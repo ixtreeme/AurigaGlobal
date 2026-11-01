@@ -624,7 +624,8 @@ bool HandleTypedItemRefinePacket(entt::entity character, const char* data)
 // new items' IDs come from the store's pool and are spent before the commit is
 // queued, so no other grant can take them meanwhile.
 
-std::expected<void, TypedGrantRefusal> RequestTypedItemGrant(entt::entity character, const items::ItemGrant& grant)
+std::expected<void, TypedGrantRefusal> RequestTypedItemGrant(entt::entity character, const items::ItemGrant& grant,
+	std::function<void(bool written)> done)
 {
 	if (!g_registry.valid(character))
 		return std::unexpected(TypedGrantRefusal::NotEnabled);
@@ -661,11 +662,14 @@ std::expected<void, TypedGrantRefusal> RequestTypedItemGrant(entt::entity charac
 	const uint64_t token = login->token;
 	g_registry.emplace_or_replace<ecs::TypedItemBusy>(character);
 	const bool queued = items::runtime::RequestCommit(typed->state.fence.owner, typed->state.fence.sessionGeneration, std::move(*commit),
-		[pid, token, grant, code = entry->base.contentCode](items::runtime::CommitOutcome outcome) {
+		[pid, token, grant, code = entry->base.contentCode, done = std::move(done)](items::runtime::CommitOutcome outcome) {
 			const entt::entity entity = CHARACTER_MANAGER::instance().FindEntityByPID(pid);
 			const auto* current = entity != entt::null && g_registry.valid(entity) ? g_registry.try_get<ecs::TypedItemLogin>(entity) : nullptr;
 			if (!current || current->token != token)
-				return; // that login is gone; the next login reloads anyway
+			{
+				if (done) done(false); // that login is gone; the next login reloads anyway
+				return;
+			}
 			g_registry.remove<ecs::TypedItemBusy>(entity);
 			if (outcome.state)
 				g_registry.emplace_or_replace<ecs::TypedItems>(entity, std::move(*outcome.state));
@@ -682,6 +686,7 @@ std::expected<void, TypedGrantRefusal> RequestTypedItemGrant(entt::entity charac
 				ecs::ChatSystem::Send(entity, CHAT_TYPE_INFO, "A tárgy átadása nem sikerült: %s.", ErrorText(outcome.write.error()));
 			}
 			SendTypedInventory(entity);
+			if (done) done(outcome.write.has_value());
 			PumpTypedItemGrants(entity); // drops that waited for this answer
 		});
 	if (!queued)

@@ -10,6 +10,7 @@
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/QuestSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
+#include "TypedLoot.hpp"
 #include "char.h"
 #include "char_manager.h"
 #include "config.h"
@@ -120,6 +121,7 @@ void CInputMain::ItemPickup(entt::entity character, const char* data)
 #endif
     command_item_pickup packet {};
     memcpy(&packet, data, sizeof(packet));
+    if (PickupTypedLoot(character, packet.vid)) return; // typed ground loot (F4 C7c)
     ItemSystem::PickupItem(character, packet.vid);
 }
 

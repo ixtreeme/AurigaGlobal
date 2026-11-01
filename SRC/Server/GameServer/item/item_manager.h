@@ -409,6 +409,9 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		// groups) are skipped: the typed catalog rolls them (items.drops = "typed").
 		bool			CreateDropItem(entt::entity victim, entt::entity killer, std::vector<entt::entity>& vec_item,
 							int iDeltaPercent, int iRandRange, bool tableDrops = true);
+		// A ground VID from the item VID counter for typed ground loot (C7c), so
+		// it never meets a legacy item's VID; 0 when the counter is exhausted.
+		uint32_t		AllocateGroundVID();
 #ifdef __SEND_TARGET_INFO__
 		bool			CreateDropItemVector(entt::entity victim, entt::entity killer, std::vector<TargetInfoItem>& items);
 #endif

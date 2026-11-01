@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
+#include <vector>
 #include <entt/entity/entity.hpp>
 
 namespace ecs {
@@ -18,10 +20,20 @@ enum class SpatialKind : uint8_t {
     Character = 0,
     Item = 1,
     Building = 2,
+    TypedLoot = 3, // typed ground loot (item system F4 C7c, IC-035)
 };
 
 struct SpatialKindTag {
     SpatialKind kind;
+};
+
+// What a typed ground loot entry shows to the clients that see it: the encoded
+// GC_TYPED_GROUND_ADD, and the claimant's name for GC_ITEM_OWNERSHIP while the
+// claim lasts. The loot itself is held by GameServer/item/TypedLoot.cpp.
+struct TypedLootView {
+    uint32_t vid = 0;
+    std::vector<std::byte> insert;
+    std::string claimName;
 };
 
 // Transitional explicit Z component. Position already stores z, but this keeps

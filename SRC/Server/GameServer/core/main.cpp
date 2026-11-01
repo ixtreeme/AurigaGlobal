@@ -117,6 +117,7 @@
 #include "hwidmanager.h"
 #endif
 #include "../item/ItemStore.hpp"
+#include "../item/TypedLoot.hpp"
 
 
 #ifdef _WIN64
@@ -322,6 +323,8 @@ void heartbeat(LPHEART ht, int pulse)
 
 	DBManager::instance().Process();
 	auriga::item::runtime::ItemStore::Instance().Drain();
+	if (!(pulse % passes_per_sec))
+		TickTypedLoot(); // typed ground loot: lapsed claims, expiry (F4 C7c)
 	AccountDB::instance().Process();
 	CPVPManager::instance().Process();
 

@@ -1360,6 +1360,12 @@ bool ITEM_MANAGER::CreateDropItemVector(entt::entity chr, entt::entity killer, s
 	return !items.empty();
 }
 #endif
+uint32_t ITEM_MANAGER::AllocateGroundVID()
+{
+	if (m_dwVIDCount == UINT32_MAX) return 0; // never wrap over a live VID
+	return ++m_dwVIDCount;
+}
+
 bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::vector<entt::entity>& vec_item,
 	int iDeltaPercent, int iRandRange, bool tableDrops)
 {

@@ -4,8 +4,8 @@
 // With items.drops = "typed" a kill rolls the catalog drop tables with the
 // legacy GetDropPct modifiers, and each drop goes to its owner's inventory
 // through the item store. One store operation per character runs at a time,
-// so drops wait in the owner's queue meanwhile. A full inventory loses the
-// drop until ground loot arrives (C7c).
+// so drops wait in the owner's queue meanwhile. A drop that does not fit goes
+// on the ground at the owner's feet, theirs for 60 s (TypedLoot, C7c).
 #include <cstdint>
 #include <vector>
 #include <entt/entity/fwd.hpp>

@@ -3,6 +3,7 @@
 #include "ItemCatalogRuntime.hpp"
 #include "ItemStore.hpp"
 #include "TypedItemOps.hpp"
+#include "TypedLoot.hpp"
 #include "../core/utils.h"
 #include "../ecs/Registry.hpp"
 #include "../ecs/systems/ChatSystem.hpp"
@@ -46,10 +47,20 @@ void Refused(entt::entity owner, const items::ItemGrant& grant, TypedGrantRefusa
 	switch (why)
 	{
 	case TypedGrantRefusal::NoRoom:
-		// A full inventory drops the loot on the ground in C7c (IC-035).
-		LOG_INFO("TypedDrops: pid {} has no room for {} x{}; the drop is lost", pid, code, count);
-		ecs::ChatSystem::Send(owner, CHAT_TYPE_INFO, "Nincs hely az inventoryban, a zsákmány elveszett: %s ×%u.", code.c_str(), count);
+	{
+		// A full inventory drops the loot at the owner's feet, theirs for 60 s
+		// (IC-035 C7c), with the legacy scatter.
+		const std::int32_t x = ecs::PlayerRuntime::GetX(owner) + number(-7, 7) * 20;
+		const std::int32_t y = ecs::PlayerRuntime::GetY(owner) + number(-7, 7) * 20;
+		if (DropTypedLoot(grant, ecs::PlayerRuntime::GetMapIndex(owner), x, y, ecs::PlayerRuntime::GetZ(owner), owner))
+			ecs::ChatSystem::Send(owner, CHAT_TYPE_INFO, "Nincs hely az inventoryban, a zsákmány a földre esett: %s ×%u.", code.c_str(), count);
+		else
+		{
+			LOG_ERROR("TypedDrops: pid {} has no room for {} x{}, and it cannot go on the ground; the drop is lost", pid, code, count);
+			ecs::ChatSystem::Send(owner, CHAT_TYPE_INFO, "Nincs hely az inventoryban, a zsákmány elveszett: %s ×%u.", code.c_str(), count);
+		}
 		break;
+	}
 	case TypedGrantRefusal::NoIds:
 		LOG_ERROR("TypedDrops: no reserved item IDs; pid {} lost {} x{}", pid, code, count);
 		ecs::ChatSystem::Send(owner, CHAT_TYPE_INFO, "A zsákmány átadása nem sikerült (nincs tárgyazonosító): %s ×%u.", code.c_str(), count);

@@ -348,6 +348,34 @@ void SendItemRemove(entt::registry& reg, entt::entity item, entt::entity viewer)
     ecs::NetworkService::Send(viewer, &packet, sizeof(packet));
 }
 
+// Typed ground loot (F4 C7c): its own add packet; delete and claim label are
+// the legacy VID packets, so the client handles them like any ground item.
+void SendTypedLootInsert(entt::registry& reg, entt::entity loot, entt::entity viewer)
+{
+    const auto* view = reg.try_get<ecs::TypedLootView>(loot);
+    if (!view || !view->vid || view->insert.empty())
+        return;
+    ecs::NetworkService::Send(viewer, view->insert.data(), view->insert.size());
+    if (view->claimName.empty())
+        return;
+    TPacketGCItemOwnership owner {};
+    owner.bHeader = HEADER_GC_ITEM_OWNERSHIP;
+    owner.dwVID = view->vid;
+    strlcpy(owner.szName, view->claimName.c_str(), sizeof(owner.szName));
+    ecs::NetworkService::Send(viewer, &owner, sizeof(owner));
+}
+
+void SendTypedLootRemove(entt::registry& reg, entt::entity loot, entt::entity viewer)
+{
+    const auto* view = reg.try_get<ecs::TypedLootView>(loot);
+    if (!view || !view->vid)
+        return;
+    TPacketGCItemGroundDel packet {};
+    packet.bHeader = HEADER_GC_ITEM_GROUND_DEL;
+    packet.dwVID = view->vid;
+    ecs::NetworkService::Send(viewer, &packet, sizeof(packet));
+}
+
 void SendBuildingInsert(entt::registry& reg, entt::entity building, entt::entity viewer)
 {
     const auto* vid = reg.try_get<ecs::VIDComponent>(building);
@@ -430,6 +458,9 @@ void SendInsert(entt::registry& reg, entt::entity source, entt::entity viewer)
     case ecs::SpatialKind::Building:
         SendBuildingInsert(reg, source, viewer);
         break;
+    case ecs::SpatialKind::TypedLoot:
+        SendTypedLootInsert(reg, source, viewer);
+        break;
     default:
         // CEntity::EncodeInsertPacket used to be pure virtual, so a new entity
         // kind could not compile without saying how it announces itself. That
@@ -467,6 +498,9 @@ void SendRemove(entt::registry& reg, entt::entity source, entt::entity viewer)
         break;
     case ecs::SpatialKind::Building:
         SendBuildingRemove(reg, source, viewer);
+        break;
+    case ecs::SpatialKind::TypedLoot:
+        SendTypedLootRemove(reg, source, viewer);
         break;
     default:
         // CEntity::EncodeRemovePacket used to be pure virtual, so a new entity

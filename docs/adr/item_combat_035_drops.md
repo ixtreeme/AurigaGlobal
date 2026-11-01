@@ -2,7 +2,8 @@
 
 2026-10-31. Fázis: F4 ([IC-034](item_combat_034_runtime_integration_plan.md),
 C csomag, „drop”). Állapot: **döntés elfogadva; a C7a (b92fe955), a
-C7b-1 (cff05d52), a C7b-2 (e37bb0ec) és a C7b-3 kész; a C7c hátravan**.
+C7b-1 (cff05d52), a C7b-2 (e37bb0ec), a C7b-3 (88c3a157) és a C7c kész; a saját
+tárgy eldobása külön szelet**.
 
 ## Régi működés (forrásaudit)
 
@@ -30,15 +31,28 @@ C7b-1 (cff05d52), a C7b-2 (e37bb0ec) és a C7b-3 kész; a C7c hátravan**.
 2. **Tele inventorynál a zsákmány a földre esik, 60 másodperces joggal**, ahogy
    ma.
 
+## Döntések a C7c-hez (a felhasználó, 2026-11-01)
+
+3. **A földi zsákmány csak memóriában él**, ahogy ma.
+   - A földi tétel tárgyállapotot, darabszámot és jogosultat tart; a
+     tárgypéldány a felvételkor jön létre.
+   - 60 másodpercig a jogosulté, 5 perc múlva eltűnik.
+   - Szerver-újraindításkor a földön lévő zsákmány elvész.
+4. **A saját tárgy eldobása külön szelet.** A teljes példányállapot (szint,
+   bónuszok) megőrzése külön tervet kíván.
+5. **A szerver és a Unity kliens együtt készül.**
+   - Új földi csomag megy ki: VID, tárgykulcs és darabszám.
+   - A törlés, a jogosult kijelzése és a felvétel a meglévő, VID-alapú
+     csomagokon megy.
+
 ## Szeletek
 
 - **C7a — futásidejű azonosítók és tárgyadás.** Ez az alap: a drop, a bolt, a
   crafting és a quest-jutalom is új tárgyat hoz létre.
 - **C7b — droptáblák a katalógusban és sorsolás a szörny halálakor.** A régi
   szorzók megmaradnak; a jutalom a jogosult inventoryjába kerül.
-- **C7c — földi zsákmány tele inventorynál és felvétel; a játékos saját
-  tárgyának eldobása.** A javaslat: a földi zsákmány a régihez hasonlóan nem
-  tartós, a tárgypéldány a felvételkor jön létre. Ezt a C7c előtt egyeztetjük.
+- **C7c — földi zsákmány tele inventorynál és felvétel.** A döntések fent
+  (3–5.); a saját tárgy eldobása külön szelet.
 
 ## C7b — droptáblák a katalógusban (C7b-1, C7b-2 és C7b-3 kész)
 
@@ -167,8 +181,8 @@ egész aritmetika eredménye változatlan marad.
   adás) válasza után a következő tétel indul (`PumpTypedItemGrants`).
 - **Kiépítetlen karakter:** akinek nincs típusos tárgyállapota, nem kap
   tábladropot. Ezért a `"typed"` mód egyelőre csak próbára való.
-- **Tele inventory:** amíg a C7c el nem készül, a drop elveszik. A játékos
-  üzenetet kap, és a napló rögzíti.
+- **Tele inventory:** a C7c óta a drop a jogosult lába elé esik, 60
+  másodpercig az övé (lásd lent).
 - **Kijelentkezés:** a várakozó dropok elvesznek.
 
 **Még nincs benne:**
@@ -190,6 +204,77 @@ egész aritmetika eredménye változatlan marad.
 - A szerverkódot (a kiosztást és a várakozási sort) csak a fordítás és a
   kódátnézés ellenőrzi. Élő próbához `"typed"` mód, egy kiépített
   tesztkarakter és egy droptábla kell.
+
+## C7c — földi zsákmány (2026-11-01)
+
+**Tartomány** (`common/item/TypedGround.hpp`, `ItemDomain/TypedGround.cpp`):
+- **`GroundLoot`:** tárgyállapot, a jogosult PID-je, a jog vége (60 mp) és az
+  eltűnés ideje (5 perc).
+- **`DecideGroundPickup`:** a régi felvételi szabály.
+  - A jogosult, vagy lejárt jog után bárki, magának veszi fel.
+  - A jogosult partytársa a jogosultnak veszi fel, és a tárgy az ő
+    inventoryjába kerül.
+  - Más nem veheti fel.
+- **`GC_TYPED_GROUND_ADD` (226) v1:** explicit little-endian csomag.
+  - Mezői: VID, x, y, z, ItemKey, szint, darab és a tartalomkód (1–96
+    nyomtatható karakter).
+  - A golden fájl (`tests/fixtures/item_combat/typed_ground_v1.hex`) mindkét
+    oldalt rögzíti.
+
+**Szerver** (`GameServer/item/TypedLoot.*`):
+- **Földi tétel:** egy térbeli entitás (`SpatialKind::TypedLoot`). Csak azt
+  hordozza, amit a kliens lát (`ecs::TypedLootView`: a kódolt csomag és a
+  jogosult neve); maga a zsákmány VID szerint a `TypedLoot.cpp`-ben van.
+- **VID:** a régi tárgy-VID számlálóból jön (`AllocateGroundVID`), így sosem
+  ütközik régi földi tárggyal.
+- **Látótér:** a láthatóság távolság szerint működik, mint a régi földi
+  tárgynál. A hálózati kiosztás a 226-ost küldi, utána élő jognál a régi
+  `GC_ITEM_OWNERSHIP`-et; eltávolításkor a régi `GC_ITEM_GROUND_DEL` megy.
+- **Tele inventory:** a dropsor `NoRoom` esetén a zsákmányt a jogosult lába
+  elé teszi, a régi ±140 egységes szórással. Csatatér-arénán nincs jog.
+- **Felvétel:** a régi `CG_ITEM_PICKUP` (VID) előbb a típusos zsákmányt
+  nézi.
+  - Ellenőrzi: él a karakter, nem megfigyelő, ugyanazon a térképen van, és a
+    régi 2400-as távolságon belül.
+  - Ezután a tárgyadás (`RequestTypedItemGrant`) indul.
+  - A tétel csak akkor tűnik el a földről, amikor a tároló megírta a tárgyat.
+    Addig nem vehető fel újra. Sikertelen írásnál újra felvehető.
+  - Az elutasító üzenetek karakterenként legfeljebb 3 másodpercenként mennek
+    ki, mert a kliens automatikus felvétele másodpercenként négyszer próbál.
+- **Időzítés:** a heartbeat másodpercenként futtatja a `TickTypedLoot`-ot.
+  - A lejárt jogot törli; a látók üres nevű tulajdonos-csomagot kapnak, mint
+    ma.
+  - A lejárt vagy elveszett térképrészen maradt zsákmányt eltávolítja (pl.
+    egy bezárt dungeon-példányét).
+- **`RequestTypedItemGrant`:** kapott egy opcionális visszahívást, amely
+  megmondja, hogy a tároló megírta-e a tárgyat. Akkor is meghívódik (hamis
+  értékkel), ha a karakter közben kilépett.
+
+**Unity kliens** (Plastic, `D:\Auriga-Unity6`):
+- **Kodek:** `Metin2GamePacketCodec.ReadTypedGroundItem`, a szerverrel
+  azonos szigorú ellenőrzéssel.
+- **Csomagkeretező:** a 226 uint32 méretmezős dinamikus csomag.
+- **Földi világ:** a típusos tételt a régi ismeretlen vnumú tárgyhoz hasonlóan
+  rakja ki: kattintható dobozzal és felirattal, pl. „material.leather +3
+  x200”. A felvétel a meglévő VID-es úton megy.
+- **Validátor:** `Metin2ProtocolCodecValidator` a szerver golden fájljával.
+
+**Tesztek:**
+- `TypedGroundTests`: 31 ellenőrzés.
+  - a felvételi szabály, a jog és a lejárat határai;
+  - a csomag oda-vissza útja;
+  - minden hibás csomag elutasítása;
+  - a golden fájl.
+- `EntityNetworkDispatchTests`: a 226-os bájtok változatlanul mennek ki, a
+  jogosult felirata, a VID szerinti törlés, és nézet nélkül nem megy semmi.
+- A földi tétel élettartamát és a felvételt csak a fordítás és a kódátnézés
+  ellenőrzi. Élő próbához kell a kliens, a `"typed"` drop mód és egy tele
+  inventoryjú, kiépített tesztkarakter.
+
+**Még nincs benne:** a saját tárgy eldobása (külön szelet); a zsákmány 3D
+modellje (a kliensnek még nincs típusos katalógusa, F5); a felvett tárgy
+„102”-es kliensoldali üzenete (a típusos tárgy üzenete a szerver
+chatszövege).
 
 ## C7a — futásidejű azonosítók és tárgyadás
 

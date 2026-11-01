@@ -138,6 +138,36 @@ void NativeBuildingPackets() {
     Check(wire.empty(), "building sent to missing viewer session");
     g_registry.clear();
 }
+
+// Typed ground loot (F4 C7c): its own add bytes, then the legacy VID packets
+// for the claim label and the delete.
+void TypedLootPackets() {
+    DESC desc;
+    const auto viewer = Character(2100, true, &desc);
+    const auto loot = WorldObject(ecs::SpatialKind::TypedLoot, 2101);
+    const std::vector<std::byte> insert {std::byte {226}, std::byte {7}, std::byte {0}, std::byte {0}, std::byte {0},
+        std::byte {1}, std::byte {42}};
+    g_registry.emplace<ecs::TypedLootView>(loot, 2101u, insert, std::string("rider"));
+    ecs::EntityNetworkDispatch::SendInsert(g_registry, loot, viewer);
+    ecs::EntityNetworkDispatch::SendRemove(g_registry, loot, viewer);
+    const auto& frames = wire.at(&desc);
+    Check(frames.size() == 3, "typed loot: add, claim label and delete");
+    Check(frames[0].size() == insert.size() && std::memcmp(frames[0].data(), insert.data(), insert.size()) == 0,
+        "typed loot add bytes changed on the way");
+    const auto owner = Packet<TPacketGCItemOwnership>(desc, 1, HEADER_GC_ITEM_OWNERSHIP);
+    Check(owner.dwVID == 2101 && std::string(owner.szName) == "rider", "typed loot claim label");
+    Check(Packet<TPacketGCItemGroundDel>(desc, 2, HEADER_GC_ITEM_GROUND_DEL).dwVID == 2101, "typed loot delete by VID");
+    wire.clear();
+    g_registry.get<ecs::TypedLootView>(loot).claimName.clear();
+    ecs::EntityNetworkDispatch::SendInsert(g_registry, loot, viewer);
+    Check(wire.at(&desc).size() == 1, "unclaimed typed loot sent a claim label");
+    wire.clear();
+    g_registry.remove<ecs::TypedLootView>(loot);
+    ecs::EntityNetworkDispatch::SendInsert(g_registry, loot, viewer);
+    ecs::EntityNetworkDispatch::SendRemove(g_registry, loot, viewer);
+    Check(wire.empty(), "typed loot without a view sent packets");
+    g_registry.clear();
+}
 void MountWireRoundTrip() {
     DESC ownerDesc, observerDesc;
     const auto owner = Character(500, true, &ownerDesc);
@@ -651,6 +681,7 @@ int main() {
     try {
         CHARACTER_MANAGER characters; SECTREE_MANAGER maps;
         NativeBuildingPackets();
+        TypedLootPackets();
         MountWireRoundTrip(); ExpiredAndMissingSession();
         UpdateAfterVisibilityRemoval();
         RetiredSourceBroadcasts();

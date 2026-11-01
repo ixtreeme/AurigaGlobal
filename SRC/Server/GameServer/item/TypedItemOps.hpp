@@ -8,6 +8,7 @@
 // fresh GC_TYPED_INVENTORY snapshot (also after a refusal).
 #include <cstdint>
 #include <expected>
+#include <functional>
 #include <entt/entity/fwd.hpp>
 #include <item/PersistentItems.hpp>
 
@@ -27,6 +28,9 @@ void RequestTypedItemRefine(entt::entity character, std::uint64_t itemId, std::u
 bool HandleTypedItemRefinePacket(entt::entity character, const char* data);
 // Gives new units of one item state to the character's inventory (F4 C7a):
 // the path drops, purchases and rewards take. The new items' IDs come from the
-// store's reserved pool. Nothing is queued when it is refused.
+// store's reserved pool. Nothing is queued when it is refused. Once queued,
+// `done` (if any) learns whether the store wrote the grant; it is also told
+// false when the character's login is gone by then.
 enum class TypedGrantRefusal { NotEnabled, Busy, Invalid, NoRoom, NoIds };
-std::expected<void, TypedGrantRefusal> RequestTypedItemGrant(entt::entity character, const auriga::item::ItemGrant& grant);
+std::expected<void, TypedGrantRefusal> RequestTypedItemGrant(entt::entity character, const auriga::item::ItemGrant& grant,
+	std::function<void(bool written)> done = {});
