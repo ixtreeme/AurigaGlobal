@@ -27,7 +27,7 @@ struct Writer
 };
 }
 std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDetails(
-    const ItemCatalog& c,std::span<const PersistentItem> items,bool ownedDropEnabled)
+    const ItemCatalog& c,std::span<const PersistentItem> items,bool ownedDropEnabled,std::span<const ItemGrant> extraStates)
 {
     try
     {
@@ -43,6 +43,8 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
             { keys.insert(*stone.stone); states.emplace(*stone.stone,stone.refinementLevel); }
             sources.emplace(item.key,item.refinementLevel);
         }
+        for(const auto& extra:extraStates)
+        { keys.insert(extra.key); states.emplace(extra.key,extra.refinementLevel); sources.emplace(extra.key,extra.refinementLevel); }
         for(const auto& [key,level]:sources)
             for(const auto* r:c.RefinementRecipesFrom(key,level))
             {

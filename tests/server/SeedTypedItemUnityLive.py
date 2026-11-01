@@ -13,6 +13,8 @@ parser.add_argument('--map-index',type=int,default=41)
 parser.add_argument('--x',type=int,default=987300)
 parser.add_argument('--y',type=int,default=268800)
 parser.add_argument('--game-port',type=int,default=30078)
+parser.add_argument('--npc-shops',action='store_true',help='Add the dedicated NPC shop and demo prices')
+parser.add_argument('--npc-race',type=int,default=9003)
 args=parser.parse_args()
 root=args.package.resolve()
 _,manager,_,auth=item_bench.connection(root)
@@ -53,6 +55,24 @@ document['recipes']=[dict(source_level='0',target_category_id=None,target_local_
 tables=editor.apply(document,key)
 item_catalog.run_tool(dict(action='commit',connection=auth,tables=tables,expected_hash=packet['hash']),packet['columns'],tool)
 config.update(keys)
+if args.npc_shops:
+    stock_path=root/'data/typed_shops.json'
+    stock=json.loads(stock_path.read_text(encoding='utf-8')) if stock_path.exists() else dict(version=1,shops=[])
+    assert stock['version']==1
+    previous=next((row for row in stock['shops'] if row['npc_race']==args.npc_race),None)
+    assert previous is None or previous['name']=='Local item demo', 'Preserve the existing operator NPC shop'
+    if stock_path.exists():(backup/'typed_shops.before.json').write_bytes(stock_path.read_bytes())
+    for category,field,buy,sell in ((1,'WeaponLocal',100,50),(5,'FlaskLocal',5,2),(6,'MaterialLocal',3,1)):
+        packet=read();editor=item_catalog.Catalog(packet);key=(category,keys[field]);document=editor.item(key)
+        document['base'].update(buy_amount=str(buy),sell_amount=str(sell))
+        item_catalog.run_tool(dict(action='commit',connection=auth,tables=editor.apply(document,key),expected_hash=packet['hash']),packet['columns'],tool)
+    listing=dict(npc_race=args.npc_race,name='Local item demo',offers=[
+        dict(id=1,category=1,local=keys['WeaponLocal'],level=0,count=1),
+        dict(id=2,category=5,local=keys['FlaskLocal'],level=0,count=1),
+        dict(id=3,category=6,local=keys['MaterialLocal'],level=0,count=2)])
+    stock['shops']=[row for row in stock['shops'] if row['npc_race']!=args.npc_race]+[listing]
+    stock_path.write_text(json.dumps(stock,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+    config['ShopNpcRace']=args.npc_race
 config['GamePort']=args.game_port
 config_path.write_text(json.dumps(config),encoding='utf-8')
 item_bench.run_tool(dict(action='setup',connection=auth),bench)

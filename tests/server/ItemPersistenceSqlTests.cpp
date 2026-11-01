@@ -2,6 +2,7 @@
 #include "CatalogSnapshotFixture.hpp"
 #include <ItemPersistenceSql.hpp>
 #include <item/OwnedGround.hpp>
+#include <item/NpcShops.hpp>
 #include <CatalogSqlReader.hpp>
 #include <SQL/AsyncSQL.h>
 #include <Core/Logging.hpp>
@@ -382,6 +383,38 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         auto final=p::LoadCurrentItemOwner(writer,*c,dropper).value();
         Check(Find(final,sword.id.Value()).attributes==sword.attributes && Find(final,sword.id.Value()).stones==sword.stones,"runtime registered pickup preserves complete payload");
 
+    }
+    {
+        const ItemOwner customer{ItemOwnerKind::Character,880082};
+        const auto bag=f::Inventory(customer);
+        const ItemWallet wallet{customer,WalletCurrency::Gold,1,1000};
+        Check(p::ProvisionOwner(admin,*c,customer,std::span(&bag,1),std::span(&wallet,1)).has_value(),"NPC customer provisioned");
+        auto state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        const auto block=p::ReserveItemInstanceIds(writer,*c,32).value();
+        std::vector<ItemInstanceId> ids;for(auto i=block.first;i<block.end;++i)ids.push_back(ItemInstanceId::Create(i).value());
+        const NpcShopOffer offer{1,{f::Sword().key,0,1}};
+        std::array<std::uint8_t,16> op{};op.fill(0xB1);
+        auto buy=MakeNpcBuyCommit(*c,op,state.fence,state.storages,state.items,state.wallets,offer,3,ids);
+        Check(buy && p::CommitItems(writer,*c,*buy).has_value(),"NPC purchase writes three swords and payment together");
+        auto replay=p::CommitItems(writer,*c,*buy);Check(replay && replay->replay,"purchase replay is idempotent");
+        state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        Check(state.items.size()==3 && state.wallets[0].balance==700,"purchase reload has exact quantity and cost");
+        op.fill(0xB2);auto invalid=MakeNpcBuyCommit(*c,op,state.fence,state.storages,state.items,state.wallets,offer,1,std::span(ids).subspan(3));
+        Check(invalid.has_value(),"second purchase plan");
+        ++invalid->wallets[0].before.revision;++invalid->wallets[0].after.revision;
+        Check(!p::CommitItems(writer,*c,*invalid),"wallet race rolls purchase back");
+        auto untouched=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        Check(untouched.items==state.items && untouched.wallets==state.wallets && untouched.fence==state.fence,"failed payment leaves no free item");
+        op.fill(0xB3);auto sell=MakeNpcSellCommit(*c,op,state.fence,state.storages,state.items,state.wallets,state.items[0].id,0);
+        Check(sell && p::CommitItems(writer,*c,*sell).has_value(),"NPC sale writes tombstone and credit together");
+        replay=p::CommitItems(writer,*c,*sell);Check(replay && replay->replay,"sale replay does not double credit");
+        state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        Check(state.items.size()==2 && state.wallets[0].balance==750,"sale reload has exact credit and remaining instances");
+        op.fill(0xB4);auto stale=MakeNpcSellCommit(*c,op,state.fence,state.storages,state.items,state.wallets,state.items[0].id,0);
+        Check(stale.has_value() && p::ClaimOwnerSession(writer,*c,customer).has_value(),"relogin fences pending sale");
+        Check(!p::CommitItems(writer,*c,*stale),"old session cannot sell");
+        auto after=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        Check(after.items==state.items && after.wallets==state.wallets,"stale sale changes neither items nor money");
     }
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);

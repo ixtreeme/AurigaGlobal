@@ -439,6 +439,15 @@ typedef struct command_typed_item_drop
 	uint32_t dwCount;
 } TPacketCGTypedItemDrop;
 
+// Fixed sequenced body; server owns the price, item identity and session.
+typedef struct command_typed_shop
+{
+    uint8_t bHeader, action; // 1 open, 2 buy, 3 sell, 4 close
+    uint32_t npc;
+    uint64_t session, request, subject; // offer id or persistent instance id
+    uint32_t count; // purchase bundles; sale units (0 = whole)
+} TPacketCGTypedShop;
+
 typedef struct command_party_parameter
 {
 	uint8_t	bHeader;

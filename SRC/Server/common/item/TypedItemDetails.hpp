@@ -16,5 +16,5 @@ inline constexpr std::uint8_t TypedItemDetailsHeader = 227;
 inline constexpr std::uint8_t TypedActionMove = 1, TypedActionEquip = 2,
     TypedActionUse = 4, TypedActionRefine = 8, TypedActionDrop = 16;
 std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDetails(
-    const ItemCatalog&, std::span<const PersistentItem>, bool ownedDropEnabled = false);
+    const ItemCatalog&, std::span<const PersistentItem>, bool ownedDropEnabled = false, std::span<const ItemGrant> extraStates = {});
 }

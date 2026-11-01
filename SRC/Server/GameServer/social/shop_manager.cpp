@@ -26,6 +26,7 @@
 #include "locale_service.h"
 #include "desc_client.h"
 #include "shop_manager.h"
+#include "../item/TypedShop.hpp"
 #include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/ResourceAdmission.hpp"
@@ -116,6 +117,7 @@ entt::entity CShopManager::GetByNPCVnum(uint32_t dwVnum)
 // Start shopping.
 bool CShopManager::StartShopping(entt::entity pkChr, entt::entity pkChrShopKeeper, int iShopVnum)
 {
+    if (TryOpenTypedShop(pkChr, pkChrShopKeeper)) return true;
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
 	if (ecs::PlayerRuntime::GetGMLevel(pkChr) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(pkChr) < GM_IMPLEMENTOR) {
 		return false;
@@ -214,6 +216,7 @@ void CShopManager::DestroyPCShop(entt::entity ch)
 // Stop shopping.
 void CShopManager::StopShopping(entt::entity ch)
 {
+    CloseTypedShop(ch);
 	const entt::entity shop = ecs::SocialSystem::GetShop(ch);
 
 	if (shop == entt::null)

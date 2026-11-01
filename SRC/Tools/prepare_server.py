@@ -142,6 +142,7 @@ def build(source, output, build_dir, sql_port=3307):
     (output / 'schemas').mkdir()
     shutil.copy2(REPO / 'config/server.json.example', output / 'config/server.json.example')
     shutil.copy2(REPO / 'docs/schemas/server.schema.json', output / 'schemas/server.schema.json')
+    shutil.copy2(REPO / 'config/typed_shops.example.json', output / 'data/typed_shops.json')
     py = str(Path(sys.executable).resolve())
     py_literal = py.replace("'", "''")
     wrapper = ('$ErrorActionPreference = \'Stop\'\nSet-Location -LiteralPath $PSScriptRoot\n'

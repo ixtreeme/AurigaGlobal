@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "TypedLoot.hpp"
+#include "TypedShop.hpp"
 #include "ItemCatalogRuntime.hpp"
 #include "TypedItemOps.hpp"
 #include "TypedDrops.hpp"
@@ -244,6 +245,7 @@ bool PickupTypedLoot(entt::entity character, std::uint32_t vid)
 void TickTypedLoot()
 {
 	TickTypedItemRefreshes();
+	TickTypedShops();
 	auto& all = Loot();
 	if (all.empty())
 		return;

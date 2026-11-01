@@ -3,7 +3,7 @@
 2026-10-31. Fázis: F4 ([IC-034](item_combat_034_runtime_integration_plan.md),
 C csomag, „drop”). Állapot: **döntés elfogadva; a C7a (b92fe955), a
 C7b-1 (cff05d52), a C7b-2 (e37bb0ec), a C7b-3 (88c3a157) és a C7c kész; a saját
-tárgy eldobásának C7d-1 natív/SQL alapja kész, a futásidejű bekötés még nyitott**.
+tárgy eldobásának C7d-1 alapja és a C7d-2 futásidejű/Unity-bekötés kész**.
 
 ## Régi működés (forrásaudit)
 

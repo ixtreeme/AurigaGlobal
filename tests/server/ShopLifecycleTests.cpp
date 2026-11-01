@@ -30,6 +30,8 @@
 // Real shop.cpp + shop_manager.cpp with entity-only fixtures. Descriptors,
 // items, points, sessions and the DB are doubles. NPC inventory commits are
 // a controlled boundary here; QuickslotTests runs the actual transaction.
+bool TryOpenTypedShop(entt::entity,entt::entity) { return false; }
+void CloseTypedShop(entt::entity) {}
 entt::registry g_registry;
 int passes_per_sec = 25;
 int test_server = 0;

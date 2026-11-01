@@ -116,6 +116,7 @@ enum HEADER_CG
 	// Typed item system (F4 C6, IC-034): RequestTypedItemRefine.
 	HEADER_CG_TYPED_ITEM_REFINE = 227,
 	HEADER_CG_TYPED_ITEM_DROP = 228,
+	HEADER_CG_TYPED_SHOP = 229,
 
 #ifdef __NEWPET_SYSTEM__
 	HEADER_CG_PetSetName = 146,

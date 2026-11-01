@@ -224,5 +224,6 @@ enum HEADER_GC
 	// Typed ground loot (F4 C7c, IC-035): auriga::item::EncodeTypedGround.
 	HEADER_GC_TYPED_GROUND_ADD = 226,
 	HEADER_GC_TYPED_ITEM_DETAILS = 227,
+	HEADER_GC_TYPED_SHOP = 228,
 
 };
