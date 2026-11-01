@@ -61,6 +61,9 @@ bool CanSee(entt::registry& reg, entt::entity source, entt::entity viewer) {
     if (source == viewer || !Active(reg, source) || !Active(reg, viewer) ||
         reg.get<SpatialKindTag>(viewer).kind != SpatialKind::Character ||
         reg.get<MapIndex>(source).value != reg.get<MapIndex>(viewer).value) return false;
+    // A reserved owned-item drop already has sector membership while its SQL
+    // result is pending. It must acquire no view edges before publication.
+    if (reg.get<SpatialKindTag>(source).kind == SpatialKind::TypedLoot && !reg.all_of<TypedLootView>(source)) return false;
     const auto* status = reg.try_get<StatusFlags>(source);
     if (status && status->isObserverMode) return false;
     const auto a = reg.get<Position>(source), b = reg.get<Position>(viewer);

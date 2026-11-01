@@ -19,3 +19,6 @@ bool DropTypedLoot(const auriga::item::ItemGrant& grant, std::int32_t mapIndex, 
 bool PickupTypedLoot(entt::entity character, std::uint32_t vid);
 // Once a second from the heartbeat: lapsed claims and expired loot.
 void TickTypedLoot();
+// CG_TYPED_ITEM_DROP (228): concrete inventory instance, 0 means whole stack.
+void RequestTypedItemDrop(entt::entity character, std::uint64_t id, std::uint32_t units);
+bool HandleTypedItemDropPacket(entt::entity character, const char* data);

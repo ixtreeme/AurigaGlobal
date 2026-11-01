@@ -21,18 +21,19 @@ ItemStore::~ItemStore()
 	Stop();
 }
 
-std::expected<void, std::string> ItemStore::Start(const GameSqlConfig& player, std::shared_ptr<const ItemCatalog> catalog)
+std::expected<void, std::string> ItemStore::Start(const GameSqlConfig& player, std::shared_ptr<const ItemCatalog> catalog, std::string groundCore)
 {
 	{
 		std::lock_guard lock(mutex_);
 		if (running_ || thread_.joinable()) return std::unexpected(std::string("the item store is already running"));
 		if (!catalog) return std::unexpected(std::string("the item store needs the typed catalog"));
 		catalog_ = std::move(catalog);
+        groundRun_.reset();
 		stopping_ = false;
 	}
 	auto ready = std::make_shared<std::promise<std::string>>();
 	auto connected = ready->get_future();
-	thread_ = std::thread(&ItemStore::Run, this, player, ready);
+	thread_ = std::thread(&ItemStore::Run, this, player, ready, std::move(groundCore));
 	auto error = connected.get();
 	if (!error.empty())
 	{
@@ -48,6 +49,11 @@ std::expected<void, std::string> ItemStore::Start(const GameSqlConfig& player, s
 	firstIds_.reset();
 	refillingIds_ = false;
 	return {};
+}
+
+std::optional<ItemGroundChange> ItemStore::GroundRun() const
+{
+    std::lock_guard lock(mutex_); return groundRun_;
 }
 
 bool ItemStore::Running() const noexcept
@@ -153,7 +159,7 @@ void ItemStore::RefillIds()
 	});
 }
 
-void ItemStore::Run(GameSqlConfig player, std::shared_ptr<std::promise<std::string>> ready)
+void ItemStore::Run(GameSqlConfig player, std::shared_ptr<std::promise<std::string>> ready, std::string groundCore)
 {
 	CAsyncSQL connection;
 	connection.SetTimeouts(10);
@@ -168,6 +174,13 @@ void ItemStore::Run(GameSqlConfig player, std::shared_ptr<std::promise<std::stri
 		std::lock_guard lock(mutex_);
 		catalog = catalog_;
 	}
+
+    if(!groundCore.empty())
+    {
+        const auto run=persistence::BeginOwnedGroundRun(connection,*catalog,groundCore);
+        if(!run) { ready->set_value(fmt::format("owned ground startup failed (error {}); apply migration 003_owned_ground.sql",static_cast<int>(run.error()))); return; }
+        std::lock_guard lock(mutex_); groundRun_=ItemGroundChange{std::move(groundCore),*run,*run,0,false};
+    }
 	// Without IDs the store still loads and changes existing items; it only
 	// cannot create new ones (db/migrations/item_instance/002 missing?).
 	auto ids = persistence::ReserveItemInstanceIds(connection, *catalog, IdBlockSize);
@@ -217,7 +230,7 @@ bool RequestLoginLoad(std::uint32_t pid, std::function<void(LoginLoad)> done)
 		else
 		{
 			result.session = *session;
-			result.loaded = persistence::LoadItemOwner(sql, catalog, owner, *session);
+            result.loaded = persistence::LoadItemOwner(sql, catalog, owner, *session);
 		}
 		return [done = std::move(done), result = std::move(result)]() mutable { done(std::move(result)); };
 	});
@@ -234,10 +247,10 @@ namespace
 {
 struct PendingCommit
 {
-	ItemOwner owner;
-	std::uint64_t session;
+	std::vector<OwnerRead> owners;
 	ItemCommit commit;
-	std::function<void(CommitOutcome)> done;
+	std::function<void(MultiCommitOutcome)> done;
+    std::optional<std::expected<persistence::ItemWriteResult,ItemPersistenceError>> settled;
 	bool reconciling = false;
 };
 
@@ -245,14 +258,14 @@ bool QueueCommit(std::shared_ptr<PendingCommit> pending, std::chrono::millisecon
 {
 	return ItemStore::Instance().Submit([pending](CAsyncSQL& sql, const ItemCatalog& catalog) -> ItemStore::Completion {
 		std::expected<persistence::ItemWriteResult, ItemPersistenceError> write = std::unexpected(ItemPersistenceError::CommitUnknown);
-		if (!pending->reconciling)
+		if (!pending->settled && !pending->reconciling)
 		{
 			write = persistence::CommitItems(sql, catalog, pending->commit);
 			pending->reconciling = !write && write.error() == ItemPersistenceError::CommitUnknown;
 			if (pending->reconciling)
-				LOG_ERROR("ItemStore: owner {} commit acknowledgement lost; reconciling its original receipt", pending->owner.id);
+				LOG_ERROR("ItemStore: owner {} commit acknowledgement lost; reconciling its original receipt", pending->owners.front().owner.id);
 		}
-		if (pending->reconciling)
+		if (!pending->settled && pending->reconciling)
 		{
 			const auto receipt = persistence::FindItemReceipt(sql, catalog, pending->commit);
 			if (!receipt)
@@ -265,7 +278,15 @@ bool QueueCommit(std::shared_ptr<PendingCommit> pending, std::chrono::millisecon
 			else
 				write = std::unexpected(ItemPersistenceError::SqlFailure);
 		}
-		CommitOutcome outcome { std::move(write), persistence::LoadItemOwner(sql, catalog, pending->owner, pending->session) };
+        if(!pending->settled) pending->settled=std::move(write);
+        MultiCommitOutcome outcome{*pending->settled,{}};
+        for(const auto& owner:pending->owners)
+        {
+            auto state=owner.session ? persistence::LoadItemOwner(sql,catalog,owner.owner,owner.session) : persistence::LoadCurrentItemOwner(sql,catalog,owner.owner);
+            if(!state && state.error()==ItemPersistenceError::SqlFailure)
+                return [pending] { QueueCommit(pending,std::chrono::seconds(1)); };
+            outcome.states.push_back(std::move(state));
+        }
 		return [pending, outcome = std::move(outcome)]() mutable { pending->done(std::move(outcome)); };
 	}, delay);
 }
@@ -273,6 +294,13 @@ bool QueueCommit(std::shared_ptr<PendingCommit> pending, std::chrono::millisecon
 
 bool RequestCommit(ItemOwner owner, std::uint64_t session, ItemCommit commit, std::function<void(CommitOutcome)> done)
 {
-	return QueueCommit(std::make_shared<PendingCommit>(PendingCommit { owner, session, std::move(commit), std::move(done) }));
+    return RequestCommitMany({{owner,session}},std::move(commit),[done=std::move(done)](MultiCommitOutcome result) mutable {
+        done(CommitOutcome{std::move(result.write),std::move(result.states.front())});
+    });
+}
+bool RequestCommitMany(std::vector<OwnerRead> owners,ItemCommit commit,std::function<void(MultiCommitOutcome)> done)
+{
+    if(owners.empty()) return false;
+    return QueueCommit(std::make_shared<PendingCommit>(PendingCommit{std::move(owners),std::move(commit),std::move(done)}));
 }
 } // namespace auriga::item::runtime

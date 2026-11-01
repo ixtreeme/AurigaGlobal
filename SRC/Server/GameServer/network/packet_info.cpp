@@ -173,6 +173,7 @@ CPacketInfoCG::CPacketInfoCG()
 	Set(HEADER_CG_TYPED_ITEM_MOVE, sizeof(TPacketCGTypedItemMove), "TypedItemMove", true);
 	Set(HEADER_CG_TYPED_ITEM_USE, sizeof(TPacketCGTypedItemUse), "TypedItemUse", true);
 	Set(HEADER_CG_TYPED_ITEM_REFINE, sizeof(TPacketCGTypedItemRefine), "TypedItemRefine", true);
+	Set(HEADER_CG_TYPED_ITEM_DROP, sizeof(TPacketCGTypedItemDrop), "TypedItemDrop", true);
 
 
 #ifdef __INGAME_WIKI__
@@ -300,6 +301,7 @@ CPacketInfoGG::CPacketInfoGG()
 	Set(HEADER_GG_AUTH, sizeof(TPacketGGAuth), "Auth", false);
 	Set(HEADER_GG_AUTH_RESULT, sizeof(TPacketGGAuthResult), "AuthResult", false);
 	Set(HEADER_GG_AUTH_CHALLENGE, sizeof(TPacketGGAuthChallenge), "AuthChallenge", false);
+	Set(HEADER_GG_TYPED_ITEM_REFRESH, sizeof(TPacketGGTypedItemRefresh), "TypedItemRefresh", false);
 }
 
 CPacketInfoGG::~CPacketInfoGG()

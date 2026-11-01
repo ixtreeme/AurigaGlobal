@@ -432,6 +432,13 @@ typedef struct command_typed_item_refine
 	uint32_t	dwNpcVid;	// the smith the item is handed to
 } TPacketCGTypedItemRefine;
 
+typedef struct command_typed_item_drop
+{
+	uint8_t bHeader;
+	uint64_t qwItemId;
+	uint32_t dwCount;
+} TPacketCGTypedItemDrop;
+
 typedef struct command_party_parameter
 {
 	uint8_t	bHeader;

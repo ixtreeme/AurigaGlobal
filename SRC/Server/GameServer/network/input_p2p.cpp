@@ -12,6 +12,7 @@
 #include "char_manager.h"
 #include "../ecs/CharacterAccessors.hpp"
 #include "p2p.h"
+#include "../item/TypedInventorySync.hpp"
 #include "guild.h"
 #ifdef ENABLE_GUILD_RENEWAL_BY_RAZOR93
 #include "guild_renewal.h"
@@ -434,6 +435,12 @@ int CInputP2P::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 
 	switch (bHeader)
 	{
+		case HEADER_GG_TYPED_ITEM_REFRESH:
+		{
+			const auto* packet = reinterpret_cast<const TPacketGGTypedItemRefresh*>(c_pData);
+			RefreshRemoteTypedItemOwner(packet->pid, packet->session, packet->revision);
+			break;
+		}
 		case HEADER_GG_SETUP:
 			Setup(d, c_pData);
 			break;

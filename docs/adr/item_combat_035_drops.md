@@ -323,35 +323,35 @@ a saját tárgyat ezen az úton nem szabad újragenerálni.
   közötti fegyver- és ékszerátadás; részhalom és lejárat; idempotens nyugta;
   elavult felvétel nem módosít semmit.
 
-### C7d-2 — futó szerver és Unity együtt (még nyitott)
+### C7d-2 — futó szerver és Unity együtt (kész)
 
-A felhasználó 2026-11-01-i kérése szerint a szerver- és kliensbekötés
-ugyanabban a munkában készül, hogy együtt lehessen helyben kipróbálni.
-A kliens aktív ága `/main/codex-mission-engine`, a projekt Unity 6.3-as
-(`6000.3.27f1`), workspace-e `D:\Auriga-Unity6\SRC\AurigaUnity`.
+A szerver- és kliensbekötés együtt készült, Unity `6000.3.27f1` alatt,
+a `/main/codex-mission-engine` ágon. A teljes helyi próba és a natív/SQL
+regressziók eredménye a [jelentésben](../reports/item_combat/2026-11-01_unity_item_runtime_integration.md).
 
-A C7d-1 csak tervező és írási halmaz: játékbeli eldobóparancs vagy csomag
-még nem hívja. Az escrow nincs automatikusan kiépítve a játékosoknak.
-Bekötés előtt együtt szükséges:
-
-1. Előre kiépített escrow, a földi tétel és a konkrét példány összerendelése,
-   illetve core-/indulási munkamenethez kötött felügyelet. A foglalás nem
-   használható inventoryként, fejlesztési anyagként vagy jutalomhalomként.
-2. Eldobás előtt lefoglalt, elhelyezhető földi entitás. Csak igazolt SQL-írás
-   után publikálható; elutasításnál a foglalás megszűnik. `CommitUnknown`
-   esetén az eredeti nyugta rendezéséig foglalt marad.
-3. Felvételnél a forrás és a felvevő aktuális kerítése, mindkét online
-   snapshot frissítése, offline forrástulajdonos és újrabelépés kezelése.
-4. Ötperces lejárat és bezárt térkép: igazolt escrow-megszüntetés. Újraindulás
-   után az előző indulás foglalásainak takarítása szükséges, visszaspawnolás
-   nélkül, más futó core földi tárgyainak érintése nélkül. Ezzel marad
-   memória-élettartamú a földi világ, és nem keletkezik árva példány.
-5. A mai saját eldobás nem ad 60 másodperces jogot: más azonnal felveheti.
-   Ez eltér a tele inventoryból földre került C7c zsákmánytól. A felvételi
-   távolság, tiltott karakterállapotok és DROP/GIVE szabályok megmaradnak.
-6. Új, példányazonosítós és darabszámos CG-kérés, Unity-író és inventoryakció,
-   valamint kliens/szerver protokollteszt. A C7c megjelenítő csomagja a földi
-   feliratot továbbra is ki tudja szolgálni; a teljes payload a szerveré.
+- **Előzetes kiépítés:** a `003_owned_ground.sql` és a próbapad kiépítője
+  külön, fenntartott `TradeEscrow` tárolót hoz létre. A futó tárgyíró továbbra
+  sem kap tárolólétrehozási jogosultságot. Ez a tároló nem inventoryoldal.
+- **Foglalás és publikálás:** az elhelyezhető földi entitás a mentés előtt
+  elkészül, de `TypedLootView` és látólista-kapcsolatok nélkül. Csak igazolt
+  írás után válik láthatóvá. Elutasításkor a foglalás megszűnik; ismeretlen
+  COMMIT-nál a nyugta rendezéséig megmarad.
+- **Atomi nyilvántartás:** a példány és az `item_ground_entry` hivatkozás
+  ugyanabban az SQL-tranzakcióban változik. A core és indulási generáció
+  az ellenőrzés és a nyugtahash része.
+- **Felvétel:** a forrás aktuális munkamenetével és a felvevő kerítésével
+  készül. Saját felvételnél egy kerítés van. A helyi online állapotok frissülnek;
+  másik core-on lévő tulajdonost generáció-/revízióellenőrzött
+  `GG_TYPED_ITEM_REFRESH` (45) értesítés frissít. Későbbi értesítést egy
+  folyamatban lévő művelet sem veszít el. Offline forrás is támogatott.
+- **Élettartam:** öt perc, saját eldobásnál 60 másodperces jog nélkül.
+  Lejáratkor és bezárt térképnél igazolt SQL-megszüntetés után tűnik el.
+  Induláskor a core a saját korábbi indulásainak foglalásait takarítja,
+  visszaspawnolás és más core érintése nélkül.
+- **Kliens:** `CG_TYPED_ITEM_DROP` (228), 64 bites példányazonosító és
+  32 bites darabszám; megerősítő ablak és részhalom-választás. A meglévő
+  `GC_TYPED_GROUND_ADD` és pickup út használható. A teljes példányállapot
+  a szerveren marad; nincs `ItemGrant`-ból újragenerálás vagy összevonás.
 
 ## C7a — futásidejű azonosítók és tárgyadás
 

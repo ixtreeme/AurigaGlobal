@@ -162,7 +162,7 @@ class Document:
 def pending_deployment(root):
     for path in sorted((root / 'run/deployments').glob('*/result.json')):
         try:
-            if strict_json(path.read_text(encoding='utf-8'))['status'] not in ('installing', 'rollback-failed'):
+            if strict_json(path.read_text(encoding='utf-8-sig'))['status'] not in ('installing', 'rollback-failed'):
                 continue
         except (OSError, ValueError, KeyError, TypeError):
             pass

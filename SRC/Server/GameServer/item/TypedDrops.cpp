@@ -3,6 +3,7 @@
 #include "ItemCatalogRuntime.hpp"
 #include "ItemStore.hpp"
 #include "TypedItemOps.hpp"
+#include "TypedInventorySync.hpp"
 #include "TypedLoot.hpp"
 #include "../core/utils.h"
 #include "../ecs/Registry.hpp"
@@ -116,6 +117,7 @@ void PumpTypedItemGrants(entt::entity owner)
 {
 	if (owner == entt::null || !g_registry.valid(owner))
 		return;
+	if (PumpRemoteTypedItemRefresh(owner)) return;
 	while (auto* queue = g_registry.try_get<ecs::TypedGrantQueue>(owner))
 	{
 		if (queue->pending.empty())

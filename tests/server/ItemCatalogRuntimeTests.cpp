@@ -72,9 +72,11 @@ int main(int argc, char** argv)
 			const ItemWallet gold { provisioned, WalletCurrency::Gold, 1, 777 };
 			auto made = persistence::ProvisionOwner(importer, *catalog, provisioned, std::span(&bag, 1), std::span(&gold, 1));
 			Check(made && *made, "owner provisioned for the store test");
+            Check(persistence::ProvisionGroundStorage(importer,*catalog,provisioned).has_value(), "importer pre-provisions the ground escrow");
 			Check(!store.Start(GameSqlConfig { "127.0.0.1", std::stoi(port), "game_reader", "wrong", "player" }, catalog), "store started with a wrong password");
 			Check(!store.Running(), "failed start left the store running");
-			Check(store.Start(player, catalog).has_value() && store.Running(), "store did not start");
+			Check(store.Start(player, catalog, "runtime-test-core").has_value() && store.Running(), "store did not start");
+            Check(store.GroundRun() && store.GroundRun()->run==1, "store starts a fenced owned-ground run");
 			Check(!store.Start(player, catalog), "store started twice");
 			const auto gameThread = std::this_thread::get_id();
 			std::vector<std::string> order;

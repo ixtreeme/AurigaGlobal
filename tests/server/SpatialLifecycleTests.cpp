@@ -516,6 +516,7 @@ void SendInsert(entt::registry& reg, entt::entity source, entt::entity viewer) {
 }
 void SendRemove(entt::registry& reg, entt::entity source, entt::entity viewer) {
     Check(reg.valid(source) && reg.valid(viewer), "remove stale identity");
+    if (reg.get<SpatialKindTag>(source).kind == SpatialKind::TypedLoot && !reg.all_of<TypedLootView>(source)) return;
     Packet packet {false, source, viewer}; packets.push_back(packet);
     if (onPacket) { auto callback = onPacket; callback(packet); }
 }
@@ -2011,6 +2012,23 @@ void Place(entt::entity e, int x, int y) {
     if (ecs::SectorOf(g_registry, e) != target) Check(target->InsertEntity(e), "refresh fixture move");
     ecs::SpatialService::UpdateSectree(g_registry, e);
 }
+void ReservedTypedLootPublication() {
+    Reset(); MapFixture map;
+    const auto viewer=Entity(ecs::SpatialKind::Character), loot=Entity(ecs::SpatialKind::TypedLoot);
+    Check(Spawn(viewer) && Spawn(loot), "reserved typed loot placement");
+    packets.clear();
+    ecs::VisibilitySystem::Refresh(g_registry,viewer);
+    Check(!Visible(loot,viewer) && packets.empty(), "pending SQL drop is invisible even to a moving viewer");
+    g_registry.emplace<ecs::TypedLootView>(loot,100u,std::vector<std::byte>{std::byte{226}},std::string{});
+    ecs::VisibilitySystem::Refresh(g_registry,loot);
+    Check(Visible(loot,viewer) && packets.size()==1 && packets[0].add, "confirmed drop publishes to stationary viewers");
+    ecs::VisibilitySystem::Refresh(g_registry,viewer);
+    Check(packets.size()==1, "confirmed drop is published once");
+    const auto refused=Entity(ecs::SpatialKind::TypedLoot);
+    Check(Spawn(refused), "refused drop reservation");
+    packets.clear();ecs::SpatialService::RemoveEntity(g_registry,refused);
+    Check(packets.empty(), "cancelled reservation has no network side effects");
+}
 void RefreshKeepsEveryPairExact() {
     Reset(); MapFixture map;
     std::mt19937 rng(13);
@@ -2073,6 +2091,7 @@ int main() {
         NativeRecoveryTimers();
         BulkCharacterRetirement();
         RangeQueryMatchesTheSnapshotScan();
+        ReservedTypedLootPublication();
         RefreshKeepsEveryPairExact();
         Reset(); ecs::VisibilitySystem::Shutdown(g_registry);
         std::cout << "Spatial checks passed: " << checks << '\n'; return 0;

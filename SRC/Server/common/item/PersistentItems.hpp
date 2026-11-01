@@ -74,6 +74,13 @@ struct ItemWallet
 struct ItemChange { std::optional<PersistentItem> before; PersistentItem after; };
 struct ItemWalletChange { ItemWallet before, after; };
 enum class ItemOperationKind : std::uint8_t { Grant=1, Move=2, Refine=3, Service=4, Consume=5, Trade=6 };
+inline constexpr std::uint64_t OwnedGroundStorageId = 0xfffffffffffffffeULL;
+struct ItemGroundChange
+{
+    std::string core;
+    std::uint64_t run = 0, storedRun = 0, instance = 0;
+    bool create = false;
+};
 struct ItemCommit
 {
     std::array<std::uint8_t,16> operationId{};
@@ -86,6 +93,8 @@ struct ItemCommit
     std::vector<ItemWalletChange> wallets;
     std::uint16_t outcomeCode=0;
     std::vector<std::uint8_t> result;
+    // Ground registry and the concrete item are written in the same SQL transaction.
+    std::optional<ItemGroundChange> ground;
 };
 inline constexpr std::size_t MaxItemCommitItems=32, MaxItemCommitOwners=8,
     MaxItemCommitStorages=16, MaxItemCommitResult=4096, MaxLoadedOwnerItems=4096;

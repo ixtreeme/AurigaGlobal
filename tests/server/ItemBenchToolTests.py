@@ -31,7 +31,7 @@ def setUpModule():
     SANDBOX.client.query('CREATE DATABASE player CHARACTER SET utf8mb4 COLLATE utf8mb4_bin')
     paths = sorted((ROOT / 'db/migrations/item_combat').glob('[0-9][0-9][0-9]_*.sql'))
     if [int(path.name[:3]) for path in paths] != list(range(len(paths))): raise RuntimeError('incomplete catalog migrations')
-    for path in [*paths, ROOT / 'db/migrations/item_instance/001_item_persistence.sql', ROOT / 'db/migrations/item_instance/002_instance_id_allocator.sql']:
+    for path in [*paths, ROOT / 'db/migrations/item_instance/001_item_persistence.sql', ROOT / 'db/migrations/item_instance/002_instance_id_allocator.sql', ROOT / 'db/migrations/item_instance/003_owned_ground.sql']:
         for statement in statements(path.read_text(encoding='utf-8-sig')): SANDBOX.client.query(statement)
 
 
@@ -137,7 +137,7 @@ class BenchTests(unittest.TestCase):
         # A catalog edit (here: price) is followed after a full reload check.
         changed = catalog.Catalog(packet).item(sword_key); changed['base']['buy_amount'] = '777'
         packet = commit(packet, changed, sword_key)
-        result = use('load'); self.assertTrue(result['catalog_followed'])
+        result = use('setup'); self.assertTrue(result['catalog_followed'])
         self.assertEqual(result['state']['items'], use('load')['state']['items'])
         self.assertFalse(use('load')['catalog_followed'])
         # A catalog that drops the +2 the stored sword has is refused; the pin stays.

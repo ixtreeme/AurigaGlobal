@@ -2,6 +2,7 @@
 // exact bytes the Unity decoder is tested against. --write-golden rewrites it.
 #include "PersistentItemFixture.hpp"
 #include <item/TypedInventoryWire.hpp>
+#include <item/TypedItemDetails.hpp>
 
 #include <filesystem>
 #include <fstream>
@@ -91,6 +92,13 @@ int main(int argc, char** argv)
 		auto empty = EncodeTypedInventory(c, {}, {}, {});
 		Check(empty && empty->size() == 13 && DecodeTypedInventory(*empty, f::Character()).has_value(), "empty inventory");
 
+
+        auto details=EncodeTypedItemDetails(c,items,true);
+        Check(details.has_value(),"details encode with stone state and refinement recipes");
+        Check(std::to_integer<unsigned>((*details)[0])==227 && std::to_integer<unsigned>((*details)[5])==1,"details envelope");
+        const auto detailsPath=Golden().parent_path()/"typed_item_details_v1.hex";
+        if(argc==2 && std::string(argv[1])=="--write-golden")std::ofstream(detailsPath,std::ios::binary)<<Hex(*details);
+        else { std::ifstream input(detailsPath,std::ios::binary);std::stringstream stored;stored<<input.rdbuf();auto text=stored.str();std::erase(text,'\r');Check(text==Hex(*details),"details golden parity"); }
 		const auto text = Hex(b);
 		if (argc == 2 && std::string(argv[1]) == "--write-golden")
 		{

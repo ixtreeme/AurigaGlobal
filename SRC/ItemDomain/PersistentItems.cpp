@@ -117,6 +117,17 @@ std::expected<std::vector<std::uint32_t>,E> OccupiedItemCells(const ItemCatalog&
 std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& r)
 {
     if(r.catalogRevision!=c.Revision() || r.catalogHash!=c.ContentHash())return std::unexpected(E::CatalogMismatch);
+    if(r.ground)
+    {
+        const auto& g=*r.ground;
+        if(g.core.empty() || g.core.size()>128 || !g.run || !g.storedRun || g.storedRun>g.run || !g.instance ||
+           (g.create && g.storedRun!=g.run)) return std::unexpected(E::InvalidChange);
+        const auto changed=std::ranges::find_if(r.items,[&](const ItemChange& i){return i.after.id.Value()==g.instance;});
+        if(changed==r.items.end()) return std::unexpected(E::InvalidChange);
+        const auto escrow=[](const PersistentItem& i){return !i.destroyed && i.placement && i.placement->kind==ItemStorageKind::TradeEscrow && i.placement->storageId==OwnedGroundStorageId;};
+        if(g.create ? (!escrow(changed->after) || (changed->before && escrow(*changed->before))) :
+           (!changed->before || !escrow(*changed->before) || escrow(changed->after))) return std::unexpected(E::InvalidChange);
+    }
     if(r.owners.empty() || r.owners.size()>MaxItemCommitOwners || r.items.size()>MaxItemCommitItems ||
        r.storages.size()>MaxItemCommitStorages || r.wallets.size()>MaxItemCommitOwners || r.result.size()>MaxItemCommitResult)return std::unexpected(E::LimitExceeded);
     if((r.items.empty() && r.wallets.empty()) || !r.outcomeCode || r.kind<ItemOperationKind::Grant || r.kind>ItemOperationKind::Trade ||
@@ -179,6 +190,13 @@ std::expected<ItemCatalogDigest,E> ItemCommitDigest(const ItemCatalog& c,const I
     for(const auto& i:items){w.Put(i.before.has_value(),1);if(i.before)w.Item(*i.before);w.Item(i.after);}
     auto wallets=r.wallets;std::ranges::sort(wallets,{},[](const auto& v){return std::pair{v.before.owner,v.before.currency};});w.Put(wallets.size(),1);
     for(const auto& v:wallets){w.Money(v.before);w.Money(v.after);}w.Put(r.outcomeCode,2);w.Put(r.result.size(),4);for(auto b:r.result)w.Put(b,1);
+    if(r.ground)
+    {
+        const auto& g=*r.ground;
+        w.Put(0x31444e554f5247ULL,8); // GROUND1 extension; legacy commits keep their digest
+        w.Put(g.core.size(),2); for(unsigned char b:g.core) w.Put(b,1);
+        w.Put(g.run,8);w.Put(g.storedRun,8);w.Put(g.instance,8);w.Put(g.create,1);
+    }
     ItemCatalogDigest digest{};unsigned length=0;
     if(EVP_Digest(w.bytes.data(),w.bytes.size(),digest.data(),&length,EVP_sha256(),nullptr)!=1 || length!=digest.size())return std::unexpected(E::HashFailure);
     return digest;

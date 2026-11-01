@@ -93,6 +93,7 @@
 #endif
 #include <common/CommonDefines.h>
 #include "../item/TypedItemOps.hpp"
+#include "../item/TypedLoot.hpp"
 
 
 #define ENABLE_CHECK_GHOSTMODE
@@ -438,6 +439,9 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 
 		case HEADER_CG_TYPED_ITEM_REFINE:
 			HandleTypedItemRefinePacket(character, c_pData);
+			break;
+		case HEADER_CG_TYPED_ITEM_DROP:
+			HandleTypedItemDropPacket(character, c_pData);
 			break;
 
 		case HEADER_CG_PARTY_INVITE:

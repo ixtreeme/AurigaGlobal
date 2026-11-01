@@ -1,4 +1,6 @@
 #include "ItemPersistenceSql.hpp"
+#include <item/OwnedGround.hpp>
+#include <random>
 #include <SQL/AsyncSQL.h>
 #include <algorithm>
 #include <charconv>
@@ -120,6 +122,9 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
 {
     const auto digest=ItemCommitDigest(c,r);if(!digest)return std::unexpected(digest.error());
     auto tx=Guards(c);
+    if(r.ground) tx.push_back({"SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN ('item_ground_core','item_ground_entry') HAVING COUNT(*)=2 AND SUM(ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE')=2",{},{},1});
+    if(r.ground) tx.push_back({"SELECT run_generation FROM player.item_ground_core WHERE core_key=? AND run_generation=? FOR UPDATE",
+        {U::Blob(r.ground->core),U::UInt(r.ground->run)},{},1});
     tx.push_back({"INSERT INTO player.item_operation_receipt(operation_id,request_sha256,catalog_revision,catalog_sha256,operation_kind,outcome_code,result_payload) VALUES(?,?,?,?,?,?,?)",
         {U::Blob(Bytes(r.operationId)),U::Blob(Bytes(*digest)),U::UInt(r.catalogRevision),U::Blob(Bytes(r.catalogHash)),U::UInt(static_cast<unsigned>(r.kind)),U::UInt(r.outcomeCode),U::Blob(Bytes(r.result))},1,{}});
     auto owners=r.owners;std::ranges::sort(owners,{},&ItemOwnerFence::owner);
@@ -200,6 +205,14 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
             for(auto cell:*cells){if(!values.empty())values+=",";values+="(?,?,?,?,?,?)";Append(pCells,Storage({i.after.owner,i.after.placement->kind,i.after.placement->storageId}));Append(pCells,{U::UInt(cell),U::UInt(i.after.id.Value())});}
             tx.push_back({"INSERT INTO player.item_occupied_cell(owner_kind,owner_id,storage_kind,storage_id,cell_index,instance_id) VALUES"+values,std::move(pCells),cells->size(),{}});
         }
+    }
+    if(r.ground)
+    {
+        const auto& g=*r.ground;
+        if(g.create) tx.push_back({"INSERT INTO player.item_ground_entry(instance_id,core_key,run_generation) VALUES(?,?,?)",
+            {U::UInt(g.instance),U::Blob(g.core),U::UInt(g.storedRun)},1,{}});
+        else tx.push_back({"DELETE FROM player.item_ground_entry WHERE instance_id=? AND core_key=? AND run_generation=?",
+            {U::UInt(g.instance),U::Blob(g.core),U::UInt(g.storedRun)},1,{}});
     }
     std::size_t parameters=0,bytes=0;
     for(const auto& step:tx){parameters+=step.params.size();bytes+=step.query.size();for(const auto& p:step.params)bytes+=p.bytes.size();if(step.query.size()>SqlTransactionLimits::QueryBytes)return std::unexpected(E::LimitExceeded);}
@@ -408,5 +421,73 @@ std::expected<LoadedItemOwner,E> LoadItemOwner(CAsyncSQL& db,const ItemCatalog& 
         if(actual!=expected)throw Invalid{};return out;
     }
     catch(const Invalid&){return std::unexpected(E::InvalidStoredData);}
+}
+
+std::expected<LoadedItemOwner,E> LoadCurrentItemOwner(CAsyncSQL& db,const ItemCatalog& c,ItemOwner owner)
+{
+    auto tx=Guards(c);const auto at=tx.size();
+    tx.push_back({"SELECT session_generation FROM player.item_owner_fence WHERE owner_kind=? AND owner_id=?",Owner(owner),{},{}});
+    Message m(db.DirectTransactionPrepared(std::move(tx)));if(!m)return std::unexpected(E::SqlFailure);
+    auto rows=Result(*m,at,1,1);if(!rows)return std::unexpected(rows.error());
+    if(rows->empty())return std::unexpected(E::MissingOwner);
+    try { return LoadItemOwner(db,c,owner,Number<std::uint64_t>((*rows)[0][0])); }
+    catch(const Invalid&){return std::unexpected(E::InvalidStoredData);}
+}
+std::expected<void,E> ProvisionGroundStorage(CAsyncSQL& db,const ItemCatalog& c,ItemOwner owner)
+{
+    if(owner.kind!=ItemOwnerKind::Character || !ValidItemOwner(owner))return std::unexpected(E::InvalidOwner);
+    auto tx=Guards(c);
+    tx.push_back({"SELECT state_revision FROM player.item_owner_fence WHERE owner_kind=? AND owner_id=? FOR UPDATE",Owner(owner),{},1});
+    auto p=Owner(owner);p.push_back(U::UInt(OwnedGroundStorageId));
+    tx.push_back({"SELECT 1 FROM player.item_storage WHERE owner_kind=? AND owner_id=? HAVING COUNT(*)<16 OR SUM(storage_kind=7 AND storage_id=?)=1",p,{},1});
+    tx.push_back({"INSERT IGNORE INTO player.item_storage(owner_kind,owner_id,storage_kind,storage_id,grid_columns,grid_rows,grid_pages) VALUES(?,?,7,?,256,256,1)",p,{},{}});
+    tx.push_back({"SELECT 1 FROM player.item_storage WHERE owner_kind=? AND owner_id=? AND storage_kind=7 AND storage_id=? AND grid_columns=256 AND grid_rows=256 AND grid_pages=1",std::move(p),{},1});
+    Message m(db.DirectTransactionPrepared(std::move(tx)));
+    if(!m || !m->bTransaction || m->uiSQLErrno || m->transactionOutcome!=SqlTransactionOutcome::Committed)return std::unexpected(m ? Failure(*m) : E::SqlFailure);
+    return {};
+}
+std::expected<std::uint64_t,E> BeginOwnedGroundRun(CAsyncSQL& db,const ItemCatalog& c,std::string_view core)
+{
+    if(core.empty() || core.size()>128)return std::unexpected(E::InvalidOperation);
+    auto tx=Guards(c);
+    tx.push_back({"INSERT IGNORE INTO player.item_ground_core(core_key,run_generation) VALUES(?,0)",{U::Blob(std::string(core))},{},{}});
+    tx.push_back({"UPDATE player.item_ground_core SET run_generation=run_generation+1 WHERE core_key=? AND run_generation<18446744073709551615",{U::Blob(std::string(core))},1,{}});
+    const auto at=tx.size();
+    tx.push_back({"SELECT run_generation FROM player.item_ground_core WHERE core_key=? FOR UPDATE",{U::Blob(std::string(core))},{},1});
+    Message begun(db.DirectTransactionPrepared(std::move(tx)));if(!begun)return std::unexpected(E::SqlFailure);
+    auto generation=Result(*begun,at,1,1);if(!generation)return std::unexpected(generation.error());
+    std::uint64_t run=0;
+    try { run=Number<std::uint64_t>((*generation)[0][0]); }
+    catch(const Invalid&){return std::unexpected(E::InvalidStoredData);}
+    std::random_device random;
+    for(;;)
+    {
+        auto list=Guards(c);const auto index=list.size();
+        list.push_back({"SELECT g.instance_id,g.run_generation,i.owner_kind,i.owner_id FROM player.item_ground_entry g LEFT JOIN player.item_instance i ON i.instance_id=g.instance_id WHERE g.core_key=? AND g.run_generation<>? ORDER BY g.instance_id LIMIT 32",{U::Blob(std::string(core)),U::UInt(run)},{},{}});
+        Message message(db.DirectTransactionPrepared(std::move(list)));if(!message)return std::unexpected(E::SqlFailure);
+        auto rows=Result(*message,index,4,32);if(!rows)return std::unexpected(rows.error());
+        if(rows->empty())return run;
+        try
+        {
+            for(const auto& row:*rows)
+            {
+                auto id=ItemInstanceId::Create(Number<std::uint64_t>(row[0]));if(!id)throw Invalid{};
+                const auto owner=ReadOwner(row,2);bool finished=false;
+                for(unsigned retry=0;retry<8 && !finished;++retry)
+                {
+                    auto state=LoadCurrentItemOwner(db,c,owner);if(!state)return std::unexpected(state.error());
+                    std::array<std::uint8_t,16> op{};for(auto& b:op)b=static_cast<std::uint8_t>(random());op[0]|=1;
+                    auto commit=MakeGroundExpireCommit(c,op,state->fence,state->storages,state->items,*id);
+                    if(!commit)return std::unexpected(commit.error());
+                    commit->ground=ItemGroundChange{std::string(core),run,Number<std::uint64_t>(row[1]),id->Value(),false};
+                    auto written=CommitItems(db,c,*commit);
+                    if(written)finished=true;
+                    else if(written.error()!=E::Conflict)return std::unexpected(written.error());
+                }
+                if(!finished)return std::unexpected(E::Conflict);
+            }
+        }
+        catch(const Invalid&){return std::unexpected(E::InvalidStoredData);}
+    }
 }
 } // namespace auriga::item::persistence

@@ -1,7 +1,9 @@
 # Saját tárgy eldobása — C7d-1 natív és SQL alap
 
 2026-11-01. F4, [IC-035](../../adr/item_combat_035_drops.md).
-Állapot: **ez a szelet kész; játékbeli és Unity-bekötés még nincs**.
+Történeti C7d-1 állapot: **a natív/SQL alap kész**. Az erre épülő játékbeli
+és Unity-bekötés azóta elkészült; lásd a [teljes integráció és helyi
+próba beszámolóját](2026-11-01_unity_item_runtime_integration.md).
 
 ## Megvalósítás
 

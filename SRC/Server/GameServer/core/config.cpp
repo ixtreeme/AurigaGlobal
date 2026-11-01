@@ -337,7 +337,7 @@ static void __ApplyConnectConfig(const GameConfig& cfg)
 		{
 			LOG_INFO("ItemCatalog: protos loaded, {} items, revision {}, sha256 {}", (*loaded)->items, (*loaded)->revision, (*loaded)->sha256);
 			// Typed item store (IC-034 B1): its own connection and thread.
-			if (const auto started = items::ItemStore::Instance().Start(cfg.sql.player, items::CurrentCatalog()); !started)
+			if (const auto started = items::ItemStore::Instance().Start(cfg.sql.player, items::CurrentCatalog(), cfg.server.hostname + ":" + std::to_string(cfg.network.port)); !started)
 			{
 				LOG_ERROR("ItemStore: {} (items.catalog is \"required\")", started.error());
 				exit(1);

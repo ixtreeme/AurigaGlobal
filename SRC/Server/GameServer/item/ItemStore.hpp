@@ -38,7 +38,8 @@ public:
 	static ItemStore& Instance();
 
 	// Connects on the store thread and returns once connected or failed.
-	std::expected<void, std::string> Start(const GameSqlConfig& player, std::shared_ptr<const ItemCatalog> catalog);
+	std::expected<void, std::string> Start(const GameSqlConfig& player, std::shared_ptr<const ItemCatalog> catalog, std::string groundCore = {});
+	std::optional<ItemGroundChange> GroundRun() const;
 	bool Running() const noexcept;
 	// False when the store is not running; the work is then not queued.
 	// Delayed reconciliation does not hold up work ready to run now.
@@ -65,7 +66,7 @@ public:
 	ItemStore& operator=(const ItemStore&) = delete;
 
 private:
-	void Run(GameSqlConfig player, std::shared_ptr<std::promise<std::string>> ready);
+	void Run(GameSqlConfig player, std::shared_ptr<std::promise<std::string>> ready, std::string groundCore);
 	void RefillIds();
 
 	mutable std::mutex mutex_;
@@ -73,6 +74,7 @@ private:
 	std::multimap<std::chrono::steady_clock::time_point, Work> jobs_;
 	std::deque<Completion> done_;
 	std::shared_ptr<const ItemCatalog> catalog_;
+	std::optional<ItemGroundChange> groundRun_;
 	std::thread thread_;
 	bool running_ = false, stopping_ = false;
 	// Handed from the store thread to Start.
@@ -108,6 +110,13 @@ struct CommitOutcome
 	std::expected<persistence::LoadedItemOwner, ItemPersistenceError> state;
 };
 bool RequestCommit(ItemOwner owner, std::uint64_t session, ItemCommit commit, std::function<void(CommitOutcome)> done);
+struct OwnerRead { ItemOwner owner; std::uint64_t session = 0; }; // 0: current session (offline source)
+struct MultiCommitOutcome
+{
+	std::expected<persistence::ItemWriteResult, ItemPersistenceError> write;
+	std::vector<std::expected<persistence::LoadedItemOwner, ItemPersistenceError>> states;
+};
+bool RequestCommitMany(std::vector<OwnerRead>, ItemCommit, std::function<void(MultiCommitOutcome)>);
 } // namespace auriga::item::runtime
 
 namespace ecs
@@ -127,6 +136,10 @@ struct TypedItems
 // One typed operation of this character is in the item store; a second one
 // waits for its answer instead of building on a state about to change.
 struct TypedItemBusy {};
+struct TypedItemRefresh
+{
+	std::uint64_t session = 0, revision = 0;
+};
 // Grants (monster drops, C7b-3) that wait for the character's operation in
 // the store; the next one is sent when that operation answers.
 struct TypedGrantQueue

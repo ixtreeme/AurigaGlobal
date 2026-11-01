@@ -38,14 +38,14 @@ def main():
         sandbox.client.query("CREATE USER 'game_reader'@'localhost' IDENTIFIED BY '" + sandbox.password + "'")
         sandbox.client.query("GRANT SELECT ON protos.* TO 'game_reader'@'localhost'")
         sandbox.client.query("GRANT SELECT ON player.* TO 'game_reader'@'localhost'")
-        for name in ('001_item_persistence.sql', '002_instance_id_allocator.sql'):
+        for name in ('001_item_persistence.sql', '002_instance_id_allocator.sql', '003_owned_ground.sql'):
             for statement in statements((ROOT / 'db/migrations/item_instance' / name).read_text(encoding='utf-8-sig')):
                 sandbox.client.query(statement)
         # The game account may claim sessions; only the importer (root here) provisions.
         sandbox.client.query("GRANT UPDATE ON player.item_owner_fence TO 'game_reader'@'localhost'")
-        # ...and write its typed items like the item writer (C3 moves), never the storages.
+        # ...and update the runtime registry, but cannot provision owners/storages.
         for table in ('item_owner_fence', 'item_wallet', 'item_operation_receipt', 'item_instance',
-                      'item_instance_attribute', 'item_instance_socket', 'item_occupied_cell'):
+                      'item_instance_attribute', 'item_instance_socket', 'item_occupied_cell', 'item_ground_core', 'item_ground_entry'):
             sandbox.client.query("GRANT INSERT,UPDATE,DELETE ON player." + table + " TO 'game_reader'@'localhost'")
         # ...and reserve instance ID blocks for the items it creates (C7a).
         sandbox.client.query("GRANT UPDATE ON player.item_instance_id_allocator TO 'game_reader'@'localhost'")

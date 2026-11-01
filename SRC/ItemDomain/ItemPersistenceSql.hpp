@@ -50,4 +50,10 @@ std::expected<bool,ItemPersistenceError> ProvisionOwner(CAsyncSQL&,const ItemCat
 struct ItemInstanceIdBlock { std::uint64_t first=0, end=0; };
 inline constexpr std::uint32_t MaxItemInstanceIdBlock=1'000'000;
 std::expected<ItemInstanceIdBlock,ItemPersistenceError> ReserveItemInstanceIds(CAsyncSQL&,const ItemCatalog&,std::uint32_t count);
+std::expected<LoadedItemOwner,ItemPersistenceError> LoadCurrentItemOwner(CAsyncSQL&,const ItemCatalog&,ItemOwner);
+// Explicit importer/test-bench provisioning, never called by the runtime writer.
+std::expected<void,ItemPersistenceError> ProvisionGroundStorage(CAsyncSQL&,const ItemCatalog&,ItemOwner);
+// Fences the prior process of this exact core, then expires its old registry
+// entries. Other live cores' rows are never selected. No world respawn.
+std::expected<std::uint64_t,ItemPersistenceError> BeginOwnedGroundRun(CAsyncSQL&,const ItemCatalog&,std::string_view core);
 } // namespace auriga::item::persistence

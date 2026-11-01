@@ -81,7 +81,7 @@ bool Installed(CAsyncSQL& sql)
 {
     return Rows(sql,"SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN "
         "('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance',"
-        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator')").at(0).at(0)=="10";
+        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry')").at(0).at(0)=="12";
 }
 std::shared_ptr<const ItemCatalog> Catalog(CAsyncSQL& sql)
 {
@@ -218,10 +218,12 @@ Json Setup(CAsyncSQL& sql,const Json& request)
     const bool reset=request.value("reset",false);
     if(OwnerExists(sql) && !reset)
     {
+        const bool followed=FollowCatalog(sql,*c);
+        const auto escrow=p::ProvisionGroundStorage(sql,*c,BenchOwner);
+        Require(escrow.has_value(),"A földi foglalás kiépítése nem sikerült.");
         // Owners provisioned before equipping existed get their equipment storage now.
         Query(sql,"INSERT IGNORE INTO player.item_storage VALUES(?,?,?,?,?,?,?)",{SqlParam::UInt(static_cast<unsigned>(BenchOwner.kind)),SqlParam::UInt(BenchOwner.id),
             SqlParam::UInt(static_cast<unsigned>(ItemStorageKind::Equipment)),SqlParam::UInt(1),SqlParam::UInt(Equipment.columns),SqlParam::UInt(1),SqlParam::UInt(1)});
-        const bool followed=FollowCatalog(sql,*c);
         Claim(sql,*c);
         return {{"state",State(*c,Load(sql,*c))},{"catalog_followed",followed}};
     }
@@ -233,7 +235,7 @@ Json Setup(CAsyncSQL& sql,const Json& request)
     SqlTransaction tx;
     const auto children=[&](const char* table){
         tx.push_back({std::string("DELETE x FROM player.")+table+" x JOIN player.item_instance i ON i.instance_id=x.instance_id WHERE i.owner_kind=? AND i.owner_id=?",owner,{},{}});};
-    children("item_occupied_cell");children("item_instance_attribute");children("item_instance_socket");
+    children("item_ground_entry");children("item_occupied_cell");children("item_instance_attribute");children("item_instance_socket");
     tx.push_back({"DELETE FROM player.item_occupied_cell WHERE owner_kind=? AND owner_id=?",owner,{},{}});
     tx.push_back({"DELETE FROM player.item_instance WHERE owner_kind=? AND owner_id=?",owner,{},{}});
     tx.push_back({"DELETE FROM player.item_wallet WHERE owner_kind=? AND owner_id=?",owner,{},{}});
@@ -244,7 +246,8 @@ Json Setup(CAsyncSQL& sql,const Json& request)
     const bool followed=FollowCatalog(sql,*c);
     // The same provisioning the importer and character creation use.
     const ItemWallet wallet{BenchOwner,WalletCurrency::Gold,1,gold};
-    const ItemStorageLayout layouts[]{Inventory,Equipment};
+    const ItemStorageLayout ground{{BenchOwner,ItemStorageKind::TradeEscrow,OwnedGroundStorageId},256,256,1};
+    const ItemStorageLayout layouts[]{Inventory,Equipment,ground};
     auto made=p::ProvisionOwner(sql,*c,BenchOwner,layouts,std::span(&wallet,1));
     Require(made && *made,std::string("A karakter kiépítése nem sikerült: ")+(made?"már létezik":PersistenceText(made.error()))+".");
     Claim(sql,*c);

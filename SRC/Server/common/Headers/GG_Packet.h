@@ -192,4 +192,12 @@ typedef struct SPacketGGAuthResult
 	uint8_t	bResult;
 } TPacketGGAuthResult;
 
+typedef struct SPacketGGTypedItemRefresh
+{
+	uint8_t bHeader;
+	uint32_t pid;
+	uint64_t session;
+	uint64_t revision;
+} TPacketGGTypedItemRefresh;
+
 #pragma pack()
