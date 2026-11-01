@@ -4,6 +4,19 @@
 Állapot (2026-11-01): **C1–C7c implementált; a saját tárgy eldobásának
 C7d-1 natív/SQL alapja kész, a futásidejű és Unity-bekötés következik**.
 
+## Közös szerver–Unity munkamenet (felhasználói döntés, 2026-11-01)
+
+A további játékbeli műveletek szerver- és Unity-része ugyanabban a munkában
+készül. A csomag, a kodek, a hálózati kezelés és a kliensművelet együtt
+tesztelendő helyben; egy natív/SQL alap önmagában még nem kész játékfunkció.
+A C7d-1 ilyen alap, a következő C7d-2 már a teljes szerver–kliens bekötés.
+
+A kliens Unity 6.3-ra állt át (`6000.3.27f1`). Aktív workspace:
+`D:\Auriga-Unity6\SRC\AurigaUnity`, UVCS-ág:
+`/main/codex-mission-engine`. A korábbi `unity-6.3` ág tartalma ide került;
+az összevonás részletei és ellenőrzései a
+[jelentésben](../reports/item_combat/2026-11-01_unity63_branch_consolidation.md).
+
 ## Hátralévő munka (Codex listája, 2026-10-29)
 
 | Csomag | Tartalom | Fázis | Állapot |
@@ -410,7 +423,7 @@ A drop szeletei és a hozzájuk tartozó döntések:
 tele inventoryból földre kerülő zsákmány és felvétel (C7c).
 A saját tárgy eldobásához a teljes példányállapotot megőrző atomi
 drop/pickup/expiry tervezők készültek el (C7d-1); a földi életciklus,
-munkamenet-felügyelet és a kliensművelet még nyitott (C7d-2/3).
+munkamenet-felügyelet és a kliensművelet együtt következik (C7d-2).
 
 ## Határ
 

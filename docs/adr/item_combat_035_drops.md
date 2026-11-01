@@ -323,7 +323,12 @@ a saját tárgyat ezen az úton nem szabad újragenerálni.
   közötti fegyver- és ékszerátadás; részhalom és lejárat; idempotens nyugta;
   elavult felvétel nem módosít semmit.
 
-### C7d-2 és C7d-3 — futó szerver és Unity (még nyitott)
+### C7d-2 — futó szerver és Unity együtt (még nyitott)
+
+A felhasználó 2026-11-01-i kérése szerint a szerver- és kliensbekötés
+ugyanabban a munkában készül, hogy együtt lehessen helyben kipróbálni.
+A kliens aktív ága `/main/codex-mission-engine`, a projekt Unity 6.3-as
+(`6000.3.27f1`), workspace-e `D:\Auriga-Unity6\SRC\AurigaUnity`.
 
 A C7d-1 csak tervező és írási halmaz: játékbeli eldobóparancs vagy csomag
 még nem hívja. Az escrow nincs automatikusan kiépítve a játékosoknak.

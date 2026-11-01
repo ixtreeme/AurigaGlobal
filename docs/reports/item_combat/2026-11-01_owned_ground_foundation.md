@@ -43,8 +43,10 @@ ctest --test-dir build/codex-item-fixes -C Release -R '^(persistent_items|typed_
 
 ## Következő szelet
 
-Az [IC-035 C7d-2/3 terve](../../adr/item_combat_035_drops.md) rögzíti a
+Az [IC-035 C7d-2 terve](../../adr/item_combat_035_drops.md) rögzíti a
 földi entitás lefoglalását és publikálását, a core-/indulási munkamenet
 felügyeletét és az újraindulás utáni takarítást, a két online karakter
 snapshotjának frissítését, valamint a Unity-csomagot és inventoryakciót.
-Ezek előtt a C7d-1 tervezőket játékbeli kérés nem hívja.
+Ezek előtt a C7d-1 tervezőket játékbeli kérés nem hívja. A felhasználó
+2026-11-01-i kérése alapján a szerver és a Unity-bekötés együtt készül;
+a következő szelet helyi szerver–kliens próbával zárható.
