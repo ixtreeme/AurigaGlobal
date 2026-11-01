@@ -667,7 +667,7 @@ std::expected<void, TypedGrantRefusal> RequestTypedItemGrant(entt::entity charac
 			const auto* current = entity != entt::null && g_registry.valid(entity) ? g_registry.try_get<ecs::TypedItemLogin>(entity) : nullptr;
 			if (!current || current->token != token)
 			{
-				if (done) done(false); // that login is gone; the next login reloads anyway
+				if (done) done(outcome.write.has_value()); // persistence outlives the login
 				return;
 			}
 			g_registry.remove<ecs::TypedItemBusy>(entity);

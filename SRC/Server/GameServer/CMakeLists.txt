@@ -1033,6 +1033,21 @@ add_test(NAME icc_rotface_runtime COMMAND ICCRotfaceRuntimeTests)
 add_executable(MapRoutingRulesTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/MapRoutingRulesTests.cpp)
 add_test(NAME map_routing_rules COMMAND MapRoutingRulesTests)
 # Boot-time typed item catalog (item system F4, IC-034) against an owned MariaDB.
+add_executable(TypedItemGrantTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/TypedItemGrantTests.cpp
+    item/TypedItemOps.cpp
+)
+target_link_libraries(TypedItemGrantTests PRIVATE SERVER EnTT::EnTT LUA AurigaItemCatalog)
+if(MSVC)
+    target_compile_options(TypedItemGrantTests PRIVATE /Gy)
+    target_link_options(TypedItemGrantTests PRIVATE /OPT:REF /OPT:NOICF)
+else()
+    target_compile_options(TypedItemGrantTests PRIVATE -ffunction-sections -fdata-sections)
+    target_link_options(TypedItemGrantTests PRIVATE -Wl,--gc-sections)
+endif()
+add_test(NAME typed_item_grants COMMAND TypedItemGrantTests)
+set_tests_properties(typed_item_grants PROPERTIES LABELS server TIMEOUT 60)
+
 add_executable(ItemCatalogRuntimeTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/ItemCatalogRuntimeTests.cpp
     item/ItemCatalogRuntime.cpp

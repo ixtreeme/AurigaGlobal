@@ -34,8 +34,9 @@ int main(int argc, char** argv)
 	try
 	{
 		if (argc != 2 || std::string(argv[1]) != "--owned-sandbox") throw std::runtime_error("run through ItemCatalogRuntimeTests.py");
-		std::string port, password, items, hash;
+		std::string port, password, items, hash, proxyPort;
 		std::getline(std::cin, port); std::getline(std::cin, password); std::getline(std::cin, items); std::getline(std::cin, hash);
+		std::getline(std::cin, proxyPort);
 		GameSqlConfig player { "127.0.0.1", std::stoi(port), "game_reader", password, "player" };
 
 		auto off = runtime::LoadCatalogAtBoot({ runtime::CatalogMode::Off, 1, {} }, player);
@@ -281,6 +282,31 @@ int main(int argc, char** argv)
 			store.Stop();
 			Check(ran && !store.Running() && store.Drain() == 0 && !applied, "stop did not finish queued work or ran a late completion");
 			Check(!store.Submit([](CAsyncSQL&, const ItemCatalog&) { return runtime::ItemStore::Completion {}; }), "store accepts work after stop");
+			// Lose a real write acknowledgement and the first reconciliation
+			// response. No refusal may escape while the result is unknown, and
+			// the retry must read the same receipt without creating another item.
+			const ItemOwner picker { ItemOwnerKind::Character, 7008 };
+			const ItemStorageLayout pack { { picker, ItemStorageKind::Inventory, 1 }, 5, 9, 4 };
+			Check(persistence::ProvisionOwner(importer, *catalog, picker, std::span(&pack, 1), {}).has_value(), "fault-test owner provisioned");
+			auto owned = persistence::LoadItemOwner(importer, *catalog, picker, 1);
+			Check(owned.has_value(), "fault-test owner loads");
+			GameSqlConfig proxied = player; proxied.port = std::stoi(proxyPort);
+			Check(store.Start(proxied, catalog).has_value(), "store starts through the fault proxy");
+			const auto ids = runtime::PeekInstanceIds(1);
+			std::array<std::uint8_t, 16> op {}; op.fill(0x81);
+			auto grant = MakeGrantCommit(*catalog, op, owned->fence, owned->storages, owned->items, { ItemKey::Create(6, 1).value(), 0, 5 }, ids);
+			Check(grant.has_value(), "fault-test grant built");
+			runtime::SpendInstanceIds(1);
+			std::optional<runtime::CommitOutcome> got;
+			unsigned completions = 0;
+			const auto started = std::chrono::steady_clock::now();
+			Check(runtime::RequestCommit(picker, 1, *grant, [&](runtime::CommitOutcome outcome) { ++completions; got = std::move(outcome); }), "fault-test grant queued");
+			for (int spins = 0; !got && spins < 1500; ++spins) { store.Drain(); std::this_thread::sleep_for(std::chrono::milliseconds(10)); }
+			Check(got && got->write && got->write->replay && got->state && got->state->items.size() == 1 &&
+			      got->state->items[0].count == 5 && got->state->fence.revision == owned->fence.revision + 1 && completions == 1,
+			      "unknown write is reconciled once, with one item and one fence increment");
+			Check(std::chrono::steady_clock::now() - started >= std::chrono::seconds(1), "failed receipt read must wait before retrying");
+			store.Stop();
 		}
 
 		std::cout << "ItemCatalogRuntimeTests: " << checks << " checks passed\n";

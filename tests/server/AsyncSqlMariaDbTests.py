@@ -41,7 +41,7 @@ def packet(sock: socket.socket) -> tuple[bytes, bytes]:
 
 
 class CommitResponseProxy:
-    def __init__(self, backend_port: int, drop_count: int = 1):
+    def __init__(self, backend_port: int, drop_count: int = 1, skip_commits: int = 0):
         self.backend_port = backend_port
         self.listener = socket.socket()
         self.listener.bind(("127.0.0.1", 0))
@@ -52,6 +52,7 @@ class CommitResponseProxy:
         self.dropped = threading.Event()
         self.lock = threading.Lock()
         self.drop_count = drop_count
+        self.skip_commits = skip_commits
         self.claimed_count = 0
         self.dropped_count = 0
         self.sockets: list[socket.socket] = []
@@ -88,7 +89,9 @@ class CommitResponseProxy:
                 header, body = packet(source)
                 if client_direction and body == b"\x03COMMIT":
                     with self.lock:
-                        if self.claimed_count < self.drop_count:
+                        if self.skip_commits:
+                            self.skip_commits -= 1
+                        elif self.claimed_count < self.drop_count:
                             self.claimed_count += 1
                             pending_commit.set()
                 if not client_direction and pending_commit.is_set():

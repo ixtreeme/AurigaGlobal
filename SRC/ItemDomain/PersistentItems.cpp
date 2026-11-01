@@ -427,6 +427,8 @@ std::expected<ItemCommit,E> MakeGrantCommit(const ItemCatalog& c,std::array<std:
     // The template of a new unit; each new item takes its own ID below.
     PersistentItem fresh{ItemInstanceId::Create(1).value(),grant.key,owner.owner};fresh.refinementLevel=grant.refinementLevel;
     if(entry->base.binding==BindingPolicy::OnAcquire)fresh.boundTo=owner.owner;
+    if(const auto* accessory=std::get_if<ItemAccessoryRow>(&entry->category);accessory && accessory->socketProfile)
+        fresh.accessory=AccessorySocketState{};
     const auto sameState=[&](const PersistentItem& i){
         return i.key==fresh.key && i.refinementLevel==fresh.refinementLevel && i.boundTo==fresh.boundTo &&
                i.attributes==fresh.attributes && i.stones==fresh.stones && i.accessory==fresh.accessory;};
@@ -443,6 +445,11 @@ std::expected<ItemCommit,E> MakeGrantCommit(const ItemCatalog& c,std::array<std:
             if(!left)break;
             if(!sameState(*i) || i->count>=stack)continue;
             const auto add=std::min(left,stack-i->count);
+            // Leave room in this atomic write for new stacks of the remainder.
+            // Many almost-full stacks must not turn a small grant into an
+            // oversized commit that the drop queue would discard as invalid.
+            const auto newStacks=(std::uint64_t{left-add}+stack-1)/stack;
+            if(changes.size()+1+newStacks>MaxItemCommitItems)continue;
             auto after=*i;after.revision++;after.count+=add;changes.push_back({*i,after});left-=add;
         }
     // 2. New items in the first free cells, bag by bag, cell by cell.
@@ -455,6 +462,7 @@ std::expected<ItemCommit,E> MakeGrantCommit(const ItemCatalog& c,std::array<std:
     std::size_t used=0;
     while(left)
     {
+        if(changes.size()>=MaxItemCommitItems)return std::unexpected(E::InvalidPlacement);
         if(used>=ids.size())return std::unexpected(E::LimitExceeded);
         if(std::ranges::any_of(items,[&](const PersistentItem& i){return i.id==ids[used];}))return std::unexpected(E::InvalidChange);
         auto next=fresh;next.id=ids[used];next.count=std::min(left,stack);

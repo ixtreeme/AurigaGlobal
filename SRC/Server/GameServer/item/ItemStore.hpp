@@ -7,12 +7,14 @@
 // when the typed catalog is loaded (items.catalog = "required").
 #include <ItemPersistenceSql.hpp>
 
+#include <chrono>
 #include <condition_variable>
 #include <cstdint>
 #include <deque>
 #include <expected>
 #include <functional>
 #include <future>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -39,8 +41,9 @@ public:
 	std::expected<void, std::string> Start(const GameSqlConfig& player, std::shared_ptr<const ItemCatalog> catalog);
 	bool Running() const noexcept;
 	// False when the store is not running; the work is then not queued.
-	bool Submit(Work work);
-	// Game thread: applies at most `limit` completions, in submission order.
+	// Delayed reconciliation does not hold up work ready to run now.
+	bool Submit(Work work, std::chrono::milliseconds delay = {});
+	// Game thread: applies at most `limit` completions, in worker execution order.
 	std::size_t Drain(std::size_t limit = 64);
 	// Finishes every queued job (writes are never abandoned), joins the
 	// thread, then drops completions nobody will apply any more.
@@ -67,7 +70,7 @@ private:
 
 	mutable std::mutex mutex_;
 	std::condition_variable wake_;
-	std::deque<Work> jobs_;
+	std::multimap<std::chrono::steady_clock::time_point, Work> jobs_;
 	std::deque<Completion> done_;
 	std::shared_ptr<const ItemCatalog> catalog_;
 	std::thread thread_;
@@ -96,6 +99,9 @@ bool RequestLoginLoad(std::uint32_t pid, std::function<void(LoginLoad)> done);
 // One typed-item operation of the current login: the prepared commit, then a
 // fresh reload of the owner in the same job, so the game thread always gets
 // back the authoritative state (also after a refused or conflicting commit).
+// CommitUnknown is reconciled with a locking read of the original receipt;
+// failed reads retry in the background without publishing a refusal or writing
+// the operation again. The completion is delivered only after it is settled.
 struct CommitOutcome
 {
 	std::expected<persistence::ItemWriteResult, ItemPersistenceError> write;

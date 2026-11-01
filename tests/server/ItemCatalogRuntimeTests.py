@@ -5,6 +5,7 @@ CatalogEditorTool commit, then lets the native test load it with a
 SELECT-only reader account, as the game server does at boot.
 """
 import argparse
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -16,6 +17,7 @@ sys.path.insert(0, str(ROOT / 'db/tools'))
 import item_catalog as catalog
 from backup_sandbox import Sandbox
 from mariadb_client import statements
+from AsyncSqlMariaDbTests import CommitResponseProxy
 
 
 def main():
@@ -26,6 +28,7 @@ def main():
     parser.add_argument('--work-dir', type=Path, required=True)
     args = parser.parse_args()
     sandbox = Sandbox(args.work_dir / uuid.uuid4().hex, args.mariadb_bin)
+    proxy = None
     try:
         sandbox.start(); sandbox.verify()
         sandbox.client.query('CREATE DATABASE player CHARACTER SET utf8mb4 COLLATE utf8mb4_bin')
@@ -80,14 +83,22 @@ def main():
         packet = catalog.run_tool(dict(action='read', connection=admin), executable=args.catalog_tool)
         if len(packet['hash']) != 64 or any(c not in '0123456789abcdef' for c in packet['hash']): raise SystemExit('unexpected hash')
         sandbox.client.query("INSERT INTO player.item_persistence_format VALUES(1,1,1,UNHEX('" + packet['hash'] + "'))")
-        stdin = '\n'.join([str(sandbox.port), sandbox.password, str(len(packet['tables']['item_base'])), packet['hash']]) + '\n'
-        result = subprocess.run([str(args.test_executable.resolve()), '--owned-sandbox'], input=stdin, text=True, capture_output=True, timeout=120)
+        # The final store test uses this connection: ID reservation and receipt
+        # lookup succeed; lose the real write COMMIT and its first receipt-read
+        # acknowledgement to exercise both reconciliation and delayed retries.
+        proxy = CommitResponseProxy(sandbox.port, drop_count=2, skip_commits=2)
+        stdin = '\n'.join([str(sandbox.port), sandbox.password, str(len(packet['tables']['item_base'])), packet['hash'], str(proxy.port)]) + '\n'
+        environment = dict(os.environ, MARIADB_TLS_DISABLE_PEER_VERIFICATION='1')
+        result = subprocess.run([str(args.test_executable.resolve()), '--owned-sandbox'], input=stdin, text=True, capture_output=True, timeout=120, env=environment)
         output = (result.stdout + result.stderr).replace(sandbox.password, '[redacted]')
         (sandbox.work / 'native-test.log').write_text(output, encoding='utf-8')
         print(output, end='')
         if result.returncode: raise SystemExit('native catalog runtime tests failed')
+        if proxy.error: raise proxy.error
+        if proxy.dropped_count != 2: raise RuntimeError('lost-COMMIT reconciliation was not exercised')
         sandbox.verify()
     finally:
+        if proxy: proxy.close()
         sandbox.stop()
 
 

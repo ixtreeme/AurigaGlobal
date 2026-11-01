@@ -26,8 +26,9 @@ struct LoadedItemOwner
 // transaction may also be dispatched through ReturnTransactionPrepared.
 std::expected<SqlTransaction,ItemPersistenceError> PrepareItemWrite(const ItemCatalog&,const ItemCommit&);
 std::expected<ItemReceipt,ItemPersistenceError> ItemWriteCompleted(const ItemCatalog&,const ItemCommit&,_SQLMsg&);
-// Read after a reconnect to reconcile CommitUnknown. An absent receipt is NOT
-// permission to replay while the original owner/transaction is still in flight.
+// A locking current read after reconnect: waits for an already inserted receipt
+// to commit/roll back. Following CommitUnknown (all write steps completed), a
+// confirmed absence allows a retry. It does not settle a request not yet sent.
 std::expected<std::optional<ItemReceipt>,ItemPersistenceError> FindItemReceipt(CAsyncSQL&,const ItemCatalog&,const ItemCommit&);
 std::expected<ItemWriteResult,ItemPersistenceError> CommitItems(CAsyncSQL&,const ItemCatalog&,const ItemCommit&);
 // One consistent, bounded snapshot; rejects corrupt/missing child state,

@@ -248,7 +248,15 @@ egész aritmetika eredménye változatlan marad.
     egy bezárt dungeon-példányét).
 - **`RequestTypedItemGrant`:** kapott egy opcionális visszahívást, amely
   megmondja, hogy a tároló megírta-e a tárgyat. Akkor is meghívódik (hamis
-  értékkel), ha a karakter közben kilépett.
+  vagy igaz értékkel, a tényleges mentési eredmény szerint), ha a karakter
+  közben kilépett. A belépési token csak a karakter frissítését korlátozza;
+  sikeres mentés után a földi tétel kilépés esetén is eltűnik.
+- **Bizonytalan COMMIT:** a tárgytároló megőrzi az eredeti kérést és
+  műveletazonosítót. A nyugta zároló olvasása megvárja a folyamatban lévő
+  tranzakció végét. Olvasási hiba esetén másodpercenként újrapróbálja az
+  ellenőrzést; addig nincs végleges válasz, a karakter művelete és a földi
+  tétel foglalt marad. A műveletet nem írja újra. Csak igazolt nyugta vagy
+  igazolt hiány után oldja fel a várakozást.
 
 **Unity kliens** (Plastic, `D:\Auriga-Unity6`):
 - **Kodek:** `Metin2GamePacketCodec.ReadTypedGroundItem`, a szerverrel
@@ -308,6 +316,9 @@ darab) új egységei a tulajdonos inventoryjába kerülnek.
 1. A halmozható egységek előbb a tulajdonos egyező halmait töltik fel. Egyező
    az a halom, amelynek azonos a kulcsa, a szintje és a kötése, és nincs
    példányállapota. A sorrend tároló, majd cella szerint halad.
+   A feltöltés helyet hagy a maradék új halmainak is a 32 tételes
+   tranzakcióban. Ha így nem fér el egyben, helyhiánnyal tér vissza, ezért a
+   drop a földre kerül, nem vész el érvénytelen műveletként.
 2. A maradék új tárgyként az első szabad cellákba kerül. Halmonként egy-egy
    azonosítót kap, a kapott lista elejéről.
 3. **Mindent vagy semmit:**
@@ -315,6 +326,18 @@ darab) új egységei a tulajdonos inventoryjába kerülnek.
    - `LimitExceeded`, ha kevés az azonosító;
    - a már használt azonosító `InvalidChange`.
 4. Az `OnAcquire` kötésű tárgy a tulajdonoshoz kötődik.
+5. A foglalatprofilos ékszer üres `AccessorySocketState` állapotot kap.
+
+**C7 regressziós ellenőrzések (2026-11-01):**
+- `TypedItemGrantTests`: a tényleges szerveroldali visszahívás sikeres és
+  sikertelen mentése kilépés után, illetve sikeres mentés új belépés mellett.
+- `PersistentItemTests`: foglalatos ékszer létrehozása; 33 részleges halom
+  feltöltése a 32 tételes korláton belül; tele inventorynál földi visszaesés.
+- `item_persistence_mariadb`: folyamatban lévő nyugtát nem jelent hiányzónak;
+  visszagörgetés után a hiány igazolható.
+- `item_catalog_runtime_mariadb`: a proxy elveszíti egy valódi tárgyadás
+  COMMIT-válaszát és az első nyugtaellenőrzés válaszát. Az eredmény késleltetett
+  ellenőrzéssel, egyszer érkezik meg, egyetlen tárggyal és revíziónöveléssel.
 
 **Szerver.**
 - **`RequestTypedItemGrant`:** a jövőbeli drop, bolt és jutalom útja. A

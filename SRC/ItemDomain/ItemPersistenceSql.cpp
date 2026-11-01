@@ -228,7 +228,10 @@ std::expected<std::optional<ItemReceipt>,E> FindItemReceipt(CAsyncSQL& db,const 
 {
     const auto digest=ItemCommitDigest(c,r);if(!digest)return std::unexpected(digest.error());
     auto tx=Guards(c);
-    tx.push_back({"SELECT request_sha256,catalog_revision,catalog_sha256,operation_kind,outcome_code,result_payload FROM player.item_operation_receipt WHERE operation_id=?",{U::Blob(Bytes(r.operationId))},{},{}});
+    // A current, locking read waits for an in-flight receipt INSERT to settle.
+    // After CommitUnknown all write steps have run, so only then is an absent
+    // receipt proof that the original transaction did not commit.
+    tx.push_back({"SELECT request_sha256,catalog_revision,catalog_sha256,operation_kind,outcome_code,result_payload FROM player.item_operation_receipt WHERE operation_id=? LOCK IN SHARE MODE",{U::Blob(Bytes(r.operationId))},{},{}});
     Message m(db.DirectTransactionPrepared(std::move(tx)));if(!m)return std::unexpected(E::SqlFailure);
     auto rows=Result(*m,3,6,1);if(!rows)return std::unexpected(rows.error());if(rows->empty())return std::optional<ItemReceipt>{};
     try

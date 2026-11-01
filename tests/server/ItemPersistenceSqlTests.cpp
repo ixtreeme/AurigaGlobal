@@ -168,6 +168,18 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
     Message denied(writer.DirectQueryPrepared("UPDATE protos.item_base SET sell_amount=0",{}));Check(denied && denied->uiSQLErrno,"runtime writer cannot modify catalog");
     auto second=f::Sword(3);second.refinementLevel=0;second.placement->anchor=2;
     auto grant=f::Grant(*c,{f::Sword(),f::Leather(),second});
+    // A receipt absent from a consistent snapshot can still be committing.
+    // Reconciliation must wait for that write instead of reporting absence.
+    const auto inFlight=p::PrepareItemWrite(*c,grant).value();
+    Execute(admin,"START TRANSACTION");
+    for(const auto& step:inFlight)Query(admin,step.query,step.params);
+    Execute(writer,"SET SESSION innodb_lock_wait_timeout=1");
+    auto unresolved=p::FindItemReceipt(writer,*c,grant);
+    Check(!unresolved,"an uncommitted receipt must not be reported absent");
+    Execute(admin,"ROLLBACK");
+    auto rolledBack=p::FindItemReceipt(writer,*c,grant);
+    Check(rolledBack && !*rolledBack,"a settled rollback confirms the receipt is absent");
+    Execute(writer,"SET SESSION innodb_lock_wait_timeout=50");
     auto committed=p::CommitItems(writer,*c,grant);Check(committed && !committed->replay,"initial atomic grant");
     auto state=Load(writer,*c);Check(state.items.size()==3 && state.fence.revision==2,"grant reloaded");
     Check(Find(state,f::Sword().id.Value())==f::Sword() && Find(state,3)==second,"full signed attribute/socket/high64 round trip");

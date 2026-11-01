@@ -56,12 +56,12 @@ bool ItemStore::Running() const noexcept
 	return running_ && !stopping_;
 }
 
-bool ItemStore::Submit(Work work)
+bool ItemStore::Submit(Work work, std::chrono::milliseconds delay)
 {
 	{
 		std::lock_guard lock(mutex_);
 		if (!running_ || stopping_ || !work) return false;
-		jobs_.push_back(std::move(work));
+		jobs_.emplace(std::chrono::steady_clock::now() + delay, std::move(work));
 	}
 	wake_.notify_one();
 	return true;
@@ -184,11 +184,19 @@ void ItemStore::Run(GameSqlConfig player, std::shared_ptr<std::promise<std::stri
 		Work job;
 		{
 			std::unique_lock lock(mutex_);
-			wake_.wait(lock, [this] { return stopping_ || !jobs_.empty(); });
+			while (!stopping_)
+			{
+				if (jobs_.empty())
+					wake_.wait(lock);
+				else if (jobs_.begin()->first > std::chrono::steady_clock::now())
+					wake_.wait_until(lock, jobs_.begin()->first);
+				else
+					break;
+			}
 			// Stop only once the queue is empty: queued writes are finished.
 			if (jobs_.empty()) break;
-			job = std::move(jobs_.front());
-			jobs_.pop_front();
+			job = std::move(jobs_.begin()->second);
+			jobs_.erase(jobs_.begin());
 		}
 		Completion completion;
 		try { completion = job(connection, *catalog); }
@@ -222,12 +230,49 @@ void SpendInstanceIds(std::size_t used)
 {
 	ItemStore::Instance().SpendIds(used);
 }
+namespace
+{
+struct PendingCommit
+{
+	ItemOwner owner;
+	std::uint64_t session;
+	ItemCommit commit;
+	std::function<void(CommitOutcome)> done;
+	bool reconciling = false;
+};
+
+bool QueueCommit(std::shared_ptr<PendingCommit> pending, std::chrono::milliseconds delay = {})
+{
+	return ItemStore::Instance().Submit([pending](CAsyncSQL& sql, const ItemCatalog& catalog) -> ItemStore::Completion {
+		std::expected<persistence::ItemWriteResult, ItemPersistenceError> write = std::unexpected(ItemPersistenceError::CommitUnknown);
+		if (!pending->reconciling)
+		{
+			write = persistence::CommitItems(sql, catalog, pending->commit);
+			pending->reconciling = !write && write.error() == ItemPersistenceError::CommitUnknown;
+			if (pending->reconciling)
+				LOG_ERROR("ItemStore: owner {} commit acknowledgement lost; reconciling its original receipt", pending->owner.id);
+		}
+		if (pending->reconciling)
+		{
+			const auto receipt = persistence::FindItemReceipt(sql, catalog, pending->commit);
+			if (!receipt)
+				return [pending] { QueueCommit(pending, std::chrono::seconds(1)); };
+			// A confirmed absence after the locking read means the original write
+			// rolled back. Until that read succeeds, keep the caller (and ground
+			// loot) pending, even if the character has logged out meanwhile.
+			if (*receipt)
+				write = persistence::ItemWriteResult { **receipt, true };
+			else
+				write = std::unexpected(ItemPersistenceError::SqlFailure);
+		}
+		CommitOutcome outcome { std::move(write), persistence::LoadItemOwner(sql, catalog, pending->owner, pending->session) };
+		return [pending, outcome = std::move(outcome)]() mutable { pending->done(std::move(outcome)); };
+	}, delay);
+}
+} // namespace
+
 bool RequestCommit(ItemOwner owner, std::uint64_t session, ItemCommit commit, std::function<void(CommitOutcome)> done)
 {
-	return ItemStore::Instance().Submit([owner, session, commit = std::move(commit), done = std::move(done)](CAsyncSQL& sql, const ItemCatalog& catalog) mutable -> ItemStore::Completion {
-		CommitOutcome outcome { persistence::CommitItems(sql, catalog, commit), std::unexpected(ItemPersistenceError::SqlFailure) };
-		outcome.state = persistence::LoadItemOwner(sql, catalog, owner, session);
-		return [done = std::move(done), outcome = std::move(outcome)]() mutable { done(std::move(outcome)); };
-	});
+	return QueueCommit(std::make_shared<PendingCommit>(PendingCommit { owner, session, std::move(commit), std::move(done) }));
 }
 } // namespace auriga::item::runtime

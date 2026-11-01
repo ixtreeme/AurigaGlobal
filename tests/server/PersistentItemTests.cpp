@@ -205,6 +205,29 @@ void Run()
         auto blade=MakeGrantCommit(c,op,fence,bags,items,{k::Sword(),9,1},ids);
         Check(blade && blade->items.size()==1 && blade->items[0].after.refinementLevel==9 && blade->items[0].after.placement->anchor==2 &&
               blade->items[0].after.revision==1 && !blade->items[0].after.boundTo,"a new sword at its level, where its three rows fit");
+        auto bracelet=MakeGrantCommit(c,op,fence,bags,{}, {k::Bracelet(),0,1},ids);
+        Check(bracelet && bracelet->items.size()==1 && bracelet->items[0].after.accessory==AccessorySocketState{} &&
+              ValidateItemCommit(c,*bracelet).has_value(),"a socketed accessory is granted with its empty concrete state");
+        std::vector<PersistentItem> fragmented;
+        for(std::uint32_t n=0;n<33;++n)
+        {
+            auto partial=f::Leather(100+n);partial.count=199;partial.placement->anchor=n;fragmented.push_back(partial);
+        }
+        auto many=MakeGrantCommit(c,op,fence,bags,fragmented,{k::Leather(),0,33},ids);
+        Check(many && many->items.size()==MaxItemCommitItems && !many->items.back().before && many->items.back().after.count==2,
+              "fragmented stacks leave a write slot for the remainder instead of exceeding the commit limit");
+        std::uint32_t added=0;
+        for(const auto& change:many->items)added+=change.after.count-(change.before ? change.before->count : 0);
+        Check(added==33 && ValidateItemCommit(c,*many).has_value(),"bounded grant preserves every incoming unit");
+        auto exact=MakeGrantCommit(c,op,fence,bags,fragmented,{k::Leather(),0,32},{});
+        Check(exact && exact->items.size()==MaxItemCommitItems,"exactly 32 top-ups need no new ID or cell");
+        for(std::uint32_t n=33;n<90;++n)
+        {
+            auto partial=f::Leather(100+n);partial.count=199;partial.placement->anchor=n;fragmented.push_back(partial);
+        }
+        auto full=MakeGrantCommit(c,op,fence,bags,fragmented,{k::Leather(),0,33},ids);
+        Check(!full && full.error()==ItemPersistenceError::InvalidPlacement && fragmented[0].count==199,
+              "an unrepresentable full-inventory grant takes the ground fallback, without partial changes");
         Check(MakeGrantCommit(c,op,fence,bags,items,{k::SocketDrill(),0,45},std::span(ids).first(2)).error()==ItemPersistenceError::LimitExceeded,"too few IDs");
         const std::vector<ItemStorageLayout> tiny{{{f::Character(),ItemStorageKind::Inventory,1},2,2,1}};
         Check(MakeGrantCommit(c,op,fence,tiny,{},{k::Sword(),0,1},ids).error()==ItemPersistenceError::InvalidPlacement,"no room is refused, nothing half given");
