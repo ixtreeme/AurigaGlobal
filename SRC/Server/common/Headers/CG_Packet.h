@@ -456,6 +456,14 @@ typedef struct command_typed_trade
     uint32_t count;
 } TPacketCGTypedTrade;
 
+typedef struct command_typed_craft
+{
+    uint8_t bHeader, action;
+    uint32_t npc;
+    uint64_t session, request;
+    uint32_t recipe, count;
+} TPacketCGTypedCraft;
+
 typedef struct command_party_parameter
 {
 	uint8_t	bHeader;

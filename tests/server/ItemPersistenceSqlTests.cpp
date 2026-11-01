@@ -4,6 +4,7 @@
 #include <item/OwnedGround.hpp>
 #include <item/NpcShops.hpp>
 #include <item/PlayerTrades.hpp>
+#include <item/Crafting.hpp>
 #include <CatalogSqlReader.hpp>
 #include <SQL/AsyncSQL.h>
 #include <Core/Logging.hpp>
@@ -453,6 +454,33 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         op[15]=4;auto stale=MakePlayerTradeCommit(*c,op,offers,layouts,items,wallets,{});
         Check(stale && p::ClaimOwnerSession(writer,*c,left).has_value(),"relogin advances one trade fence");
         Check(!p::CommitItems(writer,*c,*stale),"stale trade session cannot write");
+    }
+    {
+        const ItemOwner customer{ItemOwnerKind::Character,880085};const auto bag=f::Inventory(customer);
+        const ItemWallet wallet{customer,WalletCurrency::Gold,1,1000};
+        Check(p::ProvisionOwner(admin,*c,customer,std::span(&bag,1),std::span(&wallet,1)).has_value(),"craft owner provisioned");
+        auto state=p::LoadCurrentItemOwner(writer,*c,customer).value();const auto block=p::ReserveItemInstanceIds(writer,*c,32).value();
+        auto material=f::Leather(block.first);material.owner=customer;material.count=20;material.placement->anchor=0;
+        std::array<std::uint8_t,16> op{};op[0]='C';op[1]='R';op[15]=1;
+        ItemCommit grant;grant.operationId=op;grant.catalogRevision=c->Revision();grant.catalogHash=c->ContentHash();grant.kind=ItemOperationKind::Grant;grant.owners={state.fence};grant.storages={bag};grant.items={{{},material}};grant.outcomeCode=1;grant.result={1};
+        Check(p::CommitItems(writer,*c,grant).has_value(),"craft materials granted");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        CraftRecipe recipe{7,"Iron sword",{f::Sword().key,9,1},25,5000,{{material.key,0,2}}};
+        const std::vector<std::uint16_t> rolls{0,4999,5000};const std::vector<ItemInstanceId> ids{ItemInstanceId::Create(block.first+1).value(),ItemInstanceId::Create(block.first+2).value(),ItemInstanceId::Create(block.first+3).value()};op[15]=2;
+        auto craft=MakeCraftCommit(*c,op,state.fence,state.storages,state.items,state.wallets,recipe,3,rolls,ids);
+        Check(craft && p::CommitItems(writer,*c,craft->commit).has_value(),"mixed craft batch writes inputs, output and payment atomically");
+        auto replay=p::CommitItems(writer,*c,craft->commit);Check(replay && replay->replay,"craft receipt replay does not reroll or pay twice");
+        auto changed=craft->commit;changed.result.back()^=1;Check(!p::CommitItems(writer,*c,changed),"same operation cannot change recorded rolls");
+        state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        Check(state.wallets[0].balance==925 && Find(state,material.id.Value()).count==14 && Find(state,ids[0].Value()).refinementLevel==9 && Find(state,ids[1].Value()).refinementLevel==9,"craft reload retains exact identities, level, remaining inputs and gold");
+        op[15]=3;auto raced=MakeCraftCommit(*c,op,state.fence,state.storages,state.items,state.wallets,recipe,1,std::span(rolls).first(1),std::span(ids).subspan(2));Check(raced.has_value(),"second craft planned");
+        ++raced->commit.wallets[0].before.revision;++raced->commit.wallets[0].after.revision;
+        Check(!p::CommitItems(writer,*c,raced->commit),"craft wallet race rolls all writes back");const auto after=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        Check(after.items==state.items && after.wallets==state.wallets && after.fence==state.fence,"no free output or missing inputs after failed payment");
+        op[15]=4;recipe.chance=0;auto failure=MakeCraftCommit(*c,op,state.fence,state.storages,state.items,state.wallets,recipe,1,std::span(rolls).first(1),{});
+        Check(failure && p::CommitItems(writer,*c,failure->commit).has_value(),"failed craft pays and consumes together");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        Check(state.items.size()==3 && Find(state,material.id.Value()).count==12 && state.wallets[0].balance==900,"failed roll creates no output");
+        op[15]=5;auto stale=MakeCraftCommit(*c,op,state.fence,state.storages,state.items,state.wallets,recipe,1,std::span(rolls).first(1),{});
+        Check(stale && p::ClaimOwnerSession(writer,*c,customer).has_value(),"relogin fences previous craft");Check(!p::CommitItems(writer,*c,stale->commit),"stale craft cannot consume");
     }
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);

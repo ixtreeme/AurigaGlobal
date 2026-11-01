@@ -1,7 +1,7 @@
 # ADR IC-034 — F4 szerverbekötés: ütemterv és 1. szelet (katalógus induláskor)
 
 2026-10-29. Fázis: F4 ([IC-012](item_combat_012_item_runtime_first.md)).
-Állapot (2026-11-01): **C1–C9 implementált; az elkészült futásidejű
+Állapot (2026-11-01): **C1–C10 implementált; az elkészült futásidejű
 műveletek Unity 6.3-ból kezelhetők, helyi szerverrel ellenőrizve**.
 
 ## Közös szerver–Unity munkamenet (felhasználói döntés, 2026-11-01)
@@ -23,8 +23,8 @@ az összevonás részletei és ellenőrzései a
 |---|---|---|---|
 | A. Speciális tárgyműveletek | Páros (kapcsolt) bónuszok; jelmez-, stóla- és rúnabónuszok; fejlesztési segédanyagok | F2 maradéka | nyitott ([IC-031](item_combat_031_instance_attributes.md) határa) |
 | B. Tartós tárgymentés | Teljes mentés, visszatöltés és tranzakciókezelés a futó szerverben; a még nem támogatott kategóriák példányállapota | F3 maradéka | a modell, az író és a próbapad kész ([IC-032](item_combat_032_item_persistence.md), [IC-033](item_combat_033_item_test_bench.md)) |
-| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C9 kész**; a crafting és további használatok még nyitottak |
-| D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | **C1–C9 kliensútjai kész**, részletek lent |
+| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C10 kész**; a quest/Mission és további használatok még nyitottak |
+| D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | **C1–C10 kliensútjai kész**, részletek lent |
 | E. Teljes adatkonverzió | Régi protók, példányok, receptek, tartalmi hivatkozások | F6 | az eszközök megvannak; a családtérkép jóváhagyásra vár |
 | F. Végső ellenőrzés | Helyi játékpróba, újrabelépés utáni adatmegőrzés, gazdasági műveletek, FreeBSD-build | F7 | nyitott |
 
@@ -480,7 +480,8 @@ munkamenet-felügyelet és a kliensművelet is (C7d-2).
   katalógus-tábladrop és földi zsákmány `items.drops = "typed"` mellett
   szintén az új úton megy (C7b/c). A saját tárgy eldobása és felvétele is
   bekötött (C7d). Az NPC-bolt (C8) és a játékosok közötti csere (C9) is
-  elkészült. A többi használat, a céhes kovács és a tekercsek még nyitottak.
+  elkészült, ahogy a tárgykészítés is (C10). A többi használat, a céhes kovács
+  és a tekercsek még nyitottak.
 - **FreeBSD:** a GameServer mostantól linkeli az `AurigaItemCatalogSql`
   könyvtárat. A FreeBSD-build ezzel még nincs kipróbálva (F).
 
@@ -502,5 +503,17 @@ egész példány helye. A Unityben másik játékos kijelölése → **I → Cse
 
 Részletek: [IC-037](item_combat_037_player_trades.md),
 [ellenőrzések és helyi használat](../reports/item_combat/2026-11-01_player_trade_runtime.md).
-A következő nyitott gazdasági út a crafting; a quest/Mission tárgyműveletek
-szintén hátravannak.
+A crafting a következő szeletben elkészült.
+
+## C10 — Tárgykészítés (2026-11-01)
+
+ItemKey-alapú NPC-műhelyek és receptek, 1–100 próbás köteg, szerveres esély,
+alapanyag- és Yang-levonás az eredménnyel egy SQL-tranzakcióban. A teljesen
+elfogyó alapanyag felszabaduló helye is használható a kész tárgynak. Azonos
+kérés újraküldése nem ír és nem sorsol újra. A Unity a receptet, a költséget,
+az elérhető alapanyagot és a sikertelenség következményét megerősítés előtt
+mutatja: **NPC kijelölése → I → Készítés**.
+
+Részletek: [IC-038](item_combat_038_crafting.md),
+[ellenőrzések és helyi használat](../reports/item_combat/2026-11-01_crafting_runtime.md).
+A következő nyitott út a quest/Mission tárgyműveleteinek közös bekötése.

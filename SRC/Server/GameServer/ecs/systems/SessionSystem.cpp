@@ -9,6 +9,7 @@
 #include "../CharacterAccessors.hpp"
 
 #include "SessionSystem.hpp"
+#include "../../item/TypedCraft.hpp"
 #include "SocialSystem.hpp"
 #include "SkillSystem.hpp"
 #include "AffectSystem.hpp"
@@ -803,6 +804,7 @@ bool IsCubeOpen(entt::entity character)
 {
     if (!g_registry.valid(character))
         return false;
+    if (g_registry.all_of<ecs::TypedCraftActive>(character)) return true;
     const auto* cube = g_registry.try_get<ecs::CubeWindowComponent>(character);
     return cube && g_registry.valid(cube->npc);
 }

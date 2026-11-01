@@ -96,6 +96,7 @@
 #include "../item/TypedLoot.hpp"
 #include "../item/TypedShop.hpp"
 #include "../item/TypedTrade.hpp"
+#include "../item/TypedCraft.hpp"
 
 
 #define ENABLE_CHECK_GHOSTMODE
@@ -441,6 +442,9 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 
 		case HEADER_CG_TYPED_ITEM_REFINE:
 			HandleTypedItemRefinePacket(character, c_pData);
+			break;
+		case HEADER_CG_TYPED_CRAFT:
+			HandleTypedCraftPacket(character, c_pData);
 			break;
 		case HEADER_CG_TYPED_TRADE:
 			HandleTypedTradePacket(character, c_pData);

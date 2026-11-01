@@ -2,6 +2,7 @@
 #define _cube_cpp_
 
 #include "stdafx.h"
+#include "TypedCraft.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/AcceSystem.hpp"
 #include "../ecs/CharacterAccessors.hpp"
@@ -313,6 +314,7 @@ bool Cube_InformationInitialize()
 void Cube_open (entt::entity chEntity)
 {
 	const entt::entity npc = ecs::PlayerRuntime::GetQuestNPC(chEntity);
+    if (TryOpenTypedCraft(chEntity, npc)) return;
 
 
 
@@ -369,11 +371,13 @@ void Cube_open (entt::entity chEntity)
 
 void Cube_close(entt::entity chEntity)
 {
+    CloseTypedCraft(chEntity);
 	ecs::SessionSystem::SetCubeNPC(chEntity, entt::null);
 }
 
 void Cube_Make(entt::entity chEntity, int index, int count_item, int index_item_improve)
 {
+    if (g_registry.valid(chEntity) && g_registry.all_of<ecs::TypedCraftActive>(chEntity)) return;
 	if (!ecs::IsCharacter(chEntity) || !ecs::SessionSystem::IsCubeOpen(chEntity) || count_item <= 0 ||
 		count_item > static_cast<int>(g_bItemCountLimit))
 	{

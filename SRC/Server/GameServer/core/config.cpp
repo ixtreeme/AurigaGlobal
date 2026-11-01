@@ -27,6 +27,7 @@
 #include "../item/ItemCatalogRuntime.hpp"
 #include "../item/ItemStore.hpp"
 #include "../item/TypedShop.hpp"
+#include "../item/TypedCraft.hpp"
 #include "Core/Logging.hpp"
 #include <fmt/format.h>
 #include <fstream>
@@ -346,6 +347,8 @@ static void __ApplyConnectConfig(const GameConfig& cfg)
 			LOG_INFO("ItemStore: started");
             if (const auto shops = LoadTypedShops(LocaleService_GetBasePath() + "/typed_shops.json"); !shops)
             { LOG_ERROR("TypedShop: {}", shops.error()); exit(1); }
+            if (const auto crafting = LoadTypedCrafting(LocaleService_GetBasePath() + "/typed_crafting.json"); !crafting)
+            { LOG_ERROR("TypedCraft: {}", crafting.error()); exit(1); }
 			items::EnableTypedDrops(cfg.items.drops == "typed");
 			LOG_INFO("ItemDrops: {}", cfg.items.drops == "typed" ? "typed (catalog drop tables)" : "legacy drop tables");
 		}

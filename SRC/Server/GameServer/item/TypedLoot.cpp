@@ -2,6 +2,7 @@
 #include "TypedLoot.hpp"
 #include "TypedShop.hpp"
 #include "TypedTrade.hpp"
+#include "TypedCraft.hpp"
 #include "ItemCatalogRuntime.hpp"
 #include "TypedItemOps.hpp"
 #include "TypedDrops.hpp"
@@ -248,6 +249,7 @@ void TickTypedLoot()
 	TickTypedItemRefreshes();
 	TickTypedShops();
 	TickTypedTrades();
+	TickTypedCrafting();
 	auto& all = Loot();
 	if (all.empty())
 		return;
