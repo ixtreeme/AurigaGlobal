@@ -1,7 +1,8 @@
 # ADR IC-034 — F4 szerverbekötés: ütemterv és 1. szelet (katalógus induláskor)
 
 2026-10-29. Fázis: F4 ([IC-012](item_combat_012_item_runtime_first.md)).
-Állapot: **az 1. szelet implementált és tesztelt; a további szeletek terv**.
+Állapot (2026-11-01): **C1–C7c implementált; a saját tárgy eldobásának
+C7d-1 natív/SQL alapja kész, a futásidejű és Unity-bekötés következik**.
 
 ## Hátralévő munka (Codex listája, 2026-10-29)
 
@@ -9,7 +10,7 @@
 |---|---|---|---|
 | A. Speciális tárgyműveletek | Páros (kapcsolt) bónuszok; jelmez-, stóla- és rúnabónuszok; fejlesztési segédanyagok | F2 maradéka | nyitott ([IC-031](item_combat_031_instance_attributes.md) határa) |
 | B. Tartós tárgymentés | Teljes mentés, visszatöltés és tranzakciókezelés a futó szerverben; a még nem támogatott kategóriák példányállapota | F3 maradéka | a modell, az író és a próbapad kész ([IC-032](item_combat_032_item_persistence.md), [IC-033](item_combat_033_item_test_bench.md)) |
-| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **1. szelet kész** (lent) |
+| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C7c kész; C7d-1 natív alap kész** (lent) |
 | D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | nyitott |
 | E. Teljes adatkonverzió | Régi protók, példányok, receptek, tartalmi hivatkozások | F6 | az eszközök megvannak; a családtérkép jóváhagyásra vár |
 | F. Végső ellenőrzés | Helyi játékpróba, újrabelépés utáni adatmegőrzés, gazdasági műveletek, FreeBSD-build | F7 | nyitott |
@@ -404,8 +405,12 @@ kiépítéskor tölti fel a pénztárcát.
 ## C7 — drop
 
 A drop szeletei és a hozzájuk tartozó döntések:
-[IC-035](item_combat_035_drops.md). Az első szelet (C7a) a futásidejű
-azonosító-kiosztás és a tárgyadás.
+[IC-035](item_combat_035_drops.md). Kész az azonosító-kiosztás és tárgyadás
+(C7a), a katalógus-droptábla, szerkesztő és sorsolás (C7b), valamint a
+tele inventoryból földre kerülő zsákmány és felvétel (C7c).
+A saját tárgy eldobásához a teljes példányállapotot megőrző atomi
+drop/pickup/expiry tervezők készültek el (C7d-1); a földi életciklus,
+munkamenet-felügyelet és a kliensművelet még nyitott (C7d-2/3).
 
 ## Határ
 
@@ -432,7 +437,8 @@ azonosító-kiosztás és a tárgyadás.
        Ctrl+Shift+I-t.
 - **Az új rendszeren futó műveletek:** áthelyezés (C3), felszerelés és
   levétel (C4), azonnali gyógyital (C5), fejlesztés normál kovácsnál (C6). A
-  többi használat, a céhes kovács és a tekercsek, a drop, a bolt és a trade
-  még a régi úton megy.
+  katalógus-tábladrop és földi zsákmány `items.drops = "typed"` mellett
+  szintén az új úton megy (C7b/c). A saját tárgy eldobása, a többi használat,
+  a céhes kovács és a tekercsek, a bolt és a trade játékbekötése még nyitott.
 - **FreeBSD:** a GameServer mostantól linkeli az `AurigaItemCatalogSql`
   könyvtárat. A FreeBSD-build ezzel még nincs kipróbálva (F).

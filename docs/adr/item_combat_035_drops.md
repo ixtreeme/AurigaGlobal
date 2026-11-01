@@ -3,7 +3,7 @@
 2026-10-31. Fázis: F4 ([IC-034](item_combat_034_runtime_integration_plan.md),
 C csomag, „drop”). Állapot: **döntés elfogadva; a C7a (b92fe955), a
 C7b-1 (cff05d52), a C7b-2 (e37bb0ec), a C7b-3 (88c3a157) és a C7c kész; a saját
-tárgy eldobása külön szelet**.
+tárgy eldobásának C7d-1 natív/SQL alapja kész, a futásidejű bekötés még nyitott**.
 
 ## Régi működés (forrásaudit)
 
@@ -283,6 +283,70 @@ egész aritmetika eredménye változatlan marad.
 modellje (a kliensnek még nincs típusos katalógusa, F5); a felvett tárgy
 „102”-es kliensoldali üzenete (a típusos tárgy üzenete a szerver
 chatszövege).
+
+## C7d — saját tárgy eldobása (2026-11-01)
+
+A felhasználó ezt választotta a következő fejlesztési iránynak. A C7c
+`ItemGrant`-alapú földi zsákmánya új, állapot nélküli egységeket hoz létre;
+a saját tárgyat ezen az úton nem szabad újragenerálni.
+
+### C7d-1 — teljes példányállapotú atomi műveletek (kész)
+
+`common/item/OwnedGround.hpp`, `ItemDomain/OwnedGround.cpp`:
+
+- `MakeGroundDropCommit`: inventoryból előre kiépített `TradeEscrow`
+  tárolóba helyez. Az egész halom azonosítója megmarad. Részleges eldobásnál
+  a maradék az eredeti példányon marad, a leválasztott rész külön lefoglalt
+  azonosítót kap; a két módosítás egy tranzakció.
+- A kulcs, fejlesztési szint, példánybónuszok, zárolt bónuszhely, kövek és
+  ékszerfoglalat-állapot másolással marad meg; nincs alapértékekre állítás.
+- Kötött és felszerelt tárgy nem dobható el. A régi DROP/GIVE tiltásnak
+  megfelelően az `allowDrop` és az `allowTrade` is szükséges. A túl nagy
+  darabszám és a már használt split-azonosító elutasított.
+- `MakeGroundPickupCommit`: a konkrét escrow-példány kerül a felvevő szabad
+  inventoryhelyére. Két karakter esetén mindkét tulajdonos kerítése ugyanabban
+  a tranzakcióban vesz részt. Saját visszavételnél egyetlen kerítés szerepel.
+  Ebben a szeletben nincs halomösszevonás; az azonosság megőrzése explicit.
+- `MakeGroundExpireCommit`: csak escrow-példányt szüntethet meg; az utolsó
+  teljes állapot sírkőként megmarad. Inventoryban vagy felszerelve lévő
+  tárgyhoz ezen a belépési ponton nem nyúlhat.
+- Minden érintett rácsot a teljes előtte/utána állapot alapján ellenőriz;
+  az érintetlen tárgyak többcellás lábnyomát is figyelembe veszi.
+- A meglévő `Move`, `Trade`, `Consume` tranzakciókat használja. Nincs
+  sémamódosítás és nincs új adatbázis-író.
+
+**Ellenőrzés:**
+- `PersistentItemTests`: teljes és részleges eldobás, saját és idegen
+  felvétel, azonosság, bónuszok és foglalatok, lejárat, tilalmak,
+  hiányzó tároló/azonosító, hibás kerítés és teljes lábnyomos ütközés.
+- `item_persistence_mariadb`: valódi SQL-írás és visszatöltés; két tulajdonos
+  közötti fegyver- és ékszerátadás; részhalom és lejárat; idempotens nyugta;
+  elavult felvétel nem módosít semmit.
+
+### C7d-2 és C7d-3 — futó szerver és Unity (még nyitott)
+
+A C7d-1 csak tervező és írási halmaz: játékbeli eldobóparancs vagy csomag
+még nem hívja. Az escrow nincs automatikusan kiépítve a játékosoknak.
+Bekötés előtt együtt szükséges:
+
+1. Előre kiépített escrow, a földi tétel és a konkrét példány összerendelése,
+   illetve core-/indulási munkamenethez kötött felügyelet. A foglalás nem
+   használható inventoryként, fejlesztési anyagként vagy jutalomhalomként.
+2. Eldobás előtt lefoglalt, elhelyezhető földi entitás. Csak igazolt SQL-írás
+   után publikálható; elutasításnál a foglalás megszűnik. `CommitUnknown`
+   esetén az eredeti nyugta rendezéséig foglalt marad.
+3. Felvételnél a forrás és a felvevő aktuális kerítése, mindkét online
+   snapshot frissítése, offline forrástulajdonos és újrabelépés kezelése.
+4. Ötperces lejárat és bezárt térkép: igazolt escrow-megszüntetés. Újraindulás
+   után az előző indulás foglalásainak takarítása szükséges, visszaspawnolás
+   nélkül, más futó core földi tárgyainak érintése nélkül. Ezzel marad
+   memória-élettartamú a földi világ, és nem keletkezik árva példány.
+5. A mai saját eldobás nem ad 60 másodperces jogot: más azonnal felveheti.
+   Ez eltér a tele inventoryból földre került C7c zsákmánytól. A felvételi
+   távolság, tiltott karakterállapotok és DROP/GIVE szabályok megmaradnak.
+6. Új, példányazonosítós és darabszámos CG-kérés, Unity-író és inventoryakció,
+   valamint kliens/szerver protokollteszt. A C7c megjelenítő csomagja a földi
+   feliratot továbbra is ki tudja szolgálni; a teljes payload a szerveré.
 
 ## C7a — futásidejű azonosítók és tárgyadás
 

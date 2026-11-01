@@ -1,5 +1,6 @@
 #include "PersistentItemFixture.hpp"
 #include <item/Consumables.hpp>
+#include <item/OwnedGround.hpp>
 #include <iostream>
 #include <source_location>
 #include <stdexcept>
@@ -260,6 +261,61 @@ void Run()
         while(pending.size()<MaxPendingGrants)pending.push_back({k::Sword(),0,1});
         Check(!QueueGrant(pending,{k::Sword(),0,1},1) && pending.size()==MaxPendingGrants,"a full queue refuses and keeps its grants");
         Check(QueueGrant(pending,{k::Leather(),0,1},200) && pending[1].count==4 && pending.size()==MaxPendingGrants,"a full queue still merges");
+    }
+    // C7d-1: owned ground transfers preserve the concrete instance payload.
+    {
+        std::array<std::uint8_t,16> op{};op[0]=0xD1;
+        const ItemOwner other{ItemOwnerKind::Character,43};const ItemOwnerFence receiver{other,8,1};
+        const ItemStorageLayout escrow{{f::Character(),ItemStorageKind::TradeEscrow,1},5,9,2};
+        const std::vector<ItemStorageLayout> bags{f::Inventory(),escrow,f::Inventory(other)};
+        const std::vector<PersistentItem> carried{f::Sword(),f::Leather()};
+        const ItemPlacement ground{ItemStorageKind::TradeEscrow,1,0};
+        auto drop=MakeGroundDropCommit(c,op,fence,bags,carried,f::Sword().id,ground);
+        auto expected=f::Sword();expected.revision++;expected.placement=ground;
+        Check(drop && drop->items.size()==1 && drop->items[0].after==expected,"whole drop retains ID, level, bonuses and every stone");
+        const std::vector<PersistentItem> held{expected,f::Leather()};
+        auto pickup=MakeGroundPickupCommit(c,op,fence,receiver,bags,held,expected.id,{ItemStorageKind::Inventory,1,2});
+        auto taken=expected;taken.owner=other;taken.revision++;taken.placement=ItemPlacement{ItemStorageKind::Inventory,1,2};
+        Check(pickup && pickup->owners.size()==2 && pickup->items[0].after==taken,"pickup transfers one full instance with both owner fences");
+        auto mine=MakeGroundPickupCommit(c,op,fence,fence,bags,held,expected.id,{ItemStorageKind::Inventory,1,2});
+        Check(mine && mine->owners.size()==1,"own pickup deduplicates the owner fence");
+        auto stale=fence;stale.revision++;
+        Check(MakeGroundPickupCommit(c,op,fence,stale,bags,held,expected.id,{ItemStorageKind::Inventory,1,2}).error()==ItemPersistenceError::InvalidFence,"same owner cannot supply conflicting fences");
+        auto blocker=f::Leather(900);blocker.owner=other;blocker.placement->anchor=7;
+        const std::vector<PersistentItem> blocked{expected,blocker};
+        Check(MakeGroundPickupCommit(c,op,fence,receiver,bags,blocked,expected.id,{ItemStorageKind::Inventory,1,2}).error()==ItemPersistenceError::InvalidPlacement,"pickup checks the complete footprint against unchanged items");
+        blocker=f::Leather(900);blocker.placement=ItemPlacement{ItemStorageKind::TradeEscrow,1,5};
+        const std::vector<PersistentItem> crowded{f::Sword(),blocker};
+        Check(MakeGroundDropCommit(c,op,fence,bags,crowded,f::Sword().id,ground).error()==ItemPersistenceError::InvalidPlacement,"drop checks the full escrow footprint");
+        const auto splitId=ItemInstanceId::Create(800).value();
+        auto split=MakeGroundDropCommit(c,op,fence,bags,carried,f::Leather().id,ground,1,splitId);
+        Check(split && split->items.size()==2 && split->items[0].after.id==f::Leather().id && split->items[0].after.count==2 &&
+              split->items[1].after.id==splitId && split->items[1].after.count==1 && split->items[1].after.revision==1,"partial drop conserves units and allocates only the split identity");
+        Check(MakeGroundDropCommit(c,op,fence,bags,carried,f::Leather().id,ground,1).error()==ItemPersistenceError::InvalidChange,"split requires a reserved ID");
+        Check(MakeGroundDropCommit(c,op,fence,bags,carried,f::Leather().id,ground,1,f::Sword().id).error()==ItemPersistenceError::InvalidChange,"split ID cannot already exist");
+        Check(MakeGroundDropCommit(c,op,fence,bags,carried,f::Leather().id,ground,4).error()==ItemPersistenceError::InvalidChange,"oversized amount is refused");
+        Check(MakeGroundDropCommit(c,{},fence,bags,carried,f::Sword().id,ground).error()==ItemPersistenceError::InvalidOperation,"drop requires an operation identity");
+        Check(MakeGroundDropCommit(c,op,receiver,bags,carried,f::Sword().id,ground).error()==ItemPersistenceError::MissingItem,"foreign inventory item cannot be dropped");
+        Check(MakeGroundDropCommit(c,op,fence,bags,carried,f::Sword().id,{ItemStorageKind::Inventory,1,2}).error()==ItemPersistenceError::UnsupportedState,"drop destination must be escrow");
+        Check(MakeGroundDropCommit(c,op,fence,std::span(bags).first(1),carried,f::Sword().id,ground).error()==ItemPersistenceError::InvalidStorage,"escrow must be provisioned");
+        auto bound=f::Sword();bound.boundTo=f::Character();const std::vector<PersistentItem> boundItems{bound};
+        Check(MakeGroundDropCommit(c,op,fence,bags,boundItems,bound.id,ground).error()==ItemPersistenceError::TransferDenied,"bound item cannot be dropped");
+        auto source=f::Catalog();source.tradePolicies[0].allowDrop=false;auto forbidden=BuildItemCatalog(source).value();
+        Check(MakeGroundDropCommit(*forbidden,op,fence,bags,carried,f::Sword().id,ground).error()==ItemPersistenceError::TransferDenied,"catalog drop prohibition is enforced");
+        source=f::Catalog();source.tradePolicies[0].allowTrade=false;forbidden=BuildItemCatalog(source).value();
+        Check(MakeGroundDropCommit(*forbidden,op,fence,bags,carried,f::Sword().id,ground).error()==ItemPersistenceError::TransferDenied,"legacy GIVE restriction also blocks dropping");
+        Check(MakeGroundPickupCommit(*forbidden,op,fence,receiver,bags,held,expected.id,{ItemStorageKind::Inventory,1,2}).error()==ItemPersistenceError::TransferDenied,"pickup cannot bypass a trade prohibition");
+        auto worn=f::Sword();worn.placement=ItemPlacement{ItemStorageKind::Equipment,1,0};const std::vector<PersistentItem> equipped{worn};
+        Check(MakeGroundDropCommit(c,op,fence,bags,equipped,worn.id,ground).error()==ItemPersistenceError::UnsupportedState,"equipped item cannot be dropped");
+        auto bracelet=f::Leather(810);bracelet.key=item_catalog_fixture::Bracelet();bracelet.count=1;bracelet.accessory=AccessorySocketState{3,2,1000,false};
+        const std::vector<PersistentItem> jewelry{bracelet};
+        auto jewelDrop=MakeGroundDropCommit(c,op,fence,bags,jewelry,bracelet.id,ground);
+        Check(jewelDrop && jewelDrop->items[0].after.accessory==bracelet.accessory,"accessory capacity, grade and remaining time survive the drop");
+        auto expired=MakeGroundExpireCommit(c,op,fence,bags,held,expected.id);
+        Check(expired && expired->items[0].after.destroyed && !expired->items[0].after.placement && !expired->items[0].after.count &&
+              expired->items[0].after.attributes==expected.attributes && expired->items[0].after.stones==expected.stones,"expiry leaves a complete tombstone");
+        Check(MakeGroundExpireCommit(c,op,fence,bags,carried,f::Sword().id).error()==ItemPersistenceError::UnsupportedState,"expiry cannot destroy an inventory item");
+        Check(MakeGroundPickupCommit(c,op,fence,receiver,bags,carried,f::Sword().id,{ItemStorageKind::Inventory,1,2}).error()==ItemPersistenceError::UnsupportedState,"pickup cannot steal a carried item");
     }
     // F4 C6: refinement from the owner's state; equipment never takes part.
     {

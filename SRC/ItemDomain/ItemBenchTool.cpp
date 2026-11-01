@@ -45,7 +45,7 @@ const char* PersistenceText(ItemPersistenceError e)
         "érvénytelen foglalatállapot","nincs hely, vagy ütközik egy másik tárggyal","érvénytelen művelet","elavult tulajdonos-kerítés",
         "érvénytelen változás","érvénytelen pénztárca-változás","túl sok adat egy műveletben","katalóguseltérés","hash-hiba","adatbázishiba",
         "ütközés egy párhuzamos mentéssel (próbáld újra)","a mentés eredménye ismeretlen","nyugtaeltérés","sérült tárolt adat",
-        "nincs ilyen tulajdonos (nincs kiépítve)", "a karakter nem felel meg a feltételeknek (szint, kaszt vagy nem)" };
+        "nincs ilyen tulajdonos (nincs kiépítve)", "a karakter nem felel meg a feltételeknek (szint, kaszt vagy nem)", "ez a tárgy nem dobható el vagy adható át" };
     const auto code=static_cast<std::size_t>(e);return code<std::size(texts)?texts[code]:"ismeretlen hiba";
 }
 const char* RefinementText(RefinementUseError e)

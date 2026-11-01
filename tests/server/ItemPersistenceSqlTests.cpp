@@ -1,6 +1,7 @@
 #include "PersistentItemFixture.hpp"
 #include "CatalogSnapshotFixture.hpp"
 #include <ItemPersistenceSql.hpp>
+#include <item/OwnedGround.hpp>
 #include <CatalogSqlReader.hpp>
 #include <SQL/AsyncSQL.h>
 #include <Core/Logging.hpp>
@@ -284,6 +285,60 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
     Execute(writer,"SET SESSION check_constraint_checks=0");Check(!p::LoadItemOwner(writer,*c,account,9),"CHECK-disabled connection denied");Execute(writer,"SET SESSION check_constraint_checks=1");
     Execute(writer,"SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED");Check(!p::LoadItemOwner(writer,*c,account,9),"nonrepeatable read denied");Execute(writer,"SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ");
     Check(Scalar(writer,"SELECT @@autocommit")=="1","transaction not left open");
+    // C7d-1: full-state own-item drop/pickup/expiry through the real writer.
+    {
+        const ItemOwner dropper{ItemOwnerKind::Character,8101},picker{ItemOwnerKind::Character,8102};
+        const ItemStorageLayout bag=f::Inventory(dropper),target=f::Inventory(picker);
+        const ItemStorageLayout escrow{{dropper,ItemStorageKind::TradeEscrow,1},5,9,2};
+        const ItemStorageLayout layouts[]{bag,escrow};
+        Check(p::ProvisionOwner(admin,*c,dropper,layouts,{}).has_value(),"ground source provisioned");
+        Check(p::ProvisionOwner(admin,*c,picker,std::span(&target,1),{}).has_value(),"ground picker provisioned");
+        auto a=Load(writer,*c,dropper,1),b=Load(writer,*c,picker,1);
+        auto sword=f::Sword(850001);sword.owner=dropper;
+        auto leather=f::Leather(850002);leather.owner=dropper;leather.count=10;
+        auto bracelet=leather;bracelet.id=ItemInstanceId::Create(850003).value();bracelet.key=item_catalog_fixture::Bracelet();
+        bracelet.count=1;bracelet.placement->anchor=2;bracelet.accessory=AccessorySocketState{3,2,1000,false};
+        auto give=f::Grant(*c,{sword,leather,bracelet});give.operationId.fill(0xD0);give.owners={a.fence};give.storages={bag};
+        Check(p::CommitItems(writer,*c,give).has_value(),"ground source instances granted");a=Load(writer,*c,dropper,1);
+        std::array<std::uint8_t,16> operation{};operation.fill(0xD1);
+        auto drop=MakeGroundDropCommit(*c,operation,a.fence,a.storages,a.items,sword.id,{ItemStorageKind::TradeEscrow,1,0});
+        Check(drop && p::CommitItems(writer,*c,*drop).has_value(),"own sword drop committed");
+        auto replayDrop=p::CommitItems(writer,*c,*drop);Check(replayDrop && replayDrop->replay,"own drop replay is idempotent");
+        a=Load(writer,*c,dropper,1);auto held=Find(a,sword.id.Value());
+        auto expected=sword;expected.revision++;expected.placement=ItemPlacement{ItemStorageKind::TradeEscrow,1,0};
+        Check(held==expected,"escrow reload preserves ID, level, signed bonuses and socket states");
+        std::vector<ItemStorageLayout> both=a.storages;both.insert(both.end(),b.storages.begin(),b.storages.end());
+        std::vector<PersistentItem> combined=a.items;combined.insert(combined.end(),b.items.begin(),b.items.end());
+        operation.fill(0xD2);
+        auto pickup=MakeGroundPickupCommit(*c,operation,a.fence,b.fence,both,combined,sword.id,{ItemStorageKind::Inventory,1,0});
+        Check(pickup && p::CommitItems(writer,*c,*pickup).has_value(),"cross-owner pickup committed atomically");
+        auto replayPickup=p::CommitItems(writer,*c,*pickup);Check(replayPickup && replayPickup->replay,"pickup replay never duplicates the instance");
+        a=Load(writer,*c,dropper,1);b=Load(writer,*c,picker,1);
+        expected.owner=picker;expected.revision++;expected.placement=ItemPlacement{ItemStorageKind::Inventory,1,0};
+        Check(a.items.size()==2 && b.items.size()==1 && Find(b,sword.id.Value())==expected,"pickup reload moves the original identity and payload to the picker");
+        auto stale=*pickup;stale.operationId.fill(0xD3);const auto fingerprint=Fingerprint(admin);
+        Check(!p::CommitItems(writer,*c,stale) && Fingerprint(admin)==fingerprint,"stale pickup cannot debit or duplicate anything");
+        operation.fill(0xD4);const auto splitId=ItemInstanceId::Create(850004).value();
+        auto split=MakeGroundDropCommit(*c,operation,a.fence,a.storages,a.items,leather.id,{ItemStorageKind::TradeEscrow,1,1},4,splitId);
+        Check(split && p::CommitItems(writer,*c,*split).has_value(),"partial drop commits the source debit and split together");
+        a=Load(writer,*c,dropper,1);
+        Check(Find(a,leather.id.Value()).count==6 && Find(a,splitId.Value()).count==4,"partial drop reload conserves units");
+        operation.fill(0xD5);auto expire=MakeGroundExpireCommit(*c,operation,a.fence,a.storages,a.items,splitId);
+        Check(expire && p::CommitItems(writer,*c,*expire).has_value(),"ground split expiry committed");
+        a=Load(writer,*c,dropper,1);
+        Check(a.items.size()==2 && Find(a,leather.id.Value()).count==6,"expiry only removes the escrow instance");
+        operation.fill(0xD6);auto jewelry=MakeGroundDropCommit(*c,operation,a.fence,a.storages,a.items,bracelet.id,{ItemStorageKind::TradeEscrow,1,2});
+        Check(jewelry && p::CommitItems(writer,*c,*jewelry).has_value(),"accessory drop committed");
+        a=Load(writer,*c,dropper,1);
+        Check(Find(a,bracelet.id.Value()).accessory==bracelet.accessory,"accessory lifetime and capacity survive SQL round trip");
+        both=a.storages;both.insert(both.end(),b.storages.begin(),b.storages.end());
+        combined=a.items;combined.insert(combined.end(),b.items.begin(),b.items.end());
+        operation.fill(0xD7);
+        auto jewelryPickup=MakeGroundPickupCommit(*c,operation,a.fence,b.fence,both,combined,bracelet.id,{ItemStorageKind::Inventory,1,1});
+        Check(jewelryPickup && p::CommitItems(writer,*c,*jewelryPickup).has_value(),"accessory pickup committed");
+        b=Load(writer,*c,picker,1);
+        Check(Find(b,bracelet.id.Value()).accessory==bracelet.accessory,"accessory pickup preserves the original instance and lifetime");
+    }
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);
 }
