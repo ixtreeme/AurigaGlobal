@@ -1685,8 +1685,6 @@ class ItemPage(QWidget):
         weapon.add('child', 'physical_attack_base_raw', 'Fizikai támadás', 'scaled', scale=1000, unit='pont', range=(0, 10 ** 15))
         weapon.add('child', 'magical_attack_base_raw', 'Mágikus támadás', 'scaled', scale=1000, unit='pont', range=(0, 10 ** 15))
         weapon.section('Támadás működése')
-        weapon.add('attack', 'interval_ticks', 'Támadási időköz', unit='tick', range=(1, 4294967295))
-        weapon.add('attack', 'windup_ticks', 'Felkészülés', unit='tick', range=(0, 4294967295), hint='Nem lehet hosszabb a támadási időköznél.')
         weapon.add('attack', 'reach_millimeters', 'Hatótáv', 'scaled', scale=1000, unit='méter', range=(1, 4294967295))
         weapon.add('attack', 'max_targets', 'Célpontok száma', range=(1, 1024))
         weapon.section('Lőszerhasználat')
