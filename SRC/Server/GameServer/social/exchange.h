@@ -17,6 +17,8 @@ enum EExchangeValues
 
 namespace ecs
 {
+struct TypedTradeActive {};
+
 struct ExchangeRef
 {
     entt::entity session { entt::null };

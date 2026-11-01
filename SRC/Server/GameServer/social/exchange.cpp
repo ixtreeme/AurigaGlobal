@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "exchange.h"
+#include "../item/TypedTrade.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/ResourceAdmission.hpp"
 #include "../ecs/components/character_runtime_components.hpp"
@@ -735,7 +736,7 @@ entt::entity GetSession(entt::entity participant)
 
 bool IsActive(entt::entity participant)
 {
-    return GetSession(participant) != entt::null;
+    return (g_registry.valid(participant) && g_registry.all_of<ecs::TypedTradeActive>(participant)) || GetSession(participant) != entt::null;
 }
 
 int GetLastExchangePulse(entt::entity participant)
@@ -747,6 +748,7 @@ int GetLastExchangePulse(entt::entity participant)
 
 bool Start(entt::entity initiator, entt::entity target)
 {
+    if (TryStartTypedTrade(initiator, target)) return true;
     if (initiator == target || !CanTrade(initiator) || !CanTrade(target) ||
         IsActive(initiator) || !Near(initiator, target))
         return false;
@@ -946,6 +948,7 @@ bool Accept(entt::entity participant, bool accepted)
 
 void Cancel(entt::entity participant)
 {
+    CancelTypedTrade(participant);
     Close(GetSession(participant));
 }
 }

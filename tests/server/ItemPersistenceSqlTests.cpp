@@ -3,6 +3,7 @@
 #include <ItemPersistenceSql.hpp>
 #include <item/OwnedGround.hpp>
 #include <item/NpcShops.hpp>
+#include <item/PlayerTrades.hpp>
 #include <CatalogSqlReader.hpp>
 #include <SQL/AsyncSQL.h>
 #include <Core/Logging.hpp>
@@ -415,6 +416,43 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         Check(!p::CommitItems(writer,*c,*stale),"old session cannot sell");
         auto after=p::LoadCurrentItemOwner(writer,*c,customer).value();
         Check(after.items==state.items && after.wallets==state.wallets,"stale sale changes neither items nor money");
+    }
+    {
+        const ItemOwner left{ItemOwnerKind::Character,880083},right{ItemOwnerKind::Character,880084};
+        const auto leftBag=f::Inventory(left),rightBag=f::Inventory(right);
+        const ItemWallet leftWallet{left,WalletCurrency::Gold,1,1000},rightWallet{right,WalletCurrency::Gold,1,500};
+        Check(p::ProvisionOwner(admin,*c,left,std::span(&leftBag,1),std::span(&leftWallet,1)).has_value(),"trade left provisioned");
+        Check(p::ProvisionOwner(admin,*c,right,std::span(&rightBag,1),std::span(&rightWallet,1)).has_value(),"trade right provisioned");
+        auto a=p::LoadCurrentItemOwner(writer,*c,left).value(),b=p::LoadCurrentItemOwner(writer,*c,right).value();
+        const auto block=p::ReserveItemInstanceIds(writer,*c,32).value();
+        auto sword=f::Sword(block.first);sword.owner=left;
+        auto leather=f::Leather(block.first+1);leather.owner=right;leather.count=10;leather.placement->anchor=0;
+        std::array<std::uint8_t,16> op{};op[0]='T';op[1]='R';op[15]=1;
+        ItemCommit grant;grant.operationId=op;grant.catalogRevision=c->Revision();grant.catalogHash=c->ContentHash();grant.kind=ItemOperationKind::Grant;
+        grant.owners={a.fence,b.fence};grant.storages={leftBag,rightBag};grant.items={{{},sword},{{},leather}};grant.outcomeCode=1;grant.result={1};
+        Check(p::CommitItems(writer,*c,grant).has_value(),"complete trade fixtures granted");
+        a=p::LoadCurrentItemOwner(writer,*c,left).value();b=p::LoadCurrentItemOwner(writer,*c,right).value();
+        std::vector<ItemStorageLayout> layouts{leftBag,rightBag};auto items=a.items;items.insert(items.end(),b.items.begin(),b.items.end());
+        auto wallets=a.wallets;wallets.insert(wallets.end(),b.wallets.begin(),b.wallets.end());
+        std::array<PlayerTradeOffer,2> offers{{{a.fence,{{sword.id,0}},100},{b.fence,{{leather.id,4}},40}}};
+        const std::vector<ItemInstanceId> ids{ItemInstanceId::Create(block.first+2).value()};op[15]=2;
+        auto trade=MakePlayerTradeCommit(*c,op,offers,layouts,items,wallets,ids);
+        Check(trade && p::CommitItems(writer,*c,*trade).has_value(),"both item directions and wallets commit together");
+        auto replay=p::CommitItems(writer,*c,*trade);Check(replay && replay->replay,"trade receipt replay writes once");
+        a=p::LoadCurrentItemOwner(writer,*c,left).value();b=p::LoadCurrentItemOwner(writer,*c,right).value();
+        Check(a.wallets[0].balance==940 && b.wallets[0].balance==560,"net trade gold persisted");
+        Check(Find(a,ids[0].Value()).count==4 && Find(b,leather.id.Value()).count==6,"partial trade persisted without regeneration");
+        Check(Find(b,sword.id.Value()).attributes==sword.attributes && Find(b,sword.id.Value()).stones==sword.stones && Find(b,sword.id.Value()).refinementLevel==9,"whole trade preserves high ID and complete instance state");
+        offers={PlayerTradeOffer{a.fence,{{ids[0],0}},10},PlayerTradeOffer{b.fence,{{sword.id,0}},0}};
+        items=a.items;items.insert(items.end(),b.items.begin(),b.items.end());wallets=a.wallets;wallets.insert(wallets.end(),b.wallets.begin(),b.wallets.end());op[15]=3;
+        auto raced=MakePlayerTradeCommit(*c,op,offers,layouts,items,wallets,{});Check(raced.has_value(),"second trade planned");
+        ++raced->wallets[1].before.revision;++raced->wallets[1].after.revision;
+        Check(!p::CommitItems(writer,*c,*raced),"one wallet race rejects the entire trade");
+        auto unchangedA=p::LoadCurrentItemOwner(writer,*c,left).value(),unchangedB=p::LoadCurrentItemOwner(writer,*c,right).value();
+        Check(unchangedA.items==a.items && unchangedA.wallets==a.wallets && unchangedA.fence==a.fence && unchangedB.items==b.items && unchangedB.wallets==b.wallets && unchangedB.fence==b.fence,"failed trade cannot debit, credit or transfer either side");
+        op[15]=4;auto stale=MakePlayerTradeCommit(*c,op,offers,layouts,items,wallets,{});
+        Check(stale && p::ClaimOwnerSession(writer,*c,left).has_value(),"relogin advances one trade fence");
+        Check(!p::CommitItems(writer,*c,*stale),"stale trade session cannot write");
     }
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);

@@ -27,6 +27,8 @@
 
 // The complete production exchange.cpp is linked. Fixtures contain only
 // entities/components and real inert descriptors, never CHARACTER or CItem.
+bool TryStartTypedTrade(entt::entity,entt::entity) { return false; }
+void CancelTypedTrade(entt::entity) {}
 entt::registry g_registry;
 int passes_per_sec = 25, g_nPortalLimitTime = 10;
 std::string g_stHostname = "exchange-test";

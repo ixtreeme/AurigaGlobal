@@ -176,6 +176,7 @@ CWarMap* GetWarMap(entt::entity e)
 
 bool HasExchange(entt::entity e)
 {
+    if (g_registry.valid(e) && g_registry.all_of<ecs::TypedTradeActive>(e)) return true;
     if (!g_registry.valid(e)) return false;
     const auto* ref = g_registry.try_get<ecs::ExchangeRef>(e);
     const auto* session = ref && g_registry.valid(ref->session)

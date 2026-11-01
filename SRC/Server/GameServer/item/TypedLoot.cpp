@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "TypedLoot.hpp"
 #include "TypedShop.hpp"
+#include "TypedTrade.hpp"
 #include "ItemCatalogRuntime.hpp"
 #include "TypedItemOps.hpp"
 #include "TypedDrops.hpp"
@@ -246,6 +247,7 @@ void TickTypedLoot()
 {
 	TickTypedItemRefreshes();
 	TickTypedShops();
+	TickTypedTrades();
 	auto& all = Loot();
 	if (all.empty())
 		return;

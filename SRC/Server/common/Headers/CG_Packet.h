@@ -448,6 +448,14 @@ typedef struct command_typed_shop
     uint32_t count; // purchase bundles; sale units (0 = whole)
 } TPacketCGTypedShop;
 
+typedef struct command_typed_trade
+{
+    uint8_t bHeader, action;
+    uint32_t peer;
+    uint64_t session, request, revision, subject;
+    uint32_t count;
+} TPacketCGTypedTrade;
+
 typedef struct command_party_parameter
 {
 	uint8_t	bHeader;

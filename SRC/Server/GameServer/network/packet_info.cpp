@@ -175,6 +175,7 @@ CPacketInfoCG::CPacketInfoCG()
 	Set(HEADER_CG_TYPED_ITEM_REFINE, sizeof(TPacketCGTypedItemRefine), "TypedItemRefine", true);
 	Set(HEADER_CG_TYPED_ITEM_DROP, sizeof(TPacketCGTypedItemDrop), "TypedItemDrop", true);
 	Set(HEADER_CG_TYPED_SHOP, sizeof(TPacketCGTypedShop), "TypedShop", true);
+	Set(HEADER_CG_TYPED_TRADE, sizeof(TPacketCGTypedTrade), "TypedTrade", true);
 
 
 #ifdef __INGAME_WIKI__
