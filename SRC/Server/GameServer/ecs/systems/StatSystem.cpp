@@ -1,5 +1,6 @@
 #include "../../core/stdafx.h"
 #include "StatSystem.hpp"
+#include "../../item/TypedEquipment.hpp"
 #include "PointSystem.hpp"
 #include "CombatSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
@@ -141,7 +142,7 @@ void Compute(entt::entity e)
 #endif
     }) ecs::PlayerRuntime::SetPart(e, part, ecs::PlayerRuntime::GetOriginalPart(e, part));
 
-    MountSystem::ComputeMountInventoryBonuses(e);
+    if (!HasTypedEquipment(e)) MountSystem::ComputeMountInventoryBonuses(e);
     if (!HasPointState(e)) return;
     int64_t maxHP = mobHP, maxSP = 0, maxStamina = 0;
     if (player) {
@@ -189,7 +190,7 @@ void Compute(entt::entity e)
             if (value > Get(e, type)) Change(e, type, value - Get(e, type));
         }
     }
-    ApplyBeltPoints(e);
+    if (!HasTypedEquipment(e)) ApplyBeltPoints(e);
     if (!HasPointState(e)) return;
     ComputeBattlePoints(e);
     if (!HasPointState(e)) return;
@@ -202,7 +203,7 @@ void Compute(entt::entity e)
 
     std::unordered_set<entt::entity> applied;
     for (int slot = 0; slot < WEAR_MAX_NUM; ++slot) {
-        const auto item = ItemSystem::GetWearItem(e, slot);
+        const auto item = CombatWearItem(e, slot);
         if (!ItemSystem::IsValidItem(item) || ItemSystem::GetItemOwner(item) != e || !applied.insert(item).second) continue;
 #ifdef ENABLE_RUNE_SYSTEM
         if (ItemSystem::IsRuneItem(item) && ItemSystem::GetItemSocket(item, 1) != 1) continue;
@@ -236,6 +237,7 @@ void Compute(entt::entity e)
     if (!HasPointState(e)) return;
     NetworkSyncSystem::UpdatePacket(e);
     if (HasPointState(e)) ComputeBattlePoints(e);
+    if (HasPointState(e) && HasTypedEquipment(e)) SendTypedEquipment(e);
 }
 } // namespace ecs::PointSystem
 

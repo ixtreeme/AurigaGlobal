@@ -33,12 +33,14 @@
 #include "../../SRC/Server/GameServer/ecs/systems/ViewSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MovementSystem.hpp"
 #include "../../SRC/Server/GameServer/core/packet.h"
+#include "../../SRC/Server/GameServer/item/TypedEquipment.hpp"
 #include <cstring>
 #include <Core/Logging.hpp>
 #include <functional>
 #include <iostream>
 #include <stdexcept>
 
+void SendTypedEquipment(entt::entity) {} // packet encoder is covered by the shared native/Unity fixture
 entt::registry g_registry;
 entt::dispatcher g_dispatcher;
 TJobInitialPoints JobInitialPoints[JOB_MAX_NUM] {};
@@ -433,6 +435,47 @@ void SourceChecks() {
     g_registry.destroy(e); P::Compute(e); P::Compute(entt::null);
     Check(packets == 0, "stale/null entity published");
 }
+void TypedEquipmentChecks() {
+    using B=auriga::item::BonusId;
+    Reset();const auto e=ActorEntity();Wear(e);mountHP=100;
+    auriga::item::EquipmentStats gear;gear.flat={20500,10000,7000,9000};gear.weapon=auriga::item::WeaponSubtype::Sword;
+    gear.bonuses[unsigned(B::Strength)]=3;gear.bonuses[unsigned(B::Constitution)]=4;gear.bonuses[unsigned(B::Intelligence)]=2;
+    gear.bonuses[unsigned(B::PhysicalAttackPercent)]=2500;gear.bonuses[unsigned(B::AttackSpeedPercent)]=1250;
+    gear.bonuses[unsigned(B::MovementSpeedPercent)]=500;gear.bonuses[unsigned(B::CastSpeedPercent)]=1000;
+    g_registry.emplace<ecs::TypedEquipmentProjection>(e).stats=gear;
+    for(int i=0;i<10;++i) {
+        P::Compute(e);
+        Check(P::Get(e,POINT_ST)==13 && P::GetReal(e,POINT_ST)==10 && P::Get(e,POINT_HT)==14 && P::Get(e,POINT_IQ)==12,"typed primary contributions never alter base authority");
+        Check(P::Get(e,POINT_ATT_GRADE)==108 && P::Get(e,POINT_MAGIC_ATT_GRADE)==74 && P::Get(e,POINT_DEF_GRADE)==38 && P::Get(e,POINT_MAGIC_DEF_GRADE)==45,"typed flat, percent and magic inputs apply exactly once");
+        Check(P::Get(e,POINT_ATT_SPEED)==113 && P::GetLimitPoint(e,POINT_ATT_SPEED)==113 && P::Get(e,POINT_MOV_SPEED)==210 && P::Get(e,POINT_CASTING_SPEED)==110,"speed uses effective projection and existing engine limits");
+        Check(P::GetMaxHP(e)==1710 && P::GetMaxSP(e)==290 && modifies==0,"constitution and intelligence affect vitals; legacy gear is excluded");
+    }
+    P::Change(e,POINT_DEF_GRADE_BONUS,11);
+    Check(P::Get(e,POINT_DEF_GRADE)==49 && P::Get(e,POINT_MAGIC_DEF_GRADE)==50,"late defense affect refreshes its magic-defense contribution");
+    P::Change(e,POINT_DEF_GRADE_BONUS,-11);
+    Check(P::Get(e,POINT_DEF_GRADE)==38 && P::Get(e,POINT_MAGIC_DEF_GRADE)==45,"removing defense affect restores both channels");
+    P::Change(e,POINT_ATT_SPEED,3);Check(P::Get(e,POINT_ATT_SPEED)==116,"buff changes unscaled speed source");
+    P::Change(e,POINT_ATT_SPEED,-3);Check(P::Get(e,POINT_ATT_SPEED)==113,"buff removal does not compound equipment multiplier");
+    P::Change(e,POINT_ATT_GRADE_BONUS,4);Check(P::Get(e,POINT_ATT_GRADE)==113,"attack buff enters before equipment percentage");
+    P::Change(e,POINT_ATT_GRADE_BONUS,-4);Check(P::Get(e,POINT_ATT_GRADE)==108,"attack buff removal restores exact source");
+    g_registry.get<ecs::TypedEquipmentProjection>(e).stats=auriga::item::EquipmentStats{};P::Compute(e);
+    Check(P::Get(e,POINT_ATT_GRADE)==60 && P::Get(e,POINT_MAGIC_ATT_GRADE)==60 && P::GetMaxHP(e)==1670 && modifies==0,"unequip clears contribution without falling back to legacy gear");
+
+    const auto target=ActorEntity();auriga::item::EquipmentStats a,b;a.weapon=auriga::item::WeaponSubtype::Sword;
+    a.bonuses[unsigned(B::NormalOutgoing)]=1000;a.bonuses[unsigned(B::SkillOutgoing)]=500;a.bonuses[unsigned(B::PveOutgoing)]=2000;a.bonuses[unsigned(B::GlobalOutgoing)]=500;
+    b.bonuses[unsigned(B::PhysicalResistance)]=1000;b.bonuses[unsigned(B::MagicalResistance)]=1000;b.resistances[0]=500;b.resistances[2]=700;
+    b.bonuses[unsigned(B::NormalIncoming)]=1000;b.bonuses[unsigned(B::SkillIncoming)]=2000;b.bonuses[unsigned(B::PveIncoming)]=500;b.bonuses[unsigned(B::BlockReduction)]=1000;b.bonuses[unsigned(B::Evasion)]=1000;
+    g_registry.get<ecs::TypedEquipmentProjection>(e).stats=a;g_registry.emplace<ecs::TypedEquipmentProjection>(target).stats=b;
+    Check(EquipmentDamageModifiers(e,target,1000,DAMAGE_TYPE_NORMAL,false,false)==759,"normal PvE filters, channel/weapon resistance, deterministic block/evasion and global stage");
+    Check(EquipmentDamageModifiers(e,target,1000,DAMAGE_TYPE_NORMAL,true,false)==667,"PvP never also applies PvE buckets");
+    Check(EquipmentDamageModifiers(e,target,1000,DAMAGE_TYPE_MAGIC,false,false)==905,"magic skill skips physical block, evasion and weapon defense");
+    a={};b={};a.bonuses[unsigned(B::CritMultiplierExtra)]=10000;
+    a.bonuses[unsigned(B::PhysicalFlatPenetration)]=10000;a.bonuses[unsigned(B::PhysicalPercentPenetration)]=2000;
+    a.bonuses[unsigned(B::MagicalFlatPenetration)]=5000;a.bonuses[unsigned(B::MagicalPercentPenetration)]=2500;
+    g_registry.get<ecs::TypedEquipmentProjection>(e).stats=a;g_registry.get<ecs::TypedEquipmentProjection>(target).stats=b;
+    Check(EquipmentEffectiveDefense(e,40)==24 && EquipmentEffectiveDefense(e,25,true)==15,"flat then percent penetration affects matching defense");
+    Check(EquipmentDamageModifiers(e,target,2000,DAMAGE_TYPE_NORMAL,false,true)==3000 && EquipmentDamageModifiers(e,target,2000,DAMAGE_TYPE_NORMAL,false,false)==2000,"critical extra modifies only a recorded critical hit");
+}
 void WalkingPreferenceChecks() {
     for (bool preference : {false, true}) {
         Reset(); const auto e = ActorEntity();
@@ -491,7 +534,7 @@ void CallbackChecks() {
 int main() {
     try {
         CSkillManager skills; CHARACTER_MANAGER characters;
-        NativeVitalSourceChecks(); PointPublicationChecks(); FormulaChecks(); RepeatedCalculation(); SkillPointSpendChecks(); SourceChecks(); WalkingPreferenceChecks(); MovementTimingRouteChecks(); CallbackChecks();
+        NativeVitalSourceChecks(); PointPublicationChecks(); FormulaChecks(); RepeatedCalculation(); SkillPointSpendChecks(); SourceChecks(); TypedEquipmentChecks(); WalkingPreferenceChecks(); MovementTimingRouteChecks(); CallbackChecks();
         std::cout << "Point calculation checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

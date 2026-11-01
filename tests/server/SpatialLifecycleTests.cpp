@@ -1,4 +1,5 @@
 #include "../../SRC/Server/GameServer/core/stdafx.h"
+#include "../../SRC/Server/GameServer/item/TypedEquipment.hpp"
 #include "../../SRC/Server/GameServer/story/CaravanQuestSystem.hpp"
 #include "../../SRC/Server/GameServer/world/sectree_manager.h"
 #include "../../SRC/Server/GameServer/entity/char_manager.h"
@@ -1360,6 +1361,14 @@ void NativeMotionSelection() {
         weaponProtos[weapon].bSubType = subtype;
         Check(ecs::MovementSystem::GetMotionMode(e) == mode, "weapon motion mode mismatch");
     }
+    auto& typed=g_registry.emplace<ecs::TypedEquipmentProjection>(e);
+    typed.stats=auriga::item::EquipmentStats{};typed.stats->weapon=auriga::item::WeaponSubtype::Bow;
+    Check(ecs::MovementSystem::GetMotionMode(e)==MOTION_MODE_BOW,"typed weapon motion ignored");
+    typed.stats->weapon.reset();
+    Check(ecs::MovementSystem::GetMotionMode(e)==MOTION_MODE_GENERAL,"empty typed gear fell back to old fan");
+    typed.stats.reset();
+    Check(ecs::MovementSystem::GetMotionMode(e)==MOTION_MODE_GENERAL,"invalid typed gear retained old motion");
+    g_registry.remove<ecs::TypedEquipmentProjection>(e);
     motionSettings[e].polymorphed = true;
     Check(ecs::MovementSystem::GetMotionMode(e) == MOTION_MODE_GENERAL, "polymorph retained weapon mode");
     motionSettings[e].polymorphed = false;

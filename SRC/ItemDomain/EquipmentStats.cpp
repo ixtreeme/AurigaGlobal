@@ -1,0 +1,102 @@
+#include <item/EquipmentStats.hpp>
+#include <algorithm>
+#include <limits>
+#include <set>
+
+namespace auriga::item
+{
+namespace
+{
+using E=EquipmentStatsError;
+bool Add(std::int64_t& to,std::int64_t value)
+{
+    if((value>0 && to>INT64_MAX-value) || (value<0 && to<INT64_MIN-value))return false;
+    to+=value;return true;
+}
+}
+std::expected<std::int64_t,E> AddEquipmentValue(std::int64_t a,std::int64_t b)
+{if(!Add(a,b))return std::unexpected(E::Overflow);return a;}
+std::expected<std::int64_t,E> ScaleEquipmentValue(std::int64_t value,std::int64_t numerator,std::int64_t denominator)
+{
+    if(denominator<=0 || numerator<0 || value==INT64_MIN)return std::unexpected(E::Overflow);
+    const bool negative=value<0;const auto n=static_cast<std::uint64_t>(negative ? -value : value);
+    const auto factor=static_cast<std::uint64_t>(numerator),div=static_cast<std::uint64_t>(denominator);
+    const auto q=n/div,r=n%div;
+    if((q && factor>std::uint64_t(INT64_MAX)/q) || (r && factor>UINT64_MAX/r))return std::unexpected(E::Overflow);
+    const auto whole=q*factor,part=r*factor;
+    const auto fraction=part/div+(part%div>=div/2+div%2 ? 1 : 0);
+    if(fraction>std::uint64_t(INT64_MAX)-whole)return std::unexpected(E::Overflow);
+    const auto result=static_cast<std::int64_t>(whole+fraction);return negative ? -result : result;
+}
+std::expected<EquipmentStats,E> BuildEquipmentStats(const ItemCatalog& c,ItemOwner owner,std::span<const PersistentItem> inventory)
+{
+    EquipmentStats out;std::set<ItemInstanceId> ids;std::set<unsigned> slots;
+    std::vector<const PersistentItem*> equipped;
+    for(const auto& item:inventory)
+    {
+        if(item.destroyed || !item.placement || item.placement->kind!=ItemStorageKind::Equipment)continue;
+        if(item.owner!=owner || !ValidatePersistentItem(c,item) || !ids.insert(item.id).second)return std::unexpected(E::InvalidItem);
+        if(!slots.insert(item.placement->anchor).second)return std::unexpected(E::Duplicate);
+        equipped.push_back(&item);
+    }
+    std::ranges::sort(equipped,{},[](const auto* item){return item->placement->anchor;});
+    const auto profiles=[&](ItemKey key,std::uint16_t level)->bool {
+        const auto p=c.BonusProfilesAt(key,level);if(!p)return false;
+        for(const auto* profile:{p->base,p->refinement})if(profile)for(const auto& b:profile->Data().entries)
+            if(!FindBonusDefinition(b.bonus) || !Add(out.bonuses[static_cast<unsigned>(b.bonus)],b.valueScaled))return false;
+        return true;
+    };
+    const auto base=[&](ItemKey key,std::uint16_t level)->bool {
+        const auto s=c.RefinedBaseStats(key,level);return s && Add(out.flat.physicalAttackRaw,s->physicalAttackRaw) && Add(out.flat.magicalAttackRaw,s->magicalAttackRaw) &&
+            Add(out.flat.physicalDefenseRaw,s->physicalDefenseRaw) && Add(out.flat.magicalDefenseRaw,s->magicalDefenseRaw) && profiles(key,level);
+    };
+    for(const auto* item:equipped)
+    {
+        const auto* d=c.Find(item->key);if(!d)return std::unexpected(E::InvalidItem);
+        unsigned slot=0;std::uint32_t resistance=0;
+        std::visit([&](const auto& row){if constexpr(requires{row.slot;})slot=static_cast<unsigned>(row.slot);if constexpr(requires{row.resistanceProfile;})resistance=row.resistanceProfile;},d->category);
+        if(!slot || slot>8 || item->placement->anchor!=slot-1)return std::unexpected(E::InvalidSlot);
+        // Active accessory grades need their persisted equipped-time lifecycle
+        // before they can contribute; never grant an indefinitely frozen buff.
+        if(item->accessory && item->accessory->activeGrade)return std::unexpected(E::UnsupportedState);
+        if(const auto* weapon=std::get_if<ItemWeaponRow>(&d->category))
+        {
+            const auto* ammo=c.FindAmmoPolicy(weapon->ammoPolicy);const auto* attack=c.FindAttack(weapon->attackProfile);
+            if(!ammo || ammo->kind!=AmmoKind::None || !attack)return std::unexpected(E::UnsupportedState);
+            out.weapon=weapon->subtype;out.reachMillimeters=attack->reachMillimeters;
+        }
+        const auto* appearance=d->base.appearanceProfile ? c.FindAppearance(*d->base.appearanceProfile) : nullptr;
+        out.equipped.push_back({static_cast<std::uint8_t>(slot),item->id,item->key,item->refinementLevel,appearance ? appearance->modelAsset : std::string{}});
+        if(!base(item->key,item->refinementLevel))return std::unexpected(E::Overflow);
+        for(const auto& entry:item->attributes.slots)if(entry && !Add(out.bonuses[static_cast<unsigned>(entry->bonus)],entry->valueScaled))return std::unexpected(E::Overflow);
+        for(const auto& stone:item->stones)if(stone.state==StoneSocketState::Occupied)
+            if(!stone.stone || !base(*stone.stone,stone.refinementLevel))return std::unexpected(E::InvalidItem);
+        if(resistance)
+        {
+            const auto* r=c.FindResistance(resistance);if(!r)return std::unexpected(E::InvalidItem);const auto values=r->Values();
+            for(std::size_t i=0;i<values.size();++i)if(!Add(out.resistances[i],values[i]))return std::unexpected(E::Overflow);
+        }
+    }
+    if(!Add(out.flat.physicalAttackRaw,out.Bonus(BonusId::PhysicalAttackFlat)) || !Add(out.flat.magicalAttackRaw,out.Bonus(BonusId::MagicalAttackFlat)) ||
+       !Add(out.flat.physicalDefenseRaw,out.Bonus(BonusId::PhysicalDefenseFlat)) || !Add(out.flat.magicalDefenseRaw,out.Bonus(BonusId::MagicalDefenseFlat)))return std::unexpected(E::Overflow);
+    for(const auto [flat,bp]:{std::pair{out.flat.physicalAttackRaw,out.Bonus(BonusId::PhysicalAttackPercent)},std::pair{out.flat.magicalAttackRaw,out.Bonus(BonusId::MagicalAttackPercent)}})
+    {
+        const auto maximum=AddEquipmentValue(std::max<std::int64_t>(0,flat),std::int64_t(INT32_MAX)*1000);
+        if(!maximum || !ScaleEquipmentValue(*maximum,std::max<std::int64_t>(0,10000+bp)))return std::unexpected(E::Overflow);
+    }
+    return out;
+}
+std::vector<std::byte> EncodeEquipmentStats(const EquipmentStats* stats,std::uint32_t vid,std::uint64_t revision,
+    std::uint64_t inventoryRevision,const std::array<std::int64_t,13>& points)
+{
+    const EquipmentStats empty;const auto& s=stats ? *stats : empty;
+    std::vector<std::byte> bytes;const auto put=[&](std::uint64_t value,unsigned size){for(unsigned i=0;i<size;++i)bytes.push_back(std::byte((value>>(8*i))&255));};
+    put(231,1);put(0,4);put(1,1);put(stats ? 0 : 1,1);put(vid,4);put(revision,8);put(inventoryRevision,8);
+    put(s.weapon ? static_cast<unsigned>(*s.weapon) : 0,1);for(auto value:s.flat.Values())put(static_cast<std::uint64_t>(value),8);
+    for(auto value:points)put(static_cast<std::uint64_t>(value),8);
+    put(std::ranges::count_if(s.bonuses,[](auto value){return value!=0;}),1);
+    for(unsigned id=1;id<s.bonuses.size();++id)if(s.bonuses[id]){put(id,4);put(static_cast<std::uint64_t>(s.bonuses[id]),8);}
+    for(auto value:s.resistances)put(static_cast<std::uint64_t>(value),8);
+    for(unsigned i=0;i<4;++i)bytes[1+i]=std::byte((bytes.size()>>(8*i))&255);return bytes;
+}
+}

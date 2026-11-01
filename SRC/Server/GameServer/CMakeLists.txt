@@ -782,7 +782,7 @@ add_executable(QuickslotTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/QuickslotTests.cpp
     ecs/systems/InventorySystem.cpp
 )
-target_link_libraries(QuickslotTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
+target_link_libraries(QuickslotTests PRIVATE SERVER EnTT::EnTT LUA S_Core AurigaItemCatalog)
 add_test(NAME quickslots COMMAND QuickslotTests)
 
 add_executable(SpatialLifecycleTests EXCLUDE_FROM_ALL
@@ -796,7 +796,7 @@ add_executable(SpatialLifecycleTests EXCLUDE_FROM_ALL
     world/event.cpp
     world/event_queue.cpp
 )
-target_link_libraries(SpatialLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
+target_link_libraries(SpatialLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core AurigaItemCatalog)
 if(WIN32)
     target_link_libraries(SpatialLifecycleTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
 endif()
@@ -850,7 +850,7 @@ add_executable(PointCalculationTests EXCLUDE_FROM_ALL
     ecs/systems/PointSystem.cpp
     ecs/systems/StatSystem.cpp
 )
-target_link_libraries(PointCalculationTests PRIVATE SERVER EnTT::EnTT LUA)
+target_link_libraries(PointCalculationTests PRIVATE SERVER EnTT::EnTT LUA AurigaItemCatalog)
 add_test(NAME point_calculation COMMAND PointCalculationTests)
 
 add_executable(CombatStateTests EXCLUDE_FROM_ALL
@@ -859,7 +859,7 @@ add_executable(CombatStateTests EXCLUDE_FROM_ALL
     combat/battle.cpp
 )
 target_compile_definitions(CombatStateTests PRIVATE ENABLE_ANTICHEAT ENABLE_CHECK_BATTLE)
-# AurigaItemCatalog only for the item domain headers of the typed drops (C7b-3).
+# Typed item and equipment helpers use the pure catalog/domain library.
 target_link_libraries(CombatStateTests PRIVATE SERVER EnTT::EnTT LUA AurigaItemCatalog)
 if(WIN32)
     target_link_libraries(CombatStateTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
@@ -919,7 +919,7 @@ add_executable(GmCommandTests EXCLUDE_FROM_ALL
     ecs/PIDRegistry.cpp
     core/utils.cpp
 )
-target_link_libraries(GmCommandTests PRIVATE SERVER EnTT::EnTT LUA S_Core S_Poly)
+target_link_libraries(GmCommandTests PRIVATE SERVER EnTT::EnTT LUA S_Core S_Poly AurigaItemCatalog)
 if(MSVC)
     # Keep actual command bodies while dropping unrelated server entry points.
     target_compile_options(GmCommandTests PRIVATE /Gy)

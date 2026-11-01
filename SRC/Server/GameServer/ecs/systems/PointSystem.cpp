@@ -4,6 +4,7 @@
 #include "ViewSystem.hpp"
 
 #include "PointSystem.hpp"
+#include "../../item/TypedEquipment.hpp"
 #include "PointRouter.hpp"
 #include "QuestSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
@@ -197,7 +198,7 @@ int64_t Get(entt::entity e, uint8_t type)
 	case ecs::PointRouter::PointSource::SRC_NEXT_EXP_COMPUTED:
 		return GetNextExpFromEcs(e);
 	case ecs::PointRouter::PointSource::SRC_INSTANT_ARRAY:
-		return ReadInstantArray(e, mapping.index);
+		return EquipmentPointValue(e, type, ReadInstantArray(e, mapping.index));
 	case ecs::PointRouter::PointSource::SRC_REAL_ARRAY:
 		return ReadRealArray(e, mapping.index);
 	case ecs::PointRouter::PointSource::SRC_LEGACY_ONLY:
@@ -545,6 +546,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 #endif
 )
 {
+    const auto sourceValue = [&] { return HasTypedEquipment(e) && IsEquipmentDerivedPoint(type) ? ReadInstantArray(e,type) : Get(e,type); };
 	if (!IsReadableEntity(e) || type >= POINT_MAX_NUM) return;
 	int64_t val = 0;
 
@@ -871,13 +873,13 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	}
 	break;
 	case POINT_MAX_HP_PCT:
-		Set(e, type, Get(e, type) + amount);
+		Set(e, type, sourceValue() + amount);
 		val = Get(e, type);
 		Change(e, POINT_MAX_HP, 0);
 		break;
 
 	case POINT_MAX_SP_PCT:
-		Set(e, type, Get(e, type) + amount);
+		Set(e, type, sourceValue() + amount);
 		val = Get(e, type);
 		Change(e, POINT_MAX_SP, 0);
 		break;
@@ -970,14 +972,14 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	}
 	break;
 	case POINT_DEF_GRADE:
-		Set(e, type, Get(e, type) + amount);
+		Set(e, type, sourceValue() + amount);
 		val = Get(e, type);
 
 		Change(e, POINT_CLIENT_DEF_GRADE, amount);
 		break;
 
 	case POINT_CLIENT_DEF_GRADE:
-		Set(e, type, Get(e, type) + amount);
+		Set(e, type, sourceValue() + amount);
 		val = Get(e, type);
 		break;
 
@@ -1070,7 +1072,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_DOUBLE_DROP_ITEM:
 	case POINT_IRR_WEAPON_DEFENSE:
 #endif
-		Set(e, type, Get(e, type) + amount);
+		Set(e, type, sourceValue() + amount);
 		val = Get(e, type);
 		break;
 #ifdef ELEMENT_NEW_BONUSES
@@ -1097,7 +1099,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 #ifdef ENABLE_NEW_USE_POTION
 	case POINT_PARTY_DROPEXP:
 #endif
-		Set(e, type, Get(e, type) + amount);
+		Set(e, type, sourceValue() + amount);
 		val = Get(e, type);
 		break;
 
@@ -1126,7 +1128,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_RESIST_ASSASSIN:
 	case POINT_RESIST_SURA:
 	case POINT_RESIST_SHAMAN:
-		Set(e, type, Get(e, type) + amount);
+		Set(e, type, sourceValue() + amount);
 		val = Get(e, type);
 		break;
 	case POINT_MALL_EXPBONUS:
@@ -1144,7 +1146,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 			amount = 100 - Get(e, type);
 		}
 
-		Set(e, type, Get(e, type) + amount);
+		Set(e, type, sourceValue() + amount);
 		val = Get(e, type);
 
 		if (type == POINT_MALL_DEFBONUS)
@@ -1180,13 +1182,13 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 			amount = 254 - Get(e, type);
 		}
 
-		Set(e, type, Get(e, type) + amount);
+		Set(e, type, sourceValue() + amount);
 		val = Get(e, type);
 		break;
 
 	case POINT_IMMUNE_STUN:		// 76
 	{
-		Set(e, type, Get(e, type) + amount);
+		Set(e, type, sourceValue() + amount);
 		val = Get(e, type);
 		uint32_t immuneFlag = ecs::PlayerRuntime::GetImmuneFlag(e);
 		if (val)
@@ -1203,7 +1205,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 
 	case POINT_IMMUNE_SLOW:		// 77
 	{
-		Set(e, type, Get(e, type) + amount);
+		Set(e, type, sourceValue() + amount);
 		val = Get(e, type);
 		uint32_t immuneFlag = ecs::PlayerRuntime::GetImmuneFlag(e);
 		if (val)
@@ -1220,7 +1222,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 
 	case POINT_IMMUNE_FALL:	// 78
 	{
-		Set(e, type, Get(e, type) + amount);
+		Set(e, type, sourceValue() + amount);
 		val = Get(e, type);
 		uint32_t immuneFlag = ecs::PlayerRuntime::GetImmuneFlag(e);
 		if (val)
@@ -1236,25 +1238,25 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	}
 
 	case POINT_ATT_GRADE_BONUS:
-		Set(e, type, Get(e, type) + amount);
+		Set(e, type, sourceValue() + amount);
 		Change(e, POINT_ATT_GRADE, amount);
 		val = Get(e, type);
 		break;
 
 	case POINT_DEF_GRADE_BONUS:
-		Set(e, type, Get(e, type) + amount);
+		Set(e, type, sourceValue() + amount);
 		Change(e, POINT_DEF_GRADE, amount);
 		val = Get(e, type);
 		break;
 
 	case POINT_MAGIC_ATT_GRADE_BONUS:
-		Set(e, type, Get(e, type) + amount);
+		Set(e, type, sourceValue() + amount);
 		Change(e, POINT_MAGIC_ATT_GRADE, amount);
 		val = Get(e, type);
 		break;
 
 	case POINT_MAGIC_DEF_GRADE_BONUS:
-		Set(e, type, Get(e, type) + amount);
+		Set(e, type, sourceValue() + amount);
 		Change(e, POINT_MAGIC_DEF_GRADE, amount);
 		val = Get(e, type);
 		break;
@@ -1266,13 +1268,13 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		break;
 
 	case POINT_POLYMORPH:
-		Set(e, type, Get(e, type) + amount);
+		Set(e, type, sourceValue() + amount);
 		val = Get(e, type);
 		AffectSystem::SetPolymorph(e, val);
 		break;
 
 	case POINT_MOUNT:
-		Set(e, type, Get(e, type) + amount);
+		Set(e, type, sourceValue() + amount);
 		val = Get(e, type);
 		MountSystem::SetMountVnum(e, val);
 		break;
@@ -1294,6 +1296,12 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 
 	switch (type)
 	{
+    case POINT_DEF_GRADE_BONUS:
+    case POINT_PARTY_DEFENDER_BONUS:
+        // The existing magic-defense formula also uses half this armor bonus.
+        // Late affect loading must match a later equipment recompute.
+        if (HasTypedEquipment(e)) ComputeBattlePoints(e);
+        break;
 	case POINT_LEVEL:
 	case POINT_ST:
 	case POINT_DX:
@@ -1329,6 +1337,8 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		else
 			ecs::ViewSystem::PacketView(e, &pack, sizeof(pack));
 	}
+    if (HasTypedEquipment(e) && (IsEquipmentDerivedPoint(type) || type==POINT_MAX_HP || type==POINT_MAX_SP))
+        if (const auto* state=g_registry.try_get<ecs::CharacterStatsComponent>(e); state && !state->recomputing) SendTypedEquipment(e);
 }
 
 int GetPolymorphPoint(entt::entity e, uint8_t type)
@@ -1390,8 +1400,8 @@ void ComputeBattlePoints(entt::entity e)
 		Set(e, POINT_ATT_GRADE, 0);
 		Set(e, POINT_DEF_GRADE, 0);
 		Set(e, POINT_CLIENT_DEF_GRADE, 0);
-		Set(e, POINT_MAGIC_ATT_GRADE, Get(e, POINT_ATT_GRADE));
-		Set(e, POINT_MAGIC_DEF_GRADE, Get(e, POINT_DEF_GRADE));
+		Set(e, POINT_MAGIC_ATT_GRADE, HasTypedEquipment(e) ? 0 : Get(e, POINT_ATT_GRADE));
+		Set(e, POINT_MAGIC_DEF_GRADE, HasTypedEquipment(e) ? 0 : Get(e, POINT_DEF_GRADE));
 
 		//
 		//
@@ -1449,7 +1459,7 @@ void ComputeBattlePoints(entt::entity e)
 
 		for (int i = 0; i < WEAR_MAX_NUM; ++i)
 		{
-			const entt::entity worn = ItemSystem::GetWearItem(e, i);
+			const entt::entity worn = CombatWearItem(e, i);
 			if (ItemSystem::GetItemType(worn) == ITEM_ARMOR)
 			{
 #ifdef ENABLE_PENDANT
@@ -1490,8 +1500,8 @@ void ComputeBattlePoints(entt::entity e)
 			iClientDef += (iClientDef * iPct) / 100;
 		}
 
-		Change(e, POINT_DEF_GRADE, iServerDef - Get(e, POINT_DEF_GRADE));
-		Change(e, POINT_CLIENT_DEF_GRADE, iClientDef - Get(e, POINT_CLIENT_DEF_GRADE));
+		Change(e, POINT_DEF_GRADE, iServerDef - (HasTypedEquipment(e) ? ReadInstantArray(e, POINT_DEF_GRADE) : Get(e, POINT_DEF_GRADE)));
+		Change(e, POINT_CLIENT_DEF_GRADE, iClientDef - (HasTypedEquipment(e) ? ReadInstantArray(e, POINT_CLIENT_DEF_GRADE) : Get(e, POINT_CLIENT_DEF_GRADE)));
 
 		Change(e, POINT_MAGIC_ATT_GRADE, GetLevel(e) * 2 + Get(e, POINT_IQ) * 2 + Get(e, POINT_MAGIC_ATT_GRADE_BONUS));
 		Change(e, POINT_MAGIC_DEF_GRADE, GetLevel(e) + (Get(e, POINT_IQ) * 3 + Get(e, POINT_HT)) / 3 + iArmor / 2 + Get(e, POINT_MAGIC_DEF_GRADE_BONUS));
@@ -1750,7 +1760,7 @@ int GetLimitPoint(entt::entity e, uint8_t type)
 		return 0;
 	}
 
-	int64_t val = ecs::PointSystem::ReadInstantArray(e, type);
+	int64_t val = EquipmentPointValue(e, type, ecs::PointSystem::ReadInstantArray(e, type));
 	int max_val = INT_MAX;
 	int limit = INT_MAX;
 	int min_limit = -INT_MAX;

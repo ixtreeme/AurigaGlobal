@@ -3,6 +3,7 @@
 #include "ItemCatalogRuntime.hpp"
 #include "ItemStore.hpp"
 #include "TypedDrops.hpp"
+#include "TypedEquipment.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../network/desc.h"
@@ -97,6 +98,7 @@ void TickTypedItemRefreshes()
 
 void SendTypedInventory(entt::entity character)
 {
+	RefreshTypedEquipment(character);
 	if (!g_registry.valid(character))
 		return;
 	const auto* typed = g_registry.try_get<ecs::TypedItems>(character);
@@ -134,4 +136,5 @@ void SendTypedInventory(entt::entity character)
 		desc->LargePacket(bytes->data(), size);
 	else
 		desc->Packet(bytes->data(), size);
+	SendTypedEquipment(character);
 }

@@ -71,6 +71,7 @@
 #include "../ecs/components/inventory_components.hpp"
 #include "../item/ItemStore.hpp"
 #include "../item/TypedInventorySync.hpp"
+#include "../item/TypedEquipment.hpp"
 #ifdef ENABLE_HWID
 #include "hwidmanager.h"
 #endif
@@ -528,8 +529,8 @@ void CInputDB::ChangeName(LPDESC d, const char * data)
 
 //#define ENABLE_GOHOME_IF_MAP_NOT_EXIST
 // Typed items (item system F4, IC-034): claim a new session and load the
-// character's typed state on the item store thread. Read-only shadow while the
-// legacy item runtime is authoritative; characters never provisioned have none.
+// character's typed state on the item store thread. A provisioned character
+// exclusively uses typed equipment. Never-provisioned characters retain legacy state.
 static void LoadTypedItems(entt::entity character)
 {
 	namespace items = auriga::item::runtime;
@@ -539,6 +540,7 @@ static void LoadTypedItems(entt::entity character)
 	const uint64_t token = ++s_lastToken;
 	const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(character);
 	g_registry.emplace_or_replace<ecs::TypedItemLogin>(character, token);
+    g_registry.emplace_or_replace<ecs::TypedEquipmentProjection>(character); // no combat until owner mode is known
 	const bool queued = items::RequestLoginLoad(pid, [pid, token](items::LoginLoad result) {
 		const entt::entity entity = CHARACTER_MANAGER::instance().FindEntityByPID(pid);
 		const auto* login = entity != entt::null && g_registry.valid(entity) ? g_registry.try_get<ecs::TypedItemLogin>(entity) : nullptr;
@@ -551,12 +553,22 @@ static void LoadTypedItems(entt::entity character)
 			SendTypedInventory(entity); // only once the client is in game
 		}
 		else if (result.loaded.error() == auriga::item::ItemPersistenceError::MissingOwner)
-			LOG_TRACE("TypedItems: pid {} has no typed items yet", pid);
-		else
-			LOG_ERROR("TypedItems: pid {} load failed (error {})", pid, static_cast<int>(result.loaded.error()));
+        {
+            g_registry.remove<ecs::TypedEquipmentProjection>(entity);
+            ecs::PointSystem::Compute(entity);
+            LOG_TRACE("TypedItems: pid {} has no typed items yet", pid);
+        }
+        else
+        {
+            LOG_ERROR("TypedItems: pid {} load failed (error {})", pid, static_cast<int>(result.loaded.error()));
+            if (auto* desc = ecs::PlayerRuntime::GetDesc(entity)) desc->SetPhase(PHASE_CLOSE);
+        }
 	});
 	if (!queued)
-		LOG_ERROR("TypedItems: pid {} load could not be queued", pid);
+    {
+        LOG_ERROR("TypedItems: pid {} load could not be queued", pid);
+        if (auto* desc = ecs::PlayerRuntime::GetDesc(character)) desc->SetPhase(PHASE_CLOSE);
+    }
 }
 
 void CInputDB::PlayerLoad(LPDESC d, const char * data)

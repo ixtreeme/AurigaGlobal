@@ -15,6 +15,7 @@
 #include "NetworkSyncSystem.hpp"
 
 #include "CombatSystem.hpp"
+#include "../../item/TypedEquipment.hpp"
 #include "HerbalismRules.hpp"
 #include "SessionSystem.hpp"
 #include "SkillSystem.hpp"
@@ -1682,6 +1683,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 	if (test_server)
 		ecs::ChatSystem::Send(toEntity, CHAT_TYPE_INFO, "exp+minGNE+adjust(%d)", iExp);
 	// set
+	iExp=EquipmentLegacyInt(std::max<int64_t>(0,EquipmentScale(iExp,10000+TypedEquipmentBonus(toEntity,auriga::item::BonusId::ExperiencePercent))));
 	ecs::PointSystem::Change(toEntity, POINT_EXP, iExp, true);
 	CombatSystem::CreateFly(fromEntity, FLY_EXP, toEntity);
 	// marriage
@@ -1813,6 +1815,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 	}
 #endif
 
+	iExp=EquipmentLegacyInt(std::max<int64_t>(0,EquipmentScale(iExp,10000+TypedEquipmentBonus(toEntity,auriga::item::BonusId::ExperiencePercent))));
 	ecs::PointSystem::Change(toEntity, POINT_EXP, iExp, true);
 	CombatSystem::CreateFly(fromEntity, FLY_EXP, toEntity);
 
@@ -2702,7 +2705,7 @@ bool Attack(entt::entity attacker, entt::entity victim, uint8_t attackType)
     // Pruning shears are gathering tools, even though the equipment protocol
     // retains the old SWORD subtype. Never trust a client-side attack gate.
     if (ecs::PlayerRuntime::IsPC(attacker)) {
-        const auto tool=ItemSystem::GetWearItem(attacker,WEAR_WEAPON);
+        const auto tool=CombatWearItem(attacker,WEAR_WEAPON);
         if (ItemSystem::IsValidItem(tool) && HerbalismRules::IsShears(ItemSystem::GetItemVnum(tool)))
             return false;
     }
@@ -3126,7 +3129,7 @@ void ItemDropPenalty(entt::entity e, entt::entity killer)
 		std::vector<uint8_t> vec_bSlots;
 
 		for (i = 0; i < WEAR_MAX_NUM; ++i)
-			if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(ownerEntity, i)))
+			if (ItemSystem::IsValidItem(CombatWearItem(ownerEntity, i)))
 				vec_bSlots.push_back(i);
 
 		if (!vec_bSlots.empty())
@@ -3147,7 +3150,7 @@ void ItemDropPenalty(entt::entity e, entt::entity killer)
 			for (i = 0; i < iQty; ++i)
 			{
 				const entt::entity itemEntity =
-					ItemSystem::GetWearItem(ownerEntity, vec_bSlots[i]);
+					CombatWearItem(ownerEntity, vec_bSlots[i]);
 				if (IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_PKDROP))
 					continue;
 
@@ -3160,7 +3163,7 @@ void ItemDropPenalty(entt::entity e, entt::entity killer)
 
 	if (bDropAntiDropUniqueItem)
 	{
-		const entt::entity unique1 = ItemSystem::GetWearItem(ownerEntity, WEAR_UNIQUE1);
+		const entt::entity unique1 = CombatWearItem(ownerEntity, WEAR_UNIQUE1);
 		if (ItemSystem::IsValidItem(unique1) &&
 			ItemSystem::GetItemVnum(unique1) == UNIQUE_ITEM_SKIP_ITEM_DROP_PENALTY)
 		{
@@ -3169,7 +3172,7 @@ void ItemDropPenalty(entt::entity e, entt::entity killer)
 				vec_item.emplace_back(unique1, EQUIPMENT);
 		}
 
-		const entt::entity unique2 = ItemSystem::GetWearItem(ownerEntity, WEAR_UNIQUE2);
+		const entt::entity unique2 = CombatWearItem(ownerEntity, WEAR_UNIQUE2);
 		if (ItemSystem::IsValidItem(unique2) &&
 			ItemSystem::GetItemVnum(unique2) == UNIQUE_ITEM_SKIP_ITEM_DROP_PENALTY)
 		{
@@ -4655,6 +4658,8 @@ namespace CombatSystem {
 // was a read on the victim; that is what the entity in each call is.
 bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t damageType)
 {
+    if (HasTypedEquipment(attacker) && !TypedEquipmentView(attacker)) return false;
+
     if(!SpyQuest::AllowCombat(attacker,victim))return false;
     if(!CaravanQuest::AllowCombat(attacker,victim))return false;
     if(!EclipseRaid::AllowCombat(attacker,victim))return false;
@@ -4685,8 +4690,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	if (attackerIsCharacter)
 	{
 		const entt::entity attackerEntity = attacker;
-		const bool hasWeapon = ItemSystem::IsValidItem(
-			ItemSystem::GetWearItem(attackerEntity, WEAR_WEAPON));
+		const bool hasWeapon = HasCombatWeapon(attackerEntity);
 		if (AffectSystem::IsAffectFlag(attackerEntity, AFF_GWIGUM) && !hasWeapon)
 		{
 			AffectSystem::RemoveAffect(attackerEntity, SKILL_GWIGEOM);
@@ -4715,6 +4719,11 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	}
 #endif
 
+    if (type==DAMAGE_TYPE_MAGIC || type==DAMAGE_TYPE_FIRE || type==DAMAGE_TYPE_ICE || type==DAMAGE_TYPE_ELEC)
+    {
+        const auto* equipment=TypedEquipmentView(victim);
+        if(equipment)dam=std::max<int64_t>(0,dam-EquipmentEffectiveDefense(attacker,EquipmentScale(equipment->flat.magicalDefenseRaw,1,1000),true));
+    }
 	if (DAMAGE_TYPE_MAGIC == type)
 	{
 		dam = (int)((float)dam * (100 + (ecs::PointSystem::Get(attacker, POINT_MAGIC_ATT_BONUS_PER) + ecs::PointSystem::Get(attacker, POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100.f + 0.5f);
@@ -4736,10 +4745,10 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 #ifdef DISABLE_DAMAGE_TYPE_NORMAL_RANGE_EVENT_MAP
 
 
-		const entt::entity weapon = ItemSystem::GetWearItem(
+		const entt::entity weapon = CombatWearItem(
 			attacker, WEAR_WEAPON);
 		const TItemTable* weaponProto = ItemSystem::GetItemProto(weapon);
-		if (weaponProto && weaponProto->bSubType == WEAPON_BOW)
+		if (CombatWeaponSubtype(attacker) == WEAPON_BOW)
 		{
 
 			CombatSystem::SendDamagePacket(victim, attacker, 0, DAMAGE_BLOCK);
@@ -4815,7 +4824,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 				iCriticalPct += ecs::PointSystem::Get(attacker, POINT_PVM_CRITICAL_PCT);
 			}
 
-			if (iCriticalPct)
+			if (iCriticalPct || TypedEquipmentBonus(attacker, auriga::item::BonusId::CritChance) || TypedEquipmentBonus(victim, auriga::item::BonusId::CritResistance))
 			{
 				if (iCriticalPct >= 10)
 					iCriticalPct = 5 + (iCriticalPct - 10) / 4;
@@ -4824,7 +4833,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 
 				iCriticalPct -= ecs::PointSystem::Get(victim, POINT_RESIST_CRITICAL);
 
-				if (number(1, 100) <= iCriticalPct)
+				if ((HasTypedEquipment(attacker) || HasTypedEquipment(victim)) ? number(0,9999) < std::clamp<int64_t>(int64_t(iCriticalPct)*100 + TypedEquipmentBonus(attacker,auriga::item::BonusId::CritChance) - TypedEquipmentBonus(victim,auriga::item::BonusId::CritResistance),0,10000) : number(1,100) <= iCriticalPct)
 				{
 					IsCritical = true;
 					dam *= 2;
@@ -4971,11 +4980,11 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 				iCriticalPct += ecs::PointSystem::Get(attacker, POINT_PVM_CRITICAL_PCT);
 			}
 
-			if (iCriticalPct)
+			if (iCriticalPct || TypedEquipmentBonus(attacker, auriga::item::BonusId::CritChance) || TypedEquipmentBonus(victim, auriga::item::BonusId::CritResistance))
 			{
 				iCriticalPct -= ecs::PointSystem::Get(victim, POINT_RESIST_CRITICAL);
 
-				if (number(1, 100) <= iCriticalPct)
+				if ((HasTypedEquipment(attacker) || HasTypedEquipment(victim)) ? number(0,9999) < std::clamp<int64_t>(int64_t(iCriticalPct)*100 + TypedEquipmentBonus(attacker,auriga::item::BonusId::CritChance) - TypedEquipmentBonus(victim,auriga::item::BonusId::CritResistance),0,10000) : number(1,100) <= iCriticalPct)
 				{
 					IsCritical = true;
 					dam *= 2;
@@ -5260,6 +5269,8 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 
 	//
 	//
+    dam=EquipmentDamageModifiers(attacker,victim,dam,damageType,
+        attackerIsCharacter && ecs::PlayerRuntime::IsPC(attacker) && ecs::PlayerRuntime::IsPC(victim),IsCritical);
 	if (AffectSystem::IsAffectFlag(victim, AFF_MANASHIELD))
 	{
 		int iDamageSPPart = dam / 3;
@@ -5994,7 +6005,10 @@ namespace CombatSystem {
 // The arrow and the bow a shot will spend, and the spending of them.
 int GetArrowAndBow(entt::entity e, entt::entity* ppkBow, entt::entity* ppkArrow, int iArrowCount)
 {
-	const entt::entity bow = ItemSystem::GetWearItem(e, WEAR_WEAPON);
+    if (HasTypedEquipment(e))
+    {if(ppkBow)*ppkBow=entt::null;if(ppkArrow)*ppkArrow=entt::null;return CombatWeaponSubtype(e)==WEAPON_BOW ? iArrowCount : 0;}
+
+	const entt::entity bow = CombatWearItem(e, WEAR_WEAPON);
 	if (!ItemSystem::IsValidItem(bow))
 	{
 		return 0;
@@ -6006,7 +6020,7 @@ int GetArrowAndBow(entt::entity e, entt::entity* ppkBow, entt::entity* ppkArrow,
 		return 0;
 	}
 
-	const entt::entity arrow = ItemSystem::GetWearItem(e, WEAR_ARROW);
+	const entt::entity arrow = CombatWearItem(e, WEAR_ARROW);
 	if (!ItemSystem::IsValidItem(arrow) || ItemSystem::GetItemType(arrow) != ITEM_WEAPON)
 	{
 		return 0;
@@ -6028,6 +6042,8 @@ int GetArrowAndBow(entt::entity e, entt::entity* ppkBow, entt::entity* ppkArrow,
 
 void UseArrow(entt::entity e, entt::entity pkArrow, uint32_t dwArrowCount)
 {
+    if (HasTypedEquipment(e)) return;
+
 	int iCount = ItemSystem::GetItemCount(pkArrow);
 	uint32_t dwVnum = ItemSystem::GetItemVnum(pkArrow);
 #if !defined(__INFINITE_ARROW__)
@@ -6797,11 +6813,9 @@ static int64_t CalcReferenceBasicHitDamage(entt::entity attacker, entt::entity v
 
 	int64_t dam = 0;
 
-	const entt::entity weapon = ItemSystem::GetWearItem(
+	const entt::entity weapon = CombatWearItem(
 		attacker, WEAR_WEAPON);
-	if (ItemSystem::IsValidItem(weapon) &&
-		ItemSystem::GetItemType(weapon) == ITEM_WEAPON &&
-		ItemSystem::GetItemSubType(weapon) == WEAPON_BOW)
+	if (CombatWeaponSubtype(attacker) == WEAPON_BOW)
 		dam = CalcReferenceBowHitDamage(attacker, victim);
 	else
 		dam = CalcReferenceNormalHitDamage(attacker, victim);
@@ -6825,13 +6839,13 @@ static int64_t CalcReferenceNormalHitDamage(entt::entity attacker, entt::entity 
 	if (dam <= 0)
 		return 0;
 
-	const entt::entity weapon = ItemSystem::GetWearItem(
+	const entt::entity weapon = CombatWearItem(
 		attacker, WEAR_WEAPON);
-	if (ItemSystem::IsValidItem(weapon))
+	if (HasCombatWeapon(attacker))
 	{
 		int32_t lValue = 0;
 
-		switch (ItemSystem::GetItemSubType(weapon))
+		switch (CombatWeaponSubtype(attacker))
 		{
 		case WEAPON_SWORD:
 			lValue = ecs::PointSystem::Get(victim, POINT_RESIST_SWORD);
@@ -7332,7 +7346,7 @@ void SetTarget(entt::entity e, entt::entity target)
 	if (target != entt::null && g_registry.valid(target)) {
 		const entt::entity chrTarget = target;
 		if (ecs::PlayerRuntime::IsPC(chrTarget)) {
-			const entt::entity item = ItemSystem::GetWearItem(
+			const entt::entity item = CombatWearItem(
 				chrTarget, WEAR_PENDANT);
 			if (ItemSystem::IsValidItem(item)) {
 				uint32_t vnum = ItemSystem::GetItemVnum(item);

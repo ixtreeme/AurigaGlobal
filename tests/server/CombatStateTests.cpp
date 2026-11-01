@@ -134,6 +134,7 @@ struct BattleFixture {
     bool riding {false};
 };
 struct WeaponFixture {
+    TItemTable proto {};
     uint8_t type {ITEM_WEAPON}, subtype {WEAPON_SWORD};
     std::array<int, 6> values {0, 0, 0, 10, 10, 2};
 };
@@ -550,7 +551,12 @@ unsigned char ItemSystem::GetItemSubType(entt::entity e) { Check(IsValidItem(e),
 unsigned int ItemSystem::GetItemCount(entt::entity) { UnexpectedService(__func__); }
 char const * ItemSystem::GetItemName(entt::entity) { UnexpectedService(__func__); }
 unsigned int ItemSystem::GetItemAntiFlag(entt::entity) { UnexpectedService(__func__); }
-SItemTable const * ItemSystem::GetItemProto(entt::entity) { UnexpectedService(__func__); }
+SItemTable const * ItemSystem::GetItemProto(entt::entity e) {
+    Check(IsValidItem(e), "invalid item prototype read");
+    auto& weapon=g_registry.get<WeaponFixture>(e);
+    weapon.proto.bType=weapon.type;weapon.proto.bSubType=weapon.subtype;
+    return &weapon.proto;
+}
 bool ItemSystem::SetItemCountEcs(entt::entity,unsigned int) { UnexpectedService(__func__); }
 bool ItemSystem::AddItemCountEcs(entt::entity,int) { UnexpectedService(__func__); }
 bool ItemSystem::DestroyItemEntityEcs(entt::entity,char const *) { UnexpectedService(__func__); }

@@ -3,6 +3,7 @@
 #include "TypedShop.hpp"
 #include "TypedTrade.hpp"
 #include "TypedCraft.hpp"
+#include "TypedEquipment.hpp"
 #include "ItemCatalogRuntime.hpp"
 #include "TypedItemOps.hpp"
 #include "TypedDrops.hpp"
@@ -247,6 +248,7 @@ bool PickupTypedLoot(entt::entity character, std::uint32_t vid)
 void TickTypedLoot()
 {
 	TickTypedItemRefreshes();
+	TickTypedEquipment();
 	TickTypedShops();
 	TickTypedTrades();
 	TickTypedCrafting();

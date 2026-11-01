@@ -10,6 +10,7 @@
 
 #include "PlayerRuntimeSystem.hpp"
 #include "MovementSystem.hpp"
+#include "../../item/TypedEquipment.hpp"
 #include "AISystem.hpp"
 #include "CombatSystem.hpp"
 #include "../components/ai_components.hpp"
@@ -1643,10 +1644,8 @@ namespace ecs::MovementSystem {
 uint32_t GetMotionMode(entt::entity e)
 {
     if (!IsValid(e) || AffectSystem::IsPolymorphed(e)) return MOTION_MODE_GENERAL;
-    const auto weapon = ItemSystem::GetWearItem(e, WEAR_WEAPON);
-    const auto* proto = ItemSystem::IsValidItem(weapon) ? ItemSystem::GetItemProto(weapon) : nullptr;
-    if (!proto) return MOTION_MODE_GENERAL;
-    switch (proto->bSubType) {
+    const int subtype=CombatWeaponSubtype(e);
+    switch (subtype) {
     case WEAPON_SWORD: return MOTION_MODE_ONEHAND_SWORD;
     case WEAPON_TWO_HANDED: return MOTION_MODE_TWOHAND_SWORD;
     case WEAPON_DAGGER: return MOTION_MODE_DUALHAND_SWORD;

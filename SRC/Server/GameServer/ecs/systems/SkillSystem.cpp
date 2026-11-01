@@ -8,6 +8,7 @@
 #include <sstream>
 
 #include "SkillSystem.hpp"
+#include "../../item/TypedEquipment.hpp"
 #include "PointSystem.hpp"
 #include "CombatSystem.hpp"
 #include "SocialSystem.hpp"
@@ -1987,6 +1988,14 @@ EVENTFUNC(ChainLightningEvent)
 
 void SetPolyVarForAttack(entt::entity character, CSkillProto * pkSk, entt::entity pkWeapon)
 {
+    if (HasTypedEquipment(character))
+    {
+        const auto* stats=TypedEquipmentView(character);
+        pkSk->SetPointVar("wep", stats ? EquipmentScale(stats->flat.physicalAttackRaw,1,1000) : 0);
+        const auto magic=stats ? EquipmentScale(stats->flat.magicalAttackRaw,1,1000) : 0;
+        pkSk->SetPointVar("mtk",magic);pkSk->SetPointVar("mwep",magic);return;
+    }
+
 	if (ecs::PlayerRuntime::IsPC(character))
 	{
 		if (ItemSystem::IsValidItem(pkWeapon) && ItemSystem::GetItemType(pkWeapon) == ITEM_WEAPON)
@@ -2156,7 +2165,7 @@ struct FuncSplashDamage
 #endif
 		;
 
-		const entt::entity equippedWeapon = ItemSystem::GetWearItem(
+		const entt::entity equippedWeapon = CombatWearItem(
 			m_character, WEAR_WEAPON);
 		if (m_pkSk->dwVnum == SKILL_AMSEOP)
 		{
@@ -2170,8 +2179,7 @@ struct FuncSplashDamage
 				if (bUnderEunhyung)
 					adjust += 0.5f;
 
-				if (ItemSystem::IsValidItem(equippedWeapon) &&
-					ItemSystem::GetItemSubType(equippedWeapon) == WEAPON_DAGGER)
+				if (CombatWeaponSubtype(m_character) == WEAPON_DAGGER)
 				{
 					adjust += 0.5f;
 				}
@@ -2183,8 +2191,7 @@ struct FuncSplashDamage
 				if (bUnderEunhyung)
 					adjust += 0.5f;
 
-				if (ItemSystem::IsValidItem(equippedWeapon) &&
-					ItemSystem::GetItemSubType(equippedWeapon) == WEAPON_DAGGER)
+				if (CombatWeaponSubtype(m_character) == WEAPON_DAGGER)
 					adjust += 0.5f;
 			}
 
@@ -2194,8 +2201,7 @@ struct FuncSplashDamage
 		{
 			float adjust = 1.0;
 
-			if (ItemSystem::IsValidItem(equippedWeapon) &&
-				ItemSystem::GetItemSubType(equippedWeapon) == WEAPON_DAGGER)
+			if (CombatWeaponSubtype(m_character) == WEAPON_DAGGER)
 			{
 				adjust = 1.35f;
 			}
@@ -2227,8 +2233,8 @@ struct FuncSplashDamage
 				{
 					dt = DAMAGE_TYPE_MELEE;
 
-					if (ItemSystem::IsValidItem(equippedWeapon)) {
-						switch (ItemSystem::GetItemSubType(equippedWeapon))
+					if (HasCombatWeapon(m_character)) {
+						switch (CombatWeaponSubtype(m_character))
 						{
 							case WEAPON_SWORD:
 							{
@@ -2314,7 +2320,7 @@ struct FuncSplashDamage
 					}
 
 					if (!bIgnoreDefense) {
-						iDam -= ecs::PointSystem::Get(victimEntity, POINT_DEF_GRADE);
+						iDam -= EquipmentEffectiveDefense(m_character, ecs::PointSystem::Get(victimEntity, POINT_DEF_GRADE));
 					}
 
 					break;
@@ -2906,7 +2912,7 @@ int SkillSystem::ComputeSkillAtPosition(entt::entity e, uint32_t dwVnum, const P
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
 		ecs::MovementSystem::OnMove(e, true);
 
-	entt::entity pkWeapon = ItemSystem::GetWearItem(character, WEAR_WEAPON);
+	entt::entity pkWeapon = CombatWearItem(character, WEAR_WEAPON);
 
 	SetPolyVarForAttack(character, pkSk, pkWeapon);
 
@@ -3209,7 +3215,7 @@ int SkillSystem::ComputeGyeongGongSkill(entt::entity e, uint32_t dwVnum, entt::e
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
 		ecs::MovementSystem::OnMove(e, true);
 
-	entt::entity pkWeapon = ItemSystem::GetWearItem(character, WEAR_WEAPON);
+	entt::entity pkWeapon = CombatWearItem(character, WEAR_WEAPON);
 
 	SetPolyVarForAttack(character, pkSk, pkWeapon);
 	int iAmount = (int) pkSk->kPointPoly2.Eval();
@@ -3370,7 +3376,7 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
 		ecs::MovementSystem::OnMove(e, true);
 
-	entt::entity pkWeapon = ItemSystem::GetWearItem(character, WEAR_WEAPON);
+	entt::entity pkWeapon = CombatWearItem(character, WEAR_WEAPON);
 
 	SetPolyVarForAttack(character, pkSk, pkWeapon);
 
@@ -3694,7 +3700,7 @@ bool SkillSystem::UseSkill(entt::entity e, uint32_t dwVnum, entt::entity victim,
 	entt::entity victimEntity = victim;
 #ifdef ENABLE_BUG_FIXES
 	if ((dwVnum == SKILL_GEOMKYUNG || dwVnum == SKILL_GWIGEOM) &&
-		!ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_WEAPON)))
+		!HasCombatWeapon(character))
 		return false;
 #endif
 
@@ -3787,7 +3793,7 @@ bool SkillSystem::UseSkill(entt::entity e, uint32_t dwVnum, entt::entity victim,
 	// END_OF_NO_GRANDMASTER
 
 	// MINING
-	const entt::entity equippedWeapon = ItemSystem::GetWearItem(character, WEAR_WEAPON);
+	const entt::entity equippedWeapon = CombatWearItem(character, WEAR_WEAPON);
 	if (ItemSystem::IsValidItem(equippedWeapon) &&
 		(ItemSystem::GetItemType(equippedWeapon) == ITEM_ROD ||
 		 ItemSystem::GetItemType(equippedWeapon) == ITEM_PICK))

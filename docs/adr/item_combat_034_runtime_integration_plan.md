@@ -1,7 +1,7 @@
 # ADR IC-034 — F4 szerverbekötés: ütemterv és 1. szelet (katalógus induláskor)
 
 2026-10-29. Fázis: F4 ([IC-012](item_combat_012_item_runtime_first.md)).
-Állapot (2026-11-01): **C1–C10 implementált; az elkészült futásidejű
+Állapot (2026-11-01): **C1–C11 implementált; az elkészült futásidejű
 műveletek Unity 6.3-ból kezelhetők, helyi szerverrel ellenőrizve**.
 
 ## Közös szerver–Unity munkamenet (felhasználói döntés, 2026-11-01)
@@ -23,8 +23,8 @@ az összevonás részletei és ellenőrzései a
 |---|---|---|---|
 | A. Speciális tárgyműveletek | Páros (kapcsolt) bónuszok; jelmez-, stóla- és rúnabónuszok; fejlesztési segédanyagok | F2 maradéka | nyitott ([IC-031](item_combat_031_instance_attributes.md) határa) |
 | B. Tartós tárgymentés | Teljes mentés, visszatöltés és tranzakciókezelés a futó szerverben; a még nem támogatott kategóriák példányállapota | F3 maradéka | a modell, az író és a próbapad kész ([IC-032](item_combat_032_item_persistence.md), [IC-033](item_combat_033_item_test_bench.md)) |
-| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C10 kész**; a quest/Mission és további használatok még nyitottak |
-| D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | **C1–C10 kliensútjai kész**, részletek lent |
+| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C11 kész**; a quest/Mission és további használatok még nyitottak |
+| D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | **C1–C11 kliensútjai kész**, részletek lent |
 | E. Teljes adatkonverzió | Régi protók, példányok, receptek, tartalmi hivatkozások | F6 | az eszközök megvannak; a családtérkép jóváhagyásra vár |
 | F. Végső ellenőrzés | Helyi játékpróba, újrabelépés utáni adatmegőrzés, gazdasági műveletek, FreeBSD-build | F7 | nyitott |
 
@@ -516,4 +516,16 @@ mutatja: **NPC kijelölése → I → Készítés**.
 
 Részletek: [IC-038](item_combat_038_crafting.md),
 [ellenőrzések és helyi használat](../reports/item_combat/2026-11-01_crafting_runtime.md).
+A felszerelés harci/stat bekötése a C11 szeletben elkészült.
+
+## C11 — Felszerelésstat és jelenlegi harci bemenet (2026-11-01)
+
+Az új felszerelés alapértékei, finomítása, bónuszai és foglalt kövei a
+karakter tényleges statjait adják. A kiépített karakter üres felszerelése
+sem tér vissza a régi tárgybónuszokhoz. A helyi Unity fegyvertípusa,
+képességfeltétele és mozgásmódja typed forrású; **I → Harci statok** mutatja
+a szerver aktuális értékeit. A meglévő harci képletek maradnak (IC-012).
+
+Részletek és határok: [IC-039](item_combat_039_equipment_stats.md),
+[natív, Unity és helyi élő ellenőrzések](../reports/item_combat/2026-11-01_equipment_stats_runtime.md).
 A következő nyitott út a quest/Mission tárgyműveleteinek közös bekötése.

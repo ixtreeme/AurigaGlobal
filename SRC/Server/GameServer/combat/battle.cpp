@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../item/TypedEquipment.hpp"
 #include "../story/SpyQuestSystem.hpp"
 #include "../story/CaravanQuestSystem.hpp"
 #include "../raid/EclipseRaidSystem.hpp"
@@ -289,6 +290,7 @@ int CalcMagicDamage(entt::entity attacker, entt::entity victim)
 {
     if (!IsBattlePair(attacker, victim))
         return 0;
+	if (HasTypedEquipment(attacker)) return CalcMagicDamageWithValue(EquipmentLegacyInt(ecs::PointSystem::Get(attacker, POINT_MAGIC_ATT_GRADE)), attacker, victim);
 	int iDam = 0;
 
     // Legacy IsNPC meant every non-PC, including TagMonster and TagStone.
@@ -331,88 +333,90 @@ float CalcAttackRating(entt::entity attacker, entt::entity victim, bool bIgnoreT
 	return fAR - fER;
 }
 
-int CalcAttBonus(entt::entity attacker, entt::entity victim, int iAtk)
+int CalcAttBonus(entt::entity attacker, entt::entity victim, int input)
 {
+    int64_t iAtk = input;
+    const auto bound=[](long double value) { return static_cast<int64_t>(std::clamp<long double>(value,INT_MIN,INT_MAX)); };
     if (!IsBattlePair(attacker, victim))
         return 0;
 	// PvP???? ????????????
 	if (!ecs::PlayerRuntime::IsPC(victim))
-		iAtk += ecs::SocialSystem::GetMarriageBonus(attacker, UNIQUE_ITEM_MARRIAGE_ATTACK_BONUS);
+		iAtk = bound(static_cast<long double>(iAtk) + (ecs::SocialSystem::GetMarriageBonus(attacker, UNIQUE_ITEM_MARRIAGE_ATTACK_BONUS)));
 
 	// PvP???? ????????????
 	if (!ecs::PlayerRuntime::IsPC(attacker))
 	{
 		int iReduceDamagePct = ecs::SocialSystem::GetMarriageBonus(victim, UNIQUE_ITEM_MARRIAGE_TRANSFER_DAMAGE);
-		iAtk = iAtk * (100 + iReduceDamagePct) / 100;
+		iAtk = bound(static_cast<long double>(iAtk) * (100 + iReduceDamagePct) / 100);
 	}
 
 	if (!ecs::PlayerRuntime::IsPC(attacker) && ecs::PlayerRuntime::IsPC(victim))
 	{
-		iAtk = (iAtk * CHARACTER_MANAGER::instance().GetMobDamageRate(attacker)) / 100;
+		iAtk = bound((static_cast<long double>(iAtk) * CHARACTER_MANAGER::instance().GetMobDamageRate(attacker)) / 100);
 	}
 
 	if (ecs::PlayerRuntime::IsNPC(victim))
 	{
 #ifdef ENABLE_RUNE_DUNGEON
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_RUNE))
-			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_RUNE_MONSTERS)) / 100;
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_RUNE_MONSTERS)) / 100));
 #endif
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ANIMAL))
-			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_ANIMAL)) / 100;
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_ANIMAL)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_UNDEAD))
-			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_UNDEAD)) / 100;
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_UNDEAD)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_DEVIL))
-			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_DEVIL)) / 100;
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_DEVIL)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_HUMAN))
-			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_HUMAN)) / 100;
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_HUMAN)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ORC))
-			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_ORC)) / 100;
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_ORC)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_MILGYO))
-			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_MILGYO)) / 100;
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_MILGYO)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_INSECT))
-			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_INSECT)) / 100;
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_INSECT)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_FIRE))
-			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_FIRE)) / 100;
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_FIRE)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ICE))
-			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_ICE)) / 100;
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_ICE)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_DESERT))
-			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_DESERT)) / 100;
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_DESERT)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_TREE))
-			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_TREE)) / 100;
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_TREE)) / 100));
 #ifdef ELEMENT_NEW_BONUSES
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ATT_ELEC))
-			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_ELEC)) / 100;
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_ELEC)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ATT_FIRE))
-			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_FIRE)) / 100;
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_FIRE)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ATT_ICE))
-			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_ICE)) / 100;
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_ICE)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ATT_WIND))
-			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_WIND)) / 100;
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_WIND)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ATT_EARTH))
-			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_EARTH)) / 100;
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_EARTH)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ATT_DARK))
-			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_DARK)) / 100;
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_DARK)) / 100));
 #endif
 		if (HasCharacterType(victim, CHAR_TYPE_STONE)) {
-			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_METIN)) / 100;
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_METIN)) / 100));
 		}
 		else {
 			if (ecs::PlayerRuntime::GetMobRank(victim) >= MOB_RANK_BOSS)
-				iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_BOSS)) / 100;
+				iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_BOSS)) / 100));
 		}
 
 #ifdef ENABLE_NO_ATTBONUS_MONSTER_FOR_STONES
 		if (!HasCharacterType(victim, CHAR_TYPE_STONE)) {
-			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_MONSTER)) / 100;
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_MONSTER)) / 100));
 		}
 #else
 #ifdef ENABLE_MAP1_SKILL_MOB__disable
 		if (!(ecs::PlayerRuntime::IsMonster(victim) && ecs::PlayerRuntime::GetRaceNum(victim) == 136 && CombatSystem::IsSkillHit(attacker)))
 		{
-			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_MONSTER)) / 100;
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_MONSTER)) / 100));
 		}
 #else
-		iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_MONSTER)) / 100;
+		iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_MONSTER)) / 100));
 #endif
 
 #endif
@@ -434,29 +438,29 @@ int CalcAttBonus(entt::entity attacker, entt::entity victim, int iAtk)
 			if (net < 0) net = 0;
 
 			if (net > 0)
-				iAtk += (iAtk * net) / 100;
+				iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * net) / 100));
 		}
 #else
 
-	iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_HUMAN)) / 100;
+	iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_HUMAN)) / 100));
 #endif
 
 		switch (ecs::PlayerRuntime::GetJob(victim))
 		{
 			case JOB_WARRIOR:
-				iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_WARRIOR)) / 100;
+				iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_WARRIOR)) / 100));
 				break;
 
 			case JOB_ASSASSIN:
-				iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_ASSASSIN)) / 100;
+				iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_ASSASSIN)) / 100));
 				break;
 
 			case JOB_SURA:
-				iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_SURA)) / 100;
+				iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_SURA)) / 100));
 				break;
 
 			case JOB_SHAMAN:
-				iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_SHAMAN)) / 100;
+				iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_SHAMAN)) / 100));
 				break;
 		}
 	}
@@ -464,24 +468,24 @@ int CalcAttBonus(entt::entity attacker, entt::entity victim, int iAtk)
 	if (ecs::PlayerRuntime::IsPC(attacker) == true)
 	{
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-		iAtk -= (iAtk * ecs::PointSystem::Get(victim, POINT_DEF_TALISMAN)) / 100;
+		iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(victim, POINT_DEF_TALISMAN)) / 100));
 #endif
 		switch (ecs::PlayerRuntime::GetJob(attacker))
 		{
 			case JOB_WARRIOR:
-				iAtk -= (iAtk * ecs::PointSystem::Get(victim, POINT_RESIST_WARRIOR)) / 100;
+				iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(victim, POINT_RESIST_WARRIOR)) / 100));
 				break;
 
 			case JOB_ASSASSIN:
-				iAtk -= (iAtk * ecs::PointSystem::Get(victim, POINT_RESIST_ASSASSIN)) / 100;
+				iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(victim, POINT_RESIST_ASSASSIN)) / 100));
 				break;
 
 			case JOB_SURA:
-				iAtk -= (iAtk * ecs::PointSystem::Get(victim, POINT_RESIST_SURA)) / 100;
+				iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(victim, POINT_RESIST_SURA)) / 100));
 				break;
 
 			case JOB_SHAMAN:
-				iAtk -= (iAtk * ecs::PointSystem::Get(victim, POINT_RESIST_SHAMAN)) / 100;
+				iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(victim, POINT_RESIST_SHAMAN)) / 100));
 				break;
 		}
 	}
@@ -493,27 +497,27 @@ int CalcAttBonus(entt::entity attacker, entt::entity victim, int iAtk)
 	if (!ecs::PlayerRuntime::IsPC(attacker) && ecs::PlayerRuntime::IsPC(victim))
 	{
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-		iAtk -= (iAtk * 30 * ecs::PointSystem::Get(victim, POINT_DEF_TALISMAN))		/ 10000;
+		iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::Get(victim, POINT_DEF_TALISMAN))		/ 10000));
 #endif
 		if (ecs::PlayerRuntime::IsRaceFlag(attacker, RACE_FLAG_ATT_ELEC))
-			iAtk -= (iAtk * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_ELEC))		/ 10000;
+			iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_ELEC))		/ 10000));
 		if (ecs::PlayerRuntime::IsRaceFlag(attacker, RACE_FLAG_ATT_FIRE))
-			iAtk -= (iAtk * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_FIRE))		/ 10000;
+			iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_FIRE))		/ 10000));
 		if (ecs::PlayerRuntime::IsRaceFlag(attacker, RACE_FLAG_ATT_ICE))
-			iAtk -= (iAtk * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_ICE))		/ 10000;
+			iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_ICE))		/ 10000));
 		if (ecs::PlayerRuntime::IsRaceFlag(attacker, RACE_FLAG_ATT_WIND))
-			iAtk -= (iAtk * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_WIND))		/ 10000;
+			iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_WIND))		/ 10000));
 		if (ecs::PlayerRuntime::IsRaceFlag(attacker, RACE_FLAG_ATT_EARTH))
-			iAtk -= (iAtk * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_EARTH))	/ 10000;
+			iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_EARTH))	/ 10000));
 		if (ecs::PlayerRuntime::IsRaceFlag(attacker, RACE_FLAG_ATT_DARK))
-			iAtk -= (iAtk * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_DARK))		/ 10000;//difesa
+			iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_DARK))		/ 10000));//difesa
 #endif
 #ifdef ENABLE_RESIST_MONSTER
-		iAtk -= (iAtk * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_MONSTER))		/ 10000;//resistenza mostri
+		iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_MONSTER))		/ 10000));//resistenza mostri
 #endif
 	}
 
-	return iAtk;
+	return static_cast<int>(iAtk);
 }
 
 void Item_GetDamage(entt::entity item, int* pdamMin, int* pdamMax)
@@ -542,7 +546,10 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 {
     if (!IsBattlePair(attacker, victim))
         return 0;
-	const entt::entity weapon = ItemSystem::GetWearItem(attacker, WEAR_WEAPON);
+	const entt::entity weapon = CombatWearItem(attacker, WEAR_WEAPON);
+    const bool typed = HasTypedEquipment(attacker);
+    if (typed && !TypedEquipmentView(attacker)) return 0;
+    if (typed && CombatWeaponSubtype(attacker) == WEAPON_BOW) return 0;
 	bool bPolymorphed = AffectSystem::IsPolymorphed(attacker);
 
 	if (ItemSystem::IsValidItem(weapon) && !(bPolymorphed && !AffectSystem::IsPolyMaintainStat(attacker)))
@@ -606,17 +613,17 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 		iDamMax = CombatSystem::GetMobDamageMax(attacker);
 	}
 
-	iDam = number(iDamMin, iDamMax) * 2;
+	iDam = typed ? 0 : number(iDamMin, iDamMax) * 2;
 
 	// TESTSERVER_SHOW_ATTACKINFO
 	DEBUG_iDamCur = iDam;
 	// END_OF_TESTSERVER_SHOW_ATTACKINFO
 	//
-	int iAtk = 0;
+	int64_t iAtk = 0;
 
 	// level must be ignored when multiply by fAR, so subtract it before calculation.
 	iAtk = ecs::PointSystem::Get(attacker, POINT_ATT_GRADE) + iDam - (ecs::PointSystem::GetLevel(attacker) * 2);
-	iAtk = (int) (iAtk * fAR);
+	iAtk = static_cast<int64_t>(static_cast<float>(iAtk) * fAR);
 	iAtk += ecs::PointSystem::GetLevel(attacker) * 2; // and add again
 
 	if (ItemSystem::IsValidItem(weapon))
@@ -629,24 +636,24 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 	}
 
 	iAtk += ecs::PointSystem::Get(attacker, POINT_PARTY_ATTACKER_BONUS); // party attacker role bonus
-	iAtk = (int) (iAtk * (100 + (ecs::PointSystem::Get(attacker, POINT_ATT_BONUS) + ecs::PointSystem::Get(attacker, POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100);
+	iAtk = (int64_t) (iAtk * (100 + (ecs::PointSystem::Get(attacker, POINT_ATT_BONUS) + ecs::PointSystem::Get(attacker, POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100);
 
-	iAtk = CalcAttBonus(attacker, victim, iAtk);
+	iAtk = CalcAttBonus(attacker, victim, EquipmentLegacyInt(iAtk));
 
 	int iDef = 0;
 
 	if (!bIgnoreDefense)
 	{
-		iDef = (ecs::PointSystem::Get(victim, POINT_DEF_GRADE) * (100 + ecs::PointSystem::Get(victim, POINT_DEF_BONUS)) / 100);
+		iDef = EquipmentLegacyInt(EquipmentEffectiveDefense(attacker, ecs::PointSystem::Get(victim, POINT_DEF_GRADE) * (100 + ecs::PointSystem::Get(victim, POINT_DEF_BONUS)) / 100));
 
 		if (!ecs::PlayerRuntime::IsPC(attacker))
 			iDef += ecs::SocialSystem::GetMarriageBonus(victim, UNIQUE_ITEM_MARRIAGE_DEFENSE_BONUS);
 	}
 
 	if (!ecs::PlayerRuntime::IsPC(attacker))
-		iAtk = (int) (iAtk * CombatSystem::GetMobDamageMultiplier(attacker));
+		iAtk = static_cast<int64_t>(std::clamp<double>(iAtk * static_cast<double>(CombatSystem::GetMobDamageMultiplier(attacker)), 0, INT_MAX));
 
-	iDam = MAX(0, iAtk - iDef);
+	iDam = EquipmentLegacyInt(std::max<int64_t>(0, iAtk - iDef));
 
 	if (test_server)
 	{
@@ -680,7 +687,7 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 		char szUnknownAtk[32] = "";
 
 		if (iAtk != DEBUG_iPureAtk)
-			snprintf(szUnknownAtk, sizeof(szUnknownAtk), "+?(%d)", iAtk-DEBUG_iPureAtk);
+			snprintf(szUnknownAtk, sizeof(szUnknownAtk), "+?(%d)", EquipmentLegacyInt(iAtk-DEBUG_iPureAtk));
 
 		char szUnknownDam[32] = "";
 
@@ -692,7 +699,7 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 		snprintf(szMeleeAttack, sizeof(szMeleeAttack),
 				"%s(%d)-%s(%d)=%d%s, ATK=LV(%d)+ST(%d)+WP(%d)%s%s%s, AR=%.3g%s",
 				ecs::PlayerRuntime::GetName(attacker).data(),
-				iAtk,
+				EquipmentLegacyInt(iAtk),
 				ecs::PlayerRuntime::GetName(victim).data(),
 				iDef,
 				iDam,
@@ -715,12 +722,14 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 
 int CalcArrowDamage(entt::entity attacker, entt::entity victim, entt::entity bow, entt::entity arrow, bool bIgnoreDefense)
 {
-    if (!IsBattlePair(attacker, victim) || !ItemSystem::IsValidItem(bow) || !ItemSystem::IsValidItem(arrow))
+    const bool typed = HasTypedEquipment(attacker);
+    if (typed && (!TypedEquipmentView(attacker) || CombatWeaponSubtype(attacker) != WEAPON_BOW)) return 0;
+    if (!IsBattlePair(attacker, victim) || (!typed && (!ItemSystem::IsValidItem(bow) || !ItemSystem::IsValidItem(arrow))))
         return 0;
-	if (bow == entt::null || ItemSystem::GetItemType(bow) != ITEM_WEAPON || ItemSystem::GetItemSubType(bow) != WEAPON_BOW)
+	if (!typed && (bow == entt::null || ItemSystem::GetItemType(bow) != ITEM_WEAPON || ItemSystem::GetItemSubType(bow) != WEAPON_BOW))
 		return 0;
 
-	if (arrow == entt::null)
+	if (!typed && arrow == entt::null)
 		return 0;
 
 	// Y??g ????
@@ -737,35 +746,35 @@ int CalcArrowDamage(entt::entity attacker, entt::entity victim, entt::entity bow
 	int iDam = 0;
 
 	float fAR = CalcAttackRating(attacker, victim, false);
-	iDam = number(ItemSystem::GetItemValue(bow, 3), ItemSystem::GetItemValue(bow, 4)) * 2 + ItemSystem::GetItemValue(arrow, 3);
-	int iAtk;
+	iDam = typed ? 0 : number(ItemSystem::GetItemValue(bow, 3), ItemSystem::GetItemValue(bow, 4)) * 2 + ItemSystem::GetItemValue(arrow, 3);
+	int64_t iAtk;
 
 	// level must be ignored when multiply by fAR, so subtract it before calculation.
 	iAtk = ecs::PointSystem::Get(attacker, POINT_ATT_GRADE) + iDam - (ecs::PointSystem::GetLevel(attacker) * 2);
-	iAtk = (int) (iAtk * fAR);
+	iAtk = static_cast<int64_t>(static_cast<float>(iAtk) * fAR);
 	iAtk += ecs::PointSystem::GetLevel(attacker) * 2; // and add again
 
 	// Refine Grade
-	iAtk += ItemSystem::GetItemValue(bow, 5) * 2;
+	if (!typed) iAtk += ItemSystem::GetItemValue(bow, 5) * 2;
 
 	iAtk += ecs::PointSystem::Get(attacker, POINT_PARTY_ATTACKER_BONUS);
-	iAtk = (int) (iAtk * (100 + (ecs::PointSystem::Get(attacker, POINT_ATT_BONUS) + ecs::PointSystem::Get(attacker, POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100);
+	iAtk = (int64_t) (iAtk * (100 + (ecs::PointSystem::Get(attacker, POINT_ATT_BONUS) + ecs::PointSystem::Get(attacker, POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100);
 
-	iAtk = CalcAttBonus(attacker, victim, iAtk);
+	iAtk = CalcAttBonus(attacker, victim, EquipmentLegacyInt(iAtk));
 
 	int iDef = 0;
 
 	if (!bIgnoreDefense)
-		iDef = (ecs::PointSystem::Get(victim, POINT_DEF_GRADE) * (100 + ecs::PointSystem::Get(attacker, POINT_DEF_BONUS)) / 100);
+		iDef = EquipmentLegacyInt(EquipmentEffectiveDefense(attacker, ecs::PointSystem::Get(victim, POINT_DEF_GRADE) * (100 + ecs::PointSystem::Get(attacker, POINT_DEF_BONUS)) / 100));
 
 	if (!ecs::PlayerRuntime::IsPC(attacker))
-		iAtk = (int) (iAtk * CombatSystem::GetMobDamageMultiplier(attacker));
+		iAtk = static_cast<int64_t>(std::clamp<double>(iAtk * static_cast<double>(CombatSystem::GetMobDamageMultiplier(attacker)), 0, INT_MAX));
 
-	iDam = MAX(0, iAtk - iDef);
+	iDam = EquipmentLegacyInt(std::max<int64_t>(0, iAtk - iDef));
 
 	int iPureDam = iDam;
 
-	iPureDam = (iPureDam * iPercent) / 100;
+	iPureDam = EquipmentLegacyInt((int64_t(iPureDam) * iPercent) / 100);
 
 	if (test_server)
 	{
@@ -832,11 +841,11 @@ int battle_hit(entt::entity attacker, entt::entity victim, int & iRetDam)
 
 	// ?????? ???
 	//iDam = iDam * (100 - ecs::PointSystem::Get(victim, POINT_RESIST)) / 100;
-	const entt::entity weapon = ItemSystem::GetWearItem(
+	const entt::entity weapon = CombatWearItem(
 		attacker, WEAR_WEAPON);
 
-	if (ItemSystem::IsValidItem(weapon))
-		switch (ItemSystem::GetItemSubType(weapon))
+	if (HasCombatWeapon(attacker))
+		switch (CombatWeaponSubtype(attacker))
 		{
 			case WEAPON_SWORD:
 			{
@@ -968,8 +977,8 @@ int32_t GET_ATTACK_SPEED(entt::entity character)
     if (denominator <= 0)
         return 1000;
     int64_t speed = static_cast<int64_t>(ani_attack_speed(character)) * 100 / denominator;
-    const auto weapon = ItemSystem::GetWearItem(character, WEAR_WEAPON);
-    if (ItemSystem::IsValidItem(weapon) && ItemSystem::GetItemSubType(weapon) == WEAPON_DAGGER)
+    const auto weapon = CombatWearItem(character, WEAR_WEAPON);
+    if (CombatWeaponSubtype(character) == WEAPON_DAGGER)
         speed /= 2;
     return static_cast<int32_t>(std::clamp<int64_t>(speed, 0, INT32_MAX));
 }

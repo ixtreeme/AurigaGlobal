@@ -16,6 +16,7 @@
 #include "../components/character_runtime_components.hpp"
 
 #include "InventorySystem.hpp"
+#include "../../item/TypedEquipment.hpp"
 #include "SocialSystem.hpp"
 #include "PointSystem.hpp"
 #include "ItemSystem.hpp"
@@ -2778,6 +2779,7 @@ bool UnequipItemToEcs(entt::entity owner, entt::entity item, TItemPos destinatio
 }
 
 bool EquipItemEcs(entt::entity owner, entt::entity item, int candidateCell) {
+    if (HasTypedEquipment(owner)) return false; // request gate; restoring stored legacy slots remains lossless
     if (!g_registry.valid(owner) || !IsValidItem(item)) return false;
     const auto permission = ecs::resource_admission::Enter({owner}, auriga::resource_admission::Operation::Equipment);
     if (!permission || !permission->Current()) return false;
@@ -3094,6 +3096,7 @@ bool RemoveItemEcs(entt::entity item)
 void ModifyPoints(entt::entity itemEntity, bool bAdd)
 {
 	const entt::entity ownerEntity = ItemSystem::GetItemOwner(itemEntity);
+    if (HasTypedEquipment(ownerEntity)) return; // one equipment stat authority
 #ifdef ENABLE_BUG_FIXES
 	if (ownerEntity == entt::null) {
 		return;

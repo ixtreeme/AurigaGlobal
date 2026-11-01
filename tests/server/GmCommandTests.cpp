@@ -1035,6 +1035,7 @@ int64_t quest::CQuestManager::GetEventFlag(std::string const &) { Unexpected(); 
 bool RaceToJob(unsigned int,unsigned int *) { Unexpected(); }
 unsigned char ItemSystem::GetItemType(entt::entity) { Unexpected(); }
 unsigned char ItemSystem::GetItemSubType(entt::entity) { Unexpected(); }
+const TItemTable* ItemSystem::GetItemProto(entt::entity) { Unexpected(); }
 int ItemSystem::GetItemValue(entt::entity,unsigned int) { Unexpected(); }
 
 int main() {

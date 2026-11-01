@@ -4,6 +4,7 @@
 #include "ItemCatalogRuntime.hpp"
 #include "ItemStore.hpp"
 #include "TypedInventorySync.hpp"
+#include "TypedEquipment.hpp"
 #include "refine.h"
 #include "../command/cmd.h"
 #include "../core/packet.h"
@@ -116,6 +117,14 @@ void RequestTypedItemMove(entt::entity character, std::uint64_t itemId, std::uin
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "A tárgyművelet nem lehetséges: %s.", ErrorText(commit.error()));
 		SendTypedInventory(character); // the client reverts to the authoritative layout
 		return;
+	}
+	if (target.kind == items::ItemStorageKind::Equipment)
+	{
+		auto equipped = state.items;
+		for (const auto& change : commit->items)
+			if (auto item = std::ranges::find(equipped, change.after.id, &items::PersistentItem::id); item != equipped.end()) *item = change.after;
+		if (!items::BuildEquipmentStats(*catalog, state.fence.owner, equipped))
+		{ Tell(character, "Ez a felszerelés még nem támogatott vagy túl nagy statértéket tartalmaz."); SendTypedInventory(character); return; }
 	}
 	const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(character);
 	const uint64_t token = login->token;

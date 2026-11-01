@@ -3,6 +3,7 @@
 #include "../../SRC/Server/GameServer/ecs/systems/SessionSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/quest_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/ResourceAdmission.hpp"
+#include "../../SRC/Server/GameServer/item/TypedEquipment.hpp"
 #include "../../SRC/Server/GameServer/item/safebox.h"
 #include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
@@ -1314,6 +1315,16 @@ void AssertWorn(entt::entity owner, entt::entity item, int slot) {
         "equipped state mismatch");
 }
 void EquipmentPolicies() {
+    Reset();
+    {
+        const auto owner=PlacementOwner(), item=Gear(owner);
+        g_registry.emplace<ecs::TypedEquipmentProjection>(owner).stats=auriga::item::EquipmentStats{};
+        Check(!ItemSystem::EquipItemEcs(owner,item), "typed owner accepted a new legacy equipment request");
+        AssertPlaced(owner,item,TItemPos(INVENTORY,0));
+        Check(InventorySystem::EquipTo(item,owner,WEAR_BODY), "restoring stored legacy equipment must remain lossless");
+        Check(ItemSystem::GetWearItem(owner,WEAR_BODY)==item && CombatWearItem(owner,WEAR_BODY)==entt::null,
+            "restored legacy gear is preserved but cannot enter typed combat");
+    }
     Reset();
     const auto owner = PlacementOwner(), item = Gear(owner);
     Check(InventorySystem::CanEquipNow(owner, item), "basic equipment policy");
