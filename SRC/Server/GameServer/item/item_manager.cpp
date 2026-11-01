@@ -31,6 +31,7 @@
 #include "locale_service.h"
 #include "item.h"
 #include "item_manager.h"
+#include "ItemCatalogRuntime.hpp"
 #include "../ecs/EntityFactory.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/ItemRegistry.hpp"
@@ -1282,6 +1283,9 @@ bool ITEM_MANAGER::CreateDropItemVector(entt::entity chr, entt::entity killer, s
 	const uint8_t rank = ecs::PlayerRuntime::GetMobRank(chr);
 	const uint32_t race = ecs::PlayerRuntime::GetRaceNum(chr);
 	const bool isStone = ecs::PlayerRuntime::IsStone(chr);
+	// With typed drops the catalog tables roll instead; this legacy preview
+	// lists only what the legacy runtime still drops.
+	const bool tableDrops = !auriga::item::runtime::TypedDropsEnabled();
 
 	const auto add = [&items](uint32_t vnum, uint32_t count)
 	{
@@ -1291,7 +1295,7 @@ bool ITEM_MANAGER::CreateDropItemVector(entt::entity chr, entt::entity killer, s
 
 	for (const CItemDropInfo& info : g_vec_pkCommonDropItem[rank])
 	{
-		if (isStone || level < info.m_iLevelStart || level > info.m_iLevelEnd)
+		if (!tableDrops || isStone || level < info.m_iLevelStart || level > info.m_iLevelEnd)
 			continue;
 
 		const TItemTable* table = GetTable(info.m_dwVnum);
@@ -1304,13 +1308,13 @@ bool ITEM_MANAGER::CreateDropItemVector(entt::entity chr, entt::entity killer, s
 
 	// The target-info preview lists configured entries, including metin groups.
 	// It must not roll loot or consume the gameplay RNG.
-	if (const auto it = m_map_pkDropItemGroup.find(race); it != m_map_pkDropItemGroup.end() && it->second)
+	if (const auto it = m_map_pkDropItemGroup.find(race); tableDrops && it != m_map_pkDropItemGroup.end() && it->second)
 	{
 		for (const auto& info : it->second->GetVector())
 			add(info.dwVnum, info.iCount);
 	}
 
-	if (const auto it = m_map_pkMobItemGroup.find(race); it != m_map_pkMobItemGroup.end())
+	if (const auto it = m_map_pkMobItemGroup.find(race); tableDrops && it != m_map_pkMobItemGroup.end())
 	{
 		CMobItemGroup* group = it->second;
 		if (group && !group->IsEmpty())
@@ -1320,7 +1324,7 @@ bool ITEM_MANAGER::CreateDropItemVector(entt::entity chr, entt::entity killer, s
 		}
 	}
 
-	if (!isStone)
+	if (tableDrops && !isStone)
 	{
 		if (const auto it = m_map_pkLevelItemGroup.find(race);
 			it != m_map_pkLevelItemGroup.end() && it->second->GetLevelLimit() <= static_cast<uint32_t>(level))
@@ -1356,7 +1360,8 @@ bool ITEM_MANAGER::CreateDropItemVector(entt::entity chr, entt::entity killer, s
 	return !items.empty();
 }
 #endif
-bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::vector<entt::entity>& vec_item)
+bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::vector<entt::entity>& vec_item,
+	int iDeltaPercent, int iRandRange, bool tableDrops)
 {
 #ifdef ENABLE_METINSTONE_DROP_BUGFIX_RAZOR9d
 	const CMobItemGroup* pGroup = quest::CQuestManager::instance().GetMobDropItem(ecs::PlayerRuntime::GetRaceNum(chr));
@@ -1370,17 +1375,13 @@ bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::ve
 #endif
 	int iLevel = ecs::PointSystem::GetLevel(killer);
 
-	int iDeltaPercent, iRandRange;
-	if (!GetDropPct(chr, killer, iDeltaPercent, iRandRange))
-		return false;
-
 	uint8_t bRank = ecs::PlayerRuntime::GetMobRank(chr);
 	entt::entity item = entt::null;
 
 	// Common Drop Items
 	auto it = g_vec_pkCommonDropItem[bRank].begin();
 
-	while (!ecs::PlayerRuntime::IsStone(chr) && it != g_vec_pkCommonDropItem[bRank].end())
+	while (tableDrops && !ecs::PlayerRuntime::IsStone(chr) && it != g_vec_pkCommonDropItem[bRank].end())
 	{
 		const CItemDropInfo& c_rInfo = *(it++);
 
@@ -1426,7 +1427,7 @@ bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::ve
 		auto it = m_map_pkDropItemGroup.find(ecs::PlayerRuntime::GetRaceNum(chr));
 
 		// Configured per-race drop groups apply to stones too, matching target info.
-		if (it != m_map_pkDropItemGroup.end() && it->second)
+		if (tableDrops && it != m_map_pkDropItemGroup.end() && it->second)
 		{
 			auto v = it->second->GetVector();
 
@@ -1463,7 +1464,7 @@ bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::ve
 	{
 		auto it = m_map_pkMobItemGroup.find(ecs::PlayerRuntime::GetRaceNum(chr));
 
-		if (it != m_map_pkMobItemGroup.end())
+		if (tableDrops && it != m_map_pkMobItemGroup.end())
 		{
 			CMobItemGroup* pGroup = it->second;
 
@@ -1488,7 +1489,7 @@ bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::ve
 	{
 		auto it = m_map_pkLevelItemGroup.find(ecs::PlayerRuntime::GetRaceNum(chr));
 
-		if (it != m_map_pkLevelItemGroup.end())
+		if (tableDrops && it != m_map_pkLevelItemGroup.end())
 		{
 			if (!ecs::PlayerRuntime::IsStone(chr) && it->second->GetLevelLimit() <= (uint32_t)iLevel)
 			{
@@ -1508,7 +1509,7 @@ bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::ve
 	}
 
 	{
-		if (!ecs::PlayerRuntime::IsStone(chr) && ((ecs::PlayerRuntime::GetPremiumRemainSeconds(killer, PREMIUM_ITEM) > 0) || (ItemSystem::IsEquipUniqueGroup(killer, UNIQUE_GROUP_DOUBLE_ITEM))
+		if (tableDrops && !ecs::PlayerRuntime::IsStone(chr) && ((ecs::PlayerRuntime::GetPremiumRemainSeconds(killer, PREMIUM_ITEM) > 0) || (ItemSystem::IsEquipUniqueGroup(killer, UNIQUE_GROUP_DOUBLE_ITEM))
 #ifdef ENABLE_NEW_COMMON_BONUSES
 			|| (ecs::PointSystem::Get(killer, APPLY_DOUBLE_DROP_ITEM) > 0)
 #endif

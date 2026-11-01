@@ -397,6 +397,20 @@ std::expected<ItemCommit,E> MakeConsumeCommit(const ItemCatalog& c,std::array<st
     if(auto valid=ValidateItemCommit(c,r);!valid)return std::unexpected(valid.error());
     return r;
 }
+bool QueueGrant(std::deque<ItemGrant>& pending,const ItemGrant& grant,std::uint32_t mergeLimit)
+{
+    if(!grant.count)return false;
+    for(auto& waiting:pending)
+        if(waiting.key==grant.key && waiting.refinementLevel==grant.refinementLevel &&
+           std::uint64_t{waiting.count}+grant.count<=mergeLimit)
+        {
+            waiting.count+=grant.count;
+            return true;
+        }
+    if(pending.size()>=MaxPendingGrants)return false;
+    pending.push_back(grant);
+    return true;
+}
 std::expected<ItemCommit,E> MakeGrantCommit(const ItemCatalog& c,std::array<std::uint8_t,16> operationId,ItemOwnerFence owner,
     std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> items,const ItemGrant& grant,std::span<const ItemInstanceId> ids)
 {

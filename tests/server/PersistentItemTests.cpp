@@ -225,6 +225,18 @@ void Run()
         auto mine=f::Leather();mine.boundTo=f::Character();const std::vector<PersistentItem> boundItems{f::Sword(),mine};
         auto joined=MakeGrantCommit(**boundCatalog,op,fence,bags,boundItems,{k::Leather(),0,5},ids);
         Check(joined && joined->items.size()==1 && joined->items[0].before && joined->items[0].after.count==8,"it joins the owner's bound stack");
+        // F4 C7b-3: drops wait per owner; one item state merges up to a stack.
+        std::deque<ItemGrant> pending;
+        Check(QueueGrant(pending,{k::Leather(),0,150},200) && QueueGrant(pending,{k::Leather(),0,50},200) &&
+              pending.size()==1 && pending[0].count==200,"one item state merges up to one stack");
+        Check(QueueGrant(pending,{k::Leather(),0,1},200) && pending.size()==2 && pending[1].count==1,"a full stack starts another grant");
+        Check(QueueGrant(pending,{k::Leather(),1,1},200) && pending.size()==3,"another level is another item state");
+        Check(QueueGrant(pending,{k::Sword(),0,1},1) && QueueGrant(pending,{k::Sword(),0,1},1) && pending.size()==5,"one-unit stacks never merge");
+        Check(QueueGrant(pending,{k::Leather(),0,2},200) && pending[1].count==3 && pending.size()==5,"a later drop joins the first waiting grant with room");
+        Check(!QueueGrant(pending,{k::Leather(),0,0},200) && pending.size()==5,"zero units are refused");
+        while(pending.size()<MaxPendingGrants)pending.push_back({k::Sword(),0,1});
+        Check(!QueueGrant(pending,{k::Sword(),0,1},1) && pending.size()==MaxPendingGrants,"a full queue refuses and keeps its grants");
+        Check(QueueGrant(pending,{k::Leather(),0,1},200) && pending[1].count==4 && pending.size()==MaxPendingGrants,"a full queue still merges");
     }
     // F4 C6: refinement from the owner's state; equipment never takes part.
     {

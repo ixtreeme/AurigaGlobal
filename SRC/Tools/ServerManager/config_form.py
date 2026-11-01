@@ -50,6 +50,7 @@ NAMES = {
     'account_sql': 'Fiókadatbázis', 'spam_block': 'Spamvédelem', 'item_destroy': 'Eldobott tárgyak eltűnése',
     'items': 'Új tárgyrendszer', 'catalog': 'Új tárgykatalógus induláskor (off / required)',
     'catalog_revision': 'Katalógus kiadási száma', 'catalog_sha256': 'Elvárt katalógus-hash (üres: bármely érvényes)',
+    'drops': 'Szörnydrop forrása (legacy / typed: a katalógus droptáblái)',
 }
 ROLES = {'player': 'Játékosadatok', 'account': 'Fiókok', 'common': 'Közös adatok', 'log': 'Naplóadatok', 'mission': 'Küldetések'}
 HELP = {

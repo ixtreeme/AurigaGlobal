@@ -214,6 +214,7 @@ bool GameConfig::Load(const auriga::config::Section& input, std::string& error)
 			items.catalog = it.value("catalog", std::string("off"));
 			items.catalogRevision = it.value("catalog_revision", uint64_t { 1 });
 			items.catalogSha256 = it.value("catalog_sha256", std::string());
+			items.drops = it.value("drops", std::string("legacy"));
 		}
 	}
 	catch (const std::exception&)
@@ -225,6 +226,18 @@ bool GameConfig::Load(const auriga::config::Section& input, std::string& error)
 	if (items.catalog != "off" && items.catalog != "required")
 	{
 		error = "GameServer: 'items.catalog' must be \"off\" or \"required\"";
+		return false;
+	}
+
+	if (items.drops != "legacy" && items.drops != "typed")
+	{
+		error = "GameServer: 'items.drops' must be \"legacy\" or \"typed\"";
+		return false;
+	}
+
+	if (items.drops == "typed" && items.catalog != "required")
+	{
+		error = "GameServer: 'items.drops' \"typed\" needs 'items.catalog' \"required\"";
 		return false;
 	}
 

@@ -404,7 +404,11 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		bool			GetVnumByOriginalName(const char * c_pszName, uint32_t & r_dwVnum);
 
 		bool			GetDropPct(entt::entity victim, entt::entity killer, OUT int& iDeltaPercent, OUT int& iRandRange);
-		bool			CreateDropItem(entt::entity victim, entt::entity killer, std::vector<entt::entity>& vec_item);
+		// iDeltaPercent/iRandRange come from GetDropPct, once per kill. Without
+		// tableDrops the drop tables (common drop, drop/kill/limit/thiefgloves
+		// groups) are skipped: the typed catalog rolls them (items.drops = "typed").
+		bool			CreateDropItem(entt::entity victim, entt::entity killer, std::vector<entt::entity>& vec_item,
+							int iDeltaPercent, int iRandRange, bool tableDrops = true);
 #ifdef __SEND_TARGET_INFO__
 		bool			CreateDropItemVector(entt::entity victim, entt::entity killer, std::vector<TargetInfoItem>& items);
 #endif

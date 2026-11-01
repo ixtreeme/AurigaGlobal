@@ -121,6 +121,12 @@ struct TypedItems
 // One typed operation of this character is in the item store; a second one
 // waits for its answer instead of building on a state about to change.
 struct TypedItemBusy {};
+// Grants (monster drops, C7b-3) that wait for the character's operation in
+// the store; the next one is sent when that operation answers.
+struct TypedGrantQueue
+{
+	std::deque<auriga::item::ItemGrant> pending;
+};
 // When each consumable cooldown of this character ends, by cooldown profile,
 // in steady-clock milliseconds. Runtime only: not saved across logins yet.
 struct TypedItemCooldowns

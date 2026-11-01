@@ -1,6 +1,7 @@
 #include "../../SRC/Server/GameServer/core/stdafx.h"
 #include "../../SRC/Server/GameServer/core/utils.h"
 #include "../../SRC/Server/GameServer/item/item_manager.h"
+#include "../../SRC/Server/GameServer/item/ItemCatalogRuntime.hpp"
 #include "../../SRC/Server/GameServer/item/item.h"
 #include "../../SRC/Server/GameServer/entity/char.h"
 #include "../../SRC/Server/GameServer/item/safebox.h"
@@ -46,6 +47,7 @@ bool rejectDetach = false;
 bool creationTest = false, rejectAllocation = false, rejectCount = false;
 bool persistenceTest = false;
 bool dropPreviewTest = false;
+bool typedDropsTest = false; // items.drops = "typed" (C7b-3)
 struct PreviewMob { bool stone; uint32_t race; };
 std::vector<uint8_t> persistedHeaders;
 std::vector<std::vector<uint8_t>> persistedPayloads;
@@ -100,7 +102,7 @@ public:
     ~Manager() { m_VIDMap.clear(); m_map_pkItemByID.clear(); m_set_pkItemForDelayedSave.clear(); }
 };
 void Reset() {
-    dropPreviewTest = false;
+    dropPreviewTest = false; typedDropsTest = false;
     persistenceTest = false; db_clientdesc = nullptr; persistedHeaders.clear(); persistedPayloads.clear();
     onCreation = {}; creationTest = rejectAllocation = rejectCount = false;
     rejectRune = rejectTimer = blendExists = highDraw = false;
@@ -272,6 +274,7 @@ int number_ex(int low, int high, const char*, int) { Check(creationTest && low <
 time_t get_global_time() { Check(creationTest, "unexpected clock"); return 10000; }
 const char* get_table_postfix() { Unexpected(); }
 bool AffectSystem::IsPolymorphed(entt::entity) { Check(dropPreviewTest, "unexpected polymorph query"); return false; }
+bool auriga::item::runtime::TypedDropsEnabled() noexcept { return typedDropsTest; }
 uint32_t ecs::PlayerRuntime::GetMobDropItemVnum(entt::entity) { Check(dropPreviewTest, "unexpected drop query"); return 0; }
 uint32_t ecs::PlayerRuntime::GetPolymorphItemVnum(entt::entity) { Unexpected(); }
 bool MountSystem::IsHorseRiding(entt::entity) { return false; }
@@ -1287,6 +1290,13 @@ void TargetDropPreview() {
                 items[2].vnum == 19 && items[2].count == 1 &&
                 items[3].vnum == 29 && items[3].count == 4, "preview contents/counts changed");
         }
+        // Typed drops (C7b-3): the catalog tables replace these, so the
+        // legacy preview no longer lists them.
+        typedDropsTest = true;
+        std::vector<TargetInfoItem> typedPreview;
+        Check(!manager.CreateDropItemVector(victim, killer, typedPreview) && typedPreview.empty(),
+            "typed drops: the legacy tables are still previewed");
+        typedDropsTest = false;
         CMobItemGroup emptyKill(8001, 10, "empty-kill");
         manager.DropGroups(8001, &drop, &emptyKill);
         std::vector<TargetInfoItem> dropOnly;

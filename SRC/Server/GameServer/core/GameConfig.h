@@ -203,11 +203,14 @@ struct GameConfig
 	// Typed item catalog (item system F4). "off" keeps the legacy item_proto
 	// runtime untouched; "required" loads and validates protos at boot and
 	// refuses to start without it. The revision/hash identify the release.
+	// drops: "legacy" keeps the legacy drop tables; "typed" rolls the catalog
+	// drop tables instead and needs the catalog (F4 C7b-3, IC-035).
 	struct ItemsConfig
 	{
 		std::string	catalog { "off" };
 		uint64_t	catalogRevision { 1 };
 		std::string	catalogSha256; // optional lowercase hex pin
+		std::string	drops { "legacy" };
 	} items;
 
 	bool Load(const auriga::config::Section& input, std::string& error);

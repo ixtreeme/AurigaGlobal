@@ -76,9 +76,16 @@ int main() {
         auto items = first;
         items.values["items"] = Json{{"catalog", "required"}, {"catalog_revision", 7}, {"catalog_sha256", std::string(64, 'a')}};
         Check(game.Load(items, error) && game.items.catalog == "required" && game.items.catalogRevision == 7 &&
-              game.items.catalogSha256 == std::string(64, 'a'), "required item catalog settings lost");
+              game.items.catalogSha256 == std::string(64, 'a') && game.items.drops == "legacy", "required item catalog settings lost");
+        // Typed drops (C7b-3) need the catalog; "legacy" is the default.
+        auto typedDrops = items; typedDrops.values["items"]["drops"] = "typed";
+        Check(game.Load(typedDrops, error) && game.items.drops == "typed", "typed drop setting lost");
+        auto noCatalog = typedDrops; noCatalog.values["items"]["catalog"] = "off";
+        Check(!game.Load(noCatalog, error) && game.items.drops == "typed" && error.find("items.drops") != std::string::npos,
+              "typed drops accepted without the catalog");
+        Check(game.Load(items, error) && game.items.drops == "legacy", "drop setting survived a reload without it");
         for (const auto& [field, value] : std::vector<std::pair<std::string, Json>>{{"catalog", "on"}, {"catalog_revision", 0},
-                 {"catalog_sha256", std::string(64, 'A')}, {"catalog_sha256", "abc"}})
+                 {"catalog_sha256", std::string(64, 'A')}, {"catalog_sha256", "abc"}, {"drops", "on"}})
         {
             auto bad = items; bad.values["items"][field] = value;
             Check(!game.Load(bad, error) && game.items.catalogRevision == 7 && error.find("items.") != std::string::npos,

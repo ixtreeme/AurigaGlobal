@@ -2,7 +2,7 @@
 
 2026-10-31. Fázis: F4 ([IC-034](item_combat_034_runtime_integration_plan.md),
 C csomag, „drop”). Állapot: **döntés elfogadva; a C7a (b92fe955), a
-C7b-1 (cff05d52) és a C7b-2 kész; a C7b-3 hátravan**.
+C7b-1 (cff05d52), a C7b-2 (e37bb0ec) és a C7b-3 kész; a C7c hátravan**.
 
 ## Régi működés (forrásaudit)
 
@@ -40,7 +40,7 @@ C7b-1 (cff05d52) és a C7b-2 kész; a C7b-3 hátravan**.
   tárgyának eldobása.** A javaslat: a földi zsákmány a régihez hasonlóan nem
   tartós, a tárgypéldány a felvételkor jön létre. Ezt a C7c előtt egyeztetjük.
 
-## C7b — droptáblák a katalógusban (C7b-1 és C7b-2 kész)
+## C7b — droptáblák a katalógusban (C7b-1, C7b-2 és C7b-3 kész)
 
 Három lépésben készül:
 - **C7b-1:** katalógusréteg és tiszta sorsoló;
@@ -121,6 +121,75 @@ egész aritmetika eredménye változatlan marad.
   - `DropPageTests`: lista, kereső, ablak, mentés, újranyitás és törlés;
   - `SqlCommitTests`: commit, szerkesztés, triggeres visszagörgetés, a
     kivezetés tiltása és törlés privát MariaDB-n.
+
+## C7b-3 — sorsolás a szörny halálakor (2026-10-31)
+
+**Kapcsoló:** `server.json` → `items.drops`.
+- `"legacy"` (alapérték): semmi nem változik.
+- `"typed"`: csak `items.catalog = "required"` mellett érvényes. A szerver
+  induláskor naplózza: `ItemDrops: typed (catalog drop tables)`.
+
+**Mi változik `"typed"` módban:**
+- A régi öt tábladrop helyett a katalógus droptáblái sorsolnak: közös drop,
+  `drop`/`drop_item_group`, `kill`, `limit` és `thiefgloves`.
+- Változatlanul a régi úton marad: a szörny saját tárgya, a metinkő, a
+  lókönyv, a lottó és az eseménydropok.
+- A célpont-információs ablak (target info) is csak a régi úton maradt
+  forrásokat listázza. A típusos dropok ebben a régi csomagban nem
+  jeleníthetők meg, mert nincs vnumjuk; ez kliensoldali munka (F5).
+
+**Sorsolás:**
+- Ölésenként egyszer fut a `GetDropPct`. Ugyanaz a `delta` és tartomány megy
+  a régi és a típusos sorsolásnak is.
+- A `PlanMobDrops` a régi `number()` véletlenforrással dob.
+- A dupla drop feltétele a régi: prémium, dupla tárgy egyedi csoport vagy
+  `APPLY_DOUBLE_DROP_ITEM`.
+
+**Kiosztás** (a régi szabály, közös függvényekben):
+- Egy drop a gyilkosé.
+- Több dropnál a legalább 10%-ot sebzők között körbe megy. Partyban a party
+  saját sorrendje (`GetNextOwnership`) dönt; ha senki nem éri el a 10%-ot, a
+  gyilkosé.
+- A megosztott dungeonokban minden nyertes saját példányt kap.
+  - A nyertes HWID|HOST-onként egy karakter; egyezésnél a többet sebző.
+- A `SharedDungeonDropWinners` és a `DropContributors` kiemelt függvény, a
+  régi drop is ezeket használja. A viselkedése nem változott.
+
+**Átadás** (`GameServer/item/TypedDrops.*`):
+- **Várakozási sor:** a karakternek egyszerre egy tárgyművelete lehet a
+  tárolóban, ezért a dropok karakterenként sorba állnak
+  (`ecs::TypedGrantQueue`).
+  - Az azonos tárgyállapotú dropok egy halomnyi mennyiségig összevonódnak
+    (`QueueGrant`).
+  - Legfeljebb 256 várakozó tétel lehet; a fölötte érkező drop naplózva
+    elveszik.
+- **Továbbküldés:** minden tárgyművelet (mozgatás, használat, fejlesztés,
+  adás) válasza után a következő tétel indul (`PumpTypedItemGrants`).
+- **Kiépítetlen karakter:** akinek nincs típusos tárgyállapota, nem kap
+  tábladropot. Ezért a `"typed"` mód egyelőre csak próbára való.
+- **Tele inventory:** amíg a C7c el nem készül, a drop elveszik. A játékos
+  üzenetet kap, és a napló rögzíti.
+- **Kijelentkezés:** a várakozó dropok elvesznek.
+
+**Még nincs benne:**
+- a ritka bónusz esélye;
+- az `ITEM_POLYMORPH` szűrése, ami a régiben csak a szörny saját gömbjét
+  engedi;
+- a régi „rare drop” közlemény;
+- a tárgynapló (`MONEY_LOG_DROP`).
+
+**Tesztek:**
+- `PersistentItemTests`: a várakozási sor összevonása, a halomhatár, a
+  szintek külön kezelése, a nulla darab és a 256-os korlát.
+- `ServerConfigTests`: az alapérték, a `"typed"` elfogadása, a katalógus
+  nélküli `"typed"` és a hibás érték elutasítása.
+- `ItemManagerLifecycleTests`: `"typed"` módban a célpont-információs ablak
+  nem listázza a régi táblákat.
+- `CombatStateTests`: a csonkok követik az új `CreateDropItem` és
+  `GetDropPct` hívást.
+- A szerverkódot (a kiosztást és a várakozási sort) csak a fordítás és a
+  kódátnézés ellenőrzi. Élő próbához `"typed"` mód, egy kiépített
+  tesztkarakter és egy droptábla kell.
 
 ## C7a — futásidejű azonosítók és tárgyadás
 

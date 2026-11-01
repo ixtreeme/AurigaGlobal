@@ -43,4 +43,10 @@ std::expected<std::optional<CatalogSummary>, std::string> LoadCatalogAtBoot(cons
 
 // Null when the catalog is off.
 std::shared_ptr<const ItemCatalog> CurrentCatalog() noexcept;
+
+// items.drops = "typed" (F4 C7b-3, IC-035): monster kills roll the catalog
+// drop tables instead of the legacy ones. Set once at boot; true only while a
+// catalog is loaded.
+void EnableTypedDrops(bool enabled) noexcept;
+bool TypedDropsEnabled() noexcept;
 } // namespace auriga::item::runtime

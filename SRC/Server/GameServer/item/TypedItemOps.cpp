@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "TypedItemOps.hpp"
+#include "TypedDrops.hpp"
 #include "ItemCatalogRuntime.hpp"
 #include "ItemStore.hpp"
 #include "TypedInventorySync.hpp"
@@ -136,6 +137,7 @@ void RequestTypedItemMove(entt::entity character, std::uint64_t itemId, std::uin
 				ecs::ChatSystem::Send(entity, CHAT_TYPE_INFO, "A tárgyművelet nem sikerült: %s.", ErrorText(outcome.write.error()));
 			}
 			SendTypedInventory(entity);
+			PumpTypedItemGrants(entity); // drops that waited for this answer
 		});
 	if (!queued)
 	{
@@ -390,6 +392,7 @@ void RequestTypedItemUse(entt::entity character, std::uint64_t itemId)
 				ecs::ChatSystem::Send(entity, CHAT_TYPE_INFO, "A tárgyhasználat nem sikerült: %s.", ErrorText(outcome.write.error()));
 			}
 			SendTypedInventory(entity);
+			PumpTypedItemGrants(entity); // drops that waited for this answer
 		});
 	if (!queued)
 	{
@@ -591,6 +594,7 @@ void RefineAt(entt::entity character, std::uint64_t itemId, std::uint32_t recipe
 				ecs::ChatSystem::Send(entity, CHAT_TYPE_INFO, "A fejlesztés nem sikerült: %s.", ErrorText(outcome.write.error()));
 			}
 			SendTypedInventory(entity);
+			PumpTypedItemGrants(entity); // drops that waited for this answer
 		});
 	if (!queued)
 	{
@@ -678,6 +682,7 @@ std::expected<void, TypedGrantRefusal> RequestTypedItemGrant(entt::entity charac
 				ecs::ChatSystem::Send(entity, CHAT_TYPE_INFO, "A tárgy átadása nem sikerült: %s.", ErrorText(outcome.write.error()));
 			}
 			SendTypedInventory(entity);
+			PumpTypedItemGrants(entity); // drops that waited for this answer
 		});
 	if (!queued)
 	{
@@ -687,7 +692,7 @@ std::expected<void, TypedGrantRefusal> RequestTypedItemGrant(entt::entity charac
 	return {};
 }
 
-// /typed_give <category> <local id> [count] [level]: GM test grant (C7a), until drops arrive (C7b).
+// /typed_give <category> <local id> [count] [level]: GM test grant (C7a); drops queue through TypedDrops (C7b-3).
 ACMD(do_typed_give)
 {
 	char category[32], local[32], count[32], level[32];

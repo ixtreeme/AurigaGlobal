@@ -43,7 +43,10 @@ Futásidejű vnum-adapter és kettős írás továbbra sem lehet (IC-012). Az
 - **Konfiguráció** (`server.json`, game rész), új `items` szakasz:
   - `catalog`: `"off"` (alapérték) vagy `"required"`;
   - `catalog_revision`: legalább 1, alapértéke 1;
-  - `catalog_sha256`: üres vagy 64 kisbetűs hexa karakter.
+  - `catalog_sha256`: üres vagy 64 kisbetűs hexa karakter;
+  - `drops` (C7b-3 óta): `"legacy"` (alapérték) vagy `"typed"`. A `"typed"`
+    csak `catalog = "required"` mellett érvényes; lásd
+    [IC-035](item_combat_035_drops.md).
 
   Hibás érték esetén a konfiguráció nem töltődik be, és az élő beállítás nem
   változik. A séma (`docs/schemas/server.schema.json`) és a szerverkezelő

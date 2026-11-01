@@ -1,6 +1,7 @@
 #pragma once
 #include "ItemCatalog.hpp"
 #include "ItemInstanceId.hpp"
+#include <deque>
 #include <optional>
 #include <span>
 #include <variant>
@@ -162,6 +163,13 @@ struct ItemGrant
 };
 std::expected<ItemCommit,ItemPersistenceError> MakeGrantCommit(const ItemCatalog&,std::array<std::uint8_t,16> operationId,
     ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const ItemGrant&,std::span<const ItemInstanceId> ids);
+// Grants that wait while an earlier typed operation of the owner is in the
+// store (C7b-3 monster drops). A grant joins the first waiting grant of the
+// same item state whose sum stays within `mergeLimit` units (one stack), else
+// it queues behind. False, and nothing changes, for zero units or a queue
+// already holding MaxPendingGrants grants.
+inline constexpr std::size_t MaxPendingGrants=256;
+bool QueueGrant(std::deque<ItemGrant>& pending,const ItemGrant& grant,std::uint32_t mergeLimit);
 // Refines one inventory item of the owner with one catalog recipe (F4 C6).
 // Only the owner's live inventory items take part: an equipped item is never
 // the source or a material. The Gold wallet pays. The server supplies the

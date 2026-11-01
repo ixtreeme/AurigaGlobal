@@ -343,6 +343,8 @@ static void __ApplyConnectConfig(const GameConfig& cfg)
 				exit(1);
 			}
 			LOG_INFO("ItemStore: started");
+			items::EnableTypedDrops(cfg.items.drops == "typed");
+			LOG_INFO("ItemDrops: {}", cfg.items.drops == "typed" ? "typed (catalog drop tables)" : "legacy drop tables");
 		}
 		else
 			LOG_INFO("ItemCatalog: off (legacy item_proto runtime)");

@@ -54,6 +54,8 @@
 #include "../../entity/char_manager.h"
 #include "../../item/item.h"
 #include "../../item/item_manager.h"
+#include "../../item/ItemCatalogRuntime.hpp"
+#include "../../item/TypedDrops.hpp"
 #include "../../entity/mob_manager.h"
 #include "../../combat/battle.h"
 #include "../../combat/pvp.h"
@@ -3615,6 +3617,211 @@ static std::set<uint32_t> verjema_szadba_ixtreeme =
 };
 #endif
 
+#ifdef ENABLE_DUNGEON_SHARED_DROP_HWID
+// Dungeon party shared drop (ground + ownership) + HWID|HOST szures:
+// - csak mapindex
+// - csak ha a killer partyban van
+// - ugyanazt a dropot kapja minden jogosult (kulon item peldany, ownershipelve)
+// - azonos HWID+HOST eseten csak 1 karakter kap (a legtobb dmg a mobra)
+// The winners of a shared dungeon drop (one character per HWID|HOST, the
+// most damage wins), or none outside those dungeons. Legacy and typed drops
+// (C7b-3) give every winner its own copy.
+static std::vector<entt::entity> SharedDungeonDropWinners(entt::entity e, entt::entity attacker)
+{
+	if (ecs::SocialSystem::GetDungeon(e) == entt::null || !ecs::IsCharacter(attacker) || !ecs::PlayerRuntime::IsPC(attacker))
+		return {};
+	const long lMapIndex = ecs::PlayerRuntime::GetMapIndex(e); // a megolt mob mapindexe
+	if (!(
+		(lMapIndex >= 3550000 && lMapIndex < 3560000)  // ork
+
+		|| (lMapIndex >= 660000 && lMapIndex < 670000)   // dt
+		|| (lMapIndex >= 3690000 && lMapIndex < 3700000)  // triton
+		|| (lMapIndex >= 3570000 && lMapIndex < 3580000)  // pyramid
+		|| (lMapIndex >= 3730000 && lMapIndex < 3740000)  // nightmare
+		|| (lMapIndex >= 180000 && lMapIndex < 190000)   // bagoly
+		|| (lMapIndex >= 2180000 && lMapIndex < 2190000)  // runa
+		|| (lMapIndex >= 2120000 && lMapIndex < 2130000)  // meley
+		|| (lMapIndex >= 3670000 && lMapIndex < 3680000)  // majom
+		|| (lMapIndex >= 3520000 && lMapIndex < 3530000)  // nemere
+		|| (lMapIndex >= 270000 && lMapIndex < 280000)   // slyme
+		|| (lMapIndex >= 2080000 && lMapIndex < 2090000)  // beran
+		|| (lMapIndex >= 2160000 && lMapIndex < 2170000)  // catacombe
+		|| (lMapIndex >= 2090000 && lMapIndex < 2100000)  // ochao
+		|| (lMapIndex >= 2100000 && lMapIndex < 2110000)  // valazslatos erdo
+		|| (lMapIndex >= 3510000 && lMapIndex < 3520000)  // razador
+		|| (lMapIndex >= 2170000 && lMapIndex < 2180000)  // pokbaro
+		|| (lMapIndex >= 1610000 && lMapIndex < 1620000)  // vampir
+		|| (lMapIndex >= 1790000 && lMapIndex < 1800000)  // viking
+		))
+		return {};
+	if (ecs::SocialSystem::GetParty(attacker) == entt::null) // CSAK partyra
+		return {};
+	const entt::entity pDungeon = ecs::SocialSystem::GetDungeon(e);
+	// csak akkor, ha a killer ugyanebben a dungeon instance-ben van
+	if (ecs::SocialSystem::GetDungeon(attacker) != pDungeon)
+		return {};
+
+	// --- helper: HWID|HOST kulcs ugyanugy, ahogy nalad masutt is ---
+	auto MakeHwidHostKey = [&](entt::entity ch) -> std::string
+		{
+			if (ch == entt::null || !ecs::PlayerRuntime::IsPC(ch) || !ecs::PlayerRuntime::GetDesc(ch))
+				return std::string();
+
+			DESC* d = ecs::PlayerRuntime::GetDesc(ch);
+			const char* hwid = d->GetHwid();
+			const char* host = d->GetHostName();
+
+			if (!hwid || !*hwid)
+				return std::string();
+			if (!host || !*host)
+				return std::string();
+
+			std::string key;
+			key.reserve(128);
+			key += hwid;
+			key += "|";
+			key += host;
+			return key;
+		};
+
+	// 1) HWID|HOST alapjan 1 karakter / gep (dupe eseten a legtobb dmg kap)
+	std::unordered_map<std::string, entt::entity> mapWinnerByKey;
+	mapWinnerByKey.reserve(16);
+
+	DungeonSystem::ForEachMember(pDungeon, [&](entt::entity mch)
+		{
+			const entt::entity mchEntity = mch;
+			if (mch == entt::null || !ecs::PlayerRuntime::IsPC(mchEntity) || !ecs::PlayerRuntime::GetDesc(mchEntity))
+				return;
+
+			// ugyanabban a dungeon instance-ben kell legyen
+			if (ecs::SocialSystem::GetDungeon(mchEntity) != pDungeon)
+				return;
+
+			//   ugyanazon a mapindexen legyen (INSTANCE) -> NINCS hibas normalizalas
+			if (ecs::PlayerRuntime::GetMapIndex(mchEntity) != lMapIndex)
+				return;
+
+			// ugyanabban a partyban legyen
+			if (ecs::SocialSystem::GetParty(mchEntity) != ecs::SocialSystem::GetParty(attacker))
+				return;
+
+			std::string key = MakeHwidHostKey(mch);
+
+			// ha nincs hwid/host, fallback: account (ne kapjon duplan)
+			if (key.empty())
+				key = "ACC:" + std::to_string(ecs::PlayerRuntime::GetDesc(mchEntity)->GetAccountTable().id);
+
+			auto it = mapWinnerByKey.find(key);
+			if (it == mapWinnerByKey.end())
+			{
+				mapWinnerByKey.emplace(std::move(key), mch);
+				return;
+			}
+
+			// dupe HWID|HOST: a legtobb dmg-et okozo kap
+			uint64_t dmgNew = 0;
+			uint64_t dmgOld = 0;
+
+			auto itNew = CombatSystem::DamageLedgerOf(e).entries.find(mchEntity);
+			if (itNew != CombatSystem::DamageLedgerOf(e).entries.end())
+				dmgNew = itNew->second.totalDamage;
+
+			auto itOld = CombatSystem::DamageLedgerOf(e).entries.find(it->second);
+			if (itOld != CombatSystem::DamageLedgerOf(e).entries.end())
+				dmgOld = itOld->second.totalDamage;
+
+			if (dmgNew > dmgOld)
+				it->second = mch;
+		});
+
+	std::vector<entt::entity> winners;
+	winners.reserve(mapWinnerByKey.size());
+	for (const auto& kv : mapWinnerByKey)
+		winners.push_back(kv.second);
+	return winners;
+}
+#endif // ENABLE_DUNGEON_SHARED_DROP_HWID
+
+// The drop owners of a kill (legacy rule): the attackers that dealt at least a
+// tenth of the damage, most damage first. Shared by legacy and typed drops.
+static std::vector<entt::entity> DropContributors(entt::entity victim)
+{
+	std::priority_queue<std::pair<uint64_t, entt::entity> > pq;
+	uint64_t total_dam = 0;
+	for (const auto& [attacker, contribution] : CombatSystem::DamageLedgerOf(victim).entries)
+	{
+		const uint64_t iDamage = contribution.totalDamage;
+		if (iDamage > 0 && ecs::PlayerRuntime::IsValid(attacker))
+		{
+			pq.push(std::make_pair(iDamage, attacker));
+			total_dam += iDamage;
+		}
+	}
+	std::vector<entt::entity> v;
+	while (!pq.empty() && pq.top().first * 10 >= total_dam)
+	{
+		v.push_back(pq.top().second);
+		pq.pop();
+	}
+	return v;
+}
+
+// Typed drops of one kill (F4 C7b-3, IC-035): the catalog drop tables roll
+// with the kill's legacy GetDropPct values, and each drop goes to the owner
+// the legacy rule picks: the killer for a single drop, else the main
+// attackers in turn (a party's own ownership order); in a shared dungeon every
+// winner gets its own copy. The rare bonus chance is not applied yet.
+static void GiveTypedMobDrops(entt::entity victim, entt::entity killer, int deltaPercent, int randRange)
+{
+	namespace items = auriga::item;
+	items::MobDropContext kill;
+	kill.mobVnum = ecs::PlayerRuntime::GetRaceNum(victim);
+	kill.mobRank = static_cast<uint8_t>(ecs::PlayerRuntime::GetMobRank(victim));
+	kill.stone = ecs::PlayerRuntime::IsStone(victim);
+	kill.killerLevel = static_cast<uint16_t>(std::clamp(ecs::PointSystem::GetLevel(killer), 1, 65535));
+	kill.deltaPercent = deltaPercent;
+	kill.randomRange = randRange > 0 ? static_cast<uint32_t>(randRange) : 0;
+	kill.doubleDrop = ecs::PlayerRuntime::GetPremiumRemainSeconds(killer, PREMIUM_ITEM) > 0 ||
+		ItemSystem::IsEquipUniqueGroup(killer, UNIQUE_GROUP_DOUBLE_ITEM)
+#ifdef ENABLE_NEW_COMMON_BONUSES
+		|| ecs::PointSystem::Get(killer, APPLY_DOUBLE_DROP_ITEM) > 0
+#endif
+		;
+	const auto drops = RollTypedMobDrops(kill);
+	if (drops.empty())
+		return;
+	const auto give = [](entt::entity owner, const items::MobDrop& drop) {
+		QueueTypedItemGrant(owner, { drop.item, drop.refinementLevel, drop.amount });
+	};
+#ifdef ENABLE_DUNGEON_SHARED_DROP_HWID
+	if (const auto winners = SharedDungeonDropWinners(victim, killer); !winners.empty())
+	{
+		for (const entt::entity winner : winners)
+			for (const auto& drop : drops)
+				give(winner, drop);
+		return;
+	}
+#endif
+	const auto contributors = drops.size() > 1 ? DropContributors(victim) : std::vector<entt::entity> {};
+	if (contributors.empty())
+	{
+		for (const auto& drop : drops)
+			give(killer, drop);
+		return;
+	}
+	auto next = contributors.begin();
+	for (const auto& drop : drops)
+	{
+		entt::entity owner = *next;
+		if (const entt::entity party = ecs::SocialSystem::GetParty(owner); party != entt::null)
+			owner = PartySystem::GetNextOwnership(party, owner, ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim));
+		if (++next == contributors.end())
+			next = contributors.begin();
+		give(owner, drop);
+	}
+}
+
 // char_battle.cpp slice BC3b moved into CombatSystem.cpp
 
 namespace CombatSystem {
@@ -3728,7 +3935,16 @@ void Reward(entt::entity e, bool bItemDrop)
 	std::vector<entt::entity> s_vec_item;
 	s_vec_item.clear();
 
-	if (ITEM_MANAGER::instance().CreateDropItem(e, attacker, s_vec_item))
+	// One GetDropPct per kill, shared by the legacy drops and, with
+	// items.drops = "typed", the catalog drop tables that replace the legacy
+	// tables (F4 C7b-3, IC-035).
+	int iDeltaPercent = 0, iRandRange = 0;
+	const bool bDropPct = ITEM_MANAGER::instance().GetDropPct(e, attacker, iDeltaPercent, iRandRange);
+	const bool bTypedDrops = bDropPct && auriga::item::runtime::TypedDropsEnabled();
+	if (bTypedDrops)
+		GiveTypedMobDrops(e, attacker, iDeltaPercent, iRandRange);
+
+	if (bDropPct && ITEM_MANAGER::instance().CreateDropItem(e, attacker, s_vec_item, iDeltaPercent, iRandRange, !bTypedDrops))
 	{
 
 #ifdef ENABLE_RARE_DROP_NOTICE_RAZOR93
@@ -3754,225 +3970,116 @@ void Reward(entt::entity e, bool bItemDrop)
 		// - ugyanazt a dropot kapja minden jogosult (kulon item peldany, ownershipelve)
 		// - azonos HWID+HOST eseten csak 1 karakter kap (a legtobb dmg a mobra)
 
-		if (ecs::SocialSystem::GetDungeon(e) != entt::null && ecs::IsCharacter(attacker) && ecs::PlayerRuntime::IsPC(attacker) && !s_vec_item.empty())
+		if (!s_vec_item.empty())
 		{
 			const long lMapIndex = ecs::PlayerRuntime::GetMapIndex(e); // a megolt mob mapindexe
-
-			if (
-				(lMapIndex >= 3550000 && lMapIndex < 3560000)  // ork
-
-				|| (lMapIndex >= 660000 && lMapIndex < 670000)   // dt
-				|| (lMapIndex >= 3690000 && lMapIndex < 3700000)  // triton
-				|| (lMapIndex >= 3570000 && lMapIndex < 3580000)  // pyramid
-				|| (lMapIndex >= 3730000 && lMapIndex < 3740000)  // nightmare
-				|| (lMapIndex >= 180000 && lMapIndex < 190000)   // bagoly
-				|| (lMapIndex >= 2180000 && lMapIndex < 2190000)  // runa
-				|| (lMapIndex >= 2120000 && lMapIndex < 2130000)  // meley
-				|| (lMapIndex >= 3670000 && lMapIndex < 3680000)  // majom
-				|| (lMapIndex >= 3520000 && lMapIndex < 3530000)  // nemere
-				|| (lMapIndex >= 270000 && lMapIndex < 280000)   // slyme
-				|| (lMapIndex >= 2080000 && lMapIndex < 2090000)  // beran
-				|| (lMapIndex >= 2160000 && lMapIndex < 2170000)  // catacombe
-				|| (lMapIndex >= 2090000 && lMapIndex < 2100000)  // ochao
-				|| (lMapIndex >= 2100000 && lMapIndex < 2110000)  // valazslatos erdo
-				|| (lMapIndex >= 3510000 && lMapIndex < 3520000)  // razador
-				|| (lMapIndex >= 2170000 && lMapIndex < 2180000)  // pokbaro
-				|| (lMapIndex >= 1610000 && lMapIndex < 1620000)  // vampir
-				|| (lMapIndex >= 1790000 && lMapIndex < 1800000)  // viking
-				)
+			const std::vector<entt::entity> winners = SharedDungeonDropWinners(e, attacker);
+			if (!winners.empty())
 			{
-				if (ecs::SocialSystem::GetParty(attacker) != entt::null) // CSAK partyra
+				// 2) template drop lementese (vnum/count/socket/attr)
+				struct SPartySharedDropItem
 				{
-					const entt::entity pDungeon = ecs::SocialSystem::GetDungeon(e);
+					uint32_t vnum;
+					uint32_t count;
+					// uint32_t, not long: sockets are 32-bit on the wire and
+					// on Windows, but long is 64-bit on LP64 (FreeBSD).
+					uint32_t sockets[ITEM_SOCKET_MAX_NUM];
+					TPlayerItemAttribute attrs[ITEM_ATTRIBUTE_MAX_NUM];
+				};
 
-					// csak akkor, ha a killer ugyanebben a dungeon instance-ben van
-					if (ecs::SocialSystem::GetDungeon(attacker) == pDungeon)
+				std::vector<SPartySharedDropItem> drops;
+				drops.reserve(s_vec_item.size());
+
+				for (const entt::entity srcItem : s_vec_item)
+				{
+					if (!ItemSystem::IsValidItem(srcItem))
+						continue;
+
+					SPartySharedDropItem di{};
+					di.vnum = ItemSystem::GetItemVnum(srcItem);
+					di.count = ItemSystem::GetItemCount(srcItem);
+
+					for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+						di.sockets[i] = ItemSystem::GetItemSocket(srcItem, i);
+
+					for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+						di.attrs[i] = ItemSystem::GetItemAttribute(srcItem, i);
+
+					drops.push_back(di);
+				}
+
+				// 3) kiosztas: minden HWID-unique winnernek ugyanaz a drop (ground + ownership)
+				for (const entt::entity rchEntity : winners)
+				{
+					if (rchEntity == entt::null || !ecs::PlayerRuntime::IsPC(rchEntity) || !ecs::PlayerRuntime::GetDesc(rchEntity))
+						continue;
+
+					PIXEL_POSITION mpos = pos;
+
+					// kis eltolas, hogy ne 1 pontra essen minden
+					mpos.x = number(-7, 7) * 20 + ecs::PlayerRuntime::GetX(e);
+					mpos.y = number(-7, 7) * 20 + ecs::PlayerRuntime::GetY(e);
+
+					for (const auto& di : drops)
 					{
-						// --- helper: HWID|HOST kulcs ugyanugy, ahogy nalad masutt is ---
-						auto MakeHwidHostKey = [&](entt::entity ch) -> std::string
-							{
-								if (ch == entt::null || !ecs::PlayerRuntime::IsPC(ch) || !ecs::PlayerRuntime::GetDesc(ch))
-									return std::string();
+						const entt::entity newItem =
+							ITEM_MANAGER::instance().CreateItem(di.vnum, di.count);
+						if (!ItemSystem::IsValidItem(newItem))
+							continue;
 
-								DESC* d = ecs::PlayerRuntime::GetDesc(ch);
-								const char* hwid = d->GetHwid();
-								const char* host = d->GetHostName();
+						for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+							ItemSystem::SetItemSocket(newItem, i, di.sockets[i]);
 
-								if (!hwid || !*hwid)
-									return std::string();
-								if (!host || !*host)
-									return std::string();
-
-								std::string key;
-								key.reserve(128);
-								key += hwid;
-								key += "|";
-								key += host;
-								return key;
-							};
-
-						// 1) HWID|HOST alapjan 1 karakter / gep (dupe eseten a legtobb dmg kap)
-						std::unordered_map<std::string, entt::entity> mapWinnerByKey;
-						mapWinnerByKey.reserve(16);
-
-						DungeonSystem::ForEachMember(pDungeon, [&](entt::entity mch)
-							{
-								const entt::entity mchEntity = mch;
-								if (mch == entt::null || !ecs::PlayerRuntime::IsPC(mchEntity) || !ecs::PlayerRuntime::GetDesc(mchEntity))
-									return;
-
-								// ugyanabban a dungeon instance-ben kell legyen
-								if (ecs::SocialSystem::GetDungeon(mchEntity) != pDungeon)
-									return;
-
-								//   ugyanazon a mapindexen legyen (INSTANCE) -> NINCS hibas normalizalas
-								if (ecs::PlayerRuntime::GetMapIndex(mchEntity) != lMapIndex)
-									return;
-
-								// ugyanabban a partyban legyen
-								if (ecs::SocialSystem::GetParty(mchEntity) != ecs::SocialSystem::GetParty(attacker))
-									return;
-
-								std::string key = MakeHwidHostKey(mch);
-
-								// ha nincs hwid/host, fallback: account (ne kapjon duplan)
-								if (key.empty())
-									key = "ACC:" + std::to_string(ecs::PlayerRuntime::GetDesc(mchEntity)->GetAccountTable().id);
-
-								auto it = mapWinnerByKey.find(key);
-								if (it == mapWinnerByKey.end())
-								{
-									mapWinnerByKey.emplace(std::move(key), mch);
-									return;
-								}
-
-								// dupe HWID|HOST: a legtobb dmg-et okozo kap
-								uint64_t dmgNew = 0;
-								uint64_t dmgOld = 0;
-
-								auto itNew = CombatSystem::DamageLedgerOf(e).entries.find(mchEntity);
-								if (itNew != CombatSystem::DamageLedgerOf(e).entries.end())
-									dmgNew = itNew->second.totalDamage;
-
-								auto itOld = CombatSystem::DamageLedgerOf(e).entries.find(it->second);
-								if (itOld != CombatSystem::DamageLedgerOf(e).entries.end())
-									dmgOld = itOld->second.totalDamage;
-
-								if (dmgNew > dmgOld)
-									it->second = mch;
-							});
-
-						if (!mapWinnerByKey.empty())
-						{
-							// 2) template drop lementese (vnum/count/socket/attr)
-							struct SPartySharedDropItem
-							{
-								uint32_t vnum;
-								uint32_t count;
-								// uint32_t, not long: sockets are 32-bit on the wire and
-								// on Windows, but long is 64-bit on LP64 (FreeBSD).
-								uint32_t sockets[ITEM_SOCKET_MAX_NUM];
-								TPlayerItemAttribute attrs[ITEM_ATTRIBUTE_MAX_NUM];
-							};
-
-							std::vector<SPartySharedDropItem> drops;
-							drops.reserve(s_vec_item.size());
-
-							for (const entt::entity srcItem : s_vec_item)
-							{
-								if (!ItemSystem::IsValidItem(srcItem))
-									continue;
-
-								SPartySharedDropItem di{};
-								di.vnum = ItemSystem::GetItemVnum(srcItem);
-								di.count = ItemSystem::GetItemCount(srcItem);
-
-								for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-									di.sockets[i] = ItemSystem::GetItemSocket(srcItem, i);
-
-								for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-									di.attrs[i] = ItemSystem::GetItemAttribute(srcItem, i);
-
-								drops.push_back(di);
-							}
-
-							// 3) kiosztas: minden HWID-unique winnernek ugyanaz a drop (ground + ownership)
-							for (const auto& kv : mapWinnerByKey)
-							{
-								const entt::entity rchEntity = kv.second;
-
-								if (rchEntity == entt::null || !ecs::PlayerRuntime::IsPC(rchEntity) || !ecs::PlayerRuntime::GetDesc(rchEntity))
-									continue;
-
-								PIXEL_POSITION mpos = pos;
-
-								// kis eltolas, hogy ne 1 pontra essen minden
-								mpos.x = number(-7, 7) * 20 + ecs::PlayerRuntime::GetX(e);
-								mpos.y = number(-7, 7) * 20 + ecs::PlayerRuntime::GetY(e);
-
-								for (const auto& di : drops)
-								{
-									const entt::entity newItem =
-										ITEM_MANAGER::instance().CreateItem(di.vnum, di.count);
-									if (!ItemSystem::IsValidItem(newItem))
-										continue;
-
-									for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-										ItemSystem::SetItemSocket(newItem, i, di.sockets[i]);
-
-									for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-										ItemSystem::SetItemAttribute(
-											newItem, i, di.attrs[i].bType, di.attrs[i].sValue);
+						for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+							ItemSystem::SetItemAttribute(
+								newItem, i, di.attrs[i].bType, di.attrs[i].sValue);
 
 #ifdef ENABLE_DROP_INSTANT_INVENTORY
-									if (bInstantRewardToInventory)
-									{
-										__GiveRewardItemToCharacterOrDrop(rchEntity, e, newItem, mpos);
-									}
-									else
-									{
-										if (!ItemSystem::PlaceItemOnGround(
-												newItem, lMapIndex, mpos, 300))
-										{
-											ItemSystem::DestroyItemEntityEcs(
-												newItem, "SHARED_DROP_PLACE_FAIL");
-											continue;
-										}
-
-										if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(rchEntity)) == false)
-											ItemSystem::SetGroundOwnership(
-												newItem, rchEntity);
-									}
-#else
-									if (!ItemSystem::PlaceItemOnGround(
-											newItem, lMapIndex, mpos, 300))
-									{
-										ItemSystem::DestroyItemEntityEcs(
-											newItem, "SHARED_DROP_PLACE_FAIL");
-										continue;
-									}
-
-									if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(rchEntity)) == false)
-										ItemSystem::SetGroundOwnership(
-											newItem, rchEntity);
-#endif
-								}
-							}
-
-							// 4) a template itemeket megsemmisitjuk, hogy ne duplazzon
-							for (const entt::entity srcItem : s_vec_item)
-							{
-								if (ItemSystem::IsValidItem(srcItem))
-									ItemSystem::DestroyItemEntityEcs(
-										srcItem,
-										"COMBAT_SHARED_DROP_TEMPLATE");
-							}
-
-							s_vec_item.clear();
-							bSharedDungeonDrop = true;
+						if (bInstantRewardToInventory)
+						{
+							__GiveRewardItemToCharacterOrDrop(rchEntity, e, newItem, mpos);
 						}
+						else
+						{
+							if (!ItemSystem::PlaceItemOnGround(
+									newItem, lMapIndex, mpos, 300))
+							{
+								ItemSystem::DestroyItemEntityEcs(
+									newItem, "SHARED_DROP_PLACE_FAIL");
+								continue;
+							}
+
+							if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(rchEntity)) == false)
+								ItemSystem::SetGroundOwnership(
+									newItem, rchEntity);
+						}
+#else
+						if (!ItemSystem::PlaceItemOnGround(
+								newItem, lMapIndex, mpos, 300))
+						{
+							ItemSystem::DestroyItemEntityEcs(
+								newItem, "SHARED_DROP_PLACE_FAIL");
+							continue;
+						}
+
+						if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(rchEntity)) == false)
+							ItemSystem::SetGroundOwnership(
+								newItem, rchEntity);
+#endif
 					}
 				}
+
+				// 4) a template itemeket megsemmisitjuk, hogy ne duplazzon
+				for (const entt::entity srcItem : s_vec_item)
+				{
+					if (ItemSystem::IsValidItem(srcItem))
+						ItemSystem::DestroyItemEntityEcs(
+							srcItem,
+							"COMBAT_SHARED_DROP_TEMPLATE");
+				}
+
+				s_vec_item.clear();
+				bSharedDungeonDrop = true;
 			}
 		}
 #endif // ENABLE_DUNGEON_SHARED_DROP_HWID
@@ -4029,30 +4136,7 @@ void Reward(entt::entity e, bool bItemDrop)
 			{
 				int iItemIdx = s_vec_item.size() - 1;
 
-				std::priority_queue<std::pair<uint64_t, entt::entity> > pq;
-
-				uint64_t total_dam = 0;
-
-				for (std::map<entt::entity, ecs::BattleContribution>::iterator it = CombatSystem::DamageLedgerOf(e).entries.begin(); it != CombatSystem::DamageLedgerOf(e).entries.end(); ++it)
-				{
-					uint64_t iDamage = it->second.totalDamage;
-					if (iDamage > 0)
-					{
-						if (ecs::PlayerRuntime::IsValid(it->first))
-						{
-							pq.push(std::make_pair(iDamage, it->first));
-							total_dam += iDamage;
-						}
-					}
-				}
-
-				std::vector<entt::entity> v;
-
-				while (!pq.empty() && pq.top().first * 10 >= total_dam)
-				{
-					v.push_back(pq.top().second);
-					pq.pop();
-				}
+				std::vector<entt::entity> v = DropContributors(e);
 
 				if (v.empty())
 				{
@@ -4177,30 +4261,7 @@ void Reward(entt::entity e, bool bItemDrop)
 			{
 				int iItemIdx = s_vec_item.size() - 1;
 
-				std::priority_queue<std::pair<uint64_t, entt::entity> > pq;
-
-				uint64_t total_dam = 0;
-
-				for (std::map<entt::entity, ecs::BattleContribution>::iterator it = CombatSystem::DamageLedgerOf(e).entries.begin(); it != CombatSystem::DamageLedgerOf(e).entries.end(); ++it)
-				{
-					uint64_t iDamage = it->second.totalDamage;
-					if (iDamage > 0)
-					{
-						if (ecs::PlayerRuntime::IsValid(it->first))
-						{
-							pq.push(std::make_pair(iDamage, it->first));
-							total_dam += iDamage;
-						}
-					}
-				}
-
-				std::vector<entt::entity> v;
-
-				while (!pq.empty() && pq.top().first * 10 >= total_dam)
-				{
-					v.push_back(pq.top().second);
-					pq.pop();
-				}
+				std::vector<entt::entity> v = DropContributors(e);
 
 				if (v.empty())
 				{

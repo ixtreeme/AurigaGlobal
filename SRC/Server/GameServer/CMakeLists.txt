@@ -859,7 +859,8 @@ add_executable(CombatStateTests EXCLUDE_FROM_ALL
     combat/battle.cpp
 )
 target_compile_definitions(CombatStateTests PRIVATE ENABLE_ANTICHEAT ENABLE_CHECK_BATTLE)
-target_link_libraries(CombatStateTests PRIVATE SERVER EnTT::EnTT LUA)
+# AurigaItemCatalog only for the item domain headers of the typed drops (C7b-3).
+target_link_libraries(CombatStateTests PRIVATE SERVER EnTT::EnTT LUA AurigaItemCatalog)
 if(WIN32)
     target_link_libraries(CombatStateTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
 endif()

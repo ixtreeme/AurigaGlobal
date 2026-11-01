@@ -47,6 +47,8 @@
 #include "../../SRC/Server/GameServer/entity/char_manager.h"
 #include "../../SRC/Server/GameServer/item/item.h"
 #include "../../SRC/Server/GameServer/item/item_manager.h"
+#include "../../SRC/Server/GameServer/item/ItemCatalogRuntime.hpp"
+#include "../../SRC/Server/GameServer/item/TypedDrops.hpp"
 #include "../../SRC/Server/GameServer/entity/mob_manager.h"
 #include "../../SRC/Server/GameServer/combat/battle.h"
 #include "../../SRC/Server/GameServer/combat/pvp.h"
@@ -582,7 +584,11 @@ int CHARACTER_MANAGER::GetMobExpRate(entt::entity) { UnexpectedService(__func__)
 int CHARACTER_MANAGER::GetUserDamageRate(entt::entity) { UnexpectedService(__func__); }
 event_struct_ const * CHARACTER_MANAGER::CheckEventIsActive(unsigned char,unsigned char) { UnexpectedService(__func__); }
 entt::entity ITEM_MANAGER::CreateItem(unsigned int,unsigned int,unsigned int,bool,int,bool) { UnexpectedService(__func__); }
-bool ITEM_MANAGER::CreateDropItem(entt::entity,entt::entity,std::vector<entt::entity,std::allocator<entt::entity> > &) { UnexpectedService(__func__); }
+bool ITEM_MANAGER::CreateDropItem(entt::entity,entt::entity,std::vector<entt::entity,std::allocator<entt::entity> > &,int,int,bool) { UnexpectedService(__func__); }
+bool ITEM_MANAGER::GetDropPct(entt::entity,entt::entity,int&,int&) { UnexpectedService(__func__); }
+std::vector<auriga::item::MobDrop> RollTypedMobDrops(const auriga::item::MobDropContext&) { UnexpectedService(__func__); }
+void QueueTypedItemGrant(entt::entity,const auriga::item::ItemGrant&) { UnexpectedService(__func__); }
+bool auriga::item::runtime::TypedDropsEnabled() noexcept { return false; }
 bool CPVPManager::Dead(entt::entity,unsigned int) { UnexpectedService(__func__); }
 void LogManager::ItemLogEntity(entt::entity,entt::entity,char const *,char const *) { UnexpectedService(__func__); }
 void LogManager::CharLog(entt::entity,unsigned int,char const *,char const *) { UnexpectedService(__func__); }

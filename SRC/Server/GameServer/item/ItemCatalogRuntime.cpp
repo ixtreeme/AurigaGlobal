@@ -13,6 +13,7 @@ namespace auriga::item::runtime
 namespace
 {
 std::atomic<std::shared_ptr<const ItemCatalog>> g_catalog;
+std::atomic<bool> g_typedDrops { false };
 
 constexpr const char* ReadErrorNames[] = {
 	"InvalidPin", "RowLimit", "ByteBudget", "ColumnCount", "NullValue", "InvalidNumber",
@@ -87,5 +88,15 @@ std::expected<std::optional<CatalogSummary>, std::string> LoadCatalogAtBoot(cons
 std::shared_ptr<const ItemCatalog> CurrentCatalog() noexcept
 {
 	return g_catalog.load();
+}
+
+void EnableTypedDrops(bool enabled) noexcept
+{
+	g_typedDrops.store(enabled);
+}
+
+bool TypedDropsEnabled() noexcept
+{
+	return g_typedDrops.load() && g_catalog.load() != nullptr;
 }
 } // namespace auriga::item::runtime
