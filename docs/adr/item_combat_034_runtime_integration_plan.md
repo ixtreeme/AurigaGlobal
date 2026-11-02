@@ -1,7 +1,7 @@
 # ADR IC-034 — F4 szerverbekötés: ütemterv és 1. szelet (katalógus induláskor)
 
 2026-10-29. Fázis: F4 ([IC-012](item_combat_012_item_runtime_first.md)).
-Állapot (2026-11-01): **C1–C11 implementált; az elkészült futásidejű
+Állapot (2026-11-02): **C1–C12 implementált; az elkészült futásidejű
 műveletek Unity 6.3-ból kezelhetők, helyi szerverrel ellenőrizve**.
 
 ## Közös szerver–Unity munkamenet (felhasználói döntés, 2026-11-01)
@@ -23,8 +23,8 @@ az összevonás részletei és ellenőrzései a
 |---|---|---|---|
 | A. Speciális tárgyműveletek | Páros (kapcsolt) bónuszok; jelmez-, stóla- és rúnabónuszok; fejlesztési segédanyagok | F2 maradéka | nyitott ([IC-031](item_combat_031_instance_attributes.md) határa) |
 | B. Tartós tárgymentés | Teljes mentés, visszatöltés és tranzakciókezelés a futó szerverben; a még nem támogatott kategóriák példányállapota | F3 maradéka | a modell, az író és a próbapad kész ([IC-032](item_combat_032_item_persistence.md), [IC-033](item_combat_033_item_test_bench.md)) |
-| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C11 kész**; a quest/Mission és további használatok még nyitottak |
-| D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | **C1–C11 kliensútjai kész**, részletek lent |
+| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C12 kész**, C12-ben egyszeri NPC-s tárgyleadás; általános Mission/Lua-quest és további használatok még nyitottak |
+| D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | **C1–C12 kliensútjai kész**, részletek lent |
 | E. Teljes adatkonverzió | Régi protók, példányok, receptek, tartalmi hivatkozások | F6 | az eszközök megvannak; a családtérkép jóváhagyásra vár |
 | F. Végső ellenőrzés | Helyi játékpróba, újrabelépés utáni adatmegőrzés, gazdasági műveletek, FreeBSD-build | F7 | nyitott |
 
@@ -531,7 +531,7 @@ Részletek és határok: [IC-039](item_combat_039_equipment_stats.md),
 A következő út a quest/Mission tárgyműveleteinek közös bekötése; az első
 korlátozott NPC-s leadás a C12 szeletben készült el.
 
-## C12 — NPC-s tárgyleadó Mission (2026-11-02, élő ellenőrzés alatt)
+## C12 — NPC-s tárgyleadó Mission (2026-11-02)
 
 Az ItemKey/szint/darab alapú, egyszer teljesíthető küldetések külön kezelik
 a nem fogyó tárgyfeltételt, a fogyasztást, a jutalmat és a Yangot. Egy
@@ -539,9 +539,10 @@ itemtranzakció menti a teljes eredményt és a tartós teljesítési receiptet.
 A meglévő MissionRuntime NPC-cél/jutalom/siker gráfja a receipt után zárul.
 Unity: **NPC kijelölése → I → Küldetések**, szerveres állapot és megerősítés.
 
-A natív, SQL- és Unity offline ellenőrzések sikeresek. A végleges helyi
-TLS-próba a nyitott Editor frissítésére vár; ez a szelet még nincs az
-élőben ellenőrzött C1–C11 közé sorolva. Általános többlépcsős Mission,
+A natív, SQL- és Unity offline ellenőrzések sikeresek, és a valódi helyi
+TLS-próba mind a négy fázisa átment, **87 ellenőrzéssel**. A teszt az aktuális
+források külön Unity 6.3 másolatán futott, az eredeti nyitott jelenet megőrzésével.
+Általános többlépcsős Mission,
 checkpoint/outbox/resource-writer aktiválás, XP/szintjutalom és legacy
 Lua-quest konverzió továbbra is nyitott.
 

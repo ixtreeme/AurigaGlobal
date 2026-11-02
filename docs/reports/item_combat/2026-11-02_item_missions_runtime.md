@@ -1,7 +1,8 @@
 # NPC-s tárgyleadó Mission — C12
 
 2026-11-02. Szerverág `codex/mission-engine`, Unity 6.3 `6000.3.27f1`,
-klienság `/main/codex-mission-engine`, **Unity changeset 45**.
+klienság `/main/codex-mission-engine`, funkció **Unity changeset 45**,
+automatikus batch ellenőrzés **changeset 46**.
 
 ## Eredmény és határ
 
@@ -42,11 +43,32 @@ Részletes döntések és tartalomformátum: [IC-040](../../adr/item_combat_040_
   csere **4553**, NPC-bolt **4044**, inventory **4179**. A küldetésablak
   `Logs/typed-item-mission-preview.png` képe vizuálisan ellenőrzött.
 
-Az élő TLS-próba végleges eredménye még rögzítendő. A nyitott Editor a
-legutóbbi sikeres scriptfordítás után nem folytatta az update ciklust;
-az Assets → Refresh lépést kértük, mert az alkalmazásvezérlő inicializálása hibás.
-A legutolsó kliensjavítás (halott/kábult karakter elküldetlen kérésének
-várakozását törli) Editor-újrafordítása is ezzel együtt ellenőrzendő.
+- Valódi helyi TLS Unity-klienssel **87 ellenőrzés, 4/4 fázis**: UI-s
+  megerősítés, tárgy/Yang/jutalom együtt mentése, azonos kérés ismétlése,
+  új NPC-nonce és régi nonce elutasítása, eredeti inputfeltétel megszűnése
+  utáni ismételt igénylés, nem fogyó tárgyfeltétel, minimumszint és hibás
+  küldetés elutasítása, pontos példány/szint/darab/Yang és teljesítés relog után.
+- Teljes, 180 halmos leltárban a helyhiány nem von le és nem ad teljesítést.
+  Az egész anyaghalom leadásakor annak helyére kerül az italjutalom, új ID-val;
+  a kész állapot relog után is megmarad. Pénzhiánynál és hiányzó előzetes
+  inputnál sincs részleges változás. A tesztinventory resetje nem törli a
+  történelmi teljesítést.
+
+A nyitott Editor és az alkalmazásvezérlő hibája miatt az unattended futás
+külön, forrásból készített Unity 6.3 tesztprojektben ment. A meglévő projekt
+és az Editor nem lett újraindítva vagy bezárva. **4292 forrásfájl** hashével
+ellenőrzött snapshot, benne **1696 változatlan C# fájl**, az eredeti beágyazott
+Addressables/SBP csomagokkal, aktuális manifestekkel, locale-lal, fonttal és
+a teszt által használt valódi kardikonnal/katalógussal. A legutolsó
+halott/kábult-kérésjavítás is ebben fordult újra.
+
+A batch bridge a megjelölt külön tesztprojektben egyetlen üres jelenetet
+használ, majd az eredmény után csak a teszt-Editort zárja be. A normál,
+nyitott projekt additív jelenetkezelése megmarad. A snapshot a szükséges
+validációs asseteket tartalmazza; ez nem teljes világasset- vagy standalone
+player-build ellenőrzés. A grafikát építő, ettől független Editor-hookok
+hiányzó világassetekről írhatnak a batch naplóba; a C# fordítás és a felsorolt
+tesztcsoportok eredménye sikeres.
 
 ## Helyi csomag és újrafuttatás
 
@@ -57,7 +79,7 @@ jutalomból előre nem finanszírozható input. Új adatfájl:
 `data/typed_item_missions.json`; a szerverkezelő adatfájl-szerkesztőjével szerkeszthető.
 
 A dedikált #1610 karakter állapota és pozíciója minden fixture-reset előtt
-a `run/item-mission-live/` alatt mentendő. Az eredeti bináris, manifest és
+a `run/item-mission-live/20261102T101126/` alatt mentve van. Az eredeti bináris, manifest és
 adatfájl a `run/deployments/item-missions-*` mentésben marad.
 A teszt kizárólag ellenőrzött saját fiókot épít át a karakterválasztóban,
 és nem töröl történelmi teljesítési receipteket. Új, már jutalmazó tesztfutás friss, explicit
@@ -69,8 +91,26 @@ A fixture jelszót és TLS-beállításokat tartalmaz, ezért nem része a commi
 A segéd az Editor opt-in fájlbridge-én keresztül valódi TLS-kliensfolyamatot
 indít, négy fázist készít elő, és siker után kézzel próbálható tárgyakat ad.
 
+Felügyelet nélküli futáshoz előbb `PrepareUnityValidationSnapshot.py --source
+<aktív Unity> --output <friss külön mappa> --changeset <forrás changeset>`.
+A külön projekten a rögzített Editor `-batchmode -nographics -projectPath ...
+-logFile ...` kapcsolókkal indulhat, a smoke script pedig ezt kapja
+`--unity-project` értékként. A segéd meglévő célmappát nem töröl és nem ír felül;
+nem használ hardlinket, így a snapshot importja sem írhatja az eredeti projektet.
+Az eredeti projektben függő saját tesztkérés eltávolítva, nincs később
+váratlanul induló validáció. A teszt-Editor a végén sikeresen kilépett.
+
+A kézi fixture ismét a kereskedő mellett áll: **1000 Yang, +1 fegyver,
++0 vért, 3 ital, 20 anyag**. A sikeres élő kör után csak a saját demó
+küldetésverziója lépett **1793614426**-ra, hogy a felhasználó friss,
+nem teljesített megbízásokkal próbálhassa: **NPC kijelölése → I → Küldetések**.
+A régi receiptek megmaradtak. A szerver újraindult a változatlan
+`2882ab954f05053e7314f8ab9ebd40110752541d620f9bd2a831769da456a464`
+GameServerrel; végső telepítési mentés `run/deployments/item-missions-20261102T101346`.
+
 Naplók: `build/item-missions-final-build.log`, `build/item-missions-final-ctest.log`,
-`build/item-missions-kernel-ctest.log`, `build/item-missions-live-harness-final.log`,
+`build/item-missions-kernel-ctest.log`, `build/item-missions-live-harness-batch-final4.log`,
+`build/item-missions-batch-editor-final4.log`, `build/item-missions-snapshot-verification.json`,
 Unity `METIN2_TYPED_ITEM_MISSION_*`.
 
 A korábbi felhasználói ProjectSettings-, csomagmanifest/lock- és AI-beállítások
