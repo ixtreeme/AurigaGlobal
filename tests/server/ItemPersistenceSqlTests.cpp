@@ -7,6 +7,7 @@
 #include <item/Crafting.hpp>
 #include <item/ContainerOpening.hpp>
 #include <item/TokenRedemption.hpp>
+#include <item/SocketMaintenance.hpp>
 #include <CatalogSqlReader.hpp>
 #include <SQL/AsyncSQL.h>
 #include <Core/Logging.hpp>
@@ -577,6 +578,32 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
             auto stale=MakeTokenRedemptionCommit(*c,op,state.fence,state.storages,state.items,state.wallets,id,1,INT64_MAX,{100,0,0,false});
             Check(stale && p::ClaimOwnerSession(writer,*c,customer).has_value(),"token relog advances session fence");Check(!p::CommitItems(writer,*c,stale->commit),"old login cannot redeem tokens");
         }
+    }
+    {
+        const ItemOwner customer{ItemOwnerKind::Character,880089};const auto bag=f::Inventory(customer);const ItemWallet wallet{customer,WalletCurrency::Gold,1,1000};
+        Check(p::ProvisionOwner(admin,*c,customer,std::span(&bag,1),std::span(&wallet,1)).has_value(),"socket maintenance owner provisioned");
+        auto state=p::LoadCurrentItemOwner(writer,*c,customer).value();const auto block=p::ReserveItemInstanceIds(writer,*c,6).value();
+        auto target=f::Sword(block.first);target.owner=customer;target.stones[2]={StoneSocketState::Occupied,2,socket_service_fixture::Stone(2),0};
+        auto tool=f::Leather(block.first+1);tool.owner=customer;tool.key=socket_service_fixture::Tool(2);tool.count=3;
+        ItemCommit grant;grant.operationId={15};grant.catalogRevision=c->Revision();grant.catalogHash=c->ContentHash();grant.kind=ItemOperationKind::Grant;grant.owners={state.fence};grant.storages={bag};grant.items={{{},target},{{},tool}};grant.outcomeCode=1;
+        Check(p::CommitItems(writer,*c,grant).has_value(),"socket fixture with exact embedded levels granted");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        const std::array outputs{ItemInstanceId::Create(block.first+2).value(),ItemInstanceId::Create(block.first+3).value()};
+        auto plan=MakeSocketMaintenanceCommit(*c,{15,1},state.fence,state.storages,state.items,tool.id,target.id,{100,1,1,false},outputs);Check(plan.has_value(),"socket extraction planned");
+        auto raced=plan->commit;++raced.items[1].before->revision;++raced.items[1].after.revision;
+        Check(!p::CommitItems(writer,*c,raced),"target CAS failure rolls back source and every stone");
+        const auto absent=p::FindItemReceipt(writer,*c,raced);Check(absent && !*absent,"failed extraction has no receipt");
+        auto after=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(after.items==state.items && after.wallets==state.wallets && after.fence==state.fence,"failed extraction preserves entire owner state");
+        Check(p::CommitItems(writer,*c,plan->commit).has_value(),"source, full socket replacement and all return instances share one SQL write");
+        const auto replay=p::CommitItems(writer,*c,plan->commit);Check(replay && replay->replay,"socket receipt replay cannot extract twice");
+        auto changed=plan->commit;changed.items[2].after.refinementLevel=19;Check(!p::CommitItems(writer,*c,changed),"same operation cannot alter returned level");
+        state=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(state.items.size()==4 && Find(state,tool.id.Value()).count==2 && Find(state,target.id.Value()).attributes==target.attributes && Find(state,target.id.Value()).stones==plan->quote.after && Find(state,outputs[0].Value()).refinementLevel==20 && Find(state,outputs[1].Value()).refinementLevel==0 && state.wallets[0].balance==1000,"all identities, grades, attributes, levels and wallet reload exactly");
+        auto clean=MakeSocketMaintenanceCommit(*c,{15,2},state.fence,state.storages,state.items,tool.id,target.id,{100,1,1,false},outputs);Check(!clean && clean.error()==SocketMaintenanceStatus::NoEffect,"already extracted stones cannot be returned again");
+        // Replace the extraction tool with a separately granted cleaning tool,
+        // then verify an old login cannot clean the remaining broken slots.
+        auto replace=MakeConsumeCommit(*c,{15,3},state.fence,state.storages,state.items,tool.id,2);Check(replace && p::CommitItems(writer,*c,*replace).has_value(),"spent extraction tool removed");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        auto add=MakeGrantCommit(*c,{15,4},state.fence,state.storages,state.items,{socket_service_fixture::Tool(1),0,1},std::array{ItemInstanceId::Create(block.first+4).value()});Check(add && p::CommitItems(writer,*c,*add).has_value(),"cleaning tool granted");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        auto stale=MakeSocketMaintenanceCommit(*c,{15,5},state.fence,state.storages,state.items,ItemInstanceId::Create(block.first+4).value(),target.id,{100,1,1,false},{});
+        Check(stale && p::ClaimOwnerSession(writer,*c,customer).has_value(),"socket relog advances owner fence");Check(!p::CommitItems(writer,*c,stale->commit),"previous login cannot clean or consume");
     }
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);

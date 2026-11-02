@@ -77,3 +77,11 @@ egyetlen gazdasági commit. CommitUnknown esetén tartós operation ID szerinti
 egyeztetés kell. Statpublikálás csak sikeres commit után, egy forrás teljes
 cseréjével történhet. A valódi tartalom és beágyazott régi foglalatok offline
 konverziója F6. Az aktív v7, a telepített app, Unity és távoli gép érintetlen.
+
+## C15 runtime (2026-11-02)
+
+A három foglalatkarbantartás szerver- és Unity-útja elkészült, teljes
+kő-visszaadással és egy SQL itemtranzakcióval. A normál/arany minőség,
+beépített kőszint és teljes céltárgyállapot megmarad; helyhiány és hatástalan
+művelet nem fogyaszt. Részletek: [IC-043](item_combat_043_socket_maintenance.md).
+Az ékszerfoglalat unlock/charge és a kőbehelyezés további runtime szelet.

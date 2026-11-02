@@ -1,4 +1,5 @@
 #include <item/PersistentItems.hpp>
+#include <item/SocketMaintenance.hpp>
 #include <algorithm>
 #include <limits>
 #include <memory>
@@ -167,7 +168,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
             if(b.destroyed || b.id!=p.id || b.revision==UINT64_MAX || p.revision!=b.revision+1 || (!bindingUnchanged && !bindOnEquip) || b==p)return std::unexpected(E::InvalidChange);
         }
         else if(p.destroyed || p.revision!=1)return std::unexpected(E::InvalidChange);
-        if((!change.before || change.before->key!=p.key) && c.Find(p.key)->base.retired)return std::unexpected(E::InvalidChange);
+        if((!change.before || change.before->key!=p.key) && c.Find(p.key)->base.retired && !IsSocketMaintenanceRecovery(c,r))return std::unexpected(E::InvalidChange);
     }
     std::set<std::pair<ItemOwner,WalletCurrency>> wallets;
     for(const auto& w:r.wallets)

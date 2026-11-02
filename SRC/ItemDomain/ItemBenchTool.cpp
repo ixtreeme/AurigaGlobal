@@ -294,6 +294,20 @@ Json Grant(CAsyncSQL& sql,const Json& request)
     PersistentItem item{ItemInstanceId::Create(ids->first).value(),*key,BenchOwner};
     item.count=request.value("count",1u);item.refinementLevel=static_cast<std::uint16_t>(request.value("level",0u));
     if(entry->base.binding==BindingPolicy::OnAcquire)item.boundTo=BenchOwner;
+    // Explicit local test fixture state; the normal persistent validator and
+    // transactional grant still reject incompatible or malformed sockets.
+    if(request.contains("stones"))
+    {
+        const auto& slots=request.at("stones");Require(slots.is_array() && slots.size()==EquipmentStoneSockets,"Pontosan három foglalat szükséges.");
+        for(std::size_t n=0;n<slots.size();++n)
+        {
+            const auto& value=slots.at(n);const auto state=value.at("state").get<unsigned>(),grade=value.at("grade").get<unsigned>(),level=value.value("level",0u);
+            Require(state>=1 && state<=4 && grade<=2 && level<=UINT16_MAX,"Érvénytelen foglalatállapot.");
+            auto& slot=item.stones[n];slot.state=static_cast<StoneSocketState>(state);slot.grade=static_cast<std::uint8_t>(grade);slot.refinementLevel=static_cast<std::uint16_t>(level);
+            if(value.contains("category") || value.contains("local"))
+            {const auto key=ItemKey::Create(value.at("category").get<unsigned>(),value.at("local").get<std::uint32_t>());Require(key.has_value(),"Érvénytelen foglalatkő.");slot.stone=*key;}
+        }
+    }
     if(const auto* a=std::get_if<ItemAccessoryRow>(&entry->category); a && a->socketProfile)item.accessory=AccessorySocketState{};
     if(auto valid=ValidatePersistentItem(*c,PersistentItem{item.id,item.key,item.owner,1,item.refinementLevel,item.count,item.boundTo,false,
         ItemPlacement{ItemStorageKind::Inventory,1,0},item.attributes,item.stones,item.accessory});!valid)

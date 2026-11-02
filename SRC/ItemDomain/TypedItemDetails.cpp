@@ -69,6 +69,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
                 if constexpr(requires { row.slot; }) slot=static_cast<unsigned>(row.slot);
                 if constexpr(std::is_same_v<std::decay_t<decltype(row)>,ItemConsumableRow>)
                 {
+                    if(row.socketServiceProfile) actions|=TypedActionSocket;
                     const auto* recovery=c.FindRecovery(row.recoveryProfile);
                     if(recovery && recovery->Data().Delivery()==RecoveryDelivery::Instant) actions|=TypedActionUse;
                 }
