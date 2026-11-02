@@ -112,6 +112,7 @@ bool ValidItemStorage(const ItemStorageLayout&) noexcept;
 // lifetime/pet/tool/etc. state is not represented here. Never zero-fill them.
 // Recovery consumables carry none, except the automatic kind's charge.
 bool SupportsPersistentItem(const ItemCatalog&,const ItemCatalogEntry&) noexcept;
+bool PlainInventoryItem(const PersistentItem&,ItemOwner) noexcept;
 std::expected<void,ItemPersistenceError> ValidatePersistentItem(const ItemCatalog&,const PersistentItem&);
 std::expected<std::vector<std::uint32_t>,ItemPersistenceError> OccupiedItemCells(
     const ItemCatalog&,const PersistentItem&,const ItemStorageLayout&);

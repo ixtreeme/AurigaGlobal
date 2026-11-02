@@ -72,6 +72,8 @@ bool SupportsPersistentItem(const ItemCatalog& c,const ItemCatalogEntry& e) noex
         std::holds_alternative<ItemSkillBookRow>(e.category) || std::holds_alternative<ItemQuestRow>(e.category) ||
         std::holds_alternative<ItemContainerKeyRow>(e.category);
 }
+bool PlainInventoryItem(const PersistentItem& item,ItemOwner owner) noexcept
+{return item.owner==owner && !item.destroyed && item.placement && item.placement->kind==ItemStorageKind::Inventory && (!item.boundTo || item.boundTo==owner) && item.attributes==InstanceAttributes{} && item.stones==decltype(item.stones){} && (!item.accessory || *item.accessory==AccessorySocketState{});}
 std::expected<void,E> ValidatePersistentItem(const ItemCatalog& c,const PersistentItem& p)
 {
     const auto* e=c.Find(p.key);if(!e)return std::unexpected(E::MissingItem);

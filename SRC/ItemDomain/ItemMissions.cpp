@@ -34,9 +34,7 @@ std::expected<ItemCatalogDigest,E> Hash(const Writer& w)
 {ItemCatalogDigest digest{};unsigned length=0;if(EVP_Digest(w.bytes.data(),w.bytes.size(),digest.data(),&length,EVP_sha256(),nullptr)!=1 || length!=digest.size())return std::unexpected(E::Unavailable);return digest;}
 }
 bool MissionItemUsable(const PersistentItem& item,ItemOwner owner)
-{return item.owner==owner && !item.destroyed && item.placement && item.placement->kind==ItemStorageKind::Inventory &&
-    (!item.boundTo || item.boundTo==owner) && item.attributes==InstanceAttributes{} && item.stones==decltype(item.stones){} &&
-    (!item.accessory || *item.accessory==AccessorySocketState{});}
+{return PlainInventoryItem(item,owner);}
 std::uint64_t CountMissionItems(std::span<const PersistentItem> items,ItemOwner owner,ItemKey key,std::uint16_t level)
 {std::uint64_t count=0;for(const auto& i:items)if(i.key==key && i.refinementLevel==level && MissionItemUsable(i,owner))count+=i.count;return count;}
 std::expected<void,E> ValidateItemMission(const ItemCatalog& c,const ItemMission& m)

@@ -6,6 +6,7 @@
 #include <item/PlayerTrades.hpp>
 #include <item/Crafting.hpp>
 #include <item/ContainerOpening.hpp>
+#include <item/TokenRedemption.hpp>
 #include <CatalogSqlReader.hpp>
 #include <SQL/AsyncSQL.h>
 #include <Core/Logging.hpp>
@@ -544,6 +545,38 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         auto stale=MakeContainerOpeningCommit(*c,op,state.fence,state.storages,state.items,state.wallets,request,{},[](auto){return 0;});Check(stale && p::ClaimOwnerSession(writer,*c,customer).has_value(),"container relog advances owner fence");
         Check(!p::CommitItems(writer,*c,stale->commit),"old login cannot open another container");after=p::LoadCurrentItemOwner(writer,*c,customer).value();
         Check(after.items==state.items && after.wallets==state.wallets,"container result survives session change");
+    }
+    // Token stack consumption, wallet credit and receipt have one CAS boundary.
+    for(bool nearCap:{false,true})
+    {
+        const ItemOwner customer{ItemOwnerKind::Character,nearCap ? 880088u : 880087u};const auto bag=f::Inventory(customer);
+        const ItemWallet wallet{customer,WalletCurrency::Gold,1,nearCap ? std::uint64_t(INT64_MAX)-12000000 : 1000};
+        Check(p::ProvisionOwner(admin,*c,customer,std::span(&bag,1),std::span(&wallet,1)).has_value(),"token owner provisioned");
+        auto state=p::LoadCurrentItemOwner(writer,*c,customer).value();const auto block=p::ReserveItemInstanceIds(writer,*c,1).value();const auto id=ItemInstanceId::Create(block.first).value();
+        std::array<std::uint8_t,16> op{};op[0]='T';op[1]=nearCap ? 2 : 1;op[15]=1;
+        auto grant=MakeGrantCommit(*c,op,state.fence,state.storages,state.items,{item_catalog_fixture::GoldBar(),0,10},std::array{id});
+        Check(grant && p::CommitItems(writer,*c,*grant).has_value(),"token stack granted");state=p::LoadCurrentItemOwner(writer,*c,customer).value();op[15]=2;
+        auto redeem=MakeTokenRedemptionCommit(*c,op,state.fence,state.storages,state.items,state.wallets,id,nearCap ? 10 : 3,INT64_MAX,{100,0,0,false});
+        Check(redeem && p::CommitItems(writer,*c,redeem->commit).has_value(),"token debit and credit commit together");
+        const auto replay=p::CommitItems(writer,*c,redeem->commit);Check(replay && replay->replay,"token receipt replay cannot consume or credit again");
+        auto changed=redeem->commit;changed.result.back()^=1;Check(!p::CommitItems(writer,*c,changed),"token receipt cannot change its economic result");
+        state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        Check(Find(state,id.Value()).count==(nearCap ? 8 : 7) && Find(state,id.Value()).revision==2 && state.wallets[0].balance==(nearCap ? std::uint64_t(INT64_MAX)-2000000 : 15001000),"reload retains exact remainder, revision and wallet");
+        op[15]=3;
+        if(nearCap)
+        {
+            Check(MakeTokenRedemptionCommit(*c,op,state.fence,state.storages,state.items,state.wallets,id,8,INT64_MAX,{100,0,0,false}).error()==TokenRedemptionError::WalletFull,"partial redemption leaves too little room for a whole remaining token");
+        }
+        else
+        {
+            auto raced=MakeTokenRedemptionCommit(*c,op,state.fence,state.storages,state.items,state.wallets,id,1,INT64_MAX,{100,0,0,false});Check(raced.has_value(),"second token operation planned");
+            ++raced->commit.wallets[0].before.revision;++raced->commit.wallets[0].after.revision;
+            Check(!p::CommitItems(writer,*c,raced->commit),"wallet CAS rolls token consumption back");
+            const auto missing=p::FindItemReceipt(writer,*c,raced->commit);Check(missing && !*missing,"failed redemption has no success receipt");
+            const auto after=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(after.items==state.items && after.wallets==state.wallets && after.fence==state.fence,"failed redemption preserves every item and wallet before image");
+            auto stale=MakeTokenRedemptionCommit(*c,op,state.fence,state.storages,state.items,state.wallets,id,1,INT64_MAX,{100,0,0,false});
+            Check(stale && p::ClaimOwnerSession(writer,*c,customer).has_value(),"token relog advances session fence");Check(!p::CommitItems(writer,*c,stale->commit),"old login cannot redeem tokens");
+        }
     }
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);

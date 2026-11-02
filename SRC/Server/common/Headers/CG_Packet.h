@@ -478,6 +478,13 @@ typedef struct command_typed_container_opening
     uint64_t session, box, key;
 } TPacketCGTypedContainerOpening;
 
+typedef struct command_typed_token_redemption
+{
+    uint8_t bHeader, action;
+    uint64_t session, item;
+    uint32_t units;
+} TPacketCGTypedTokenRedemption;
+
 typedef struct command_party_parameter
 {
 	uint8_t	bHeader;

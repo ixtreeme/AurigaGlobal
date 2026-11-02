@@ -14,7 +14,7 @@ namespace auriga::item
 // bonus definitions:u8 {id:u32,unit:u8,name:text16}. text16 is UTF-8.
 inline constexpr std::uint8_t TypedItemDetailsHeader = 227;
 inline constexpr std::uint8_t TypedActionMove = 1, TypedActionEquip = 2,
-    TypedActionUse = 4, TypedActionRefine = 8, TypedActionDrop = 16, TypedActionOpen = 32;
+    TypedActionUse = 4, TypedActionRefine = 8, TypedActionDrop = 16, TypedActionOpen = 32, TypedActionRedeem = 64;
 std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDetails(
     const ItemCatalog&, std::span<const PersistentItem>, bool ownedDropEnabled = false, std::span<const ItemGrant> extraStates = {});
 }

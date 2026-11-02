@@ -99,6 +99,7 @@
 #include "../item/TypedCraft.hpp"
 #include "../item/TypedItemMissions.hpp"
 #include "../item/TypedContainerOpening.hpp"
+#include "../item/TypedTokenRedemption.hpp"
 
 
 #define ENABLE_CHECK_GHOSTMODE
@@ -447,6 +448,9 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 			break;
         case HEADER_CG_TYPED_CONTAINER_OPENING:
             HandleTypedContainerOpeningPacket(character, c_pData);
+            break;
+        case HEADER_CG_TYPED_TOKEN_REDEMPTION:
+            HandleTypedTokenRedemptionPacket(character, c_pData);
             break;
 		case HEADER_CG_TYPED_ITEM_MISSION:
             HandleTypedItemMissionPacket(character, c_pData);

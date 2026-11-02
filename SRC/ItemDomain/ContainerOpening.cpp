@@ -54,7 +54,7 @@ std::expected<ContainerOpeningPlan,E> Build(const ItemCatalog& c,std::array<std:
 }
 }
 bool ContainerItemUsable(const PersistentItem& item,ItemOwner owner)
-{return item.owner==owner && !item.destroyed && item.placement && item.placement->kind==ItemStorageKind::Inventory && (!item.boundTo || item.boundTo==owner) && item.attributes==InstanceAttributes{} && item.stones==decltype(item.stones){} && (!item.accessory || *item.accessory==AccessorySocketState{});}
+{return PlainInventoryItem(item,owner);}
 std::expected<void,E> ValidateContainerContents(const ItemCatalog& c,ItemKey key)
 {
     const auto* entry=c.Find(key);const auto* box=entry ? std::get_if<ItemContainerRow>(&entry->category) : nullptr;

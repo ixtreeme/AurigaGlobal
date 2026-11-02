@@ -179,6 +179,7 @@ CPacketInfoCG::CPacketInfoCG()
 	Set(HEADER_CG_TYPED_CRAFT, sizeof(TPacketCGTypedCraft), "TypedCraft", true);
     Set(HEADER_CG_TYPED_ITEM_MISSION, sizeof(TPacketCGTypedItemMission), "TypedItemMission", true);
     Set(HEADER_CG_TYPED_CONTAINER_OPENING, sizeof(TPacketCGTypedContainerOpening), "TypedContainerOpening", true);
+    Set(HEADER_CG_TYPED_TOKEN_REDEMPTION, sizeof(TPacketCGTypedTokenRedemption), "TypedTokenRedemption", true);
 
 
 #ifdef __INGAME_WIKI__

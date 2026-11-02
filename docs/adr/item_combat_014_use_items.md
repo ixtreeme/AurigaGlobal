@@ -45,6 +45,13 @@ viselkedés saját, névvel regisztrált, validált struktúrát és tesztet kap
   nem tárgypéldány; a konverter nem hoz létre belőle tárgyat.
 - **Formátum:** v7 (`013_currency_tokens.sql`, kanonikus 22. tábla).
 
+**Futásidejű állapot (C14, 2026-11-02):** a karakter Yang-pénzjegye a
+szerver és Unity közös útján beváltható, pontos darabszámmal, részleges
+befogadással és egy tranzakciós item/wallet/receipt írással. A typed wallet
+korlátja jelenleg `INT64_MAX`. A Sárkányérme-utalvány beváltása a legacy
+fiókpénztárca írójának átadásáig elutasított, a tárgy megmarad.
+Részletek: [IC-042](item_combat_042_token_redemption.md).
+
 ## 2. szelet — stat-hatások (2026-10-28)
 
 A [IC-015](item_combat_015_timed_consumables.md) szerinti csoportok,
