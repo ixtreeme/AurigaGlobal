@@ -11,7 +11,7 @@ auriga_add_server_executable(GameServer LIBS LUA)
 target_link_libraries(GameServer PRIVATE EnTT::EnTT)
 # Typed item catalog (item system F4): read and validated at boot when enabled.
 target_link_libraries(GameServer PRIVATE AurigaItemCatalogSql AurigaItemPersistenceSql)
-target_sources(GameServer PRIVATE item/TypedItemMissions.cpp mission/ItemDelivery.cpp)
+target_sources(GameServer PRIVATE item/TypedItemMissions.cpp mission/ItemDelivery.cpp item/TypedContainerOpening.cpp)
 
 add_executable(WoodcuttingRulesTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/WoodcuttingRulesTests.cpp)
@@ -1084,6 +1084,7 @@ endif()
 get_property(_server_test_targets DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
 list(FILTER _server_test_targets INCLUDE REGEX "Tests$")
 add_custom_target(ServerTests DEPENDS ${_server_test_targets})
+add_dependencies(ServerTests ContainerOpeningTests)
 add_dependencies(ServerTests ServerPackageCheck MissionCheck MissionCompiler ItemKeyTests ItemCatalogTests RefinementProfileTests BonusProfileTests AccessorySocketTests ConsumableTests AutomaticRecoveryTests TimedEffectTests ToggleEffectTests SkillBookTests RefinementRecipeTests MobDropTests QuestItemTests SocketStoneTests CostumeTests GatheringItemTests PolymorphItemTests SoulItemTests CompanionItemTests GrowthPetTests PetCareTests PetLifecycleTests SocketServiceTests InstanceAttributeTests PersistentItemTests TypedInventoryWireTests TypedGroundTests ItemPersistenceSqlTests ItemBenchTool ContainerTests CurrencyTokenTests CatalogSnapshotTests CatalogSqlReaderTests CatalogEditorTool)
 get_property(_server_tests DIRECTORY PROPERTY TESTS)
 set_tests_properties(${_server_tests} PROPERTIES LABELS server TIMEOUT 60)

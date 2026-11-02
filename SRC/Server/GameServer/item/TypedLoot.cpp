@@ -4,6 +4,7 @@
 #include "TypedTrade.hpp"
 #include "TypedCraft.hpp"
 #include "TypedItemMissions.hpp"
+#include "TypedContainerOpening.hpp"
 #include "TypedEquipment.hpp"
 #include "ItemCatalogRuntime.hpp"
 #include "TypedItemOps.hpp"
@@ -254,6 +255,7 @@ void TickTypedLoot()
 	TickTypedTrades();
 	TickTypedCrafting();
     TickTypedItemMissions();
+    TickTypedContainerOpening();
 	auto& all = Loot();
 	if (all.empty())
 		return;

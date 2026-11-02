@@ -58,6 +58,7 @@ bool ValidItemStorage(const ItemStorageLayout& l) noexcept
 }
 bool SupportsPersistentItem(const ItemCatalog& c,const ItemCatalogEntry& e) noexcept
 {
+    if(const auto* container=std::get_if<ItemContainerRow>(&e.category))return container->kind!=ContainerKind::PetEgg;
     if(const auto* consumable=std::get_if<ItemConsumableRow>(&e.category))
     {
         if(consumable->socketServiceProfile.has_value() || consumable->attributeServiceProfile.has_value())return true;

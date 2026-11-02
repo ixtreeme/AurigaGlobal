@@ -73,6 +73,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
                     if(recovery && recovery->Data().Delivery()==RecoveryDelivery::Instant) actions|=TypedActionUse;
                 }
             },entry->category);
+            if(const auto* box=std::get_if<ItemContainerRow>(&entry->category);box && (box->kind==ContainerKind::Use || box->kind==ContainerKind::Locked))actions|=TypedActionOpen;
             if(slot && slot<=8) actions|=TypedActionEquip;
             if(refinable.contains(key)) actions|=TypedActionRefine;
             if(ownedDropEnabled && trade && trade->allowDrop && trade->allowTrade) actions|=TypedActionDrop;

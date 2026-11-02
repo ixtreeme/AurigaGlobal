@@ -92,6 +92,7 @@ internal static class AurigaValidationSnapshotExit
         const string result = "Temp/typed-shop-validation-result.json";
         if (!File.Exists(result)) return;
         EditorApplication.update -= Poll;
+        File.Copy(result, "validation-source-snapshot-result.json", true);
         EditorApplication.Exit(JsonUtility.FromJson<Result>(File.ReadAllText(result)).Success ? 0 : 1);
     }
 }

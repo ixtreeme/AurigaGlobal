@@ -472,6 +472,12 @@ typedef struct command_typed_item_mission
     uint32_t mission;
 } TPacketCGTypedItemMission;
 
+typedef struct command_typed_container_opening
+{
+    uint8_t bHeader, action;
+    uint64_t session, box, key;
+} TPacketCGTypedContainerOpening;
+
 typedef struct command_party_parameter
 {
 	uint8_t	bHeader;

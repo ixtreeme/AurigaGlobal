@@ -5,6 +5,7 @@
 #include <item/NpcShops.hpp>
 #include <item/PlayerTrades.hpp>
 #include <item/Crafting.hpp>
+#include <item/ContainerOpening.hpp>
 #include <CatalogSqlReader.hpp>
 #include <SQL/AsyncSQL.h>
 #include <Core/Logging.hpp>
@@ -162,7 +163,11 @@ void Allocator(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,unsigned 
 }
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
 {
-    const auto source=f::Catalog();Populate(admin,source);const auto c=BuildItemCatalog(source).value();
+    auto source=f::Catalog();
+    const auto sqlBox=ItemKey::Create(8,99).value();auto boxBase=*std::ranges::find(source.items,item_catalog_fixture::GiftBox(),&ItemBaseRow::key);
+    boxBase.key=sqlBox;boxBase.contentCode="container.sql_opening";source.items.push_back(boxBase);source.containers.push_back({sqlBox,ContainerKind::Locked,3,7});
+    source.lootProfiles.push_back({3,"loot.sql_opening",LootPickMode::IndependentChance,{{1,LootRewardKind::Item,f::Leather().key,3,10000,0},{2,LootRewardKind::Gold,{},75,10000,0}}});
+    Populate(admin,source);const auto c=BuildItemCatalog(source).value();
     auto loadedCatalog=s::ReadCatalog(writer,{c->Revision(),c->ContentHash()});Check(loadedCatalog.has_value(),"SQL/native catalog parity");
     Query(admin,"INSERT INTO player.item_persistence_format VALUES(1,1,?,?)",{U::UInt(c->Revision()),U::Blob(Bytes(c->ContentHash()))});
     Execute(admin,"INSERT INTO player.item_owner_fence VALUES(1,42,7,1),(1,43,8,1),(2,42,9,1),(3,42,10,1)");
@@ -513,6 +518,32 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         Check(!p::CommitItems(writer,*c,*stale) && !p::FindItemMissionReceipt(writer,*c,state.fence,mission,proof),"old login cannot mutate or authorize mission completion");
         state=p::LoadCurrentItemOwner(writer,*c,customer).value();const auto restored=p::FindItemMissionReceipt(writer,*c,state.fence,mission,proof);
         Check(restored && *restored && state.wallets[0].balance==1075 && Find(state,source.Value()).count==8,"new login restores durable completion without another reward");
+    }
+    {
+        const ItemOwner customer{ItemOwnerKind::Character,880086};const auto bag=f::Inventory(customer);const ItemWallet wallet{customer,WalletCurrency::Gold,1,1000};
+        Check(p::ProvisionOwner(admin,*c,customer,std::span(&bag,1),std::span(&wallet,1)).has_value(),"container owner provisioned");
+        auto state=p::LoadCurrentItemOwner(writer,*c,customer).value();const auto block=p::ReserveItemInstanceIds(writer,*c,32).value();
+        const auto boxId=ItemInstanceId::Create(block.first).value(),keyId=ItemInstanceId::Create(block.first+1).value();
+        std::array<std::uint8_t,16> op{};op[0]='B';op[1]='X';op[15]=1;
+        auto grant=MakeGrantCommit(*c,op,state.fence,state.storages,state.items,{sqlBox,0,2},std::array{boxId});
+        Check(grant && p::CommitItems(writer,*c,*grant).has_value(),"two SQL chests granted");state=p::LoadCurrentItemOwner(writer,*c,customer).value();op[15]=2;
+        grant=MakeGrantCommit(*c,op,state.fence,state.storages,state.items,{item_catalog_fixture::IronKey(),0,2},std::array{keyId});
+        Check(grant && p::CommitItems(writer,*c,*grant).has_value(),"two SQL keys granted");state=p::LoadCurrentItemOwner(writer,*c,customer).value();op[15]=3;
+        const auto resultId=ItemInstanceId::Create(block.first+2).value();ContainerOpeningRequest request{boxId,keyId,{100,0,0,false}};
+        auto opening=MakeContainerOpeningCommit(*c,op,state.fence,state.storages,state.items,state.wallets,request,std::array{resultId},[](auto){return 0;});
+        Check(opening && p::CommitItems(writer,*c,opening->commit).has_value(),"container consumes key and box and awards whole item/gold bundle");
+        const auto replay=p::CommitItems(writer,*c,opening->commit);Check(replay && replay->replay,"container receipt replay does not draw or consume again");
+        auto changed=opening->commit;changed.result.back()^=1;Check(!p::CommitItems(writer,*c,changed),"recorded container result cannot be changed on replay");
+        state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        Check(Find(state,boxId.Value()).count==1 && Find(state,keyId.Value()).count==1 && Find(state,resultId.Value()).count==3 && state.wallets[0].balance==1075,"container reload preserves precise inputs, result ID and money");
+        op[15]=4;auto raced=MakeContainerOpeningCommit(*c,op,state.fence,state.storages,state.items,state.wallets,request,{},[](auto){return 0;});Check(raced.has_value(),"last container opening planned");
+        ++raced->commit.wallets[0].before.revision;++raced->commit.wallets[0].after.revision;
+        Check(!p::CommitItems(writer,*c,raced->commit),"container wallet CAS rolls back whole opening");
+        auto after=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(after.items==state.items && after.wallets==state.wallets && after.fence==state.fence,"failed opening preserves key, box, items and wallet");
+        const auto missing=p::FindItemReceipt(writer,*c,raced->commit);Check(missing && !*missing,"failed container opening has no success receipt");
+        auto stale=MakeContainerOpeningCommit(*c,op,state.fence,state.storages,state.items,state.wallets,request,{},[](auto){return 0;});Check(stale && p::ClaimOwnerSession(writer,*c,customer).has_value(),"container relog advances owner fence");
+        Check(!p::CommitItems(writer,*c,stale->commit),"old login cannot open another container");after=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        Check(after.items==state.items && after.wallets==state.wallets,"container result survives session change");
     }
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);

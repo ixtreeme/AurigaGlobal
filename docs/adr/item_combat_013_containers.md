@@ -1,8 +1,10 @@
 # ADR IC-013 — Tárolók, kulcsok és tartalomprofilok
 
 2026-10-27. Fázis: F2 ([IC-012](item_combat_012_item_runtime_first.md)).
-Állapot: **implementált katalógus-, SQL-, szerkesztő- és tervező réteg**. A
-GameServer még nem használja (F4).
+Állapot: **implementált katalógus-, SQL-, szerkesztő- és tervező réteg**.
+A C13-ban elkészült a Use/Locked ládák tárgy-/Yang-jutalmának atomi
+szerver–Unity nyitása, teljes helyi próbával. A többi jutalomfajta és
+petkeltetés még nyitott. Részletek: [IC-041](item_combat_041_container_opening.md).
 
 ## Régi működés (forrásaudit)
 

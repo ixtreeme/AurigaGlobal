@@ -1,7 +1,7 @@
 # ADR IC-034 — F4 szerverbekötés: ütemterv és 1. szelet (katalógus induláskor)
 
 2026-10-29. Fázis: F4 ([IC-012](item_combat_012_item_runtime_first.md)).
-Állapot (2026-11-02): **C1–C12 implementált; az elkészült futásidejű
+Állapot (2026-11-02): **C1–C13 implementált; az elkészült futásidejű
 műveletek Unity 6.3-ból kezelhetők, helyi szerverrel ellenőrizve**.
 
 ## Közös szerver–Unity munkamenet (felhasználói döntés, 2026-11-01)
@@ -23,8 +23,8 @@ az összevonás részletei és ellenőrzései a
 |---|---|---|---|
 | A. Speciális tárgyműveletek | Páros (kapcsolt) bónuszok; jelmez-, stóla- és rúnabónuszok; fejlesztési segédanyagok | F2 maradéka | nyitott ([IC-031](item_combat_031_instance_attributes.md) határa) |
 | B. Tartós tárgymentés | Teljes mentés, visszatöltés és tranzakciókezelés a futó szerverben; a még nem támogatott kategóriák példányállapota | F3 maradéka | a modell, az író és a próbapad kész ([IC-032](item_combat_032_item_persistence.md), [IC-033](item_combat_033_item_test_bench.md)) |
-| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C12 kész**, C12-ben egyszeri NPC-s tárgyleadás; általános Mission/Lua-quest és további használatok még nyitottak |
-| D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | **C1–C12 kliensútjai kész**, részletek lent |
+| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C13 kész**, egyszeri NPC-s tárgyleadás és tárgy-/Yang-ládanyitás; általános Mission/Lua-quest és további használatok még nyitottak |
+| D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | **C1–C13 kliensútjai kész**, részletek lent |
 | E. Teljes adatkonverzió | Régi protók, példányok, receptek, tartalmi hivatkozások | F6 | az eszközök megvannak; a családtérkép jóváhagyásra vár |
 | F. Végső ellenőrzés | Helyi játékpróba, újrabelépés utáni adatmegőrzés, gazdasági műveletek, FreeBSD-build | F7 | nyitott |
 
@@ -548,3 +548,19 @@ Lua-quest konverzió továbbra is nyitott.
 
 Részletek: [IC-040](item_combat_040_item_missions.md),
 [ellenőrzések és helyi próba](../reports/item_combat/2026-11-02_item_missions_runtime.md).
+
+## C13 — Dobozok és kulcsos ládák nyitása (2026-11-02)
+
+Tárgy-/Yang-jutalmú Use/Locked ládák, pontos kulcsválasztás, összes lehetséges
+eredmény befogadása a sorsolás előtt, közös fogyasztás/jutalom/receipt commit.
+Szerveres, kriptográfiai sorsolás; üres independent eredmény, ismétlés,
+elavult preview, teli leltár és pénztárcakorlát kezelése. Unity:
+**I → láda → Nyitás**, jutalom/esély előnézet és megerősítés.
+
+16 natív/SQL regressziós csoport, 3429 új Unity-ellenőrzés és 122 valódi TLS
+ellenőrzés sikeres. A még nem támogatott XP/spawn/státusz/ritka bónuszos
+profil egésze elutasított, nem kap részleges jutalmat. A petkeltetés,
+további használatok/szolgáltatások, teljes konverzió és kiadási kapuk nyitottak.
+
+Részletek: [IC-041](item_combat_041_container_opening.md),
+[ellenőrzések és helyi próba](../reports/item_combat/2026-11-02_container_opening_runtime.md).
