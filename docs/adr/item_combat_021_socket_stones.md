@@ -75,3 +75,11 @@ egyezése nem bizonyít prototípusazonosságot; a sorokat nem egyesítjük pusz
 ennek alapján. A teljes családkonverzió, régi apply/policy/ár/extra proto,
 beágyazott játékospéldányok, kiemelés/tisztítás és runtime statbekötés még
 további implementáció. A DragonSoul rendszerhez ez nem ad új integrációt.
+
+## C16 runtime (2026-11-02)
+
+A behelyezés szerveres és Unity-útja elkészült, a meglévő szerveres eséllyel,
+egy darab fogyásával, mindkét kimenet egy itemtranzakciós mentésével és
+ismétlésvédelemmel. A C11 felszerelésstat és C15 kiemelés/tisztítás együtt
+ellenőrzött. Részletek: [IC-044](item_combat_044_socket_insertion.md).
+A teljes offline konverzió és a többi kiadási kapu továbbra is nyitott.

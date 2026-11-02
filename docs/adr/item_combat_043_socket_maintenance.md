@@ -78,3 +78,10 @@ Nincs új séma, vnum-adapter vagy legacy item-írás. A lokális próbapad
 `grant` opcionális explicit foglalatállapotot fogad, ugyanazzal a teljes
 validálással és gazdasági writerrel; az élő fixture nem kézi SQL-lel
 módosítja a tárgyakat.
+
+## C16 protokollbővítés
+
+[IC-044](item_combat_044_socket_insertion.md) a közös ablakot és nonce-ot
+kőbehelyezéssel bővíti. A szerver már GC235 v2-t küld, 162 bájtos terminal
+envelope-pal; a kliens a korábbi v1 golden-t is olvassa. Az 128-as action
+az 5-ös karbantartó mellett a 7-es behelyezhető kőre is érvényes.

@@ -115,17 +115,18 @@ std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeSocketMainte
     std::uint64_t nonce,const PersistentItem* source,const PersistentItem* target,std::uint64_t revision,SocketMaintenanceStatus status,
     const SocketMaintenanceQuote& q,std::span<const std::uint64_t> targets)
 {
-    if(static_cast<unsigned>(status)>12 || targets.size()>MaxLoadedOwnerItems || q.returns.size()>EquipmentStoneSockets ||
+    if(static_cast<unsigned>(status)>16 || targets.size()>MaxLoadedOwnerItems || q.returns.size()>EquipmentStoneSockets || q.chance>10000 ||
        (source ? (!nonce || !revision) : (nonce || target || revision || q!=SocketMaintenanceQuote{} || !targets.empty())) ||
-       ((status==SocketMaintenanceStatus::Ready || status==SocketMaintenanceStatus::Applied) && (!source || !target || q.kind<1 || q.kind>3 || !q.units || q.units>q.available)))return std::unexpected(TypedInventoryWireError::BadValue);
+       ((status==SocketMaintenanceStatus::Ready || status==SocketMaintenanceStatus::Applied || status==SocketMaintenanceStatus::Broken) && (!source || !target || q.kind<1 || q.kind>4 || !q.units || q.units>q.available || (q.kind==4 && q.slot>=EquipmentStoneSockets) || (status==SocketMaintenanceStatus::Broken && q.kind!=4))))return std::unexpected(TypedInventoryWireError::BadValue);
     std::vector<PersistentItem> metadata;if(source)metadata.push_back(*source);if(target)metadata.push_back(*target);
     const auto details=source ? EncodeTypedItemDetails(c,metadata,false) : std::expected<std::vector<std::byte>,TypedInventoryWireError>(std::vector<std::byte>{});if(!details)return std::unexpected(details.error());
     std::vector<std::byte> out;const auto put=[&](std::uint64_t v,unsigned n){for(unsigned i=0;i<n;++i)out.push_back(std::byte((v>>(i*8))&255));};
     const auto key=[&](const PersistentItem* item){put(item ? static_cast<unsigned>(item->key.Category()) : 0,2);put(item ? item->key.LocalId() : 0,4);put(item ? item->refinementLevel : 0,2);};
     const auto sockets=[&](const auto& values){for(const auto& s:values){put(static_cast<unsigned>(s.state),1);put(s.grade,1);put(s.stone ? static_cast<unsigned>(s.stone->Category()) : 0,2);put(s.stone ? s.stone->LocalId() : 0,4);put(s.refinementLevel,2);}};
-    put(235,1);put(0,4);put(1,1);put(static_cast<unsigned>(status),1);put(nonce,8);put(source ? source->id.Value() : 0,8);put(target ? target->id.Value() : 0,8);put(revision,8);
+    put(235,1);put(0,4);put(2,1);put(static_cast<unsigned>(status),1);put(nonce,8);put(source ? source->id.Value() : 0,8);put(target ? target->id.Value() : 0,8);put(revision,8);
     put(q.kind,1);put(q.units,2);put(q.available,4);key(source);key(target);sockets(q.before);sockets(q.after);
     put(q.returns.size(),1);for(const auto& r:q.returns){put(r.socket,1);put(static_cast<unsigned>(r.key.Category()),2);put(r.key.LocalId(),4);put(r.level,2);}
+    put(q.chance,2);put(q.slot,1);sockets(q.failure);
     put(targets.size(),2);for(auto id:targets)put(id,8);put(details->size(),4);out.insert(out.end(),details->begin(),details->end());
     if(out.size()>(1u<<20))return std::unexpected(TypedInventoryWireError::TooLarge);for(unsigned i=0;i<4;++i)out[1+i]=std::byte((out.size()>>(i*8))&255);return out;
 }

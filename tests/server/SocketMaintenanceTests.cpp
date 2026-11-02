@@ -59,7 +59,7 @@ std::vector<std::byte> Run()
     full[1].key=sf::Tool(3);auto freed=MakeSocketMaintenanceCommit(c,{34},fence,layouts,full,tool.id,target.id,actor,ids);Check(freed && freed->commit.items[0].after.destroyed && freed->commit.items[2].after.placement->anchor==1,"last source cell can hold exactly one returned stone");
     full[1].key=sf::Tool(1);Check(MakeSocketMaintenanceCommit(c,{35},fence,layouts,full,tool.id,target.id,actor,{}).has_value(),"cleaning works in a full inventory");
     const auto packet=EncodeSocketMaintenance(c,0x123456789abcdefULL,&tool,&target,2,SocketMaintenanceStatus::Ready,extract->quote,std::array{target.id.Value()});
-    Check(packet && EncodeSocketMaintenance(c,0,nullptr,nullptr,0,SocketMaintenanceStatus::Closed,{},{})->size()==129,"native quote and terminal envelope encode");return *packet;
+    Check(packet && EncodeSocketMaintenance(c,0,nullptr,nullptr,0,SocketMaintenanceStatus::Closed,{},{})->size()==162,"native quote and terminal envelope encode");return *packet;
 }
 }
 int main(int argc,char** argv){try{const auto bytes=Run();if(argc==3 && std::string_view(argv[1])=="--write-golden"){std::ofstream out(argv[2]);for(auto b:bytes)out<<std::hex<<std::setfill('0')<<std::setw(2)<<std::to_integer<unsigned>(b);out<<'\n';if(!out)throw std::runtime_error("golden write failed");}std::cout<<checks<<" socket maintenance checks passed\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

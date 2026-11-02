@@ -9,8 +9,55 @@ against the owned local server without a second instance of the open project.
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
 import shutil
+import subprocess
+
+
+def ui_dependencies(source):
+    """Keep the real UI catalog and its atlases for InitializeOnLoad builders.
+
+    A source-only project must not trip a batch-fatal catalog regeneration
+    merely because the source project's already generated images were omitted.
+    """
+    catalog = source / 'Assets/Metin2/Resources/Metin2UiSpriteCatalog.asset'
+    manifest = source / 'Assets/Metin2/Generated/UI/Layouts/extra-sprites.json'
+    selected = {path for path in (catalog, manifest) if path.is_file()}
+    if manifest.is_file():
+        for row in json.loads(manifest.read_text(encoding='utf-8-sig')).get('sprites', []):
+            path = (source / row['atlas']).resolve()
+            if not path.is_relative_to(source):
+                raise ValueError('UI atlas escapes source project')
+            if path.is_file():
+                selected.add(path)
+    if catalog.is_file():
+        needed = set(re.findall(r'(?:texture|alphaTexture): \{fileID: \d+, guid: ([0-9a-f]{32})', catalog.read_text(encoding='utf-8-sig')))
+        for path in tuple(selected):
+            meta = path.with_name(path.name + '.meta')
+            if meta.is_file():
+                match = re.search(r'^guid: ([0-9a-f]{32})$', meta.read_text(encoding='utf-8-sig'), re.MULTILINE)
+                if match:
+                    needed.discard(match[1])
+        if needed:
+            # rg searches the GUID text directly; opening every large model
+            # importer .meta through Python is needlessly slow on Windows.
+            found = subprocess.run(['rg', '-l', '--hidden', '--no-ignore', '-g', '*.meta',
+                                    'guid: (' + '|'.join(sorted(needed)) + ')', 'Assets'],
+                                   cwd=source, capture_output=True, text=True, encoding='utf-8')
+            if found.returncode not in (0, 1):
+                raise RuntimeError('Cannot locate UI catalog texture metadata')
+            for relative in found.stdout.splitlines():
+                meta = source / relative
+                match = re.search(r'^guid: ([0-9a-f]{32})$', meta.read_text(encoding='utf-8-sig', errors='replace'), re.MULTILINE)
+                if match and match[1] in needed:
+                    selected.add(meta.with_suffix(''))
+                    needed.remove(match[1])
+                    if not needed:
+                        break
+        if needed:
+            raise ValueError('Missing source UI catalog texture dependencies: ' + str(len(needed)))
+    return selected
 
 
 def prepare(source, output, changeset):
@@ -49,6 +96,7 @@ def prepare(source, output, changeset):
         }
         if is_code or is_fixture or is_resource or is_artwork:
             selected.add(path)
+    selected.update(ui_dependencies(source))
     for path in tuple(selected):
         if path.suffix != '.meta' and path.with_name(path.name + '.meta').is_file():
             selected.add(path.with_name(path.name + '.meta'))

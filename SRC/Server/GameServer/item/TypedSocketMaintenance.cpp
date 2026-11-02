@@ -18,7 +18,8 @@
 #include "../entity/char_manager.h"
 #include "../network/desc.h"
 #include "../core/packet.h"
-#include <item/SocketMaintenance.hpp>
+#include <item/SocketInsertion.hpp>
+extern int stone_chance;
 #include <openssl/rand.h>
 #include <algorithm>
 #include <tuple>
@@ -36,6 +37,20 @@ struct TypedSocketMaintenanceSession
 std::uint64_t Nonce(){std::uint64_t value=0;while(!value)if(RAND_bytes(reinterpret_cast<unsigned char*>(&value),sizeof(value))!=1)return 0;return value;}
 bool Operation(std::array<std::uint8_t,16>& out)
 {return RAND_bytes(out.data(),static_cast<int>(out.size()))==1 && std::ranges::any_of(out,[](auto byte){return byte!=0;});}
+std::uint16_t Chance(){return static_cast<std::uint16_t>(std::clamp(stone_chance,0,100)*100);}
+std::uint16_t Draw(std::uint16_t chance)
+{
+    if(chance==0 || chance==10000)return 0;
+    constexpr auto range=std::uint64_t(UINT32_MAX)+1,limit=range-range%10000;std::uint32_t value=0;
+    do{if(RAND_bytes(reinterpret_cast<unsigned char*>(&value),sizeof(value))!=1)return 10001;}while(value>=limit);
+    return static_cast<std::uint16_t>(value%10000+1);
+}
+std::expected<items::SocketMaintenancePlan,items::SocketMaintenanceError> Build(const items::ItemCatalog& c,
+    const TypedSocketMaintenanceSession& session,const ecs::TypedItems& typed,items::SocketMaintenanceActor actor,std::uint16_t roll)
+{
+    if(session.quote.kind==4)return items::MakeSocketInsertionCommit(c,session.operation,session.fence,typed.state.storages,typed.state.items,session.source->id,session.target->id,actor,Chance(),roll);
+    return items::MakeSocketMaintenanceCommit(c,session.operation,session.fence,typed.state.storages,typed.state.items,session.source->id,session.target->id,actor,store::PeekInstanceIds(3));
+}
 entt::entity Current(std::uint32_t pid,std::uint64_t token)
 {const auto e=CHARACTER_MANAGER::instance().FindEntityByPID(pid);const auto* login=e!=entt::null && g_registry.valid(e) ? g_registry.try_get<ecs::TypedItemLogin>(e) : nullptr;return login && login->token==token ? e : entt::null;}
 bool Admitted(entt::entity e)
@@ -74,9 +89,10 @@ bool HandleTypedSocketMaintenancePacket(entt::entity e,const char* data)
         const auto source=id ? std::ranges::find(typed->state.items,*id,&items::PersistentItem::id) : typed->state.items.end();
         const auto* entry=source!=typed->state.items.end() ? c->Find(source->key) : nullptr;const auto* row=entry ? std::get_if<items::ItemConsumableRow>(&entry->category) : nullptr;
         const auto* profile=row && row->socketServiceProfile ? c->FindSocketService(*row->socketServiceProfile) : nullptr;
-        if(!profile || !items::PlainInventoryItem(*source,typed->state.fence.owner)){g_registry.remove<TypedSocketMaintenanceSession>(e);Reply(e,Status::Invalid);return true;}
+        const auto* stone=entry ? std::get_if<items::ItemSocketStoneRow>(&entry->category) : nullptr;const bool insertion=stone && stone->kind==items::SocketStoneKind::Insertable;
+        if((!profile && !insertion) || !items::PlainInventoryItem(*source,typed->state.fence.owner)){g_registry.remove<TypedSocketMaintenanceSession>(e);Reply(e,Status::Invalid);return true;}
         TypedSocketMaintenanceSession next;next.nonce=Nonce();if(!next.nonce || !Operation(next.operation)){g_registry.remove<TypedSocketMaintenanceSession>(e);Reply(e,Status::Failed);return true;}
-        next.fence=typed->state.fence;next.source=*source;next.quote.kind=static_cast<std::uint8_t>(profile->kind);next.quote.units=profile->unitsPerUse;next.quote.available=source->count;
+        next.fence=typed->state.fence;next.source=*source;next.quote.kind=insertion ? 4 : static_cast<std::uint8_t>(profile->kind);next.quote.units=insertion ? 1 : profile->unitsPerUse;next.quote.available=source->count;next.quote.chance=insertion ? Chance() : 0;
         std::vector<const items::PersistentItem*> candidates;for(const auto& item:typed->state.items)if(items::SocketMaintenanceTarget(*c,item,next.fence.owner))candidates.push_back(&item);
         std::ranges::sort(candidates,{},[](const auto* i){return std::tuple{i->placement->storageId,i->placement->anchor,i->id};});
         for(const auto* item:candidates)next.targets.push_back(item->id.Value());
@@ -85,7 +101,7 @@ bool HandleTypedSocketMaintenancePacket(entt::entity e,const char* data)
         if(next.target)
         {
             next.quote.before=next.quote.after=next.target->stones;
-            const auto plan=items::MakeSocketMaintenanceCommit(*c,next.operation,next.fence,typed->state.storages,typed->state.items,source->id,next.target->id,Actor(e),store::PeekInstanceIds(3));
+            const auto chance=Chance();const auto plan=Build(*c,next,*typed,Actor(e),insertion && chance!=0 && chance!=10000 ? 1 : 0);
             next.status=plan ? Status::Ready : plan.error();if(plan)next.quote=plan->quote;
         }
         g_registry.emplace_or_replace<TypedSocketMaintenanceSession>(e,std::move(next));if(auto* s=g_registry.try_get<TypedSocketMaintenanceSession>(e))Reply(e,s->status);return true;
@@ -101,15 +117,24 @@ bool HandleTypedSocketMaintenancePacket(entt::entity e,const char* data)
     if(g_registry.all_of<ecs::TypedItemBusy>(e)){s->status=Status::Busy;Reply(e,s->status);return true;}
     if(typed->state.fence!=s->fence){s->status=Status::Stale;Reply(e,s->status);return true;}
     if(!s->target){s->status=Status::NoTarget;Reply(e,s->status);return true;}
-    auto plan=items::MakeSocketMaintenanceCommit(*c,s->operation,s->fence,typed->state.storages,typed->state.items,s->source->id,s->target->id,Actor(e),store::PeekInstanceIds(3));
+    const auto chance=Chance();auto plan=Build(*c,*s,*typed,Actor(e),s->quote.kind==4 && chance!=0 && chance!=10000 ? 1 : 0);
     if(!plan){s->status=plan.error();Reply(e,s->status);return true;}
     if(plan->quote!=s->quote){s->status=Status::Stale;Reply(e,s->status);return true;}
+    if(s->quote.kind==4)
+    {
+        // Draw once, after the complete deterministic quote has been admitted.
+        // Neither preview nor replay can consume entropy or spend a stone.
+        const auto roll=Draw(chance);plan=Build(*c,*s,*typed,Actor(e),roll);
+        if(!plan){s->status=plan.error();Reply(e,s->status);return true;}
+        if(plan->quote!=s->quote){s->status=Status::Stale;Reply(e,s->status);return true;}
+    }
+    const bool succeeded=plan->succeeded;
     const auto fence=s->fence;const auto pid=ecs::PlayerRuntime::GetPlayerID(e);const auto token=login->token;const auto nonce=s->nonce;
     auto held=std::make_shared<auriga::resource_admission::Permit>(std::move(*permit));if(!held->Current())return true;store::SpendInstanceIds(plan->quote.returns.size());s->pending=true;s->status=Status::Pending;g_registry.insert<ecs::TypedItemBusy>(&e,&e+1);
     if(Current(pid,token)!=e || !held->Current()){if(Current(pid,token)==e){g_registry.remove<ecs::TypedItemBusy>(e);if(auto* s=g_registry.try_get<TypedSocketMaintenanceSession>(e);s && s->nonce==nonce){s->pending=false;s->status=Status::Failed;Reply(e,s->status);}}return true;}
-    const auto complete=[pid,token,nonce,held](store::CommitOutcome outcome) {
+    const auto complete=[pid,token,nonce,held,succeeded](store::CommitOutcome outcome) {
         const auto e=Current(pid,token);if(e==entt::null)return;if(outcome.state)g_registry.emplace_or_replace<ecs::TypedItems>(e,std::move(*outcome.state));if(Current(pid,token)!=e)return;g_registry.remove<ecs::TypedItemBusy>(e);if(Current(pid,token)!=e)return;
-        if(auto* s=g_registry.try_get<TypedSocketMaintenanceSession>(e);s && s->nonce==nonce){s->pending=false;s->status=outcome.write ? Status::Applied : Status::Failed;Reply(e,s->status);}else SendTypedInventory(e);PumpTypedItemGrants(e);
+        if(auto* s=g_registry.try_get<TypedSocketMaintenanceSession>(e);s && s->nonce==nonce){s->pending=false;s->status=outcome.write ? (succeeded ? Status::Applied : Status::Broken) : Status::Failed;Reply(e,s->status);}else SendTypedInventory(e);PumpTypedItemGrants(e);
     };
     if(!store::RequestCommit(fence.owner,fence.sessionGeneration,std::move(plan->commit),complete)){g_registry.remove<ecs::TypedItemBusy>(e);if(auto* s=g_registry.try_get<TypedSocketMaintenanceSession>(e);s && s->nonce==nonce){s->pending=false;s->status=Status::Failed;Reply(e,s->status);}}
     return true;
