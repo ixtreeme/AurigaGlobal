@@ -1,5 +1,6 @@
 #pragma once
 #include <item/PersistentItems.hpp>
+#include <item/ItemMissions.hpp>
 #include <SQL/PreparedTransaction.h>
 #include <span>
 class CAsyncSQL;
@@ -31,6 +32,11 @@ std::expected<ItemReceipt,ItemPersistenceError> ItemWriteCompleted(const ItemCat
 // confirmed absence allows a retry. It does not settle a request not yet sent.
 std::expected<std::optional<ItemReceipt>,ItemPersistenceError> FindItemReceipt(CAsyncSQL&,const ItemCatalog&,const ItemCommit&);
 std::expected<ItemWriteResult,ItemPersistenceError> CommitItems(CAsyncSQL&,const ItemCatalog&,const ItemCommit&);
+// Historical item-mission completion, authorized by the CURRENT owner's
+// session. Match the complete immutable contract, not a newly rebuilt before
+// image. A duplicate after relog/catalog balance changes never spends twice.
+std::expected<bool,ItemPersistenceError> FindItemMissionReceipt(CAsyncSQL&,const ItemCatalog&,ItemOwnerFence,
+    const ItemMission&,ItemMissionProof);
 // One consistent, bounded snapshot; rejects corrupt/missing child state,
 // checksum differences, wrong footprints, unknown catalog or stale sessions.
 std::expected<LoadedItemOwner,ItemPersistenceError> LoadItemOwner(CAsyncSQL&,const ItemCatalog&,ItemOwner,std::uint64_t sessionGeneration);

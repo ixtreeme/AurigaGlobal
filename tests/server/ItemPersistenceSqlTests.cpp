@@ -482,6 +482,38 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         op[15]=5;auto stale=MakeCraftCommit(*c,op,state.fence,state.storages,state.items,state.wallets,recipe,1,std::span(rolls).first(1),{});
         Check(stale && p::ClaimOwnerSession(writer,*c,customer).has_value(),"relogin fences previous craft");Check(!p::CommitItems(writer,*c,stale->commit),"stale craft cannot consume");
     }
+    // Item-only Mission delivery: the immutable action receipt and all costs /
+    // rewards share the native item transaction, including rollback and relog.
+    {
+        const ItemOwner customer{ItemOwnerKind::Character,8100012};auto bag=f::Inventory(customer);const ItemWallet wallet{customer,WalletCurrency::Gold,1,1000};
+        Check(p::ProvisionOwner(admin,*c,customer,std::span(&bag,1),std::span(&wallet,1)).has_value(),"mission owner provisioned");
+        auto state=p::LoadCurrentItemOwner(writer,*c,customer).value();const auto block=p::ReserveItemInstanceIds(writer,*c,32).value();
+        const auto materialKey=f::Leather().key;const auto swordKey=f::Sword().key;
+        const auto grant=MakeGrantCommit(*c,{12},state.fence,state.storages,state.items,{materialKey,0,10},std::array{ItemInstanceId::Create(block.first).value()});
+        Check(grant && p::CommitItems(writer,*c,*grant).has_value(),"mission source granted");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        ItemMission mission{7,1,"mission.sql_delivery","Delivery","Bring ore",5,{{materialKey,0,10}},{{materialKey,0,4}},{{swordKey,9,1},{materialKey,0,2}},25,100};
+        ItemMissionProof proof{customer,{}};proof.action[0]=12;proof.action[31]=1;
+        const auto none=p::FindItemMissionReceipt(writer,*c,state.fence,mission,proof);Check(none && !*none,"mission initially uncompleted");
+        const auto id=ItemInstanceId::Create(block.first+1).value();const auto plan=MakeItemMissionCommit(*c,mission,proof,5,state.fence,state.storages,state.items,state.wallets,std::array{id});
+        Check(plan && p::CommitItems(writer,*c,*plan).has_value(),"mission writes whole item and wallet bundle");
+        const auto source=state.items[0].id;state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        Check(Find(state,source.Value()).count==8 && Find(state,id.Value()).refinementLevel==9 && state.wallets[0].balance==1075,"mission result reload retains exact source, result and wallet");
+        Check(CountMissionItems(state.items,customer,materialKey,0)==8 && !MakeItemMissionCommit(*c,mission,proof,5,state.fence,state.storages,state.items,state.wallets,{}),"original requirements no longer satisfied after payment");
+        const auto replay=p::FindItemMissionReceipt(writer,*c,state.fence,mission,proof);Check(replay && *replay,"historical receipt succeeds without rebuilding spent inputs");
+        auto changed=mission;changed.goldReward++;Check(!p::FindItemMissionReceipt(writer,*c,state.fence,changed,proof),"same mission identity cannot change its economic contract");
+        auto wrong=proof;wrong.owner.id++;Check(!p::FindItemMissionReceipt(writer,*c,state.fence,mission,wrong),"foreign mission receipt denied");
+        changed=mission;changed.version=2;changed.requirements.clear();auto secondProof=proof;secondProof.action[31]=2;
+        auto raced=MakeItemMissionCommit(*c,changed,secondProof,5,state.fence,state.storages,state.items,state.wallets,std::array{ItemInstanceId::Create(block.first+2).value()});
+        Check(raced.has_value(),"second mission planned");++raced->wallets[0].before.revision;++raced->wallets[0].after.revision;
+        Check(!p::CommitItems(writer,*c,*raced),"mission payment CAS rejects whole write");const auto after=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        Check(after.items==state.items && after.wallets==state.wallets && after.fence==state.fence,"failed mission neither consumes nor rewards");
+        const auto absent=p::FindItemMissionReceipt(writer,*c,state.fence,changed,secondProof);Check(absent && !*absent,"failed mission has no completion receipt");
+        auto stale=MakeItemMissionCommit(*c,changed,secondProof,5,state.fence,state.storages,state.items,state.wallets,std::array{ItemInstanceId::Create(block.first+3).value()});
+        Check(stale && p::ClaimOwnerSession(writer,*c,customer).has_value(),"mission relog creates new owner fence");
+        Check(!p::CommitItems(writer,*c,*stale) && !p::FindItemMissionReceipt(writer,*c,state.fence,mission,proof),"old login cannot mutate or authorize mission completion");
+        state=p::LoadCurrentItemOwner(writer,*c,customer).value();const auto restored=p::FindItemMissionReceipt(writer,*c,state.fence,mission,proof);
+        Check(restored && *restored && state.wallets[0].balance==1075 && Find(state,source.Value()).count==8,"new login restores durable completion without another reward");
+    }
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);
 }

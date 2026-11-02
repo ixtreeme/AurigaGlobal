@@ -11,6 +11,7 @@ auriga_add_server_executable(GameServer LIBS LUA)
 target_link_libraries(GameServer PRIVATE EnTT::EnTT)
 # Typed item catalog (item system F4): read and validated at boot when enabled.
 target_link_libraries(GameServer PRIVATE AurigaItemCatalogSql AurigaItemPersistenceSql)
+target_sources(GameServer PRIVATE item/TypedItemMissions.cpp mission/ItemDelivery.cpp)
 
 add_executable(WoodcuttingRulesTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/WoodcuttingRulesTests.cpp)
@@ -107,6 +108,19 @@ if(TARGET auriga_sanitizers)
     target_link_libraries(MissionCheckpointTests PRIVATE auriga_sanitizers)
 endif()
 add_test(NAME mission_checkpoint COMMAND MissionCheckpointTests)
+
+add_executable(ItemMissionTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/ItemMissionTests.cpp
+    ${_mission_persistence_sources}
+    mission/ItemDelivery.cpp)
+target_include_directories(ItemMissionTests PRIVATE ${AURIGA_MISSION_JSON_INCLUDE})
+target_link_libraries(ItemMissionTests PRIVATE AurigaItemCatalog Threads::Threads OpenSSL::Crypto)
+target_compile_features(ItemMissionTests PRIVATE cxx_std_23)
+add_test(NAME item_missions COMMAND ItemMissionTests)
+set_tests_properties(item_missions PROPERTIES LABELS server TIMEOUT 60)
+if(MSVC)
+    set_target_properties(ItemMissionTests PROPERTIES VS_GLOBAL_ImportDirectoryBuildProps false VS_GLOBAL_ImportDirectoryBuildTargets false)
+endif()
 
 add_executable(MissionRewardsTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/MissionRewardsTests.cpp

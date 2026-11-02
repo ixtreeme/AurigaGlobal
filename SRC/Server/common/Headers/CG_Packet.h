@@ -464,6 +464,14 @@ typedef struct command_typed_craft
     uint32_t recipe, count;
 } TPacketCGTypedCraft;
 
+typedef struct command_typed_item_mission
+{
+    uint8_t bHeader, action;
+    uint32_t npc;
+    uint64_t session, request;
+    uint32_t mission;
+} TPacketCGTypedItemMission;
+
 typedef struct command_party_parameter
 {
 	uint8_t	bHeader;

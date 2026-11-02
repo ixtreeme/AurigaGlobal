@@ -177,6 +177,7 @@ CPacketInfoCG::CPacketInfoCG()
 	Set(HEADER_CG_TYPED_SHOP, sizeof(TPacketCGTypedShop), "TypedShop", true);
 	Set(HEADER_CG_TYPED_TRADE, sizeof(TPacketCGTypedTrade), "TypedTrade", true);
 	Set(HEADER_CG_TYPED_CRAFT, sizeof(TPacketCGTypedCraft), "TypedCraft", true);
+    Set(HEADER_CG_TYPED_ITEM_MISSION, sizeof(TPacketCGTypedItemMission), "TypedItemMission", true);
 
 
 #ifdef __INGAME_WIKI__

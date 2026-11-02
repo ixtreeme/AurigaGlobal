@@ -528,4 +528,22 @@ a szerver aktuális értékeit. A meglévő harci képletek maradnak (IC-012).
 
 Részletek és határok: [IC-039](item_combat_039_equipment_stats.md),
 [natív, Unity és helyi élő ellenőrzések](../reports/item_combat/2026-11-01_equipment_stats_runtime.md).
-A következő nyitott út a quest/Mission tárgyműveleteinek közös bekötése.
+A következő út a quest/Mission tárgyműveleteinek közös bekötése; az első
+korlátozott NPC-s leadás a C12 szeletben készült el.
+
+## C12 — NPC-s tárgyleadó Mission (2026-11-02, élő ellenőrzés alatt)
+
+Az ItemKey/szint/darab alapú, egyszer teljesíthető küldetések külön kezelik
+a nem fogyó tárgyfeltételt, a fogyasztást, a jutalmat és a Yangot. Egy
+itemtranzakció menti a teljes eredményt és a tartós teljesítési receiptet.
+A meglévő MissionRuntime NPC-cél/jutalom/siker gráfja a receipt után zárul.
+Unity: **NPC kijelölése → I → Küldetések**, szerveres állapot és megerősítés.
+
+A natív, SQL- és Unity offline ellenőrzések sikeresek. A végleges helyi
+TLS-próba a nyitott Editor frissítésére vár; ez a szelet még nincs az
+élőben ellenőrzött C1–C11 közé sorolva. Általános többlépcsős Mission,
+checkpoint/outbox/resource-writer aktiválás, XP/szintjutalom és legacy
+Lua-quest konverzió továbbra is nyitott.
+
+Részletek: [IC-040](item_combat_040_item_missions.md),
+[ellenőrzések és helyi próba](../reports/item_combat/2026-11-02_item_missions_runtime.md).

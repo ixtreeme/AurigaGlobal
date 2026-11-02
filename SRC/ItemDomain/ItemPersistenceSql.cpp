@@ -267,6 +267,24 @@ std::expected<ItemWriteResult,E> CommitItems(CAsyncSQL& db,const ItemCatalog& c,
     {receipt=FindItemReceipt(db,c,r);if(!receipt)return std::unexpected(receipt.error());if(*receipt)return ItemWriteResult{**receipt,true};}
     return std::unexpected(result.error());
 }
+std::expected<bool,E> FindItemMissionReceipt(CAsyncSQL& db,const ItemCatalog& c,ItemOwnerFence fence,const ItemMission& mission,ItemMissionProof proof)
+{
+    const auto op=ItemMissionOperation(proof);const auto expected=ItemMissionReceipt(mission,proof);
+    if(!op || !expected || proof.owner!=fence.owner || !fence.sessionGeneration)return std::unexpected(E::InvalidOperation);
+    auto tx=Guards(c);auto owner=Owner(fence.owner);owner.push_back(U::UInt(fence.sessionGeneration));
+    tx.push_back({"SELECT state_revision FROM player.item_owner_fence WHERE owner_kind=? AND owner_id=? AND session_generation=? LOCK IN SHARE MODE",std::move(owner),{},1});
+    tx.push_back({"SELECT request_sha256,catalog_revision,catalog_sha256,operation_kind,outcome_code,result_payload FROM player.item_operation_receipt WHERE operation_id=? LOCK IN SHARE MODE",{U::Blob(Bytes(*op))},{},{}});
+    Message m(db.DirectTransactionPrepared(std::move(tx)));if(!m)return std::unexpected(E::SqlFailure);
+    const auto rows=Result(*m,4,6,1);if(!rows)return std::unexpected(rows.error());if(rows->empty())return false;
+    try
+    {
+        const auto& row=rows->front();(void)Array<32>(row[0]);(void)Array<32>(row[2]);
+        if(!Number<std::uint64_t>(row[1]) || Number<unsigned>(row[3])!=static_cast<unsigned>(ItemOperationKind::Service) ||
+           Number<std::uint16_t>(row[4])!=ItemMissionOutcome || Payload(row[5])!=*expected)return std::unexpected(E::ReceiptMismatch);
+        return true;
+    }
+    catch(const Invalid&){return std::unexpected(E::InvalidStoredData);}
+}
 std::expected<std::uint64_t,E> ClaimOwnerSession(CAsyncSQL& db,const ItemCatalog& c,ItemOwner owner)
 {
     if(!ValidItemOwner(owner))return std::unexpected(E::InvalidOwner);

@@ -28,6 +28,7 @@
 #include "../item/ItemStore.hpp"
 #include "../item/TypedShop.hpp"
 #include "../item/TypedCraft.hpp"
+#include "../item/TypedItemMissions.hpp"
 #include "Core/Logging.hpp"
 #include <fmt/format.h>
 #include <fstream>
@@ -349,6 +350,8 @@ static void __ApplyConnectConfig(const GameConfig& cfg)
             { LOG_ERROR("TypedShop: {}", shops.error()); exit(1); }
             if (const auto crafting = LoadTypedCrafting(LocaleService_GetBasePath() + "/typed_crafting.json"); !crafting)
             { LOG_ERROR("TypedCraft: {}", crafting.error()); exit(1); }
+            if (const auto missions = LoadTypedItemMissions(LocaleService_GetBasePath() + "/typed_item_missions.json"); !missions)
+            { LOG_ERROR("TypedItemMissions: {}", missions.error()); exit(1); }
 			items::EnableTypedDrops(cfg.items.drops == "typed");
 			LOG_INFO("ItemDrops: {}", cfg.items.drops == "typed" ? "typed (catalog drop tables)" : "legacy drop tables");
 		}
