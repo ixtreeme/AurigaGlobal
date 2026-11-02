@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "TypedEquipment.hpp"
+#include "TypedAccessoryClock.hpp"
+#include <item/AccessoryRuntime.hpp>
 #include "ItemStore.hpp"
 #include "ItemCatalogRuntime.hpp"
 #include "../ecs/systems/PointSystem.hpp"
@@ -17,8 +19,12 @@ void RefreshTypedEquipment(entt::entity e)
     const auto* pointState=g_registry.try_get<ecs::CharacterStatsComponent>(e);
     if(pointState && pointState->recomputing)return; // finish the current source snapshot first
     auto* old=g_registry.try_get<ecs::TypedEquipmentProjection>(e);
-    if(old && old->fence==items->state.fence && old->applied)return;
-    const auto built=auriga::item::BuildEquipmentStats(*catalog,items->state.fence.owner,items->state.items);
+    const auto elapsed=TypedAccessoryElapsed(e);
+    const bool mayExpire=std::ranges::any_of(items->state.items,[elapsed](const auto& i){return !i.destroyed && i.placement && i.placement->kind==auriga::item::ItemStorageKind::Equipment && i.accessory && i.accessory->activeGrade && !i.accessory->permanent && elapsed>=i.accessory->remainingMs;});
+    if(old && old->fence==items->state.fence && old->applied && !mayExpire)return;
+    auto effective=items->state.items;
+    const auto time=auriga::item::ProjectAccessoryTime(*catalog,effective,elapsed);
+    const auto built=time ? auriga::item::BuildEquipmentStats(*catalog,items->state.fence.owner,effective) : std::expected<auriga::item::EquipmentStats,auriga::item::EquipmentStatsError>{std::unexpected(auriga::item::EquipmentStatsError::InvalidItem)};
     const auto stats=built ? std::optional{*built} : std::optional<auriga::item::EquipmentStats>{};
     const bool changed=!old || old->stats!=stats;const bool recompute=changed || !old->applied;
     ecs::TypedEquipmentProjection next;next.fence=items->state.fence;next.stats=stats;next.revision=old ? old->revision+(changed ? 1 : 0) : 1;

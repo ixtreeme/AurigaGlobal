@@ -16,6 +16,12 @@ struct SocketMaintenanceQuote
     // v2: insertion previews both possible outcomes before any server draw.
     std::uint16_t chance=0;std::uint8_t slot=255;
     std::array<StoneSocketSlot,EquipmentStoneSockets> failure{};
+    // v3 accessory operations (5 unlock, 6 charge), disjoint from stone slots.
+    AccessorySocketState accessoryBefore{},accessoryAfter{},accessoryFailure{};
+    std::uint8_t maximum=0;
+    std::uint32_t increaseBp=0;
+    std::int64_t minimumRaw=0;
+    std::int32_t minimumBp=0,minimumInteger=0;
     bool operator==(const SocketMaintenanceQuote&)const=default;
 };
 struct SocketMaintenancePlan {ItemCommit commit;SocketMaintenanceQuote quote;bool succeeded=true;};

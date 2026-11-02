@@ -117,6 +117,7 @@
 #include "hwidmanager.h"
 #endif
 #include "../item/ItemStore.hpp"
+#include "../item/TypedAccessoryClock.hpp"
 #include "../item/TypedLoot.hpp"
 
 
@@ -759,6 +760,7 @@ void destroy()
 
 	// Finishes every queued typed-item job before the process goes away.
 	LOG_INFO("<shutdown> Stopping ItemStore...");
+    FinishTypedAccessoryClocks();
 	auriga::item::runtime::ItemStore::Instance().Stop();
 
 	LOG_INFO("<shutdown> Canceling ReloadSpamEvent...");

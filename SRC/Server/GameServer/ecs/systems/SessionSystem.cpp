@@ -9,6 +9,7 @@
 #include "../CharacterAccessors.hpp"
 
 #include "SessionSystem.hpp"
+#include "../../item/TypedAccessoryClock.hpp"
 #include "../../item/TypedCraft.hpp"
 #include "SocialSystem.hpp"
 #include "SkillSystem.hpp"
@@ -668,6 +669,7 @@ void Disconnect(entt::entity e, const char* c_pszReason)
     assert(ecs::PlayerRuntime::GetDesc(e) != nullptr);
 
     LOG_INFO("DISCONNECT: {} ({})", ecs::PlayerRuntime::GetName(e).data(), c_pszReason ? c_pszReason : "unset");
+    StopTypedAccessoryClock(e);
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
     COrcsDungeon::instance().OnPlayerDisconnect(e);
     CTritonTempleDungeon::instance().OnPlayerDisconnect(e);

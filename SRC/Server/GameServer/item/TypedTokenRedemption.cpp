@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "TypedTokenRedemption.hpp"
 #include "TypedInventorySync.hpp"
+#include "TypedAccessoryClock.hpp"
 #include "TypedDrops.hpp"
 #include "ItemStore.hpp"
 #include "ItemCatalogRuntime.hpp"
@@ -90,7 +91,8 @@ bool HandleTypedTokenRedemptionPacket(entt::entity e,const char* data)
     s=g_registry.try_get<TypedTokenRedemptionSession>(e);const auto* typed=g_registry.try_get<ecs::TypedItems>(e);const auto* login=g_registry.try_get<ecs::TypedItemLogin>(e);
     if(!s || s->nonce!=r.session || !typed || !login || !Admitted(e))return true;
     if(g_registry.all_of<ecs::TypedItemBusy>(e)){s->status=Status::Busy;Reply(e,s->status);return true;}
-    if(typed->state.fence!=s->fence){s->status=Status::Stale;Reply(e,s->status);return true;}
+    if(typed->state.fence!=s->fence)
+    {if(!OnlyTypedAccessoryClockChanges(s->fence,typed->state.fence)){s->status=Status::Stale;Reply(e,s->status);return true;}s->fence=typed->state.fence;}
     auto plan=items::MakeTokenRedemptionCommit(*c,s->operation,s->fence,typed->state.storages,typed->state.items,typed->state.wallets,s->item->id,s->quote.requested,INT64_MAX,Actor(e));
     if(!plan){s->status=Refusal(plan.error());Reply(e,s->status);return true;}
     if(plan->quote!=s->quote){s->status=Status::Stale;Reply(e,s->status);return true;}

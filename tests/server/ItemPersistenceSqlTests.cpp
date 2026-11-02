@@ -9,6 +9,7 @@
 #include <item/TokenRedemption.hpp>
 #include <item/SocketMaintenance.hpp>
 #include <item/SocketInsertion.hpp>
+#include <item/AccessoryRuntime.hpp>
 #include <CatalogSqlReader.hpp>
 #include <SQL/AsyncSQL.h>
 #include <Core/Logging.hpp>
@@ -623,6 +624,29 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         auto stale=MakeSocketInsertionCommit(*c,{16,2},state.fence,state.storages,state.items,stone.id,target.id,{100,1,1,false},10000,0);Check(stale && p::ClaimOwnerSession(writer,*c,customer).has_value(),"relog fences pending insertion");Check(!p::CommitItems(writer,*c,stale->commit),"old login cannot insert into next socket");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
         auto success=MakeSocketInsertionCommit(*c,{16,3},state.fence,state.storages,state.items,stone.id,target.id,{100,1,1,false},10000,0);Check(success && success->succeeded && p::CommitItems(writer,*c,success->commit).has_value(),"success endpoint writes source and embedded stone together");
         state=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(Find(state,stone.id.Value()).count==1 && Find(state,stone.id.Value()).revision==3 && Find(state,target.id.Value()).stones[0].state==StoneSocketState::Broken && Find(state,target.id.Value()).stones[1]==StoneSocketSlot{StoneSocketState::Occupied,2,stone.key,20} && Find(state,target.id.Value()).revision==3 && state.wallets[0].balance==1000,"success skips broken socket, keeps gold quality and +20 embedded level after reload");
+    }
+    {
+        const ItemOwner customer{ItemOwnerKind::Character,880091};const auto bag=f::Inventory(customer);const ItemStorageLayout equipment{{customer,ItemStorageKind::Equipment,1},8,1,1};const std::array layouts{bag,equipment};const ItemWallet wallet{customer,WalletCurrency::Gold,1,1000};
+        Check(p::ProvisionOwner(admin,*c,customer,layouts,std::span(&wallet,1)).has_value(),"accessory owner provisioned");
+        auto state=p::LoadCurrentItemOwner(writer,*c,customer).value();const auto block=p::ReserveItemInstanceIds(writer,*c,3).value();
+        auto target=f::Leather(block.first);target.owner=customer;target.key=item_catalog_fixture::Bracelet();target.refinementLevel=15;target.count=1;target.placement->anchor=0;target.accessory=AccessorySocketState{};
+        auto drill=f::Leather(block.first+1);drill.owner=customer;drill.key=item_catalog_fixture::SocketDrill();drill.count=3;
+        auto jewel=f::Leather(block.first+2);jewel.owner=customer;jewel.key=item_catalog_fixture::SocketJewel();jewel.count=3;jewel.placement->anchor=2;
+        ItemCommit grant;grant.operationId={17};grant.catalogRevision=c->Revision();grant.catalogHash=c->ContentHash();grant.kind=ItemOperationKind::Grant;grant.owners={state.fence};grant.storages={bag};grant.items={{{},target},{{},drill},{{},jewel}};grant.outcomeCode=1;
+        Check(p::CommitItems(writer,*c,grant).has_value(),"socket accessory and explicit materials granted");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        const auto plan=[&](unsigned op,ItemInstanceId material,AccessoryServiceKind kind,std::uint16_t roll){return MakeAccessorySocketCommit(*c,{17,static_cast<std::uint8_t>(op)},state.fence,state.storages,state.items,material,target.id,{100,1,1,false},kind,roll);};
+        auto unlock=plan(1,drill.id,AccessoryServiceKind::Unlock,5000);Check(unlock && p::CommitItems(writer,*c,unlock->commit).has_value(),"unlock writes material debit and capacity atomically");
+        Check(p::CommitItems(writer,*c,unlock->commit)->replay,"unlock receipt prevents double capacity or debit");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        auto failure=plan(2,drill.id,AccessoryServiceKind::Unlock,5001);Check(failure && !failure->succeeded && p::CommitItems(writer,*c,failure->commit).has_value(),"failed unlock consumes material with unchanged capacity");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        Check(Find(state,drill.id.Value()).count==1 && Find(state,target.id.Value()).accessory==AccessorySocketState{1,0,0,false},"failed unlock reloads exact prior state");
+        auto charge=plan(3,jewel.id,AccessoryServiceKind::Charge,0);Check(charge && p::CommitItems(writer,*c,charge->commit).has_value(),"guaranteed charge is persisted once");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        auto equip=MakeEquipCommit(*c,{17,4},state.fence,state.storages,state.items,target.id,{100,1,1});Check(equip && p::CommitItems(writer,*c,*equip).has_value(),"charged accessory equips");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        const auto duration=Find(state,target.id.Value()).accessory->remainingMs;
+        auto unequip=MakeUnequipCommit(*c,{17,5},state.fence,state.storages,state.items,target.id,{ItemStorageKind::Inventory,1,0});Check(unequip && SettleAccessoryTime(*c,*unequip,state.fence,state.storages,state.items,1234).has_value(),"unequip settles elapsed in its own transaction");
+        auto raced=*unequip;++raced.items[0].before->revision;++raced.items[0].after.revision;Check(!p::CommitItems(writer,*c,raced),"timer CAS race rolls complete move back");
+        Check(p::CommitItems(writer,*c,*unequip).has_value() && p::CommitItems(writer,*c,*unequip)->replay,"elapsed debit and movement commit once across replay");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        Check(Find(state,target.id.Value()).accessory->remainingMs==duration-1234 && Find(state,target.id.Value()).placement->kind==ItemStorageKind::Inventory && state.wallets[0].balance==1000,"remaining equipped time survives reload and wallet is unchanged");
+        Check(p::ClaimOwnerSession(writer,*c,customer).has_value(),"accessory relog claims next session");auto relog=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(Find(relog,target.id.Value()).accessory==Find(state,target.id.Value()).accessory,"offline state neither refills nor consumes time");
     }
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);

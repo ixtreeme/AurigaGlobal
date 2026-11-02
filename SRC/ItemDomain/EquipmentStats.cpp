@@ -40,15 +40,29 @@ std::expected<EquipmentStats,E> BuildEquipmentStats(const ItemCatalog& c,ItemOwn
         equipped.push_back(&item);
     }
     std::ranges::sort(equipped,{},[](const auto* item){return item->placement->anchor;});
-    const auto profiles=[&](ItemKey key,std::uint16_t level)->bool {
+    const auto profiles=[&](ItemKey key,std::uint16_t level,const AccessorySocketGrade* grade)->bool {
         const auto p=c.BonusProfilesAt(key,level);if(!p)return false;
+        std::map<BonusId,std::int64_t> combined;
         for(const auto* profile:{p->base,p->refinement})if(profile)for(const auto& b:profile->Data().entries)
-            if(!FindBonusDefinition(b.bonus) || !Add(out.bonuses[static_cast<unsigned>(b.bonus)],b.valueScaled))return false;
+            if(!FindBonusDefinition(b.bonus) || !Add(combined[b.bonus],b.valueScaled))return false;
+        for(auto [id,value]:combined)
+        {
+            if(grade && value)
+            {
+                if(value==INT64_MIN)return false;
+                const auto* definition=FindBonusDefinition(id);const auto magnitude=value<0 ? -value : value;
+                const auto delta=ScaleEquipmentValue(magnitude,grade->bonusIncreaseBp);if(!delta)return false;
+                const std::int64_t minimum=definition->unit==BonusUnit::Raw ? grade->minimumRaw : definition->unit==BonusUnit::BasisPoints ? grade->minimumBp : grade->minimumInteger;
+                const auto boosted=AddEquipmentValue(magnitude,std::max(*delta,minimum));if(!boosted)return false;
+                value=value<0 ? -*boosted : *boosted;
+            }
+            if(!Add(out.bonuses[static_cast<unsigned>(id)],value))return false;
+        }
         return true;
     };
-    const auto base=[&](ItemKey key,std::uint16_t level)->bool {
+    const auto base=[&](ItemKey key,std::uint16_t level,const AccessorySocketGrade* grade=nullptr)->bool {
         const auto s=c.RefinedBaseStats(key,level);return s && Add(out.flat.physicalAttackRaw,s->physicalAttackRaw) && Add(out.flat.magicalAttackRaw,s->magicalAttackRaw) &&
-            Add(out.flat.physicalDefenseRaw,s->physicalDefenseRaw) && Add(out.flat.magicalDefenseRaw,s->magicalDefenseRaw) && profiles(key,level);
+            Add(out.flat.physicalDefenseRaw,s->physicalDefenseRaw) && Add(out.flat.magicalDefenseRaw,s->magicalDefenseRaw) && profiles(key,level,grade);
     };
     for(const auto* item:equipped)
     {
@@ -56,9 +70,13 @@ std::expected<EquipmentStats,E> BuildEquipmentStats(const ItemCatalog& c,ItemOwn
         unsigned slot=0;std::uint32_t resistance=0;
         std::visit([&](const auto& row){if constexpr(requires{row.slot;})slot=static_cast<unsigned>(row.slot);if constexpr(requires{row.resistanceProfile;})resistance=row.resistanceProfile;},d->category);
         if(!slot || slot>8 || item->placement->anchor!=slot-1)return std::unexpected(E::InvalidSlot);
-        // Active accessory grades need their persisted equipped-time lifecycle
-        // before they can contribute; never grant an indefinitely frozen buff.
-        if(item->accessory && item->accessory->activeGrade)return std::unexpected(E::UnsupportedState);
+        const AccessorySocketGrade* grade=nullptr;
+        if(item->accessory && item->accessory->activeGrade)
+        {
+            const auto* accessory=std::get_if<ItemAccessoryRow>(&d->category);
+            const auto* profile=accessory && accessory->socketProfile ? c.FindAccessorySocket(*accessory->socketProfile) : nullptr;
+            if(!profile || !(grade=profile->FindGrade(item->accessory->activeGrade)))return std::unexpected(E::InvalidItem);
+        }
         if(const auto* weapon=std::get_if<ItemWeaponRow>(&d->category))
         {
             const auto* ammo=c.FindAmmoPolicy(weapon->ammoPolicy);const auto* attack=c.FindAttack(weapon->attackProfile);
@@ -67,7 +85,7 @@ std::expected<EquipmentStats,E> BuildEquipmentStats(const ItemCatalog& c,ItemOwn
         }
         const auto* appearance=d->base.appearanceProfile ? c.FindAppearance(*d->base.appearanceProfile) : nullptr;
         out.equipped.push_back({static_cast<std::uint8_t>(slot),item->id,item->key,item->refinementLevel,appearance ? appearance->modelAsset : std::string{}});
-        if(!base(item->key,item->refinementLevel))return std::unexpected(E::Overflow);
+        if(!base(item->key,item->refinementLevel,grade))return std::unexpected(E::Overflow);
         for(const auto& entry:item->attributes.slots)if(entry && !Add(out.bonuses[static_cast<unsigned>(entry->bonus)],entry->valueScaled))return std::unexpected(E::Overflow);
         for(const auto& stone:item->stones)if(stone.state==StoneSocketState::Occupied)
             if(!stone.stone || !base(*stone.stone,stone.refinementLevel))return std::unexpected(E::InvalidItem);

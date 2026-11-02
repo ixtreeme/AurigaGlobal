@@ -81,8 +81,10 @@ fegyvermodell vagy fegyvertípus. A karakterváltás törli a snapshotot és az 
 
 ## Maradó határok
 
-- Aktív ékszerfokozat és fogyó lőszert igénylő fegyver felvétele elutasított,
-  amíg az időzítő, illetve typed lőszer-életciklus nincs bekötve. Már betöltött
+- Az aktív ékszerfokozat korábbi felvételi tiltását a
+  [C17 mentett viselési életciklusa](item_combat_045_accessory_socket_runtime.md)
+  feloldotta. A fogyó lőszert igénylő fegyver felvétele továbbra is elutasított,
+  amíg a typed lőszer-életciklus nincs bekötve. Már betöltött
   nem támogatott felszerelés levehető; addig nem ad részleges, félrevezető statot.
 - A régi hatótáv és animációs ütközés marad. Teljes elemi skillmetadata,
   wind/earth/dark csatornák, új determinisztikus pipeline és procok külön harci munka.

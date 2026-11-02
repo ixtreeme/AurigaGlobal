@@ -11,7 +11,7 @@ auriga_add_server_executable(GameServer LIBS LUA)
 target_link_libraries(GameServer PRIVATE EnTT::EnTT)
 # Typed item catalog (item system F4): read and validated at boot when enabled.
 target_link_libraries(GameServer PRIVATE AurigaItemCatalogSql AurigaItemPersistenceSql)
-target_sources(GameServer PRIVATE item/TypedItemMissions.cpp mission/ItemDelivery.cpp item/TypedContainerOpening.cpp item/TypedTokenRedemption.cpp item/TypedSocketMaintenance.cpp)
+target_sources(GameServer PRIVATE item/TypedItemMissions.cpp mission/ItemDelivery.cpp item/TypedContainerOpening.cpp item/TypedTokenRedemption.cpp item/TypedSocketMaintenance.cpp item/TypedAccessoryClock.cpp)
 
 add_executable(WoodcuttingRulesTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/WoodcuttingRulesTests.cpp)

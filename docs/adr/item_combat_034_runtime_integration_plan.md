@@ -1,7 +1,7 @@
 # ADR IC-034 — F4 szerverbekötés: ütemterv és 1. szelet (katalógus induláskor)
 
 2026-10-29. Fázis: F4 ([IC-012](item_combat_012_item_runtime_first.md)).
-Állapot (2026-11-02): **C1–C16 implementált; az elkészült futásidejű
+Állapot (2026-11-02): **C1–C17 implementált; az elkészült futásidejű
 műveletek Unity 6.3-ból kezelhetők, helyi szerverrel ellenőrizve**.
 
 ## Közös szerver–Unity munkamenet (felhasználói döntés, 2026-11-01)
@@ -23,8 +23,8 @@ az összevonás részletei és ellenőrzései a
 |---|---|---|---|
 | A. Speciális tárgyműveletek | Páros (kapcsolt) bónuszok; jelmez-, stóla- és rúnabónuszok; fejlesztési segédanyagok | F2 maradéka | nyitott ([IC-031](item_combat_031_instance_attributes.md) határa) |
 | B. Tartós tárgymentés | Teljes mentés, visszatöltés és tranzakciókezelés a futó szerverben; a még nem támogatott kategóriák példányállapota | F3 maradéka | a modell, az író és a próbapad kész ([IC-032](item_combat_032_item_persistence.md), [IC-033](item_combat_033_item_test_bench.md)) |
-| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C16 kész**, tárgyleadó Mission, ládanyitás, Yang-pénzjegy, foglalatkarbantartás és kőbehelyezés; fiókpénztárca, általános Mission/Lua-quest és további használatok még nyitottak |
-| D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | **C1–C16 kliensútjai kész**, részletek lent |
+| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C17 kész**, tárgyleadó Mission, ládanyitás, Yang-pénzjegy, foglalatkarbantartás, kőbehelyezés és ékszerfoglalatok; fiókpénztárca, általános Mission/Lua-quest és további használatok még nyitottak |
+| D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | **C1–C17 kliensútjai kész**, részletek lent |
 | E. Teljes adatkonverzió | Régi protók, példányok, receptek, tartalmi hivatkozások | F6 | az eszközök megvannak; a családtérkép jóváhagyásra vár |
 | F. Végső ellenőrzés | Helyi játékpróba, újrabelépés utáni adatmegőrzés, gazdasági műveletek, FreeBSD-build | F7 | nyitott |
 
@@ -622,3 +622,32 @@ Részletek: [IC-044](item_combat_044_socket_insertion.md),
 [ellenőrzések és helyi próba](../reports/item_combat/2026-11-02_socket_insertion_runtime.md).
 Az ékszerfoglalatok, bónuszszolgáltatások, további használatok, teljes
 konverzió és kiadási kapuk továbbra is nyitottak.
+
+## C17 — Ékszerfoglalatok és viselési idő (2026-11-02)
+
+Saját ékszer foglalatainak nyitása, időzített vagy végleges feltöltése.
+A saját profil adja az anyaglistát, darabszámot, esélyt és fokozatonkénti
+időt. Kudarc is fogyaszt; a régi ékszerállapot megmarad. Előnézetkor nincs
+dobás, a megerősített művelet anyag/cél/receipt atomikus tranzakció.
+
+Az idő csak viseléskor fogy, levételkor és logoutkor szünetel. Mentett
+checkpointok, tárgyműveletbe illesztett időelszámolás, lezárt clock utolsó
+mentése, relog és fokozatlejárat. A harci projekció SQL-várakozás alatt is
+eltávolítja a lejárt bónuszt. A base/refinement profil összevont bónusza
+egyszer növekszik, egységhelyes minimummal; a példánybónusz külön hozzáadás.
+
+Unity: **I → kompatibilis anyag → Foglalatok**, külön nyitás/feltöltés,
+céltárgy, esély, anyagigény, mindkét kimenet és megerősítés. A részletekben
+látszik a hátralévő viselési idő és a szünetelő/végleges állapot. Az idő
+checkpointja megőrzi a többi tárgyablak érvényes megerősítését is.
+
+25/25 natív/SQL tesztcsoport, 3397 új Unity-ellenőrzés, a C4–C16 korábbi
+validátorai, 3/3 valódi TLS-fázis (122 ellenőrzés) sikeres. Token- és
+dobozmegerősítés működik az idő checkpointjain át is. A helyi tesztkészletben
+új ékszer, háromféle anyag ×60 és minden korábbi próbatárgy rendelkezésre áll.
+
+Részletek és a checkpointolt idő crash/handoff korlátja:
+[IC-045](item_combat_045_accessory_socket_runtime.md),
+[ellenőrzések és helyi próba](../reports/item_combat/2026-11-02_accessory_socket_runtime.md).
+Következő szelet: **bónuszszolgáltatások — hozzáadás, váltás és zárolás**.
+A további használatok, teljes konverzió és kiadási kapuk továbbra is nyitottak.

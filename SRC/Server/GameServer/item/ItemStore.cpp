@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ItemStore.hpp"
+#include "TypedAccessoryClock.hpp"
 #include "../core/GameConfig.h"
 
 #include <SQL/AsyncSQL.h>
@@ -221,6 +222,7 @@ void ItemStore::Run(GameSqlConfig player, std::shared_ptr<std::promise<std::stri
 
 bool RequestLoginLoad(std::uint32_t pid, std::function<void(LoginLoad)> done)
 {
+    if(DeferAccessoryLogin(pid,[pid,done]{RequestLoginLoad(pid,done);})){TickTypedAccessoryClocks();return true;}
 	const ItemOwner owner { ItemOwnerKind::Character, pid };
 	return ItemStore::Instance().Submit([owner, done = std::move(done)](CAsyncSQL& sql, const ItemCatalog& catalog) mutable -> ItemStore::Completion {
 		LoginLoad result { owner, 0, std::unexpected(ItemPersistenceError::InvalidOwner) };
@@ -301,6 +303,9 @@ bool RequestCommit(ItemOwner owner, std::uint64_t session, ItemCommit commit, st
 bool RequestCommitMany(std::vector<OwnerRead> owners,ItemCommit commit,std::function<void(MultiCommitOutcome)> done)
 {
     if(owners.empty()) return false;
-    return QueueCommit(std::make_shared<PendingCommit>(PendingCommit{std::move(owners),std::move(commit),std::move(done)}));
+    auto clock=BeginAccessoryClockCommit(owners,commit);if(!clock)return false;
+    auto completed=[settle=*clock,done=std::move(done)](MultiCommitOutcome result) mutable {settle(&result);done(std::move(result));};
+    const bool queued=QueueCommit(std::make_shared<PendingCommit>(PendingCommit{std::move(owners),std::move(commit),std::move(completed)}));
+    if(!queued)(*clock)(nullptr);return queued;
 }
 } // namespace auriga::item::runtime

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "TypedContainerOpening.hpp"
 #include "TypedInventorySync.hpp"
+#include "TypedAccessoryClock.hpp"
 #include "TypedDrops.hpp"
 #include "ItemStore.hpp"
 #include "ItemCatalogRuntime.hpp"
@@ -124,7 +125,8 @@ bool HandleTypedContainerOpeningPacket(entt::entity e,const char* data)
     s=g_registry.try_get<TypedContainerOpeningSession>(e);const auto* typed=g_registry.try_get<ecs::TypedItems>(e);const auto* login=g_registry.try_get<ecs::TypedItemLogin>(e);
     if(!s || s->token!=r.session || !typed || !login || !Admitted(e))return true;
     if(g_registry.all_of<ecs::TypedItemBusy>(e)){s->status=Status::Busy;Reply(e,s->status);return true;}
-    if(typed->state.fence!=s->fence){s->status=Status::Stale;Reply(e,s->status);return true;}
+    if(typed->state.fence!=s->fence)
+    {if(!OnlyTypedAccessoryClockChanges(s->fence,typed->state.fence)){s->status=Status::Stale;Reply(e,s->status);return true;}s->fence=typed->state.fence;}
 #ifdef ENABLE_NEWSTUFF
     const bool plain=std::get<items::ItemContainerRow>(c->Find(s->box->key)->category).kind==items::ContainerKind::Use;
     if(plain && g_BoxUseTimeLimitValue && std::uint32_t(get_dword_time()-ecs::PlayerRuntime::GetBoxUseTime(e))<g_BoxUseTimeLimitValue){s->status=Status::Cooldown;Reply(e,s->status);return true;}

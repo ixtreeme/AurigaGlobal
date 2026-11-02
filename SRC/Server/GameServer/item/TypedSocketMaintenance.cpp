@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "TypedSocketMaintenance.hpp"
 #include "TypedInventorySync.hpp"
+#include "TypedAccessoryClock.hpp"
 #include "TypedDrops.hpp"
 #include "ItemStore.hpp"
 #include "ItemCatalogRuntime.hpp"
@@ -19,6 +20,7 @@
 #include "../network/desc.h"
 #include "../core/packet.h"
 #include <item/SocketInsertion.hpp>
+#include <item/AccessoryRuntime.hpp>
 extern int stone_chance;
 #include <openssl/rand.h>
 #include <algorithm>
@@ -38,6 +40,13 @@ std::uint64_t Nonce(){std::uint64_t value=0;while(!value)if(RAND_bytes(reinterpr
 bool Operation(std::array<std::uint8_t,16>& out)
 {return RAND_bytes(out.data(),static_cast<int>(out.size()))==1 && std::ranges::any_of(out,[](auto byte){return byte!=0;});}
 std::uint16_t Chance(){return static_cast<std::uint16_t>(std::clamp(stone_chance,0,100)*100);}
+std::uint16_t SessionChance(const items::ItemCatalog& c,const TypedSocketMaintenanceSession& s)
+{
+    if(s.quote.kind==4)return Chance();if(s.quote.kind<5 || !s.target || !s.target->accessory)return 0;
+    const auto* row=std::get_if<items::ItemAccessoryRow>(&c.Find(s.target->key)->category);const auto* p=row && row->socketProfile ? c.FindAccessorySocket(*row->socketProfile) : nullptr;if(!p)return 0;
+    const auto* grade=p->FindGrade(s.quote.kind==5 ? s.target->accessory->unlockedCapacity : s.target->accessory->activeGrade);
+    return grade ? (s.quote.kind==5 ? grade->unlockChanceBp : grade->chargeChanceBp) : 0;
+}
 std::uint16_t Draw(std::uint16_t chance)
 {
     if(chance==0 || chance==10000)return 0;
@@ -49,6 +58,7 @@ std::expected<items::SocketMaintenancePlan,items::SocketMaintenanceError> Build(
     const TypedSocketMaintenanceSession& session,const ecs::TypedItems& typed,items::SocketMaintenanceActor actor,std::uint16_t roll)
 {
     if(session.quote.kind==4)return items::MakeSocketInsertionCommit(c,session.operation,session.fence,typed.state.storages,typed.state.items,session.source->id,session.target->id,actor,Chance(),roll);
+    if(session.quote.kind>=5)return items::MakeAccessorySocketCommit(c,session.operation,session.fence,typed.state.storages,typed.state.items,session.source->id,session.target->id,actor,session.quote.kind==5 ? items::AccessoryServiceKind::Unlock : items::AccessoryServiceKind::Charge,roll);
     return items::MakeSocketMaintenanceCommit(c,session.operation,session.fence,typed.state.storages,typed.state.items,session.source->id,session.target->id,actor,store::PeekInstanceIds(3));
 }
 entt::entity Current(std::uint32_t pid,std::uint64_t token)
@@ -82,7 +92,7 @@ bool HandleTypedSocketMaintenancePacket(entt::entity e,const char* data)
 {
     static_assert(sizeof(TPacketCGTypedSocketMaintenance)==26);const auto r=*reinterpret_cast<const TPacketCGTypedSocketMaintenance*>(data);if(!g_registry.valid(e))return true;
     auto* s=g_registry.try_get<TypedSocketMaintenanceSession>(e);if(s && s->pending){Reply(e,Status::Pending);return true;}const auto c=store::CurrentCatalog();if(!c)return true;
-    if(r.action==1)
+    if(r.action==1 || r.action==4 || r.action==5)
     {
         if(r.session){Reply(e,Status::Invalid);return true;}if(!Admitted(e) || g_registry.all_of<ecs::TypedItemBusy>(e)){Reply(e,Status::Denied);return true;}
         const auto* typed=g_registry.try_get<ecs::TypedItems>(e);const auto id=items::ItemInstanceId::Create(r.source);
@@ -90,18 +100,26 @@ bool HandleTypedSocketMaintenancePacket(entt::entity e,const char* data)
         const auto* entry=source!=typed->state.items.end() ? c->Find(source->key) : nullptr;const auto* row=entry ? std::get_if<items::ItemConsumableRow>(&entry->category) : nullptr;
         const auto* profile=row && row->socketServiceProfile ? c->FindSocketService(*row->socketServiceProfile) : nullptr;
         const auto* stone=entry ? std::get_if<items::ItemSocketStoneRow>(&entry->category) : nullptr;const bool insertion=stone && stone->kind==items::SocketStoneKind::Insertable;
-        if((!profile && !insertion) || !items::PlainInventoryItem(*source,typed->state.fence.owner)){g_registry.remove<TypedSocketMaintenanceSession>(e);Reply(e,Status::Invalid);return true;}
+        const bool accessory=entry && items::AccessoryMaterial(*c,source->key);
+        if((!profile && !insertion && !accessory) || ((r.action==4 || r.action==5) && !accessory) || !items::PlainInventoryItem(*source,typed->state.fence.owner)){g_registry.remove<TypedSocketMaintenanceSession>(e);Reply(e,Status::Invalid);return true;}
         TypedSocketMaintenanceSession next;next.nonce=Nonce();if(!next.nonce || !Operation(next.operation)){g_registry.remove<TypedSocketMaintenanceSession>(e);Reply(e,Status::Failed);return true;}
-        next.fence=typed->state.fence;next.source=*source;next.quote.kind=insertion ? 4 : static_cast<std::uint8_t>(profile->kind);next.quote.units=insertion ? 1 : profile->unitsPerUse;next.quote.available=source->count;next.quote.chance=insertion ? Chance() : 0;
-        std::vector<const items::PersistentItem*> candidates;for(const auto& item:typed->state.items)if(items::SocketMaintenanceTarget(*c,item,next.fence.owner))candidates.push_back(&item);
+        next.fence=typed->state.fence;next.source=*source;next.quote.kind=accessory ? (r.action==5 ? 6 : 5) : insertion ? 4 : static_cast<std::uint8_t>(profile->kind);next.quote.units=accessory || insertion ? 1 : profile->unitsPerUse;next.quote.available=source->count;next.quote.chance=insertion ? Chance() : 0;
+        std::vector<const items::PersistentItem*> candidates;for(const auto& item:typed->state.items)if(accessory ? items::AccessoryTarget(*c,item,next.fence.owner) : items::SocketMaintenanceTarget(*c,item,next.fence.owner))candidates.push_back(&item);
         std::ranges::sort(candidates,{},[](const auto* i){return std::tuple{i->placement->storageId,i->placement->anchor,i->id};});
         for(const auto* item:candidates)next.targets.push_back(item->id.Value());
         for(const auto* item:candidates)if((!r.target && !next.target) || item->id.Value()==r.target)next.target=*item;
         next.status=r.target && !next.target ? Status::Invalid : Status::NoTarget;
         if(next.target)
         {
-            next.quote.before=next.quote.after=next.target->stones;
-            const auto chance=Chance();const auto plan=Build(*c,next,*typed,Actor(e),insertion && chance!=0 && chance!=10000 ? 1 : 0);
+            if(accessory)
+            {
+                const auto* row=std::get_if<items::ItemAccessoryRow>(&c->Find(next.target->key)->category);const auto& p=c->FindAccessorySocket(*row->socketProfile)->Data();
+                if(r.action==1 && (!std::ranges::binary_search(p.unlockMaterials,source->key) || next.target->accessory->unlockedCapacity==p.maxGrade))next.quote.kind=6;
+                next.quote.units=next.quote.kind==5 ? p.unlockUnitsPerAttempt : p.chargeUnitsPerAttempt;
+                next.quote.accessoryBefore=next.quote.accessoryAfter=next.quote.accessoryFailure=*next.target->accessory;next.quote.maximum=p.maxGrade;
+            }
+            else next.quote.before=next.quote.after=next.target->stones;
+            const auto chance=SessionChance(*c,next);const auto plan=Build(*c,next,*typed,Actor(e),next.quote.kind>=4 && chance!=0 && chance!=10000 ? 1 : 0);
             next.status=plan ? Status::Ready : plan.error();if(plan)next.quote=plan->quote;
         }
         g_registry.emplace_or_replace<TypedSocketMaintenanceSession>(e,std::move(next));if(auto* s=g_registry.try_get<TypedSocketMaintenanceSession>(e))Reply(e,s->status);return true;
@@ -115,12 +133,18 @@ bool HandleTypedSocketMaintenancePacket(entt::entity e,const char* data)
     s=g_registry.try_get<TypedSocketMaintenanceSession>(e);const auto* typed=g_registry.try_get<ecs::TypedItems>(e);const auto* login=g_registry.try_get<ecs::TypedItemLogin>(e);
     if(!s || s->nonce!=r.session || !typed || !login || !Admitted(e))return true;
     if(g_registry.all_of<ecs::TypedItemBusy>(e)){s->status=Status::Busy;Reply(e,s->status);return true;}
-    if(typed->state.fence!=s->fence){s->status=Status::Stale;Reply(e,s->status);return true;}
+    if(typed->state.fence!=s->fence)
+    {
+        const auto source=std::ranges::find(typed->state.items,s->source->id,&items::PersistentItem::id);
+        const auto target=s->target ? std::ranges::find(typed->state.items,s->target->id,&items::PersistentItem::id) : typed->state.items.end();
+        if(!OnlyTypedAccessoryClockChanges(s->fence,typed->state.fence) || source==typed->state.items.end() || *source!=*s->source || (s->target && (target==typed->state.items.end() || *target!=*s->target))){s->status=Status::Stale;Reply(e,s->status);return true;}
+        s->fence=typed->state.fence;
+    }
     if(!s->target){s->status=Status::NoTarget;Reply(e,s->status);return true;}
-    const auto chance=Chance();auto plan=Build(*c,*s,*typed,Actor(e),s->quote.kind==4 && chance!=0 && chance!=10000 ? 1 : 0);
+    const auto chance=SessionChance(*c,*s);auto plan=Build(*c,*s,*typed,Actor(e),s->quote.kind>=4 && chance!=0 && chance!=10000 ? 1 : 0);
     if(!plan){s->status=plan.error();Reply(e,s->status);return true;}
     if(plan->quote!=s->quote){s->status=Status::Stale;Reply(e,s->status);return true;}
-    if(s->quote.kind==4)
+    if(s->quote.kind>=4)
     {
         // Draw once, after the complete deterministic quote has been admitted.
         // Neither preview nor replay can consume entropy or spend a stone.

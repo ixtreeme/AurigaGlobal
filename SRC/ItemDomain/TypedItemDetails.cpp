@@ -1,6 +1,7 @@
 #include <item/TypedItemDetails.hpp>
 #include <item/ItemWireCodec.hpp>
 #include <item/BonusRegistry.hpp>
+#include <item/AccessoryRuntime.hpp>
 #include <limits>
 #include <set>
 #include <stdexcept>
@@ -76,6 +77,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
             },entry->category);
             if(const auto* box=std::get_if<ItemContainerRow>(&entry->category);box && (box->kind==ContainerKind::Use || box->kind==ContainerKind::Locked))actions|=TypedActionOpen;
             if(const auto* stone=std::get_if<ItemSocketStoneRow>(&entry->category);stone && stone->kind==SocketStoneKind::Insertable)actions|=TypedActionSocket;
+            if(key.Category()==ItemCategory::Material && AccessoryMaterial(c,key))actions|=TypedActionSocket;
             if(std::holds_alternative<ItemCurrencyTokenRow>(entry->category))actions|=TypedActionRedeem;
             if(slot && slot<=8) actions|=TypedActionEquip;
             if(refinable.contains(key)) actions|=TypedActionRefine;

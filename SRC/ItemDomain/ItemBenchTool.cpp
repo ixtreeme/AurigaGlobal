@@ -123,7 +123,8 @@ Json State(const ItemCatalog& c,const p::LoadedItemOwner& o)
             {"destroyed",i.destroyed},{"cell",i.placement && i.placement->kind==ItemStorageKind::Inventory?Json(i.placement->anchor):Json(nullptr)},
             {"equipped_slot",i.placement && i.placement->kind==ItemStorageKind::Equipment?Json(i.placement->anchor+1):Json(nullptr)},{"attributes",attributes},
             {"locked_slot",i.attributes.lockedSlot?Json(*i.attributes.lockedSlot):Json(nullptr)},{"stones",stones},
-            {"bound",i.boundTo.has_value()}});
+            {"bound",i.boundTo.has_value()},
+            {"accessory",i.accessory ? Json{{"capacity",i.accessory->unlockedCapacity},{"grade",i.accessory->activeGrade},{"remaining_ms",i.accessory->remainingMs},{"permanent",i.accessory->permanent}} : Json(nullptr)}});
     }
     Json wallets=Json::array();
     for(const auto& w:o.wallets)wallets.push_back({{"currency",static_cast<int>(w.currency)},{"balance",w.balance},{"revision",w.revision}});
