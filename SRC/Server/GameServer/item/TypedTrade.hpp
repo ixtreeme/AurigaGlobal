@@ -6,3 +6,5 @@ bool TryStartTypedTrade(entt::entity initiator,entt::entity target);
 void CancelTypedTrade(entt::entity participant);
 void TickTypedTrades();
 bool HandleTypedTradePacket(entt::entity participant,const char* data);
+
+bool TypedTradeAllowsRecoveryTick(entt::entity);

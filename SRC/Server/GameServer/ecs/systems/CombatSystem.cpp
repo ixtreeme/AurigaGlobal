@@ -15,6 +15,7 @@
 #include "NetworkSyncSystem.hpp"
 
 #include "CombatSystem.hpp"
+#include "../../item/TypedRecovery.hpp"
 #include "../../item/TypedEquipment.hpp"
 #include "HerbalismRules.hpp"
 #include "SessionSystem.hpp"
@@ -2400,6 +2401,7 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 	}
 #endif
 	ecs::PlayerRuntime::SetPosition(victim, POS_DEAD);
+    NotifyTypedRecoveryDeath(victim);
 	AffectSystem::ClearAffect(victim, true);
 
 	if (hasKiller && ecs::PlayerRuntime::IsPC(victim))

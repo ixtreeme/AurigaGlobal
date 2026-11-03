@@ -10,6 +10,7 @@
 #include "TypedAttributes.hpp"
 #include "TypedEquipment.hpp"
 #include "TypedAccessoryClock.hpp"
+#include "TypedRecovery.hpp"
 #include "ItemCatalogRuntime.hpp"
 #include "TypedItemOps.hpp"
 #include "TypedDrops.hpp"
@@ -254,7 +255,7 @@ bool PickupTypedLoot(entt::entity character, std::uint32_t vid)
 void TickTypedLoot()
 {
 	TickTypedItemRefreshes();
-    TickTypedAccessoryClocks();
+    TickTypedRecovery();TickTypedAccessoryClocks();
 	TickTypedEquipment();
 	TickTypedShops();
 	TickTypedTrades();

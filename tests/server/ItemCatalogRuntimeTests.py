@@ -38,7 +38,7 @@ def main():
         sandbox.client.query("CREATE USER 'game_reader'@'localhost' IDENTIFIED BY '" + sandbox.password + "'")
         sandbox.client.query("GRANT SELECT ON protos.* TO 'game_reader'@'localhost'")
         sandbox.client.query("GRANT SELECT ON player.* TO 'game_reader'@'localhost'")
-        for name in ('001_item_persistence.sql', '002_instance_id_allocator.sql', '003_owned_ground.sql'):
+        for name in ('001_item_persistence.sql', '002_instance_id_allocator.sql', '003_owned_ground.sql', '004_recovery_schedule.sql'):
             for statement in statements((ROOT / 'db/migrations/item_instance' / name).read_text(encoding='utf-8-sig')):
                 sandbox.client.query(statement)
         # The game account may claim sessions; only the importer (root here) provisions.

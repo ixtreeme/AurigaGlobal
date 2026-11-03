@@ -134,7 +134,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
     }
     if(r.owners.empty() || r.owners.size()>MaxItemCommitOwners || r.items.size()>MaxItemCommitItems ||
        r.storages.size()>MaxItemCommitStorages || r.wallets.size()>MaxItemCommitOwners || r.result.size()>MaxItemCommitResult)return std::unexpected(E::LimitExceeded);
-    if((r.items.empty() && r.wallets.empty()) || !r.outcomeCode || r.kind<ItemOperationKind::Grant || r.kind>ItemOperationKind::Trade ||
+    if((r.items.empty() && r.wallets.empty() && !r.recovery) || !r.outcomeCode || r.kind<ItemOperationKind::Grant || r.kind>ItemOperationKind::Trade ||
        std::ranges::all_of(r.operationId,[](auto n){return !n;}))return std::unexpected(E::InvalidOperation);
     std::set<ItemOwner> owners;
     for(const auto& o:r.owners)if(!ValidItemOwner(o.owner) || !o.sessionGeneration || !o.revision || o.revision==UINT64_MAX || !owners.insert(o.owner).second)return std::unexpected(E::InvalidFence);
@@ -178,6 +178,13 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
            !owners.contains(w.before.owner) || !wallets.emplace(w.before.owner,w.before.currency).second)return std::unexpected(E::InvalidWallet);
         usedOwners.insert(w.before.owner);
     }
+    if(r.recovery)
+    {
+        const auto& a=*r.recovery;
+        if(a.owner.kind!=ItemOwnerKind::Character || !owners.contains(a.owner) || a.before.revision==UINT64_MAX || a.after.revision!=a.before.revision+1 ||
+           a.elapsedMs>INT64_MAX || !ValidateRecoverySchedule(c,a.before) || !ValidateRecoverySchedule(c,a.after))return std::unexpected(E::InvalidChange);
+        usedOwners.insert(a.owner);
+    }
     if(usedOwners!=owners || usedLayouts.size()!=layouts.size())return std::unexpected(E::InvalidFence);
     return {};
 }
@@ -201,6 +208,11 @@ std::expected<ItemCatalogDigest,E> ItemCommitDigest(const ItemCatalog& c,const I
         w.Put(g.core.size(),2); for(unsigned char b:g.core) w.Put(b,1);
         w.Put(g.run,8);w.Put(g.storedRun,8);w.Put(g.instance,8);w.Put(g.create,1);
     }
+    if(r.recovery)
+    {
+        const auto& a=*r.recovery;w.Put(0x3156434552ULL,8);w.Owner(a.owner);w.Put(a.elapsedMs,8);
+        for(const auto* state:{&a.before,&a.after}){const auto encoded=EncodeRecoverySchedule(c,*state);if(!encoded)return std::unexpected(E::InvalidChange);w.Put(encoded->size(),4);for(auto b:*encoded)w.Put(b,1);}
+    }
     ItemCatalogDigest digest{};unsigned length=0;
     if(EVP_Digest(w.bytes.data(),w.bytes.size(),digest.data(),&length,EVP_sha256(),nullptr)!=1 || length!=digest.size())return std::unexpected(E::HashFailure);
     return digest;
@@ -212,6 +224,12 @@ std::expected<ItemCatalogDigest,E> PersistentItemDigest(const ItemCatalog& c,con
     ItemCatalogDigest digest{};unsigned length=0;
     if(EVP_Digest(w.bytes.data(),w.bytes.size(),digest.data(),&length,EVP_sha256(),nullptr)!=1 || length!=digest.size())return std::unexpected(E::HashFailure);
     return digest;
+}
+std::expected<ItemCatalogDigest,E> RecoveryScheduleDigest(const ItemCatalog& c,ItemOwner owner,const RecoverySchedule& s)
+{
+    if(owner.kind!=ItemOwnerKind::Character || !ValidItemOwner(owner))return std::unexpected(E::InvalidOwner);
+    const auto encoded=EncodeRecoverySchedule(c,s);if(!encoded)return std::unexpected(E::InvalidChange);Writer w;for(char b:std::string_view("auriga.recovery.v1"))w.Put(b,1);w.Owner(owner);for(auto b:*encoded)w.Put(b,1);
+    ItemCatalogDigest digest{};unsigned length=0;if(EVP_Digest(w.bytes.data(),w.bytes.size(),digest.data(),&length,EVP_sha256(),nullptr)!=1 || length!=digest.size())return std::unexpected(E::HashFailure);return digest;
 }
 std::expected<ItemCommit,E> MakeRefinementCommit(const ItemCatalog& c,const RefinementPlan& p,ItemOwnerFence owner,
     std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> items,const ItemWallet& wallet)

@@ -75,7 +75,7 @@ bool DeferAccessoryLogin(std::uint32_t pid,std::function<void()> resume)
 std::expected<std::function<void(MultiCommitOutcome*)>,ItemPersistenceError> BeginAccessoryClockCommit(const std::vector<OwnerRead>& owners,ItemCommit& commit)
 {
     struct Mark{std::shared_ptr<TypedAccessoryClockState> clock;Clock::time_point boundary;std::size_t index;std::uint64_t revision;};std::vector<Mark> marks;
-    const bool timerOnly=commit.outcomeCode==0x1703;
+    const bool timerOnly=commit.outcomeCode==0x1703 || commit.outcomeCode==0x1903;
     const auto catalog=CurrentCatalog();if(!catalog)return std::unexpected(ItemPersistenceError::CatalogMismatch);
     const auto now=Clock::now();
     for(std::size_t i=0;i<owners.size();++i)

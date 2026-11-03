@@ -1,7 +1,7 @@
 # ADR IC-034 — F4 szerverbekötés: ütemterv és 1. szelet (katalógus induláskor)
 
 2026-10-29. Fázis: F4 ([IC-012](item_combat_012_item_runtime_first.md)).
-Állapot (2026-11-03): **C1–C18 implementált; az elkészült futásidejű
+Állapot (2026-11-03): **C1–C19 implementált; az elkészült futásidejű
 műveletek Unity 6.3-ból kezelhetők, helyi szerverrel ellenőrizve**.
 
 ## Közös szerver–Unity munkamenet (felhasználói döntés, 2026-11-01)
@@ -23,8 +23,8 @@ az összevonás részletei és ellenőrzései a
 |---|---|---|---|
 | A. Speciális tárgyműveletek | Páros (kapcsolt) bónuszok; jelmez-, stóla- és rúnabónuszok; fejlesztési segédanyagok | F2 maradéka | nyitott ([IC-031](item_combat_031_instance_attributes.md) határa) |
 | B. Tartós tárgymentés | Teljes mentés, visszatöltés és tranzakciókezelés a futó szerverben; a még nem támogatott kategóriák példányállapota | F3 maradéka | a modell, az író és a próbapad kész ([IC-032](item_combat_032_item_persistence.md), [IC-033](item_combat_033_item_test_bench.md)) |
-| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C18 kész**, tárgyleadó Mission, ládanyitás, Yang-pénzjegy, foglalatkarbantartás, kőbehelyezés, ékszerfoglalatok és bónuszszolgáltatások; fiókpénztárca, általános Mission/Lua-quest és további használatok még nyitottak |
-| D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | **C1–C18 kliensútjai kész**, részletek lent |
+| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C19 kész**, tárgyleadó Mission, ládanyitás, Yang-pénzjegy, foglalatkarbantartás, kőbehelyezés, ékszerfoglalatok, bónuszszolgáltatások és tartalékos/folyamatos HP/SP-visszatöltés; fiókpénztárca, általános Mission/Lua-quest és további használatok még nyitottak |
+| D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | **C1–C19 kliensútjai kész**, részletek lent |
 | E. Teljes adatkonverzió | Régi protók, példányok, receptek, tartalmi hivatkozások | F6 | az eszközök megvannak; a családtérkép jóváhagyásra vár |
 | F. Végső ellenőrzés | Helyi játékpróba, újrabelépés utáni adatmegőrzés, gazdasági műveletek, FreeBSD-build | F7 | nyitott |
 
@@ -676,3 +676,31 @@ Részletek: [IC-046](item_combat_046_attribute_services_runtime.md),
 Következő szelet: **C19 — tartalékos és folyamatos HP/SP-visszatöltés**.
 Automatikus ital, időzített/toggle hatás, további használatok, kapcsolt és
 jelmez/stóla/rúna bónuszok, teljes konverzió és kiadási kapuk még nyitottak.
+
+
+## C19 — Tartalékos és folyamatos HP/SP-visszatöltés (2026-11-03)
+
+HP/SP-n külön tartalék, FIFO adagok, hiányra korlátozás, profil szerinti
+sebesség és potion bonus. HP/SP folyamatos csoportok, azonos poolon csere,
+pontos időtartam, teli pool mellett is indítható hatás. Tartós online óra,
+logout/same-core relog/shutdown rendezése, közös cooldown az azonnali itallal,
+halál- és kézi törlés; tiltott időből nincs későbbi gyógyulás.
+
+Az új recovery tábla, source debit, owner fence és receipt egy tranzakció.
+Unity: **I → ital → Visszatöltés**, pontos profil és megerősítés; a felső
+**Visszatöltések** gomb a forrás elfogyása után is elérhető. Aktív adagok,
+sebesség, idő, cooldown és egyenkénti/összes megszakítás külön megerősítéssel.
+Kereskedés mellett a passzív checkpointok átvezethetők, a csere commitja vár.
+
+13/13 célzott natív csoport, 664 recovery-domain és 1399 SQL-ellenőrzés,
+3212 új Unity-ellenőrzés és a korábbi C4–C18 validátorok sikeresek.
+3/3 valódi TLS-fázis 112 ellenőrzéssel, benne két kliens két commitolt
+cseréje aktív visszatöltés mellett. A helyi karakter minden korábbi
+próbatárgyat és tizenegy recovery-próbát ×20 megkapott.
+
+Részletek és a legacy HP/SP crash-atomikussági korlátja:
+[IC-047](item_combat_047_recovery_runtime.md),
+[ellenőrzések és helyi próba](../reports/item_combat/2026-11-03_recovery_runtime.md).
+Következő szelet: **C20 — automatikus HP/SP-italok**.
+Időzített/toggle hatás, további használatok, kapcsolt és jelmez/stóla/rúna
+bónuszok, fiókpénztárca, teljes konverzió és kiadási kapuk még nyitottak.

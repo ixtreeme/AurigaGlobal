@@ -109,12 +109,15 @@ enum class RecoveryUseError
     MissingItem, WrongCategory, WrongDelivery, RetiredItem, InvalidState, DeadCharacter,
     ContextDenied, PvpDenied, CombatDenied, LevelDenied, ClassDenied, SexDenied,
     OnCooldown, InsufficientUnits, NoEffect, ArenaDenied, ArenaQuotaExceeded,
+    QueueFull,
 };
 // Common match admission, also required by future reserve/periodic writers.
 // A positive result is only a proposed quota decrement; it changes no state.
 std::expected<std::uint16_t, RecoveryUseError> PlanRecoveryArena(
     RecoveryContext context, const std::optional<RecoveryArenaAdmission>& state, std::uint16_t cost) noexcept;
 class ItemCatalog;
+// Shared use-time policy for instant, reserve and periodic recovery. No healing.
+std::expected<InstantRecoveryPlan,RecoveryUseError> PlanRecoveryAdmission(const ItemCatalog&,ItemKey,const InstantRecoveryAdmission&) noexcept;
 // Pure server-input proposal. Owner/lock/revision, map-specific quota and actual
 // resource/HP/cooldown commit + operation receipt belong to the future writer.
 std::expected<InstantRecoveryPlan, RecoveryUseError> PlanInstantRecovery(

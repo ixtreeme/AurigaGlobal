@@ -1,5 +1,6 @@
 #pragma once
 #include "ItemCatalog.hpp"
+#include "RecoverySchedule.hpp"
 #include "ItemInstanceId.hpp"
 #include <deque>
 #include <optional>
@@ -81,6 +82,12 @@ struct ItemGroundChange
     std::uint64_t run = 0, storedRun = 0, instance = 0;
     bool create = false;
 };
+struct ItemRecoveryChange
+{
+    ItemOwner owner;
+    RecoverySchedule before,after;
+    std::uint64_t elapsedMs=0;
+};
 struct ItemCommit
 {
     std::array<std::uint8_t,16> operationId{};
@@ -95,6 +102,7 @@ struct ItemCommit
     std::vector<std::uint8_t> result;
     // Ground registry and the concrete item are written in the same SQL transaction.
     std::optional<ItemGroundChange> ground;
+    std::optional<ItemRecoveryChange> recovery;
 };
 inline constexpr std::size_t MaxItemCommitItems=32, MaxItemCommitOwners=8,
     MaxItemCommitStorages=16, MaxItemCommitResult=4096, MaxLoadedOwnerItems=4096;
@@ -121,6 +129,7 @@ std::expected<void,ItemPersistenceError> ValidateItemCommit(const ItemCatalog&,c
 // Sorted sets give the same digest regardless of caller vector ordering.
 std::expected<ItemCatalogDigest,ItemPersistenceError> ItemCommitDigest(const ItemCatalog&,const ItemCommit&);
 std::expected<ItemCatalogDigest,ItemPersistenceError> PersistentItemDigest(const ItemCatalog&,const PersistentItem&);
+std::expected<ItemCatalogDigest,ItemPersistenceError> RecoveryScheduleDigest(const ItemCatalog&,ItemOwner,const RecoverySchedule&);
 
 // Translates the new native refinement plan directly into an atomic write set.
 // No vnum mapping, RNG, SQL execution or ECS mutation. Exact source/material/

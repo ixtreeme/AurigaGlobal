@@ -497,6 +497,13 @@ typedef struct command_typed_attributes
     uint64_t session, source, target;
 } TPacketCGTypedAttributes;
 
+typedef struct command_typed_recovery
+{
+    uint8_t bHeader, action;
+    uint64_t session, source, target;
+} TPacketCGTypedRecovery;
+
+
 typedef struct command_party_parameter
 {
 	uint8_t	bHeader;

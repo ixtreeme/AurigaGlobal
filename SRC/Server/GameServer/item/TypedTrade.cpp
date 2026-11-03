@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "TypedTrade.hpp"
+#include "TypedRecovery.hpp"
+#include "TypedAccessoryClock.hpp"
 #include "ItemStore.hpp"
 #include "ItemCatalogRuntime.hpp"
 #include "TypedDrops.hpp"
@@ -102,6 +104,19 @@ bool Near(const Session& s)
     const auto dy=std::abs(std::int64_t(ecs::PlayerRuntime::GetY(a))-ecs::PlayerRuntime::GetY(b));
     return std::max(dx,dy)+std::min(dx,dy)/2<EXCHANGE_MAX_DISTANCE;
 }
+bool RebasePassive(const std::shared_ptr<Session>& s)
+{
+    if(!s->joined)return true;
+    for(int side=0;side<2;++side)
+    {
+        if(!Current(*s,side))return false;
+        const auto& now=g_registry.get<ecs::TypedItems>(s->entities[side]).state;
+        if(now.fence==s->states[side].fence)continue;
+        if(!OnlyTypedAccessoryClockChanges(s->states[side].fence,now.fence))return false;
+        s->states[side]=now;s->view.actors[side].offer.owner=now.fence;
+    }
+    return true;
+}
 void Terminal(entt::entity e,Status status,std::uint64_t request=0)
 {
     if(!g_registry.valid(e))return;const auto catalog=store::CurrentCatalog();auto* desc=ecs::PlayerRuntime::GetDesc(e);
@@ -134,7 +149,7 @@ void Close(const std::shared_ptr<Session>& s,Status status,entt::entity destroyi
         {
             g_registry.remove<Ref>(e);g_registry.remove<ecs::TypedTradeActive>(e);
             if(s->busyOwned[side])
-            {g_registry.get_or_emplace<ecs::WarpBlockState>(e).exchangeTime=thecore_pulse();g_registry.remove<ecs::TypedItemBusy>(e);}
+            {g_registry.get_or_emplace<ecs::WarpBlockState>(e).exchangeTime=thecore_pulse();if(!g_registry.any_of<TypedRecoveryBusy>(e))g_registry.remove<ecs::TypedItemBusy>(e);}
         }
     }
     s->guard.reset();
@@ -210,6 +225,7 @@ bool TryStartTypedTrade(entt::entity first,entt::entity second)
 }
 void CancelTypedTrade(entt::entity e)
 {if(const auto s=Find(e)){if(s->view.phase==Phase::Committing)Reply(s,Status::Pending,Side(*s,e));else Close(s,Status::Cancelled);}}
+bool TypedTradeAllowsRecoveryTick(entt::entity e){const auto s=Find(e);return s && s->joined && s->view.phase!=Phase::Committing;}
 void TickTypedTrades()
 {
     std::vector<std::shared_ptr<Session>> current;for(const auto& [token,s]:sessions)current.push_back(s);
@@ -217,11 +233,7 @@ void TickTypedTrades()
     {
         if(s->view.phase==Phase::Committing)continue;
         bool valid=s->expires>Now() && Near(*s) && Admitted(s->entities[0]) && Admitted(s->entities[1]) && (!s->guard || s->guard->Current());
-        if(valid && s->joined)for(int side=0;side<2;++side)
-        {
-            const auto e=s->entities[side];const auto* refresh=g_registry.try_get<ecs::TypedItemRefresh>(e);
-            valid=valid && g_registry.get<ecs::TypedItems>(e).state.fence==s->states[side].fence && !refresh;
-        }
+        if(valid && s->joined)valid=RebasePassive(s) && !g_registry.any_of<ecs::TypedItemRefresh>(s->entities[0]) && !g_registry.any_of<ecs::TypedItemRefresh>(s->entities[1]);
         if(!valid)Close(s,Status::Cancelled);
     }
 }
@@ -237,6 +249,8 @@ bool HandleTypedTradePacket(entt::entity e,const char* data)
     if(r.action==8){CancelTypedTrade(e);return true;}
     if(!Near(*s) || !Admitted(s->entities[0]) || !Admitted(s->entities[1])){if(s->view.phase!=Phase::Committing)Close(s,Status::Cancelled);return true;}
     if(s->view.phase==Phase::Committing){Reply(s,Status::Pending,side);return true;}
+    if(g_registry.any_of<TypedRecoveryBusy>(s->entities[0]) || g_registry.any_of<TypedRecoveryBusy>(s->entities[1])){Reply(s,Status::Stale,side);return true;}
+    if(!RebasePassive(s)){Close(s,Status::Cancelled);return true;}
     auto& last=s->requests[side];
     if(!r.request || r.request!=last.sequence+1)
     {

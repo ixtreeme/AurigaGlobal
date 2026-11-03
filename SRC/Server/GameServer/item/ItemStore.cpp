@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "ItemStore.hpp"
 #include "TypedAccessoryClock.hpp"
+#include "TypedRecovery.hpp"
 #include "../core/GameConfig.h"
 
 #include <SQL/AsyncSQL.h>
@@ -222,6 +223,7 @@ void ItemStore::Run(GameSqlConfig player, std::shared_ptr<std::promise<std::stri
 
 bool RequestLoginLoad(std::uint32_t pid, std::function<void(LoginLoad)> done)
 {
+    if(DeferRecoveryLogin(pid,[pid,done]{RequestLoginLoad(pid,done);})){TickTypedRecovery();return true;}
     if(DeferAccessoryLogin(pid,[pid,done]{RequestLoginLoad(pid,done);})){TickTypedAccessoryClocks();return true;}
 	const ItemOwner owner { ItemOwnerKind::Character, pid };
 	return ItemStore::Instance().Submit([owner, done = std::move(done)](CAsyncSQL& sql, const ItemCatalog& catalog) mutable -> ItemStore::Completion {
@@ -304,8 +306,9 @@ bool RequestCommitMany(std::vector<OwnerRead> owners,ItemCommit commit,std::func
 {
     if(owners.empty()) return false;
     auto clock=BeginAccessoryClockCommit(owners,commit);if(!clock)return false;
-    auto completed=[settle=*clock,done=std::move(done)](MultiCommitOutcome result) mutable {settle(&result);done(std::move(result));};
+    auto recovery=BeginRecoveryClockCommit(owners,commit);if(!recovery){(*clock)(nullptr);return false;}
+    auto completed=[settle=*clock,recover=*recovery,done=std::move(done)](MultiCommitOutcome result) mutable {settle(&result);recover(&result);done(std::move(result));};
     const bool queued=QueueCommit(std::make_shared<PendingCommit>(PendingCommit{std::move(owners),std::move(commit),std::move(completed)}));
-    if(!queued)(*clock)(nullptr);return queued;
+    if(!queued){(*clock)(nullptr);(*recovery)(nullptr);}return queued;
 }
 } // namespace auriga::item::runtime

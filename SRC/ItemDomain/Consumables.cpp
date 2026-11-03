@@ -83,17 +83,13 @@ std::expected<std::uint16_t, RecoveryUseError> PlanRecoveryArena(
     if (state->remainingUses && *state->remainingUses < cost) return std::unexpected(RecoveryUseError::ArenaQuotaExceeded);
     return state->remainingUses ? cost : 0;
 }
-std::expected<InstantRecoveryPlan, RecoveryUseError> PlanInstantRecovery(
-    const ItemCatalog& catalog, ItemKey key, const InstantRecoveryAdmission& state) noexcept
+std::expected<InstantRecoveryPlan, RecoveryUseError> PlanRecoveryAdmission(const ItemCatalog& catalog, ItemKey key, const InstantRecoveryAdmission& state) noexcept
 {
-    const auto* item = catalog.Find(key);
-    if (!item) return std::unexpected(RecoveryUseError::MissingItem);
-    const auto* child = std::get_if<ItemConsumableRow>(&item->category);
-    if (!child) return std::unexpected(RecoveryUseError::WrongCategory);
-    if (!child->recoveryProfile) return std::unexpected(RecoveryUseError::WrongDelivery);
-    const auto& profile = catalog.FindRecovery(child->recoveryProfile)->Data();
-    const auto* effect = std::get_if<InstantRecovery>(&profile.effect);
-    if (!effect) return std::unexpected(RecoveryUseError::WrongDelivery);
+    const auto* item=catalog.Find(key);if(!item)return std::unexpected(RecoveryUseError::MissingItem);
+    const auto* child=std::get_if<ItemConsumableRow>(&item->category);if(!child)return std::unexpected(RecoveryUseError::WrongCategory);
+    if(!child->recoveryProfile)return std::unexpected(RecoveryUseError::WrongDelivery);
+    const auto& profile=catalog.FindRecovery(child->recoveryProfile)->Data();
+    if(profile.Delivery()==RecoveryDelivery::Automatic)return std::unexpected(RecoveryUseError::WrongDelivery);
     if (item->base.retired) return std::unexpected(RecoveryUseError::RetiredItem);
     const auto& pools = state.pools;
     if (!detail::ValidRecoveryPool(pools.hpRaw, pools.maxHpRaw) || !pools.maxHpRaw || !detail::ValidRecoveryPool(pools.spRaw, pools.maxSpRaw) ||
@@ -114,11 +110,28 @@ std::expected<InstantRecoveryPlan, RecoveryUseError> PlanInstantRecovery(
     if (state.availableUnits < profile.unitsPerUse) return std::unexpected(RecoveryUseError::InsufficientUnits);
     const auto arena = PlanRecoveryArena(state.context, state.arena, profile.arenaQuotaCost);
     if (!arena) return std::unexpected(arena.error());
+    InstantRecoveryPlan plan{0,0,profile.unitsPerUse,{},*arena};
+    if(profile.cooldownProfile)plan.cooldown=ConsumableCooldownStart{*profile.cooldownProfile,catalog.FindConsumableCooldown(*profile.cooldownProfile)->durationMs};
+    return plan;
+}
+std::expected<InstantRecoveryPlan, RecoveryUseError> PlanInstantRecovery(
+    const ItemCatalog& catalog, ItemKey key, const InstantRecoveryAdmission& state) noexcept
+{
+    const auto* item = catalog.Find(key);
+    if (!item) return std::unexpected(RecoveryUseError::MissingItem);
+    const auto* child = std::get_if<ItemConsumableRow>(&item->category);
+    if (!child) return std::unexpected(RecoveryUseError::WrongCategory);
+    if (!child->recoveryProfile) return std::unexpected(RecoveryUseError::WrongDelivery);
+    const auto& profile = catalog.FindRecovery(child->recoveryProfile)->Data();
+    const auto* effect = std::get_if<InstantRecovery>(&profile.effect);
+    if (!effect) return std::unexpected(RecoveryUseError::WrongDelivery);
+    const auto admitted=PlanRecoveryAdmission(catalog,key,state);if(!admitted)return std::unexpected(admitted.error());
+    const auto& pools=state.pools;
     const auto multiplier = 10000 + std::min<std::int64_t>(state.potionBonusBp, effect->flatBonusCapBp);
     const auto hp = std::min(pools.maxHpRaw - pools.hpRaw, detail::ScaleRecovery(effect->hpRaw, multiplier) + detail::ScaleRecovery(pools.maxHpRaw, effect->maxHpBp));
     const auto sp = std::min(pools.maxSpRaw - pools.spRaw, detail::ScaleRecovery(effect->spRaw, multiplier) + detail::ScaleRecovery(pools.maxSpRaw, effect->maxSpBp));
     if (!hp && !sp) return std::unexpected(RecoveryUseError::NoEffect);
-    InstantRecoveryPlan plan {hp, sp, profile.unitsPerUse, {}, *arena};
+    InstantRecoveryPlan plan=*admitted;plan.hpRestoredRaw=hp;plan.spRestoredRaw=sp;
     if (profile.cooldownProfile)
         plan.cooldown = ConsumableCooldownStart{*profile.cooldownProfile, catalog.FindConsumableCooldown(*profile.cooldownProfile)->durationMs};
     return plan;

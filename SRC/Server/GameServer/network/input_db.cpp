@@ -73,6 +73,7 @@
 #include "../item/TypedInventorySync.hpp"
 #include "../item/TypedEquipment.hpp"
 #include "../item/TypedAccessoryClock.hpp"
+#include "../item/TypedRecovery.hpp"
 #ifdef ENABLE_HWID
 #include "hwidmanager.h"
 #endif
@@ -551,7 +552,7 @@ static void LoadTypedItems(entt::entity character)
 		{
 			LOG_INFO("TypedItems: pid {} session {}: {} items", pid, result.session, result.loaded->items.size());
 			g_registry.emplace_or_replace<ecs::TypedItems>(entity, std::move(*result.loaded));
-            StartTypedAccessoryClock(entity);
+            StartTypedAccessoryClock(entity);StartTypedRecoveryClock(entity);
 			SendTypedInventory(entity); // only once the client is in game
 		}
 		else if (result.loaded.error() == auriga::item::ItemPersistenceError::MissingOwner)

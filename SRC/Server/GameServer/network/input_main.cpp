@@ -102,6 +102,7 @@
 #include "../item/TypedTokenRedemption.hpp"
 #include "../item/TypedSocketMaintenance.hpp"
 #include "../item/TypedAttributes.hpp"
+#include "../item/TypedRecovery.hpp"
 
 
 #define ENABLE_CHECK_GHOSTMODE
@@ -453,6 +454,9 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
             break;
         case HEADER_CG_TYPED_SOCKET_MAINTENANCE:
             HandleTypedSocketMaintenancePacket(character, c_pData);
+            break;
+        case HEADER_CG_TYPED_RECOVERY:
+            HandleTypedRecoveryPacket(character, c_pData);
             break;
         case HEADER_CG_TYPED_ATTRIBUTES:
             HandleTypedAttributesPacket(character, c_pData);

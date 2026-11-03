@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "TypedItemOps.hpp"
+#include "TypedRecovery.hpp"
 #include "TypedDrops.hpp"
 #include "ItemCatalogRuntime.hpp"
 #include "ItemStore.hpp"
@@ -263,6 +264,7 @@ const char* UseErrorText(items::RecoveryUseError e)
 	case E::InsufficientUnits: return "nincs elég belőle";
 	case E::NoEffect: return "most nem lenne hatása";
 	case E::ArenaDenied: return "az arénában most nem használható";
+	case E::QueueFull: return "megtelt a visszatöltési tartalék";
 	case E::ArenaQuotaExceeded: return "elfogyott az aréna-kereted";
 	}
 	return "ismeretlen hiba";
@@ -280,6 +282,7 @@ items::InstantRecoveryAdmission RecoveryAdmission(entt::entity character, std::o
 {
 	items::InstantRecoveryAdmission state;
 	const auto pool = [](std::uint64_t current, std::uint64_t max) {
+		if(max>static_cast<std::uint64_t>(items::MaxItemStatRaw/1000))return std::pair<std::int64_t,std::int64_t>{-1,-1};
 		return std::pair { static_cast<std::int64_t>(std::min(current, max)) * 1000, static_cast<std::int64_t>(max) * 1000 };
 	};
 	const auto [hp, maxHp] = pool(ecs::PlayerRuntime::GetHP(character), ecs::PointSystem::GetMaxHP(character));
@@ -290,6 +293,7 @@ items::InstantRecoveryAdmission RecoveryAdmission(entt::entity character, std::o
 		if (const auto* cooldowns = g_registry.try_get<ecs::TypedItemCooldowns>(character))
 			if (const auto it = cooldowns->readyAtMs.find(*cooldownProfile); it != cooldowns->readyAtMs.end())
 				state.cooldownRemainingMs = static_cast<std::uint64_t>(std::max<std::int64_t>(0, it->second - NowMs()));
+	if(cooldownProfile)state.cooldownRemainingMs=std::max(state.cooldownRemainingMs,TypedRecoveryCooldown(character,*cooldownProfile));
 	const auto map = ecs::PlayerRuntime::GetMapIndex(character);
 	state.inPvp = CPVPManager::instance().IsFighting(ecs::PlayerRuntime::GetPlayerID(character));
 	state.context = CArenaManager::instance().IsArenaMap(map) ? items::RecoveryContext::Arena
@@ -335,6 +339,9 @@ void ApplyInstantRecovery(entt::entity character, const items::InstantRecoveryPl
 }
 } // namespace
 
+items::InstantRecoveryAdmission TypedRecoveryAdmission(entt::entity e,std::optional<std::uint32_t> cd,std::uint32_t units){return RecoveryAdmission(e,cd,units);}
+void ApplyTypedRecovery(entt::entity e,const items::InstantRecoveryPlan& p){ApplyInstantRecovery(e,p);}
+
 void RequestTypedItemUse(entt::entity character, std::uint64_t itemId)
 {
 	if (!g_registry.valid(character))
@@ -365,6 +372,7 @@ void RequestTypedItemUse(entt::entity character, std::uint64_t itemId)
 	const auto* entry = catalog->Find(current->key);
 	const auto* consumable = entry ? std::get_if<items::ItemConsumableRow>(&entry->category) : nullptr;
 	const auto* recovery = consumable && consumable->recoveryProfile ? catalog->FindRecovery(consumable->recoveryProfile) : nullptr;
+	if(recovery && (recovery->Data().Delivery()==items::RecoveryDelivery::Reserve || recovery->Data().Delivery()==items::RecoveryDelivery::Periodic)){PreviewTypedRecovery(character,itemId);return;}
 	const auto plan = items::PlanInstantRecovery(*catalog, current->key,
 		RecoveryAdmission(character, recovery ? recovery->Data().cooldownProfile : std::nullopt, current->count));
 	if (!plan)
@@ -379,11 +387,18 @@ void RequestTypedItemUse(entt::entity character, std::uint64_t itemId)
 		SendTypedInventory(character);
 		return;
 	}
+	if(plan->cooldown)
+    {
+        const auto elapsed=TypedRecoveryElapsed(character);auto advanced=items::AdvanceRecoverySchedule(*catalog,state.recovery,elapsed);
+        if(!advanced || state.recovery.revision==UINT64_MAX || !items::SetRecoveryCooldown(*catalog,*advanced,plan->cooldown->profileId,plan->cooldown->durationMs))return;
+        advanced->revision=state.recovery.revision+1;commit->recovery=items::ItemRecoveryChange{state.fence.owner,state.recovery,*advanced,elapsed};
+    }
 	const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(character);
 	const uint64_t token = login->token;
 	g_registry.emplace_or_replace<ecs::TypedItemBusy>(character);
 	const bool queued = items::runtime::RequestCommit(typed->state.fence.owner, typed->state.fence.sessionGeneration, std::move(*commit),
-		[pid, token, effect = *plan](items::runtime::CommitOutcome outcome) {
+		[pid, token, effect = *plan](items::runtime::CommitOutcome outcome) mutable {
+            effect.cooldown.reset();
 			const entt::entity entity = CHARACTER_MANAGER::instance().FindEntityByPID(pid);
 			const auto* current = entity != entt::null && g_registry.valid(entity) ? g_registry.try_get<ecs::TypedItemLogin>(entity) : nullptr;
 			if (!current || current->token != token)

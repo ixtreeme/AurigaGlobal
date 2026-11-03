@@ -31,6 +31,7 @@ def main():
         paths.append(ROOT / "db/migrations/item_instance/001_item_persistence.sql")
         paths.append(ROOT / "db/migrations/item_instance/002_instance_id_allocator.sql")
         paths.append(ROOT / "db/migrations/item_instance/003_owned_ground.sql")
+        paths.append(ROOT / "db/migrations/item_instance/004_recovery_schedule.sql")
         for path in paths:
             for statement in statements(path.read_text(encoding="utf-8")):
                 sandbox.client.query(statement)
@@ -40,7 +41,7 @@ def main():
         sandbox.client.query("GRANT SELECT ON protos.* TO 'item_writer'@'localhost'")
         sandbox.client.query("GRANT SELECT ON player.* TO 'item_writer'@'localhost'")
         for table in ("item_owner_fence", "item_wallet", "item_operation_receipt", "item_instance",
-                      "item_instance_attribute", "item_instance_socket", "item_occupied_cell", "item_ground_core", "item_ground_entry"):
+                      "item_instance_attribute", "item_instance_socket", "item_occupied_cell", "item_ground_core", "item_ground_entry", "item_recovery_schedule"):
             sandbox.client.query("GRANT INSERT,UPDATE,DELETE ON player." + table + " TO 'item_writer'@'localhost'")
         sandbox.client.query("GRANT UPDATE ON player.item_instance_id_allocator TO 'item_writer'@'localhost'")
         metadata = {"version": sandbox.client.query("SELECT VERSION()")[0][0],

@@ -22,8 +22,9 @@ BASE_TABLES = ('item_occupied_cell', 'item_instance_socket', 'item_instance_attr
 # Added later (F4 C7a): the shared instance ID allocator of 002.
 ALLOCATOR = 'item_instance_id_allocator'
 GROUND_TABLES = ('item_ground_entry', 'item_ground_core')
-TABLES = (*GROUND_TABLES, ALLOCATOR, *BASE_TABLES)
-MIGRATIONS = ('001_item_persistence.sql', '002_instance_id_allocator.sql', '003_owned_ground.sql')
+RECOVERY_TABLES = ('item_recovery_schedule',)
+TABLES = (*RECOVERY_TABLES, *GROUND_TABLES, ALLOCATOR, *BASE_TABLES)
+MIGRATIONS = ('001_item_persistence.sql', '002_instance_id_allocator.sql', '003_owned_ground.sql', '004_recovery_schedule.sql')
 NO_WINDOW = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
 
 
@@ -100,8 +101,9 @@ def install(root):
         if found.returncode: raise api.EditorError('A helyi adatbázis nem olvasható.')
         present = set(found.stdout.decode('utf-8', 'replace').split())
         if not present: scripts, created = MIGRATIONS, TABLES
-        elif present == set(BASE_TABLES): scripts, created = MIGRATIONS[1:], (*GROUND_TABLES, ALLOCATOR)
-        elif present == {ALLOCATOR, *BASE_TABLES}: scripts, created = MIGRATIONS[2:], GROUND_TABLES
+        elif present == set(BASE_TABLES): scripts, created = MIGRATIONS[1:], (*RECOVERY_TABLES, *GROUND_TABLES, ALLOCATOR)
+        elif present == {ALLOCATOR, *BASE_TABLES}: scripts, created = MIGRATIONS[2:], (*RECOVERY_TABLES, *GROUND_TABLES)
+        elif present == {*GROUND_TABLES, ALLOCATOR, *BASE_TABLES}: scripts, created = MIGRATIONS[3:], RECOVERY_TABLES
         else: raise api.EditorError('Részben telepített mentési táblák vannak a player adatbázisban; kézi ellenőrzés szükséges.')
         stamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S-') + secrets.token_hex(4)
         folder = root / 'run/item-bench' / stamp; folder.mkdir(parents=True)

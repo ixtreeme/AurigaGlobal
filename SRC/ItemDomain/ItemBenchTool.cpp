@@ -81,7 +81,7 @@ bool Installed(CAsyncSQL& sql)
 {
     return Rows(sql,"SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN "
         "('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance',"
-        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry')").at(0).at(0)=="12";
+        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule')").at(0).at(0)=="13";
 }
 std::shared_ptr<const ItemCatalog> Catalog(CAsyncSQL& sql)
 {
@@ -241,6 +241,7 @@ Json Setup(CAsyncSQL& sql,const Json& request)
     tx.push_back({"DELETE FROM player.item_instance WHERE owner_kind=? AND owner_id=?",owner,{},{}});
     tx.push_back({"DELETE FROM player.item_wallet WHERE owner_kind=? AND owner_id=?",owner,{},{}});
     tx.push_back({"DELETE FROM player.item_storage WHERE owner_kind=? AND owner_id=?",owner,{},{}});
+    tx.push_back({"DELETE FROM player.item_recovery_schedule WHERE owner_kind=? AND owner_id=?",owner,{},{}});
     tx.push_back({"DELETE FROM player.item_owner_fence WHERE owner_kind=? AND owner_id=?",owner,{},{}});
     Message result(sql.DirectTransactionPrepared(std::move(tx)));
     Require(result && !result->uiSQLErrno && result->transactionOutcome==SqlTransactionOutcome::Committed,"A korábbi tárgyak törlése nem sikerült.");

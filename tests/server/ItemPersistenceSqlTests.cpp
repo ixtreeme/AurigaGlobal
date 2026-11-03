@@ -669,6 +669,25 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         Check(!Find(state,target.id.Value()).attributes.lockedSlot && Find(state,target.id.Value()).attributes.slots==reroll->after.slots && state.wallets[0].balance==1000,"unlock leaves every bonus and Gold unchanged");
         for(const auto& tool:tools)Check(Find(state,tool.id.Value()).count==2,"each service consumes one exact tool");Check(p::ClaimOwnerSession(writer,*c,customer).has_value(),"attribute relog claims next generation");auto next=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(Find(next,target.id.Value()).attributes==Find(state,target.id.Value()).attributes,"complete bonus state survives session change");
     }
+    {
+        const ItemOwner customer{ItemOwnerKind::Character,880093};const auto bag=f::Inventory(customer);const ItemWallet wallet{customer,WalletCurrency::Gold,1,1000};
+        Check(p::ProvisionOwner(admin,*c,customer,std::span(&bag,1),std::span(&wallet,1)).has_value(),"recovery owner provisioned");auto state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        Check(state.recovery==RecoverySchedule{},"missing sidecar is empty");const auto block=p::ReserveItemInstanceIds(writer,*c,1).value();
+        const auto grant=MakeGrantCommit(*c,{19},state.fence,state.storages,state.items,{item_catalog_fixture::ReservePotion(),0,3},std::array{ItemInstanceId::Create(block.first).value()});
+        Check(grant && p::CommitItems(writer,*c,*grant).has_value(),"recovery source granted");state=p::LoadCurrentItemOwner(writer,*c,customer).value();const auto source=state.items[0].id;
+        InstantRecoveryAdmission actor;actor.pools={500000,2000000,200000,1000000};actor.context=RecoveryContext::World;actor.level=100;actor.availableUnits=3;
+        auto plan=PlanScheduledRecoveryUse(*c,state.items[0].key,actor,state.recovery,0,{1,2});Check(plan.has_value(),"recovery schedule admitted");
+        auto use=MakeConsumeCommit(*c,{19,1},state.fence,state.storages,state.items,source,plan->units).value();use.recovery=ItemRecoveryChange{customer,state.recovery,plan->after,0};
+        auto raced=use;raced.items[0].before->count=2;raced.items[0].after.count=1;Check(!p::CommitItems(writer,*c,raced),"item CAS rolls sidecar insertion back");auto unchanged=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(unchanged.recovery==state.recovery && unchanged.items==state.items && unchanged.fence==state.fence,"failed start neither consumes nor queues");
+        Check(p::CommitItems(writer,*c,use).has_value() && p::CommitItems(writer,*c,use)->replay,"source and schedule commit exactly once");state=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(state.recovery==plan->after && state.items[0].count==2,"full recovery state reload");
+        auto changed=use;changed.recovery->after.doses[0].id=3;Check(!p::CommitItems(writer,*c,changed),"receipt binds exact scheduled effect");
+        auto tick=PlanRecoveryScheduleTick(*c,state.recovery,1234,actor,false,false).value();ItemCommit save;save.operationId={19,2};save.kind=ItemOperationKind::Service;save.catalogRevision=c->Revision();save.catalogHash=c->ContentHash();save.owners={state.fence};save.outcomeCode=0x1903;save.recovery=ItemRecoveryChange{customer,state.recovery,tick.after,1234};
+        auto stale=save;stale.recovery->before.doses[0].remainingRaw--;Check(!p::CommitItems(writer,*c,stale),"sidecar CAS refuses stale amount");Check(p::LoadCurrentItemOwner(writer,*c,customer)->fence==state.fence,"stale sidecar rolls fence back");
+        Check(p::CommitItems(writer,*c,save).has_value() && p::CommitItems(writer,*c,save)->replay,"tick debit is replay safe");state=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(state.recovery==tick.after && state.items[0].count==2 && state.wallets[0].balance==1000,"tick is recovery only");
+        Check(p::ClaimOwnerSession(writer,*c,customer).has_value(),"recovery relog");Check(p::LoadCurrentItemOwner(writer,*c,customer)->recovery==state.recovery,"offline remainders preserved");
+        Query(admin,"UPDATE player.item_recovery_schedule SET state_sha256=UNHEX(REPEAT('00',32)) WHERE owner_kind=1 AND owner_id=880093");auto corrupt=p::LoadCurrentItemOwner(writer,*c,customer);Check(!corrupt && corrupt.error()==E::InvalidStoredData,"corrupt sidecar fails closed");
+        Query(admin,"UPDATE player.item_recovery_schedule SET state_sha256=? WHERE owner_kind=1 AND owner_id=880093",{U::Blob(Bytes(*RecoveryScheduleDigest(*c,customer,state.recovery)))});Check(p::LoadCurrentItemOwner(writer,*c,customer).has_value(),"verified sidecar restored");
+    }
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);
 }
