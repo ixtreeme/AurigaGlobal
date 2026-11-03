@@ -12,7 +12,7 @@ namespace
 using E=RecoveryUseError;
 const RecoveryProfile* Profile(const ItemCatalog& c,ItemKey key)
 {const auto* e=c.Find(key);const auto* r=e ? std::get_if<ItemConsumableRow>(&e->category) : nullptr;const auto* p=r && r->recoveryProfile ? c.FindRecovery(r->recoveryProfile) : nullptr;return p ? &p->Data() : nullptr;}
-bool Empty(const RecoverySchedule& s){return s.doses.empty() && s.cooldowns.empty() && s.creditRaw==std::array<std::uint16_t,2>{};}
+bool Empty(const RecoverySchedule& s){return s.doses.empty() && s.cooldowns.empty() && s.effects.empty() && s.creditRaw==std::array<std::uint16_t,2>{};}
 std::uint64_t Plus(std::uint64_t a,std::uint64_t b){return b>UINT64_MAX-a ? UINT64_MAX : a+b;}
 std::int64_t Product(std::int64_t value,std::uint64_t count,std::int64_t limit)
 {if(value<=0 || !count || limit<=0)return 0;if(value>=limit || count>=static_cast<std::uint64_t>(limit/value+(limit%value!=0)))return limit;return value*static_cast<std::int64_t>(count);}
@@ -37,7 +37,17 @@ bool ValidateRecoverySchedule(const ItemCatalog& c,const RecoverySchedule& s)
         else return false;
     }
     std::uint32_t previous=0;for(const auto& cd:s.cooldowns){if(cd.profile<=previous || !c.FindConsumableCooldown(cd.profile) || !cd.remainingMs || cd.remainingMs>INT64_MAX)return false;previous=cd.profile;}
-    return s.doses.empty() || s.generation>0;
+    if(s.effects.size()>MaxRuntimeTimedEffects)return false;
+    std::set<std::uint32_t> groups;
+    for(const auto& effect:s.effects)
+    {
+        const auto* e=c.Find(effect.source);const auto* row=e ? std::get_if<ItemConsumableRow>(&e->category) : nullptr;
+        const auto* p=row && row->timedEffectProfile ? c.FindTimedEffect(*row->timedEffectProfile) : nullptr;
+        const auto* g=p ? c.FindTimedEffectGroup(p->group) : nullptr;
+        if(!g || !effect.id || !ids.insert(effect.id).second || !groups.insert(g->id).second ||
+           (g->clock==TimedEffectClock::OnlineTime ? !effect.remainingMs || effect.remainingMs>p->durationMs || effect.expiresAtMs!=0 : effect.remainingMs!=0 || !effect.expiresAtMs || effect.expiresAtMs>INT64_MAX))return false;
+    }
+    return (s.doses.empty() && s.effects.empty()) || s.generation>0;
 }
 std::expected<RecoverySchedule,E> AdvanceRecoverySchedule(const ItemCatalog& c,RecoverySchedule s,std::uint64_t elapsed)
 {
@@ -53,6 +63,8 @@ std::expected<RecoverySchedule,E> AdvanceRecoverySchedule(const ItemCatalog& c,R
         else if(d.nextTickMs)d.nextTickMs-=step;
         if(d.delivery==RecoveryDelivery::Periodic){d.remainingMs-=step;if(!d.remainingMs)d.nextTickMs=0;}
     }
+    for(auto& effect:s.effects)if(!effect.expiresAtMs)effect.remainingMs-=std::min(elapsed,effect.remainingMs);
+    std::erase_if(s.effects,[](const auto& effect){return !effect.expiresAtMs && !effect.remainingMs;});
     return s;
 }
 std::uint64_t RecoveryCooldownRemaining(const RecoverySchedule& s,std::uint32_t profile)
@@ -120,7 +132,7 @@ std::expected<RecoverySchedulePlan,E> PlanRecoveryScheduleTick(const ItemCatalog
         std::erase_if(s.doses,[](const auto& d){return d.delivery==RecoveryDelivery::Reserve ? !d.remainingRaw : !d.remainingMs && !d.dueTicks;});
         for(unsigned pool=0;pool<2;++pool){const auto raw=std::min(missing[pool],earned[pool]+s.creditRaw[pool]);const auto whole=raw/1000*1000;s.creditRaw[pool]=static_cast<std::uint16_t>(raw-whole);(pool==0 ? out.hpRestoredRaw : out.spRestoredRaw)=whole;}
     }
-    if(s==before && (!elapsed || (before.doses.empty() && before.cooldowns.empty())))return std::unexpected(E::NoEffect);if(auto v=Bump(s,before.revision);!v)return std::unexpected(v.error());if(!ValidateRecoverySchedule(c,s))return std::unexpected(E::InvalidState);return out;
+    if(s==before && (!elapsed || (before.doses.empty() && before.cooldowns.empty() && before.effects.empty())))return std::unexpected(E::NoEffect);if(auto v=Bump(s,before.revision);!v)return std::unexpected(v.error());if(!ValidateRecoverySchedule(c,s))return std::unexpected(E::InvalidState);return out;
 }
 std::expected<RecoverySchedulePlan,E> PlanRecoveryScheduleCancel(const ItemCatalog& c,const RecoverySchedule& before,std::uint64_t elapsed,std::uint64_t generation,std::uint64_t id)
 {
@@ -132,16 +144,18 @@ std::expected<RecoverySchedulePlan,E> PlanRecoveryScheduleCancel(const ItemCatal
 std::expected<std::vector<std::uint8_t>,E> EncodeRecoverySchedule(const ItemCatalog& c,const RecoverySchedule& s)
 {
     if(!ValidateRecoverySchedule(c,s))return std::unexpected(E::InvalidState);std::vector<std::uint8_t> out;const auto put=[&](std::uint64_t v,unsigned n){for(unsigned i=0;i<n;++i)out.push_back(static_cast<std::uint8_t>(v>>(8*i)));};
-    for(char b:std::string_view("RCS1"))put(b,1);put(s.revision,8);put(s.generation,8);for(auto v:s.creditRaw)put(v,2);put(s.doses.size(),1);
+    for(char b:std::string_view(s.effects.empty() ? "RCS1" : "RCS2"))put(b,1);put(s.revision,8);put(s.generation,8);for(auto v:s.creditRaw)put(v,2);put(s.doses.size(),1);
     for(const auto& d:s.doses){put(d.id,8);put(static_cast<unsigned>(d.source.Category()),2);put(d.source.LocalId(),4);put(static_cast<unsigned>(d.delivery),1);put(static_cast<unsigned>(d.pool),1);put(d.remainingRaw,8);put(d.perTickRaw,8);put(d.intervalMs,8);put(d.nextTickMs,8);put(d.remainingMs,8);put(d.dueTicks,8);put(d.rateBp,2);}
-    put(s.cooldowns.size(),1);for(const auto& cd:s.cooldowns){put(cd.profile,4);put(cd.remainingMs,8);}if(out.size()>MaxRecoveryStateBytes)return std::unexpected(E::InvalidState);return out;
+    put(s.cooldowns.size(),1);for(const auto& cd:s.cooldowns){put(cd.profile,4);put(cd.remainingMs,8);}if(!s.effects.empty()){put(s.effects.size(),1);for(const auto& e:s.effects){put(e.id,8);put(static_cast<unsigned>(e.source.Category()),2);put(e.source.LocalId(),4);put(e.remainingMs,8);put(e.expiresAtMs,8);}}
+    if(out.size()>MaxRecoveryStateBytes)return std::unexpected(E::InvalidState);return out;
 }
 std::expected<RecoverySchedule,E> DecodeRecoverySchedule(const ItemCatalog& c,std::span<const std::uint8_t> bytes)
 {
     if(bytes.size()<26 || bytes.size()>MaxRecoveryStateBytes)return std::unexpected(E::InvalidState);std::size_t at=0;bool bad=false;const auto get=[&](unsigned n){if(n>bytes.size()-at){bad=true;return std::uint64_t{0};}std::uint64_t v=0;for(unsigned i=0;i<n;++i)v|=std::uint64_t(bytes[at++])<<(8*i);return v;};
-    if(get(4)!=0x31534352)return std::unexpected(E::InvalidState);RecoverySchedule s;s.revision=get(8);s.generation=get(8);for(auto& v:s.creditRaw)v=static_cast<std::uint16_t>(get(2));const auto count=get(1);if(count>MaxRecoveryDoses)return std::unexpected(E::InvalidState);
+    const auto magic=get(4);if(magic!=0x31534352 && magic!=0x32534352)return std::unexpected(E::InvalidState);RecoverySchedule s;s.revision=get(8);s.generation=get(8);for(auto& v:s.creditRaw)v=static_cast<std::uint16_t>(get(2));const auto count=get(1);if(count>MaxRecoveryDoses)return std::unexpected(E::InvalidState);
     for(unsigned i=0;i<count;++i){const auto id=get(8),category=get(2),local=get(4);const auto key=ItemKey::Create(static_cast<std::uint16_t>(category),static_cast<std::uint32_t>(local));if(!key)return std::unexpected(E::InvalidState);RecoveryDose d{id,*key};d.delivery=static_cast<RecoveryDelivery>(get(1));d.pool=static_cast<RecoveryPool>(get(1));d.remainingRaw=static_cast<std::int64_t>(get(8));d.perTickRaw=static_cast<std::int64_t>(get(8));d.intervalMs=get(8);d.nextTickMs=get(8);d.remainingMs=get(8);d.dueTicks=get(8);d.rateBp=static_cast<std::uint16_t>(get(2));s.doses.push_back(d);}
     const auto cds=get(1);if(cds>MaxRecoveryCooldowns)return std::unexpected(E::InvalidState);for(unsigned i=0;i<cds;++i){const auto profile=get(4),remaining=get(8);s.cooldowns.push_back({static_cast<std::uint32_t>(profile),remaining});}
+    if(magic==0x32534352){const auto n=get(1);if(n>MaxRuntimeTimedEffects || !n)return std::unexpected(E::InvalidState);for(unsigned i=0;i<n;++i){const auto id=get(8),category=get(2),local=get(4);const auto key=ItemKey::Create(static_cast<std::uint16_t>(category),static_cast<std::uint32_t>(local));if(!key)return std::unexpected(E::InvalidState);const auto remaining=get(8),deadline=get(8);s.effects.push_back({id,*key,remaining,deadline});}}
     if(bad || at!=bytes.size() || !ValidateRecoverySchedule(c,s))return std::unexpected(E::InvalidState);return s;
 }
 }

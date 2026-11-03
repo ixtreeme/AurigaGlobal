@@ -59,6 +59,7 @@ struct PersistentItem
     std::array<StoneSocketSlot,EquipmentStoneSockets> stones{};
     std::optional<AccessorySocketState> accessory;
     std::optional<AutomaticRecoveryState> automatic;
+    std::optional<ToggleEffectState> toggle;
     bool operator==(const PersistentItem&) const = default;
 };
 struct ItemOwnerFence

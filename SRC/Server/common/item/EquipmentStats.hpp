@@ -23,7 +23,7 @@ struct EquipmentStats
     std::int64_t Bonus(BonusId id) const noexcept {return bonuses[static_cast<unsigned>(id)];}
 };
 enum class EquipmentStatsError { InvalidItem, InvalidSlot, Duplicate, Overflow, UnsupportedState };
-std::expected<EquipmentStats,EquipmentStatsError> BuildEquipmentStats(const ItemCatalog&,ItemOwner,std::span<const PersistentItem>);
+std::expected<EquipmentStats,EquipmentStatsError> BuildEquipmentStats(const ItemCatalog&,ItemOwner,std::span<const PersistentItem>,std::span<const BonusEntry> effects={});
 // Checked signed nearest rounding (ties away from zero). No floating point or
 // balance clamp. A negative factor is interpreted as zero at the call site.
 std::expected<std::int64_t,EquipmentStatsError> ScaleEquipmentValue(std::int64_t value,std::int64_t numerator,std::int64_t denominator=10000);

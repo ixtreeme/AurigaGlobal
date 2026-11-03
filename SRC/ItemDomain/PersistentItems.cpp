@@ -47,6 +47,7 @@ struct Writer
         Put(p.accessory.has_value(),1);if(p.accessory){Put(p.accessory->unlockedCapacity,1);Put(p.accessory->activeGrade,1);Put(p.accessory->remainingMs,8);Put(p.accessory->permanent,1);}
         // Append only for charged items: existing instance/receipt digests stay unchanged.
         if(p.automatic){Put(0x31545541,4);Put(p.automatic->remainingRaw,8);Put(p.automatic->active,1);Put(p.automatic->nextTickInMs,8);}
+        if(p.toggle){Put(0x314c4754,4);Put(p.toggle->remainingMs,8);Put(p.toggle->active,1);}
     }
     void Money(const ItemWallet& w){Owner(w.owner);Put(static_cast<std::uint8_t>(w.currency),1);Put(w.revision,8);Put(w.balance,8);}
 };
@@ -67,7 +68,7 @@ bool SupportsPersistentItem(const ItemCatalog& c,const ItemCatalogEntry& e) noex
         if(consumable->socketServiceProfile.has_value() || consumable->attributeServiceProfile.has_value())return true;
         // Instant, reserve and periodic recovery act on the character, not the item.
         const auto* recovery=consumable->recoveryProfile ? c.FindRecovery(consumable->recoveryProfile) : nullptr;
-        return recovery != nullptr;
+        return recovery || consumable->timedEffectProfile || consumable->toggleEffectProfile;
     }
     return std::holds_alternative<ItemWeaponRow>(e.category) || std::holds_alternative<ItemArmorRow>(e.category) ||
         std::holds_alternative<ItemAccessoryRow>(e.category) || std::holds_alternative<ItemMaterialRow>(e.category) ||
@@ -76,7 +77,7 @@ bool SupportsPersistentItem(const ItemCatalog& c,const ItemCatalogEntry& e) noex
         std::holds_alternative<ItemContainerKeyRow>(e.category);
 }
 bool PlainInventoryItem(const PersistentItem& item,ItemOwner owner) noexcept
-{return item.owner==owner && !item.destroyed && item.placement && item.placement->kind==ItemStorageKind::Inventory && (!item.boundTo || item.boundTo==owner) && item.attributes==InstanceAttributes{} && item.stones==decltype(item.stones){} && (!item.accessory || *item.accessory==AccessorySocketState{}) && (!item.automatic || !item.automatic->active);}
+{return item.owner==owner && !item.destroyed && item.placement && item.placement->kind==ItemStorageKind::Inventory && (!item.boundTo || item.boundTo==owner) && item.attributes==InstanceAttributes{} && item.stones==decltype(item.stones){} && (!item.accessory || *item.accessory==AccessorySocketState{}) && (!item.automatic || !item.automatic->active) && (!item.toggle || !item.toggle->active);}
 std::expected<void,E> ValidatePersistentItem(const ItemCatalog& c,const PersistentItem& p)
 {
     const auto* e=c.Find(p.key);if(!e)return std::unexpected(E::MissingItem);
@@ -105,6 +106,13 @@ std::expected<void,E> ValidatePersistentItem(const ItemCatalog& c,const Persiste
            (a.active ? !a.nextTickInMs || a.nextTickInMs>automatic->tickIntervalMs || p.destroyed || p.owner.kind!=ItemOwnerKind::Character || !p.placement || p.placement->kind!=ItemStorageKind::Inventory || (automatic->supply==RecoverySupply::Finite && !a.remainingRaw) : a.nextTickInMs!=0))return std::unexpected(E::InvalidItem);
     }
     else if(p.automatic)return std::unexpected(E::InvalidItem);
+    const auto* toggle=consumable && consumable->toggleEffectProfile ? c.FindToggleEffect(*consumable->toggleEffectProfile) : nullptr;
+    if(toggle)
+    {
+        if(!p.toggle || p.refinementLevel || (!p.destroyed && p.count!=1) || p.toggle->remainingMs>toggle->durationMs ||
+           (p.toggle->active && (!p.toggle->remainingMs || p.destroyed || p.owner.kind!=ItemOwnerKind::Character || !p.placement || p.placement->kind!=ItemStorageKind::Inventory)))return std::unexpected(E::InvalidItem);
+    }
+    else if(p.toggle)return std::unexpected(E::InvalidItem);
     if(p.placement && !StorageOwner({p.owner,p.placement->kind,p.placement->storageId}))return std::unexpected(E::InvalidPlacement);
     return {};
 }
@@ -176,6 +184,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
         {
             const auto& b=*change.before;
             if(b.automatic && b.automatic->active && (p.owner!=b.owner || p.key!=b.key || (p.placement!=b.placement && !p.destroyed) || (p.count!=b.count && !p.destroyed) || (p.destroyed && (r.outcomeCode!=0x2003 || !p.automatic || p.automatic->remainingRaw || p.automatic->active))))return std::unexpected(E::TransferDenied);
+            if(b.toggle && b.toggle->active && (p.owner!=b.owner || p.key!=b.key || (p.placement!=b.placement && !p.destroyed) || (p.count!=b.count && !p.destroyed) || (p.destroyed && (!r.recovery || r.recovery->owner!=b.owner || r.recovery->elapsedMs<b.toggle->remainingMs || !p.toggle || p.toggle->remainingMs || p.toggle->active))))return std::unexpected(E::TransferDenied);
             const bool bindingUnchanged=p.boundTo==b.boundTo;
             const bool bindOnEquip=!b.boundTo && p.boundTo==p.owner && b.owner==p.owner && b.key==p.key &&
                 c.Find(p.key)->base.binding==BindingPolicy::OnEquip && p.placement && p.placement->kind==ItemStorageKind::Equipment;
@@ -490,9 +499,10 @@ std::expected<ItemCommit,E> MakeGrantCommit(const ItemCatalog& c,std::array<std:
     if(const auto* accessory=std::get_if<ItemAccessoryRow>(&entry->category);accessory && accessory->socketProfile)
         fresh.accessory=AccessorySocketState{};
     if(const auto initial=InitialAutomaticRecoveryState(c,grant.key);initial)fresh.automatic=*initial;
+    if(const auto initial=InitialToggleEffectState(c,grant.key);initial)fresh.toggle=*initial;
     const auto sameState=[&](const PersistentItem& i){
         return i.key==fresh.key && i.refinementLevel==fresh.refinementLevel && i.boundTo==fresh.boundTo &&
-               i.attributes==fresh.attributes && i.stones==fresh.stones && i.accessory==fresh.accessory && i.automatic==fresh.automatic;};
+               i.attributes==fresh.attributes && i.stones==fresh.stones && i.accessory==fresh.accessory && i.automatic==fresh.automatic && i.toggle==fresh.toggle;};
     std::vector<const PersistentItem*> carried;
     for(const auto& i:items)
         if(!i.destroyed && i.owner==owner.owner && i.placement && i.placement->kind==ItemStorageKind::Inventory && bagOf(i.placement->storageId)!=bags.end())

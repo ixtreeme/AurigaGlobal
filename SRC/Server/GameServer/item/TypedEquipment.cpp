@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "TypedEquipment.hpp"
 #include "TypedAccessoryClock.hpp"
+#include "TypedRecovery.hpp"
+#include <item/EffectRuntime.hpp>
 #include <item/AccessoryRuntime.hpp>
 #include "ItemStore.hpp"
 #include "ItemCatalogRuntime.hpp"
@@ -21,10 +23,13 @@ void RefreshTypedEquipment(entt::entity e)
     auto* old=g_registry.try_get<ecs::TypedEquipmentProjection>(e);
     const auto elapsed=TypedAccessoryElapsed(e);
     const bool mayExpire=std::ranges::any_of(items->state.items,[elapsed](const auto& i){return !i.destroyed && i.placement && i.placement->kind==auriga::item::ItemStorageKind::Equipment && i.accessory && i.accessory->activeGrade && !i.accessory->permanent && elapsed>=i.accessory->remainingMs;});
-    if(old && old->fence==items->state.fence && old->applied && !mayExpire)return;
+    if(old && old->fence==items->state.fence && old->applied && !mayExpire && items->state.recovery.effects.empty() && std::ranges::none_of(items->state.items,[](const auto& i){return i.toggle && i.toggle->active;}))return;
     auto effective=items->state.items;
     const auto time=auriga::item::ProjectAccessoryTime(*catalog,effective,elapsed);
-    const auto built=time ? auriga::item::BuildEquipmentStats(*catalog,items->state.fence.owner,effective) : std::expected<auriga::item::EquipmentStats,auriga::item::EquipmentStatsError>{std::unexpected(auriga::item::EquipmentStatsError::InvalidItem)};
+    const auto facts=TypedItemEffectFacts(e);const auto toggles=auriga::item::ProjectToggleItems(*catalog,effective,TypedRecoveryElapsed(e),facts);if(toggles)effective=*toggles;
+    auto schedule=auriga::item::AdvanceRecoverySchedule(*catalog,items->state.recovery,TypedRecoveryElapsed(e));if(schedule)auriga::item::NormalizeTimedItems(*catalog,*schedule,TypedItemEffectNow(),&facts);
+    const auto bonuses=schedule ? auriga::item::CollectItemEffectBonuses(*catalog,*schedule,effective) : std::expected<std::vector<auriga::item::BonusEntry>,auriga::item::ItemPersistenceError>{std::unexpected(auriga::item::ItemPersistenceError::InvalidStoredData)};
+    const auto built=time && toggles && bonuses ? auriga::item::BuildEquipmentStats(*catalog,items->state.fence.owner,effective,*bonuses) : std::expected<auriga::item::EquipmentStats,auriga::item::EquipmentStatsError>{std::unexpected(auriga::item::EquipmentStatsError::InvalidItem)};
     const auto stats=built ? std::optional{*built} : std::optional<auriga::item::EquipmentStats>{};
     const bool changed=!old || old->stats!=stats;const bool recompute=changed || !old->applied;
     ecs::TypedEquipmentProjection next;next.fence=items->state.fence;next.stats=stats;next.revision=old ? old->revision+(changed ? 1 : 0) : 1;

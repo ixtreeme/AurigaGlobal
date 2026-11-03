@@ -1,5 +1,6 @@
 #pragma once
 #include "ItemStore.hpp"
+#include <item/EffectRuntime.hpp>
 #include <entt/entity/entity.hpp>
 struct TypedRecoveryBusy {};
 void StartTypedRecoveryClock(entt::entity);
@@ -8,6 +9,10 @@ void NotifyTypedRecoveryDeath(entt::entity);
 void TickTypedRecovery();
 void FinishTypedRecoveryClocks();
 void SendTypedRecovery(entt::entity);
+void SendTypedEffects(entt::entity);
+bool HandleTypedEffectsPacket(entt::entity,const char*);
+auriga::item::ItemEffectFacts TypedItemEffectFacts(entt::entity);
+std::uint64_t TypedItemEffectNow();
 void PreviewTypedRecovery(entt::entity,std::uint64_t);
 bool HandleTypedRecoveryPacket(entt::entity,const char*);
 std::uint64_t TypedRecoveryElapsed(entt::entity);

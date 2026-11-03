@@ -10,7 +10,7 @@ std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeRecoveryRunt
     const RecoveryProfile* profile=nullptr;
     if(v.source){const auto* e=c.Find(v.source->key);const auto* r=e ? std::get_if<ItemConsumableRow>(&e->category) : nullptr;const auto* p=r && r->recoveryProfile ? c.FindRecovery(r->recoveryProfile) : nullptr;if(!p || (p->Data().Delivery()!=RecoveryDelivery::Reserve && p->Data().Delivery()!=RecoveryDelivery::Periodic && p->Data().Delivery()!=RecoveryDelivery::Automatic))return std::unexpected(E::BadValue);profile=&p->Data();}
     const auto blob=EncodeRecoverySchedule(c,v.state);if(!blob)return std::unexpected(E::BadValue);
-    std::vector<ItemGrant> extra;for(const auto& d:v.state.doses)extra.push_back({d.source,0,1});std::vector<PersistentItem> metadata;if(v.source)metadata.push_back(*v.source);
+    std::vector<ItemGrant> extra;for(const auto& d:v.state.doses)extra.push_back({d.source,0,1});for(const auto& e:v.state.effects)extra.push_back({e.source,0,1});std::vector<PersistentItem> metadata;if(v.source)metadata.push_back(*v.source);
     for(const auto& item:v.items)if(item.automatic)metadata.push_back(item);
     const auto details=EncodeTypedItemDetails(c,metadata,false,extra);if(!details)return std::unexpected(details.error());
     std::uint64_t hp=0,sp=0,interval=0,duration=0,cooldown=0;std::uint16_t rate=0;

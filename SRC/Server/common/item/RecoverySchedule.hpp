@@ -19,12 +19,20 @@ struct RecoveryDose
 };
 struct RecoveryCooldown
 {std::uint32_t profile=0;std::uint64_t remainingMs=0;bool operator==(const RecoveryCooldown&)const=default;};
+inline constexpr std::size_t MaxRuntimeTimedEffects=32,MaxRuntimeToggleEffects=16;
+struct TimedItemEffect
+{
+    std::uint64_t id=0;ItemKey source;
+    std::uint64_t remainingMs=0,expiresAtMs=0;
+    bool operator==(const TimedItemEffect&)const=default;
+};
 struct RecoverySchedule
 {
     std::uint64_t revision=0,generation=0;
     std::array<std::uint16_t,2> creditRaw{};
     std::vector<RecoveryDose> doses;
     std::vector<RecoveryCooldown> cooldowns;
+    std::vector<TimedItemEffect> effects;
     bool operator==(const RecoverySchedule&)const=default;
 };
 struct RecoverySchedulePlan

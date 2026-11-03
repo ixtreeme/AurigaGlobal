@@ -1,8 +1,9 @@
 # ADR IC-034 — F4 szerverbekötés: ütemterv és 1. szelet (katalógus induláskor)
 
 2026-10-29. Fázis: F4 ([IC-012](item_combat_012_item_runtime_first.md)).
-Állapot (2026-11-03): **C1–C20 implementált; az elkészült futásidejű
-műveletek Unity 6.3-ból kezelhetők, helyi szerverrel ellenőrizve**.
+Állapot (2026-11-03): **C1–C21 implementált a külön típusos tárgyrendszerben;
+Unity 6.3 és helyi szerver együtt ellenőrizve**. A normál legacy leltár és
+a meglévő karakterek átállítása a felhasználó kérésére még nem történik meg.
 
 ## Közös szerver–Unity munkamenet (felhasználói döntés, 2026-11-01)
 
@@ -23,8 +24,8 @@ az összevonás részletei és ellenőrzései a
 |---|---|---|---|
 | A. Speciális tárgyműveletek | Páros (kapcsolt) bónuszok; jelmez-, stóla- és rúnabónuszok; fejlesztési segédanyagok | F2 maradéka | nyitott ([IC-031](item_combat_031_instance_attributes.md) határa) |
 | B. Tartós tárgymentés | Teljes mentés, visszatöltés és tranzakciókezelés a futó szerverben; a még nem támogatott kategóriák példányállapota | F3 maradéka | a modell, az író és a próbapad kész ([IC-032](item_combat_032_item_persistence.md), [IC-033](item_combat_033_item_test_bench.md)) |
-| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C20 kész**, tárgyleadó Mission, ládanyitás, Yang-pénzjegy, foglalatkarbantartás, kőbehelyezés, ékszerfoglalatok, bónuszszolgáltatások és tartalékos/folyamatos és automatikus HP/SP-visszatöltés; fiókpénztárca, általános Mission/Lua-quest és további használatok még nyitottak |
-| D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | **C1–C20 kliensútjai kész**, részletek lent |
+| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C21 kész a típusos úton**, időzített/kapcsolható hatásokkal; fiókpénztárca, általános Mission/Lua-quest és további használatok még nyitottak |
+| D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | **C1–C21 külön kliensútjai kész**, normál leltárátállás még vár, részletek lent |
 | E. Teljes adatkonverzió | Régi protók, példányok, receptek, tartalmi hivatkozások | F6 | az eszközök megvannak; a családtérkép jóváhagyásra vár |
 | F. Végső ellenőrzés | Helyi játékpróba, újrabelépés utáni adatmegőrzés, gazdasági műveletek, FreeBSD-build | F7 | nyitott |
 
@@ -728,3 +729,23 @@ Részletek: [IC-048](item_combat_048_automatic_recovery_runtime.md),
 Következő szelet: **C21 — időzített és kapcsolható tárgyhatások**.
 A további használatok/kategóriák, általános Mission/Lua-quest, speciális
 bónuszok, fiókpénztárca, teljes konverzió és kiadási kapuk továbbra is nyitottak.
+
+## C21 — Időzített és kapcsolható tárgyhatások (2026-11-03)
+
+Online/faliórás időzített csomagok, Reject/Replace és megerősített törlés;
+kapcsolható harmatok pontos aktív ideje, variánscsere, zárolás és kifogyás.
+RCS2 sidecar és nullable példánymezők, közös online óra, valós statbónuszok.
+GC243 külön munkamenet, GC225 v3 és GC227 Effects action. A külön típusos
+Unity-leltár Hatás/Hatások ablakot kapott; a normál legacy leltár átállítása
+felhasználói kérésre továbbra is vár.
+
+16/16 natív regressziós csoport, 163 új runtime-, 1504 SQL-ellenőrzés;
+Unity-fordítás, 5445 új és minden korábbi C4–C20 validátor; 50 valódi
+TLS/UI-ellenőrzés sikeres. Mind az 55 korábbi helyi tárgyállapot megmaradt.
+Unity: cs58 a mission engine ágon, csak a húsz C21-fájllal.
+
+Részletek: [IC-049](item_combat_049_item_effects_runtime.md),
+[ellenőrzések és helyi próba](../reports/item_combat/2026-11-03_item_effects_runtime.md).
+Következő szelet: **C22 — képességkönyvek**. A további kategóriák, általános
+Mission/Lua-quest, speciális bónuszok, fiókpénztárca, teljes konverzió és
+kiadási kapuk még nyitottak.

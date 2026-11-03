@@ -28,7 +28,7 @@ std::expected<std::int64_t,E> ScaleEquipmentValue(std::int64_t value,std::int64_
     if(fraction>std::uint64_t(INT64_MAX)-whole)return std::unexpected(E::Overflow);
     const auto result=static_cast<std::int64_t>(whole+fraction);return negative ? -result : result;
 }
-std::expected<EquipmentStats,E> BuildEquipmentStats(const ItemCatalog& c,ItemOwner owner,std::span<const PersistentItem> inventory)
+std::expected<EquipmentStats,E> BuildEquipmentStats(const ItemCatalog& c,ItemOwner owner,std::span<const PersistentItem> inventory,std::span<const BonusEntry> effects)
 {
     EquipmentStats out;std::set<ItemInstanceId> ids;std::set<unsigned> slots;
     std::set<RecoveryPool> automaticPools;
@@ -103,6 +103,7 @@ std::expected<EquipmentStats,E> BuildEquipmentStats(const ItemCatalog& c,ItemOwn
             for(std::size_t i=0;i<values.size();++i)if(!Add(out.resistances[i],values[i]))return std::unexpected(E::Overflow);
         }
     }
+    for(const auto& effect:effects)if(!FindBonusDefinition(effect.bonus) || !Add(out.bonuses[static_cast<unsigned>(effect.bonus)],effect.valueScaled))return std::unexpected(E::Overflow);
     if(!Add(out.flat.physicalAttackRaw,out.Bonus(BonusId::PhysicalAttackFlat)) || !Add(out.flat.magicalAttackRaw,out.Bonus(BonusId::MagicalAttackFlat)) ||
        !Add(out.flat.physicalDefenseRaw,out.Bonus(BonusId::PhysicalDefenseFlat)) || !Add(out.flat.magicalDefenseRaw,out.Bonus(BonusId::MagicalDefenseFlat)))return std::unexpected(E::Overflow);
     for(const auto [flat,bp]:{std::pair{out.flat.physicalAttackRaw,out.Bonus(BonusId::PhysicalAttackPercent)},std::pair{out.flat.magicalAttackRaw,out.Bonus(BonusId::MagicalAttackPercent)}})

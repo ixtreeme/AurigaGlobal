@@ -1,5 +1,6 @@
 #include "PersistentItemFixture.hpp"
 #include "AttributeRuntimeFixture.hpp"
+#include "EffectRuntimeFixture.hpp"
 #include "CatalogSnapshotFixture.hpp"
 #include <ItemPersistenceSql.hpp>
 #include <item/OwnedGround.hpp>
@@ -171,6 +172,7 @@ void Allocator(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,unsigned 
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
 {
     auto source=attribute_runtime_fixture::Catalog();
+    effect_runtime_fixture::Extend(source);
     const auto sqlBox=ItemKey::Create(8,99).value();auto boxBase=*std::ranges::find(source.items,item_catalog_fixture::GiftBox(),&ItemBaseRow::key);
     boxBase.key=sqlBox;boxBase.contentCode="container.sql_opening";source.items.push_back(boxBase);source.containers.push_back({sqlBox,ContainerKind::Locked,3,7});
     source.lootProfiles.push_back({3,"loot.sql_opening",LootPickMode::IndependentChance,{{1,LootRewardKind::Item,f::Leather().key,3,10000,0},{2,LootRewardKind::Gold,{},75,10000,0}}});
@@ -703,6 +705,22 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         Check(p::CommitItems(writer,*c,tick).has_value() && p::CommitItems(writer,*c,tick)->replay,"tick debit and fractional credit commit exactly once");state=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(Find(state,ids[0].Value()).automatic->remainingRaw==4860000,"only committed healing debits charge");
         Check(p::ClaimOwnerSession(writer,*c,customer).has_value(),"automatic relog session");Check(p::LoadCurrentItemOwner(writer,*c,customer)->items==state.items,"relog neither refills charge nor loses activation");
         Query(admin,"UPDATE player.item_instance SET automatic_remaining_raw=automatic_remaining_raw+1 WHERE instance_id=?",{U::UInt(ids[0].Value())});Check(!p::LoadCurrentItemOwner(writer,*c,customer),"corrupt charge rejected by item digest");Query(admin,"UPDATE player.item_instance SET automatic_remaining_raw=automatic_remaining_raw-1 WHERE instance_id=?",{U::UInt(ids[0].Value())});Check(p::LoadCurrentItemOwner(writer,*c,customer).has_value(),"verified charge restored");
+    }
+    {
+        namespace ef=effect_runtime_fixture;
+        const ItemOwner customer{ItemOwnerKind::Character,880095};const auto bag=f::Inventory(customer);
+        Check(p::ProvisionOwner(admin,*c,customer,std::span(&bag,1),{}).has_value(),"effect owner provisioned");
+        auto state=p::LoadCurrentItemOwner(writer,*c,customer).value();const auto ids=p::ReserveItemInstanceIds(writer,*c,3).value();
+        for(unsigned i=0;i<3;++i){auto add=MakeGrantCommit(*c,{21,0,static_cast<std::uint8_t>(i+1)},state.fence,state.storages,state.items,{ef::Key(i==2 ? 4 : i),0,i==2 ? 1u : 3u},std::array{ItemInstanceId::Create(ids.first+i).value()});Check(add && p::CommitItems(writer,*c,*add).has_value(),"effect source granted");state=p::LoadCurrentItemOwner(writer,*c,customer).value();}
+        const auto use=[&](unsigned step,unsigned item,std::uint64_t elapsed){return MakeItemEffectUse(*c,{21,1,static_cast<std::uint8_t>(step)},state.fence,state.storages,state.items,state.recovery,ItemInstanceId::Create(ids.first+item).value(),ef::Facts(),elapsed,1000+elapsed,step);};
+        auto wall=use(1,0,0);Check(wall.has_value(),"wall use planned");auto raced=*wall;++raced.items[0].before->revision;++raced.items[0].after.revision;Check(!p::CommitItems(writer,*c,raced),"source CAS rolls new RCS2 effect back");Check(p::LoadCurrentItemOwner(writer,*c,customer)->recovery==state.recovery,"failed effect start leaves sidecar unchanged");
+        Check(p::CommitItems(writer,*c,*wall).has_value() && p::CommitItems(writer,*c,*wall)->replay,"wall deadline and exact debit commit once");state=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(state.recovery.effects[0].expiresAtMs==61000 && Find(state,ids.first).count==2,"RCS2 deadline survives SQL");
+        auto online=use(2,1,123);Check(online && p::CommitItems(writer,*c,*online).has_value(),"online effect saved alongside wall");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        auto on=use(3,2,250);Check(on && p::CommitItems(writer,*c,*on).has_value(),"toggle activation and online elapsed saved together");state=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(Find(state,ids.first+2).toggle==ToggleEffectState{60000,true},"toggle not charged before activation");
+        auto off=use(4,2,137);Check(off.has_value(),"subsecond off planned");auto corrupt=*off;corrupt.items[0].before->toggle->remainingMs--;Check(!p::CommitItems(writer,*c,corrupt),"stale toggle charge rolls schedule and owner fence back");Check(p::LoadCurrentItemOwner(writer,*c,customer)->recovery==state.recovery,"stale toggle transaction changes no timer");
+        Check(p::CommitItems(writer,*c,*off).has_value() && p::CommitItems(writer,*c,*off)->replay,"exact milliseconds debit once across replay");state=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(Find(state,ids.first+2).toggle==ToggleEffectState{59863,false} && state.recovery.effects[1].remainingMs==59613,"item timer and online schedule reload exactly");
+        Check(p::ClaimOwnerSession(writer,*c,customer).has_value(),"effect owner relog");auto next=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(next.items==state.items && next.recovery==state.recovery,"offline time does not refill or advance online state");
+        Query(admin,"UPDATE player.item_instance SET toggle_remaining_ms=toggle_remaining_ms+1 WHERE instance_id=?",{U::UInt(ids.first+2)});Check(!p::LoadCurrentItemOwner(writer,*c,customer),"corrupt toggle charge fails item hash");Query(admin,"UPDATE player.item_instance SET toggle_remaining_ms=toggle_remaining_ms-1 WHERE instance_id=?",{U::UInt(ids.first+2)});Check(p::LoadCurrentItemOwner(writer,*c,customer).has_value(),"verified toggle restored");
     }
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);

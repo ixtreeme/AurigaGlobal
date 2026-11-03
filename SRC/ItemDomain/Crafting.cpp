@@ -32,7 +32,7 @@ bool CraftIngredientUsable(const PersistentItem& item,ItemOwner owner)
 {
     return item.owner==owner && !item.destroyed && item.placement && item.placement->kind==ItemStorageKind::Inventory &&
         !item.boundTo && item.attributes==InstanceAttributes{} && item.stones==decltype(item.stones){} &&
-        (!item.accessory || *item.accessory==AccessorySocketState{}) && (!item.automatic || !item.automatic->active);
+        (!item.accessory || *item.accessory==AccessorySocketState{}) && (!item.automatic || !item.automatic->active) && (!item.toggle || !item.toggle->active);
 }
 std::expected<void,E> ValidateCraftWorkshops(const ItemCatalog& c,std::span<const CraftWorkshop> workshops)
 {
