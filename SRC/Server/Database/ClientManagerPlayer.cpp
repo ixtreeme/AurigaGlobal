@@ -124,6 +124,7 @@ void CClientManager::PutPlayerCache(TPlayerTable * pNew)
 		m_map_playerCache.insert(TPlayerTableCacheMap::value_type(pNew->id, c));
 	}
 
+    if(const auto* old=c->Get(false);old && old->typed_book_revision>pNew->typed_book_revision){pNew->typed_book_revision=old->typed_book_revision;pNew->exp=old->exp;pNew->skill_point=old->skill_point;pNew->sub_skill_point=old->sub_skill_point;pNew->horse_skill_point=old->horse_skill_point;std::copy_n(old->skills,SKILL_MAX_NUM,pNew->skills);}
 	c->Put(pNew);
 }
 
@@ -384,7 +385,7 @@ bool CClientManager::QUERY_PLAYER_LOAD(CPeer *peer, uint32_t dwHandle, TPlayerLo
 				"r18, "
 				"r19 "
 #endif
-				"FROM player%s WHERE id=%u AND account_id=%u",
+				", typed_book_revision FROM player%s WHERE id=%u AND account_id=%u",
                 GetTablePostfix(), packet->player_id, packet->account_id);
 
 		auto pkInfo = makeInfo();
@@ -561,6 +562,7 @@ bool CreatePlayerTableFromRes(MYSQL_RES * res, TPlayerTable * pkTab)
 		str_to_number(lRankPoint, row[col++]);
 #endif
 
+    str_to_number(pkTab->typed_book_revision,row[col++]);
 	NormalizeSecondarySkills(*pkTab);
 
 	return true;

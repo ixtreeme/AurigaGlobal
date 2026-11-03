@@ -41,6 +41,7 @@
 #include <stdexcept>
 
 void SendTypedEquipment(entt::entity) {} // packet encoder is covered by the shared native/Unity fixture
+bool DeferTypedBookMutation(entt::entity,std::function<void()>) { return false; } // no pending book write in these legacy-actor fixtures
 entt::registry g_registry;
 entt::dispatcher g_dispatcher;
 TJobInitialPoints JobInitialPoints[JOB_MAX_NUM] {};

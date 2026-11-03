@@ -1,4 +1,6 @@
 #include "../../core/stdafx.h"
+#include "../components/skill_components.hpp"
+#include "../../item/TypedBooks.hpp"
 #include "../components/session_components.hpp"
 #include "../../social/exchange.h"
 #include "InventorySystem.hpp"
@@ -650,6 +652,7 @@ void CreatePlayerProto(entt::entity e, TPlayerTable& tab)
             memcpy(tab.parts, appearance->parts, sizeof(tab.parts));
     }
     SkillSystem::StoreSkillLevels(e, tab.skills);
+    if(const auto* book=g_registry.try_get<ecs::TypedBookRevision>(e))tab.typed_book_revision=book->value;
 
 #ifdef ENABLE_RANKING
     const entt::entity rankEntity = e;

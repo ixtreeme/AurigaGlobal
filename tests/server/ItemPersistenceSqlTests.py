@@ -34,6 +34,9 @@ def main():
         paths.append(ROOT / "db/migrations/item_instance/004_recovery_schedule.sql")
         paths.append(ROOT / "db/migrations/item_instance/005_automatic_recovery.sql")
         paths.append(ROOT / "db/migrations/item_instance/006_item_effects.sql")
+        paths.append(ROOT / "db/migrations/item_instance/007_book_learning.sql")
+        sandbox.client.query("CREATE TABLE player.player(id INT UNSIGNED PRIMARY KEY, name VARCHAR(24) NOT NULL DEFAULT '', exp INT UNSIGNED NOT NULL DEFAULT 0, skill_point SMALLINT NOT NULL DEFAULT 0, sub_skill_point SMALLINT NOT NULL DEFAULT 0, horse_skill_point SMALLINT NOT NULL DEFAULT 0, skill_level BLOB NULL) ENGINE=InnoDB")
+        sandbox.client.query("CREATE TABLE player.player_deleted LIKE player.player")
         for path in paths:
             for statement in statements(path.read_text(encoding="utf-8")):
                 sandbox.client.query(statement)
@@ -45,6 +48,8 @@ def main():
         for table in ("item_owner_fence", "item_wallet", "item_operation_receipt", "item_instance",
                       "item_instance_attribute", "item_instance_socket", "item_occupied_cell", "item_ground_core", "item_ground_entry", "item_recovery_schedule"):
             sandbox.client.query("GRANT INSERT,UPDATE,DELETE ON player." + table + " TO 'item_writer'@'localhost'")
+        sandbox.client.query("GRANT INSERT,UPDATE,DELETE ON player.item_book_learning TO 'item_writer'@'localhost'")
+        sandbox.client.query("GRANT UPDATE ON player.player TO 'item_writer'@'localhost'")
         sandbox.client.query("GRANT UPDATE ON player.item_instance_id_allocator TO 'item_writer'@'localhost'")
         metadata = {"version": sandbox.client.query("SELECT VERSION()")[0][0],
                     "owned_datadir_verified": True, "catalog_select_only": True,
@@ -57,7 +62,7 @@ def main():
         (sandbox.work / "native-test.log").write_text(output, encoding="utf-8")
         print(output, end="")
         if result.returncode:
-            raise RuntimeError("native item persistence tests failed")
+            raise RuntimeError(f"native item persistence tests failed (exit {result.returncode}, 0x{result.returncode & 0xffffffff:08x})")
         sandbox.verify()
     finally:
         sandbox.stop()

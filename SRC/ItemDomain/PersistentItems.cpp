@@ -48,6 +48,7 @@ struct Writer
         // Append only for charged items: existing instance/receipt digests stay unchanged.
         if(p.automatic){Put(0x31545541,4);Put(p.automatic->remainingRaw,8);Put(p.automatic->active,1);Put(p.automatic->nextTickInMs,8);}
         if(p.toggle){Put(0x314c4754,4);Put(p.toggle->remainingMs,8);Put(p.toggle->active,1);}
+        if(p.bookSkill){Put(0x31534b42,4);Put(*p.bookSkill,2);}
     }
     void Money(const ItemWallet& w){Owner(w.owner);Put(static_cast<std::uint8_t>(w.currency),1);Put(w.revision,8);Put(w.balance,8);}
 };
@@ -62,6 +63,7 @@ bool ValidItemStorage(const ItemStorageLayout& l) noexcept
 }
 bool SupportsPersistentItem(const ItemCatalog& c,const ItemCatalogEntry& e) noexcept
 {
+    if(std::holds_alternative<ItemSkillBookRow>(e.category))return true;
     if(const auto* container=std::get_if<ItemContainerRow>(&e.category))return container->kind!=ContainerKind::PetEgg;
     if(const auto* consumable=std::get_if<ItemConsumableRow>(&e.category))
     {
@@ -113,6 +115,9 @@ std::expected<void,E> ValidatePersistentItem(const ItemCatalog& c,const Persiste
            (p.toggle->active && (!p.toggle->remainingMs || p.destroyed || p.owner.kind!=ItemOwnerKind::Character || !p.placement || p.placement->kind!=ItemStorageKind::Inventory)))return std::unexpected(E::InvalidItem);
     }
     else if(p.toggle)return std::unexpected(E::InvalidItem);
+    const auto* book=std::get_if<ItemSkillBookRow>(&e->category);
+    if(book){const auto* profile=c.FindSkillBook(book->profile);if(p.refinementLevel || (profile->targetMode==SkillBookTargetMode::InstanceBound ? !p.bookSkill || std::ranges::none_of(profile->targets,[&](const auto& t){return t.skillId==*p.bookSkill;}) : p.bookSkill.has_value()))return std::unexpected(E::InvalidItem);}
+    else if(p.bookSkill)return std::unexpected(E::InvalidItem);
     if(p.placement && !StorageOwner({p.owner,p.placement->kind,p.placement->storageId}))return std::unexpected(E::InvalidPlacement);
     return {};
 }
@@ -155,7 +160,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
     }
     if(r.owners.empty() || r.owners.size()>MaxItemCommitOwners || r.items.size()>MaxItemCommitItems ||
        r.storages.size()>MaxItemCommitStorages || r.wallets.size()>MaxItemCommitOwners || r.result.size()>MaxItemCommitResult)return std::unexpected(E::LimitExceeded);
-    if((r.items.empty() && r.wallets.empty() && !r.recovery) || !r.outcomeCode || r.kind<ItemOperationKind::Grant || r.kind>ItemOperationKind::Trade ||
+    if((r.items.empty() && r.wallets.empty() && !r.recovery && !r.learning) || !r.outcomeCode || r.kind<ItemOperationKind::Grant || r.kind>ItemOperationKind::Trade ||
        std::ranges::all_of(r.operationId,[](auto n){return !n;}))return std::unexpected(E::InvalidOperation);
     std::set<ItemOwner> owners;
     for(const auto& o:r.owners)if(!ValidItemOwner(o.owner) || !o.sessionGeneration || !o.revision || o.revision==UINT64_MAX || !owners.insert(o.owner).second)return std::unexpected(E::InvalidFence);
@@ -201,6 +206,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
            !owners.contains(w.before.owner) || !wallets.emplace(w.before.owner,w.before.currency).second)return std::unexpected(E::InvalidWallet);
         usedOwners.insert(w.before.owner);
     }
+    if(r.learning){const auto& b=*r.learning;if(!ValidItemOwner(b.owner) || b.owner.kind!=ItemOwnerKind::Character || std::ranges::none_of(r.owners,[&](const auto& f){return f.owner==b.owner;}) || !ValidBookLearning(b.before) || !ValidBookLearning(b.after) || b.before.revision==UINT64_MAX || b.after.revision!=b.before.revision+1)return std::unexpected(E::InvalidChange);}
     if(r.recovery)
     {
         const auto& a=*r.recovery;
@@ -236,6 +242,7 @@ std::expected<ItemCatalogDigest,E> ItemCommitDigest(const ItemCatalog& c,const I
         const auto& a=*r.recovery;w.Put(0x3156434552ULL,8);w.Owner(a.owner);w.Put(a.elapsedMs,8);
         for(const auto* state:{&a.before,&a.after}){const auto encoded=EncodeRecoverySchedule(c,*state);if(!encoded)return std::unexpected(E::InvalidChange);w.Put(encoded->size(),4);for(auto b:*encoded)w.Put(b,1);}
     }
+    if(r.learning){const auto& b=*r.learning;w.Put(0x314b4f42,4);w.Owner(b.owner);for(const auto* state:{&b.before,&b.after}){const auto encoded=EncodeBookLearning(*state);w.Put(encoded->size(),4);for(auto byte:*encoded)w.Put(byte,1);}}
     ItemCatalogDigest digest{};unsigned length=0;
     if(EVP_Digest(w.bytes.data(),w.bytes.size(),digest.data(),&length,EVP_sha256(),nullptr)!=1 || length!=digest.size())return std::unexpected(E::HashFailure);
     return digest;
@@ -254,6 +261,8 @@ std::expected<ItemCatalogDigest,E> RecoveryScheduleDigest(const ItemCatalog& c,I
     const auto encoded=EncodeRecoverySchedule(c,s);if(!encoded)return std::unexpected(E::InvalidChange);Writer w;for(char b:std::string_view("auriga.recovery.v1"))w.Put(b,1);w.Owner(owner);for(auto b:*encoded)w.Put(b,1);
     ItemCatalogDigest digest{};unsigned length=0;if(EVP_Digest(w.bytes.data(),w.bytes.size(),digest.data(),&length,EVP_sha256(),nullptr)!=1 || length!=digest.size())return std::unexpected(E::HashFailure);return digest;
 }
+std::expected<ItemCatalogDigest,E> BookLearningDigest(ItemOwner owner,const BookLearning& s)
+{const auto bytes=EncodeBookLearning(s);if(!bytes || !ValidItemOwner(owner) || owner.kind!=ItemOwnerKind::Character)return std::unexpected(E::InvalidChange);Writer w;for(char c:std::string_view("auriga.book_learning.v1"))w.Put(c,1);w.Owner(owner);for(auto b:*bytes)w.Put(b,1);ItemCatalogDigest digest{};unsigned n=0;if(EVP_Digest(w.bytes.data(),w.bytes.size(),digest.data(),&n,EVP_sha256(),nullptr)!=1 || n!=digest.size())return std::unexpected(E::HashFailure);return digest;}
 std::expected<ItemCommit,E> MakeRefinementCommit(const ItemCatalog& c,const RefinementPlan& p,ItemOwnerFence owner,
     std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> items,const ItemWallet& wallet)
 {
@@ -470,7 +479,7 @@ bool QueueGrant(std::deque<ItemGrant>& pending,const ItemGrant& grant,std::uint3
 {
     if(!grant.count)return false;
     for(auto& waiting:pending)
-        if(waiting.key==grant.key && waiting.refinementLevel==grant.refinementLevel &&
+        if(waiting.key==grant.key && waiting.refinementLevel==grant.refinementLevel && waiting.bookSkill==grant.bookSkill &&
            std::uint64_t{waiting.count}+grant.count<=mergeLimit)
         {
             waiting.count+=grant.count;
@@ -499,10 +508,10 @@ std::expected<ItemCommit,E> MakeGrantCommit(const ItemCatalog& c,std::array<std:
     if(const auto* accessory=std::get_if<ItemAccessoryRow>(&entry->category);accessory && accessory->socketProfile)
         fresh.accessory=AccessorySocketState{};
     if(const auto initial=InitialAutomaticRecoveryState(c,grant.key);initial)fresh.automatic=*initial;
-    if(const auto initial=InitialToggleEffectState(c,grant.key);initial)fresh.toggle=*initial;
+    if(const auto initial=InitialToggleEffectState(c,grant.key);initial)fresh.toggle=*initial;fresh.bookSkill=grant.bookSkill;
     const auto sameState=[&](const PersistentItem& i){
         return i.key==fresh.key && i.refinementLevel==fresh.refinementLevel && i.boundTo==fresh.boundTo &&
-               i.attributes==fresh.attributes && i.stones==fresh.stones && i.accessory==fresh.accessory && i.automatic==fresh.automatic && i.toggle==fresh.toggle;};
+               i.attributes==fresh.attributes && i.stones==fresh.stones && i.accessory==fresh.accessory && i.automatic==fresh.automatic && i.toggle==fresh.toggle && i.bookSkill==fresh.bookSkill;};
     std::vector<const PersistentItem*> carried;
     for(const auto& i:items)
         if(!i.destroyed && i.owner==owner.owner && i.placement && i.placement->kind==ItemStorageKind::Inventory && bagOf(i.placement->storageId)!=bags.end())

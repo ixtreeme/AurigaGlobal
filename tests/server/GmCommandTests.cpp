@@ -1,4 +1,6 @@
 #include "../../SRC/Server/GameServer/core/stdafx.h"
+#include "../../SRC/Server/GameServer/item/TypedBooks.hpp"
+bool DeferTypedBookMutation(entt::entity,std::function<void()>) { return false; } // isolated command fixtures have no pending book write
 #include "../../SRC/Server/GameServer/entity/char.h"
 #include "../../SRC/Server/GameServer/command/cmd.h"
 #include "../../SRC/Server/GameServer/combat/skill.h"

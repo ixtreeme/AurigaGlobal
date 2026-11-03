@@ -1,7 +1,7 @@
 # ADR IC-034 — F4 szerverbekötés: ütemterv és 1. szelet (katalógus induláskor)
 
 2026-10-29. Fázis: F4 ([IC-012](item_combat_012_item_runtime_first.md)).
-Állapot (2026-11-03): **C1–C21 implementált a külön típusos tárgyrendszerben;
+Állapot (2026-11-03): **C1–C22 implementált a külön típusos tárgyrendszerben;
 Unity 6.3 és helyi szerver együtt ellenőrizve**. A normál legacy leltár és
 a meglévő karakterek átállítása a felhasználó kérésére még nem történik meg.
 
@@ -24,8 +24,8 @@ az összevonás részletei és ellenőrzései a
 |---|---|---|---|
 | A. Speciális tárgyműveletek | Páros (kapcsolt) bónuszok; jelmez-, stóla- és rúnabónuszok; fejlesztési segédanyagok | F2 maradéka | nyitott ([IC-031](item_combat_031_instance_attributes.md) határa) |
 | B. Tartós tárgymentés | Teljes mentés, visszatöltés és tranzakciókezelés a futó szerverben; a még nem támogatott kategóriák példányállapota | F3 maradéka | a modell, az író és a próbapad kész ([IC-032](item_combat_032_item_persistence.md), [IC-033](item_combat_033_item_test_bench.md)) |
-| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C21 kész a típusos úton**, időzített/kapcsolható hatásokkal; fiókpénztárca, általános Mission/Lua-quest és további használatok még nyitottak |
-| D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | **C1–C21 külön kliensútjai kész**, normál leltárátállás még vár, részletek lent |
+| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C22 kész a típusos úton**, időzített/kapcsolható hatásokkal és képességkönyvekkel; fiókpénztárca, általános Mission/Lua-quest és további használatok még nyitottak |
+| D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | **C1–C22 külön kliensútjai kész**, normál leltárátállás még vár, részletek lent |
 | E. Teljes adatkonverzió | Régi protók, példányok, receptek, tartalmi hivatkozások | F6 | az eszközök megvannak; a családtérkép jóváhagyásra vár |
 | F. Végső ellenőrzés | Helyi játékpróba, újrabelépés utáni adatmegőrzés, gazdasági műveletek, FreeBSD-build | F7 | nyitott |
 
@@ -749,3 +749,28 @@ Részletek: [IC-049](item_combat_049_item_effects_runtime.md),
 Következő szelet: **C22 — képességkönyvek**. A további kategóriák, általános
 Mission/Lua-quest, speciális bónuszok, fiókpénztárca, teljes konverzió és
 kiadási kapuk még nyitottak.
+
+
+## C22 — Képességkönyvek (2026-11-03)
+
+Tanulás, olvasásszámláló, mesterkönyv, felejtés és lópont; fix és mentett
+példányhoz kötött skillcél. Egy commit írja a könyvet, XP-t, tényleges skillt,
+olvasást, pontot és skillhez tartozó UTC-határidőt. A késői legacy mentés és
+a hideg betöltés már nem vonja vissza a könyv eredményét. Game/Database/Login
+együtt változott. GC244, GC225 v4 és GC227 Book action, külön Unity-olvasóablak.
+A normál legacy leltár átállítása továbbra is vár.
+
+18/18 item-CTest, 2649 runtime-, 1100 könyv-domain-, 1569 item-SQL-ellenőrzés;
+15 player-load-, 6650 pont-, 31564 GM-parancs-, 167 karakterlétrehozási és
+38/455 karaktercache-ellenőrzés sikeres. Unity-fordítás, 2929 új és minden
+korábbi C4–C21 validátor, valamint 37 valódi TLS/UI-ellenőrzés sikeres.
+Mind a 69 korábbi helyi tárgyállapot változatlan.
+Unity: cs59 a mission engine ágon, csak a tizenkilenc C22-fájllal.
+
+Részletek: [IC-050](item_combat_050_skill_books_runtime.md),
+[ellenőrzések és helyi próba](../reports/item_combat/2026-11-03_skill_books_runtime.md).
+Következő szelet: **C23 — könyvsegédek és speciális fogyaszthatók**. A töltetek
+atomikus könyvbeli felhasználása már natívan ellenőrzött; megszerzésük új
+tárgyútja és a legacy affectek konverziója még nyitott. További kategóriák,
+általános Mission/Lua-quest, speciális bónuszok, fiókpénztárca, teljes konverzió
+és kiadási kapuk még hátravannak.

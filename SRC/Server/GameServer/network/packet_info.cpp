@@ -183,6 +183,7 @@ CPacketInfoCG::CPacketInfoCG()
     Set(HEADER_CG_TYPED_SOCKET_MAINTENANCE, sizeof(TPacketCGTypedSocketMaintenance), "TypedSocketMaintenance", true);
     Set(HEADER_CG_TYPED_ATTRIBUTES, sizeof(TPacketCGTypedAttributes), "TypedAttributes", true);
     Set(HEADER_CG_TYPED_EFFECTS,sizeof(TPacketCGTypedRecovery),"TypedEffects",true);
+    Set(HEADER_CG_TYPED_BOOKS, sizeof(TPacketCGTypedRecovery), "TypedBooks", true);
     Set(HEADER_CG_TYPED_RECOVERY, sizeof(TPacketCGTypedRecovery), "TypedRecovery", true);
 
 

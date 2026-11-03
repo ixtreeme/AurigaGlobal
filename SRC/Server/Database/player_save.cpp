@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "ClientManager.h"
 #include "Main.h"
+#include <common/item/BookSaveFence.hpp>
 
 uint64_t CreatePlayerSaveQuery(char * pszQuery, uint64_t querySize, TPlayerTable * pkTab)
 {
@@ -158,11 +159,14 @@ uint64_t CreatePlayerSaveQuery(char * pszQuery, uint64_t querySize, TPlayerTable
 	static char text[8192 + 1];
 
 	CDBManager::instance().EscapeString(text, pkTab->skills, sizeof(pkTab->skills));
+    const std::string escapedSkills(text);
 	queryLen += snprintf(pszQuery + queryLen, querySize - queryLen, "skill_level = '%s', ", text);
 
 	CDBManager::instance().EscapeString(text, pkTab->quickslot, sizeof(pkTab->quickslot));
 	queryLen += snprintf(pszQuery + queryLen, querySize - queryLen, "quickslot = '%s' ", text);
 
 	queryLen += snprintf(pszQuery + queryLen, querySize - queryLen, " WHERE id=%u", pkTab->id);
-	return queryLen;
+    const auto query=auriga::item::ProtectBookSave(std::string(pszQuery,queryLen),pkTab->typed_book_revision,escapedSkills);
+    if(!query || query->size()>=querySize){if(querySize)pszQuery[0]=0;return 0;}
+    std::memcpy(pszQuery,query->c_str(),query->size()+1);return query->size();
 }

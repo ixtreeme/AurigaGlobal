@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../item/TypedBooks.hpp"
 #include <common/character_creation.h>
 #include <Core/packet_string.h>
 #include <common/time_64_packets.h>
@@ -552,6 +553,7 @@ static void LoadTypedItems(entt::entity character)
 		{
 			LOG_INFO("TypedItems: pid {} session {}: {} items", pid, result.session, result.loaded->items.size());
 			g_registry.emplace_or_replace<ecs::TypedItems>(entity, std::move(*result.loaded));
+            if(!ApplyTypedBookLogin(entity)){if(auto* desc=ecs::PlayerRuntime::GetDesc(entity))desc->SetPhase(PHASE_CLOSE);return;}
             StartTypedAccessoryClock(entity);StartTypedRecoveryClock(entity);
 			SendTypedInventory(entity); // only once the client is in game
 		}

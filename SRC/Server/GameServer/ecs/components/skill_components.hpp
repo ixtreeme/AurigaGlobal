@@ -16,6 +16,7 @@ namespace ecs {
 // pointer to an array the component allocated itself, while CHARACTER kept a
 // second array of its own loaded from the same row - so a level-up wrote here
 // and the save read there. The table is owned here now, and there is one copy.
+struct TypedBookRevision { std::uint64_t value=0; };
 struct SkillLevels {
     std::array<TPlayerSkill, SKILL_MAX_NUM> levels {};
     uint8_t group { 0 };

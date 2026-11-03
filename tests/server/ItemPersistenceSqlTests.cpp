@@ -1,6 +1,8 @@
 #include "PersistentItemFixture.hpp"
 #include "AttributeRuntimeFixture.hpp"
 #include "EffectRuntimeFixture.hpp"
+#include "BookRuntimeFixture.hpp"
+#include <item/BookSaveFence.hpp>
 #include "CatalogSnapshotFixture.hpp"
 #include <ItemPersistenceSql.hpp>
 #include <item/OwnedGround.hpp>
@@ -172,7 +174,7 @@ void Allocator(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,unsigned 
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
 {
     auto source=attribute_runtime_fixture::Catalog();
-    effect_runtime_fixture::Extend(source);
+    effect_runtime_fixture::Extend(source);book_runtime_fixture::Extend(source);
     const auto sqlBox=ItemKey::Create(8,99).value();auto boxBase=*std::ranges::find(source.items,item_catalog_fixture::GiftBox(),&ItemBaseRow::key);
     boxBase.key=sqlBox;boxBase.contentCode="container.sql_opening";source.items.push_back(boxBase);source.containers.push_back({sqlBox,ContainerKind::Locked,3,7});
     source.lootProfiles.push_back({3,"loot.sql_opening",LootPickMode::IndependentChance,{{1,LootRewardKind::Item,f::Leather().key,3,10000,0},{2,LootRewardKind::Gold,{},75,10000,0}}});
@@ -721,6 +723,23 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         Check(p::CommitItems(writer,*c,*off).has_value() && p::CommitItems(writer,*c,*off)->replay,"exact milliseconds debit once across replay");state=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(Find(state,ids.first+2).toggle==ToggleEffectState{59863,false} && state.recovery.effects[1].remainingMs==59613,"item timer and online schedule reload exactly");
         Check(p::ClaimOwnerSession(writer,*c,customer).has_value(),"effect owner relog");auto next=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(next.items==state.items && next.recovery==state.recovery,"offline time does not refill or advance online state");
         Query(admin,"UPDATE player.item_instance SET toggle_remaining_ms=toggle_remaining_ms+1 WHERE instance_id=?",{U::UInt(ids.first+2)});Check(!p::LoadCurrentItemOwner(writer,*c,customer),"corrupt toggle charge fails item hash");Query(admin,"UPDATE player.item_instance SET toggle_remaining_ms=toggle_remaining_ms-1 WHERE instance_id=?",{U::UInt(ids.first+2)});Check(p::LoadCurrentItemOwner(writer,*c,customer).has_value(),"verified toggle restored");
+    }
+    {
+        namespace bf=book_runtime_fixture;
+        const ItemOwner customer{ItemOwnerKind::Character,880096};const auto bag=f::Inventory(customer);
+        Check(p::ProvisionOwner(admin,*c,customer,std::span(&bag,1),{}).has_value(),"book owner provisioned");
+        Query(admin,"INSERT INTO player.player(id,exp,skill_level) VALUES(880096,1000,?)",{U::Blob(std::string(2550,'\0'))});
+        auto state=p::LoadCurrentItemOwner(writer,*c,customer).value();const auto block=p::ReserveItemInstanceIds(writer,*c,1).value();const auto id=ItemInstanceId::Create(block.first).value();
+        auto grant=MakeGrantCommit(*c,{22,0,1},state.fence,state.storages,state.items,{bf::Key(0),0,3},std::array{id});if(!grant)throw std::runtime_error("SQL book grant planning error "+std::to_string(static_cast<unsigned>(grant.error())));auto granted=p::CommitItems(writer,*c,*grant);if(!granted)throw std::runtime_error("SQL book grant write error "+std::to_string(static_cast<unsigned>(granted.error())));Check(granted.has_value(),"book source granted");state=p::LoadCurrentItemOwner(writer,*c,customer).value();BookCharacter live;live.experience=1000;
+        auto first=MakeBookRuntimeCommit(*c,{22,1},state.fence,state.storages,state.items,state.learning,live,id,bf::Facts(),1000,{0,1500});Check(first.has_value(),"SQL book progress planned");
+        auto raced=first->commit;++raced.items[0].before->revision;++raced.items[0].after.revision;Check(!p::CommitItems(writer,*c,raced),"item CAS rolls book sidecar and character back");Check(Scalar(admin,"SELECT exp FROM player.player WHERE id=880096")=="1000" && p::LoadCurrentItemOwner(writer,*c,customer)->learning==BookLearning{},"refused read cannot charge XP or progress");
+        Execute(admin,"UPDATE player.player SET typed_book_revision=1 WHERE id=880096");Check(!p::CommitItems(writer,*c,first->commit),"character revision CAS rolls source and sidecar back");Execute(admin,"UPDATE player.player SET typed_book_revision=0 WHERE id=880096");Check(p::LoadCurrentItemOwner(writer,*c,customer)->items==state.items,"refused participant preserves book count");
+        Check(p::CommitItems(writer,*c,first->commit).has_value() && p::CommitItems(writer,*c,first->commit)->replay,"book source, XP, progress, deadline and receipt commit once");state=p::LoadCurrentItemOwner(writer,*c,customer).value();live=state.learning.character;Check(state.learning==first->commit.learning->after && state.items[0].count==2 && Scalar(admin,"SELECT exp FROM player.player WHERE id=880096")=="900","entire learning state reloads exactly");
+        auto changed=first->commit;changed.result[4]=3;Check(!p::CommitItems(writer,*c,changed),"receipt binds recorded book outcome");
+        auto second=MakeBookRuntimeCommit(*c,{22,2},state.fence,state.storages,state.items,state.learning,live,id,bf::Facts(),2500,{0,1500});Check(second && p::CommitItems(writer,*c,second->commit).has_value(),"second successful read promotes once");state=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(state.learning.character.skills[1].level==1 && state.learning.character.experience==800 && state.learning.progress[0].reads==0,"learned level and counter reload together");
+        const auto save=ProtectBookSave("UPDATE player.player SET exp = 9999, skill_point = 9, sub_skill_point = 9, horse_skill_point = 9, skill_level = '', name = 'later' WHERE id=880096",0,"");Check(save.has_value(),"real legacy save protection constructed");Execute(admin,*save);Check(Scalar(admin,"SELECT exp FROM player.player WHERE id=880096")=="800" && Scalar(admin,"SELECT typed_book_revision FROM player.player WHERE id=880096")=="2" && Scalar(admin,"SELECT name FROM player.player WHERE id=880096")=="later","late legacy save preserves every book field while other fields still save");
+        Check(p::ClaimOwnerSession(writer,*c,customer).has_value(),"book relog fence");Check(p::LoadCurrentItemOwner(writer,*c,customer)->learning==state.learning,"book level, reads and offline deadline survive relog");
+        Query(admin,"UPDATE player.item_book_learning SET state_sha256=UNHEX(REPEAT('00',32)) WHERE owner_kind=1 AND owner_id=880096");Check(!p::LoadCurrentItemOwner(writer,*c,customer),"corrupt learning hash fails closed");Query(admin,"UPDATE player.item_book_learning SET state_sha256=? WHERE owner_kind=1 AND owner_id=880096",{U::Blob(Bytes(*BookLearningDigest(customer,state.learning)))});
     }
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);

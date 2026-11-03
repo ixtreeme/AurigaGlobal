@@ -31,7 +31,9 @@ def setUpModule():
     SANDBOX.client.query('CREATE DATABASE player CHARACTER SET utf8mb4 COLLATE utf8mb4_bin')
     paths = sorted((ROOT / 'db/migrations/item_combat').glob('[0-9][0-9][0-9]_*.sql'))
     if [int(path.name[:3]) for path in paths] != list(range(len(paths))): raise RuntimeError('incomplete catalog migrations')
-    for path in [*paths, ROOT / 'db/migrations/item_instance/001_item_persistence.sql', ROOT / 'db/migrations/item_instance/002_instance_id_allocator.sql', ROOT / 'db/migrations/item_instance/003_owned_ground.sql', ROOT / 'db/migrations/item_instance/004_recovery_schedule.sql', ROOT / 'db/migrations/item_instance/005_automatic_recovery.sql', ROOT / 'db/migrations/item_instance/006_item_effects.sql']:
+    SANDBOX.client.query("CREATE TABLE player.player(id INT UNSIGNED PRIMARY KEY, name VARCHAR(24) NOT NULL DEFAULT '', exp INT UNSIGNED NOT NULL DEFAULT 0, skill_point SMALLINT NOT NULL DEFAULT 0, sub_skill_point SMALLINT NOT NULL DEFAULT 0, horse_skill_point SMALLINT NOT NULL DEFAULT 0, skill_level BLOB NULL) ENGINE=InnoDB")
+    SANDBOX.client.query("CREATE TABLE player.player_deleted LIKE player.player")
+    for path in [*paths, ROOT / 'db/migrations/item_instance/001_item_persistence.sql', ROOT / 'db/migrations/item_instance/002_instance_id_allocator.sql', ROOT / 'db/migrations/item_instance/003_owned_ground.sql', ROOT / 'db/migrations/item_instance/004_recovery_schedule.sql', ROOT / 'db/migrations/item_instance/005_automatic_recovery.sql', ROOT / 'db/migrations/item_instance/006_item_effects.sql', ROOT / 'db/migrations/item_instance/007_book_learning.sql']:
         for statement in statements(path.read_text(encoding='utf-8-sig')): SANDBOX.client.query(statement)
 
 
@@ -157,8 +159,8 @@ class BenchTests(unittest.TestCase):
 
         # Real characters (D1c): listed, provisioned on request, claimed per action.
         self.assertEqual(use('characters')['characters'], [])                   # no player table: empty, not an error
-        SANDBOX.client.query('CREATE TABLE player.player(id INT UNSIGNED PRIMARY KEY, name VARCHAR(24) NOT NULL)')
-        SANDBOX.client.query("INSERT INTO player.player VALUES(5,'Teszt'),(6,'Masik')")
+        SANDBOX.client.query('DELETE FROM player.player')
+        SANDBOX.client.query("INSERT INTO player.player(id,name) VALUES(5,'Teszt'),(6,'Masik')")
         self.assertEqual([(c['id'], c['name'], c['provisioned']) for c in use('characters')['characters']], [(5, 'Teszt', False), (6, 'Masik', False)])
         with self.assertRaises(api.EditorError): use('load', owner=5)          # not provisioned yet
         with self.assertRaises(api.EditorError): use('load', owner=0)

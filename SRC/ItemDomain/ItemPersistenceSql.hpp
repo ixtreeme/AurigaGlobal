@@ -22,6 +22,7 @@ struct LoadedItemOwner
     std::vector<ItemWallet> wallets;
     std::vector<PersistentItem> items;
     RecoverySchedule recovery;
+    BookLearning learning;
 };
 // Dedicated existing CAsyncSQL direct connection; no second SQL engine.
 // Values are bound; all tables are fixed and fully qualified. The returned

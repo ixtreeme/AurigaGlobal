@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ItemStore.hpp"
+#include "TypedBooks.hpp"
 #include "TypedAccessoryClock.hpp"
 #include "TypedRecovery.hpp"
 #include "../core/GameConfig.h"
@@ -223,6 +224,7 @@ void ItemStore::Run(GameSqlConfig player, std::shared_ptr<std::promise<std::stri
 
 bool RequestLoginLoad(std::uint32_t pid, std::function<void(LoginLoad)> done)
 {
+    if(DeferTypedBookLogin(pid,[pid,done]{RequestLoginLoad(pid,done);})){return true;}
     if(DeferRecoveryLogin(pid,[pid,done]{RequestLoginLoad(pid,done);})){TickTypedRecovery();return true;}
     if(DeferAccessoryLogin(pid,[pid,done]{RequestLoginLoad(pid,done);})){TickTypedAccessoryClocks();return true;}
 	const ItemOwner owner { ItemOwnerKind::Character, pid };

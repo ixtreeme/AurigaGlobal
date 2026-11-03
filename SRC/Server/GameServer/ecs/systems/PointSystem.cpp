@@ -1,3 +1,4 @@
+#include "../../item/TypedBooks.hpp"
 #include "../../core/stdafx.h"
 #include "../../raid/EclipseRaidSystem.hpp"
 #include "SessionSystem.hpp"
@@ -289,6 +290,7 @@ int32_t GetLevel(entt::entity e)
 
 bool Set(entt::entity e, uint8_t type, int64_t value)
 {
+    if((type==POINT_EXP || type==POINT_SKILL || type==POINT_SUB_SKILL || type==POINT_HORSE_SKILL || type==POINT_LEVEL || type==POINT_LEVEL_STEP) && DeferTypedBookMutation(e,[=]{Set(e,type,value);}))return true;
     if (type >= POINT_MAX_NUM || !IsReadableEntity(e)) return false;
     g_registry.get_or_emplace<ecs::CharacterStatsComponent>(e).points[type] = value;
     g_registry.emplace_or_replace<ecs::DirtyTag>(e);
@@ -303,6 +305,7 @@ bool Set(entt::entity e, uint8_t type, int64_t value)
 
 bool SetReal(entt::entity e, uint8_t type, int64_t value)
 {
+    if((type==POINT_EXP || type==POINT_SKILL || type==POINT_SUB_SKILL || type==POINT_HORSE_SKILL || type==POINT_LEVEL || type==POINT_LEVEL_STEP) && DeferTypedBookMutation(e,[=]{SetReal(e,type,value);}))return true;
     if (type >= POINT_MAX_NUM || !IsReadableEntity(e)) return false;
     g_registry.get_or_emplace<ecs::CharacterPoints>(e).base.points[type] = value;
     g_registry.emplace_or_replace<ecs::DirtyTag>(e);
@@ -546,6 +549,11 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 #endif
 )
 {
+    if((type==POINT_EXP || type==POINT_SKILL || type==POINT_SUB_SKILL || type==POINT_HORSE_SKILL || type==POINT_LEVEL || type==POINT_LEVEL_STEP) && DeferTypedBookMutation(e,[=]{Change(e,type,amount,bAmount,bBroadcast
+#ifdef __ENABLE_BLOCK_EXP__
+        ,bForceExp
+#endif
+    );}))return;
     const auto sourceValue = [&] { return HasTypedEquipment(e) && IsEquipmentDerivedPoint(type) ? ReadInstantArray(e,type) : Get(e,type); };
 	if (!IsReadableEntity(e) || type >= POINT_MAX_NUM) return;
 	int64_t val = 0;

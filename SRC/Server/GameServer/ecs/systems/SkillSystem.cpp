@@ -1,3 +1,5 @@
+#include "../../item/TypedBooks.hpp"
+#include "../../item/ItemStore.hpp"
 #include "../../core/stdafx.h"
 #include "MovementSystem.hpp"
 #include "../../raid/EclipseRaidSystem.hpp"
@@ -145,6 +147,7 @@ time_t GetSkillNextReadTime(entt::entity e, uint32_t skillId)
 
 void SetSkillNextReadTime(entt::entity e, uint32_t skillId, time_t when)
 {
+    if(DeferTypedBookMutation(e,[=]{SkillSystem::SetSkillNextReadTime(e,skillId,when);}))return;
     if (skillId >= SKILL_MAX_NUM)
         return;
 
@@ -161,6 +164,7 @@ void SetSkillNextReadTime(entt::entity e, uint32_t skillId, time_t when)
 // cost comes back.
 bool SkillLevelDown(entt::entity e, uint32_t dwVnum)
 {
+    if(g_registry.valid(e) && g_registry.all_of<ecs::TypedItems>(e))return false;
 	if (g_bSkillDisable)
 		return false;
 
@@ -324,6 +328,7 @@ uint8_t GetSkillGroup(entt::entity e)
 
 void SetSkillGroup(entt::entity e, uint8_t skillGroup)
 {
+    if(DeferTypedBookMutation(e,[=]{SkillSystem::SetSkillGroup(e,skillGroup);}))return;
     if (!g_registry.valid(e) || skillGroup > 2)
         return;
     g_registry.get_or_emplace<ecs::SkillLevels>(e).group = skillGroup;
@@ -416,6 +421,7 @@ bool CanIncreaseSkill(entt::entity e, uint32_t dwVnum, bool book)
 
 void SetSkillLevel(entt::entity e, uint32_t skillId, uint8_t level)
 {
+    if(DeferTypedBookMutation(e,[=]{SkillSystem::SetSkillLevel(e,skillId,level);}))return;
     if (skillId >= SKILL_MAX_NUM)
         return;
 
@@ -992,6 +998,7 @@ void ComputeSkillPoints(entt::entity)
 
 void ResetSkill(entt::entity e)
 {
+    if(DeferTypedBookMutation(e,[=]{SkillSystem::ResetSkill(e);}))return;
 	auto* levels = TryGetSkillLevels(e);
 	if (!levels || !levels->loaded)
 		return;
@@ -1026,6 +1033,7 @@ void ResetSkill(entt::entity e)
 
 void ClearSkill(entt::entity e)
 {
+    if(DeferTypedBookMutation(e,[=]{SkillSystem::ClearSkill(e);}))return;
 	if (e == entt::null || !g_registry.valid(e))
 		return;
 	ecs::PointSystem::Change(e, POINT_SKILL,
@@ -1035,6 +1043,7 @@ void ClearSkill(entt::entity e)
 
 void ClearSubSkill(entt::entity e)
 {
+    if(DeferTypedBookMutation(e,[=]{SkillSystem::ClearSubSkill(e);}))return;
 	auto* levels = TryGetSkillLevels(e);
 	if (!levels || !levels->loaded)
 		return;
@@ -1059,6 +1068,7 @@ void ClearSubSkill(entt::entity e)
 
 bool ResetOneSkill(entt::entity e, uint32_t skillId)
 {
+    if(g_registry.valid(e) && g_registry.all_of<ecs::TypedItemBusy>(e))return false;
 	auto* levels = TryGetSkillLevels(e);
 	if (!levels || !levels->loaded || skillId >= SKILL_MAX_NUM)
 		return false;
@@ -1092,6 +1102,7 @@ void SkillSystem::SetSkillNextReadTimeCapped(entt::entity e, uint32_t dwVnum, ti
 
 bool SkillSystem::LearnGrandMasterSkill(entt::entity e, uint32_t dwSkillVnum)
 {
+    if(g_registry.valid(e) && g_registry.all_of<ecs::TypedItems>(e))return false;
 	CSkillProto * pkSk = CSkillManager::instance().Get(dwSkillVnum);
 
 	if (!pkSk)
@@ -1195,6 +1206,7 @@ bool SkillSystem::LearnGrandMasterSkill(entt::entity e, uint32_t dwSkillVnum)
 
 bool SkillSystem::LearnSkillByBook(entt::entity e, uint32_t dwSkillVnum, uint8_t bProb)
 {
+    if(g_registry.valid(e) && g_registry.all_of<ecs::TypedItems>(e))return false;
 	const CSkillProto* pkSk = CSkillManager::instance().Get(dwSkillVnum);
 
 	if (!pkSk)
@@ -1683,6 +1695,7 @@ uint32_t SkillSystem::GetAffectedEunhyung(entt::entity e)
 
 void SkillSystem::SkillLevelUp(entt::entity e, uint32_t dwVnum, uint8_t bMethod)
 {
+    if(DeferTypedBookMutation(e,[=]{SkillSystem::SkillLevelUp(e,dwVnum,bMethod);}))return;
 	if (!SkillSystem::HasSkillLevels(e))
 		return;
 

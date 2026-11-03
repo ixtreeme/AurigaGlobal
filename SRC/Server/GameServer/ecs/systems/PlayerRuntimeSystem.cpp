@@ -1,3 +1,4 @@
+#include "../../item/TypedBooks.hpp"
 #include "../../core/stdafx.h"
 #include "../../story/SpyQuestSystem.hpp"
 #include "../../story/CaravanQuestSystem.hpp"
@@ -1923,6 +1924,7 @@ int64_t GetMaxStamina(entt::entity e)
 
 void SetExp(entt::entity e, uint32_t exp)
 {
+    if(DeferTypedBookMutation(e,[=]{SetExp(e,exp);}))return;
     if (auto* ecsExp = EnsureExperienceComponent(e))
         ecsExp->current = exp;
 }
@@ -2920,6 +2922,7 @@ void ecs::PlayerRuntime::SetPlayerProto(entt::entity e, const TPlayerTable* t)
     ecs::PlayerRuntime::SetRace(e, t->job);
 
     ecs::PlayerRuntime::SetLevel(e, t->level);
+    g_registry.emplace_or_replace<ecs::TypedBookRevision>(e,t->typed_book_revision);
     ecs::PlayerRuntime::SetExp(e, t->exp);
     ecs::PlayerRuntime::SetGold(e, t->gold);
 #ifdef ENABLE_GAYA_SYSTEM

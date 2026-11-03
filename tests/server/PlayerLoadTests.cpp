@@ -10,6 +10,8 @@ void Check(bool ok, const char* why) { ++checks; if (!ok) throw std::runtime_err
 int main()
 {
     try {
+        TPlayerTable book {};book.typed_book_revision=1;book.level=50;book.sub_skill_point=42;book.skills[121].bLevel=1;
+        NormalizeSecondarySkills(book);Check(book.sub_skill_point==42 && book.skills[121].bLevel==1,"typed book points and level survive cold-load normalization");
         TPlayerTable player {};
         player.level = 50; player.skills[121].bLevel = 20; player.skills[123].bLevel = 20;
         NormalizeSecondarySkills(player);

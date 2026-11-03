@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS `player`.`player` (
   `horse_hp_droptime` BIGINT UNSIGNED    NOT NULL DEFAULT 0,
   `horse_stamina`     SMALLINT           NOT NULL DEFAULT 0,
   `horse_skill_point` SMALLINT           NOT NULL DEFAULT 0,
+  `typed_book_revision` BIGINT UNSIGNED  NOT NULL DEFAULT 0,
   `envanter`          INT                NOT NULL DEFAULT 0,
   `battle_pass_end`   DATETIME           NULL     DEFAULT NULL,
   `r0`                BIGINT             NOT NULL DEFAULT 0,

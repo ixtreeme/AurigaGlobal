@@ -501,6 +501,7 @@ typedef struct SPlayerTable
 #ifdef ENABLE_RANKING
 	long long	lRankPoints[RANKING_MAX_CATEGORIES];
 #endif
+    uint64_t typed_book_revision;
 } TPlayerTable;
 
 typedef struct SMobSkillLevel

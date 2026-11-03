@@ -4,6 +4,9 @@
 
 void NormalizeSecondarySkills(TPlayerTable& player)
 {
+    // C22's participant transaction owns these exact saved levels and points.
+    // A legacy budget reconstruction would undo book refunds after a cold load.
+    if(player.typed_book_revision)return;
     player.skills[123].bLevel = 0; // Retired SKILL_CREATE.
     if (player.level <= 9) {
         player.sub_skill_point = 0;
