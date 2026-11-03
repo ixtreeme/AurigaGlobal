@@ -15,7 +15,7 @@ sql=['-- TERA companions: new IDs only; existing records remain unchanged.','SET
 items=[];mobs=[];motions=[]
 models={m['key']:m for m in json.loads((r/'Assets/TeraCompanionLab/catalog.json').read_text(encoding='utf-8'))['models']}
 for e in entries:
- item=dict(templates[e['kind']]);item.update(vnum=str(e['item']),name='TERA_'+e['key'],locale_name=e['itemNames']['en'],value0='0',value1=str(e['mob']),value2='0',value3='0',value4='0',value5='0',gold='0',shop_buy_price='0',refined_vnum='0',refine_set='0',vnum_range='0')
+ item=dict(templates[e['kind']]);item.update(vnum=str(e['item']),name='TERA_'+e['key'],locale_name=e['itemNames']['en'],value0='0',value1=str(e['mob']),value2='0',value3='0',value4='0',value5=str(int(e['kind']=='mount' and any(c.lower()=='flyforward' for c in e['clips']))),gold='0',shop_buy_price='0',refined_vnum='0',refine_set='0',vnum_range='0')
  for prefix in ('limittype','limitvalue','applytype','applyvalue'):
   for k in list(item):
    if k.startswith(prefix):item[k]='0'

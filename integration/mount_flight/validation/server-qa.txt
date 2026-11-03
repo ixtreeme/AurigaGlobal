@@ -1,0 +1,1 @@
+PASS FreeBSD GameServer, Database, LoginServer, ServerPackageCheck build. MountLifecycleTests/ctest mount_lifecycle passed, including flight permission, no-mount refusal, ascent, teleport rejection, packet-rate budget, absolute hover state, landing, death, map handshake, mount reset and proto-flag revocation.

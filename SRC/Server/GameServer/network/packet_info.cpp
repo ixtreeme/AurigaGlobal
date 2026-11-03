@@ -141,6 +141,7 @@ CPacketInfoCG::CPacketInfoCG()
 	Set(HEADER_CG_QUEST_CONFIRM, sizeof(TPacketCGQuestConfirm), "QuestConfirm", true);
 
 	Set(HEADER_CG_MOVE, sizeof(TPacketCGMove), "Move", true);
+    Set(HEADER_CG_MOUNT_FLIGHT, sizeof(TPacketCGMountFlight), "MountFlight", true);
 	Set(HEADER_CG_SYNC_POSITION, sizeof(TPacketCGSyncPosition), "SyncPosition", true);
 
 	Set(HEADER_CG_FLY_TARGETING, sizeof(TPacketCGFlyTargeting), "FlyTarget", true);

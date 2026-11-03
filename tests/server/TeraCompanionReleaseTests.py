@@ -45,6 +45,14 @@ class TeraCompanionReleaseTests(unittest.TestCase):
             self.assertGreater(int(motion['run_speed']),0)
             self.assertGreaterEqual(int(motion['attack_duration']),0)
 
+    def test_original_flying_mounts_have_explicit_capability_flag(self):
+        flagged=0
+        for row in self.rows:
+            expected=int(row['kind']=='mount' and any(clip.lower()=='flyforward' for clip in row['clips']))
+            self.assertEqual(int(self.items[row['item']]['value5']),expected,row['name'])
+            flagged+=expected
+        self.assertEqual(flagged,84)
+
     def test_pet_handlers_and_mount_inventory_are_disjoint(self):
         quest=(RELEASE/'tera_companions.lua').read_text()
         handlers={int(x) for x in re.findall(r'(\d+)\.use',quest)}

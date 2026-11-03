@@ -1,0 +1,1 @@
+PASS 20 checks: CG/GC wire and fragmentation, permission, ascent, absolute hover over hills/cliffs, terrain obstruction, Ctrl landing, two receivers, late actor snapshots, revoke, original Pegasus fly/hover animations.

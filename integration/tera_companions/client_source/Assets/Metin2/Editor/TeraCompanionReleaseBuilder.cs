@@ -276,7 +276,7 @@ public static class TeraCompanionReleaseBuilder
             item.applyType0=item.applyType1=item.applyType2=item.applyType3=item.applyType4=0;
             item.applyValue0=item.applyValue1=item.applyValue2=item.applyValue3=item.applyValue4=0;
             item.rarity=item.extraApplyType0=item.extraApplyValue0=item.extraApplyType1=item.extraApplyValue1=0;
-            item.value0=item.value2=item.value3=item.value4=item.value5=0;item.value1=(int)e.mob;
+            item.value0=item.value2=item.value3=item.value4=0;item.value5=e.kind=="mount"&&e.clips.Any(c=>c.Equals("FlyForward",StringComparison.OrdinalIgnoreCase))?1:0;item.value1=(int)e.mob;
             item.buyItemPrice=item.sellItemPrice=0;itemEntries[e.item]=item;
         }
         items.entries=itemEntries.Values.OrderBy(x=>x.vnum).ToArray();EditorUtility.SetDirty(items);

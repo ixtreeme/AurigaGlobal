@@ -132,6 +132,7 @@ class CInputMain : public CInputProcessor
 		void		Exchange(entt::entity character, const char * data);
 		void		Position(entt::entity character, const char * data);
 		void		Move(entt::entity character, const char * data);
+        void MountFlight(entt::entity character, const char* data);
 		int			SyncPosition(entt::entity character, const char * data, uint64_t uiBytes);
 		void		FlyTarget(entt::entity character, const char * pcData, uint8_t bHeader);
 		void		UseSkill(entt::entity character, const char * pcData);

@@ -1263,6 +1263,7 @@ int CInputLogin::Analyze(LPDESC d, uint8_t bHeader, const char* c_pData)
 		Empire(d, c_pData);
 		break;
 
+	case HEADER_CG_MOUNT_FLIGHT:
 	case HEADER_CG_MOVE:
 		break;
 

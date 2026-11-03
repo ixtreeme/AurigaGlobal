@@ -42,6 +42,14 @@
 #include "../ecs/systems/ViewSystem.hpp"
 #include "OXEvent.h"
 #include "item_manager.h"
+#include "../ecs/systems/MountFlightSystem.hpp"
+
+void CInputMain::MountFlight(entt::entity character, const char* data)
+{
+    TPacketCGMountFlight packet {}; memcpy(&packet,data,sizeof(packet));
+    ecs::MountFlightSystem::Request(character,packet);
+}
+
 
 void CInputMain::OnClick(entt::entity character, const char* data)
 {

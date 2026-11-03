@@ -44,3 +44,5 @@ Six source Kirin particle meshes had two geometry sections, which Unity particle
 Live publication completed: 272 additions in each of item_proto, mob_proto, and mob_motion; all prior rows unchanged. The quest is registered once. Database, login, channel 1 cores and channel 99 returned successfully. Binary backup: `/Auriga/Server/run/deployments/32c82d03ad333aa1025eb898/backup`.
 
 All 272 production race acquisitions, 69 packet-based pet spawns, 690 particle meshes and nine production riding/effect/audio Play cases passed. The optional standalone content build was stopped to reopen the main Editor for user testing; no standalone Windows player or public launcher release is claimed.
+
+Flight capability: `../mount_flight/flight-capability.sql` enables value5=1 for 84 original flying mounts after the initial insert migration. See `../mount_flight/README.md` for the networked flight integration.
