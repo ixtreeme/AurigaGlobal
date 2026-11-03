@@ -1,0 +1,1818 @@
+{
+    "version": 1,
+    "models": [
+        {
+            "key": "5a7782eaa918",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.212656259536743,
+            "totalScale": 2.212656259536743,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "0011b5c18401",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.6429686546325685,
+            "totalScale": 3.6429686546325685,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "00b755d8ef14",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.3059375286102297,
+            "totalScale": 2.767125129699707,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "00e1fa885d0f",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 1.8706250190734864,
+            "totalScale": 1.8706250190734864,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "2b3163e41fac",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.772343635559082,
+            "totalScale": 3.326812505722046,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "5a1a0fec4688",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 6.379218578338623,
+            "totalScale": 6.379218578338623,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "5eb9bf97ece4",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 10.0,
+            "totalScale": 10.0,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "ce4a92ef6351",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.6740622520446779,
+            "totalScale": 4.408874988555908,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "42e98c358a11",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 4.358124732971191,
+            "totalScale": 5.22974967956543,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "b288cdf822b0",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 6.130468845367432,
+            "totalScale": 6.130468845367432,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "5f7714d813e2",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.669062614440918,
+            "totalScale": 4.669062614440918,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "1d48ee7f71d3",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.5185937881469728,
+            "totalScale": 3.5185937881469728,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "28933e6b9967",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 5.41531229019165,
+            "totalScale": 5.41531229019165,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "4e7c11c56ce4",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.606874942779541,
+            "totalScale": 4.606874942779541,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "0518ccf77823",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.451406002044678,
+            "totalScale": 4.451406002044678,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "8b38a7696e88",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 5.011093616485596,
+            "totalScale": 5.011093616485596,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "5adef9666384",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.7984373569488527,
+            "totalScale": 4.558125019073486,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "8cc53c56bc54",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.896718740463257,
+            "totalScale": 2.896718740463257,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "c3eb594af6da",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.487499952316284,
+            "totalScale": 4.184999942779541,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "2c7501e81765",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.990000009536743,
+            "totalScale": 3.5880000591278078,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "06f2ee354a24",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.2437498569488527,
+            "totalScale": 2.692499876022339,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "2511ed654ada",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.9589061737060549,
+            "totalScale": 3.550687551498413,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "a53b85a84dd4",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.674062490463257,
+            "totalScale": 4.408874988555908,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "7df44f572242",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 4.358124732971191,
+            "totalScale": 5.22974967956543,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "e930c1609184",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 4.63796854019165,
+            "totalScale": 5.5655622482299809,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "ebc5062a6ca5",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.616874933242798,
+            "totalScale": 3.1402499675750734,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "88d6d3a4e104",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.212656259536743,
+            "totalScale": 2.6551876068115236,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "fe08b8969e28",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 4.109375,
+            "totalScale": 4.931250095367432,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "0982955391ea",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.927812337875366,
+            "totalScale": 3.5133750438690187,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "ec6b4853548a",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.990000009536743,
+            "totalScale": 3.5880000591278078,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "845ebaa73f1e",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.990000009536743,
+            "totalScale": 3.5880000591278078,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "4307acf3bb07",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 5.757343769073486,
+            "totalScale": 6.908812999725342,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "2b133df9316c",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.052187442779541,
+            "totalScale": 3.6626250743865969,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "21f1310d8049",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.772343635559082,
+            "totalScale": 3.326812505722046,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "81037391dca7",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.7412500381469728,
+            "totalScale": 3.2895002365112306,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "aeea54bced19",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.4564061164855959,
+            "totalScale": 4.1476874351501469,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "55dd25fd8a0f",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.0210936069488527,
+            "totalScale": 3.625312566757202,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "593ac2e8fca1",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.772343873977661,
+            "totalScale": 3.326812744140625,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "63d5bf0edaae",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.8034374713897707,
+            "totalScale": 3.3641250133514406,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "1855cb94e0de",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.6479687690734865,
+            "totalScale": 3.177562713623047,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "0a526912743f",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.8034374713897707,
+            "totalScale": 3.3641250133514406,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "1febead92b8a",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.674062490463257,
+            "totalScale": 4.408874988555908,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "d14442b59100",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.4253125190734865,
+            "totalScale": 4.11037540435791,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "fc92193a3e4f",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.394218683242798,
+            "totalScale": 4.073062419891357,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "2df1d16147e8",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.4564061164855959,
+            "totalScale": 4.1476874351501469,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "cf922c48828e",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.5185935497283937,
+            "totalScale": 4.2223124504089359,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "cc4d4420298a",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.705156087875366,
+            "totalScale": 4.446187496185303,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "f21bc28214a8",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.0832812786102297,
+            "totalScale": 3.699937582015991,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "30987223997b",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 4.016093730926514,
+            "totalScale": 4.819312572479248,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "050d47da57d5",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.5807812213897707,
+            "totalScale": 4.296937465667725,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "ce484b7099a9",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.5185937881469728,
+            "totalScale": 4.222312927246094,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "3c59e6418663",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.269843816757202,
+            "totalScale": 3.9238126277923586,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "9d48caed97c0",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.4253125190734865,
+            "totalScale": 3.4253125190734865,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "4c0770d4df09",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.3009374141693117,
+            "totalScale": 3.3009374141693117,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "943b4df9458f",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.487499952316284,
+            "totalScale": 3.487499952316284,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "32a7eda7f7bd",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.7412500381469728,
+            "totalScale": 3.2895002365112306,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "6a8aeda42161",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.3681249618530275,
+            "totalScale": 2.841750144958496,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "5f0876b3aac5",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.274843692779541,
+            "totalScale": 2.7298126220703127,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "5ffeadae8df3",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.212656259536743,
+            "totalScale": 2.6551876068115236,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "1e23636719dc",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 1.5596874952316285,
+            "totalScale": 1.8716250658035279,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "ec639299e02b",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 1.497499942779541,
+            "totalScale": 1.7970000505447388,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "ba5d9f9f025a",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 1.8845313787460328,
+            "totalScale": 2.2614376544952394,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "dc339c12087b",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.430312395095825,
+            "totalScale": 2.430312395095825,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "8001dec5d799",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.337031364440918,
+            "totalScale": 2.337031364440918,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "dc9f4bd6acc3",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.337031126022339,
+            "totalScale": 2.337031126022339,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "26880c67babf",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.3059375286102297,
+            "totalScale": 2.3059375286102297,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "e7f0ddb31e7b",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.389218807220459,
+            "totalScale": 4.389218807220459,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "7ed69034072a",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.358124732971191,
+            "totalScale": 4.358124732971191,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "764bcf1dad93",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 5.6640625,
+            "totalScale": 5.6640625,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "05b49ecbc77c",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.611875057220459,
+            "totalScale": 3.611875057220459,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "55fa5aacbdc9",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.896718740463257,
+            "totalScale": 3.476062536239624,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "a80403d0d2cf",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.990000009536743,
+            "totalScale": 3.5880000591278078,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "864c18c62b9a",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.772343635559082,
+            "totalScale": 3.326812505722046,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "90cc43915c21",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.057187557220459,
+            "totalScale": 2.468625068664551,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "25dc25af45fb",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 1.8395311832427979,
+            "totalScale": 2.207437515258789,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "21ed68013629",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 1.746250033378601,
+            "totalScale": 2.0955002307891847,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "f960ac7a9411",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 1.746250033378601,
+            "totalScale": 2.0955002307891847,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "cb0037f2cfb9",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.5546875,
+            "totalScale": 3.0656251907348635,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "c81674d68368",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 1.9017187356948853,
+            "totalScale": 2.282062530517578,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "5178f6752945",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.0260937213897707,
+            "totalScale": 2.4313125610351564,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "fc87f9169905",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.0260937213897707,
+            "totalScale": 2.4313125610351564,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "50ffb8876300",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.264843463897705,
+            "totalScale": 4.264843463897705,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "f3a9c95e4a90",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 1.9950000047683716,
+            "totalScale": 1.9950000047683716,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "61a7f9e86cf7",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.0260937213897707,
+            "totalScale": 2.0260937213897707,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "1080d836fd99",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.399218797683716,
+            "totalScale": 2.399218797683716,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "a2c8f03d56e0",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.1815624237060549,
+            "totalScale": 2.1815624237060549,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "f2bbddf153f3",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.896718740463257,
+            "totalScale": 2.896718740463257,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "04bb8877d6a0",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 1.310937523841858,
+            "totalScale": 1.310937523841858,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "891f4803430b",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.3059375286102297,
+            "totalScale": 2.767125129699707,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "cab68eab1f50",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 5.322031021118164,
+            "totalScale": 6.38643741607666,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "63064edd16df",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 4.482500076293945,
+            "totalScale": 5.379000186920166,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "445c58de5e50",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.4253125190734865,
+            "totalScale": 4.11037540435791,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "422a576fb17e",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.337031126022339,
+            "totalScale": 2.8044373989105226,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "8fe505e1054d",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.176562547683716,
+            "totalScale": 3.811875104904175,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "1c61c6e2cb45",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.3009374141693117,
+            "totalScale": 3.961125135421753,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "e113dd7d2af1",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.772343635559082,
+            "totalScale": 3.326812505722046,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "6c647335677b",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.052187442779541,
+            "totalScale": 3.052187442779541,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "ec067cac5b5e",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.0832812786102297,
+            "totalScale": 3.0832812786102297,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "3e8892346b44",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.5185937881469728,
+            "totalScale": 4.222312927246094,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "545255f48722",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.4564061164855959,
+            "totalScale": 4.1476874351501469,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "7be2e61f269a",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.4564061164855959,
+            "totalScale": 4.1476874351501469,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "f2a24cf7b8b3",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.3631248474121095,
+            "totalScale": 4.035749912261963,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "adb18d4a3d72",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.207656145095825,
+            "totalScale": 3.8491876125335695,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "53d27f701805",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.4564061164855959,
+            "totalScale": 4.1476874351501469,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "84e59e6ee8a0",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.674062490463257,
+            "totalScale": 4.408874988555908,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "4bd5988553cd",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.3631248474121095,
+            "totalScale": 4.035749912261963,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "346c26b63f1a",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.6429686546325685,
+            "totalScale": 4.371562480926514,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "979ee7b3bc01",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.705156087875366,
+            "totalScale": 4.446187496185303,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "249820ef6312",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.269843816757202,
+            "totalScale": 3.9238126277923586,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "576a03dc3d78",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.33203125,
+            "totalScale": 3.9984376430511476,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "80da2f521aba",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.269843816757202,
+            "totalScale": 3.9238126277923586,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "81ce0aa9d3bc",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.3009374141693117,
+            "totalScale": 3.961125135421753,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "6347ac1e720c",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.487499952316284,
+            "totalScale": 4.184999942779541,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "f8f39b86be80",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.114374876022339,
+            "totalScale": 3.7372500896453859,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "86e0d3c1f82a",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.6429688930511476,
+            "totalScale": 4.371562957763672,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "27ce2ad5e50b",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.611875057220459,
+            "totalScale": 4.334250450134277,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "a794eadfe1cd",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.5185937881469728,
+            "totalScale": 4.222312927246094,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "82a9b66db7f4",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 4.016093730926514,
+            "totalScale": 4.819312572479248,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "def733f81cb7",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.4253125190734865,
+            "totalScale": 4.11037540435791,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "1077daa527b8",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.221562385559082,
+            "totalScale": 3.865875005722046,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "2e8819d7bc8e",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.394218683242798,
+            "totalScale": 4.073062419891357,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "56eaf6a8d5cb",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.4253125190734865,
+            "totalScale": 4.11037540435791,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "311cdab4f8d5",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.114375114440918,
+            "totalScale": 3.114375114440918,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "ca6ffdc94472",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.1454687118530275,
+            "totalScale": 3.1454687118530275,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "070e6264011f",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.109375,
+            "totalScale": 4.109375,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "de1c79db28fe",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.772343635559082,
+            "totalScale": 2.772343635559082,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "be0c8441ab12",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.6790623664855959,
+            "totalScale": 2.6790623664855959,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "4a46cc72d517",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 5.228749752044678,
+            "totalScale": 5.228749752044678,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "ea08861a9bc2",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.430312395095825,
+            "totalScale": 2.430312395095825,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "c484afd985d2",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.896718740463257,
+            "totalScale": 3.476062536239624,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "8254c982a72e",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.5807809829711916,
+            "totalScale": 4.296937465667725,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "022be955e669",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.7551562786102297,
+            "totalScale": 3.306187629699707,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "08261880acab",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.4614062309265138,
+            "totalScale": 2.9536876678466799,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "a7bbcd234f7b",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.492500066757202,
+            "totalScale": 2.991000175476074,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "5a6fd6d2b6ef",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.5857810974121095,
+            "totalScale": 3.1029374599456789,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "957d89174ed5",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.6479687690734865,
+            "totalScale": 3.177562713623047,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "21c504b0a033",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.2387497425079347,
+            "totalScale": 3.2387497425079347,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "5a04c32f6ed2",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.5235936641693117,
+            "totalScale": 2.5235936641693117,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "a79713692c10",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.5235936641693117,
+            "totalScale": 2.5235936641693117,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "214762b4d30e",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.6790623664855959,
+            "totalScale": 2.6790623664855959,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "cc79d0740c25",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.710156202316284,
+            "totalScale": 2.710156202316284,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "f9b81ad665ab",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.6429686546325685,
+            "totalScale": 3.6429686546325685,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "5bf151ed2f25",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.834531307220459,
+            "totalScale": 2.834531307220459,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "7ddd966de070",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.990000009536743,
+            "totalScale": 2.990000009536743,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "e3ea187bae2e",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.834531307220459,
+            "totalScale": 2.834531307220459,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "4c4c8cb983c1",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.990000009536743,
+            "totalScale": 2.990000009536743,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "2eab2c99fd7e",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.829531192779541,
+            "totalScale": 4.595437526702881,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "041062a70b6c",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.2387499809265138,
+            "totalScale": 3.886500120162964,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "191d28619d96",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.207656145095825,
+            "totalScale": 3.8491876125335695,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "f2f6929dd889",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.394218683242798,
+            "totalScale": 4.073062419891357,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "0ad27728e50a",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.927812337875366,
+            "totalScale": 3.5133750438690187,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "bf05021a49cb",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.0210936069488527,
+            "totalScale": 3.625312566757202,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "0a4f9ead89b3",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.616874933242798,
+            "totalScale": 3.1402499675750734,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "8e59015cbab8",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.399218797683716,
+            "totalScale": 2.8790626525878908,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "91d43dbb4e5b",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.549687385559082,
+            "totalScale": 4.25962495803833,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "bd9e95c76ea0",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.33203125,
+            "totalScale": 3.9984376430511476,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "831af9278c82",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.710156202316284,
+            "totalScale": 3.252187490463257,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "4a11ac7177f0",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.4253125190734865,
+            "totalScale": 4.11037540435791,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "0c5aa7292d99",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.990000009536743,
+            "totalScale": 3.5880000591278078,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "ba7fdc49b0cd",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.896718740463257,
+            "totalScale": 3.476062536239624,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "245789766a73",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.3009374141693117,
+            "totalScale": 3.961125135421753,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "ee614b4520a9",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.9106249809265138,
+            "totalScale": 2.9106249809265138,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "ff2d50495846",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.0210936069488527,
+            "totalScale": 3.0210936069488527,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "f017fe00335a",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.990000009536743,
+            "totalScale": 2.990000009536743,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "c98a5879a5c8",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.927812337875366,
+            "totalScale": 2.927812337875366,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "2237215bf5cd",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.7984373569488527,
+            "totalScale": 4.558125019073486,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "1caf181b2bbd",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.549687385559082,
+            "totalScale": 4.25962495803833,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "3af79e1d20cc",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.891718626022339,
+            "totalScale": 4.67006254196167,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "302a10bf8c53",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.8606250286102297,
+            "totalScale": 4.632750034332275,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "ab6cecd71aac",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.487499952316284,
+            "totalScale": 4.184999942779541,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "24a887877da1",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.221562385559082,
+            "totalScale": 3.865875005722046,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "d76d20f967e8",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 4.731249809265137,
+            "totalScale": 5.677499771118164,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "24f0dab27b9f",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.1454687118530275,
+            "totalScale": 3.7745625972747804,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "06725ea4b1fa",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.88671875,
+            "totalScale": 4.88671875,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "ec9e7568d81e",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 3.269843816757202,
+            "totalScale": 3.9238126277923586,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "fd5cecdfc580",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.269843816757202,
+            "totalScale": 3.269843816757202,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "3cc32fb37de0",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.487499952316284,
+            "totalScale": 3.487499952316284,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "94e7947d0e9a",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.482500076293945,
+            "totalScale": 4.482500076293945,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "77019a5defd5",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.451406002044678,
+            "totalScale": 4.451406002044678,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "3e817bb7f5c6",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.88671875,
+            "totalScale": 4.88671875,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "51346f3b3876",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 2.506406307220459,
+            "totalScale": 3.00768780708313,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "7e9cb4dcb0f9",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 1.963906168937683,
+            "totalScale": 2.356687545776367,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "7bec578a6ce1",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.6429686546325685,
+            "totalScale": 3.6429686546325685,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "f269aa40ac74",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.207656145095825,
+            "totalScale": 3.207656145095825,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "cc8e77f26c80",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 4.295937538146973,
+            "totalScale": 5.155125141143799,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "124a89ca073b",
+            "sourceScale": 1.2000000476837159,
+            "sizeMultiplier": 1.8534374237060547,
+            "totalScale": 2.2241249084472658,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "80f182d0c538",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.927812337875366,
+            "totalScale": 2.927812337875366,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "1e0b24f7bf11",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.7412500381469728,
+            "totalScale": 2.7412500381469728,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "486a7b518b5a",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.492500066757202,
+            "totalScale": 2.492500066757202,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "98042f760fcb",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.5235936641693117,
+            "totalScale": 2.5235936641693117,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "6c9630845b99",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.4614062309265138,
+            "totalScale": 2.4614062309265138,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "f8ec68e0f689",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.679062604904175,
+            "totalScale": 2.679062604904175,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "555ab7feee5e",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.6479687690734865,
+            "totalScale": 2.6479687690734865,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "2f4964a3e67b",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.927812337875366,
+            "totalScale": 2.927812337875366,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "168a4bc5b632",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 5.788437366485596,
+            "totalScale": 5.788437366485596,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "2e5e42816fad",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 5.477499961853027,
+            "totalScale": 5.477499961853027,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "2755ae44ec6f",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 6.938905715942383,
+            "totalScale": 6.938905715942383,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "46100bd2e60e",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 5.135468482971191,
+            "totalScale": 5.135468482971191,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "732624988dc6",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.0832812786102297,
+            "totalScale": 3.0832812786102297,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "1e17c4da6502",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 1.0,
+            "totalScale": 1.0,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "60dd88c041a0",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.731249809265137,
+            "totalScale": 4.731249809265137,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "208e53751380",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.140468597412109,
+            "totalScale": 4.140468597412109,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "b8da9a7c62df",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.1454687118530275,
+            "totalScale": 3.1454687118530275,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "b96365e5c20a",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.389218807220459,
+            "totalScale": 4.389218807220459,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "0b6eea03c253",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 10.0,
+            "totalScale": 10.0,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "ad2ca8ee572c",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.8656249046325685,
+            "totalScale": 2.8656249046325685,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "685235d4c7f2",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 6.285937309265137,
+            "totalScale": 6.285937309265137,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "5f2a7cf8e87e",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.589687347412109,
+            "totalScale": 4.589687347412109,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "06f06109a0de",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.9106249809265138,
+            "totalScale": 2.9106249809265138,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "3e2a6b2e7b4f",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.140468597412109,
+            "totalScale": 4.140468597412109,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "c4f59d0a2fcf",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.4564061164855959,
+            "totalScale": 3.4564061164855959,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "b327e1c9ba23",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 1.8706250190734864,
+            "totalScale": 1.8706250190734864,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "9a80578b8e96",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.9228124618530275,
+            "totalScale": 3.9228124618530275,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "f88313ebe191",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.119374990463257,
+            "totalScale": 2.119374990463257,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "cbc30e99db3a",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.2437498569488527,
+            "totalScale": 2.2437498569488527,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "c72ea6c924a5",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.4614062309265138,
+            "totalScale": 2.4614062309265138,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "55f5fd6d578d",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.0210936069488527,
+            "totalScale": 3.0210936069488527,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "d96cb1d89dc9",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.6429686546325685,
+            "totalScale": 3.6429686546325685,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "36261a00e0a4",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 1.77734375,
+            "totalScale": 1.77734375,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "1784d6ef19b0",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.6479687690734865,
+            "totalScale": 2.6479687690734865,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "b51fd215d12c",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 5.632968425750732,
+            "totalScale": 5.632968425750732,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "d9173e776543",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 5.477499961853027,
+            "totalScale": 5.477499961853027,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "462af1c76a73",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 5.228749752044678,
+            "totalScale": 5.228749752044678,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "b151ccea597e",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 5.508593559265137,
+            "totalScale": 5.508593559265137,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "897060431a59",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 5.104374885559082,
+            "totalScale": 5.104374885559082,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "a0f2fc98f729",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.295937538146973,
+            "totalScale": 4.295937538146973,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "f15b8571d0af",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 5.135468482971191,
+            "totalScale": 5.135468482971191,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "8aa678200d2d",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 8.400312423706055,
+            "totalScale": 8.400312423706055,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "5d6420dc3aab",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.6479687690734865,
+            "totalScale": 2.6479687690734865,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "574a50a6707c",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 6.534687519073486,
+            "totalScale": 6.534687519073486,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "f3511804e738",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 5.601874828338623,
+            "totalScale": 5.601874828338623,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "11c46208f184",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 7.374218463897705,
+            "totalScale": 7.374218463897705,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "7fece9a7b438",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.829531192779541,
+            "totalScale": 3.829531192779541,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "3a5b08977240",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 6.19265604019165,
+            "totalScale": 6.19265604019165,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "3f8e0a1de687",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.176562547683716,
+            "totalScale": 3.176562547683716,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "68892fbb54b2",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.487499952316284,
+            "totalScale": 3.487499952316284,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "9e0421151f62",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 6.907812595367432,
+            "totalScale": 6.907812595367432,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "8d59d87952bd",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 6.099374771118164,
+            "totalScale": 6.099374771118164,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "414c410e93d1",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.3009374141693117,
+            "totalScale": 3.3009374141693117,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "58c34d95fc50",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.544687747955322,
+            "totalScale": 4.544687747955322,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "e6e94df63028",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.33203125,
+            "totalScale": 3.33203125,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "69d232efbd67",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.4614062309265138,
+            "totalScale": 2.4614062309265138,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "b56fa22281ac",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.3631248474121095,
+            "totalScale": 3.3631248474121095,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "ceb99c709012",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.9589061737060549,
+            "totalScale": 2.9589061737060549,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "c29c1df5dc36",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 2.9589061737060549,
+            "totalScale": 2.9589061737060549,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "45c20801eef9",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 7.094374656677246,
+            "totalScale": 7.094374656677246,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "c1d453766a10",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 8.369218826293946,
+            "totalScale": 8.369218826293946,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "7a336a667a01",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 7.560781002044678,
+            "totalScale": 7.560781002044678,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "6bfc5a33abd3",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.078281402587891,
+            "totalScale": 4.078281402587891,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "f2ee0b238287",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.88671875,
+            "totalScale": 4.88671875,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "019d384bb98a",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 3.487499952316284,
+            "totalScale": 3.487499952316284,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "1a2793cca20e",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 1.8395311832427979,
+            "totalScale": 1.8395311832427979,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "7a3189e41e31",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.327031135559082,
+            "totalScale": 4.327031135559082,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "f5249dc60bf6",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 5.011093616485596,
+            "totalScale": 5.011093616485596,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "b0481c96c553",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.047187328338623,
+            "totalScale": 4.047187328338623,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "33c2994bf50c",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.078281402587891,
+            "totalScale": 4.078281402587891,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "a3b19b06a0a1",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.264843463897705,
+            "totalScale": 4.264843463897705,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "6cc9e1cd1dcb",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.202656269073486,
+            "totalScale": 4.202656269073486,
+            "riderYaw": -90.0
+        },
+        {
+            "key": "e307231e61de",
+            "sourceScale": 1.0,
+            "sizeMultiplier": 4.327031135559082,
+            "totalScale": 4.327031135559082,
+            "riderYaw": -90.0
+        }
+    ]
+}

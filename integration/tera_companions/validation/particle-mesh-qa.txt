@@ -1,0 +1,1 @@
+PASS all 690 source particle meshes have one nonempty submesh. Six Kirin meshes preserve all 230 triangles and 163 vertices each.

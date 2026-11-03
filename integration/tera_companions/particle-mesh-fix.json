@@ -1,0 +1,44 @@
+[
+  {
+    "mesh": "04C32D46D67924BD53CB.asset",
+    "triangles": 230,
+    "vertices": 163,
+    "indexBufferUnchanged": true,
+    "vertexDataUnchanged": true
+  },
+  {
+    "mesh": "16BDFE98ADAEDA2FD304.asset",
+    "triangles": 230,
+    "vertices": 163,
+    "indexBufferUnchanged": true,
+    "vertexDataUnchanged": true
+  },
+  {
+    "mesh": "26064CDDAF8893798793.asset",
+    "triangles": 230,
+    "vertices": 163,
+    "indexBufferUnchanged": true,
+    "vertexDataUnchanged": true
+  },
+  {
+    "mesh": "64E37004DF37DFA3A996.asset",
+    "triangles": 230,
+    "vertices": 163,
+    "indexBufferUnchanged": true,
+    "vertexDataUnchanged": true
+  },
+  {
+    "mesh": "9DB05D04ABCCAE049891.asset",
+    "triangles": 230,
+    "vertices": 163,
+    "indexBufferUnchanged": true,
+    "vertexDataUnchanged": true
+  },
+  {
+    "mesh": "D735C5BC1BBA591A3FD3.asset",
+    "triangles": 230,
+    "vertices": 163,
+    "indexBufferUnchanged": true,
+    "vertexDataUnchanged": true
+  }
+]

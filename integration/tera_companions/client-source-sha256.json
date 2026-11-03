@@ -1,0 +1,70 @@
+[
+  {
+    "path": "Assets/Metin2/Runtime/TeraCompanionPresentation.cs",
+    "sha256": "baf5f91612c91dc00490d31d613e813cc4f45c0935e4caf8575e4234453304e8"
+  },
+  {
+    "path": "Assets/Metin2/Runtime/TeraCompanionAttachment.cs",
+    "sha256": "fe2a09c792cc335abfdb74d909647f781b3f0a8e9469c86ca998391e5a1e455a"
+  },
+  {
+    "path": "Assets/Metin2/Runtime/TeraSoundCue.cs",
+    "sha256": "480f3112ea0efe4e41d3c911fd292e53d8043b9ec148fc5f0b18add25a3afa41"
+  },
+  {
+    "path": "Assets/Metin2/Runtime/CompanionLab.cs",
+    "sha256": "4bc53c4e68c70e8068e9c4e6ee3fb929f27a5d96887823e53a7fc1c37538a0a2"
+  },
+  {
+    "path": "Assets/Metin2/Runtime/CompanionLabAssets.cs",
+    "sha256": "d32f6bb467f2513649157f0769b3cbc26202cc60bc75b037f17db3af57cf6712"
+  },
+  {
+    "path": "Assets/Metin2/Runtime/CompanionLabEffects.cs",
+    "sha256": "354762c887e4f2742f99762fd2344b24b7ae775455e3b6abaf40243795897a23"
+  },
+  {
+    "path": "Assets/Metin2/Runtime/CompanionLabPose.cs",
+    "sha256": "5d807ec4da12aec578d034b9dce1ac9152575e49220014b0422ae3f6997909ab"
+  },
+  {
+    "path": "Assets/Metin2/Runtime/CompanionLabSettings.cs",
+    "sha256": "837d1ab63fb3bddbd860cfb3bd461ed1ae5e1107a20677856b66e27a7815b549"
+  },
+  {
+    "path": "Assets/Metin2/Runtime/Network/Metin2AuxiliaryInventoryPanel.cs",
+    "sha256": "270266519db7c20000f46323782d9b3a6d911ec8bad2e1a27e8aec3a3b7380ec"
+  },
+  {
+    "path": "Assets/Metin2/Runtime/Network/Metin2ItemCatalog.cs",
+    "sha256": "64b3ce66a85c000a30996d198a62d93e92f36c7ebdbeb8e681ffc2aca7852dad"
+  },
+  {
+    "path": "Assets/Metin2/Runtime/Network/Metin2SoundManager.cs",
+    "sha256": "f62c1445a028e748f0d0b61ce75282c749968818ca3b05c02466bcd05e608fe9"
+  },
+  {
+    "path": "Assets/Metin2/Editor/TeraCompanionReleaseBuilder.cs",
+    "sha256": "2d982b4f9ce72fc05ff2505867806b6cc896f777fc4e187e6a6c588b014d5dbf"
+  },
+  {
+    "path": "Assets/Metin2/Editor/TeraCompanionReleaseQA.cs",
+    "sha256": "64d2640b33e45612da3abfad857cd314c38ac4e8f11ae02f5daa34d20953ba80"
+  },
+  {
+    "path": "Assets/Metin2/Editor/TeraCompanionPlayQA.cs",
+    "sha256": "4a81f062678afd9daf9ba3f39e3f06895880e0cfe838302c6ba108e2c6824084"
+  },
+  {
+    "path": "Assets/Metin2/Editor/TeraCompanionReleaseContent.cs",
+    "sha256": "45e260acdd1183fd3a6b3c7d080d1c93e3c07bfd2ecb3af4d11e204eb4a01cda"
+  },
+  {
+    "path": "Assets/Metin2/Editor/Metin2AurigaMountAssetValidator.cs",
+    "sha256": "8ed27da3f2998a53d7fa60bd66d3afffbee15220f0815cbae25f666ec545a977"
+  },
+  {
+    "path": "Assets/Metin2/Editor/TeraEffectsBuilder.cs",
+    "sha256": "cbb9d23b54d91d6bfcfec84eb9d901f1efbf1927dc4c3694137ec1ebef78de40"
+  }
+]

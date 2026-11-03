@@ -1,0 +1,10 @@
+PASS Trans_Lion_Black_01 rider=True particles=0 systems=0 sounds=10
+PASS Ice_Horse rider=True particles=107 systems=19 sounds=10
+PASS Vehicle_BoneDragon_C rider=True particles=69 systems=17 sounds=11
+PASS Vehicle_Pegasus rider=True particles=33 systems=1 sounds=13
+PASS Vehicle_Mechanic_A rider=True particles=6 systems=6 sounds=4
+PASS Kart_A rider=True particles=22 systems=2 sounds=2
+PASS Vehicle_Kirin rider=True particles=268 systems=96 sounds=1
+PASS StoneHead rider=False particles=61 systems=7 sounds=18
+PASS Pet_Animal_Panda rider=False particles=0 systems=0 sounds=0
+PASS production SetMount, four headings, upright rider, saddle pivot, warrior metric scale, body attachments, emitted effects and motion-linked audio.
