@@ -7,6 +7,7 @@
 #include "TypedContainerOpening.hpp"
 #include "TypedTokenRedemption.hpp"
 #include "TypedSocketMaintenance.hpp"
+#include "TypedAttributes.hpp"
 #include "TypedEquipment.hpp"
 #include "TypedAccessoryClock.hpp"
 #include "ItemCatalogRuntime.hpp"
@@ -262,6 +263,7 @@ void TickTypedLoot()
     TickTypedContainerOpening();
     TickTypedTokenRedemption();
     TickTypedSocketMaintenance();
+    TickTypedAttributes();
 	auto& all = Loot();
 	if (all.empty())
 		return;

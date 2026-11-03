@@ -299,7 +299,13 @@ std::expected<ItemCommit,E> MakeAttributeCommit(const ItemCatalog& c,const Attri
     if(commit->items[0].before->attributes!=plan.expected.state)return std::unexpected(E::InvalidChange);
     commit->items[0].after.attributes=plan.after;commit->outcomeCode=plan.succeeded ? 1 : 2;
     const auto payload=EncodeInstanceAttributes(c,commit->items[0].after.key,plan.after);if(!payload)return std::unexpected(E::InvalidAttributes);
-    commit->result=*payload;
+    commit->result={'A','T','R',1,static_cast<std::uint8_t>(plan.expected.successRoll&255),static_cast<std::uint8_t>(plan.expected.successRoll>>8),plan.expected.lockRoll,static_cast<std::uint8_t>(plan.expected.draws.size())};
+    for(const auto& draw:plan.expected.draws)
+    {
+        commit->result.push_back(static_cast<std::uint8_t>(draw.tierRoll&255));commit->result.push_back(static_cast<std::uint8_t>(draw.tierRoll>>8));
+        for(unsigned i=0;i<4;++i)commit->result.push_back(static_cast<std::uint8_t>(draw.bonusRoll>>(8*i)));
+    }
+    commit->result.insert(commit->result.end(),payload->begin(),payload->end());
     if(auto valid=ValidateItemCommit(c,*commit);!valid)return std::unexpected(valid.error());return commit;
 }
 std::expected<ItemCommit,E> MakeSocketServiceCommit(const ItemCatalog& c,const SocketServicePlan& plan,ItemOwnerFence owner,

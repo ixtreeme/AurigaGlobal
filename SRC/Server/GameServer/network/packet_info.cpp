@@ -181,6 +181,7 @@ CPacketInfoCG::CPacketInfoCG()
     Set(HEADER_CG_TYPED_CONTAINER_OPENING, sizeof(TPacketCGTypedContainerOpening), "TypedContainerOpening", true);
     Set(HEADER_CG_TYPED_TOKEN_REDEMPTION, sizeof(TPacketCGTypedTokenRedemption), "TypedTokenRedemption", true);
     Set(HEADER_CG_TYPED_SOCKET_MAINTENANCE, sizeof(TPacketCGTypedSocketMaintenance), "TypedSocketMaintenance", true);
+    Set(HEADER_CG_TYPED_ATTRIBUTES, sizeof(TPacketCGTypedAttributes), "TypedAttributes", true);
 
 
 #ifdef __INGAME_WIKI__

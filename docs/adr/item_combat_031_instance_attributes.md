@@ -77,3 +77,8 @@ teljes állapotvalidálás. Ez nem bekötött DB-writer vagy klienspacket.
 V24 friss katalógus és Qt-űrlap készül, nem balance-jóváhagyás vagy teljes
 APPLY-migráció. A megmaradó, még nem regisztrált bónuszok és különleges
 műveletek F2/F6 kapuk maradnak. Unity és távoli gép nem módosul.
+
+2026-11-03-i kiegészítés: a normál/ritka/extra bónuszok öt műveletének közös
+szerver–Unity útját a [C18](item_combat_046_attribute_services_runtime.md)
+befejezte, atomikus írással, valódi szerveres dobásokkal és helyi TLS-próbával.
+A kapcsolt addon és a jelmez/stóla/rúna külön viselkedések nyitottak maradtak.

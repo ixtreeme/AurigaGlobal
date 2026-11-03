@@ -491,6 +491,12 @@ typedef struct command_typed_socket_maintenance
     uint64_t session, source, target;
 } TPacketCGTypedSocketMaintenance;
 
+typedef struct command_typed_attributes
+{
+    uint8_t bHeader, action;
+    uint64_t session, source, target;
+} TPacketCGTypedAttributes;
+
 typedef struct command_party_parameter
 {
 	uint8_t	bHeader;

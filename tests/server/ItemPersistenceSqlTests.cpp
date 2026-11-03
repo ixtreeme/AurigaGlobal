@@ -1,4 +1,5 @@
 #include "PersistentItemFixture.hpp"
+#include "AttributeRuntimeFixture.hpp"
 #include "CatalogSnapshotFixture.hpp"
 #include <ItemPersistenceSql.hpp>
 #include <item/OwnedGround.hpp>
@@ -10,6 +11,7 @@
 #include <item/SocketMaintenance.hpp>
 #include <item/SocketInsertion.hpp>
 #include <item/AccessoryRuntime.hpp>
+#include <item/AttributeRuntime.hpp>
 #include <CatalogSqlReader.hpp>
 #include <SQL/AsyncSQL.h>
 #include <Core/Logging.hpp>
@@ -167,7 +169,7 @@ void Allocator(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,unsigned 
 }
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
 {
-    auto source=f::Catalog();
+    auto source=attribute_runtime_fixture::Catalog();
     const auto sqlBox=ItemKey::Create(8,99).value();auto boxBase=*std::ranges::find(source.items,item_catalog_fixture::GiftBox(),&ItemBaseRow::key);
     boxBase.key=sqlBox;boxBase.contentCode="container.sql_opening";source.items.push_back(boxBase);source.containers.push_back({sqlBox,ContainerKind::Locked,3,7});
     source.lootProfiles.push_back({3,"loot.sql_opening",LootPickMode::IndependentChance,{{1,LootRewardKind::Item,f::Leather().key,3,10000,0},{2,LootRewardKind::Gold,{},75,10000,0}}});
@@ -647,6 +649,25 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         Check(p::CommitItems(writer,*c,*unequip).has_value() && p::CommitItems(writer,*c,*unequip)->replay,"elapsed debit and movement commit once across replay");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
         Check(Find(state,target.id.Value()).accessory->remainingMs==duration-1234 && Find(state,target.id.Value()).placement->kind==ItemStorageKind::Inventory && state.wallets[0].balance==1000,"remaining equipped time survives reload and wallet is unchanged");
         Check(p::ClaimOwnerSession(writer,*c,customer).has_value(),"accessory relog claims next session");auto relog=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(Find(relog,target.id.Value()).accessory==Find(state,target.id.Value()).accessory,"offline state neither refills nor consumes time");
+    }
+    {
+        const ItemOwner customer{ItemOwnerKind::Character,880092};const auto bag=f::Inventory(customer);const ItemWallet wallet{customer,WalletCurrency::Gold,1,1000};
+        Check(p::ProvisionOwner(admin,*c,customer,std::span(&bag,1),std::span(&wallet,1)).has_value(),"attribute owner provisioned");auto state=p::LoadCurrentItemOwner(writer,*c,customer).value();const auto block=p::ReserveItemInstanceIds(writer,*c,5).value();
+        auto target=f::Sword(block.first);target.owner=customer;target.attributes=attribute_runtime_fixture::Full();
+        std::array<PersistentItem,4> tools{f::Leather(block.first+1),f::Leather(block.first+2),f::Leather(block.first+3),f::Leather(block.first+4)};
+        const std::array kinds{3u,2u,4u,5u};for(unsigned i=0;i<tools.size();++i){tools[i].owner=customer;tools[i].key=attribute_fixture::Tool(kinds[i]);tools[i].count=3;tools[i].placement->anchor=i+1;}
+        ItemCommit grant;grant.operationId={18};grant.catalogRevision=c->Revision();grant.catalogHash=c->ContentHash();grant.kind=ItemOperationKind::Grant;grant.owners={state.fence};grant.storages={bag};grant.items={{{},target}};for(const auto& tool:tools)grant.items.push_back({{},tool});grant.outcomeCode=1;
+        Check(p::CommitItems(writer,*c,grant).has_value(),"full bonus target and four service tools granted");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        const auto make=[&](unsigned operation,unsigned tool,const AttributeRandom& random){const auto quote=PrepareAttributeRuntime(*c,state.fence,state.items,tools[tool].id,target.id,{100,1,1,false});Check(quote.has_value(),"SQL attribute preview admitted");return MakeAttributeRuntimeCommit(*c,{18,static_cast<std::uint8_t>(operation)},state.fence,state.storages,state.items,tools[tool].id,target.id,{100,1,1,false},*quote,random);};
+        auto lock=make(1,0,[](auto max){return max;});Check(lock && lock->after.lockedSlot==4,"recorded lock proposal chooses exact slot");auto raced=lock->commit;++raced.items[0].before->revision;++raced.items[0].after.revision;
+        Check(!p::CommitItems(writer,*c,raced),"attribute target CAS race refuses whole transaction");auto unchanged=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(unchanged.items==state.items && unchanged.fence==state.fence,"refused lock cannot consume or change protection");
+        Check(p::CommitItems(writer,*c,lock->commit).has_value() && p::CommitItems(writer,*c,lock->commit)->replay,"lock and material debit commit once");auto changed=lock->commit;changed.result[6]=1;Check(!p::CommitItems(writer,*c,changed),"receipt rejects a different recorded lock decision");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        auto reroll=make(2,1,[](auto max){return max;});Check(reroll && p::CommitItems(writer,*c,reroll->commit).has_value(),"reroll replacement persists atomically");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        Check(Find(state,target.id.Value()).attributes==reroll->after && Find(state,target.id.Value()).attributes.slots[4]==target.attributes.slots[4] && Find(state,target.id.Value()).attributes.lockedSlot==4 && Find(state,target.id.Value()).stones==target.stones && Find(state,target.id.Value()).refinementLevel==9,"full reload retains protected value, all sockets and level");
+        auto relock=make(3,2,[](auto){return 1;});Check(relock && relock->after.lockedSlot==0 && p::CommitItems(writer,*c,relock->commit).has_value(),"relock changes only protected index");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        auto unlock=make(4,3,[](auto)->std::optional<std::uint32_t>{throw std::runtime_error("unlock must not draw");});Check(unlock && p::CommitItems(writer,*c,unlock->commit).has_value(),"unlock writes without entropy");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        Check(!Find(state,target.id.Value()).attributes.lockedSlot && Find(state,target.id.Value()).attributes.slots==reroll->after.slots && state.wallets[0].balance==1000,"unlock leaves every bonus and Gold unchanged");
+        for(const auto& tool:tools)Check(Find(state,tool.id.Value()).count==2,"each service consumes one exact tool");Check(p::ClaimOwnerSession(writer,*c,customer).has_value(),"attribute relog claims next generation");auto next=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(Find(next,target.id.Value()).attributes==Find(state,target.id.Value()).attributes,"complete bonus state survives session change");
     }
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);

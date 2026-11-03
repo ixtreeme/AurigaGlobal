@@ -1,7 +1,7 @@
 # ADR IC-034 — F4 szerverbekötés: ütemterv és 1. szelet (katalógus induláskor)
 
 2026-10-29. Fázis: F4 ([IC-012](item_combat_012_item_runtime_first.md)).
-Állapot (2026-11-02): **C1–C17 implementált; az elkészült futásidejű
+Állapot (2026-11-03): **C1–C18 implementált; az elkészült futásidejű
 műveletek Unity 6.3-ból kezelhetők, helyi szerverrel ellenőrizve**.
 
 ## Közös szerver–Unity munkamenet (felhasználói döntés, 2026-11-01)
@@ -23,8 +23,8 @@ az összevonás részletei és ellenőrzései a
 |---|---|---|---|
 | A. Speciális tárgyműveletek | Páros (kapcsolt) bónuszok; jelmez-, stóla- és rúnabónuszok; fejlesztési segédanyagok | F2 maradéka | nyitott ([IC-031](item_combat_031_instance_attributes.md) határa) |
 | B. Tartós tárgymentés | Teljes mentés, visszatöltés és tranzakciókezelés a futó szerverben; a még nem támogatott kategóriák példányállapota | F3 maradéka | a modell, az író és a próbapad kész ([IC-032](item_combat_032_item_persistence.md), [IC-033](item_combat_033_item_test_bench.md)) |
-| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C17 kész**, tárgyleadó Mission, ládanyitás, Yang-pénzjegy, foglalatkarbantartás, kőbehelyezés és ékszerfoglalatok; fiókpénztárca, általános Mission/Lua-quest és további használatok még nyitottak |
-| D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | **C1–C17 kliensútjai kész**, részletek lent |
+| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C18 kész**, tárgyleadó Mission, ládanyitás, Yang-pénzjegy, foglalatkarbantartás, kőbehelyezés, ékszerfoglalatok és bónuszszolgáltatások; fiókpénztárca, általános Mission/Lua-quest és további használatok még nyitottak |
+| D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | **C1–C18 kliensútjai kész**, részletek lent |
 | E. Teljes adatkonverzió | Régi protók, példányok, receptek, tartalmi hivatkozások | F6 | az eszközök megvannak; a családtérkép jóváhagyásra vár |
 | F. Végső ellenőrzés | Helyi játékpróba, újrabelépés utáni adatmegőrzés, gazdasági műveletek, FreeBSD-build | F7 | nyitott |
 
@@ -651,3 +651,28 @@ Részletek és a checkpointolt idő crash/handoff korlátja:
 [ellenőrzések és helyi próba](../reports/item_combat/2026-11-02_accessory_socket_runtime.md).
 Következő szelet: **bónuszszolgáltatások — hozzáadás, váltás és zárolás**.
 A további használatok, teljes konverzió és kiadási kapuk továbbra is nyitottak.
+
+## C18 — Bónuszhozzáadás, újrasorsolás és védelem (2026-11-03)
+
+Hozzáadás, csoport újrasorsolása, védelem, védelem áthelyezése és feloldás.
+A normál, ritka és extra csoport a saját profilja szerint működik. A védelem
+pontos sora/értéke megmarad újrasorsoláskor; a ritka és extra sorok közös
+duplikációtilalmat használnak. Tényleges súlyok, szinteloszlás, fogyasztó és
+nem fogyasztó kudarc, eredménytelen szinttartomány. Előnézetben nincs dobás;
+megerősítés után a source/target/receipt egyetlen tranzakció.
+
+Unity: **I → eszköz → Bónuszok**, céltárgyválasztás, meglévő/védett sorok,
+teljes sikeresély, jelöltek és súlyok, szinteloszlás, pontos költség és külön
+megerősítés. A C17 időcheckpointja nem érvényteleníti ezt a műveletet.
+
+27/27 natív/SQL tesztcsoport, 4912 új Unity-ellenőrzés és a C4–C17 korábbi
+validátorai, 4/4 valódi TLS-fázis (338 ellenőrzés) sikeres. Teli leltár,
+teljes/részhalom, valódi felszerelési stat, relog, nonce és CAS-rollback is
+ellenőrzött. A helyi karakter három üres céltárgyat és kilencféle eszközt
+kapott 60–60 darabos halomban; a korábbi próbatárgyak megmaradtak.
+
+Részletek: [IC-046](item_combat_046_attribute_services_runtime.md),
+[ellenőrzések és helyi próba](../reports/item_combat/2026-11-03_attribute_services_runtime.md).
+Következő szelet: **C19 — tartalékos és folyamatos HP/SP-visszatöltés**.
+Automatikus ital, időzített/toggle hatás, további használatok, kapcsolt és
+jelmez/stóla/rúna bónuszok, teljes konverzió és kiadási kapuk még nyitottak.

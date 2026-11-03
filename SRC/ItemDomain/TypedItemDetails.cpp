@@ -4,6 +4,7 @@
 #include <item/AccessoryRuntime.hpp>
 #include <limits>
 #include <set>
+#include <algorithm>
 #include <stdexcept>
 
 namespace auriga::item
@@ -54,7 +55,8 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
                 { keys.insert(ingredient.key); states.emplace(ingredient.key,ingredient.refinementLevel); }
             }
         if(keys.size()>65535 || states.size()>65535 || recipes.size()>65535) throw TooLarge{};
-        Writer w; w.Put(TypedItemDetailsHeader,1); w.Put(0,4); w.Put(1,1); w.Put(c.Revision(),8);
+        const bool wide=std::ranges::any_of(keys,[&](auto key){const auto* e=c.Find(key);const auto* r=e ? std::get_if<ItemConsumableRow>(&e->category) : nullptr;return r && r->attributeServiceProfile;});
+        Writer w; w.Put(TypedItemDetailsHeader,1); w.Put(0,4); w.Put(wide ? 2 : 1,1); w.Put(c.Revision(),8);
         for(auto b:c.ContentHash()) w.Put(b,1);
         w.Put(keys.size(),2);
         for(auto key:keys)
@@ -71,6 +73,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
                 if constexpr(std::is_same_v<std::decay_t<decltype(row)>,ItemConsumableRow>)
                 {
                     if(row.socketServiceProfile) actions|=TypedActionSocket;
+                    if(row.attributeServiceProfile) actions|=TypedActionAttributes;
                     const auto* recovery=c.FindRecovery(row.recoveryProfile);
                     if(recovery && recovery->Data().Delivery()==RecoveryDelivery::Instant) actions|=TypedActionUse;
                 }
@@ -87,7 +90,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
             w.Text(b.iconAsset); w.Text(appearance ? appearance->modelAsset : "");
             w.Put(b.width,1); w.Put(b.height,1); w.Put(b.minimumLevel,2);
             w.Put(use ? use->allowedClasses : 0,1); w.Put(use ? use->allowedSexes : 0,1);
-            w.Put(slot,1); w.Put(actions,1);
+            w.Put(slot,1); w.Put(actions,wide ? 2 : 1);
         }
         w.Put(states.size(),2);
         for(const auto& [key,level]:states)
