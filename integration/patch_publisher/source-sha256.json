@@ -34,5 +34,17 @@
   {
     "path": "Tools/Patching/WindowsPublisherState.ps1",
     "sha256": "3ca52695acc2bd7bcfa9455d0fc4e7a5cadfd83bc75828a4424d861bab039751"
+  },
+  {
+    "path": "Assets/Metin2/Editor/Patching/Metin2PatchManager.cs",
+    "sha256": "bdf9bcf4b784302e9a20e040987b2927de0bcfec75464f6aa6d4b5888b05c6cd"
+  },
+  {
+    "path": "Assets/Metin2/Editor/Patching/Metin2CatalogAddressValidator.cs",
+    "sha256": "d852f63ba17ff8926f3349fc574553a79bb51a4c80cafaee09bd2041c977eb72"
+  },
+  {
+    "path": "Assets/Metin2/Editor/Patching/Metin2CatalogRecovery.cs",
+    "sha256": "b24541491ed66cc808e0210af7277a55664c29de63880e0be46b27c0da0f4a85"
   }
 ]
