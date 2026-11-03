@@ -34,6 +34,17 @@ public static class TeraCompanionReleaseContent
         }
         catch(Exception e){Debug.LogException(e);EditorApplication.Exit(1);}
     }
+    public static void OpenMainForTesting()
+    {
+        var settings=UnityEditor.AddressableAssets.AddressableAssetSettingsDefaultObject.Settings;
+        int fast=settings.DataBuilders.FindIndex(x=>x&&x.GetType().Name=="BuildScriptFastMode");
+        if(fast<0)throw new InvalidOperationException("Supported Asset Database play mode is unavailable");
+        settings.ActivePlayModeDataBuilderIndex=fast;
+        AssetDatabase.SaveAssets();
+        UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/Metin2/Generated/Scenes/Metin2Client.unity");
+        EditorApplication.delayCall+=()=>{EditorApplication.isPlaying=true;var type=typeof(EditorWindow).Assembly.GetType("UnityEditor.GameView");if(type!=null)EditorWindow.GetWindow(type).Focus();};
+        Debug.Log("TERA_MAIN_CLIENT_OPENED_FOR_LIVE_TESTING");
+    }
     public static void Player()
     {
         try

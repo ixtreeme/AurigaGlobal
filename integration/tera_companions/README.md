@@ -29,7 +29,7 @@ This repository contains the server source plus the release records, approved sc
 3. Production presentation converts the lab's +Z model frame to the existing +X native actor convention. The established player wrapper provides its normal -90-degree frame. Existing actor/mount handling remains in use.
 4. `TeraCompanionReleaseQA.Run` verifies all new race acquisitions, scales, geometry/ground, materials, saddle frames, motion and cosmetic references, item links, and packet-driven pet creation.
 5. `TeraCompanionPlayQA.Run` exercises the production riding path, four headings, saddle pivot, preserved warrior size, actual particle emission and motion audio, with render captures.
-6. Build incremental Windows Addressables content and a matching Windows player before testing the published server.
+6. Open `TeraCompanionReleaseContent.OpenMainForTesting` to test the main client scene against the live server using the existing supported Asset Database play mode. Standalone/public Windows releases require a separate matching content, player and patch publication; no public launcher update is activated by this integration.
 
 Server cross-link tests: `python tests/server/TeraCompanionReleaseTests.py`.
 
@@ -40,3 +40,7 @@ Verification note: `FX_Q_HotFix_181221.PS.Q_Sound_Dummy_PS_01` is the sole sourc
 Movement audio includes original `onstartmove`, `onmove`, and `onendmove` semantic events. Persistent movement loops survive compatible animation transitions and stop when movement ends; concurrency is shared with attached body parts. Original null random branches retain their silent selection weight.
 
 Six source Kirin particle meshes had two geometry sections, which Unity particle rendering rejects. Their sections are merged without changing index or vertex buffers (230 triangles, 163 vertices each); GUIDs and prefab bindings are preserved. `fix_tera_particle_meshes.py` is the guarded one-time migration and `TeraEffectsBuilder` now merges sections on future export. All 690 metric particle meshes must pass the single-submesh audit.
+
+Live publication completed: 272 additions in each of item_proto, mob_proto, and mob_motion; all prior rows unchanged. The quest is registered once. Database, login, channel 1 cores and channel 99 returned successfully. Binary backup: `/Auriga/Server/run/deployments/32c82d03ad333aa1025eb898/backup`.
+
+All 272 production race acquisitions, 69 packet-based pet spawns, 690 particle meshes and nine production riding/effect/audio Play cases passed. The optional standalone content build was stopped to reopen the main Editor for user testing; no standalone Windows player or public launcher release is claimed.
