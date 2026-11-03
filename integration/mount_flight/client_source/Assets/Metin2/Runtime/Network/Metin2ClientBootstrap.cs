@@ -1103,8 +1103,8 @@ namespace Metin2.Runtime.Network
                 {
                     Metin2NetworkDiagnostics.Event(gameSession.DiagnosticSessionId, "DIRECT_ENTER_ENTERGAME");
                     await gameSession.SendEnterGameAsync(token);
-                    await gameSession.SendMountFlightAsync(0,0,0,token);
                     await gameSession.WaitForGamePhaseAsync(Metin2ProtocolCodec.PhaseGame, token);
+                    await gameSession.SendMountFlightAsync(0,0,0,token);
                 }
                 using (Metin2.Runtime.Metin2EnterWorldTiming.Measure("replayDeferred#2"))
                     DispatchDeferredLoadingPackets();

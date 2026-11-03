@@ -17,7 +17,7 @@ using Metin2.Runtime.Network;
     static void Poll()
     {
         if(EditorApplication.isCompiling||EditorApplication.isUpdating||!File.Exists(Request))return;
-        string revision=File.GetLastWriteTimeUtc(Request).Ticks.ToString();
+        string revision=File.GetLastWriteTimeUtc(Request).Ticks.ToString()+"|local-route-v2";
         if(SessionState.GetString("MountFlight.QARevision","")==revision)return;
         if(EditorApplication.isPlaying){EditorApplication.isPlaying=false;return;}
         if(EditorApplication.isPlayingOrWillChangePlaymode)return;
@@ -54,9 +54,11 @@ using Metin2.Runtime.Network;
             Set(world,"currentMap",terrainRoot);Set(world,"terrains",new[]{terrainRoot.GetComponent<Terrain>()});
             typeof(Metin2WorldRuntime).GetProperty("Current").SetValue(world,new Metin2MapCatalog.Entry{mapName="FlightQA",width=1,height=1,definition=definition,prefab=terrainRoot});
             var local=new GameObject("Local flyer");var controller=local.AddComponent<Metin2PlayerController>();controller.Initialize(new Vector3(10,20,-10),null);Set(controller,"footOffset",.6f);controller.PlaceOnGround(new Vector3(10,20,-10));controller.SetMounted(true);
-            var flight=local.AddComponent<Metin2MountFlight>();var requests=new List<byte>();flight.Bind(controller,world,(action,z,t)=>requests.Add(action));
-            flight.ApplyPacket(Packet(100,0,0));flight.Tick(1,.1f,0);Check(!flight.Flying,"Unflagged mount took off");
-            flight.ApplyPacket(Packet(100,1,0));for(int i=0;i<10;i++)flight.Tick(1,.1f,0);
+            var localWorld=new GameObject("Local receiver").AddComponent<Metin2NetworkEntityWorld>();Set(localWorld,"worldRuntime",world);localWorld.LocalVid=100;localWorld.LocalPlayerRoot=local.transform;
+            var requests=new List<byte>();localWorld.FlightRequested+=(action,z,t)=>requests.Add(action);
+            var flight=localWorld.AttachFlight(local,100,controller);
+            localWorld.HandlePacket(Packet(100,0,0));flight.Tick(1,.1f,0);Check(!flight.Flying,"Unflagged mount took off");
+            localWorld.HandlePacket(Packet(100,1,0));Check(flight.Capable,"Local-player snapshot did not grant capability");for(int i=0;i<10;i++)flight.Tick(1,.1f,0);
             Check(flight.Flying&&Mathf.Abs(flight.Altitude-26)<.01f,"Shift ascent speed");float hover=flight.Altitude;
             height(22);local.transform.position+=Vector3.right*20;flight.Tick(0,.1f,0);
             Check(Mathf.Abs(flight.Altitude-hover)<.001f&&Mathf.Abs(controller.LogicalGroundPosition.y-hover)<.001f,"Hill changed hover altitude");
@@ -80,7 +82,7 @@ using Metin2.Runtime.Network;
                 receiver.HandlePacket(snapshot);Check(remote.Flying&&Mathf.Abs(root.transform.position.y-50)<.001f,"Remote airborne state replay");
             }
             Check(observers[0].Altitude==observers[1].Altitude,"Observers disagree on altitude");
-            var release=JsonUtility.FromJson<TeraCompanionReleaseBuilder.Release>(File.ReadAllText("Migration/TeraCompanions/release.json"));var entry=release.entries.First(e=>e.name=="Vehicle_Pegasus");
+            var release=JsonUtility.FromJson<TeraCompanionReleaseBuilder.Release>(File.ReadAllText("Migration/TeraCompanions/release.json"));var entry=release.entries.First(e=>e.item==630090u);
             var prefab=AssetDatabase.LoadAssetAtPath<Metin2RacePrefabAsset>("Assets/Metin2/AddressableContent/Races/Prefabs/"+entry.mob+".asset").prefab;
             var mount=UnityEngine.Object.Instantiate(prefab);var entityForAnimation=observers[0].GetComponent<Metin2NetworkEntity>();typeof(Metin2NetworkEntity).GetProperty("MountInstance").SetValue(entityForAnimation,mount);
             var animator=mount.GetComponentInChildren<Animator>();animator.Rebind();animator.Update(0);observers[0].ApplyAnimation(true);animator.Update(0);
@@ -88,7 +90,7 @@ using Metin2.Runtime.Network;
             Check(clip.name.Equals("FlyForward",StringComparison.OrdinalIgnoreCase),"Moving flight did not select original FlyForward");
             observers[0].ApplyAnimation(false);animator.Update(0);clip=animator.GetCurrentAnimatorClipInfo(0).First().clip;
             Check(clip.name.Equals("FlyWait",StringComparison.OrdinalIgnoreCase),"Hover did not select original FlyWait");
-            Directory.CreateDirectory("Migration/MountFlight");File.WriteAllText("Migration/MountFlight/client-qa.txt","PASS "+checks+" checks: CG/GC wire and fragmentation, permission, ascent, absolute hover over hills/cliffs, terrain obstruction, Ctrl landing, two receivers, late actor snapshots, revoke, original Pegasus fly/hover animations.\n");Debug.Log("MOUNT_FLIGHT_CLIENT_QA_SUCCESS checks="+checks);
+            Directory.CreateDirectory("Migration/MountFlight");File.WriteAllText("Migration/MountFlight/client-qa.txt","PASS "+checks+" checks: CG/GC wire and fragmentation, permission, ascent, absolute hover over hills/cliffs, terrain obstruction, Ctrl landing, two receivers, late actor snapshots, revoke, original Gemfly 630090 fly/hover animations.\n");Debug.Log("MOUNT_FLIGHT_CLIENT_QA_SUCCESS checks="+checks);
         }
         catch(Exception e){Directory.CreateDirectory("Migration/MountFlight");File.WriteAllText("Migration/MountFlight/client-qa.txt","FAIL "+e);Debug.LogException(e);}
         finally{EditorSceneManager.CloseScene(scene,true);if(previous.IsValid()&&previous.isLoaded)SceneManager.SetActiveScene(previous);foreach(var asset in assets)if(asset)UnityEngine.Object.DestroyImmediate(asset);}

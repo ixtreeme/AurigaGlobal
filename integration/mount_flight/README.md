@@ -14,6 +14,8 @@ The initial terrain-height reference is sampled by the client because the existi
 
 Original FlyUp, FlyForward, FlyWait and FlyDescent clips are selected with cached animator state IDs; the existing source-linked effect and audio presentation follows those clips. Main Unity Editor testing uses the established Asset Database play mode. No public Windows launcher/player update is published by this integration.
 
-Validation: 20 client checks exercise CG/GC framing, fragmented input, permission, rise/hover/descent, hills/cliffs, terrain obstruction, nonzero rider foot offset, two receiving worlds, late actor creation, revocation, and real Pegasus flight/hover animations. The native MountLifecycleTests exercise server permission and state validation. The release-data suite verifies exactly the 84 approved mount flags. Live installation preserved other proto fields and returned all five previously running server processes.
+Validation: 21 client checks exercise CG/GC framing, fragmented input, permission, rise/hover/descent, hills/cliffs, terrain obstruction, nonzero rider foot offset, two receiving worlds, late actor creation, revocation, and real Gemfly 630090 flight/hover animations. The native MountLifecycleTests exercise server permission and state validation. The release-data suite verifies exactly the 84 approved mount flags. Live installation preserved other proto fields and returned all five previously running server processes.
 
 Binary backup: /Auriga/Server/run/deployments/8c745cd105689c6e8421191d/backup. SQL backup/audit: /Auriga/Server/run/mount-flight-release/.
+
+Gemfly regression: flight permission packets now resolve the local player as well as remote actors. The client announces flight support after the game phase is ready. The 21-check regression routes permission through the real world packet handler.

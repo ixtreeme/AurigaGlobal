@@ -1,0 +1,38 @@
+[
+  {
+    "path": "Assets/Metin2/Editor/Patching/Metin2PatchPublisher.cs",
+    "sha256": "22271d41e2956caea4b3f4ad8f5a309ed93804ec2704eb0311de813e31bd777f"
+  },
+  {
+    "path": "Assets/Metin2/Editor/Patching/Metin2PublisherActivity.cs",
+    "sha256": "da5ad6296e97c74a31a7f1f992909233d9f517adfceb48bed622099c3f6b1884"
+  },
+  {
+    "path": "Tools/Patching/PublisherProgress.ps1",
+    "sha256": "8bf3717176c0629a664857295d9f3754f9db79fdea5d3915a1267a12c7eb61ca"
+  },
+  {
+    "path": "Tools/Patching/Publish-WindowsClient.ps1",
+    "sha256": "87456c603eb8e4368b7a6b79beb5de2f851247cc2b5a81d0b990a5c287653a7e"
+  },
+  {
+    "path": "Tools/Patching/Publish-Ftps.ps1",
+    "sha256": "5fe8d346b81ae2b40022bfc7cc0f1072d66ad282381d352de7587be56b6776cd"
+  },
+  {
+    "path": "Tools/Patching/Test-PublisherProgress.ps1",
+    "sha256": "37cd86d44be5ba4a0f3eb0a761bdce63bd8511d1e557f411fd0910bdeac44ab7"
+  },
+  {
+    "path": "Tools/Patching/WindowsClientHash.ps1",
+    "sha256": "e3a3f568f45679601c45973df9d1e96eb9f8fdc7db58e87060ac722bafe1b095"
+  },
+  {
+    "path": "Tools/Patching/WindowsClientUploadPlan.ps1",
+    "sha256": "bfae482f36aed708655e81ef8f61e2457137d7778386c114827f4441e752fee6"
+  },
+  {
+    "path": "Tools/Patching/WindowsPublisherState.ps1",
+    "sha256": "3ca52695acc2bd7bcfa9455d0fc4e7a5cadfd83bc75828a4424d861bab039751"
+  }
+]

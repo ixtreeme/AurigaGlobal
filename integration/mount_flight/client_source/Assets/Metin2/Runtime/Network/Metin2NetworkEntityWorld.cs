@@ -1867,7 +1867,7 @@ namespace Metin2.Runtime.Network
         {
             if(packet.Length!=11)throw new ArgumentException("Invalid mount flight snapshot");
             uint vid=BitConverter.ToUInt32(packet,1);flightSnapshots[vid]=(byte[])packet.Clone();
-            if(TryGetActor(vid,out var root))root.GetComponent<Metin2MountFlight>()?.ApplyPacket(packet);
+            if(TryResolveActor(vid,out var root))root.GetComponent<Metin2MountFlight>()?.ApplyPacket(packet);
         }
         private Vector3 ToUnity(int x, int y, int z)
         {

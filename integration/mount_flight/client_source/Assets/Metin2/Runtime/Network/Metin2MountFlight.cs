@@ -25,7 +25,10 @@ namespace Metin2.Runtime.Network
         public void ApplyPacket(byte[] p)
         {
             if(p.Length!=11||p[0]!=225)throw new ArgumentException("Invalid flight packet");
-            bool was=Flying;Capable=(p[5]&1)!=0;Flying=Capable&&(p[5]&2)!=0;
+            bool was=Flying,wasCapable=Capable;Capable=(p[5]&1)!=0;Flying=Capable&&(p[5]&2)!=0;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if(local&&(!initialized||wasCapable!=Capable||was!=Flying))Debug.Log($"MOUNT_FLIGHT_LOCAL_STATE capable={Capable} flying={Flying} altitudeCm={BitConverter.ToInt32(p,6)}");
+#endif
             targetAltitude=BitConverter.ToInt32(p,6)*.01f;Axis=(sbyte)p[10];
             if(!initialized||!local||!was||!Flying||Mathf.Abs(Altitude-targetAltitude)>1f)
             {if(!initialized||!was||local)Altitude=targetAltitude;}
