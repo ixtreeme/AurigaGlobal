@@ -3,6 +3,7 @@
 #include <item/ItemWireCodec.hpp>
 
 #include <limits>
+#include <algorithm>
 
 namespace auriga::item
 {
@@ -68,7 +69,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
 	Writer w;
 	w.Put<std::uint8_t>(TypedInventoryHeader);
 	w.Put<std::uint32_t>(0); // patched below
-	w.Put<std::uint8_t>(TypedInventoryVersion);
+	w.Put<std::uint8_t>(std::ranges::any_of(items,[](const auto& i){return i.automatic.has_value();}) ? 2 : TypedInventoryVersion);
 	w.Put<std::uint16_t>(static_cast<std::uint16_t>(storages.size()));
 	for (const auto& s : storages)
 	{
@@ -99,7 +100,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
 		w.Put<std::uint8_t>(item.placement ? static_cast<std::uint8_t>(item.placement->kind) : 0);
 		w.Put<std::uint64_t>(item.placement ? item.placement->storageId : 0);
 		w.Put<std::uint32_t>(item.placement ? item.placement->anchor : 0);
-		w.Put<std::uint8_t>((item.boundTo ? 1 : 0) | (item.accessory ? 2 : 0));
+		w.Put<std::uint8_t>((item.boundTo ? 1 : 0) | (item.accessory ? 2 : 0) | (item.automatic ? 4 : 0));
 		w.Put<std::uint8_t>(item.attributes.lockedSlot ? *item.attributes.lockedSlot : 255);
 		std::uint8_t bonuses = 0;
 		for (const auto& slot : item.attributes.slots) if (slot) ++bonuses;
@@ -127,6 +128,14 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
 			w.Put<std::uint64_t>(item.accessory->remainingMs);
 			w.Put<std::uint8_t>(item.accessory->permanent ? 1 : 0);
 		}
+        if(item.automatic)
+        {
+            if(!ValidatePersistentItem(catalog,item))return std::unexpected(E::BadValue);
+            const auto& row=std::get<ItemConsumableRow>(catalog.Find(item.key)->category);
+            const auto& effect=std::get<AutomaticRecovery>(catalog.FindRecovery(row.recoveryProfile)->Data().effect);
+            w.Put<std::uint8_t>(static_cast<unsigned>(effect.supply));
+            w.Put<std::uint64_t>(item.automatic->remainingRaw);w.Put<std::uint8_t>(item.automatic->active);w.Put<std::uint64_t>(item.automatic->nextTickInMs);
+        }
 	}
 	if (w.out.size() > MaxPacket) return std::unexpected(E::TooLarge);
 	const auto size = static_cast<std::uint32_t>(w.out.size());
@@ -141,7 +150,7 @@ std::expected<TypedInventoryView, TypedInventoryWireError> DecodeTypedInventory(
 		Reader r(bytes);
 		if (r.Get<std::uint8_t>() != TypedInventoryHeader) return std::unexpected(E::BadHeader);
 		if (r.Get<std::uint32_t>() != bytes.size()) return std::unexpected(E::BadSize);
-		if (r.Get<std::uint8_t>() != TypedInventoryVersion) return std::unexpected(E::BadVersion);
+		const auto version=r.Get<std::uint8_t>();if (version!=TypedInventoryVersion && version!=2) return std::unexpected(E::BadVersion);
 		TypedInventoryView view;
 		for (auto n = r.Get<std::uint16_t>(); n; --n)
 		{
@@ -179,7 +188,7 @@ std::expected<TypedInventoryView, TypedInventoryWireError> DecodeTypedInventory(
 			const auto anchor = r.Get<std::uint32_t>();
 			if (kind) item.placement = ItemPlacement { static_cast<ItemStorageKind>(kind), storage, anchor };
 			const auto flags = r.Get<std::uint8_t>();
-			if (flags & ~3u) throw Bad {};
+			if (flags & ~(version==2 ? 7u : 3u)) throw Bad {};
 			if (flags & 1) item.boundTo = receiver;
 			const auto locked = r.Get<std::uint8_t>();
 			if (locked != 255) { if (locked >= AttributeSlots) throw Bad {}; item.attributes.lockedSlot = locked; }
@@ -213,6 +222,7 @@ std::expected<TypedInventoryView, TypedInventoryWireError> DecodeTypedInventory(
 				a.permanent = permanent == 1;
 				item.accessory = a;
 			}
+            if(flags&4){const auto supply=r.Get<std::uint8_t>();const auto raw=r.Get<std::uint64_t>();const auto active=r.Get<std::uint8_t>();const auto next=r.Get<std::uint64_t>();if(supply<1 || supply>2 || (supply==2 && raw) || raw>MaxItemStatRaw || active>1 || (active ? !next || next>INT64_MAX : next!=0))throw Bad{};item.automatic=AutomaticRecoveryState{static_cast<std::int64_t>(raw),active==1,next};}
 			view.items.push_back(std::move(item));
 		}
 		if (!r.Done()) return std::unexpected(E::TrailingBytes);

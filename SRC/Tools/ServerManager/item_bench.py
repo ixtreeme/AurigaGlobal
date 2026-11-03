@@ -24,7 +24,7 @@ ALLOCATOR = 'item_instance_id_allocator'
 GROUND_TABLES = ('item_ground_entry', 'item_ground_core')
 RECOVERY_TABLES = ('item_recovery_schedule',)
 TABLES = (*RECOVERY_TABLES, *GROUND_TABLES, ALLOCATOR, *BASE_TABLES)
-MIGRATIONS = ('001_item_persistence.sql', '002_instance_id_allocator.sql', '003_owned_ground.sql', '004_recovery_schedule.sql')
+MIGRATIONS = ('001_item_persistence.sql', '002_instance_id_allocator.sql', '003_owned_ground.sql', '004_recovery_schedule.sql', '005_automatic_recovery.sql')
 NO_WINDOW = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
 
 
@@ -104,6 +104,7 @@ def install(root):
         elif present == set(BASE_TABLES): scripts, created = MIGRATIONS[1:], (*RECOVERY_TABLES, *GROUND_TABLES, ALLOCATOR)
         elif present == {ALLOCATOR, *BASE_TABLES}: scripts, created = MIGRATIONS[2:], (*RECOVERY_TABLES, *GROUND_TABLES)
         elif present == {*GROUND_TABLES, ALLOCATOR, *BASE_TABLES}: scripts, created = MIGRATIONS[3:], RECOVERY_TABLES
+        elif present == set(TABLES): scripts, created = MIGRATIONS[4:], ()
         else: raise api.EditorError('Részben telepített mentési táblák vannak a player adatbázisban; kézi ellenőrzés szükséges.')
         stamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S-') + secrets.token_hex(4)
         folder = root / 'run/item-bench' / stamp; folder.mkdir(parents=True)
@@ -120,7 +121,7 @@ def install(root):
             with script.open('rb') as source:
                 applied = _client(owner, root, stdin=source)
             if applied.returncode:
-                _client(owner, root, '-e', 'DROP TABLE IF EXISTS ' + ','.join('player.' + name for name in created))
+                if created: _client(owner, root, '-e', 'DROP TABLE IF EXISTS ' + ','.join('player.' + name for name in created))
                 raise api.EditorError('A mentési táblák telepítése nem sikerült; a létrehozott táblák törölve. ' +
                                       applied.stderr.decode('utf-8', 'replace').strip()[:300])
         if not call(root, 'status')['installed']: raise api.EditorError('A telepítés után a mentési táblák nem teljesek.')

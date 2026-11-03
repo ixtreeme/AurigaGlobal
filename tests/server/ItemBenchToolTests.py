@@ -31,7 +31,7 @@ def setUpModule():
     SANDBOX.client.query('CREATE DATABASE player CHARACTER SET utf8mb4 COLLATE utf8mb4_bin')
     paths = sorted((ROOT / 'db/migrations/item_combat').glob('[0-9][0-9][0-9]_*.sql'))
     if [int(path.name[:3]) for path in paths] != list(range(len(paths))): raise RuntimeError('incomplete catalog migrations')
-    for path in [*paths, ROOT / 'db/migrations/item_instance/001_item_persistence.sql', ROOT / 'db/migrations/item_instance/002_instance_id_allocator.sql', ROOT / 'db/migrations/item_instance/003_owned_ground.sql', ROOT / 'db/migrations/item_instance/004_recovery_schedule.sql']:
+    for path in [*paths, ROOT / 'db/migrations/item_instance/001_item_persistence.sql', ROOT / 'db/migrations/item_instance/002_instance_id_allocator.sql', ROOT / 'db/migrations/item_instance/003_owned_ground.sql', ROOT / 'db/migrations/item_instance/004_recovery_schedule.sql', ROOT / 'db/migrations/item_instance/005_automatic_recovery.sql']:
         for statement in statements(path.read_text(encoding='utf-8-sig')): SANDBOX.client.query(statement)
 
 

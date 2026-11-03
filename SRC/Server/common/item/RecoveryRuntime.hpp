@@ -10,6 +10,7 @@ struct RecoveryRuntimeView
     RecoveryPools pools;
     RecoverySchedule state;
     std::uint64_t cooldownRemaining=0;
+    std::span<const PersistentItem> items{};
 };
 std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeRecoveryRuntime(const ItemCatalog&,const RecoveryRuntimeView&);
 }

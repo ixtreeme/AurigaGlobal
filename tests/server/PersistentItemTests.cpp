@@ -161,7 +161,7 @@ void Run()
         const std::vector<ItemStorageLayout> bags{f::Inventory()};
         Check(ValidatePersistentItem(c,potion).has_value(),"an instant potion is a persistent item");
         auto automatic=potion;automatic.key=item_catalog_fixture::AutomaticPotion();automatic.count=1;
-        Check(ValidatePersistentItem(c,automatic).error()==ItemPersistenceError::UnsupportedState,"the automatic potion's charge is not stored yet");
+        Check(ValidatePersistentItem(c,automatic).error()==ItemPersistenceError::InvalidItem,"automatic bottle must carry charge state");automatic.automatic=InitialAutomaticRecoveryState(c,automatic.key).value();Check(ValidatePersistentItem(c,automatic).has_value(),"automatic charge state is supported");
         auto sip=MakeConsumeCommit(c,op,fence,bags,items,potion.id,1);
         Check(sip && sip->kind==ItemOperationKind::Consume && sip->items.size()==1 && sip->items[0].after.count==4 &&
               sip->items[0].after.placement==potion.placement && sip->items[0].after.revision==potion.revision+1 &&

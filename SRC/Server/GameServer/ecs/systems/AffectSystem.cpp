@@ -2,6 +2,7 @@
 #include <common/retired_content.h>
 #include "PointSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
+#include "../../item/ItemStore.hpp"
 #include "../CharacterAccessors.hpp"
 
 #include "AffectSystem.hpp"
@@ -1194,8 +1195,14 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 	if (!CombatSystem::IsDead(e))
 	{
 		LOG_ERROR("LOAD_AFFECT_REFILL_POINTS_BEGIN pid={} name={}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data());
-		ecs::PointSystem::Change(e, POINT_HP, ecs::PointSystem::GetMaxHP(e) - ecs::PlayerRuntime::GetHP(e));
-		ecs::PointSystem::Change(e, POINT_SP, ecs::PointSystem::GetMaxSP(e) - ecs::PlayerRuntime::GetSP(e));
+        // Typed recovery owns healing. A delayed legacy affect reply must not
+        // overwrite the saved pools or refill them after a bottle was enabled.
+        if(g_registry.all_of<ecs::TypedItems>(e))ecs::PointSystem::CheckMaximumPoints(e);
+        else
+        {
+		    ecs::PointSystem::Change(e, POINT_HP, ecs::PointSystem::GetMaxHP(e) - ecs::PlayerRuntime::GetHP(e));
+		    ecs::PointSystem::Change(e, POINT_SP, ecs::PointSystem::GetMaxSP(e) - ecs::PlayerRuntime::GetSP(e));
+        }
 		LOG_ERROR("LOAD_AFFECT_REFILL_POINTS_END pid={} name={}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data());
 	}
 #ifdef ENABLE_GUILD_ATTRIBUTE

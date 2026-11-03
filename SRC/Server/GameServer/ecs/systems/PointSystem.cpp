@@ -852,6 +852,8 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		if (newMax < 1)
 			newMax = 1;
 
+        if(const auto* typed=g_registry.try_get<ecs::TypedEquipmentProjection>(e);typed && typed->stats)
+            newMax+=newMax/10000*typed->stats->automaticHpBonusBp+(newMax%10000)*typed->stats->automaticHpBonusBp/10000;
 		ecs::PlayerRuntime::SetMaxHP(e, newMax);
 		val = GetMaxHP(e);
 	}
@@ -867,7 +869,10 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		add_sp += ReadInstantArray(e, POINT_MAX_SP);
 		add_sp += Get(e, POINT_PARTY_SKILL_MASTER_BONUS);
 
-		ecs::PlayerRuntime::SetMaxSP(e, sp + add_sp);
+        auto maximum=sp+add_sp;
+        if(const auto* typed=g_registry.try_get<ecs::TypedEquipmentProjection>(e);typed && typed->stats)
+            maximum+=maximum/10000*typed->stats->automaticSpBonusBp+(maximum%10000)*typed->stats->automaticSpBonusBp/10000;
+		ecs::PlayerRuntime::SetMaxSP(e, maximum);
 
 		val = GetMaxSP(e);
 	}

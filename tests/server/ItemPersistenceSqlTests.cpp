@@ -12,6 +12,7 @@
 #include <item/SocketInsertion.hpp>
 #include <item/AccessoryRuntime.hpp>
 #include <item/AttributeRuntime.hpp>
+#include <item/AutomaticRuntime.hpp>
 #include <CatalogSqlReader.hpp>
 #include <SQL/AsyncSQL.h>
 #include <Core/Logging.hpp>
@@ -687,6 +688,21 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         Check(p::ClaimOwnerSession(writer,*c,customer).has_value(),"recovery relog");Check(p::LoadCurrentItemOwner(writer,*c,customer)->recovery==state.recovery,"offline remainders preserved");
         Query(admin,"UPDATE player.item_recovery_schedule SET state_sha256=UNHEX(REPEAT('00',32)) WHERE owner_kind=1 AND owner_id=880093");auto corrupt=p::LoadCurrentItemOwner(writer,*c,customer);Check(!corrupt && corrupt.error()==E::InvalidStoredData,"corrupt sidecar fails closed");
         Query(admin,"UPDATE player.item_recovery_schedule SET state_sha256=? WHERE owner_kind=1 AND owner_id=880093",{U::Blob(Bytes(*RecoveryScheduleDigest(*c,customer,state.recovery)))});Check(p::LoadCurrentItemOwner(writer,*c,customer).has_value(),"verified sidecar restored");
+    }
+    {
+        const ItemOwner customer{ItemOwnerKind::Character,880094};const auto bag=f::Inventory(customer);const ItemWallet wallet{customer,WalletCurrency::Gold,1,1000};
+        Check(p::ProvisionOwner(admin,*c,customer,std::span(&bag,1),std::span(&wallet,1)).has_value(),"automatic owner provisioned");auto state=p::LoadCurrentItemOwner(writer,*c,customer).value();const auto block=p::ReserveItemInstanceIds(writer,*c,2).value();const std::array ids{ItemInstanceId::Create(block.first).value(),ItemInstanceId::Create(block.first+1).value()};
+        const auto grant=MakeGrantCommit(*c,{20,1},state.fence,state.storages,state.items,{item_catalog_fixture::AutomaticPotion(),0,2},ids);Check(grant && p::CommitItems(writer,*c,*grant).has_value(),"two automatic bottles granted full");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        const auto before=Find(state,ids[0].Value());Check(before.automatic==AutomaticRecoveryState{5000000,false,0},"charge survives SQL roundtrip");
+        ItemCommit on;on.operationId={20,2};on.catalogRevision=c->Revision();on.catalogHash=c->ContentHash();on.kind=ItemOperationKind::Service;on.owners={state.fence};on.outcomeCode=0x2001;
+        Check(ChangeAutomatic(on,state.storages,before,{5000000,true,1000}).has_value() && p::CommitItems(writer,*c,on).has_value(),"activation persists without consuming bottle");Check(p::CommitItems(writer,*c,on)->replay,"activation receipt replay safe");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        InstantRecoveryAdmission actor;actor.pools={500000,2000000,0,1000000};actor.level=100;actor.context=RecoveryContext::World;
+        ItemCommit tick;tick.operationId={20,3};tick.catalogRevision=c->Revision();tick.catalogHash=c->ContentHash();tick.kind=ItemOperationKind::Service;tick.owners={state.fence};tick.outcomeCode=0x2003;RecoverySchedulePlan recovery;recovery.after.revision=1;
+        Check(TickAutomaticOwner(*c,tick,state.storages,state.items,actor,recovery,1000,false,true).has_value(),"automatic tick planned against SQL snapshot");tick.recovery=ItemRecoveryChange{customer,state.recovery,recovery.after,1000};
+        auto raced=tick;raced.items[0].before->automatic->remainingRaw--;Check(!p::CommitItems(writer,*c,raced),"stale charge CAS rejects entire tick");Check(p::LoadCurrentItemOwner(writer,*c,customer)->items==state.items,"stale tick leaves all charge unchanged");
+        Check(p::CommitItems(writer,*c,tick).has_value() && p::CommitItems(writer,*c,tick)->replay,"tick debit and fractional credit commit exactly once");state=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(Find(state,ids[0].Value()).automatic->remainingRaw==4860000,"only committed healing debits charge");
+        Check(p::ClaimOwnerSession(writer,*c,customer).has_value(),"automatic relog session");Check(p::LoadCurrentItemOwner(writer,*c,customer)->items==state.items,"relog neither refills charge nor loses activation");
+        Query(admin,"UPDATE player.item_instance SET automatic_remaining_raw=automatic_remaining_raw+1 WHERE instance_id=?",{U::UInt(ids[0].Value())});Check(!p::LoadCurrentItemOwner(writer,*c,customer),"corrupt charge rejected by item digest");Query(admin,"UPDATE player.item_instance SET automatic_remaining_raw=automatic_remaining_raw-1 WHERE instance_id=?",{U::UInt(ids[0].Value())});Check(p::LoadCurrentItemOwner(writer,*c,customer).has_value(),"verified charge restored");
     }
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);

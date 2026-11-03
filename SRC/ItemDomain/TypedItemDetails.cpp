@@ -55,7 +55,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
                 { keys.insert(ingredient.key); states.emplace(ingredient.key,ingredient.refinementLevel); }
             }
         if(keys.size()>65535 || states.size()>65535 || recipes.size()>65535) throw TooLarge{};
-        const bool wide=std::ranges::any_of(keys,[&](auto key){const auto* e=c.Find(key);const auto* r=e ? std::get_if<ItemConsumableRow>(&e->category) : nullptr;const auto* p=r ? c.FindRecovery(r->recoveryProfile) : nullptr;return r && (r->attributeServiceProfile || (p && (p->Data().Delivery()==RecoveryDelivery::Reserve || p->Data().Delivery()==RecoveryDelivery::Periodic)));});
+        const bool wide=std::ranges::any_of(keys,[&](auto key){const auto* e=c.Find(key);const auto* r=e ? std::get_if<ItemConsumableRow>(&e->category) : nullptr;const auto* p=r ? c.FindRecovery(r->recoveryProfile) : nullptr;return r && (r->attributeServiceProfile || (p && (p->Data().Delivery()==RecoveryDelivery::Reserve || p->Data().Delivery()==RecoveryDelivery::Periodic || p->Data().Delivery()==RecoveryDelivery::Automatic)));});
         Writer w; w.Put(TypedItemDetailsHeader,1); w.Put(0,4); w.Put(wide ? 2 : 1,1); w.Put(c.Revision(),8);
         for(auto b:c.ContentHash()) w.Put(b,1);
         w.Put(keys.size(),2);
@@ -76,7 +76,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
                     if(row.attributeServiceProfile) actions|=TypedActionAttributes;
                     const auto* recovery=c.FindRecovery(row.recoveryProfile);
                     if(recovery && recovery->Data().Delivery()==RecoveryDelivery::Instant) actions|=TypedActionUse;
-                    if(recovery && (recovery->Data().Delivery()==RecoveryDelivery::Reserve || recovery->Data().Delivery()==RecoveryDelivery::Periodic)) actions|=TypedActionRecovery;
+                    if(recovery && (recovery->Data().Delivery()==RecoveryDelivery::Reserve || recovery->Data().Delivery()==RecoveryDelivery::Periodic || recovery->Data().Delivery()==RecoveryDelivery::Automatic)) actions|=TypedActionRecovery;
                 }
             },entry->category);
             if(const auto* box=std::get_if<ItemContainerRow>(&entry->category);box && (box->kind==ContainerKind::Use || box->kind==ContainerKind::Locked))actions|=TypedActionOpen;

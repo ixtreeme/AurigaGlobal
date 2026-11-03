@@ -1,6 +1,7 @@
 #pragma once
 #include "ItemCatalog.hpp"
 #include "RecoverySchedule.hpp"
+#include "AutomaticRecovery.hpp"
 #include "ItemInstanceId.hpp"
 #include <deque>
 #include <optional>
@@ -57,6 +58,7 @@ struct PersistentItem
     InstanceAttributes attributes;
     std::array<StoneSocketSlot,EquipmentStoneSockets> stones{};
     std::optional<AccessorySocketState> accessory;
+    std::optional<AutomaticRecoveryState> automatic;
     bool operator==(const PersistentItem&) const = default;
 };
 struct ItemOwnerFence
@@ -118,7 +120,7 @@ bool ValidItemOwner(ItemOwner) noexcept;
 bool ValidItemStorage(const ItemStorageLayout&) noexcept;
 // Phase-one persistence deliberately refuses categories whose additional
 // lifetime/pet/tool/etc. state is not represented here. Never zero-fill them.
-// Recovery consumables carry none, except the automatic kind's charge.
+// Automatic recovery carries explicit persisted charge and activation state.
 bool SupportsPersistentItem(const ItemCatalog&,const ItemCatalogEntry&) noexcept;
 bool PlainInventoryItem(const PersistentItem&,ItemOwner) noexcept;
 std::expected<void,ItemPersistenceError> ValidatePersistentItem(const ItemCatalog&,const PersistentItem&);

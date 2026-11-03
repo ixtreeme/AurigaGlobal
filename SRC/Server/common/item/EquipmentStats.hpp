@@ -18,6 +18,7 @@ struct EquipmentStats
     std::vector<EquippedStatItem> equipped;
     std::optional<WeaponSubtype> weapon;
     std::uint32_t reachMillimeters=0;
+    std::uint16_t automaticHpBonusBp=0,automaticSpBonusBp=0;
     bool operator==(const EquipmentStats&) const = default;
     std::int64_t Bonus(BonusId id) const noexcept {return bonuses[static_cast<unsigned>(id)];}
 };

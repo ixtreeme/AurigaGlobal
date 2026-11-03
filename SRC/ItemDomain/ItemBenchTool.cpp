@@ -81,7 +81,7 @@ bool Installed(CAsyncSQL& sql)
 {
     return Rows(sql,"SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN "
         "('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance',"
-        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule')").at(0).at(0)=="13";
+        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule')").at(0).at(0)=="13" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms')").at(0).at(0)=="3";
 }
 std::shared_ptr<const ItemCatalog> Catalog(CAsyncSQL& sql)
 {
@@ -123,6 +123,7 @@ Json State(const ItemCatalog& c,const p::LoadedItemOwner& o)
             {"destroyed",i.destroyed},{"cell",i.placement && i.placement->kind==ItemStorageKind::Inventory?Json(i.placement->anchor):Json(nullptr)},
             {"equipped_slot",i.placement && i.placement->kind==ItemStorageKind::Equipment?Json(i.placement->anchor+1):Json(nullptr)},{"attributes",attributes},
             {"locked_slot",i.attributes.lockedSlot?Json(*i.attributes.lockedSlot):Json(nullptr)},{"stones",stones},
+            {"automatic",i.automatic ? Json{{"remaining_raw",i.automatic->remainingRaw},{"active",i.automatic->active},{"next_ms",i.automatic->nextTickInMs}} : Json(nullptr)},
             {"bound",i.boundTo.has_value()},
             {"accessory",i.accessory ? Json{{"capacity",i.accessory->unlockedCapacity},{"grade",i.accessory->activeGrade},{"remaining_ms",i.accessory->remainingMs},{"permanent",i.accessory->permanent}} : Json(nullptr)}});
     }
@@ -311,8 +312,9 @@ Json Grant(CAsyncSQL& sql,const Json& request)
         }
     }
     if(const auto* a=std::get_if<ItemAccessoryRow>(&entry->category); a && a->socketProfile)item.accessory=AccessorySocketState{};
+    if(const auto initial=InitialAutomaticRecoveryState(*c,item.key);initial)item.automatic=*initial;
     if(auto valid=ValidatePersistentItem(*c,PersistentItem{item.id,item.key,item.owner,1,item.refinementLevel,item.count,item.boundTo,false,
-        ItemPlacement{ItemStorageKind::Inventory,1,0},item.attributes,item.stones,item.accessory});!valid)
+        ItemPlacement{ItemStorageKind::Inventory,1,0},item.attributes,item.stones,item.accessory,item.automatic});!valid)
         throw Failure(std::string("A tárgy nem adható: ")+PersistenceText(valid.error())+".");
     const auto occupied=Occupied(*c,o);const auto cells=std::uint32_t{Inventory.columns}*Inventory.rows*Inventory.pages;
     std::optional<std::uint32_t> anchor;

@@ -1,5 +1,5 @@
 #pragma once
-// GC_TYPED_INVENTORY (225) payload, version 1 (item system F4 D1, IC-034).
+// GC_TYPED_INVENTORY (225), v1 / charged-instance v2 (IC-034/048).
 //
 // Explicit little-endian byte layout, no struct/ABI dependence. The Unity
 // client decodes the same layout (Metin2GamePacketCodec.ReadTypedInventory);
@@ -11,10 +11,11 @@
 //   u16 names     { key(6), u8 length, ASCII content code }   one per distinct key
 //   u16 items     { id(8), key(6), u16 level, u32 count,
 //                   u8 storage kind, u64 storage id, u32 anchor cell,
-//                   u8 flags (1 bound, 2 accessory), u8 locked slot (255: none),
+//                   u8 flags (1 bound, 2 accessory, 4 automatic in v2), u8 locked slot (255: none),
 //                   u8 bonuses { u8 slot, u32 bonus id, i64 value },
 //                   3 x { u8 state, u8 grade, u16 level, key(6) or six zero bytes },
 //                   accessory if flag 2: { u8 capacity, u8 grade, u64 remaining ms, u8 permanent } }
+//                   automatic if flag 4: { u8 supply, u64 charge raw, u8 active, u64 next tick ms }
 #include "PersistentItems.hpp"
 
 #include <cstddef>

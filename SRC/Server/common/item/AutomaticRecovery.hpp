@@ -59,8 +59,9 @@ class ItemCatalog;
 // Initial state for one newly acquired instance, not a prototype mutation.
 std::expected<AutomaticRecoveryState, AutomaticRecoveryError> InitialAutomaticRecoveryState(
     const ItemCatalog& catalog, ItemKey key) noexcept;
-// Pure proposals. The future owner must commit item/HP/timer/bonus/replacement/
-// cooldown/receipt atomically. No registry, SQL, clock, RNG or live side effects.
+// Pure proposals. The runtime commits item/timer/replacement/cooldown/receipt
+// before live healing and stat refresh. Legacy HP persistence has a separate
+// crash boundary (IC-047/048). No registry, SQL, clock, RNG or live effects here.
 std::expected<AutomaticRecoveryTogglePlan, AutomaticRecoveryError> PlanAutomaticRecoveryToggle(
     const ItemCatalog& catalog, ItemKey key, ItemInstanceId item, const AutomaticRecoveryAdmission& state) noexcept;
 std::expected<AutomaticRecoveryTickPlan, AutomaticRecoveryError> PlanAutomaticRecoveryTick(

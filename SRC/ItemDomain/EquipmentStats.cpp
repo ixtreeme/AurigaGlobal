@@ -31,6 +31,14 @@ std::expected<std::int64_t,E> ScaleEquipmentValue(std::int64_t value,std::int64_
 std::expected<EquipmentStats,E> BuildEquipmentStats(const ItemCatalog& c,ItemOwner owner,std::span<const PersistentItem> inventory)
 {
     EquipmentStats out;std::set<ItemInstanceId> ids;std::set<unsigned> slots;
+    std::set<RecoveryPool> automaticPools;
+    for(const auto& item:inventory)if(!item.destroyed && item.automatic && item.automatic->active)
+    {
+        if(item.owner!=owner || !ValidatePersistentItem(c,item))return std::unexpected(E::InvalidItem);
+        const auto& row=std::get<ItemConsumableRow>(c.Find(item.key)->category);const auto& a=std::get<AutomaticRecovery>(c.FindRecovery(row.recoveryProfile)->Data().effect);
+        if(!automaticPools.insert(a.pool).second)return std::unexpected(E::Duplicate);
+        (a.pool==RecoveryPool::Hp ? out.automaticHpBonusBp : out.automaticSpBonusBp)=a.activeMaxPoolBonusBp;
+    }
     std::vector<const PersistentItem*> equipped;
     for(const auto& item:inventory)
     {

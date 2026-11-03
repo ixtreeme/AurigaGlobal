@@ -32,6 +32,7 @@ def main():
         paths.append(ROOT / "db/migrations/item_instance/002_instance_id_allocator.sql")
         paths.append(ROOT / "db/migrations/item_instance/003_owned_ground.sql")
         paths.append(ROOT / "db/migrations/item_instance/004_recovery_schedule.sql")
+        paths.append(ROOT / "db/migrations/item_instance/005_automatic_recovery.sql")
         for path in paths:
             for statement in statements(path.read_text(encoding="utf-8")):
                 sandbox.client.query(statement)

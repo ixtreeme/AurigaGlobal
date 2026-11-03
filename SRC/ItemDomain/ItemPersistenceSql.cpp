@@ -20,7 +20,7 @@ using Cell=std::optional<std::string>;
 using Row=std::vector<Cell>;
 using Rows=std::vector<Row>;
 using U=SqlParam;
-constexpr std::string_view Columns="instance_id,category_id,local_id,owner_kind,owner_id,state_revision,refinement_level,stack_count,destroyed,bound_kind,bound_id,storage_kind,storage_id,anchor_cell,locked_attribute,accessory_capacity,accessory_grade,accessory_remaining_ms,accessory_permanent,state_sha256";
+constexpr std::string_view Columns="instance_id,category_id,local_id,owner_kind,owner_id,state_revision,refinement_level,stack_count,destroyed,bound_kind,bound_id,storage_kind,storage_id,anchor_cell,locked_attribute,accessory_capacity,accessory_grade,accessory_remaining_ms,accessory_permanent,state_sha256,automatic_remaining_raw,automatic_active,automatic_next_ms";
 template<class Range> std::string Bytes(const Range& values){std::string out;out.reserve(values.size());for(auto b:values)out.push_back(static_cast<char>(b));return out;}
 SqlParams Owner(ItemOwner o){return {U::UInt(static_cast<unsigned>(o.kind)),U::UInt(o.id)};}
 void Append(SqlParams& to,SqlParams from){for(auto& p:from)to.push_back(std::move(p));}
@@ -39,7 +39,7 @@ SqlTransaction Guards(const ItemCatalog& c)
         {"SELECT 1 WHERE @@tx_isolation='REPEATABLE-READ' AND @@foreign_key_checks=1 AND @@check_constraint_checks=1",{},{},1},
         {"SELECT 1 FROM player.item_persistence_format WHERE singleton=1 AND schema_version=1 AND catalog_revision=? AND catalog_sha256=? LOCK IN SHARE MODE",
             {U::UInt(c.Revision()),U::Blob(Bytes(c.ContentHash()))},{},1},
-        {"SELECT 1 FROM information_schema.TABLES WHERE (TABLE_SCHEMA='player' AND TABLE_NAME IN ('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance','item_instance_attribute','item_instance_socket','item_occupied_cell','item_recovery_schedule')) OR (TABLE_SCHEMA='protos' AND TABLE_NAME IN ('item_base','bonus_definition')) HAVING COUNT(*)=12 AND SUM(ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE')=12",{},{},1},
+        {"SELECT 1 FROM information_schema.TABLES WHERE (TABLE_SCHEMA='player' AND TABLE_NAME IN ('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance','item_instance_attribute','item_instance_socket','item_occupied_cell','item_recovery_schedule')) OR (TABLE_SCHEMA='protos' AND TABLE_NAME IN ('item_base','bonus_definition')) HAVING COUNT(*)=12 AND SUM(ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE')=12 AND (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms'))=3",{},{},1},
     };
 }
 SqlParams ItemValues(const ItemCatalog& c,const PersistentItem& p)
@@ -52,7 +52,9 @@ SqlParams ItemValues(const ItemCatalog& c,const PersistentItem& p)
     a.push_back(p.attributes.lockedSlot ? U::UInt(*p.attributes.lockedSlot) : U::Null());
     if(p.accessory){a.push_back(U::UInt(p.accessory->unlockedCapacity));a.push_back(U::UInt(p.accessory->activeGrade));a.push_back(U::UInt(p.accessory->remainingMs));a.push_back(U::UInt(p.accessory->permanent));}
     else for(unsigned i=0;i<4;++i)a.push_back(U::Null());
-    a.push_back(U::Blob(Bytes(*PersistentItemDigest(c,p))));return a;
+    a.push_back(U::Blob(Bytes(*PersistentItemDigest(c,p))));
+    if(p.automatic){a.push_back(U::UInt(p.automatic->remainingRaw));a.push_back(U::UInt(p.automatic->active));a.push_back(U::UInt(p.automatic->nextTickInMs));}
+    else for(unsigned i=0;i<3;++i)a.push_back(U::Null());return a;
 }
 std::string Marks(std::size_t n){std::string s;for(std::size_t i=0;i<n;++i){if(i)s+=",";s+="?";}return s;}
 std::size_t AttributeCount(const PersistentItem& p){return std::ranges::count_if(p.attributes.slots,[](const auto& a){return a.has_value();});}
@@ -398,7 +400,7 @@ std::expected<LoadedItemOwner,E> LoadItemOwner(CAsyncSQL& db,const ItemCatalog& 
     Message m(db.DirectTransactionPrepared(std::move(tx)));if(!m)return std::unexpected(E::SqlFailure);
     auto recoveryRows=Result(*m,10,3,1);
     auto fence=Result(*m,3,1,1),storageRows=Result(*m,4,5,MaxItemCommitStorages),walletRows=Result(*m,5,3,2),
-        itemRows=Result(*m,6,20,MaxLoadedOwnerItems),attributes=Result(*m,7,4,MaxLoadedOwnerItems*8),stones=Result(*m,8,7,MaxLoadedOwnerItems*3),cells=Result(*m,9,6,65536);
+        itemRows=Result(*m,6,23,MaxLoadedOwnerItems),attributes=Result(*m,7,4,MaxLoadedOwnerItems*8),stones=Result(*m,8,7,MaxLoadedOwnerItems*3),cells=Result(*m,9,6,65536);
     for(const auto* r:{&fence,&storageRows,&walletRows,&itemRows,&attributes,&stones,&cells,&recoveryRows})if(!*r)return std::unexpected(r->error());
     try
     {
@@ -434,6 +436,7 @@ std::expected<LoadedItemOwner,E> LoadItemOwner(CAsyncSQL& db,const ItemCatalog& 
             if(row[11] || row[12] || row[13])item.placement=ItemPlacement{static_cast<ItemStorageKind>(Number<std::uint8_t>(row[11])),Number<std::uint64_t>(row[12]),Number<std::uint32_t>(row[13])};
             if(row[14])item.attributes.lockedSlot=Number<std::uint8_t>(row[14]);
             if(row[15] || row[16] || row[17] || row[18])item.accessory=AccessorySocketState{Number<std::uint8_t>(row[15]),Number<std::uint8_t>(row[16]),Number<std::uint64_t>(row[17]),Boolean(row[18])};
+            if(row[20] || row[21] || row[22])item.automatic=AutomaticRecoveryState{Number<std::int64_t>(row[20]),Boolean(row[21]),Number<std::uint64_t>(row[22])};
             if(!indexes.emplace(id->Value(),out.items.size()).second)throw Invalid{};out.items.push_back(item);hashes.push_back(Array<32>(row[19]));
         }
         std::set<std::pair<std::uint64_t,unsigned>> seenAttributes,seenStones;
@@ -450,6 +453,9 @@ std::expected<LoadedItemOwner,E> LoadItemOwner(CAsyncSQL& db,const ItemCatalog& 
             StoneSocketSlot s{static_cast<StoneSocketState>(Number<std::uint8_t>(row[2])),Number<std::uint8_t>(row[3]),{},Number<std::uint16_t>(row[6])};
             if(row[4] || row[5])s.stone=ReadKey(row[4],row[5]);out.items[indexes.at(id)].stones[slot]=s;
         }
+        std::set<RecoveryPool> activePools;
+        for(const auto& item:out.items)if(item.automatic && item.automatic->active)
+        {const auto* entry=c.Find(item.key);const auto* r=entry ? std::get_if<ItemConsumableRow>(&entry->category) : nullptr;const auto* p=r ? c.FindRecovery(r->recoveryProfile) : nullptr;const auto* a=p ? std::get_if<AutomaticRecovery>(&p->Data().effect) : nullptr;if(!a || !activePools.insert(a->pool).second)throw Invalid{};}
         if(seenStones.size()!=out.items.size()*3)throw Invalid{};
         using Reservation=std::tuple<ItemStorage,std::uint32_t,std::uint64_t>;std::set<Reservation> actual,expected;
         for(std::size_t n=0;n<out.items.size();++n)
