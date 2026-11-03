@@ -6,7 +6,7 @@ and stops the owned process tree after 15 minutes without activity. Diagnostic t
 are bounded. There is no total-duration deadline while work continues.
 
 The FTPS publishers report advancing upload and download-verification progress.
-Each successfully HTTPS-hash-verified immutable client blob is checkpointed atomically
+Each successfully verified immutable client blob is checkpointed atomically
 in the destination-bound receipt. Interrupted releases can resume verified blobs.
 Existing signing, prepared-release validation and metadata activation order remain.
 
