@@ -1,7 +1,7 @@
 # ADR IC-034 — F4 szerverbekötés: ütemterv és 1. szelet (katalógus induláskor)
 
 2026-10-29. Fázis: F4 ([IC-012](item_combat_012_item_runtime_first.md)).
-Állapot (2026-11-04): **C1–C24, C25a–b és C25c-1/2 implementált a külön típusos tárgyrendszerben;
+Állapot (2026-11-04): **C1–C24, C25a–b, C25c-1/2 és a C25d kezelő implementált a külön típusos tárgyrendszerben;
 Unity 6.3 és helyi szerver együtt ellenőrizve**. A normál legacy leltár és
 a meglévő karakterek átállítása a felhasználó kérésére még nem történik meg.
 
@@ -897,3 +897,24 @@ Részletek: [IC-056](item_combat_056_free_water_fishing.md),
 [próbák és korlátok](../reports/item_combat/2026-11-04_free_water_fishing.md).
 Nyitott a gyűjtőhelyek felhasználóbarát szerkesztése, további itemkategóriák,
 általános typed Mission-események, fiókpénztárca, legacy átállás és F7.
+
+## C25d — Gyűjtőhely-szerkesztő és közös natív szabályellenőrzés (2026-11-04)
+
+Külön űrlap a meglévő Adatfájlok szerkesztőben, gyors elérés a
+Tárgykatalógusból. Helyek, eszközök, halállomány, százalékos esélyek és
+súlyozott jutalmak kezelése; forrás–űrlap váltás adatvesztés nélkül.
+Az induló szerver és a manager ugyanazt a JSON-parsert és katalógusellenőrzést
+használja. Mentés leállított szervernél, friss helyi katalógussal, eredeti
+backupjával és atomi fájlcserével. A kiadott segédek saját DLL-jeit és
+SQL nélküli indulását a csomagkészítő is ellenőrzi.
+
+27/27 item-CTest, 37 parserellenőrzés, 14 új Qt-, 20 forráskód-, 14 általános
+GUI- és 6 csomagolási teszt sikeres; valódi helyi validálás és változatlan
+világadat atomi mentése ellenőrzött. Unity 6.3 fordítás és minden offline
+validátor sikeres. Új packet, migráció vagy Unity-módosítás nincs; cs67 marad.
+A teljes C25c-2 TLS-minijátékpróba a parserkiemelés előtt futott, utána
+nem ismétlődött. A végleges tartalomkonverzió és a további itemkategóriák,
+typed Mission-események, pénztárca, legacy átállás és F7 továbbra is nyitott.
+
+Részletek: [IC-057](item_combat_057_gathering_rules_editor.md),
+[ellenőrzések és korlátok](../reports/item_combat/2026-11-04_gathering_rules_editor.md).

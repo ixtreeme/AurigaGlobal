@@ -2,6 +2,7 @@
 #include "ToolRuntime.hpp"
 #include "FishingChallenge.hpp"
 #include <string>
+#include <string_view>
 namespace auriga::item
 {
 struct GatheringReward { ItemKey key;std::uint32_t count=0,weight=0; };
@@ -17,6 +18,7 @@ enum class ResourceError:std::uint8_t { Invalid,Forbidden,WrongTool,NoBait,NoRoo
 struct ResourceRequest { ItemInstanceId tool;ToolRuntimeActor actor;bool completed=false,eligible=true; };
 struct ResourcePlan { ItemCommit commit;bool success=false;std::uint32_t points=0,bait=0;std::vector<FishingYield> yields; };
 std::expected<void,ResourceError> ValidateGatheringSites(const ItemCatalog&,std::span<const GatheringSite>);
+std::expected<std::vector<GatheringSite>,std::string> ParseGatheringSites(std::string_view,const ItemCatalog&);
 std::expected<std::uint16_t,ResourceError> CheckResourceGathering(const ItemCatalog&,const GatheringSite&,ItemOwner,std::span<const PersistentItem>,ResourceRequest);
 // All possible reward footprints and reserved IDs are admitted before any RNG.
 std::expected<ResourcePlan,ResourceError> MakeResourceGatheringCommit(const ItemCatalog&,const GatheringSite&,std::array<std::uint8_t,16>,ItemOwnerFence,

@@ -2,6 +2,7 @@
 // SQL values use the existing prepared engine; no SQL is accepted from the UI.
 // Messages stay ASCII; the manager turns the structured "detail" into UI text.
 #include "CatalogSqlReader.hpp"
+#include <item/ResourceGathering.hpp>
 #include <SQL/AsyncSQL.h>
 #include <Core/Logging.hpp>
 #include <nlohmann/json.hpp>
@@ -275,8 +276,12 @@ void Commit(CAsyncSQL& sql,const db::CapturedCatalog& before,const db::Snapshot&
 }
 Json Run(const Json& request) {
     const auto action=request.at("action").get<std::string>();
-    Require(action=="read" || action=="commit" || action=="validate" || action=="blank","Ismeretlen muvelet.");
+    Require(action=="read" || action=="commit" || action=="validate" || action=="blank" || action=="validate_gathering","Ismeretlen muvelet.");
     // Offline actions: no connection, no lock, no write.
+    if(action=="validate_gathering"){
+        const auto catalog=Validate(Decode(request.at("tables")));const auto sites=ParseGatheringSites(request.at("rules_json").get<std::string>(),*catalog);
+        if(!sites)throw std::runtime_error(sites.error());return {{"sites",sites->size()},{"catalog_hash",Hash(catalog->ContentHash())}};
+    }
     if(action=="validate")return {{"hash",Hash(Validate(Decode(request.at("tables")))->ContentHash())}};
     if(action=="blank") {
         const auto rows=Registry();Json sequences=Json::object();

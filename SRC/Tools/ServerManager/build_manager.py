@@ -5,11 +5,13 @@ does not edit the original Server2 or a running server package.
 """
 import argparse
 import importlib.metadata
+import json
 import os
 from pathlib import Path
 import shutil
 import subprocess
 import sys
+import tempfile
 
 
 def fix_windows_icu(bundle):
@@ -72,6 +74,38 @@ def fix_windows_openssl(bundle, validators, python_dlls=None):
     print('QT_OPENSSL_FIXED: isolated Python and native validator dependencies')
 
 
+def fix_windows_item_dependencies(bundle, item_tools):
+    """Native child processes must resolve their own MariaDB/zlib libraries."""
+    if os.name != 'nt': return
+    names = ('libmariadb.dll', 'z.dll')
+    source = Path(item_tools)
+    for name in names:
+        if not (source / name).is_file():
+            raise ValueError('Missing native item dependency: ' + str(source / name))
+    destination = Path(bundle) / '_internal/validators'
+    for name in names: shutil.copy2(source / name, destination / name)
+    print('QT_ITEM_DEPENDENCIES_FIXED: MariaDB and zlib beside native item helpers')
+
+
+def check_native_item_startup(bundle):
+    """Exercise real bundled executables, without SQL or the package bin path."""
+    folder = Path(bundle).resolve() / '_internal/validators'
+    suffix = '.exe' if os.name == 'nt' else ''
+    with tempfile.TemporaryDirectory(prefix='auriga-helper-startup-') as directory:
+        for name, marker, request in (
+            ('CatalogEditorTool', 'AURIGA_CATALOG_RESULT ', {'action': 'blank'}),
+            ('ItemBenchTool', 'AURIGA_BENCH_RESULT ', {'action': 'status'})):
+            # The bench intentionally has no connection; a structured rejection
+            # proves its loader/parser started, without touching any database.
+            result = subprocess.run([str(folder / (name + suffix))], input=json.dumps(request),
+                cwd=directory, capture_output=True, text=True, encoding='utf-8', timeout=30,
+                creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+            lines = [line[len(marker):] for line in result.stdout.splitlines() if line.startswith(marker)]
+            if len(lines) != 1 or (name == 'CatalogEditorTool' and not json.loads(lines[0]).get('ok')):
+                raise ValueError('Bundled native item helper cannot start: ' + name)
+    print('QT_ITEM_HELPER_STARTUP_OK: both native helpers started without SQL')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
@@ -131,6 +165,8 @@ def main():
         return code
     fix_windows_icu(output / 'AurigaServerManager')
     fix_windows_openssl(output / 'AurigaServerManager', validators)
+    fix_windows_item_dependencies(output / 'AurigaServerManager', item_tools)
+    check_native_item_startup(output / 'AurigaServerManager')
     licenses = output / 'AurigaServerManager/licenses'
     licenses.mkdir()
     shutil.copy2(source.parents[2] / 'SRC/3rd/LUA55/doc/readme.html', licenses / 'Lua-README.html')

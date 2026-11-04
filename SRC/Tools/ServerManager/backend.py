@@ -426,6 +426,19 @@ def validate_candidate(root, relative, candidate):
                 raise EditorError('A futási mappáknak a csomag run mappájában kell maradniuk.')
         return output
     relative = Path(relative).as_posix()
+    if relative == 'data/typed_gathering.json':
+        # The native helper shares the runtime parser and checks every reward
+        # against a fresh catalog snapshot. Never fall back to syntax-only checks.
+        try:
+            import item_bench
+            import item_catalog
+        except ImportError:
+            raise EditorError('A gyűjtőhelyek ellenőrzéséhez a friss helyi szerverkezelő és a csomag saját adatbázisa szükséges.') from None
+        auth = item_bench.connection(root)[3]
+        packet = item_catalog.run_tool(dict(action='read', connection=auth))
+        result = item_catalog.run_tool(dict(action='validate_gathering', tables=packet['tables'],
+            rules_json=candidate.read_text(encoding='utf-8-sig')), packet['columns'])
+        return '%d gyűjtőhely natívan ellenőrizve; minden jutalomtárgy érvényes.\n' % result['sites']
     from editor_checks import language_for
     if language_for(relative) == 'quest':
         checker = root / 'bin' / ('ServerPackageCheck.exe' if os.name == 'nt' else 'ServerPackageCheck')

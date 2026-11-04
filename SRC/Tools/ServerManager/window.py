@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComb
 
 import backend as api
 from config_form import ConfigForm
+from gathering_rules_form import GatheringRulesForm
 from remote_page import RemotePage
 from code_editor import CodePane
 import server_targets as targets
@@ -465,9 +466,13 @@ class Editor(QWidget):
         self.config_form = ConfigForm(JsonFields)
         self.config_form.error.connect(lambda text: window.error(text))
         self.config_form.changed.connect(self.changed)
+        self.gathering_form = GatheringRulesForm()
+        self.gathering_form.changed.connect(self.changed)
+        self.gathering_form.error.connect(window.error)
         self.field_pages = QStackedWidget()
         self.field_pages.addWidget(self.config_form)
         self.field_pages.addWidget(self.fields)
+        self.field_pages.addWidget(self.gathering_form)
         self.code = CodePane()
         self.source = self.code.edit
         self.tabs.addTab(self.field_pages, 'Szerkesztés')
@@ -506,6 +511,8 @@ class Editor(QWidget):
             self.window.refresh()
 
     def active_fields(self):
+        if self.document and self.document.relative == 'data/typed_gathering.json':
+            return self.gathering_form
         return self.config_form if self.document and self.document.relative == 'server.json' else self.fields
 
     def may_discard(self):
@@ -545,7 +552,12 @@ class Editor(QWidget):
             if document.is_json and not document.parse_error:
                 active = self.active_fields()
                 self.field_pages.setCurrentWidget(active)
-                active.set_value(document.value)
+                try:
+                    active.set_value(document.value)
+                except api.EditorError:
+                    if active is not self.gathering_form: raise
+                    # Keep malformed/unsupported rules available for source repair.
+                    document.parse_error = 'A gyűjtőhelyűrlap nem tudja megjeleníteni ezt a dokumentumot. Javítsd a Forráskód lapon.'
             self.tabs.setCurrentIndex(0 if document.is_json and not document.parse_error else 1)
             self.filename.setText('Szerver beállításai' if document.relative == 'server.json' else Path(document.relative).name)
             self.filename.setToolTip(document.relative)
@@ -555,6 +567,8 @@ class Editor(QWidget):
             self.saved_badge.style().polish(self.saved_badge)
             self.info.setText('A mentés ellenőrzés után készül el. A korábbi változat a Továbbiak menüből állítható vissza.'
                               if document.is_json else 'Kódolás: %s. A mentett questváltozások a Questek frissítése gombbal aktiválhatók.' % document.encoding)
+            if document.relative == 'data/typed_gathering.json':
+                self.info.setText(document.parse_error or 'Gyűjtőhelyek: mentés előtt natív szabály- és tárgyellenőrzés. A játékszervert állítsd le; a helyi adatbázis fusson. A módosítás újraindításkor lép életbe.')
             self.dirty = False
             self.save_button.setEnabled(False)
             return True

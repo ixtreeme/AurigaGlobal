@@ -19,7 +19,6 @@
 #include "../world/sectree.h"
 #include "../ecs/systems/ViewSystem.hpp"
 #include <item/ResourceGathering.hpp>
-#include <nlohmann/json.hpp>
 #include <openssl/rand.h>
 #include <algorithm>
 #include <chrono>
@@ -97,17 +96,8 @@ std::expected<void,std::string> LoadTypedGathering(const std::string& path)
  try
  {
   if(!std::filesystem::exists(path)){sites.clear();return {};}if(std::filesystem::file_size(path)>1u<<20)return std::unexpected("typed_gathering.json exceeds 1 MiB");
-  std::ifstream input(path);auto json=nlohmann::json::parse(input);if(!json.is_object() || json.size()!=2 || (json.at("version")!=1 && json.at("version")!=2) || !json.at("sites").is_array() || json.at("sites").size()>256)throw std::runtime_error("document");
-  const auto readNumber=[](const nlohmann::json& j,const char* key,std::uint64_t max)->std::uint32_t{const auto& v=j.at(key);if(!v.is_number_unsigned() || v.get<std::uint64_t>()>max)throw std::runtime_error("integer");return static_cast<std::uint32_t>(v.get<std::uint64_t>());};
-  std::vector<item::GatheringSite> next;
-  for(const auto& j:json.at("sites"))
-  {
-   if(!j.is_object() || j.size()!=14 || !j.at("rewards").is_array() || j.at("rewards").size()>32)throw std::runtime_error("site");item::GatheringSite s;
-   s.id=readNumber(j,"id",UINT32_MAX);s.map=readNumber(j,"map",INT32_MAX);s.race=readNumber(j,"race",UINT32_MAX);s.name=j.at("name").get<std::string>();s.kind=static_cast<item::ToolKind>(readNumber(j,"kind",4));s.pool=static_cast<item::FishingPool>(readNumber(j,"pool",3));s.range=readNumber(j,"range",1000);s.durationMs=readNumber(j,"duration_ms",120000);s.minimumPower=readNumber(j,"minimum_power",INT32_MAX);s.powerStep=readNumber(j,"power_step",INT32_MAX);s.baseChance=static_cast<std::uint16_t>(readNumber(j,"base_chance_bp",10000));s.powerChance=static_cast<std::uint16_t>(readNumber(j,"power_chance_bp",10000));s.baitChance=static_cast<std::uint16_t>(readNumber(j,"bait_chance_bp",10000));
-   if(!s.race && json.at("version")!=2)throw std::runtime_error("water sites need version 2");
-   for(const auto& r:j.at("rewards")){if(!r.is_object() || r.size()!=4)throw std::runtime_error("reward");auto key=item::ItemKey::Create(static_cast<std::uint16_t>(readNumber(r,"category",UINT16_MAX)),readNumber(r,"local",UINT32_MAX));if(!key)throw std::runtime_error("key");s.rewards.push_back({*key,readNumber(r,"count",10000),readNumber(r,"weight",UINT32_MAX)});}next.push_back(std::move(s));
-  }
-  const auto c=store::CurrentCatalog();if(!c || !item::ValidateGatheringSites(*c,next))return std::unexpected("invalid typed gathering sites or reward references");sites=std::move(next);LOG_INFO("TypedGathering: {} sites loaded",sites.size());return {};
+  std::ifstream input(path);std::string text((std::istreambuf_iterator<char>(input)),std::istreambuf_iterator<char>());const auto c=store::CurrentCatalog();if(!c)return std::unexpected("item catalog not loaded");
+  auto parsed=item::ParseGatheringSites(text,*c);if(!parsed)return std::unexpected(parsed.error());auto next=std::move(*parsed);sites=std::move(next);LOG_INFO("TypedGathering: {} sites loaded",sites.size());return {};
  }catch(const std::exception&){return std::unexpected("cannot parse typed_gathering.json");}
 }
 bool TypedResourceActive(entt::entity e)

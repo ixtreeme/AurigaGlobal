@@ -171,3 +171,10 @@ Tényleges víz felé kell fordulni; a dobás útját és a találatok idejét a
 ellenőrzi. A korábbi világentitásos szabályok működnek tovább. A helyi természetes
 vízpartos teszt és a végleges tartalomtól való eltérés részletei:
 [IC-056](adr/item_combat_056_free_water_fishing.md).
+
+A C25d szerverkezelőben a **Tárgykatalógus → Gyűjtőhelyek** gomb, vagy az
+**Adatfájlok → typed_gathering.json** nyitja meg a külön hely-/esély-/jutaloműrlapot.
+Mentés előtt friss katalógus-snapshottal a core közös natív parserét futtatja;
+hibás tárgyhivatkozás vagy szabály nem írható ki. A játékszerver legyen
+leállítva, a csomag saját helyi MariaDB-je fusson. A módosítás újraindításkor él.
+Részletek és határok: [IC-057](adr/item_combat_057_gathering_rules_editor.md).

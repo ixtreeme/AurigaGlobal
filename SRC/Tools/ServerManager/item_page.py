@@ -1171,7 +1171,9 @@ class ItemPage(QWidget):
         self.new_button.clicked.connect(self.new_item_wizard)
         self.drops_button = QPushButton('Droptáblák'); self.drops_button.clicked.connect(self.show_drops)
         self.drops_button.setToolTip('Mit ejtenek a szörnyek: droptáblák szörnyenként és szörnyrangonként.')
-        for widget in (self.start_db_button, self.reload_button, self.drops_button, self.new_button): bar.addWidget(widget)
+        self.gathering_button = QPushButton('Gyűjtőhelyek'); self.gathering_button.clicked.connect(self.show_gathering)
+        self.gathering_button.setToolTip('Halászati és bányászati helyek, esélyek és jutalmak szerkesztése.')
+        for widget in (self.start_db_button, self.reload_button, self.drops_button, self.gathering_button, self.new_button): bar.addWidget(widget)
         layout.addLayout(bar)
         self.status = QLabel('Válassz helyi szervercsomagot.'); self.status.setWordWrap(True); self.status.setObjectName('Subtle')
         self.status.setTextFormat(Qt.TextFormat.PlainText)
@@ -1341,6 +1343,11 @@ class ItemPage(QWidget):
         for widget in (self.delete_drop_button, self.edit_drop_button, self.new_drop_button): actions.addWidget(widget)
         side.addLayout(actions)
         self.workspace.addWidget(self.drops_page)
+
+    def show_gathering(self):
+        if not self.local() or self.owner.busy(): return
+        if self.owner.data_page.editor.load('data/typed_gathering.json'):
+            self.owner.navigation.setCurrentRow(2)
 
     def show_drops(self):
         if self.packet is None: return
@@ -2063,6 +2070,7 @@ class ItemPage(QWidget):
         self.new_button.setEnabled(local and db and not busy and self.packet is not None)
         loaded = self.packet is not None; chosen_drop = self.chosen_drop() is not None
         self.drops_button.setEnabled(not busy and loaded)
+        self.gathering_button.setEnabled(local and not busy and (self.owner.root / 'data/typed_gathering.json').is_file())
         self.drop_list.setEnabled(not busy and loaded)
         self.drops_back_button.setEnabled(not busy)
         self.new_drop_button.setEnabled(not busy and loaded)

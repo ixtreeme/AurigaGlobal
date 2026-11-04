@@ -14,6 +14,24 @@ import build_manager
 
 @unittest.skipUnless(os.name == 'nt', 'Windows DLL search isolation')
 class PackagingTests(unittest.TestCase):
+    def test_item_helpers_receive_their_own_mariadb_and_zlib(self):
+        with tempfile.TemporaryDirectory(prefix='auriga-item-bundle-') as temp:
+            root = Path(temp); native = root / 'native'; native.mkdir()
+            validators = root / 'bundle/_internal/validators'; validators.mkdir(parents=True)
+            for name in ('libmariadb.dll', 'z.dll'): (native / name).write_bytes(('native ' + name).encode())
+            (root / 'bundle/_internal/libmariadb.dll').write_bytes(b'parent DLL must stay unchanged')
+            build_manager.fix_windows_item_dependencies(root / 'bundle', native)
+            for name in ('libmariadb.dll', 'z.dll'): self.assertEqual((native / name).read_bytes(), (validators / name).read_bytes())
+            self.assertEqual((root / 'bundle/_internal/libmariadb.dll').read_bytes(), b'parent DLL must stay unchanged')
+
+    def test_missing_item_dependency_rejects_bundle_before_copying(self):
+        with tempfile.TemporaryDirectory(prefix='auriga-item-bundle-') as temp:
+            root = Path(temp); native = root / 'native'; native.mkdir()
+            validators = root / 'bundle/_internal/validators'; validators.mkdir(parents=True)
+            (native / 'libmariadb.dll').write_bytes(b'native DLL')
+            with self.assertRaisesRegex(ValueError, 'z.dll'): build_manager.fix_windows_item_dependencies(root / 'bundle', native)
+            self.assertEqual(list(validators.iterdir()), [])
+
     def test_python_and_native_openssl_pairs_are_kept_separate(self):
         with tempfile.TemporaryDirectory(prefix='auriga-openssl-bundle-') as temp:
             root = Path(temp)
