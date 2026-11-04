@@ -1,5 +1,6 @@
 #pragma once
 #include "ToolRuntime.hpp"
+#include "FishingChallenge.hpp"
 #include <string>
 namespace auriga::item
 {
@@ -13,7 +14,7 @@ struct GatheringSite
     std::vector<GatheringReward> rewards;
 };
 enum class ResourceError:std::uint8_t { Invalid,Forbidden,WrongTool,NoBait,NoRoom,Unavailable,InvalidDecision,NotCompleted };
-struct ResourceRequest { ItemInstanceId tool;ToolRuntimeActor actor;bool completed=false; };
+struct ResourceRequest { ItemInstanceId tool;ToolRuntimeActor actor;bool completed=false,eligible=true; };
 struct ResourcePlan { ItemCommit commit;bool success=false;std::uint32_t points=0,bait=0;std::vector<FishingYield> yields; };
 std::expected<void,ResourceError> ValidateGatheringSites(const ItemCatalog&,std::span<const GatheringSite>);
 std::expected<std::uint16_t,ResourceError> CheckResourceGathering(const ItemCatalog&,const GatheringSite&,ItemOwner,std::span<const PersistentItem>,ResourceRequest);
@@ -26,6 +27,7 @@ struct ResourceView
     ResourceStatus status=ResourceStatus::Closed;std::uint8_t error=255;std::uint64_t nonce=0;
     const PersistentItem* tool=nullptr;const GatheringSite* site=nullptr;std::uint32_t target=0,remainingMs=0;
     std::uint16_t chance=0;const ResourcePlan* result=nullptr;
+    const FishingRuntimeView* fishing=nullptr;
 };
 std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeResourceGathering(const ItemCatalog&,const ResourceView&);
 }

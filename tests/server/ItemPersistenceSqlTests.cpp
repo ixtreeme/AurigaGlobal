@@ -833,6 +833,16 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         Check(!MakeResourceGatheringCommit(*c,site,{27,4},state.fence,state.storages,state.items,{rod,tool::Actor(),true},rewardIds,[](auto){return 0u;}),"empty rod cannot complete a second catch");
         Check(p::ClaimOwnerSession(writer,*c,owner).has_value(),"resource relog claim");auto reloaded=p::LoadCurrentItemOwner(writer,*c,owner).value();Check(reloaded.items==state.items,"resource reward and exact tool survive relog");
     }
+    {
+        namespace tool=tool_runtime_fixture;const ItemOwner owner{ItemOwnerKind::Character,880102};const std::array bags{f::Inventory(owner),ItemStorageLayout{{owner,ItemStorageKind::Equipment,1},8,1,1}};
+        Check(p::ProvisionOwner(admin,*c,owner,bags,{}).has_value(),"water owner provisioned");auto state=p::LoadCurrentItemOwner(writer,*c,owner).value();auto ids=p::ReserveItemInstanceIds(writer,*c,2).value();auto rod=ItemInstanceId::Create(ids.first).value();
+        auto grant=MakeGrantCommit(*c,{28,1},state.fence,state.storages,state.items,{tool::Tool(),0,1,{},{},ToolInstanceState{0,50}},std::array{rod});Check(grant && p::CommitItems(writer,*c,*grant).has_value(),"baited water rod granted");state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        auto equip=MakeEquipCommit(*c,{28,2},state.fence,state.storages,state.items,rod,{100,0,0});Check(equip && p::CommitItems(writer,*c,*equip).has_value(),"water rod equipped");state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        GatheringSite site{1001,41,0,"Free water",ToolKind::Rod,FishingPool::First,400,15000,0,100,10000,0,0,{{tool::Bait(),2,1}}};unsigned draws=0;
+        auto failed=MakeResourceGatheringCommit(*c,site,{28,3},state.fence,state.storages,state.items,{rod,tool::Actor(),true,false},std::array{ItemInstanceId::Create(ids.first+1).value()},[&](auto){++draws;return 0u;});Check(failed && !failed->success && draws==0,"expired minigame plans no reward or practice RNG");
+        Check(p::CommitItems(writer,*c,failed->commit).has_value() && p::CommitItems(writer,*c,failed->commit)->replay,"failed minigame is receipted once");state=p::LoadCurrentItemOwner(writer,*c,owner).value();Check(state.items.size()==1 && Find(state,ids.first).tool==ToolInstanceState{0,0},"timeout consumes bait but never grants loot or practice");
+        Check(p::ClaimOwnerSession(writer,*c,owner).has_value(),"water relog claim");Check(p::LoadCurrentItemOwner(writer,*c,owner)->items==state.items,"water failure survives relog exactly");
+    }
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);
 }

@@ -1,9 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Typed world gathering sites v1",
+  "title": "Typed world gathering sites v1/v2",
   "type": "object", "additionalProperties": false, "required": ["version", "sites"],
   "properties": {
-    "version": {"const": 1},
+    "version": {"enum": [1, 2]},
     "sites": {"type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/site"}}
   },
   "$defs": {
@@ -13,7 +13,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["id", "map", "race", "name", "kind", "pool", "range", "duration_ms", "minimum_power", "power_step", "base_chance_bp", "power_chance_bp", "bait_chance_bp", "rewards"],
       "properties": {
-        "id": {"$ref": "#/$defs/u32"}, "map": {"type": "integer", "minimum": 1, "maximum": 2147483647}, "race": {"$ref": "#/$defs/u32"},
+        "id": {"$ref": "#/$defs/u32"}, "map": {"type": "integer", "minimum": 1, "maximum": 2147483647}, "race": {"type": "integer", "minimum": 0, "maximum": 4294967295},
         "name": {"type": "string", "minLength": 1, "maxLength": 128}, "kind": {"enum": [1, 2, 3, 4]}, "pool": {"enum": [1, 2, 3]},
         "range": {"type": "integer", "minimum": 1, "maximum": 1000}, "duration_ms": {"type": "integer", "minimum": 1000, "maximum": 120000},
         "minimum_power": {"type": "integer", "minimum": 0, "maximum": 2147483647}, "power_step": {"type": "integer", "minimum": 1, "maximum": 2147483647},
@@ -23,7 +23,8 @@
           "properties": {"category": {"type": "integer", "minimum": 1, "maximum": 18}, "local": {"$ref": "#/$defs/u32"}, "count": {"type": "integer", "minimum": 1, "maximum": 10000}, "weight": {"$ref": "#/$defs/u32"}}
         }}
       },
-      "allOf": [{"if": {"properties": {"kind": {"const": 2}}}, "then": {"properties": {"pool": {"enum": [2, 3]}}}, "else": {"properties": {"pool": {"const": 1}, "bait_chance_bp": {"const": 0}}}}]
+      "allOf": [{"if": {"properties": {"kind": {"const": 2}}}, "then": {"properties": {"pool": {"enum": [2, 3]}}}, "else": {"properties": {"race": {"minimum": 1}, "pool": {"const": 1}, "bait_chance_bp": {"const": 0}}}}, {"if": {"properties": {"race": {"const": 0}}}, "then": {"properties": {"kind": {"const": 2}, "duration_ms": {"minimum": 5000}}}}]
     }
-  }
+  },
+  "allOf": [{"if": {"properties": {"version": {"const": 1}}}, "then": {"properties": {"sites": {"items": {"properties": {"race": {"minimum": 1}}}}}}}]
 }

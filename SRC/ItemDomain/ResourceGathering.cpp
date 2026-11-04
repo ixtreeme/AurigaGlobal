@@ -48,9 +48,9 @@ std::expected<void,ResourceError> ValidateGatheringSites(const ItemCatalog& c,st
  if(sites.size()>256)return std::unexpected(E::Invalid);std::set<std::uint32_t> ids;std::set<std::tuple<std::uint32_t,std::uint32_t,ToolKind,FishingPool>> matches;
  for(const auto& s:sites)
  {
-  if(!s.id || !ids.insert(s.id).second || !s.map || !s.race || !matches.emplace(s.map,s.race,s.kind,s.pool).second || s.name.empty() || s.name.size()>128 || std::ranges::any_of(s.name,[](unsigned char ch){return ch<32 || ch==127;}) ||
+  if(!s.id || !ids.insert(s.id).second || !s.map || (!s.race && s.kind!=ToolKind::Rod) || !matches.emplace(s.map,s.race,s.kind,s.pool).second || s.name.empty() || s.name.size()>128 || std::ranges::any_of(s.name,[](unsigned char ch){return ch<32 || ch==127;}) ||
    s.kind<ToolKind::Pick || s.kind>ToolKind::Shears || (s.kind==ToolKind::Rod ? s.pool!=FishingPool::First && s.pool!=FishingPool::Second : s.pool!=FishingPool::None) ||
-   !s.range || s.range>1000 || s.durationMs<1000 || s.durationMs>120000 || s.minimumPower>INT32_MAX || !s.powerStep || s.powerStep>INT32_MAX || s.baseChance>10000 || s.powerChance>10000 || s.baitChance>10000 || (s.kind!=ToolKind::Rod && s.baitChance) || s.rewards.empty() || s.rewards.size()>32)return std::unexpected(E::Invalid);
+   !s.range || s.range>1000 || s.durationMs<(!s.race ? 5000u : 1000u) || s.durationMs>120000 || s.minimumPower>INT32_MAX || !s.powerStep || s.powerStep>INT32_MAX || s.baseChance>10000 || s.powerChance>10000 || s.baitChance>10000 || (s.kind!=ToolKind::Rod && s.baitChance) || s.rewards.empty() || s.rewards.size()>32)return std::unexpected(E::Invalid);
   std::uint64_t total=0;std::set<ItemKey> rewards;
   for(const auto& r:s.rewards)
   {const auto* entry=c.Find(r.key);if(!entry || entry->base.retired || !SupportsPersistentItem(c,*entry) || !r.count || r.count>10000 || !r.weight || !rewards.insert(r.key).second)return std::unexpected(E::Invalid);total+=r.weight;}
@@ -80,7 +80,7 @@ std::expected<ResourcePlan,ResourceError> MakeResourceGatheringCommit(const Item
  for(const auto& reward:site.rewards)if(auto probe=Build(c,site,op,fence,layouts,items,r,&reward,ids,probeRoll);!probe)return std::unexpected(probe.error());
  if(auto probe=Build(c,site,op,fence,layouts,items,r,nullptr,ids,0);!probe)return std::unexpected(probe.error());
  bool bad=false;std::vector<std::pair<std::uint32_t,std::uint32_t>> decisions;const auto roll=[&](std::uint32_t n){if(!draw || !n){bad=true;return 0u;}auto v=draw(n);if(v>=n){bad=true;return 0u;}decisions.emplace_back(n,v);return v;};
- const bool success=*chance==10000 || (*chance && roll(10000)<*chance);const GatheringReward* reward=nullptr;std::uint32_t practice=0;
+ const bool success=r.eligible && (*chance==10000 || (*chance && roll(10000)<*chance));const GatheringReward* reward=nullptr;std::uint32_t practice=0;
  if(success)
  {
   std::uint32_t total=0;for(const auto& reward:site.rewards)total+=reward.weight;auto index=site.rewards.size()==1 ? 0u : roll(total);
@@ -97,9 +97,10 @@ std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeResourceGath
  using W=TypedInventoryWireError;if(static_cast<unsigned>(v.status)>9 || (v.error!=255 && v.error>7) || (v.tool ? !v.nonce : v.nonce || v.site || v.target) || (v.site && !ValidateGatheringSites(c,{v.site,1})))return std::unexpected(W::BadValue);
  std::vector<ItemGrant> extra;if(v.site)for(const auto& r:v.site->rewards)extra.push_back({r.key,0,1});auto metadata=EncodeTypedItemDetails(c,v.tool ? std::span(v.tool,1) : std::span<const PersistentItem>{},false,extra);if(!metadata)return std::unexpected(metadata.error());
  std::vector<std::byte> b;const auto put=[&](std::uint64_t n,unsigned bytes){for(unsigned i=0;i<bytes;++i)b.push_back(std::byte((n>>(8*i))&255));};const auto key=[&](ItemKey k){put(static_cast<unsigned>(k.Category()),2);put(k.LocalId(),4);};
- put(254,1);put(0,4);put(3,1);put(static_cast<unsigned>(v.status),1);put(v.error,1);put(v.nonce,8);put(v.tool ? v.tool->id.Value() : 0,8);put(v.tool ? v.tool->revision : 0,8);
+ put(254,1);put(0,4);put(v.fishing ? 4 : 3,1);put(static_cast<unsigned>(v.status),1);put(v.error,1);put(v.nonce,8);put(v.tool ? v.tool->id.Value() : 0,8);put(v.tool ? v.tool->revision : 0,8);
  if(v.tool)key(v.tool->key);else put(0,6);put(v.tool ? v.tool->refinementLevel : 0,2);put(v.tool && v.tool->tool ? v.tool->tool->trainingPoints : 0,4);put(v.tool && v.tool->tool ? v.tool->tool->baitPower : 0,4);
  put(v.site ? v.site->id : 0,4);put(v.target,4);put(v.site ? static_cast<unsigned>(v.site->kind) : 0,1);put(v.site ? v.site->durationMs : 0,4);put(v.remainingMs,4);put(v.chance,2);
+ if(v.fishing){const auto& f=*v.fishing;put(f.state.seed,4);put(f.elapsedMs,4);put(f.state.need,1);put(f.state.hits,1);put(f.state.misses,1);put(f.state.sequence,4);put(static_cast<unsigned>(f.state.input),1);put(static_cast<std::uint32_t>(f.castX),4);put(static_cast<std::uint32_t>(f.castY),4);}
  const std::string name=v.site ? v.site->name : "";put(name.size(),2);for(unsigned char ch:name)put(ch,1);
  put(v.result ? (v.result->success ? 1 : 2) : 0,1);put(v.result ? v.result->points : 0,4);put(v.result ? v.result->bait : 0,4);
  put(v.result ? v.result->yields.size() : 0,1);if(v.result)for(const auto& r:v.result->yields){key(r.item);put(r.count,4);}
