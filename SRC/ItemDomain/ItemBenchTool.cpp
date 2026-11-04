@@ -81,7 +81,7 @@ bool Installed(CAsyncSQL& sql)
 {
     return Rows(sql,"SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN "
         "('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance',"
-        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule')").at(0).at(0)=="13" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id')").at(0).at(0)=="6";
+        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule')").at(0).at(0)=="13" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice')").at(0).at(0)=="9";
 }
 std::shared_ptr<const ItemCatalog> Catalog(CAsyncSQL& sql)
 {
@@ -125,6 +125,7 @@ Json State(const ItemCatalog& c,const p::LoadedItemOwner& o)
             {"locked_slot",i.attributes.lockedSlot?Json(*i.attributes.lockedSlot):Json(nullptr)},{"stones",stones},
             {"automatic",i.automatic ? Json{{"remaining_raw",i.automatic->remainingRaw},{"active",i.automatic->active},{"next_ms",i.automatic->nextTickInMs}} : Json(nullptr)},
             {"book_skill",i.bookSkill ? Json(*i.bookSkill) : Json(nullptr)},
+            {"polymorph",i.polymorph ? Json{{"form",i.polymorph->boundForm ? Json(*i.polymorph->boundForm) : Json(nullptr)},{"grade",i.polymorph->bookGrade},{"practice",i.polymorph->practiceRemaining}} : Json(nullptr)},
             {"toggle",i.toggle ? Json{{"remaining_ms",i.toggle->remainingMs},{"active",i.toggle->active}} : Json(nullptr)},
             {"bound",i.boundTo.has_value()},
             {"accessory",i.accessory ? Json{{"capacity",i.accessory->unlockedCapacity},{"grade",i.accessory->activeGrade},{"remaining_ms",i.accessory->remainingMs},{"permanent",i.accessory->permanent}} : Json(nullptr)}});
@@ -316,8 +317,10 @@ Json Grant(CAsyncSQL& sql,const Json& request)
     if(const auto* a=std::get_if<ItemAccessoryRow>(&entry->category); a && a->socketProfile)item.accessory=AccessorySocketState{};
     if(const auto initial=InitialAutomaticRecoveryState(*c,item.key);initial)item.automatic=*initial;
     if(const auto initial=InitialToggleEffectState(*c,item.key);initial)item.toggle=*initial;if(request.contains("book_skill"))item.bookSkill=request.at("book_skill").get<std::uint16_t>();
+    if(const auto* poly=std::get_if<ItemPolymorphRow>(&entry->category))
+    {item.polymorph=PolymorphInstanceState{};if(request.contains("polymorph_form"))item.polymorph->boundForm=request.at("polymorph_form").get<std::uint32_t>();if(request.contains("polymorph_grade"))item.polymorph->bookGrade=request.at("polymorph_grade").get<std::uint16_t>();if(request.contains("polymorph_practice"))item.polymorph->practiceRemaining=request.at("polymorph_practice").get<std::uint32_t>();}
     if(auto valid=ValidatePersistentItem(*c,PersistentItem{item.id,item.key,item.owner,1,item.refinementLevel,item.count,item.boundTo,false,
-        ItemPlacement{ItemStorageKind::Inventory,1,0},item.attributes,item.stones,item.accessory,item.automatic,item.toggle,item.bookSkill});!valid)
+        ItemPlacement{ItemStorageKind::Inventory,1,0},item.attributes,item.stones,item.accessory,item.automatic,item.toggle,item.bookSkill,item.polymorph});!valid)
         throw Failure(std::string("A tárgy nem adható: ")+PersistenceText(valid.error())+".");
     const auto occupied=Occupied(*c,o);const auto cells=std::uint32_t{Inventory.columns}*Inventory.rows*Inventory.pages;
     std::optional<std::uint32_t> anchor;

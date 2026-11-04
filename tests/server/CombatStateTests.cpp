@@ -49,6 +49,7 @@
 #include "../../SRC/Server/GameServer/item/item_manager.h"
 #include "../../SRC/Server/GameServer/item/ItemCatalogRuntime.hpp"
 #include "../../SRC/Server/GameServer/item/TypedDrops.hpp"
+#include "../../SRC/Server/GameServer/item/TypedEquipment.hpp"
 #include "../../SRC/Server/GameServer/entity/mob_manager.h"
 #include "../../SRC/Server/GameServer/combat/battle.h"
 #include "../../SRC/Server/GameServer/combat/pvp.h"
@@ -90,12 +91,15 @@
 
 entt::registry g_registry;
 entt::dispatcher g_dispatcher;
+// These isolated combat actors do not own a persisted recovery schedule.
+void NotifyTypedRecoveryDeath(entt::entity) {}
 // This isolated combat world has no active story encounters. The story rule
 // suites cover their admission; keep the external encounter boundary explicit.
 bool CaravanQuest::AllowCombat(entt::entity, entt::entity) { return true; }
 void CaravanQuest::OnDeath(entt::entity, entt::entity) {}
 // Out-of-line keys emit RTTI for the service doubles on Clang/ELF too.
 // None of these services is constructed or connected by this fixture.
+CMobManager::CMobManager() = default;
 CMobManager::~CMobManager() = default;
 SECTREE_MANAGER::~SECTREE_MANAGER() = default;
 marriage::CManager::~CManager() = default;
@@ -399,7 +403,7 @@ std::vector<AffectSlot> AffectSystem::Snapshot(entt::entity) {
 bool AffectSystem::IsAffectFlag(entt::entity e,unsigned int) { AssertActor(e); return false; }
 bool AffectSystem::AddAffect(entt::entity e,unsigned int,unsigned char,int,unsigned int,int,int,bool,bool) { AssertActor(e); ++affectCalls; const auto callback=onAffect; if(callback) callback(e); return true; }
 bool AffectSystem::RemoveAffect(entt::entity,unsigned int) { UnexpectedService(__func__); }
-bool AffectSystem::IsPolymorphed(entt::entity e) { AssertActor(e); return false; }
+bool AffectSystem::IsPolymorphed(entt::entity e) { AssertActor(e);const auto* p=g_registry.try_get<ecs::TypedPolymorphProjection>(e);return p && p->race; }
 int64_t ecs::PointSystem::Get(entt::entity e,unsigned char p) { AssertActor(e); return g_registry.get<BattleFixture>(e).points[p]; }
 uint64_t ecs::PointSystem::GetMaxHP(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).maxHP; }
 uint64_t ecs::PointSystem::GetMaxSP(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).maxSP; }
@@ -656,7 +660,7 @@ void Map1MassSpawnEvent_OnMobDead(unsigned int) { UnexpectedService(__func__); }
 int ecs::PointSystem::GetPolymorphPoint(entt::entity e, uint8_t p) { return static_cast<int>(Get(e,p)); }
 int ItemSystem::GetItemValue(entt::entity e, uint32_t p) { Check(IsValidItem(e), "invalid item value read"); return g_registry.get<WeaponFixture>(e).values.at(p); }
 bool AffectSystem::IsPolyMaintainStat(entt::entity e) { AssertActor(e); return false; }
-uint32_t AffectSystem::GetPolymorphVnum(entt::entity) { UnexpectedService(__func__); }
+uint32_t AffectSystem::GetPolymorphVnum(entt::entity e) {const auto* p=g_registry.try_get<ecs::TypedPolymorphProjection>(e);if(p && p->race)return p->race;UnexpectedService(__func__); }
 int AffectSystem::GetPolymorphPower(entt::entity) { UnexpectedService(__func__); }
 void AffectSystem::ApplyPoison(entt::entity e,entt::entity a) {
     AssertActor(e); AssertActor(a); ++poisonCalls; const auto callback=onPoison; if(callback) callback(e);
@@ -799,6 +803,20 @@ void BattleMathChecks() {
     Check(C::GetMobDamageMultiplier(a)==1, "invalid mob multiplier");
     g_registry.remove<ecs::MobDataRef>(a);
     Check(C::GetMobDamageMin(a)==0 && C::GetMobDamageMax(a)==0 && C::GetMobAttackRange(a)==0, "missing mob prototype");
+}
+void TypedPolymorphDamageChecks() {
+    Reset();const auto a=Actor(),v=Actor();auto& actor=g_registry.get<BattleFixture>(a);actor.points[POINT_ATT_GRADE]=100;actor.level=20;
+    actor.points[POINT_DX]=125; // Isolate damage scaling from the attacker's hit rating.
+    Check(CalcAttackRating(a,v,true)==1,"polymorph damage fixture has full attacker hit rating");
+    auriga::item::EquipmentStats gear;gear.weapon=auriga::item::WeaponSubtype::Bow;g_registry.emplace<ecs::TypedEquipmentProjection>(a).stats=gear;
+    Check(CalcMeleeDamage(a,v,true,true)==0,"ordinary typed bow cannot enter melee");
+    CMob prototype;prototype.m_table.dwVnum=103;prototype.m_table.dwDamageRange[0]=30;prototype.m_table.dwDamageRange[1]=60;mobProtoTable[103]=&prototype;
+    auto& p=g_registry.emplace<ecs::TypedPolymorphProjection>(a,ecs::TypedPolymorphProjection{103,3333,2,2250});
+    const auto fractionalDamage=CalcMeleeDamage(a,v,true,true);
+    Check(fractionalDamage==122,("typed polymorph keeps fractional monster damage and attack bonus even with equipped bow: "+std::to_string(fractionalDamage)).c_str());
+    p.powerBp=10000;p.bonus=1;p.magnitude=0;Check(CalcMeleeDamage(a,v,true,true)==160,"full monster power contributes to actual typed melee damage");
+    p.powerBp=0;Check(CalcMeleeDamage(a,v,true,true)==100,"zero polymorph power cannot invent monster damage");
+    g_registry.remove<ecs::TypedPolymorphProjection>(a);Check(CalcMeleeDamage(a,v,true,true)==0,"returning from polymorph restores the bow melee restriction");
 }
 void BattleAffectChecks() {
     Reset(); const auto a=Actor(),v=Actor();
@@ -1293,12 +1311,12 @@ void FollowingAnExistingDestinationDoesNotAlternateStandOffPoints() {
 
 int main() {
     try {
-        CHARACTER_MANAGER characters;
+        CHARACTER_MANAGER characters;CMobManager mobs;
         FollowingAnExistingDestinationDoesNotAlternateStandOffPoints();
         ZeroExpKillCreditChecks();
         NativeSPRecoveryChecks(); AlignmentChecks(); CallbackChecks(); ModeChecks(); MultiplierAndValidityChecks();
         BattleTargetChecks(); AggroSwitchChecks(); AttackHandleChecks();
-        DeathHandleChecks(); StoneOwnershipChecks(); DeathStateChecks(); LivenessChecks(); FlyTargetChecks(); MetinStoneDropChecks(); BattleMathChecks(); BattleAffectChecks(); AttackAuditChecks(); InteractionCounterChecks();
+        DeathHandleChecks(); StoneOwnershipChecks(); DeathStateChecks(); LivenessChecks(); FlyTargetChecks(); MetinStoneDropChecks(); BattleMathChecks(); TypedPolymorphDamageChecks(); BattleAffectChecks(); AttackAuditChecks(); InteractionCounterChecks();
         std::cout << "Combat state checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

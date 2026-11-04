@@ -118,6 +118,7 @@ class CMobManager : public singleton<CMobManager>
 		CMobManager();
 		virtual ~CMobManager();
 
+		uint64_t Revision() const noexcept { return revision_; }
 		bool		Initialize(TMobTable * table, int size);
 		void		Destroy();
 
@@ -144,6 +145,7 @@ class CMobManager : public singleton<CMobManager>
 		void			DumpRegenCount(const char* c_szFilename);
 
 	private:
+        uint64_t revision_=0;
 		std::map<uint32_t, CMob *> m_map_pkMobByVnum;
 		std::map<std::string, CMob *> m_map_pkMobByName;
 		std::map<uint32_t, CMobGroup *> m_map_pkMobGroup;

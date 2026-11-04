@@ -19,6 +19,7 @@
 #include "../../SRC/Server/GameServer/ecs/components/vital_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/skill_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/combat_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/status_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/movement_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
@@ -66,7 +67,7 @@ int test_server = 0, gPlayerMaxLevel = 150, g_iStatusPointGetLevelLimit = 115;
 namespace P = ecs::PointSystem;
 namespace {
 int checks = 0, modifies = 0, packets = 0, supportLevel = 0;
-int64_t mountHP = 0;
+int64_t mountHP = 0;const CMob* polyPrototype=nullptr;
 entt::entity connected = entt::null;
 LPDESC DescToken() { static int token; return reinterpret_cast<LPDESC>(&token); }
 std::vector<TPacketGCPointChange> pointPackets;
@@ -131,7 +132,10 @@ void PetSystem::RefreshBuff(entt::entity) {}
 LogManager::~LogManager() = default;
 quest::CQuestManager::~CQuestManager() = default;
 quest::NPC::~NPC() = default;
+CMobManager::CMobManager() = default;
 CMobManager::~CMobManager() = default;
+CMob::CMob() = default;
+CMob::~CMob() = default;
 CAsyncSQL::~CAsyncSQL() = default;
 CSemaphore::~CSemaphore() = default;
 void intrusive_ptr_release(event*) { Unexpected(); }
@@ -205,7 +209,7 @@ uint8_t GetSkillGroup(entt::entity) { return 0; }
 void ComputeSkillPoints(entt::entity) {}
 }
 namespace AffectSystem {
-bool IsPolymorphed(entt::entity) { return false; }
+bool IsPolymorphed(entt::entity e) {const auto* p=g_registry.try_get<ecs::TypedPolymorphProjection>(e);return p && p->race;}
 void RefreshAffect(entt::entity e) { if (onAffect) onAffect(e); }
 }
 namespace CombatSystem {
@@ -234,7 +238,7 @@ int MAX(int a, int b) { return std::max(a, b); }
 int MINMAX(int a, int b, int c) { return std::clamp(b, a, c); }
 int number_ex(int, int, const char*, int) { Unexpected(); }
 uint32_t get_dword_time() { return 1000; }
-const CMob* CMobManager::Get(uint32_t) { Unexpected(); }
+const CMob* CMobManager::Get(uint32_t race) {if(polyPrototype && polyPrototype->m_table.dwVnum==race)return polyPrototype;Unexpected();}
 namespace ecs::SessionSystem { void Save(entt::entity) {} }
 void ecs::ViewSystem::PacketView(entt::entity e, const void* data, int size, entt::entity except) {
     Check(e == connected && except == entt::null, "unexpected point broadcast route");
@@ -245,7 +249,7 @@ void BroadcastNoticeNew(uint8_t, uint8_t, int, uint32_t, const char*, ...) { Une
 void AffectSystem::SetPolymorph(entt::entity, uint32_t, bool) { Unexpected(); }
 int AffectSystem::GetPolymorphPower(entt::entity) { Unexpected(); }
 bool AffectSystem::IsPolyMaintainStat(entt::entity) { return false; }
-uint32_t AffectSystem::GetPolymorphVnum(entt::entity) { return 0; }
+uint32_t AffectSystem::GetPolymorphVnum(entt::entity e) {const auto* p=g_registry.try_get<ecs::TypedPolymorphProjection>(e);return p ? p->race : 0;}
 uint64_t ecs::PlayerRuntime::GetHP(entt::entity) { Unexpected(); }
 void ecs::MovementSystem::CalculateMoveDuration(entt::entity e) {
     if (!onMovement) Unexpected();
@@ -509,6 +513,20 @@ void MovementTimingRouteChecks() {
     onMovement = [&](entt::entity current) { g_registry.destroy(current); };
     Check(!P::Set(e, POINT_MOV_SPEED, 200) && !g_registry.valid(e), "movement callback retirement ignored");
 }
+void TypedPolymorphChecks() {
+    Reset();CMob prototype;prototype.m_table={};prototype.m_table.dwVnum=101;prototype.m_table.bStr=39;prototype.m_table.bCon=30;prototype.m_table.bDex=42;prototype.m_table.bInt=48;prototype.m_table.wDef=7;polyPrototype=&prototype;
+    const auto e=ActorEntity();auto& p=g_registry.emplace<ecs::TypedPolymorphProjection>(e,ecs::TypedPolymorphProjection{101,3333,2,2250});
+    P::Compute(e);Check(P::GetPolymorphPoint(e,POINT_ST)==22,"fractional polymorph power must retain basis points");Check(P::Get(e,POINT_ATT_GRADE)==102 && P::Get(e,POINT_DEF_GRADE)==46,"actual polymorph battle stats and attack bonus");
+    p.bonus=3;p.magnitude=5000;P::Compute(e);Check(P::Get(e,POINT_ATT_GRADE)==84 && P::Get(e,POINT_DEF_GRADE)==69,"polymorph defense percent affects real defense");
+    p.bonus=4;p.magnitude=21;for(unsigned n=0;n<20;++n){P::Compute(e);Check(P::Get(e,POINT_MOV_SPEED)==221,"movement points cannot accumulate on recompute");}
+    auriga::item::EquipmentStats gear;gear.flat={20500,10000,7000,9000};gear.weapon=auriga::item::WeaponSubtype::Sword;
+    using B=auriga::item::BonusId;gear.bonuses[unsigned(B::Strength)]=3;gear.bonuses[unsigned(B::Constitution)]=4;gear.bonuses[unsigned(B::PhysicalAttackPercent)]=2500;gear.bonuses[unsigned(B::MovementSpeedPercent)]=500;
+    g_registry.emplace<ecs::TypedEquipmentProjection>(e).stats=gear;
+    for(unsigned n=0;n<10;++n){P::Compute(e);Check(P::Get(e,POINT_MOV_SPEED)==231 && P::GetLimitPoint(e,POINT_MOV_SPEED)==231,"polymorph adds movement after equipment percent exactly once");}
+    p.bonus=2;p.magnitude=2250;P::Compute(e);Check(P::Get(e,POINT_ATT_GRADE)==169 && P::Get(e,POINT_MAGIC_ATT_GRADE)==100,"attack bonus includes typed weapon once and does not duplicate into magic base");
+    p.bonus=3;p.magnitude=5000;P::Compute(e);Check(P::Get(e,POINT_DEF_GRADE)==85,"polymorph defense bonus includes equipped armor");
+    g_registry.remove<ecs::TypedPolymorphProjection>(e);P::Compute(e);Check(P::Get(e,POINT_MOV_SPEED)==210,"shape bonus removed while equipment percent remains");polyPrototype=nullptr;
+}
 void CallbackChecks() {
     for (int stage = 0; stage < 3; ++stage) {
         Reset(); const auto e = ActorEntity(); Wear(e);
@@ -534,8 +552,8 @@ void CallbackChecks() {
 }
 int main() {
     try {
-        CSkillManager skills; CHARACTER_MANAGER characters;
-        NativeVitalSourceChecks(); PointPublicationChecks(); FormulaChecks(); RepeatedCalculation(); SkillPointSpendChecks(); SourceChecks(); TypedEquipmentChecks(); WalkingPreferenceChecks(); MovementTimingRouteChecks(); CallbackChecks();
+        CSkillManager skills; CHARACTER_MANAGER characters;CMobManager mobs;
+        NativeVitalSourceChecks(); PointPublicationChecks(); FormulaChecks(); RepeatedCalculation(); SkillPointSpendChecks(); SourceChecks(); TypedEquipmentChecks(); WalkingPreferenceChecks(); MovementTimingRouteChecks(); TypedPolymorphChecks(); CallbackChecks();
         std::cout << "Point calculation checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

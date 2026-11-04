@@ -7,6 +7,7 @@ struct ItemEffectFacts
 {
     InstantRecoveryAdmission actor;
     bool alive=false,married=false,partyLeader=false,allowed=false;
+    bool polymorphAllowed=true;
 };
 struct ItemEffectError { std::uint8_t code=255; };
 const TimedEffectProfile* TimedItemProfile(const ItemCatalog&,ItemKey);

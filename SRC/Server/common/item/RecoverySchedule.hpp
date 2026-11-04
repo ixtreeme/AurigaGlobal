@@ -1,5 +1,6 @@
 #pragma once
 #include "Consumables.hpp"
+#include "PolymorphItems.hpp"
 #include <array>
 #include <functional>
 #include <span>
@@ -26,6 +27,11 @@ struct TimedItemEffect
     std::uint64_t remainingMs=0,expiresAtMs=0;
     bool operator==(const TimedItemEffect&)const=default;
 };
+struct ActivePolymorph
+{
+    ItemKey source;PolymorphEffectPlan effect;
+    bool operator==(const ActivePolymorph&) const = default;
+};
 struct RecoverySchedule
 {
     std::uint64_t revision=0,generation=0;
@@ -33,6 +39,7 @@ struct RecoverySchedule
     std::vector<RecoveryDose> doses;
     std::vector<RecoveryCooldown> cooldowns;
     std::vector<TimedItemEffect> effects;
+    std::optional<ActivePolymorph> polymorph;
     bool operator==(const RecoverySchedule&)const=default;
 };
 struct RecoverySchedulePlan

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "../item/TypedEquipment.hpp"
+#include "../ecs/components/status_components.hpp"
 #include "../story/SpyQuestSystem.hpp"
 #include "../story/CaravanQuestSystem.hpp"
 #include "../raid/EclipseRaidSystem.hpp"
@@ -549,8 +550,8 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 	const entt::entity weapon = CombatWearItem(attacker, WEAR_WEAPON);
     const bool typed = HasTypedEquipment(attacker);
     if (typed && !TypedEquipmentView(attacker)) return 0;
-    if (typed && CombatWeaponSubtype(attacker) == WEAPON_BOW) return 0;
 	bool bPolymorphed = AffectSystem::IsPolymorphed(attacker);
+    if (typed && CombatWeaponSubtype(attacker) == WEAPON_BOW && !bPolymorphed) return 0;
 
 	if (ItemSystem::IsValidItem(weapon) && !(bPolymorphed && !AffectSystem::IsPolyMaintainStat(attacker)))
 	{
@@ -596,9 +597,12 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 
 		if (pMob)
 		{
-			int iPower = AffectSystem::GetPolymorphPower(attacker);
-			iDamMin += pMob->m_table.dwDamageRange[0] * iPower / 100;
-			iDamMax += pMob->m_table.dwDamageRange[1] * iPower / 100;
+            if(const auto* p=g_registry.try_get<ecs::TypedPolymorphProjection>(attacker);p && p->race)
+            {
+                const auto scale=[&](int damage,unsigned index){int64_t value=damage+static_cast<int64_t>(pMob->m_table.dwDamageRange[index])*p->powerBp/10000;if(p->bonus==2)value=value*(10000+p->magnitude)/10000;return static_cast<int>(std::clamp<int64_t>(value,0,INT_MAX));};
+                iDamMin=scale(iDamMin,0);iDamMax=scale(iDamMax,1);
+            }
+            else{int iPower=AffectSystem::GetPolymorphPower(attacker);iDamMin+=pMob->m_table.dwDamageRange[0]*iPower/100;iDamMax+=pMob->m_table.dwDamageRange[1]*iPower/100;}
 		}
 	}
 	else if (ItemSystem::IsValidItem(weapon))
@@ -613,7 +617,8 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 		iDamMax = CombatSystem::GetMobDamageMax(attacker);
 	}
 
-	iDam = typed ? 0 : number(iDamMin, iDamMax) * 2;
+    const auto* typedPoly=g_registry.try_get<ecs::TypedPolymorphProjection>(attacker);
+	iDam = typed && !(typedPoly && typedPoly->race) ? 0 : EquipmentLegacyInt(static_cast<int64_t>(number(iDamMin,iDamMax))*2);
 
 	// TESTSERVER_SHOW_ATTACKINFO
 	DEBUG_iDamCur = iDam;

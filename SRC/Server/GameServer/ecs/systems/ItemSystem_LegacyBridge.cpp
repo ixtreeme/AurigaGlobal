@@ -1,4 +1,5 @@
 #include "../../core/stdafx.h"
+#include "../../item/ItemStore.hpp"
 #include "../../social/exchange.h"
 #include "ViewSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
@@ -8467,6 +8468,7 @@ bool ItemProcess_Hair(entt::entity e, entt::entity item, int iDestCell)
 // Turning into a monster with a polymorph ball or book.
 bool ItemProcess_Polymorph(entt::entity e, entt::entity item)
 {
+    if(g_registry.all_of<ecs::TypedItems>(e))return false;
 #ifdef ENABLE_PVP_ADVANCED
 	if ((ecs::PlayerRuntime::GetDuelOption(e, "BlockPoly")))
 	{

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "TypedEquipment.hpp"
+#include "TypedPolymorph.hpp"
 #include "TypedAccessoryClock.hpp"
 #include "TypedRecovery.hpp"
 #include <item/EffectRuntime.hpp>
@@ -17,6 +18,7 @@
 void RefreshTypedEquipment(entt::entity e)
 {
     if(!g_registry.valid(e))return;
+    RefreshTypedPolymorph(e);
     const auto* items=g_registry.try_get<ecs::TypedItems>(e);const auto catalog=auriga::item::runtime::CurrentCatalog();if(!items || !catalog)return;
     const auto* pointState=g_registry.try_get<ecs::CharacterStatsComponent>(e);
     if(pointState && pointState->recomputing)return; // finish the current source snapshot first

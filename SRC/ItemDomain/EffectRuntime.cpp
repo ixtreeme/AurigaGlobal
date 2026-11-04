@@ -11,10 +11,17 @@ std::uint64_t TimedItemRemaining(const TimedItemEffect& effect,std::uint64_t now
 {return effect.expiresAtMs ? effect.expiresAtMs-std::min(effect.expiresAtMs,now) : effect.remainingMs;}
 void NormalizeTimedItems(const ItemCatalog& c,RecoverySchedule& s,std::uint64_t now,const ItemEffectFacts* facts)
 {
+    if(s.polymorph)
+    {
+        auto& p=s.polymorph->effect;const auto* entry=c.Find(s.polymorph->source);
+        if(!entry || entry->base.retired || now>=p.expiresAtUtcMs || (facts && (!facts->alive || !facts->allowed || !facts->polymorphAllowed)))s.polymorph.reset();
+        else if(p.bonusExpiresAtUtcMs && now>=p.bonusExpiresAtUtcMs){p.bonus=PolymorphBonus::None;p.bonusUnit=PolymorphBonusUnit::None;p.bonusMagnitude=0;p.bonusExpiresAtUtcMs=0;}
+    }
     std::erase_if(s.effects,[&](const auto& e){const auto* p=TimedItemProfile(c,e.source);if(!p || !TimedItemRemaining(e,now) || c.Find(e.source)->base.retired)return true;const auto* g=c.FindTimedEffectGroup(p->group);return facts && ((!facts->alive && g->removeOnDeath) || !facts->allowed || !(p->allowedContexts&static_cast<unsigned>(facts->actor.context)) || (facts->actor.inPvp && !p->allowDuringPvp));});
 }
 bool HasDeathItemEffects(const ItemCatalog& c,const RecoverySchedule& state,std::span<const PersistentItem> items)
 {
+    if(state.polymorph)return true;
     for(const auto& e:state.effects)if(const auto* p=TimedItemProfile(c,e.source);p && c.FindTimedEffectGroup(p->group)->removeOnDeath)return true;
     for(const auto& item:items)if(item.toggle && item.toggle->active)if(const auto* p=ToggleItemProfile(c,item.key);p && c.FindToggleEffectGroup(p->group)->removeOnDeath)return true;
     return false;

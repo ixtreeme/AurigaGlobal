@@ -12,7 +12,7 @@ namespace
 using E=RecoveryUseError;
 const RecoveryProfile* Profile(const ItemCatalog& c,ItemKey key)
 {const auto* e=c.Find(key);const auto* r=e ? std::get_if<ItemConsumableRow>(&e->category) : nullptr;const auto* p=r && r->recoveryProfile ? c.FindRecovery(r->recoveryProfile) : nullptr;return p ? &p->Data() : nullptr;}
-bool Empty(const RecoverySchedule& s){return s.doses.empty() && s.cooldowns.empty() && s.effects.empty() && s.creditRaw==std::array<std::uint16_t,2>{};}
+bool Empty(const RecoverySchedule& s){return s.doses.empty() && s.cooldowns.empty() && s.effects.empty() && !s.polymorph && s.creditRaw==std::array<std::uint16_t,2>{};}
 std::uint64_t Plus(std::uint64_t a,std::uint64_t b){return b>UINT64_MAX-a ? UINT64_MAX : a+b;}
 std::int64_t Product(std::int64_t value,std::uint64_t count,std::int64_t limit)
 {if(value<=0 || !count || limit<=0)return 0;if(value>=limit || count>=static_cast<std::uint64_t>(limit/value+(limit%value!=0)))return limit;return value*static_cast<std::int64_t>(count);}
@@ -47,7 +47,16 @@ bool ValidateRecoverySchedule(const ItemCatalog& c,const RecoverySchedule& s)
         if(!g || !effect.id || !ids.insert(effect.id).second || !groups.insert(g->id).second ||
            (g->clock==TimedEffectClock::OnlineTime ? !effect.remainingMs || effect.remainingMs>p->durationMs || effect.expiresAtMs!=0 : effect.remainingMs!=0 || !effect.expiresAtMs || effect.expiresAtMs>INT64_MAX))return false;
     }
-    return (s.doses.empty() && s.effects.empty()) || s.generation>0;
+    if(s.polymorph)
+    {
+        const auto& a=*s.polymorph;const auto& p=a.effect;const auto* entry=c.Find(a.source);const auto* row=entry ? std::get_if<ItemPolymorphRow>(&entry->category) : nullptr;
+        const auto* form=c.FindPolymorphForm(p.formId);
+        if(!row || !form || form->mobTemplate!=p.mobTemplate || (row->fixedForm && *row->fixedForm!=p.formId) || p.powerBp>10000 || !p.expiresAtUtcMs || p.expiresAtUtcMs>INT64_MAX ||
+           p.bonusExpiresAtUtcMs>p.expiresAtUtcMs || p.bonus<PolymorphBonus::None || p.bonus>PolymorphBonus::Movement ||
+           (p.bonus==PolymorphBonus::None ? p.bonusMagnitude || p.bonusExpiresAtUtcMs || p.bonusUnit!=PolymorphBonusUnit::None :
+            !p.bonusMagnitude || !p.bonusExpiresAtUtcMs || p.bonusMagnitude>1000000 || p.bonusUnit!=(p.bonus==PolymorphBonus::Movement ? PolymorphBonusUnit::MovementPoints : PolymorphBonusUnit::BasisPoints)))return false;
+    }
+    return (s.doses.empty() && s.effects.empty() && !s.polymorph) || s.generation>0;
 }
 std::expected<RecoverySchedule,E> AdvanceRecoverySchedule(const ItemCatalog& c,RecoverySchedule s,std::uint64_t elapsed)
 {
@@ -144,18 +153,20 @@ std::expected<RecoverySchedulePlan,E> PlanRecoveryScheduleCancel(const ItemCatal
 std::expected<std::vector<std::uint8_t>,E> EncodeRecoverySchedule(const ItemCatalog& c,const RecoverySchedule& s)
 {
     if(!ValidateRecoverySchedule(c,s))return std::unexpected(E::InvalidState);std::vector<std::uint8_t> out;const auto put=[&](std::uint64_t v,unsigned n){for(unsigned i=0;i<n;++i)out.push_back(static_cast<std::uint8_t>(v>>(8*i)));};
-    for(char b:std::string_view(s.effects.empty() ? "RCS1" : "RCS2"))put(b,1);put(s.revision,8);put(s.generation,8);for(auto v:s.creditRaw)put(v,2);put(s.doses.size(),1);
+    for(char b:std::string_view(s.polymorph ? "RCS3" : s.effects.empty() ? "RCS1" : "RCS2"))put(b,1);put(s.revision,8);put(s.generation,8);for(auto v:s.creditRaw)put(v,2);put(s.doses.size(),1);
     for(const auto& d:s.doses){put(d.id,8);put(static_cast<unsigned>(d.source.Category()),2);put(d.source.LocalId(),4);put(static_cast<unsigned>(d.delivery),1);put(static_cast<unsigned>(d.pool),1);put(d.remainingRaw,8);put(d.perTickRaw,8);put(d.intervalMs,8);put(d.nextTickMs,8);put(d.remainingMs,8);put(d.dueTicks,8);put(d.rateBp,2);}
-    put(s.cooldowns.size(),1);for(const auto& cd:s.cooldowns){put(cd.profile,4);put(cd.remainingMs,8);}if(!s.effects.empty()){put(s.effects.size(),1);for(const auto& e:s.effects){put(e.id,8);put(static_cast<unsigned>(e.source.Category()),2);put(e.source.LocalId(),4);put(e.remainingMs,8);put(e.expiresAtMs,8);}}
+    put(s.cooldowns.size(),1);for(const auto& cd:s.cooldowns){put(cd.profile,4);put(cd.remainingMs,8);}if(s.polymorph || !s.effects.empty()){put(s.effects.size(),1);for(const auto& e:s.effects){put(e.id,8);put(static_cast<unsigned>(e.source.Category()),2);put(e.source.LocalId(),4);put(e.remainingMs,8);put(e.expiresAtMs,8);}}
+    if(s.polymorph){const auto& a=*s.polymorph;const auto& p=a.effect;put(static_cast<unsigned>(a.source.Category()),2);put(a.source.LocalId(),4);put(p.formId,4);put(p.mobTemplate,4);put(p.powerBp,2);put(p.expiresAtUtcMs,8);put(p.bonusExpiresAtUtcMs,8);put(static_cast<unsigned>(p.bonus),1);put(static_cast<unsigned>(p.bonusUnit),1);put(p.bonusMagnitude,4);}
     if(out.size()>MaxRecoveryStateBytes)return std::unexpected(E::InvalidState);return out;
 }
 std::expected<RecoverySchedule,E> DecodeRecoverySchedule(const ItemCatalog& c,std::span<const std::uint8_t> bytes)
 {
     if(bytes.size()<26 || bytes.size()>MaxRecoveryStateBytes)return std::unexpected(E::InvalidState);std::size_t at=0;bool bad=false;const auto get=[&](unsigned n){if(n>bytes.size()-at){bad=true;return std::uint64_t{0};}std::uint64_t v=0;for(unsigned i=0;i<n;++i)v|=std::uint64_t(bytes[at++])<<(8*i);return v;};
-    const auto magic=get(4);if(magic!=0x31534352 && magic!=0x32534352)return std::unexpected(E::InvalidState);RecoverySchedule s;s.revision=get(8);s.generation=get(8);for(auto& v:s.creditRaw)v=static_cast<std::uint16_t>(get(2));const auto count=get(1);if(count>MaxRecoveryDoses)return std::unexpected(E::InvalidState);
+    const auto magic=get(4);if(magic!=0x31534352 && magic!=0x32534352 && magic!=0x33534352)return std::unexpected(E::InvalidState);RecoverySchedule s;s.revision=get(8);s.generation=get(8);for(auto& v:s.creditRaw)v=static_cast<std::uint16_t>(get(2));const auto count=get(1);if(count>MaxRecoveryDoses)return std::unexpected(E::InvalidState);
     for(unsigned i=0;i<count;++i){const auto id=get(8),category=get(2),local=get(4);const auto key=ItemKey::Create(static_cast<std::uint16_t>(category),static_cast<std::uint32_t>(local));if(!key)return std::unexpected(E::InvalidState);RecoveryDose d{id,*key};d.delivery=static_cast<RecoveryDelivery>(get(1));d.pool=static_cast<RecoveryPool>(get(1));d.remainingRaw=static_cast<std::int64_t>(get(8));d.perTickRaw=static_cast<std::int64_t>(get(8));d.intervalMs=get(8);d.nextTickMs=get(8);d.remainingMs=get(8);d.dueTicks=get(8);d.rateBp=static_cast<std::uint16_t>(get(2));s.doses.push_back(d);}
     const auto cds=get(1);if(cds>MaxRecoveryCooldowns)return std::unexpected(E::InvalidState);for(unsigned i=0;i<cds;++i){const auto profile=get(4),remaining=get(8);s.cooldowns.push_back({static_cast<std::uint32_t>(profile),remaining});}
-    if(magic==0x32534352){const auto n=get(1);if(n>MaxRuntimeTimedEffects || !n)return std::unexpected(E::InvalidState);for(unsigned i=0;i<n;++i){const auto id=get(8),category=get(2),local=get(4);const auto key=ItemKey::Create(static_cast<std::uint16_t>(category),static_cast<std::uint32_t>(local));if(!key)return std::unexpected(E::InvalidState);const auto remaining=get(8),deadline=get(8);s.effects.push_back({id,*key,remaining,deadline});}}
+    if(magic==0x32534352 || magic==0x33534352){const auto n=get(1);if(n>MaxRuntimeTimedEffects || (!n && magic==0x32534352))return std::unexpected(E::InvalidState);for(unsigned i=0;i<n;++i){const auto id=get(8),category=get(2),local=get(4);const auto key=ItemKey::Create(static_cast<std::uint16_t>(category),static_cast<std::uint32_t>(local));if(!key)return std::unexpected(E::InvalidState);const auto remaining=get(8),deadline=get(8);s.effects.push_back({id,*key,remaining,deadline});}}
+    if(magic==0x33534352){const auto category=get(2),local=get(4);const auto key=ItemKey::Create(static_cast<std::uint16_t>(category),static_cast<std::uint32_t>(local));if(!key)return std::unexpected(E::InvalidState);PolymorphEffectPlan p;p.formId=static_cast<std::uint32_t>(get(4));p.mobTemplate=static_cast<std::uint32_t>(get(4));p.powerBp=static_cast<std::uint16_t>(get(2));p.expiresAtUtcMs=get(8);p.bonusExpiresAtUtcMs=get(8);p.bonus=static_cast<PolymorphBonus>(get(1));p.bonusUnit=static_cast<PolymorphBonusUnit>(get(1));p.bonusMagnitude=static_cast<std::uint32_t>(get(4));s.polymorph=ActivePolymorph{*key,p};}
     if(bad || at!=bytes.size() || !ValidateRecoverySchedule(c,s))return std::unexpected(E::InvalidState);return s;
 }
 }

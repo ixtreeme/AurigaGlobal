@@ -113,6 +113,13 @@ struct StatusFlags {
     bool isArenaObserver : 1;
 };
 
+struct TypedPolymorphProjection {
+    uint32_t race=0;
+    uint16_t powerBp=0;
+    uint8_t bonus=1;
+    uint32_t magnitude=0;
+    bool operator==(const TypedPolymorphProjection&) const = default;
+};
 struct PolymorphState {
     uint32_t raceVnum;
     bool maintainStat;

@@ -3,6 +3,7 @@
 #include "PointSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
 #include "../../item/ItemStore.hpp"
+#include "../../item/TypedRecovery.hpp"
 #include "../CharacterAccessors.hpp"
 
 #include "AffectSystem.hpp"
@@ -634,7 +635,7 @@ std::vector<AffectSlot> Snapshot(entt::entity e)
 TAffectFlag GetFlags(entt::entity e)
 {
     const auto* state = AffectState(e);
-    return state ? state->flags : TAffectFlag{};
+    auto flags=state ? state->flags : TAffectFlag{};if(const auto* p=g_registry.try_get<ecs::TypedPolymorphProjection>(e);p && p->race)flags.Set(AFF_POLYMORPH);return flags;
 }
 
 void SetFlag(entt::entity e, uint32_t flag, bool enabled)
@@ -1063,6 +1064,7 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 
 	for (uint32_t i = 0; i < dwCount; ++i, ++pElements)
 	{
+		if(pElements->dwType==AFFECT_POLYMORPH && g_registry.all_of<ecs::TypedItems>(e))continue;
 		if (auriga::retired_content::Affect(pElements->dwType))
 			continue;
 		////if (pElements->dwType == SKILL_MUYEONG)
@@ -1318,6 +1320,7 @@ bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, int32_t applyValu
                uint32_t flag, int32_t duration, int32_t spCost, bool overwrite,
                bool isCube)
 {
+    if(type==AFFECT_POLYMORPH && g_registry.all_of<ecs::TypedItems>(e))return false;
     if (!AffectState(e) || applyOn >= POINT_MAX_NUM || auriga::retired_content::Affect(type))
         return false;
     if (duration == 0)
@@ -1407,6 +1410,7 @@ bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, int32_t applyValu
 
 bool RemoveAffect(entt::entity e, uint32_t type)
 {
+    if(type==AFFECT_POLYMORPH && RequestTypedPolymorphClear(e))return true;
     if (!AffectState(e))
         return false;
     TouchAffectType(e, type);
@@ -1684,6 +1688,7 @@ bool IsPolymorphed(entt::entity e)
 
 int GetPolymorphPower(entt::entity e)
 {
+    if(const auto* p=g_registry.try_get<ecs::TypedPolymorphProjection>(e);p && p->race)return p->powerBp/100;
     if (test_server)
     {
         const int value = quest::CQuestManager::instance().GetEventFlag("poly");

@@ -98,6 +98,13 @@
 namespace ecs::PointSystem {
 
 namespace {
+int64_t PolymorphPointValue(entt::entity e,uint8_t type,int64_t value)
+{
+    const auto* p=g_registry.try_get<ecs::TypedPolymorphProjection>(e);if(!p || !p->race)return value;
+    if(p->bonus==4 && type==POINT_MOV_SPEED)return std::clamp<int64_t>(value+p->magnitude,0,INT_MAX);
+    if((p->bonus==2 && type==POINT_ATT_GRADE) || (p->bonus==3 && (type==POINT_DEF_GRADE || type==POINT_CLIENT_DEF_GRADE)))return std::clamp<int64_t>(value*(10000+p->magnitude)/10000,0,INT_MAX);
+    return value;
+}
 
 bool IsReadableEntity(entt::entity e)
 {
@@ -199,7 +206,7 @@ int64_t Get(entt::entity e, uint8_t type)
 	case ecs::PointRouter::PointSource::SRC_NEXT_EXP_COMPUTED:
 		return GetNextExpFromEcs(e);
 	case ecs::PointRouter::PointSource::SRC_INSTANT_ARRAY:
-		return EquipmentPointValue(e, type, ReadInstantArray(e, mapping.index));
+		return PolymorphPointValue(e,type,EquipmentPointValue(e, type, ReadInstantArray(e, mapping.index)));
 	case ecs::PointRouter::PointSource::SRC_REAL_ARRAY:
 		return ReadRealArray(e, mapping.index);
 	case ecs::PointRouter::PointSource::SRC_LEGACY_ONLY:
@@ -554,7 +561,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
         ,bForceExp
 #endif
     );}))return;
-    const auto sourceValue = [&] { return HasTypedEquipment(e) && IsEquipmentDerivedPoint(type) ? ReadInstantArray(e,type) : Get(e,type); };
+    const auto sourceValue = [&] { return (HasTypedEquipment(e) || g_registry.all_of<ecs::TypedPolymorphProjection>(e)) && IsEquipmentDerivedPoint(type) ? ReadInstantArray(e,type) : Get(e,type); };
 	if (!IsReadableEntity(e) || type >= POINT_MAX_NUM) return;
 	int64_t val = 0;
 
@@ -1360,7 +1367,8 @@ int GetPolymorphPoint(entt::entity e, uint8_t type)
 	{
 		uint32_t dwMobVnum = AffectSystem::GetPolymorphVnum(e);
 		const CMob* pMob = CMobManager::instance().Get(dwMobVnum);
-		int iPower = AffectSystem::GetPolymorphPower(e);
+		const auto* typed=g_registry.try_get<ecs::TypedPolymorphProjection>(e);
+        const auto iPower=typed && typed->race ? typed->powerBp : AffectSystem::GetPolymorphPower(e)*100;
 
 		if (pMob)
 		{
@@ -1368,17 +1376,17 @@ int GetPolymorphPoint(entt::entity e, uint8_t type)
 			{
 			case POINT_ST:
 				if ((ecs::PlayerRuntime::GetJob(e) == JOB_SHAMAN) || ((ecs::PlayerRuntime::GetJob(e) == JOB_SURA) && (SkillSystem::GetSkillGroup(e) == 2)))
-					return pMob->m_table.bStr * iPower / 100 + Get(e, POINT_IQ);
-				return pMob->m_table.bStr * iPower / 100 + Get(e, POINT_ST);
+					return static_cast<int64_t>(pMob->m_table.bStr) * iPower / 10000 + Get(e, POINT_IQ);
+				return static_cast<int64_t>(pMob->m_table.bStr) * iPower / 10000 + Get(e, POINT_ST);
 
 			case POINT_HT:
-				return pMob->m_table.bCon * iPower / 100 + Get(e, POINT_HT);
+				return static_cast<int64_t>(pMob->m_table.bCon) * iPower / 10000 + Get(e, POINT_HT);
 
 			case POINT_IQ:
-				return pMob->m_table.bInt * iPower / 100 + Get(e, POINT_IQ);
+				return static_cast<int64_t>(pMob->m_table.bInt) * iPower / 10000 + Get(e, POINT_IQ);
 
 			case POINT_DX:
-				return pMob->m_table.bDex * iPower / 100 + Get(e, POINT_DX);
+				return static_cast<int64_t>(pMob->m_table.bDex) * iPower / 10000 + Get(e, POINT_DX);
 			}
 		}
 	}
@@ -1405,8 +1413,9 @@ void ComputeBattlePoints(entt::entity e)
 
 		Set(e, POINT_ATT_GRADE, iAtt);
 		Set(e, POINT_DEF_GRADE, iDef);
-		Set(e, POINT_MAGIC_ATT_GRADE, Get(e, POINT_ATT_GRADE));
-		Set(e, POINT_MAGIC_DEF_GRADE, Get(e, POINT_DEF_GRADE));
+        const auto* p=g_registry.try_get<ecs::TypedPolymorphProjection>(e);
+		Set(e, POINT_MAGIC_ATT_GRADE, p && p->race ? iAtt : Get(e, POINT_ATT_GRADE));
+		Set(e, POINT_MAGIC_DEF_GRADE, p && p->race ? iDef : Get(e, POINT_DEF_GRADE));
 	}
 	else if (ecs::PlayerRuntime::IsPC(e))
 	{
@@ -1773,7 +1782,7 @@ int GetLimitPoint(entt::entity e, uint8_t type)
 		return 0;
 	}
 
-	int64_t val = EquipmentPointValue(e, type, ecs::PointSystem::ReadInstantArray(e, type));
+	int64_t val = PolymorphPointValue(e,type,EquipmentPointValue(e, type, ecs::PointSystem::ReadInstantArray(e, type)));
 	int max_val = INT_MAX;
 	int limit = INT_MAX;
 	int min_limit = -INT_MAX;

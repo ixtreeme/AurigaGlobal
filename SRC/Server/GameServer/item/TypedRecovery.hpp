@@ -6,6 +6,7 @@ struct TypedRecoveryBusy {};
 void StartTypedRecoveryClock(entt::entity);
 void StopTypedRecoveryClock(entt::entity);
 void NotifyTypedRecoveryDeath(entt::entity);
+bool RequestTypedPolymorphClear(entt::entity);
 void TickTypedRecovery();
 void FinishTypedRecoveryClocks();
 void SendTypedRecovery(entt::entity);

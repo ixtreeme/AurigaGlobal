@@ -1,4 +1,5 @@
 #include "../item/TypedBooks.hpp"
+#include "../item/TypedPolymorph.hpp"
 #include "stdafx.h"
 #include <Core/packet_string.h>
 #include "../ecs/systems/InventorySystem.hpp"
@@ -455,6 +456,9 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
             break;
         case HEADER_CG_TYPED_SOCKET_MAINTENANCE:
             HandleTypedSocketMaintenancePacket(character, c_pData);
+            break;
+        case HEADER_CG_TYPED_POLYMORPH:
+            HandleTypedPolymorphPacket(character, c_pData);
             break;
         case HEADER_CG_TYPED_BOOKS:
             HandleTypedBooksPacket(character, c_pData);

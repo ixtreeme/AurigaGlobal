@@ -50,6 +50,8 @@ CMobManager::~CMobManager()
 
 bool CMobManager::Initialize(TMobTable * pTable, int iSize)
 {
+    if(revision_==UINT64_MAX)return false;
+    ++revision_;
 	m_map_pkMobByVnum.clear();
 	m_map_pkMobByName.clear();
 

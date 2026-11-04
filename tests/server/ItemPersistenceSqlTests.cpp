@@ -3,6 +3,7 @@
 #include "EffectRuntimeFixture.hpp"
 #include "BookRuntimeFixture.hpp"
 #include "BookAidFixture.hpp"
+#include "PolymorphRuntimeFixture.hpp"
 #include <item/BookSaveFence.hpp>
 #include "CatalogSnapshotFixture.hpp"
 #include <ItemPersistenceSql.hpp>
@@ -175,7 +176,7 @@ void Allocator(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,unsigned 
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
 {
     auto source=attribute_runtime_fixture::Catalog();
-    effect_runtime_fixture::Extend(source);book_runtime_fixture::Extend(source);book_aid_fixture::Extend(source);
+    effect_runtime_fixture::Extend(source);book_runtime_fixture::Extend(source);book_aid_fixture::Extend(source);polymorph_runtime_fixture::Extend(source);
     const auto sqlBox=ItemKey::Create(8,99).value();auto boxBase=*std::ranges::find(source.items,item_catalog_fixture::GiftBox(),&ItemBaseRow::key);
     boxBase.key=sqlBox;boxBase.contentCode="container.sql_opening";source.items.push_back(boxBase);source.containers.push_back({sqlBox,ContainerKind::Locked,3,7});
     source.lootProfiles.push_back({3,"loot.sql_opening",LootPickMode::IndependentChance,{{1,LootRewardKind::Item,f::Leather().key,3,10000,0},{2,LootRewardKind::Gold,{},75,10000,0}}});
@@ -759,6 +760,21 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         auto book=MakeBookRuntimeCommit(*c,{23,4},state.fence,state.storages,state.items,state.learning,live,ItemInstanceId::Create(block.first+2).value(),bf::Facts(),1000,{0,1500});Check(book && book->result.consumeChanceBonus && !book->result.consumeDelayBypass && p::CommitItems(writer,*c,book->commit).has_value(),"book atomically consumes item-earned bonus and preserves unused bypass");state=p::LoadCurrentItemOwner(writer,*c,customer).value();live=state.learning.character;
         auto waiting=MakeBookRuntimeCommit(*c,{23,5},state.fence,state.storages,state.items,state.learning,live,ItemInstanceId::Create(block.first+2).value(),bf::Facts(),1001,{0,1500});Check(waiting && waiting->result.consumeDelayBypass && p::CommitItems(writer,*c,waiting->commit).has_value(),"book consumes bypass within exact deadline");state=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(!state.learning.chanceTokens && state.learning.bypassTokens==1 && state.learning.character.skills[1].level==1,"persisted balance and skill advance together");
         Check(p::ClaimOwnerSession(writer,*c,customer).has_value() && p::LoadCurrentItemOwner(writer,*c,customer)->learning==state.learning,"aid and book result survive session handoff");
+    }
+    {
+        namespace poly=polymorph_runtime_fixture;
+        const ItemOwner owner{ItemOwnerKind::Character,880098};const auto bag=f::Inventory(owner);
+        Check(p::ProvisionOwner(admin,*c,owner,std::span(&bag,1),{}).has_value(),"poly owner provisioned");auto state=p::LoadCurrentItemOwner(writer,*c,owner).value();const auto ids=p::ReserveItemInstanceIds(writer,*c,4).value();
+        for(unsigned n=0;n<4;++n){const auto fixture=poly::Item(n);auto grant=MakeGrantCommit(*c,{24,0,static_cast<std::uint8_t>(n+1)},state.fence,state.storages,state.items,{fixture.key,0,fixture.count,{},fixture.polymorph},std::array{ItemInstanceId::Create(ids.first+n).value()});Check(grant && p::CommitItems(writer,*c,*grant).has_value(),"orb and book payloads granted");state=p::LoadCurrentItemOwner(writer,*c,owner).value();}
+        auto actor=poly::Facts();actor.actorId=owner.id;
+        auto use=[&](unsigned n,unsigned step){return MakePolymorphRuntimeCommit(*c,{24,1,static_cast<std::uint8_t>(step)},state.fence,state.storages,state.items,state.recovery,ItemInstanceId::Create(ids.first+n).value(),actor,0,1000,0);};
+        auto orb=use(0,1);Check(orb.has_value(),"SQL orb plan");auto raced=orb->commit;++raced.items[0].before->revision;++raced.items[0].after.revision;Check(!p::CommitItems(writer,*c,raced),"orb CAS rolls RCS3 back");Check(!p::LoadCurrentItemOwner(writer,*c,owner)->recovery.polymorph,"failed orb has no active shape");
+        Check(p::CommitItems(writer,*c,orb->commit).has_value() && p::CommitItems(writer,*c,orb->commit)->replay,"orb and RCS3 receipt once");state=p::LoadCurrentItemOwner(writer,*c,owner).value();Check(Find(state,ids.first).count==4 && state.recovery.polymorph->effect.powerBp==3333,"fractional power and source debit reload");
+        Check(p::ClaimOwnerSession(writer,*c,owner).has_value(),"polymorph relog");state=p::LoadCurrentItemOwner(writer,*c,owner).value();Check(state.recovery.polymorph->effect.expiresAtUtcMs==3000,"absolute deadline survives offline load");auto cancel=MakePolymorphCancel(*c,{24,2},state.fence,state.recovery,0,1500,state.recovery.generation);Check(cancel && p::CommitItems(writer,*c,*cancel).has_value(),"shape cancellation saved");state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        auto failed=use(3,2);Check(failed && p::CommitItems(writer,*c,failed->commit).has_value(),"failed book receipted");state=p::LoadCurrentItemOwner(writer,*c,owner).value();Check(Find(state,ids.first+3).polymorph->practiceRemaining==2 && !state.recovery.polymorph,"failed book changes no practice or shape");
+        auto book=use(2,3);Check(book && p::CommitItems(writer,*c,book->commit).has_value(),"practice and shape saved together");state=p::LoadCurrentItemOwner(writer,*c,owner).value();Check(Find(state,ids.first+2).polymorph->practiceRemaining==1 && state.recovery.polymorph->effect.bonusMagnitude==21,"book practice and movement bonus reload");
+        Query(admin,"UPDATE player.item_instance SET polymorph_practice=polymorph_practice+1 WHERE instance_id=?",{U::UInt(ids.first+2)});Check(!p::LoadCurrentItemOwner(writer,*c,owner),"tampered practice fails instance hash");Query(admin,"UPDATE player.item_instance SET polymorph_practice=polymorph_practice-1 WHERE instance_id=?",{U::UInt(ids.first+2)});Check(p::LoadCurrentItemOwner(writer,*c,owner).has_value(),"original practice restored");
+        auto cleared=state.recovery;cleared.polymorph.reset();++cleared.revision;ItemCommit clear;clear.operationId={24,3};clear.catalogRevision=c->Revision();clear.catalogHash=c->ContentHash();clear.kind=ItemOperationKind::Service;clear.owners={state.fence};clear.recovery=ItemRecoveryChange{owner,state.recovery,cleared,0};clear.outcomeCode=0x2404;clear.result={'P','L','R',1,4};Check(p::CommitItems(writer,*c,clear).has_value(),"death/expiry clear schedule saved");state=p::LoadCurrentItemOwner(writer,*c,owner).value();Check(!state.recovery.polymorph && Find(state,ids.first+1).polymorph->boundForm==24001,"clear preserves independent bound orb payload");
     }
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);

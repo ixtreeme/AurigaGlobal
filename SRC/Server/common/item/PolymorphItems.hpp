@@ -80,6 +80,7 @@ struct PolymorphEffectPlan
     PolymorphBonus bonus = PolymorphBonus::None;
     PolymorphBonusUnit bonusUnit = PolymorphBonusUnit::None;
     std::uint32_t bonusMagnitude = 0;
+    bool operator==(const PolymorphEffectPlan&) const = default;
 };
 struct PolymorphPlan
 {

@@ -1,7 +1,7 @@
 # ADR IC-034 — F4 szerverbekötés: ütemterv és 1. szelet (katalógus induláskor)
 
 2026-10-29. Fázis: F4 ([IC-012](item_combat_012_item_runtime_first.md)).
-Állapot (2026-11-03): **C1–C22 implementált a külön típusos tárgyrendszerben;
+Állapot (2026-11-04): **C1–C24 implementált a külön típusos tárgyrendszerben;
 Unity 6.3 és helyi szerver együtt ellenőrizve**. A normál legacy leltár és
 a meglévő karakterek átállítása a felhasználó kérésére még nem történik meg.
 
@@ -24,8 +24,8 @@ az összevonás részletei és ellenőrzései a
 |---|---|---|---|
 | A. Speciális tárgyműveletek | Páros (kapcsolt) bónuszok; jelmez-, stóla- és rúnabónuszok; fejlesztési segédanyagok | F2 maradéka | nyitott ([IC-031](item_combat_031_instance_attributes.md) határa) |
 | B. Tartós tárgymentés | Teljes mentés, visszatöltés és tranzakciókezelés a futó szerverben; a még nem támogatott kategóriák példányállapota | F3 maradéka | a modell, az író és a próbapad kész ([IC-032](item_combat_032_item_persistence.md), [IC-033](item_combat_033_item_test_bench.md)) |
-| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C23 kész a típusos úton**, időzített/kapcsolható hatásokkal, képességkönyvekkel és könyvsegédekkel; fiókpénztárca, általános Mission/Lua-quest és további használatok még nyitottak |
-| D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | **C1–C22 külön kliensútjai kész**, normál leltárátállás még vár, részletek lent |
+| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C24 kész a típusos úton**, időzített/kapcsolható hatásokkal, könyvekkel, könyvsegédekkel és átváltozással; fiókpénztárca, általános Mission/Lua-quest és további használatok még nyitottak |
+| D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | **C1–C24 külön kliensútjai kész**, normál leltárátállás még vár, részletek lent |
 | E. Teljes adatkonverzió | Régi protók, példányok, receptek, tartalmi hivatkozások | F6 | az eszközök megvannak; a családtérkép jóváhagyásra vár |
 | F. Végső ellenőrzés | Helyi játékpróba, újrabelépés utáni adatmegőrzés, gazdasági műveletek, FreeBSD-build | F7 | nyitott |
 
@@ -796,3 +796,25 @@ Részletek: [IC-051](item_combat_051_book_aids_runtime.md),
 Következő szelet: **C24 — átváltozást adó tárgyak futó szerveres és Unity-útja**.
 A legacy affectek konverziója, további kategóriák, fiókpénztárca,
 általános Mission/Lua-quest, teljes konverzió és kiadási kapuk még nyitottak.
+
+## C24 — Átváltoztató gömbök és gyakorlókönyvek (2026-11-04)
+
+Fix/példányhoz kötött alak, szerveres használat, sikertelen és sikeres gyakorlás,
+könyvfejlesztés, külön megszüntetés. Nullable példánypayload, atomi forrás- és
+RCS3-hatásmentés; UTC-lejárat online és offline, valódi race és statok.
+A bónuszok a felszereléssel együtt, halmozódás nélkül működnek. GC247,
+GC225 v5 és GC227 Polymorph action, külön Unity-ablak; a legacy leltár átállítása vár.
+
+21/21 natív item-CTest, 93 új runtime-, 62 polymorph-domain-, 1770 item-SQL-,
+7398 pont-, 2069 harci és 31564 GM-ellenőrzés sikeres. Unity-fordítás, 11255 új
+és minden korábbi C4–C23 validátor, 43 valódi TLS/UI-ellenőrzés sikeres.
+A korábbi 102 tárgy minden állapota/hash-e és a C22 learning megmaradt.
+A helyi stack és manager együtt frissült.
+Unity: cs63 a mission engine ágon, kizárólag a 26 saját fájllal.
+
+Részletek: [IC-052](item_combat_052_polymorph_runtime.md),
+[ellenőrzések és helyi próba](../reports/item_combat/2026-11-04_polymorph_runtime.md).
+Következő szelet: **C25 — gyűjtőeszközök és halászati tárgyak szerveres/Unity-útja**,
+az [IC-023](item_combat_023_gathering_tools_and_fishing.md) modelljére építve.
+A további kategóriák, speciális bónuszok, fiókpénztárca, általános Mission/Lua-quest,
+teljes konverzió és kiadási kapuk még nyitottak.
