@@ -6,6 +6,7 @@
 #include "PolymorphRuntimeFixture.hpp"
 #include "FishProcessingFixture.hpp"
 #include "ToolRuntimeFixture.hpp"
+#include <item/ResourceGathering.hpp>
 #include <item/BookSaveFence.hpp>
 #include "CatalogSnapshotFixture.hpp"
 #include <ItemPersistenceSql.hpp>
@@ -819,6 +820,18 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         auto practiced=MakeToolRuntimeCommit(*c,{26,7},state.fence,state.storages,state.items,request);Check(practiced && p::CommitItems(writer,*c,practiced->commit).has_value() && p::CommitItems(writer,*c,practiced->commit)->replay,"completed resource receipt cannot train twice");state=p::LoadCurrentItemOwner(writer,*c,owner).value();Check(Find(state,block.first).tool==ToolInstanceState{1,20},"one completed event saves exactly one practice point");
         Check(p::ClaimOwnerSession(writer,*c,owner).has_value(),"tool relog");const auto reloaded=p::LoadCurrentItemOwner(writer,*c,owner).value();Check(reloaded.items==state.items && reloaded.fence.sessionGeneration>state.fence.sessionGeneration,"equipped rod level, practice and bait survive handoff");
         Query(admin,"UPDATE player.item_instance SET tool_training_points=tool_training_points+1 WHERE instance_id=?",{U::UInt(block.first)});Check(!p::LoadCurrentItemOwner(writer,*c,owner),"tampered practice fails hash");Query(admin,"UPDATE player.item_instance SET tool_training_points=tool_training_points-1 WHERE instance_id=?",{U::UInt(block.first)});Check(p::LoadCurrentItemOwner(writer,*c,owner).has_value(),"restored tool state validates");
+    }
+    {
+        namespace tool=tool_runtime_fixture;const ItemOwner owner{ItemOwnerKind::Character,880101};const std::array bags{f::Inventory(owner),ItemStorageLayout{{owner,ItemStorageKind::Equipment,1},8,1,1}};
+        Check(p::ProvisionOwner(admin,*c,owner,bags,{}).has_value(),"resource owner provisioned");auto state=p::LoadCurrentItemOwner(writer,*c,owner).value();auto ids=p::ReserveItemInstanceIds(writer,*c,3).value();auto rod=ItemInstanceId::Create(ids.first).value();
+        auto grant=MakeGrantCommit(*c,{27,1},state.fence,state.storages,state.items,{tool::Tool(),0,1,{},{},ToolInstanceState{0,50}},std::array{rod});Check(grant && p::CommitItems(writer,*c,*grant).has_value(),"resource rod granted");state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        auto equip=MakeEquipCommit(*c,{27,2},state.fence,state.storages,state.items,rod,{100,0,0});Check(equip && p::CommitItems(writer,*c,*equip).has_value(),"resource rod equipped");state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        GatheringSite site{1,41,9009,"Fishing site",ToolKind::Rod,FishingPool::First,900,2000,1,100,10000,0,0,{{tool::Bait(),2,1}}};
+        const std::array rewardIds{ItemInstanceId::Create(ids.first+1).value(),ItemInstanceId::Create(ids.first+2).value()};auto plan=MakeResourceGatheringCommit(*c,site,{27,3},state.fence,state.storages,state.items,{rod,tool::Actor(),true},rewardIds,[](auto){return 0u;});Check(plan && plan->success,"completed event creates atomic resource plan");
+        auto raced=plan->commit;raced.items[0].before->tool->baitPower=20;Check(!p::CommitItems(writer,*c,raced),"resource wrong rod CAS rolls reward back");auto unchanged=p::LoadCurrentItemOwner(writer,*c,owner).value();Check(unchanged.items==state.items,"CAS cannot leak reward, bait or practice");
+        Check(p::CommitItems(writer,*c,plan->commit).has_value() && p::CommitItems(writer,*c,plan->commit)->replay,"resource completion receipted exactly once");state=p::LoadCurrentItemOwner(writer,*c,owner).value();Check(Find(state,ids.first).tool==ToolInstanceState{1,0} && Find(state,ids.first+1).count==2,"resource reward, training and bait saved together");
+        Check(!MakeResourceGatheringCommit(*c,site,{27,4},state.fence,state.storages,state.items,{rod,tool::Actor(),true},rewardIds,[](auto){return 0u;}),"empty rod cannot complete a second catch");
+        Check(p::ClaimOwnerSession(writer,*c,owner).has_value(),"resource relog claim");auto reloaded=p::LoadCurrentItemOwner(writer,*c,owner).value();Check(reloaded.items==state.items,"resource reward and exact tool survive relog");
     }
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);

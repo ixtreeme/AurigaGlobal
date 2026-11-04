@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "TypedTools.hpp"
+#include "TypedGathering.hpp"
 #include "TypedFishProcessing.hpp"
 #include "TypedInventorySync.hpp"
 #include "TypedDrops.hpp"
@@ -60,7 +61,7 @@ entt::entity Current(std::uint32_t pid,std::uint64_t token)
 bool TypedGatheringActive(entt::entity e)
 {
     if(!g_registry.valid(e))return false;const auto* fishing=g_registry.try_get<ecs::FishingState>(e);const auto* mining=g_registry.try_get<ecs::MiningState>(e);
-    return g_registry.all_of<ecs::FishingActiveTag>(e) || (fishing && fishing->fishingNewEvent) || (mining && mining->event) || ecs::PlayerRuntime::GetCharEvent(e,ecs::PlayerRuntime::CharEvent::Fishing);
+    return TypedResourceActive(e) || g_registry.all_of<ecs::FishingActiveTag>(e) || (fishing && fishing->fishingNewEvent) || (mining && mining->event) || ecs::PlayerRuntime::GetCharEvent(e,ecs::PlayerRuntime::CharEvent::Fishing);
 }
 bool HandleTypedToolsPacket(entt::entity e,const char* bytes)
 {

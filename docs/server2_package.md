@@ -151,3 +151,17 @@ oldódnak fel a core munkakönyvtárától függetlenül; a mobanimációk DB-be
 ezredmásodperceiből az AI másodpercet kap. A korábbi értelmezés ezerszeres
 animációs várakozást okozhatott. A normál server loopok kezelik a felügyelő
 hitelesített helyi leállítási kérését, hogy a meglévő flush/cleanup útvonalak fussanak.
+
+## Típusos gyűjtőhelyek (C25c-1)
+
+Az `items.catalog = "required"` mellett a core induláskor ellenőrzi a
+`data/typed_gathering.json` v1 gyűjtőhelyfájlt. A friss csomag üres `sites`
+listát kap; a séma a `schemas/typed_gathering.schema.json`. A szabályok
+map/race/eszközfajta/botkészlet alapján neveznek meg valódi helyeket,
+explicit ItemKey-jutalmakkal. Hibás létező fájl megállítja az indulást.
+Hiányzó vagy üres fájl nem ad gyűjtőhelyet.
+
+Ez a gyűjtőhelyes, időzített út. A legacy szabadvízi halászati minijáték és
+a végleges fogási táblák nem konvertálódnak automatikusan. A helyi C25c
+teszthelyek és teszteszközök csak az igazolt próbakarakterhez készültek.
+Részletek: [IC-055](adr/item_combat_055_resource_gathering_runtime.md).

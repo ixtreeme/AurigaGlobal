@@ -1,7 +1,7 @@
 # ADR IC-034 — F4 szerverbekötés: ütemterv és 1. szelet (katalógus induláskor)
 
 2026-10-29. Fázis: F4 ([IC-012](item_combat_012_item_runtime_first.md)).
-Állapot (2026-11-04): **C1–C24, C25a és C25b implementált a külön típusos tárgyrendszerben;
+Állapot (2026-11-04): **C1–C24, C25a–b és C25c-1 implementált a külön típusos tárgyrendszerben;
 Unity 6.3 és helyi szerver együtt ellenőrizve**. A normál legacy leltár és
 a meglévő karakterek átállítása a felhasználó kérésére még nem történik meg.
 
@@ -24,8 +24,8 @@ az összevonás részletei és ellenőrzései a
 |---|---|---|---|
 | A. Speciális tárgyműveletek | Páros (kapcsolt) bónuszok; jelmez-, stóla- és rúnabónuszok; fejlesztési segédanyagok | F2 maradéka | nyitott ([IC-031](item_combat_031_instance_attributes.md) határa) |
 | B. Tartós tárgymentés | Teljes mentés, visszatöltés és tranzakciókezelés a futó szerverben; a még nem támogatott kategóriák példányállapota | F3 maradéka | a modell, az író és a próbapad kész ([IC-032](item_combat_032_item_persistence.md), [IC-033](item_combat_033_item_test_bench.md)) |
-| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C24, C25a–b kész a típusos úton**, hatásokkal, könyvekkel, átváltozással, halfeldolgozással és eszközfejlesztés/csalizással; fogás/gyűjtés, fiókpénztárca, általános Mission/Lua-quest és további használatok nyitottak |
-| D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | **C1–C24, C25a–b külön kliensútjai kész**, normál leltárátállás még vár, részletek lent |
+| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C24, C25a–b és C25c-1 kész a típusos úton**, gyűjtőhelyes fogással/gyűjtéssel és szerzett gyakorlattal; szabadvízi halászati minijáték, fiókpénztárca, általános Mission/Lua-quest és további használatok nyitottak |
+| D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | **C1–C24, C25a–b és C25c-1 külön kliensútjai kész**, normál leltárátállás még vár, részletek lent |
 | E. Teljes adatkonverzió | Régi protók, példányok, receptek, tartalmi hivatkozások | F6 | az eszközök megvannak; a családtérkép jóváhagyásra vár |
 | F. Végső ellenőrzés | Helyi játékpróba, újrabelépés utáni adatmegőrzés, gazdasági műveletek, FreeBSD-build | F7 | nyitott |
 
@@ -856,3 +856,24 @@ Részletek: [IC-054](item_combat_054_tools_runtime.md),
 Következő: **C25c — valódi fogás/gyűjtés és annak befejezéséből járó gyakorlópont**.
 A gyakorlás védett API-ja domain/SQL-szinten ellenőrzött; az élő eszközpróba
 seedelt pontokkal futott. A teljes C25 és az F7 kiadási kapuk nyitottak.
+
+## C25c-1 — Gyűjtőhelyes fogás/gyűjtés és szerzett gyakorlat (2026-11-04)
+
+Szerkesztett világentitásos helyek, szerver által időzített művelet, két
+botkészlet, súlyozott típusos jutalom. A jutalom, a valóban szerzett
+gyakorlópont és a bot csalifelhasználása egy tranzakció. Előzetes teljes
+hely-/ID-ellenőrzés, explicit Unity-start, cancel, mozgás/kilépés megszakítás,
+receipt replay és relog. GC254 v3; a v1/v2 utak megmaradtak.
+
+25/25 natív item-CTest, 27 új domain-, 1875 SQL-, 7398 pont- és 31564
+GM-ellenőrzés sikeres. Unity-fordítás, 11831 új és minden korábbi C4–C25b
+validátor, 103 valódi TLS/UI-ellenőrzés sikeres. A fogásból szerzett két
+ponttal ugyanaz a bot a valódi horgásznál fejleszthető volt. Mind a 139
+korábbi tárgy/hash és a learning/karakter-checkpoint megmaradt.
+A helyi stack/manager frissült. Unity: cs66, kizárólag a 21 saját fájllal.
+
+Részletek: [IC-055](item_combat_055_resource_gathering_runtime.md),
+[próbák és korlátok](../reports/item_combat/2026-11-04_resource_gathering_runtime.md).
+Következő: **C25c-2 — a szabadvízi halászati minijáték típusos átvezetése**.
+A gyűjtőhelyes menet elkészült; a teljes legacy tartalomkonverzió, a végleges
+assetek, az általános Mission-események és az F7 kiadási kapuk még nyitottak.
