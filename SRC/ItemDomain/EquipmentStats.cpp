@@ -77,6 +77,7 @@ std::expected<EquipmentStats,E> BuildEquipmentStats(const ItemCatalog& c,ItemOwn
         const auto* d=c.Find(item->key);if(!d)return std::unexpected(E::InvalidItem);
         unsigned slot=0;std::uint32_t resistance=0;
         std::visit([&](const auto& row){if constexpr(requires{row.slot;})slot=static_cast<unsigned>(row.slot);if constexpr(requires{row.resistanceProfile;})resistance=row.resistanceProfile;},d->category);
+        if(const auto* tool=std::get_if<ItemToolRow>(&d->category)){slot=1;out.tool=tool->kind;}
         if(!slot || slot>8 || item->placement->anchor!=slot-1)return std::unexpected(E::InvalidSlot);
         const AccessorySocketGrade* grade=nullptr;
         if(item->accessory && item->accessory->activeGrade)
@@ -118,12 +119,13 @@ std::vector<std::byte> EncodeEquipmentStats(const EquipmentStats* stats,std::uin
 {
     const EquipmentStats empty;const auto& s=stats ? *stats : empty;
     std::vector<std::byte> bytes;const auto put=[&](std::uint64_t value,unsigned size){for(unsigned i=0;i<size;++i)bytes.push_back(std::byte((value>>(8*i))&255));};
-    put(231,1);put(0,4);put(1,1);put(stats ? 0 : 1,1);put(vid,4);put(revision,8);put(inventoryRevision,8);
+    put(231,1);put(0,4);put(s.tool ? 2 : 1,1);put(stats ? 0 : 1,1);put(vid,4);put(revision,8);put(inventoryRevision,8);
     put(s.weapon ? static_cast<unsigned>(*s.weapon) : 0,1);for(auto value:s.flat.Values())put(static_cast<std::uint64_t>(value),8);
     for(auto value:points)put(static_cast<std::uint64_t>(value),8);
     put(std::ranges::count_if(s.bonuses,[](auto value){return value!=0;}),1);
     for(unsigned id=1;id<s.bonuses.size();++id)if(s.bonuses[id]){put(id,4);put(static_cast<std::uint64_t>(s.bonuses[id]),8);}
     for(auto value:s.resistances)put(static_cast<std::uint64_t>(value),8);
+    if(s.tool)put(static_cast<unsigned>(*s.tool),1);
     for(unsigned i=0;i<4;++i)bytes[1+i]=std::byte((bytes.size()>>(8*i))&255);return bytes;
 }
 }

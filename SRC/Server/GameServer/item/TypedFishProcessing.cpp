@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "TypedFishProcessing.hpp"
+#include "TypedTools.hpp"
 #include "TypedInventorySync.hpp"
 #include "TypedDrops.hpp"
 #include "ItemCatalogRuntime.hpp"
@@ -77,8 +78,10 @@ void Reply(entt::entity e,Status status,std::uint8_t error=255)
     SendTypedInventory(e);auto* d=ecs::PlayerRuntime::GetDesc(e);if(packet && d && d->IsPhase(PHASE_GAME))d->LargePacket(packet->data(),static_cast<int>(packet->size()));
 }
 }
+bool TypedGatheringAdmitted(entt::entity e){return Admitted(e);}
 bool HandleTypedFishProcessingPacket(entt::entity e,const char* bytes)
 {
+    if(static_cast<unsigned char>(bytes[1])>=4)return HandleTypedToolsPacket(e,bytes);
     static_assert(sizeof(TPacketCGTypedRecovery)==26);const auto r=*reinterpret_cast<const TPacketCGTypedRecovery*>(bytes);
     if(!g_registry.valid(e))return true;auto* s=g_registry.try_get<TypedFishProcessingSession>(e);if(s && s->pending){Reply(e,Status::Pending);return true;}
     const auto c=store::CurrentCatalog();if(!c)return true;

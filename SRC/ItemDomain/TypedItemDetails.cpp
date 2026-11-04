@@ -55,7 +55,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
                 { keys.insert(ingredient.key); states.emplace(ingredient.key,ingredient.refinementLevel); }
             }
         if(keys.size()>65535 || states.size()>65535 || recipes.size()>65535) throw TooLarge{};
-        const bool wide=std::ranges::any_of(keys,[&](auto key){const auto* e=c.Find(key);const auto* r=e ? std::get_if<ItemConsumableRow>(&e->category) : nullptr;const auto* p=r ? c.FindRecovery(r->recoveryProfile) : nullptr;return (e && (std::holds_alternative<ItemFishingRow>(e->category) || std::holds_alternative<ItemPolymorphRow>(e->category) || std::holds_alternative<ItemSkillBookRow>(e->category))) || (r && (r->bookAidProfile || r->attributeServiceProfile || r->timedEffectProfile || r->toggleEffectProfile || (p && (p->Data().Delivery()==RecoveryDelivery::Reserve || p->Data().Delivery()==RecoveryDelivery::Periodic || p->Data().Delivery()==RecoveryDelivery::Automatic))));});
+        const bool wide=std::ranges::any_of(keys,[&](auto key){const auto* e=c.Find(key);const auto* r=e ? std::get_if<ItemConsumableRow>(&e->category) : nullptr;const auto* p=r ? c.FindRecovery(r->recoveryProfile) : nullptr;return (e && (std::holds_alternative<ItemToolRow>(e->category) || std::holds_alternative<ItemFishingRow>(e->category) || std::holds_alternative<ItemPolymorphRow>(e->category) || std::holds_alternative<ItemSkillBookRow>(e->category))) || (r && (r->bookAidProfile || r->attributeServiceProfile || r->timedEffectProfile || r->toggleEffectProfile || (p && (p->Data().Delivery()==RecoveryDelivery::Reserve || p->Data().Delivery()==RecoveryDelivery::Periodic || p->Data().Delivery()==RecoveryDelivery::Automatic))));});
         Writer w; w.Put(TypedItemDetailsHeader,1); w.Put(0,4); w.Put(wide ? 2 : 1,1); w.Put(c.Revision(),8);
         for(auto b:c.ContentHash()) w.Put(b,1);
         w.Put(keys.size(),2);
@@ -86,6 +86,8 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
             if(key.Category()==ItemCategory::Material && AccessoryMaterial(c,key))actions|=TypedActionSocket;
             if(std::holds_alternative<ItemCurrencyTokenRow>(entry->category))actions|=TypedActionRedeem;
             if(const auto* fish=std::get_if<ItemFishingRow>(&entry->category);fish && (fish->kind==FishingKind::LiveFish || (fish->kind==FishingKind::DeadFish && fish->grillResult)))actions|=TypedActionFish;
+            if(std::holds_alternative<ItemToolRow>(entry->category)){slot=1;actions|=TypedActionTool;}
+            if(const auto* bait=std::get_if<ItemFishingRow>(&entry->category);bait && bait->kind==FishingKind::Bait)actions|=TypedActionTool;
             if(std::holds_alternative<ItemPolymorphRow>(entry->category))actions|=TypedActionPolymorph;
             if(std::holds_alternative<ItemSkillBookRow>(entry->category))actions|=TypedActionBook;
             if(slot && slot<=8) actions|=TypedActionEquip;

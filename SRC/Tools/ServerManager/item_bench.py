@@ -24,7 +24,7 @@ ALLOCATOR = 'item_instance_id_allocator'
 GROUND_TABLES = ('item_ground_entry', 'item_ground_core')
 RECOVERY_TABLES = ('item_recovery_schedule',)
 TABLES = (*RECOVERY_TABLES, *GROUND_TABLES, ALLOCATOR, *BASE_TABLES)
-MIGRATIONS = ('001_item_persistence.sql', '002_instance_id_allocator.sql', '003_owned_ground.sql', '004_recovery_schedule.sql', '005_automatic_recovery.sql', '006_item_effects.sql', '007_book_learning.sql', '008_polymorph.sql')
+MIGRATIONS = ('001_item_persistence.sql', '002_instance_id_allocator.sql', '003_owned_ground.sql', '004_recovery_schedule.sql', '005_automatic_recovery.sql', '006_item_effects.sql', '007_book_learning.sql', '008_polymorph.sql', '009_gathering_tools.sql')
 NO_WINDOW = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
 
 

@@ -96,7 +96,7 @@ def main():
             parser.error('Missing native item tool: ' + str(item_tools / (name + suffix)))
     # The test bench installs the additive item persistence tables itself.
     persistence_schemas = [source.parents[2] / 'db/migrations/item_instance' / name
-                           for name in ('001_item_persistence.sql', '002_instance_id_allocator.sql', '003_owned_ground.sql', '004_recovery_schedule.sql', '005_automatic_recovery.sql', '006_item_effects.sql', '007_book_learning.sql', '008_polymorph.sql')]
+                           for name in ('001_item_persistence.sql', '002_instance_id_allocator.sql', '003_owned_ground.sql', '004_recovery_schedule.sql', '005_automatic_recovery.sql', '006_item_effects.sql', '007_book_learning.sql', '008_polymorph.sql', '009_gathering_tools.sql')]
     for schema in persistence_schemas:
         if not schema.is_file():
             parser.error('Missing item persistence schema: ' + str(schema))

@@ -5,6 +5,7 @@
 #include "BookAidFixture.hpp"
 #include "PolymorphRuntimeFixture.hpp"
 #include "FishProcessingFixture.hpp"
+#include "ToolRuntimeFixture.hpp"
 #include <item/BookSaveFence.hpp>
 #include "CatalogSnapshotFixture.hpp"
 #include <ItemPersistenceSql.hpp>
@@ -177,7 +178,7 @@ void Allocator(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,unsigned 
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
 {
     auto source=attribute_runtime_fixture::Catalog();
-    effect_runtime_fixture::Extend(source);book_runtime_fixture::Extend(source);book_aid_fixture::Extend(source);polymorph_runtime_fixture::Extend(source);fish_processing_fixture::Extend(source);
+    effect_runtime_fixture::Extend(source);book_runtime_fixture::Extend(source);book_aid_fixture::Extend(source);polymorph_runtime_fixture::Extend(source);fish_processing_fixture::Extend(source);tool_runtime_fixture::Extend(source);
     const auto sqlBox=ItemKey::Create(8,99).value();auto boxBase=*std::ranges::find(source.items,item_catalog_fixture::GiftBox(),&ItemBaseRow::key);
     boxBase.key=sqlBox;boxBase.contentCode="container.sql_opening";source.items.push_back(boxBase);source.containers.push_back({sqlBox,ContainerKind::Locked,3,7});
     source.lootProfiles.push_back({3,"loot.sql_opening",LootPickMode::IndependentChance,{{1,LootRewardKind::Item,f::Leather().key,3,10000,0},{2,LootRewardKind::Gold,{},75,10000,0}}});
@@ -799,6 +800,25 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         Check(p::ClaimOwnerSession(writer,*c,owner).has_value(),"fish relog session");const auto reloaded=p::LoadCurrentItemOwner(writer,*c,owner).value();
         Check(reloaded.items==state.items && reloaded.fence.sessionGeneration>state.fence.sessionGeneration,"fish and cooked reward survive session handoff");
         const auto old=p::CommitItems(writer,*c,grilled->commit);Check(!old || old->replay,"old session cannot reapply grill");
+    }
+    {
+        namespace tool=tool_runtime_fixture;
+        const ItemOwner owner{ItemOwnerKind::Character,880100};const std::array bags{f::Inventory(owner),ItemStorageLayout{{owner,ItemStorageKind::Equipment,1},8,1,1}};
+        Check(p::ProvisionOwner(admin,*c,owner,bags,{}).has_value(),"tool owner provisioned");auto state=p::LoadCurrentItemOwner(writer,*c,owner).value();const auto block=p::ReserveItemInstanceIds(writer,*c,2).value();
+        const auto rod=ItemInstanceId::Create(block.first).value(),bait=ItemInstanceId::Create(block.first+1).value();
+        auto grant=MakeGrantCommit(*c,{26,0,1},state.fence,state.storages,state.items,{tool::Tool(),0,1,{},{},ToolInstanceState{3,0}},std::array{rod});Check(grant && p::CommitItems(writer,*c,*grant).has_value(),"explicit tool payload granted");state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        grant=MakeGrantCommit(*c,{26,0,2},state.fence,state.storages,state.items,{tool::Bait(),0,2},std::array{bait});Check(grant && p::CommitItems(writer,*c,*grant).has_value(),"bait units granted");state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        auto equip=MakeEquipCommit(*c,{26,1},state.fence,state.storages,state.items,rod,{100,0,0});Check(equip && p::CommitItems(writer,*c,*equip).has_value(),"tool equips with occupied-cell guard");state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        auto actor=tool::Actor();ToolRuntimeRequest request{bait,rod,ToolRuntimeAction::Bait,actor};auto applied=MakeToolRuntimeCommit(*c,{26,2},state.fence,state.storages,state.items,request);Check(applied.has_value(),"SQL bait plan");
+        auto raced=applied->commit;raced.items[1].before->tool->baitPower=1;Check(!p::CommitItems(writer,*c,raced),"rod before-state CAS rolls bait debit back");auto unchanged=p::LoadCurrentItemOwner(writer,*c,owner).value();Check(Find(unchanged,block.first+1).count==2 && Find(unchanged,block.first).tool->baitPower==0,"both items unchanged after rod CAS failure");
+        Check(p::CommitItems(writer,*c,applied->commit).has_value() && p::CommitItems(writer,*c,applied->commit)->replay,"bait and rod receipt exactly once");state=p::LoadCurrentItemOwner(writer,*c,owner).value();Check(Find(state,block.first+1).count==1 && Find(state,block.first).tool==ToolInstanceState{3,20},"bait and practice reload independently");
+        Query(admin,"UPDATE player.item_instance SET tool_bait_power=tool_bait_power+1 WHERE instance_id=?",{U::UInt(block.first)});Check(!p::LoadCurrentItemOwner(writer,*c,owner),"tampered bait fails state hash");Query(admin,"UPDATE player.item_instance SET tool_bait_power=tool_bait_power-1 WHERE instance_id=?",{U::UInt(block.first)});
+        auto unequip=MakeUnequipCommit(*c,{26,3},state.fence,state.storages,state.items,rod,{ItemStorageKind::Inventory,1,0});Check(unequip && p::CommitItems(writer,*c,*unequip).has_value(),"tool unequips preserving state");state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        request={rod,{},ToolRuntimeAction::Refine,actor};auto refined=MakeToolRuntimeCommit(*c,{26,4},state.fence,state.storages,state.items,request);Check(refined && p::CommitItems(writer,*c,refined->commit).has_value() && p::CommitItems(writer,*c,refined->commit)->replay,"refine and receipt atomic");state=p::LoadCurrentItemOwner(writer,*c,owner).value();Check(Find(state,block.first).refinementLevel==1 && Find(state,block.first).tool==ToolInstanceState{0,20},"refine keeps identity and bait while resetting practice");
+        equip=MakeEquipCommit(*c,{26,5},state.fence,state.storages,state.items,rod,{100,0,0});Check(equip && p::CommitItems(writer,*c,*equip).has_value(),"practice fixture wears the same rod");state=p::LoadCurrentItemOwner(writer,*c,owner).value();request={rod,{},ToolRuntimeAction::Practice,actor,1};Check(!MakeToolRuntimeCommit(*c,{26,6},state.fence,state.storages,state.items,request),"practice without resource completion denied");request.actor.completedResourceAction=true;
+        auto practiced=MakeToolRuntimeCommit(*c,{26,7},state.fence,state.storages,state.items,request);Check(practiced && p::CommitItems(writer,*c,practiced->commit).has_value() && p::CommitItems(writer,*c,practiced->commit)->replay,"completed resource receipt cannot train twice");state=p::LoadCurrentItemOwner(writer,*c,owner).value();Check(Find(state,block.first).tool==ToolInstanceState{1,20},"one completed event saves exactly one practice point");
+        Check(p::ClaimOwnerSession(writer,*c,owner).has_value(),"tool relog");const auto reloaded=p::LoadCurrentItemOwner(writer,*c,owner).value();Check(reloaded.items==state.items && reloaded.fence.sessionGeneration>state.fence.sessionGeneration,"equipped rod level, practice and bait survive handoff");
+        Query(admin,"UPDATE player.item_instance SET tool_training_points=tool_training_points+1 WHERE instance_id=?",{U::UInt(block.first)});Check(!p::LoadCurrentItemOwner(writer,*c,owner),"tampered practice fails hash");Query(admin,"UPDATE player.item_instance SET tool_training_points=tool_training_points-1 WHERE instance_id=?",{U::UInt(block.first)});Check(p::LoadCurrentItemOwner(writer,*c,owner).has_value(),"restored tool state validates");
     }
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);

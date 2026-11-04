@@ -69,7 +69,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
 	Writer w;
 	w.Put<std::uint8_t>(TypedInventoryHeader);
 	w.Put<std::uint32_t>(0); // patched below
-	w.Put<std::uint8_t>(std::ranges::any_of(items,[](const auto& i){return i.polymorph.has_value();}) ? 5 : std::ranges::any_of(items,[](const auto& i){return i.bookSkill.has_value();}) ? 4 : std::ranges::any_of(items,[](const auto& i){return i.toggle.has_value();}) ? 3 : std::ranges::any_of(items,[](const auto& i){return i.automatic.has_value();}) ? 2 : TypedInventoryVersion);
+	w.Put<std::uint8_t>(std::ranges::any_of(items,[](const auto& i){return i.tool.has_value();}) ? 6 : std::ranges::any_of(items,[](const auto& i){return i.polymorph.has_value();}) ? 5 : std::ranges::any_of(items,[](const auto& i){return i.bookSkill.has_value();}) ? 4 : std::ranges::any_of(items,[](const auto& i){return i.toggle.has_value();}) ? 3 : std::ranges::any_of(items,[](const auto& i){return i.automatic.has_value();}) ? 2 : TypedInventoryVersion);
 	w.Put<std::uint16_t>(static_cast<std::uint16_t>(storages.size()));
 	for (const auto& s : storages)
 	{
@@ -100,7 +100,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
 		w.Put<std::uint8_t>(item.placement ? static_cast<std::uint8_t>(item.placement->kind) : 0);
 		w.Put<std::uint64_t>(item.placement ? item.placement->storageId : 0);
 		w.Put<std::uint32_t>(item.placement ? item.placement->anchor : 0);
-		w.Put<std::uint8_t>((item.boundTo ? 1 : 0) | (item.accessory ? 2 : 0) | (item.automatic ? 4 : 0) | (item.toggle ? 8 : 0) | (item.bookSkill ? 16 : 0) | (item.polymorph ? 32 : 0));
+		w.Put<std::uint8_t>((item.boundTo ? 1 : 0) | (item.accessory ? 2 : 0) | (item.automatic ? 4 : 0) | (item.toggle ? 8 : 0) | (item.bookSkill ? 16 : 0) | (item.polymorph ? 32 : 0) | (item.tool ? 64 : 0));
 		w.Put<std::uint8_t>(item.attributes.lockedSlot ? *item.attributes.lockedSlot : 255);
 		std::uint8_t bonuses = 0;
 		for (const auto& slot : item.attributes.slots) if (slot) ++bonuses;
@@ -139,6 +139,8 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
         if(item.toggle){if(!ValidatePersistentItem(catalog,item))return std::unexpected(E::BadValue);w.Put<std::uint64_t>(item.toggle->remainingMs);w.Put<std::uint8_t>(item.toggle->active);}
         if(item.bookSkill){if(!ValidatePersistentItem(catalog,item))return std::unexpected(E::BadValue);w.Put<std::uint16_t>(*item.bookSkill);}
         if(item.polymorph){if(!ValidatePersistentItem(catalog,item))return std::unexpected(E::BadValue);w.Put<std::uint32_t>(item.polymorph->boundForm.value_or(0));w.Put<std::uint16_t>(item.polymorph->bookGrade);w.Put<std::uint32_t>(item.polymorph->practiceRemaining);}
+        if(item.tool){if(!ValidatePersistentItem(catalog,item))return std::unexpected(E::BadValue);w.Put<std::uint32_t>(item.tool->trainingPoints);w.Put<std::uint32_t>(item.tool->baitPower);}
+
 	}
 	if (w.out.size() > MaxPacket) return std::unexpected(E::TooLarge);
 	const auto size = static_cast<std::uint32_t>(w.out.size());
@@ -153,7 +155,7 @@ std::expected<TypedInventoryView, TypedInventoryWireError> DecodeTypedInventory(
 		Reader r(bytes);
 		if (r.Get<std::uint8_t>() != TypedInventoryHeader) return std::unexpected(E::BadHeader);
 		if (r.Get<std::uint32_t>() != bytes.size()) return std::unexpected(E::BadSize);
-		const auto version=r.Get<std::uint8_t>();if (version!=TypedInventoryVersion && version!=2 && version!=3 && version!=4 && version!=5) return std::unexpected(E::BadVersion);
+		const auto version=r.Get<std::uint8_t>();if (version!=TypedInventoryVersion && version!=2 && version!=3 && version!=4 && version!=5 && version!=6) return std::unexpected(E::BadVersion);
 		TypedInventoryView view;
 		for (auto n = r.Get<std::uint16_t>(); n; --n)
 		{
@@ -191,7 +193,7 @@ std::expected<TypedInventoryView, TypedInventoryWireError> DecodeTypedInventory(
 			const auto anchor = r.Get<std::uint32_t>();
 			if (kind) item.placement = ItemPlacement { static_cast<ItemStorageKind>(kind), storage, anchor };
 			const auto flags = r.Get<std::uint8_t>();
-			if ((flags & ~(version==5 ? 63u : version==4 ? 31u : version==3 ? 15u : version==2 ? 7u : 3u)) || (flags & 12)==12) throw Bad {};
+			if ((flags & ~(version==6 ? 127u : version==5 ? 63u : version==4 ? 31u : version==3 ? 15u : version==2 ? 7u : 3u)) || (flags & 12)==12) throw Bad {};
 			if (flags & 1) item.boundTo = receiver;
 			const auto locked = r.Get<std::uint8_t>();
 			if (locked != 255) { if (locked >= AttributeSlots) throw Bad {}; item.attributes.lockedSlot = locked; }
@@ -229,7 +231,9 @@ std::expected<TypedInventoryView, TypedInventoryWireError> DecodeTypedInventory(
             if(flags&8){const auto remaining=r.Get<std::uint64_t>();const auto active=r.Get<std::uint8_t>();if(remaining>INT64_MAX || active>1 || (active && !remaining) || item.count!=1 || item.key.Category()!=ItemCategory::Consumable)throw Bad{};item.toggle=ToggleEffectState{remaining,active==1};}
             if(flags&32){if(item.key.Category()!=ItemCategory::Polymorph || item.refinementLevel || (flags&30))throw Bad{};const auto form=r.Get<std::uint32_t>();const auto grade=r.Get<std::uint16_t>();const auto practice=r.Get<std::uint32_t>();if(grade>255)throw Bad{};item.polymorph=PolymorphInstanceState{form ? std::optional{form} : std::nullopt,grade,practice};}
             if(flags&16){const auto skill=r.Get<std::uint16_t>();if(!skill || skill>254 || item.key.Category()!=ItemCategory::SkillBook || item.refinementLevel || (flags&14))throw Bad{};item.bookSkill=skill;}
-			view.items.push_back(std::move(item));
+			if(flags&64){if(item.key.Category()!=ItemCategory::Tool || item.count!=1 || item.refinementLevel>255 || (flags&62))throw Bad{};item.tool=ToolInstanceState{r.Get<std::uint32_t>(),r.Get<std::uint32_t>()};if(item.tool->baitPower>INT32_MAX)throw Bad{};}
+            if(item.key.Category()==ItemCategory::Tool && !item.tool)throw Bad{};
+            view.items.push_back(std::move(item));
 		}
 		if (!r.Done()) return std::unexpected(E::TrailingBytes);
 		return view;

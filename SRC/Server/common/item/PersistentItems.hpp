@@ -63,6 +63,7 @@ struct PersistentItem
     std::optional<ToggleEffectState> toggle;
     std::optional<std::uint16_t> bookSkill;
     std::optional<PolymorphInstanceState> polymorph;
+    std::optional<ToolInstanceState> tool;
     bool operator==(const PersistentItem&) const = default;
 };
 struct ItemOwnerFence
@@ -190,6 +191,7 @@ struct ItemGrant
     std::uint32_t count=1;
     std::optional<std::uint16_t> bookSkill;
     std::optional<PolymorphInstanceState> polymorph;
+    std::optional<ToolInstanceState> tool;
 };
 std::expected<ItemCommit,ItemPersistenceError> MakeGrantCommit(const ItemCatalog&,std::array<std::uint8_t,16> operationId,
     ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const ItemGrant&,std::span<const ItemInstanceId> ids);

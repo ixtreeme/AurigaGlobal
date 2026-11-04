@@ -6,6 +6,7 @@
 #include "ItemStore.hpp"
 #include "TypedInventorySync.hpp"
 #include "TypedEquipment.hpp"
+#include "TypedTools.hpp"
 #include "refine.h"
 #include "../command/cmd.h"
 #include "../core/packet.h"
@@ -78,6 +79,7 @@ void Tell(entt::entity character, const char* text)
 
 void RequestTypedItemMove(entt::entity character, std::uint64_t itemId, std::uint8_t storageKind, std::uint64_t storageId, std::uint32_t cell)
 {
+    if(TypedGatheringActive(character)){Tell(character,"Gyűjtés közben a tárgyak nem helyezhetők át.");return;}
 	if (!g_registry.valid(character))
 		return;
 	auto* typed = g_registry.try_get<ecs::TypedItems>(character);

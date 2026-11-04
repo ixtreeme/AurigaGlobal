@@ -17,6 +17,7 @@ struct EquipmentStats
     std::array<std::int64_t,15> resistances{}; // ItemResistanceProfile::Values order, bp
     std::vector<EquippedStatItem> equipped;
     std::optional<WeaponSubtype> weapon;
+    std::optional<ToolKind> tool;
     std::uint32_t reachMillimeters=0;
     std::uint16_t automaticHpBonusBp=0,automaticSpBonusBp=0;
     bool operator==(const EquipmentStats&) const = default;

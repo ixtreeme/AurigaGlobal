@@ -40,7 +40,7 @@ def main():
         sandbox.client.query("GRANT SELECT ON player.* TO 'game_reader'@'localhost'")
         sandbox.client.query("CREATE TABLE player.player(id INT UNSIGNED PRIMARY KEY) ENGINE=InnoDB")
         sandbox.client.query("CREATE TABLE player.player_deleted LIKE player.player")
-        for name in ('001_item_persistence.sql' , '002_instance_id_allocator.sql', '003_owned_ground.sql', '004_recovery_schedule.sql', '005_automatic_recovery.sql', '006_item_effects.sql', '007_book_learning.sql', '008_polymorph.sql'):
+        for name in ('001_item_persistence.sql' , '002_instance_id_allocator.sql', '003_owned_ground.sql', '004_recovery_schedule.sql', '005_automatic_recovery.sql', '006_item_effects.sql', '007_book_learning.sql', '008_polymorph.sql', '009_gathering_tools.sql'):
             for statement in statements((ROOT / 'db/migrations/item_instance' / name).read_text(encoding='utf-8-sig')):
                 sandbox.client.query(statement)
         # The game account may claim sessions; only the importer (root here) provisions.

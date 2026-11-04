@@ -81,7 +81,7 @@ bool Installed(CAsyncSQL& sql)
 {
     return Rows(sql,"SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN "
         "('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance',"
-        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule')").at(0).at(0)=="13" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice')").at(0).at(0)=="9";
+        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule')").at(0).at(0)=="13" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power')").at(0).at(0)=="11";
 }
 std::shared_ptr<const ItemCatalog> Catalog(CAsyncSQL& sql)
 {
@@ -124,6 +124,7 @@ Json State(const ItemCatalog& c,const p::LoadedItemOwner& o)
             {"equipped_slot",i.placement && i.placement->kind==ItemStorageKind::Equipment?Json(i.placement->anchor+1):Json(nullptr)},{"attributes",attributes},
             {"locked_slot",i.attributes.lockedSlot?Json(*i.attributes.lockedSlot):Json(nullptr)},{"stones",stones},
             {"automatic",i.automatic ? Json{{"remaining_raw",i.automatic->remainingRaw},{"active",i.automatic->active},{"next_ms",i.automatic->nextTickInMs}} : Json(nullptr)},
+            {"tool",i.tool ? Json{{"points",i.tool->trainingPoints},{"bait",i.tool->baitPower}} : Json(nullptr)},
             {"book_skill",i.bookSkill ? Json(*i.bookSkill) : Json(nullptr)},
             {"polymorph",i.polymorph ? Json{{"form",i.polymorph->boundForm ? Json(*i.polymorph->boundForm) : Json(nullptr)},{"grade",i.polymorph->bookGrade},{"practice",i.polymorph->practiceRemaining}} : Json(nullptr)},
             {"toggle",i.toggle ? Json{{"remaining_ms",i.toggle->remainingMs},{"active",i.toggle->active}} : Json(nullptr)},
@@ -319,8 +320,10 @@ Json Grant(CAsyncSQL& sql,const Json& request)
     if(const auto initial=InitialToggleEffectState(*c,item.key);initial)item.toggle=*initial;if(request.contains("book_skill"))item.bookSkill=request.at("book_skill").get<std::uint16_t>();
     if(const auto* poly=std::get_if<ItemPolymorphRow>(&entry->category))
     {item.polymorph=PolymorphInstanceState{};if(request.contains("polymorph_form"))item.polymorph->boundForm=request.at("polymorph_form").get<std::uint32_t>();if(request.contains("polymorph_grade"))item.polymorph->bookGrade=request.at("polymorph_grade").get<std::uint16_t>();if(request.contains("polymorph_practice"))item.polymorph->practiceRemaining=request.at("polymorph_practice").get<std::uint32_t>();}
+    if(std::holds_alternative<ItemToolRow>(entry->category))
+    {const auto points=request.value("tool_points",std::uint64_t{}),bait=request.value("tool_bait",std::uint64_t{});Require(points<=UINT32_MAX && bait<=INT32_MAX,"Érvénytelen eszközállapot.");item.tool=ToolInstanceState{static_cast<std::uint32_t>(points),static_cast<std::uint32_t>(bait)};}
     if(auto valid=ValidatePersistentItem(*c,PersistentItem{item.id,item.key,item.owner,1,item.refinementLevel,item.count,item.boundTo,false,
-        ItemPlacement{ItemStorageKind::Inventory,1,0},item.attributes,item.stones,item.accessory,item.automatic,item.toggle,item.bookSkill,item.polymorph});!valid)
+        ItemPlacement{ItemStorageKind::Inventory,1,0},item.attributes,item.stones,item.accessory,item.automatic,item.toggle,item.bookSkill,item.polymorph,item.tool});!valid)
         throw Failure(std::string("A tárgy nem adható: ")+PersistenceText(valid.error())+".");
     const auto occupied=Occupied(*c,o);const auto cells=std::uint32_t{Inventory.columns}*Inventory.rows*Inventory.pages;
     std::optional<std::uint32_t> anchor;

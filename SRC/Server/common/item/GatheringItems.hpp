@@ -9,6 +9,11 @@
 namespace auriga::item
 {
 enum class ToolKind : std::uint8_t { Pick = 1, Rod = 2, Axe = 3, Shears = 4 };
+struct ToolInstanceState
+{
+    std::uint32_t trainingPoints=0,baitPower=0;
+    bool operator==(const ToolInstanceState&) const = default;
+};
 enum class FishingPool : std::uint8_t { None = 1, First = 2, Second = 3 };
 enum class ToolFailure : std::uint8_t { LosePoints = 1, ResetAtLevel = 2 };
 struct ToolLevel
@@ -64,6 +69,7 @@ enum class GatheringError
     Forbidden, InvalidOperation, InvalidSnapshot, MissingItem, RetiredItem,
     InvalidStack, InvalidLevel, InvalidState, NotTool, NotFishingItem,
     WrongAction, AtMaximum, NotReady, InvalidDecision, CampfireRequired, FishingActive,
+    ServiceRequired, ResourceCompletionRequired,
 };
 enum class ToolAction : std::uint8_t { Practice = 1, Refine = 2 };
 struct ToolActionRequest

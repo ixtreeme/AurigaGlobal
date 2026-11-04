@@ -2,6 +2,7 @@
 #include "../../mission_pass/MissionPassEvents.hpp"
 #include "PointSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
+#include "../../item/ItemStore.hpp"
 
 #include "ActivitySystem.hpp"
 #include "ItemSystem.hpp"
@@ -131,6 +132,7 @@ namespace ActivitySystem {
 
 void StartFishing(entt::entity fisher, uint32_t)
 {
+    if(g_registry.valid(fisher) && g_registry.all_of<ecs::TypedItems>(fisher))return;
     if (fisher == entt::null || !g_registry.valid(fisher))
         return;
 
@@ -548,6 +550,7 @@ void CancelMining(entt::entity miner)
 
 bool StartMining(entt::entity miner, entt::entity load)
 {
+    if(g_registry.valid(miner) && g_registry.all_of<ecs::TypedItems>(miner))return false;
     if (miner == entt::null || load == entt::null ||
         !g_registry.valid(miner) || !g_registry.valid(load))
         return false;
@@ -667,6 +670,7 @@ int RefineFishingRod(entt::entity owner, entt::entity rod)
 
 void ActivitySystem::Fishing(entt::entity character)
 {
+    if(g_registry.valid(character) && g_registry.all_of<ecs::TypedItems>(character))return;
     if (ecs::PlayerRuntime::GetCharEvent(character, ecs::PlayerRuntime::CharEvent::Fishing))
     {
         FishingTake(character);

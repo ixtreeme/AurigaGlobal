@@ -50,6 +50,7 @@ struct Writer
         if(p.toggle){Put(0x314c4754,4);Put(p.toggle->remainingMs,8);Put(p.toggle->active,1);}
         if(p.bookSkill){Put(0x31534b42,4);Put(*p.bookSkill,2);}
         if(p.polymorph){Put(0x314d4c50,4);Put(p.polymorph->boundForm.has_value(),1);if(p.polymorph->boundForm)Put(*p.polymorph->boundForm,4);Put(p.polymorph->bookGrade,2);Put(p.polymorph->practiceRemaining,4);}
+        if(p.tool){Put(0x314c4f54,4);Put(p.tool->trainingPoints,4);Put(p.tool->baitPower,4);}
     }
     void Money(const ItemWallet& w){Owner(w.owner);Put(static_cast<std::uint8_t>(w.currency),1);Put(w.revision,8);Put(w.balance,8);}
 };
@@ -64,6 +65,7 @@ bool ValidItemStorage(const ItemStorageLayout& l) noexcept
 }
 bool SupportsPersistentItem(const ItemCatalog& c,const ItemCatalogEntry& e) noexcept
 {
+    if(std::holds_alternative<ItemToolRow>(e.category))return true;
     if(std::holds_alternative<ItemFishingRow>(e.category) || std::holds_alternative<ItemPolymorphRow>(e.category) || std::holds_alternative<ItemSkillBookRow>(e.category))return true;
     if(const auto* container=std::get_if<ItemContainerRow>(&e.category))return container->kind!=ContainerKind::PetEgg;
     if(const auto* consumable=std::get_if<ItemConsumableRow>(&e.category))
@@ -129,6 +131,14 @@ std::expected<void,E> ValidatePersistentItem(const ItemCatalog& c,const Persiste
             p.polymorph->bookGrade>profile->maxBookGrade || p.polymorph->practiceRemaining>std::uint64_t{profile->maxBookGrade}*profile->practicePerGrade))return std::unexpected(E::InvalidItem);
     }
     else if(p.polymorph)return std::unexpected(E::InvalidItem);
+    if(const auto* tool=std::get_if<ItemToolRow>(&e->category))
+    {
+        const auto* profile=c.FindToolProfile(tool->profile);
+        if(!p.tool || (!p.destroyed && p.count!=1) || p.refinementLevel>=profile->levels.size() ||
+           p.tool->trainingPoints>profile->levels[p.refinementLevel].requiredPoints || p.tool->baitPower>INT32_MAX ||
+           (tool->kind!=ToolKind::Rod && p.tool->baitPower))return std::unexpected(E::InvalidItem);
+    }
+    else if(p.tool)return std::unexpected(E::InvalidItem);
     if(p.placement && !StorageOwner({p.owner,p.placement->kind,p.placement->storageId}))return std::unexpected(E::InvalidPlacement);
     return {};
 }
@@ -144,6 +154,7 @@ std::expected<std::vector<std::uint32_t>,E> OccupiedItemCells(const ItemCatalog&
         std::optional<EquipmentSlot> slot;
         const auto& category=c.Find(p.key)->category;
         if(const auto* w=std::get_if<ItemWeaponRow>(&category))slot=w->slot;
+        if(std::holds_alternative<ItemToolRow>(category))slot=EquipmentSlot::Weapon;
         if(const auto* a=std::get_if<ItemArmorRow>(&category))slot=a->slot;
         if(const auto* a=std::get_if<ItemAccessoryRow>(&category))slot=a->slot;
         if(!slot || anchor+1!=static_cast<unsigned>(*slot))return std::unexpected(E::InvalidPlacement);
@@ -425,6 +436,7 @@ const PersistentItem* Placed(std::span<const PersistentItem> inventory,const Ite
 }
 std::optional<EquipmentSlot> SlotOf(const ItemCatalogEntry& entry)
 {
+    if(std::holds_alternative<ItemToolRow>(entry.category))return EquipmentSlot::Weapon;
     if(const auto* w=std::get_if<ItemWeaponRow>(&entry.category))return w->slot;
     if(const auto* a=std::get_if<ItemArmorRow>(&entry.category))return a->slot;
     if(const auto* a=std::get_if<ItemAccessoryRow>(&entry.category))return a->slot;
@@ -490,7 +502,7 @@ bool QueueGrant(std::deque<ItemGrant>& pending,const ItemGrant& grant,std::uint3
 {
     if(!grant.count)return false;
     for(auto& waiting:pending)
-        if(waiting.key==grant.key && waiting.refinementLevel==grant.refinementLevel && waiting.bookSkill==grant.bookSkill && waiting.polymorph==grant.polymorph &&
+        if(waiting.key==grant.key && waiting.refinementLevel==grant.refinementLevel && waiting.bookSkill==grant.bookSkill && waiting.polymorph==grant.polymorph && waiting.tool==grant.tool &&
            std::uint64_t{waiting.count}+grant.count<=mergeLimit)
         {
             waiting.count+=grant.count;
@@ -521,9 +533,10 @@ std::expected<ItemCommit,E> MakeGrantCommit(const ItemCatalog& c,std::array<std:
     if(const auto initial=InitialAutomaticRecoveryState(c,grant.key);initial)fresh.automatic=*initial;
     if(const auto initial=InitialToggleEffectState(c,grant.key);initial)fresh.toggle=*initial;fresh.bookSkill=grant.bookSkill;fresh.polymorph=grant.polymorph;
     if(!fresh.polymorph)if(const auto* poly=std::get_if<ItemPolymorphRow>(&entry->category);poly && poly->fixedForm)fresh.polymorph=PolymorphInstanceState{};
+    fresh.tool=grant.tool;if(!fresh.tool && std::holds_alternative<ItemToolRow>(entry->category))fresh.tool=ToolInstanceState{};
     const auto sameState=[&](const PersistentItem& i){
         return i.key==fresh.key && i.refinementLevel==fresh.refinementLevel && i.boundTo==fresh.boundTo &&
-               i.attributes==fresh.attributes && i.stones==fresh.stones && i.accessory==fresh.accessory && i.automatic==fresh.automatic && i.toggle==fresh.toggle && i.bookSkill==fresh.bookSkill && i.polymorph==fresh.polymorph;};
+               i.attributes==fresh.attributes && i.stones==fresh.stones && i.accessory==fresh.accessory && i.automatic==fresh.automatic && i.toggle==fresh.toggle && i.bookSkill==fresh.bookSkill && i.polymorph==fresh.polymorph && i.tool==fresh.tool;};
     std::vector<const PersistentItem*> carried;
     for(const auto& i:items)
         if(!i.destroyed && i.owner==owner.owner && i.placement && i.placement->kind==ItemStorageKind::Inventory && bagOf(i.placement->storageId)!=bags.end())
