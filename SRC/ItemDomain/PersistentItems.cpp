@@ -67,7 +67,7 @@ bool SupportsPersistentItem(const ItemCatalog& c,const ItemCatalogEntry& e) noex
     if(const auto* container=std::get_if<ItemContainerRow>(&e.category))return container->kind!=ContainerKind::PetEgg;
     if(const auto* consumable=std::get_if<ItemConsumableRow>(&e.category))
     {
-        if(consumable->socketServiceProfile.has_value() || consumable->attributeServiceProfile.has_value())return true;
+        if(consumable->bookAidProfile || consumable->socketServiceProfile.has_value() || consumable->attributeServiceProfile.has_value())return true;
         // Instant, reserve and periodic recovery act on the character, not the item.
         const auto* recovery=consumable->recoveryProfile ? c.FindRecovery(consumable->recoveryProfile) : nullptr;
         return recovery || consumable->timedEffectProfile || consumable->toggleEffectProfile;

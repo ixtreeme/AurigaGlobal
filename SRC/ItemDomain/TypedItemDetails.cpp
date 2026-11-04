@@ -55,7 +55,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
                 { keys.insert(ingredient.key); states.emplace(ingredient.key,ingredient.refinementLevel); }
             }
         if(keys.size()>65535 || states.size()>65535 || recipes.size()>65535) throw TooLarge{};
-        const bool wide=std::ranges::any_of(keys,[&](auto key){const auto* e=c.Find(key);const auto* r=e ? std::get_if<ItemConsumableRow>(&e->category) : nullptr;const auto* p=r ? c.FindRecovery(r->recoveryProfile) : nullptr;return (e && std::holds_alternative<ItemSkillBookRow>(e->category)) || (r && (r->attributeServiceProfile || r->timedEffectProfile || r->toggleEffectProfile || (p && (p->Data().Delivery()==RecoveryDelivery::Reserve || p->Data().Delivery()==RecoveryDelivery::Periodic || p->Data().Delivery()==RecoveryDelivery::Automatic))));});
+        const bool wide=std::ranges::any_of(keys,[&](auto key){const auto* e=c.Find(key);const auto* r=e ? std::get_if<ItemConsumableRow>(&e->category) : nullptr;const auto* p=r ? c.FindRecovery(r->recoveryProfile) : nullptr;return (e && std::holds_alternative<ItemSkillBookRow>(e->category)) || (r && (r->bookAidProfile || r->attributeServiceProfile || r->timedEffectProfile || r->toggleEffectProfile || (p && (p->Data().Delivery()==RecoveryDelivery::Reserve || p->Data().Delivery()==RecoveryDelivery::Periodic || p->Data().Delivery()==RecoveryDelivery::Automatic))));});
         Writer w; w.Put(TypedItemDetailsHeader,1); w.Put(0,4); w.Put(wide ? 2 : 1,1); w.Put(c.Revision(),8);
         for(auto b:c.ContentHash()) w.Put(b,1);
         w.Put(keys.size(),2);
@@ -73,6 +73,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
                 if constexpr(std::is_same_v<std::decay_t<decltype(row)>,ItemConsumableRow>)
                 {
                     if(row.socketServiceProfile) actions|=TypedActionSocket;
+                    if(row.bookAidProfile) actions|=TypedActionBook;
                     if(row.attributeServiceProfile) actions|=TypedActionAttributes;
                     if(row.timedEffectProfile || row.toggleEffectProfile)actions|=TypedActionEffects;
                     const auto* recovery=c.FindRecovery(row.recoveryProfile);

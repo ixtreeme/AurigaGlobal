@@ -101,7 +101,7 @@ enum class SkillBookError
     MissingItem, WrongCategory, RetiredItem, InvalidState, Disabled, RuleDenied,
     DeadCharacter, Polymorphed, CombatDenied, LevelDenied, ClassDenied, SexDenied,
     TargetDenied, NativeLanguage, MasteryDenied, LevelNotCovered, InsufficientUnits,
-    InsufficientExperience, OnCooldown, PointLimit, InvalidDecisions,
+    InsufficientExperience, OnCooldown, PointLimit, InvalidDecisions, ChargeLimit,
 };
 class ItemCatalog;
 class PreparedSkillBookUse;

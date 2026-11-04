@@ -59,7 +59,7 @@ std::expected<void, ItemCatalogError> Budget(const ItemCatalogSource& source)
         for (const auto& row : rows) if (!add(row.code.size())) return false;
         return true;
     };
-    if (!profiles(source.attributeProfiles) || !profiles(source.attributeServices) || !profiles(source.socketServiceProfiles) || !profiles(source.petTrainingProfiles) || !profiles(source.petSupplyProfiles) || !profiles(source.petHatchProfiles) || !profiles(source.growthPetProfiles) || !profiles(source.soulProfiles) || !profiles(source.polymorphProfiles) || !profiles(source.toolProfiles) || !profiles(source.usePolicies) || !profiles(source.tradePolicies) || !profiles(source.appearances) ||
+    if (!profiles(source.bookAidProfiles) || !profiles(source.attributeProfiles) || !profiles(source.attributeServices) || !profiles(source.socketServiceProfiles) || !profiles(source.petTrainingProfiles) || !profiles(source.petSupplyProfiles) || !profiles(source.petHatchProfiles) || !profiles(source.growthPetProfiles) || !profiles(source.soulProfiles) || !profiles(source.polymorphProfiles) || !profiles(source.toolProfiles) || !profiles(source.usePolicies) || !profiles(source.tradePolicies) || !profiles(source.appearances) ||
         !profiles(source.attacks) || !profiles(source.ammoPolicies) || !profiles(source.resistances) || !profiles(source.refinements) ||
         !profiles(source.bonuses) || !profiles(source.accessorySockets) || !profiles(source.recoveries) || !profiles(source.consumableCooldowns) ||
         !profiles(source.lootProfiles) || !profiles(source.timedEffectGroups) || !profiles(source.timedEffects) || !profiles(source.toggleEffectGroups) || !profiles(source.toggleEffects) || !profiles(source.skillBookProfiles))
@@ -139,11 +139,12 @@ auto VisualKey(const CostumeVisualRow& row) { return std::tuple{row.key,row.char
 
 std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCatalog(ItemCatalogSource source)
 {
-    if (source.schemaVersion != 25 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
+    if (source.schemaVersion != 26 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
     if (auto result = Budget(source); !result) return std::unexpected(result.error());
     for(auto& p:source.attributeProfiles){std::ranges::sort(p.groups,{},&AttributeGroup::pool);std::ranges::sort(p.candidates,[](const auto& a,const auto& b){return std::pair{a.pool,a.bonus}<std::pair{b.pool,b.bonus};});for(auto& a:p.candidates)std::ranges::sort(a.values,{},&AttributeValue::tier);}
     for(auto& p:source.attributeServices)std::ranges::sort(p.tiers,{},&AttributeTierChance::tier);
     if(auto r=Profiles(source.attributeProfiles,"attribute.profile",ValidAttributeProfile);!r)return std::unexpected(r.error());
+    if(auto r=Profiles(source.bookAidProfiles,"book_aid",ValidBookAidProfile);!r)return std::unexpected(r.error());
     if(auto r=Profiles(source.attributeServices,"attribute.service",ValidAttributeService);!r)return std::unexpected(r.error());
     if(auto r=Profiles(source.socketServiceProfiles,"socket.service",ValidSocketServiceProfile);!r)return std::unexpected(r.error());
     if(auto r=Profiles(source.companionForms,"companion.form",[](const CompanionForm& f){return f.mobTemplateId>0 && detail::AssetReference(f.modelAsset);});!r)return std::unexpected(r.error());
@@ -474,9 +475,10 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
     {
         if (row.key.Category() != ItemCategory::Consumable) return std::unexpected(Error(ItemCatalogErrorCode::WrongCategory, "consumable", row.key));
         if (!consumables.emplace(row.key, &row).second) return std::unexpected(Error(ItemCatalogErrorCode::DuplicateCategoryRow, "consumable", row.key));
-        if (unsigned(row.recoveryProfile != 0) + row.timedEffectProfile.has_value() + row.toggleEffectProfile.has_value() + row.socketServiceProfile.has_value() + row.attributeServiceProfile.has_value() != 1 ||
-            row.timedEffectProfile == 0 || row.toggleEffectProfile == 0 || row.socketServiceProfile == 0 || row.attributeServiceProfile == 0)
+        if (unsigned(row.recoveryProfile != 0) + row.timedEffectProfile.has_value() + row.toggleEffectProfile.has_value() + row.socketServiceProfile.has_value() + row.attributeServiceProfile.has_value() + row.bookAidProfile.has_value() != 1 ||
+            row.timedEffectProfile == 0 || row.toggleEffectProfile == 0 || row.socketServiceProfile == 0 || row.attributeServiceProfile == 0 || row.bookAidProfile == 0)
             return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile, "consumable.effect", row.key));
+        if(row.bookAidProfile && !FindProfile(source.bookAidProfiles,*row.bookAidProfile))return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile,"book_aid",row.key,*row.bookAidProfile));
         if(row.attributeServiceProfile && !FindProfile(source.attributeServices,*row.attributeServiceProfile))return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile,"attribute.service",row.key,*row.attributeServiceProfile));
         if (row.socketServiceProfile && !FindProfile(source.socketServiceProfiles,*row.socketServiceProfile))
             return std::unexpected(Error(ItemCatalogErrorCode::MissingProfile,"socket.service",row.key,*row.socketServiceProfile));
@@ -650,6 +652,7 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
             if (c.toggleEffectProfile && row.maxStack != 1)
                 return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase, "consumable.toggle_stack", row.key));
             const auto units = c.timedEffectProfile ? FindProfile(source.timedEffects, *c.timedEffectProfile)->unitsPerUse
+                                                   : c.bookAidProfile ? FindProfile(source.bookAidProfiles,*c.bookAidProfile)->unitsPerUse
                                                    : c.attributeServiceProfile ? FindProfile(source.attributeServices,*c.attributeServiceProfile)->units
                                                    : c.socketServiceProfile ? FindProfile(source.socketServiceProfiles,*c.socketServiceProfile)->unitsPerUse
                                                    : c.toggleEffectProfile ? 1 : catalog->FindRecovery(c.recoveryProfile)->Data().unitsPerUse;
@@ -856,6 +859,7 @@ const AttributeProfile* ItemCatalog::FindItemAttributes(ItemKey key) const noexc
     const auto it=std::ranges::lower_bound(source_.attributeBindings,key,{},&ItemAttributeBinding::key);
     return it==source_.attributeBindings.end() || it->key!=key ? nullptr : FindProfile(source_.attributeProfiles,it->profile);
 }
+const BookAidProfile* ItemCatalog::FindBookAid(std::uint32_t id) const noexcept {return FindProfile(source_.bookAidProfiles,id);}
 const AttributeServiceProfile* ItemCatalog::FindAttributeService(std::uint32_t id) const noexcept {return FindProfile(source_.attributeServices,id);}
 const SocketServiceProfile* ItemCatalog::FindSocketService(std::uint32_t id) const noexcept
 { return FindProfile(source_.socketServiceProfiles,id); }

@@ -72,7 +72,7 @@ def stage(candidate_file,helper,work,binaries):
     if expected!=candidate['hash']:raise MigrationError('Candidate hash mismatch')
     sandbox=Sandbox(work,binaries)
     migrations=sorted((ROOT/'db/migrations/item_combat').glob('[0-9][0-9][0-9]_*.sql'))
-    if [int(p.name[:3]) for p in migrations]!=list(range(32)):raise MigrationError('Unexpected catalog migration chain')
+    if [int(p.name[:3]) for p in migrations]!=list(range(33)):raise MigrationError('Unexpected catalog migration chain')
     try:
         sandbox.start();sandbox.verify()
         for path in migrations:

@@ -24,7 +24,7 @@ az összevonás részletei és ellenőrzései a
 |---|---|---|---|
 | A. Speciális tárgyműveletek | Páros (kapcsolt) bónuszok; jelmez-, stóla- és rúnabónuszok; fejlesztési segédanyagok | F2 maradéka | nyitott ([IC-031](item_combat_031_instance_attributes.md) határa) |
 | B. Tartós tárgymentés | Teljes mentés, visszatöltés és tranzakciókezelés a futó szerverben; a még nem támogatott kategóriák példányállapota | F3 maradéka | a modell, az író és a próbapad kész ([IC-032](item_combat_032_item_persistence.md), [IC-033](item_combat_033_item_test_bench.md)) |
-| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C22 kész a típusos úton**, időzített/kapcsolható hatásokkal és képességkönyvekkel; fiókpénztárca, általános Mission/Lua-quest és további használatok még nyitottak |
+| C. Szerver bekötése | Inventory, felszerelés, használat, fejlesztés, drop, bolt, trade, crafting, quest, Mission | F4 | **C1–C23 kész a típusos úton**, időzített/kapcsolható hatásokkal, képességkönyvekkel és könyvsegédekkel; fiókpénztárca, általános Mission/Lua-quest és további használatok még nyitottak |
 | D. Packetek és Unity | ItemKey, szint és példányadat a protokollban és a kliensben | F5 | **C1–C22 külön kliensútjai kész**, normál leltárátállás még vár, részletek lent |
 | E. Teljes adatkonverzió | Régi protók, példányok, receptek, tartalmi hivatkozások | F6 | az eszközök megvannak; a családtérkép jóváhagyásra vár |
 | F. Végső ellenőrzés | Helyi játékpróba, újrabelépés utáni adatmegőrzés, gazdasági műveletek, FreeBSD-build | F7 | nyitott |
@@ -774,3 +774,25 @@ atomikus könyvbeli felhasználása már natívan ellenőrzött; megszerzésük 
 tárgyútja és a legacy affectek konverziója még nyitott. További kategóriák,
 általános Mission/Lua-quest, speciális bónuszok, fiókpénztárca, teljes konverzió
 és kiadási kapuk még hátravannak.
+
+## C23 — Könyvbónusz és várakozáselhagyó segédtárgyak (2026-11-04)
+
+Saját fogyasztható profil, pontos töltetjóváírás és tárolási korlát;
+közös forrás-/learning-/karakter-/receipt-mentés. Teljes korlátnál nincs
+részleges jóváírás vagy fogyasztás. A következő megfelelő könyv valóban
+felhasználja a kapott bónuszt, illetve szükség esetén a várakozáselhagyást.
+Katalógus v26, szerkesztőpanel, GC244 v2 és külön Unity-megerősítés.
+
+20/20 natív item-CTest, 280 új domain-, 1599 item-SQL-, 158 katalógus-SQL-
+ellenőrzés; 41 sémateszt és 90 szerkesztőteszt sikeres. Unity-fordítás,
+2924 új és minden korábbi C4–C22 validátor, 37 valódi TLS/UI-ellenőrzés
+sikeres. Az új töltetek, valódi skill/XP, kudarc, korlát és relog ellenőrzött.
+Mind a 94 korábbi helyi tárgyállapot és a C22 learning-checkpoint megmaradt.
+A helyi szerkesztő frissült; a normál legacy leltár bekötése továbbra is vár.
+Unity: cs62 a mission engine ágon, csak a tizenkét C23-fájllal.
+
+Részletek: [IC-051](item_combat_051_book_aids_runtime.md),
+[ellenőrzések és helyi próba](../reports/item_combat/2026-11-04_book_aids_runtime.md).
+Következő szelet: **C24 — átváltozást adó tárgyak futó szerveres és Unity-útja**.
+A legacy affectek konverziója, további kategóriák, fiókpénztárca,
+általános Mission/Lua-quest, teljes konverzió és kiadási kapuk még nyitottak.

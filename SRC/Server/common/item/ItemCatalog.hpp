@@ -19,6 +19,7 @@
 #include "TimedEffects.hpp"
 #include "ToggleEffects.hpp"
 #include "SkillBooks.hpp"
+#include "BookAids.hpp"
 #include "Containers.hpp"
 #include "CurrencyTokens.hpp"
 #include "MobDrops.hpp"
@@ -138,12 +139,13 @@ struct ItemMaterialRow
 struct ItemConsumableRow
 {
     ItemKey key;
-    // Exactly one recovery, timed effect, toggle or named socket service.
+    // Exactly one recovery, timed effect, toggle, service or book aid.
     std::uint32_t recoveryProfile = 0;
     std::optional<std::uint32_t> timedEffectProfile;
     std::optional<std::uint32_t> toggleEffectProfile;
     std::optional<std::uint32_t> socketServiceProfile;
     std::optional<std::uint32_t> attributeServiceProfile;
+    std::optional<std::uint32_t> bookAidProfile;
 };
 struct ItemContainerRow
 {
@@ -173,7 +175,7 @@ using ItemCategoryRow = std::variant<ItemWeaponRow, ItemArmorRow, ItemAccessoryR
                                      ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow, ItemSocketStoneRow, ItemCostumeRow, ItemToolRow, ItemFishingRow, ItemPolymorphRow, ItemSoulRow, ItemCompanionRow, ItemPetSupplyRow>;
 struct ItemCatalogSource
 {
-    std::uint32_t schemaVersion = 25;
+    std::uint32_t schemaVersion = 26;
     std::uint64_t revision = 0;
     std::vector<ItemBaseRow> items;
     std::vector<ItemWeaponRow> weapons;
@@ -201,6 +203,7 @@ struct ItemCatalogSource
     std::vector<ToggleEffectGroup> toggleEffectGroups;
     std::vector<ToggleEffectProfile> toggleEffects;
     std::vector<SkillBookProfile> skillBookProfiles;
+    std::vector<BookAidProfile> bookAidProfiles;
     std::vector<ItemSkillBookRow> skillBooks;
     std::vector<RefinementRecipe> refinementRecipes;
     std::vector<ItemQuestRow> questItems;
@@ -288,6 +291,7 @@ public:
     const CostumeVisualRow* FindCostumeVisual(ItemKey key, std::uint8_t characterClass, std::uint8_t sex) const noexcept;
     const ValidatedRefinementProfile* FindRefinement(std::uint32_t id) const noexcept;
     const AttributeProfile* FindItemAttributes(ItemKey) const noexcept;
+    const BookAidProfile* FindBookAid(std::uint32_t id) const noexcept;
     const AttributeServiceProfile* FindAttributeService(std::uint32_t) const noexcept;
     const SocketServiceProfile* FindSocketService(std::uint32_t id) const noexcept;
     const PetHatchProfile* FindPetHatchProfile(std::uint32_t id) const noexcept;

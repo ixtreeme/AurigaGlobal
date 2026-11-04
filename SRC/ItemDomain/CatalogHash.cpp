@@ -68,7 +68,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     // Vectors and refinement levels are already validated and canonically sorted.
     // Revision is separate release identity; unchanged content retains its digest.
     Writer out;
-    out.Text("auriga.item_catalog.v25");
+    out.Text("auriga.item_catalog.v26");
     out.Integer(source.schemaVersion);
     out.Table(1, source.usePolicies.size());
     for (const auto& row : source.usePolicies)
@@ -219,7 +219,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
         }, row.effect);
     }
     out.Table(18, source.consumables.size());
-    for (const auto& row : source.consumables) { out.Key(row.key); out.Optional(row.recoveryProfile ? std::optional{row.recoveryProfile} : std::nullopt); out.Optional(row.timedEffectProfile); out.Optional(row.toggleEffectProfile); out.Optional(row.socketServiceProfile);out.Optional(row.attributeServiceProfile); }
+    for (const auto& row : source.consumables) { out.Key(row.key); out.Optional(row.recoveryProfile ? std::optional{row.recoveryProfile} : std::nullopt); out.Optional(row.timedEffectProfile); out.Optional(row.toggleEffectProfile); out.Optional(row.socketServiceProfile);out.Optional(row.attributeServiceProfile);out.Optional(row.bookAidProfile); }
     out.Table(19, source.lootProfiles.size());
     for (const auto& row : source.lootProfiles)
     {
@@ -391,6 +391,8 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
             out.Integer(e.weight); out.Integer(e.rareAttributeChanceBp); out.Integer(e.killerLevelMin); out.Integer(e.killerLevelMax);
         }
     }
+    out.Table(55,source.bookAidProfiles.size());
+    for(const auto& p:source.bookAidProfiles){out.Identity(p.id,p.code);out.Integer(static_cast<std::uint8_t>(p.kind));out.Integer(p.unitsPerUse);out.Integer(p.chargesPerUse);out.Integer(p.maximumCharges);}
     return out.Finish();
 }
 } // namespace auriga::item::detail

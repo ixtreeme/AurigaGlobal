@@ -26,7 +26,7 @@ def main():
         sandbox.verify()
         sandbox.client.query("CREATE DATABASE player CHARACTER SET utf8mb4 COLLATE utf8mb4_bin")
         paths = sorted((ROOT / "db/migrations/item_combat").glob("[0-9][0-9][0-9]_*.sql"))
-        if [int(path.name[:3]) for path in paths] != list(range(32)):
+        if [int(path.name[:3]) for path in paths] != list(range(33)):
             raise RuntimeError("expected complete native catalog drafts 000..031")
         paths.append(ROOT / "db/migrations/item_instance/001_item_persistence.sql")
         paths.append(ROOT / "db/migrations/item_instance/002_instance_id_allocator.sql")

@@ -203,7 +203,7 @@ class CategorySchemaTests(unittest.TestCase):
                          "003_equipment_profiles.sql", "004_refinement_profiles.sql", "005_weapon_armor_catalog.sql",
                          "006_bonus_profiles.sql", "007_bonus_registry_seed.sql", "008_accessory_material_catalog.sql",
                          "009_accessory_socket_profiles.sql", "010_recovery_consumables.sql", "011_catalog_format.sql", "012_containers.sql",
-                         "013_currency_tokens.sql", "014_timed_consumables.sql", "015_automatic_recovery.sql", "016_toggle_effects.sql", "017_skill_books.sql", "018_refinement_recipes.sql", "019_quest_items.sql", "020_socket_stones.sql", "021_costumes.sql", "022_gathering_items.sql", "023_polymorph_items.sql", "024_soul_items.sql", "025_companion_items.sql", "026_growth_pet_progression.sql", "027_pet_care.sql", "028_pet_lifecycle.sql", "029_socket_services.sql", "030_instance_attributes.sql", "031_mob_drops.sql"):
+                         "013_currency_tokens.sql", "014_timed_consumables.sql", "015_automatic_recovery.sql", "016_toggle_effects.sql", "017_skill_books.sql", "018_refinement_recipes.sql", "019_quest_items.sql", "020_socket_stones.sql", "021_costumes.sql", "022_gathering_items.sql", "023_polymorph_items.sql", "024_soul_items.sql", "025_companion_items.sql", "026_growth_pet_progression.sql", "027_pet_care.sql", "028_pet_lifecycle.sql", "029_socket_services.sql", "030_instance_attributes.sql", "031_mob_drops.sql", "032_book_aids.sql"):
                 text = (ROOT / "db/migrations/item_combat" / name).read_text(encoding="utf-8")
                 for statement in statements(text):
                     cls.connection.query(statement)
@@ -676,6 +676,24 @@ class CategorySchemaTests(unittest.TestCase):
             with self.subTest(sql=sql), self.assertRaisesRegex(RuntimeError,"^"+code+":"):
                 self.q(sql)
 
+    def test_book_aid_profile_constraints(self):
+        self.q('START TRANSACTION')
+        try:
+            self.q("INSERT INTO protos.book_aid_profile VALUES(9901,'book_aid.schema_probe',1,1,2,3)")
+            for field,value in [('aid_kind','0'),('aid_kind','3'),('units_per_use','0'),('charges_per_use','0'),('charges_per_use','4'),('maximum_charges','1')]:
+                with self.subTest(field=field,value=value),self.assertRaisesRegex(RuntimeError,'^4025:'):
+                    self.q('UPDATE protos.book_aid_profile SET '+field+'='+value+' WHERE profile_id=9901')
+            with self.assertRaisesRegex(RuntimeError,'^4025:'):
+                self.q('UPDATE protos.item_consumable SET book_aid_profile_id=9901 WHERE local_id=1')
+            self.q('UPDATE protos.item_consumable SET recovery_profile_id=NULL,book_aid_profile_id=9901 WHERE local_id=1')
+            with self.assertRaisesRegex(RuntimeError,'^1451:'):
+                self.q('DELETE FROM protos.book_aid_profile WHERE profile_id=9901')
+            with self.assertRaisesRegex(RuntimeError,'^1452:'):
+                self.q('UPDATE protos.item_consumable SET book_aid_profile_id=9902 WHERE local_id=1')
+            self.assertEqual(self.q('SELECT aid_kind,charges_per_use,maximum_charges FROM protos.book_aid_profile WHERE profile_id=9901'),[['1','2','3']])
+        finally:
+            self.q('ROLLBACK')
+
     def test_recovery_stack_and_transaction_rollback(self):
         self.q("START TRANSACTION")
         try:
@@ -710,7 +728,7 @@ class CategorySchemaTests(unittest.TestCase):
                 self.q(sql)
 
     def test_containers_keys_and_loot(self):
-        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["25", "auriga.item_catalog.v25"]])
+        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["26", "auriga.item_catalog.v26"]])
         self.assertEqual(self.q("SELECT category_id,local_id,container_kind,loot_profile_id,lock_id FROM protos.item_container ORDER BY local_id"),
                          [["8","1","1","1","0"],["8","2","2","2","7"],["8","3","3",None,"0"]])
         self.assertEqual(self.q("SELECT category_id,local_id,lock_id FROM protos.item_container_key"), [["18","1","7"]])

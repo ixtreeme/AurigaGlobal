@@ -61,6 +61,7 @@ PROFILES = {
     'consumable_cooldown_profile': ('profile_id', [('recovery_profile', 'cooldown_profile_id'), ('timed_effect_profile', 'cooldown_profile_id'), ('toggle_effect_profile', 'cooldown_profile_id')], []),
     'attribute_profile': ('profile_id',[('item_attribute_binding','profile_id')],['attribute_value','attribute_candidate','attribute_group']),
     'attribute_service_profile': ('profile_id',[('item_consumable','attribute_service_profile_id')],['attribute_tier_chance']),
+    'book_aid_profile': ('profile_id',[('item_consumable','book_aid_profile_id')],[]),
     'socket_service_profile': ('profile_id',[('item_consumable','socket_service_profile_id')],[]),
     'recovery_profile': ('profile_id', [('item_consumable', 'recovery_profile_id')], list(EFFECT_TABLES.values())),
     'timed_effect_profile': ('profile_id', [('item_consumable', 'timed_effect_profile_id')], []),
@@ -145,8 +146,10 @@ class Catalog:
                           ammo=self.linked('item_ammo_policy', child, 'ammo_policy_id', 'policy_id'))
         if category in (2, 3): result['resistance'] = self.linked('item_resistance_profile', child, 'resistance_profile_id')
         if category == 5:
-            result.update(toggle=None, toggle_group=None, toggle_bonuses=[],socket_service=None,attribute_service=None,attribute_tiers=[])
-            if child.get('attribute_service_profile_id') is not None:
+            result.update(book_aid=None,toggle=None, toggle_group=None, toggle_bonuses=[],socket_service=None,attribute_service=None,attribute_tiers=[])
+            if child.get('book_aid_profile_id') is not None:
+                result.update(book_aid=self.linked('book_aid_profile',child,'book_aid_profile_id'),recovery=None,effect=None,timed=None,timed_group=None,timed_bonuses=[],cooldown=None)
+            elif child.get('attribute_service_profile_id') is not None:
                 result.update(attribute_service=self.linked('attribute_service_profile',child,'attribute_service_profile_id'),attribute_tiers=[{k:v for k,v in r.items() if k!='profile_id'} for r in self.book_rows('attribute_tier_chance',child['attribute_service_profile_id'],'tier')],recovery=None,effect=None,timed=None,timed_group=None,timed_bonuses=[],cooldown=None)
             elif child.get('socket_service_profile_id') is not None:
                 result.update(socket_service=self.linked('socket_service_profile',child,'socket_service_profile_id'),recovery=None,effect=None,timed=None,timed_group=None,timed_bonuses=[],cooldown=None)
@@ -314,7 +317,7 @@ class Catalog:
                         effect=dict(delivery_kind='1', hp_raw='1000', sp_raw='0', max_hp_bp='0', max_sp_bp='0', flat_bonus_cap_bp='10000'),
                         cooldown=None)
             item['child'].update(recovery_profile_id=None, timed_effect_profile_id=None, toggle_effect_profile_id=None,socket_service_profile_id=None,attribute_service_profile_id=None)
-            item.update(socket_service=None,attribute_service=None,attribute_tiers=[])
+            item.update(book_aid=None,socket_service=None,attribute_service=None,attribute_tiers=[])
             item['child']['attribute_service_profile_id']=None
             item.update(timed=None, timed_group=None, timed_bonuses=[], toggle=None, toggle_group=None, toggle_bonuses=[])
         if category == 8:
@@ -548,7 +551,12 @@ class Catalog:
             child['resistance_profile_id'] = self.profile('item_resistance_profile', document['resistance'], child.get('resistance_profile_id'))
         self.apply_attributes(document,key)
         if category == 5:
-            if document.get('attribute_service') is not None:self.apply_attribute_service(document,child,key,exists)
+            old_aid=child.get('book_aid_profile_id')
+            child['book_aid_profile_id']=None
+            if document.get('book_aid') is not None:
+                identity=self.profile('book_aid_profile',document['book_aid'],old_aid if exists else None)
+                child.update(recovery_profile_id=None,timed_effect_profile_id=None,toggle_effect_profile_id=None,socket_service_profile_id=None,attribute_service_profile_id=None,book_aid_profile_id=identity)
+            elif document.get('attribute_service') is not None:self.apply_attribute_service(document,child,key,exists)
             elif document.get('socket_service') is not None:
                 identity=self.profile('socket_service_profile',document['socket_service'],child.get('socket_service_profile_id') if exists else None)
                 child.update(recovery_profile_id=None,timed_effect_profile_id=None,toggle_effect_profile_id=None,socket_service_profile_id=identity,attribute_service_profile_id=None)
@@ -589,6 +597,10 @@ class Catalog:
                 candidates.append(dict(pool_kind=pool,bonus_id=str(identity),weight='1'))
                 values.extend(dict(pool_kind=pool,bonus_id=str(identity),tier=str(tier),value_scaled=str(tier*100)) for tier in (1,2))
         return dict(attribute_profile=None,attribute_groups=[dict(pool_kind=str(i),capacity=str(capacity),exclude_static='1' if i==1 else '0') for i,capacity in [(1,5),(2,2),(3,1)]],attribute_candidates=candidates,attribute_values=values)
+
+    @staticmethod
+    def book_aid_defaults():
+        return dict(book_aid=dict(aid_kind='1',units_per_use='1',charges_per_use='1',maximum_charges='1'))
 
     @staticmethod
     def attribute_service_defaults():

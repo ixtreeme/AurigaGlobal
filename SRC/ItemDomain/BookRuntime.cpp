@@ -2,6 +2,40 @@
 #include <algorithm>
 namespace auriga::item
 {
+const BookAidProfile* BookAidItemProfile(const ItemCatalog& c,ItemKey key)
+{const auto* e=c.Find(key);const auto* row=e ? std::get_if<ItemConsumableRow>(&e->category) : nullptr;return row && row->bookAidProfile ? c.FindBookAid(*row->bookAidProfile) : nullptr;}
+std::expected<BookAidPlan,SkillBookError> PrepareBookAidUse(const ItemCatalog& c,const PersistentItem& source,const BookLearning& before,const BookCharacter& live,const SkillBookAdmission& a)
+{
+    using E=SkillBookError;const auto* entry=c.Find(source.key);if(!entry)return std::unexpected(E::MissingItem);
+    const auto* p=BookAidItemProfile(c,source.key);if(!p)return std::unexpected(E::WrongCategory);
+    if(entry->base.retired)return std::unexpected(E::RetiredItem);
+    if(!ValidBookLearning(before) || !ValidBookCharacter(live) || a.classIndex>3 || a.sexIndex>1 || source.count>entry->base.maxStack || before.revision==UINT64_MAX)return std::unexpected(E::InvalidState);
+    if(!a.skillSystemEnabled)return std::unexpected(E::Disabled);if(!a.targetAllowedByRules)return std::unexpected(E::RuleDenied);
+    if(!a.alive)return std::unexpected(E::DeadCharacter);if(a.polymorphed)return std::unexpected(E::Polymorphed);
+    const auto& use=*c.FindUsePolicy(entry->base.usePolicy);
+    if(a.inCombat && !use.useDuringCombat)return std::unexpected(E::CombatDenied);
+    if(a.characterLevel<entry->base.minimumLevel)return std::unexpected(E::LevelDenied);
+    if(!(use.allowedClasses & (1u<<a.classIndex)))return std::unexpected(E::ClassDenied);
+    if(!(use.allowedSexes & (1u<<a.sexIndex)))return std::unexpected(E::SexDenied);
+    if(source.count<p->unitsPerUse)return std::unexpected(E::InsufficientUnits);
+    const auto balance=p->kind==BookAidKind::Chance ? before.chanceTokens : before.bypassTokens;
+    if(balance>p->maximumCharges || p->chargesPerUse>p->maximumCharges-balance)return std::unexpected(E::ChargeLimit);
+    return BookAidPlan{p->kind,p->unitsPerUse,p->chargesPerUse,p->maximumCharges};
+}
+std::expected<BookAidRuntimePlan,SkillBookError> MakeBookAidRuntimeCommit(const ItemCatalog& c,std::array<std::uint8_t,16> operation,ItemOwnerFence fence,
+    std::span<const ItemStorageLayout> layouts,std::span<const PersistentItem> items,const BookLearning& before,const BookCharacter& live,ItemInstanceId id,const SkillBookAdmission& facts)
+{
+    const auto source=std::ranges::find(items,id,&PersistentItem::id);
+    if(source==items.end() || fence.owner.kind!=ItemOwnerKind::Character || !PlainInventoryItem(*source,fence.owner) || !ValidatePersistentItem(c,*source))return std::unexpected(SkillBookError::MissingItem);
+    auto result=PrepareBookAidUse(c,*source,before,live,facts);if(!result)return std::unexpected(result.error());
+    auto consume=MakeConsumeCommit(c,operation,fence,layouts,items,id,result->units);if(!consume)return std::unexpected(SkillBookError::InvalidState);
+    BookLearning after=before;++after.revision;after.character=live;
+    auto& balance=result->kind==BookAidKind::Chance ? after.chanceTokens : after.bypassTokens;balance+=result->charges;
+    consume->learning=ItemLearningChange{fence.owner,before,after};consume->outcomeCode=0x2300+static_cast<unsigned>(result->kind);
+    consume->result={'A','I','D',1,static_cast<std::uint8_t>(result->kind)};
+    for(auto value:{result->charges,balance})for(unsigned i=0;i<4;++i)consume->result.push_back(static_cast<std::uint8_t>(value>>(8*i)));
+    if(!ValidateItemCommit(c,*consume))return std::unexpected(SkillBookError::InvalidState);return BookAidRuntimePlan{std::move(*consume),*result};
+}
 const SkillBookProfile* BookItemProfile(const ItemCatalog& c,ItemKey key)
 {const auto* e=c.Find(key);const auto* b=e ? std::get_if<ItemSkillBookRow>(&e->category) : nullptr;return b ? c.FindSkillBook(b->profile) : nullptr;}
 std::expected<SkillBookAdmission,SkillBookError> BookRuntimeAdmission(const ItemCatalog& c,const PersistentItem& item,const BookLearning& before,const BookCharacter& live,SkillBookAdmission facts,std::uint64_t now)

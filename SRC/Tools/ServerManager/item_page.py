@@ -1885,6 +1885,14 @@ class ItemPage(QWidget):
         self.consumable_kind.addItem('Időzített stat-hatás', '2'); self.consumable_kind.addItem('Kapcsolható harmat', '3'); kind_row.addWidget(self.consumable_kind); kind_row.addStretch()
         self.consumable_kind.addItem('Foglalattisztítás / kőkiemelés','4')
         self.consumable_kind.addItem('Bónuszhozzáadás / váltás / védelem','5')
+        self.consumable_kind.addItem('Könyvbónusz / várakozáselhagyás','6')
+        self.book_aid_form=Form(changed)
+        self.book_aid_form.add('book_aid','aid_kind','Töltet fajtája','choice',choices=[('1','Könyvolvasás sikerbónusza'),('2','Könyvolvasás várakozásának elhagyása')])
+        self.book_aid_form.add('book_aid','units_per_use','Felhasznált darab',range=(1,65535))
+        self.book_aid_form.add('book_aid','charges_per_use','Jóváírt töltetek',range=(1,2147483647))
+        self.book_aid_form.add('book_aid','maximum_charges','Tárolható töltetek korlátja',range=(1,2147483647))
+        self.book_aid_form.note('A töltet a karakteren marad kilépés után is. A könyv profilja határozza meg a bónuszesélyt és a felhasználást. Ha a teljes jóváírás túllépné a korlátot, a tárgy nem fogy el.')
+        self.book_aid_form.finish()
         self.attribute_service_panel=AttributeServicePanel(changed,Form)
         self.socket_service_form=Form(changed)
         self.socket_service_form.add('socket_service','service_kind','Művelet','choice',choices=[
@@ -1893,7 +1901,7 @@ class ItemPage(QWidget):
         self.socket_service_form.note('A foglalat helye és minősége megmarad. A kiemelt kövek tárgytípusa és fejlesztési szintje változatlan; helyhiány esetén a művelet nem végezhető el.')
         self.socket_service_form.finish()
         wrapper_layout.addLayout(kind_row)
-        self.consumable_pages = QStackedWidget(); self.consumable_pages.addWidget(potion); self.consumable_pages.addWidget(timed_page); self.consumable_pages.addWidget(toggle_page); self.consumable_pages.addWidget(self.socket_service_form);self.consumable_pages.addWidget(self.attribute_service_panel)
+        self.consumable_pages = QStackedWidget(); self.consumable_pages.addWidget(potion); self.consumable_pages.addWidget(timed_page); self.consumable_pages.addWidget(toggle_page); self.consumable_pages.addWidget(self.socket_service_form);self.consumable_pages.addWidget(self.attribute_service_panel);self.consumable_pages.addWidget(self.book_aid_form)
         wrapper_layout.addWidget(self.consumable_pages, 1)
         self.category_pages[5] = scroll(wrapper)
         self.consumable_kind.currentIndexChanged.connect(lambda index: (self.consumable_pages.setCurrentIndex(index), self.recovery_controls(), changed()))
@@ -2226,13 +2234,15 @@ class ItemPage(QWidget):
         if category in (1,2,3,4):
             self.tabs.addTab(self.attribute_page,'Véletlen bónuszok');self.attribute_panel.load(document,self.packet['bonuses'])
         if category == 5:
+            aid=document.get('book_aid') is not None
+            self.book_aid_form.load(document if aid else catalog.Catalog.book_aid_defaults())
             attribute_service=document.get('attribute_service') is not None
             self.attribute_service_panel.load(document)
             service=document.get('socket_service') is not None
             self.socket_service_form.load(dict(socket_service=document.get('socket_service') or dict(service_kind='1',units_per_use='1')))
             timed = document.get('timed') is not None
             toggle = document.get('toggle') is not None
-            recovery_doc = document if not (timed or toggle or service or attribute_service) else catalog.Catalog(self.packet).new(5)
+            recovery_doc = document if not (aid or timed or toggle or service or attribute_service) else catalog.Catalog(self.packet).new(5)
             self.category_forms[5].load(recovery_doc)
             kind = int(recovery_doc['recovery']['delivery_kind'])
             self.finite_capacity_text = catalog.display(recovery_doc['effect']['capacity_raw']) if kind == 4 and recovery_doc['effect']['supply_kind'] == '1' else '1000'
@@ -2269,7 +2279,7 @@ class ItemPage(QWidget):
             self.toggle_cooldown_check.setChecked(bool(cooldown) and toggle)
             self.toggle_cooldown_edit.setText(catalog.display(cooldown['duration_ms']) if cooldown and toggle else '1')
             self.toggle_cooldown_edit.setEnabled(self.toggle_cooldown_check.isChecked())
-            selected_kind = 4 if attribute_service else 3 if service else 2 if toggle else 1 if timed else 0
+            selected_kind = 5 if aid else 4 if attribute_service else 3 if service else 2 if toggle else 1 if timed else 0
             self.consumable_kind.setCurrentIndex(selected_kind)
             self.consumable_pages.setCurrentIndex(selected_kind)
             self.recovery_controls()
@@ -2336,9 +2346,14 @@ class ItemPage(QWidget):
         if not document['appearance'].get('model_asset'): document['appearance'] = None
         if category in (1,2,3,4):self.attribute_panel.collect(document)
         if category == 5:
+            document['book_aid']=None
             document['attribute_service']=None
             document['socket_service']=None
-            if self.consumable_kind.currentData()=='5':
+            if self.consumable_kind.currentData()=='6':
+                self.book_aid_form.collect(document)
+                document.update(recovery=None,effect=None,timed=None,toggle=None,cooldown=None)
+                check,edit=None,None
+            elif self.consumable_kind.currentData()=='5':
                 self.attribute_service_panel.collect(document)
                 document.update(recovery=None,effect=None,timed=None,toggle=None,cooldown=None)
                 check,edit=None,None

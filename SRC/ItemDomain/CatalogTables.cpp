@@ -34,7 +34,7 @@ constexpr std::array<TableSpec, TableCount> Specs {{
     {Table::Instant, "instant_recovery_profile", "profile_id,delivery_kind,hp_raw,sp_raw,max_hp_bp,max_sp_bp,flat_bonus_cap_bp", Profiles},
     {Table::Reserve, "reserve_recovery_profile", "profile_id,delivery_kind,hp_raw,sp_raw,flat_bonus_cap_bp,tick_interval_ms,max_pool_per_tick_bp", Profiles},
     {Table::Periodic, "periodic_recovery_profile", "profile_id,delivery_kind,hp_per_tick_raw,sp_per_tick_raw,tick_interval_ms,duration_ms", Profiles},
-    {Table::Consumables, "item_consumable", "category_id,local_id,recovery_profile_id,timed_effect_profile_id,toggle_effect_profile_id,socket_service_profile_id,attribute_service_profile_id", Items},
+    {Table::Consumables, "item_consumable", "category_id,local_id,recovery_profile_id,timed_effect_profile_id,toggle_effect_profile_id,socket_service_profile_id,attribute_service_profile_id,book_aid_profile_id", Items},
     {Table::LootProfiles, "loot_profile", "profile_id,code,pick_mode", Profiles},
     {Table::LootEntries, "loot_entry", "profile_id,entry_no,reward_kind,item_category_id,item_local_id,amount,weight,rare_attribute_chance_bp", Profiles * MaxLootEntries},
     {Table::Containers, "item_container", "category_id,local_id,container_kind,loot_profile_id,lock_id,hatch_profile_id", Items},
@@ -95,6 +95,7 @@ constexpr std::array<TableSpec, TableCount> Specs {{
     {Table::AttributeTiers,"attribute_tier_chance","profile_id,tier,chance_bp",Profiles*MaxAttributeTiers},
     {Table::MobDropGroups,"mob_drop_group","group_id,code,target_kind,target_value,roll_kind,kills_per_drop,minimum_killer_level",MaxMobDropGroups},
     {Table::MobDropEntries,"mob_drop_entry","group_id,entry_no,category_id,local_id,refinement_level,amount,chance_ppb,weight,rare_attribute_chance_bp,killer_level_min,killer_level_max",MaxMobDropGroups*MaxMobDropEntries},
+    {Table::BookAids,"book_aid_profile","profile_id,code,aid_kind,units_per_use,charges_per_use,maximum_charges",Profiles},
 }};
 static_assert([] { for (std::size_t i = 0; i < Specs.size(); ++i) if (static_cast<std::size_t>(Specs[i].table) != i) return false; return true; }());
 }

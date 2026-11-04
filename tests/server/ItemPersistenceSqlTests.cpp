@@ -2,6 +2,7 @@
 #include "AttributeRuntimeFixture.hpp"
 #include "EffectRuntimeFixture.hpp"
 #include "BookRuntimeFixture.hpp"
+#include "BookAidFixture.hpp"
 #include <item/BookSaveFence.hpp>
 #include "CatalogSnapshotFixture.hpp"
 #include <ItemPersistenceSql.hpp>
@@ -174,7 +175,7 @@ void Allocator(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,unsigned 
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
 {
     auto source=attribute_runtime_fixture::Catalog();
-    effect_runtime_fixture::Extend(source);book_runtime_fixture::Extend(source);
+    effect_runtime_fixture::Extend(source);book_runtime_fixture::Extend(source);book_aid_fixture::Extend(source);
     const auto sqlBox=ItemKey::Create(8,99).value();auto boxBase=*std::ranges::find(source.items,item_catalog_fixture::GiftBox(),&ItemBaseRow::key);
     boxBase.key=sqlBox;boxBase.contentCode="container.sql_opening";source.items.push_back(boxBase);source.containers.push_back({sqlBox,ContainerKind::Locked,3,7});
     source.lootProfiles.push_back({3,"loot.sql_opening",LootPickMode::IndependentChance,{{1,LootRewardKind::Item,f::Leather().key,3,10000,0},{2,LootRewardKind::Gold,{},75,10000,0}}});
@@ -740,6 +741,24 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         const auto save=ProtectBookSave("UPDATE player.player SET exp = 9999, skill_point = 9, sub_skill_point = 9, horse_skill_point = 9, skill_level = '', name = 'later' WHERE id=880096",0,"");Check(save.has_value(),"real legacy save protection constructed");Execute(admin,*save);Check(Scalar(admin,"SELECT exp FROM player.player WHERE id=880096")=="800" && Scalar(admin,"SELECT typed_book_revision FROM player.player WHERE id=880096")=="2" && Scalar(admin,"SELECT name FROM player.player WHERE id=880096")=="later","late legacy save preserves every book field while other fields still save");
         Check(p::ClaimOwnerSession(writer,*c,customer).has_value(),"book relog fence");Check(p::LoadCurrentItemOwner(writer,*c,customer)->learning==state.learning,"book level, reads and offline deadline survive relog");
         Query(admin,"UPDATE player.item_book_learning SET state_sha256=UNHEX(REPEAT('00',32)) WHERE owner_kind=1 AND owner_id=880096");Check(!p::LoadCurrentItemOwner(writer,*c,customer),"corrupt learning hash fails closed");Query(admin,"UPDATE player.item_book_learning SET state_sha256=? WHERE owner_kind=1 AND owner_id=880096",{U::Blob(Bytes(*BookLearningDigest(customer,state.learning)))});
+    }
+    {
+        namespace af=book_aid_fixture;namespace bf=book_runtime_fixture;
+        const ItemOwner customer{ItemOwnerKind::Character,880097};const auto bag=f::Inventory(customer);
+        Check(p::ProvisionOwner(admin,*c,customer,std::span(&bag,1),{}).has_value(),"aid owner provisioned");
+        Query(admin,"INSERT INTO player.player(id,exp,skill_level) VALUES(880097,654,?)",{U::Blob(std::string(2550,'\0'))});
+        auto state=p::LoadCurrentItemOwner(writer,*c,customer).value();const auto block=p::ReserveItemInstanceIds(writer,*c,3).value();
+        for(unsigned n=0;n<3;++n){auto grant=MakeGrantCommit(*c,{23,0,static_cast<std::uint8_t>(n+1)},state.fence,state.storages,state.items,{n<2 ? af::Key(n) : bf::Key(0),0,5},std::array{ItemInstanceId::Create(block.first+n).value()});Check(grant && p::CommitItems(writer,*c,*grant).has_value(),"aid and book fixtures granted");state=p::LoadCurrentItemOwner(writer,*c,customer).value();}
+        BookCharacter live;live.experience=654;live.points={4,5,6};const auto id=ItemInstanceId::Create(block.first).value();
+        auto aid=MakeBookAidRuntimeCommit(*c,{23,1},state.fence,state.storages,state.items,state.learning,live,id,bf::Facts());Check(aid.has_value(),"aid SQL planned");
+        auto raced=aid->commit;++raced.items[0].before->revision;++raced.items[0].after.revision;Check(!p::CommitItems(writer,*c,raced),"source CAS rolls aid credit back");Check(p::LoadCurrentItemOwner(writer,*c,customer)->learning==BookLearning{},"failed aid leaves no learning sidecar");
+        Execute(admin,"UPDATE player.player SET typed_book_revision=1 WHERE id=880097");Check(!p::CommitItems(writer,*c,aid->commit),"character CAS rolls aid source and credit back");Execute(admin,"UPDATE player.player SET typed_book_revision=0 WHERE id=880097");
+        Check(p::CommitItems(writer,*c,aid->commit).has_value() && p::CommitItems(writer,*c,aid->commit)->replay,"aid replay credits once");state=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(state.learning.chanceTokens==1 && state.learning.character==live && Find(state,block.first).count==4,"aid state and live character survive SQL reload");
+        auto full=MakeBookAidRuntimeCommit(*c,{23,2},state.fence,state.storages,state.items,state.learning,live,id,bf::Facts());Check(!full && full.error()==SkillBookError::ChargeLimit,"SQL reloaded cap rejects next debit");
+        auto bypass=MakeBookAidRuntimeCommit(*c,{23,3},state.fence,state.storages,state.items,state.learning,live,ItemInstanceId::Create(block.first+1).value(),bf::Facts());Check(bypass && p::CommitItems(writer,*c,bypass->commit).has_value(),"bypass credits independently");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        auto book=MakeBookRuntimeCommit(*c,{23,4},state.fence,state.storages,state.items,state.learning,live,ItemInstanceId::Create(block.first+2).value(),bf::Facts(),1000,{0,1500});Check(book && book->result.consumeChanceBonus && !book->result.consumeDelayBypass && p::CommitItems(writer,*c,book->commit).has_value(),"book atomically consumes item-earned bonus and preserves unused bypass");state=p::LoadCurrentItemOwner(writer,*c,customer).value();live=state.learning.character;
+        auto waiting=MakeBookRuntimeCommit(*c,{23,5},state.fence,state.storages,state.items,state.learning,live,ItemInstanceId::Create(block.first+2).value(),bf::Facts(),1001,{0,1500});Check(waiting && waiting->result.consumeDelayBypass && p::CommitItems(writer,*c,waiting->commit).has_value(),"book consumes bypass within exact deadline");state=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(!state.learning.chanceTokens && state.learning.bypassTokens==1 && state.learning.character.skills[1].level==1,"persisted balance and skill advance together");
+        Check(p::ClaimOwnerSession(writer,*c,customer).has_value() && p::LoadCurrentItemOwner(writer,*c,customer)->learning==state.learning,"aid and book result survive session handoff");
     }
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);

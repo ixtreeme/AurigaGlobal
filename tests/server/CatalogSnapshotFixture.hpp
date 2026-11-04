@@ -71,7 +71,8 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
             else Add(s,T::Automatic,r.id,4,e.pool,e.supply,e.capacityRaw,e.tickIntervalMs,e.maxPoolPerTickBp,e.activeMaxPoolBonusBp);
         },r.effect);
     }
-    for (const auto& r : source.consumables) Add(s,T::Consumables,r.key.Category(),r.key.LocalId(),r.recoveryProfile ? std::optional{r.recoveryProfile} : std::nullopt,r.timedEffectProfile,r.toggleEffectProfile,r.socketServiceProfile,r.attributeServiceProfile);
+    for(const auto& p:source.bookAidProfiles)Add(s,T::BookAids,p.id,p.code,p.kind,p.unitsPerUse,p.chargesPerUse,p.maximumCharges);
+    for (const auto& r : source.consumables) Add(s,T::Consumables,r.key.Category(),r.key.LocalId(),r.recoveryProfile ? std::optional{r.recoveryProfile} : std::nullopt,r.timedEffectProfile,r.toggleEffectProfile,r.socketServiceProfile,r.attributeServiceProfile,r.bookAidProfile);
     for (const auto& r : source.lootProfiles) {
         Add(s,T::LootProfiles,r.id,r.code,r.mode);
         for (const auto& e : r.entries) {

@@ -9,6 +9,12 @@ namespace auriga::item
 constexpr std::uint8_t BookRuntimeSkillCap(std::uint32_t type,std::uint8_t declared) noexcept
 {return type==0 && declared<MaxBookSkillLevel ? declared : MaxBookSkillLevel;}
 const SkillBookProfile* BookItemProfile(const ItemCatalog&,ItemKey);
+const BookAidProfile* BookAidItemProfile(const ItemCatalog&,ItemKey);
+struct BookAidPlan { BookAidKind kind; std::uint16_t units; std::uint32_t charges,maximum; };
+std::expected<BookAidPlan,SkillBookError> PrepareBookAidUse(const ItemCatalog&,const PersistentItem&,const BookLearning&,const BookCharacter&,const SkillBookAdmission&);
+struct BookAidRuntimePlan { ItemCommit commit; BookAidPlan result; };
+std::expected<BookAidRuntimePlan,SkillBookError> MakeBookAidRuntimeCommit(const ItemCatalog&,std::array<std::uint8_t,16>,ItemOwnerFence,
+    std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const BookLearning&,const BookCharacter&,ItemInstanceId,const SkillBookAdmission&);
 std::expected<SkillBookAdmission,SkillBookError> BookRuntimeAdmission(const ItemCatalog&,const PersistentItem&,const BookLearning&,const BookCharacter&,SkillBookAdmission facts,std::uint64_t now);
 struct BookRuntimePlan{ItemCommit commit;SkillBookPlan result;};
 std::expected<BookRuntimePlan,SkillBookError> MakeBookRuntimeCommit(const ItemCatalog&,std::array<std::uint8_t,16>,ItemOwnerFence,
@@ -19,6 +25,7 @@ struct BookRuntimeView
     const PersistentItem* source=nullptr;const BookLearning* learning=nullptr;
     BookCharacter character;SkillBookAdmission actor;std::string skillName;
     const SkillBookPlan* result=nullptr;SkillBookDecisions decisions;
+    const BookAidPlan* aidResult=nullptr;
 };
 std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeBookRuntime(const ItemCatalog&,const BookRuntimeView&);
 }

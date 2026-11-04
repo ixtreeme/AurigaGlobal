@@ -1016,6 +1016,20 @@ class PageCase(unittest.TestCase):
         return packet, keys
 
 class EditorPageTests(PageCase):
+    def test_book_aid_form_and_inactive_drafts(self):
+        def aid(d):
+            d.update(catalog.Catalog.book_aid_defaults());d.update(recovery=None,effect=None)
+        packet,key=create(catalog.blank(TOOL),5,aid);self.page.loaded(packet,key)
+        self.assertEqual(self.page.consumable_kind.currentData(),'6')
+        fields={f.column:f for f in self.page.book_aid_form.fields}
+        fields['aid_kind'].widget.setCurrentIndex(fields['aid_kind'].widget.findData('2'))
+        fields['charges_per_use'].edit.setText('2');fields['maximum_charges'].edit.setText('3')
+        self.page.cooldown_check.setChecked(True);self.page.cooldown_edit.setText('invalid inactive')
+        d=self.page.collect();self.assertEqual(d['book_aid']['aid_kind'],'2');self.assertIsNone(d['cooldown']);catalog.validate(packet,d,key,TOOL)
+        packet=saved(packet,catalog.Catalog(packet).apply(d,key));self.page.loaded(packet,key)
+        self.page.consumable_kind.setCurrentIndex(0);fields['charges_per_use'].edit.setText('invalid inactive')
+        d=self.page.collect();self.assertIsNone(d['book_aid']);catalog.validate(packet,d,key,TOOL);self.page.dirty=False
+
     def test_instance_attribute_and_service_forms_ignore_inactive_drafts(self):
         packet,key=create(catalog.blank(TOOL),1,attributes);self.page.loaded(packet,key);panel=self.page.attribute_panel
         self.assertTrue(panel.enabled.isChecked());self.assertEqual(panel.values.rowCount(),28)
@@ -2477,6 +2491,19 @@ class SqlCommitTests(unittest.TestCase):
         packet = self.commit(packet, document, other)
         self.assertIsNotNone(catalog.Catalog(packet).item(other)['recovery'])
         self.assertEqual(catalog.Catalog(packet).item(key), original)
+
+    def test_z_book_aid_commit_copy_change_and_recovery_switch(self):
+        packet=self.call('read');model=catalog.Catalog(packet);d=model.new(5)
+        d.update(catalog.Catalog.book_aid_defaults());d.update(recovery=None,effect=None)
+        key=key_of(d);packet=self.commit(packet,d);actual=catalog.Catalog(packet).item(key)
+        self.assertEqual(actual['book_aid']['aid_kind'],'1')
+        model=catalog.Catalog(packet);clone=model.duplicate(key);other=key_of(clone);clone['book_aid'].update(aid_kind='2',charges_per_use='2',maximum_charges='3')
+        packet=self.commit(packet,clone);self.assertEqual(catalog.Catalog(packet).item(key)['book_aid']['aid_kind'],'1')
+        self.assertEqual(catalog.Catalog(packet).item(other)['book_aid']['charges_per_use'],'2')
+        invalid=catalog.Catalog(packet).item(other);invalid['book_aid']['maximum_charges']='1'
+        with self.assertRaises(api.EditorError):self.commit(packet,invalid,other)
+        actual=catalog.Catalog(packet).item(other);actual.update(book_aid=None,recovery=catalog.Catalog(packet).new(5)['recovery'],effect=catalog.Catalog(packet).new(5)['effect'])
+        packet=self.commit(packet,actual,other);self.assertIsNone(catalog.Catalog(packet).item(other)['book_aid'])
 
     def test_z_skill_book_full_rules_commit_copy_and_operation_change(self):
         packet = self.call('read')
