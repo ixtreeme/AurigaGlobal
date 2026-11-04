@@ -1,5 +1,6 @@
 //#define __FISHING_MAIN__
 #include "stdafx.h"
+#include "../item/ItemStore.hpp"
 #include "../ecs/systems/ViewSystem.hpp"
 #include "../ecs/systems/InventorySystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
@@ -686,6 +687,7 @@ void Grill(entt::entity owner, entt::entity itemEntity)
 
 bool UseFishEcs(entt::entity owner, entt::entity fishItem)
 {
+    if(g_registry.valid(owner) && g_registry.all_of<ecs::TypedItems>(owner))return false;
 	if (owner == entt::null || fishItem == entt::null)
 		return false;
 
@@ -695,6 +697,7 @@ bool UseFishEcs(entt::entity owner, entt::entity fishItem)
 
 bool GrillFishEcs(entt::entity owner, entt::entity fishItem)
 {
+    if(g_registry.valid(owner) && g_registry.all_of<ecs::TypedItems>(owner))return false;
 	if (owner == entt::null || fishItem == entt::null)
 		return false;
 

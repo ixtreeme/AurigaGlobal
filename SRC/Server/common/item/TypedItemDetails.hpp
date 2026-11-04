@@ -16,7 +16,7 @@ inline constexpr std::uint8_t TypedItemDetailsHeader = 227;
 inline constexpr std::uint8_t TypedActionMove = 1, TypedActionEquip = 2,
     TypedActionUse = 4, TypedActionRefine = 8, TypedActionDrop = 16, TypedActionOpen = 32, TypedActionRedeem = 64, TypedActionSocket = 128;
 // v2 widens only actions to u16 when an attribute service is present.
-inline constexpr std::uint16_t TypedActionAttributes = 256, TypedActionRecovery = 512, TypedActionEffects = 1024, TypedActionBook = 2048, TypedActionPolymorph = 4096;
+inline constexpr std::uint16_t TypedActionAttributes = 256, TypedActionRecovery = 512, TypedActionEffects = 1024, TypedActionBook = 2048, TypedActionPolymorph = 4096, TypedActionFish = 8192;
 std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDetails(
     const ItemCatalog&, std::span<const PersistentItem>, bool ownedDropEnabled = false, std::span<const ItemGrant> extraStates = {});
 }

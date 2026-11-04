@@ -4,6 +4,7 @@
 #include "BookRuntimeFixture.hpp"
 #include "BookAidFixture.hpp"
 #include "PolymorphRuntimeFixture.hpp"
+#include "FishProcessingFixture.hpp"
 #include <item/BookSaveFence.hpp>
 #include "CatalogSnapshotFixture.hpp"
 #include <ItemPersistenceSql.hpp>
@@ -176,7 +177,7 @@ void Allocator(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,unsigned 
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
 {
     auto source=attribute_runtime_fixture::Catalog();
-    effect_runtime_fixture::Extend(source);book_runtime_fixture::Extend(source);book_aid_fixture::Extend(source);polymorph_runtime_fixture::Extend(source);
+    effect_runtime_fixture::Extend(source);book_runtime_fixture::Extend(source);book_aid_fixture::Extend(source);polymorph_runtime_fixture::Extend(source);fish_processing_fixture::Extend(source);
     const auto sqlBox=ItemKey::Create(8,99).value();auto boxBase=*std::ranges::find(source.items,item_catalog_fixture::GiftBox(),&ItemBaseRow::key);
     boxBase.key=sqlBox;boxBase.contentCode="container.sql_opening";source.items.push_back(boxBase);source.containers.push_back({sqlBox,ContainerKind::Locked,3,7});
     source.lootProfiles.push_back({3,"loot.sql_opening",LootPickMode::IndependentChance,{{1,LootRewardKind::Item,f::Leather().key,3,10000,0},{2,LootRewardKind::Gold,{},75,10000,0}}});
@@ -775,6 +776,29 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         auto book=use(2,3);Check(book && p::CommitItems(writer,*c,book->commit).has_value(),"practice and shape saved together");state=p::LoadCurrentItemOwner(writer,*c,owner).value();Check(Find(state,ids.first+2).polymorph->practiceRemaining==1 && state.recovery.polymorph->effect.bonusMagnitude==21,"book practice and movement bonus reload");
         Query(admin,"UPDATE player.item_instance SET polymorph_practice=polymorph_practice+1 WHERE instance_id=?",{U::UInt(ids.first+2)});Check(!p::LoadCurrentItemOwner(writer,*c,owner),"tampered practice fails instance hash");Query(admin,"UPDATE player.item_instance SET polymorph_practice=polymorph_practice-1 WHERE instance_id=?",{U::UInt(ids.first+2)});Check(p::LoadCurrentItemOwner(writer,*c,owner).has_value(),"original practice restored");
         auto cleared=state.recovery;cleared.polymorph.reset();++cleared.revision;ItemCommit clear;clear.operationId={24,3};clear.catalogRevision=c->Revision();clear.catalogHash=c->ContentHash();clear.kind=ItemOperationKind::Service;clear.owners={state.fence};clear.recovery=ItemRecoveryChange{owner,state.recovery,cleared,0};clear.outcomeCode=0x2404;clear.result={'P','L','R',1,4};Check(p::CommitItems(writer,*c,clear).has_value(),"death/expiry clear schedule saved");state=p::LoadCurrentItemOwner(writer,*c,owner).value();Check(!state.recovery.polymorph && Find(state,ids.first+1).polymorph->boundForm==24001,"clear preserves independent bound orb payload");
+    }
+    {
+        namespace fish=fish_processing_fixture;
+        const ItemOwner owner{ItemOwnerKind::Character,880099};const auto bag=f::Inventory(owner);
+        Check(p::ProvisionOwner(admin,*c,owner,std::span(&bag,1),{}).has_value(),"fish owner provisioned");auto state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        const auto block=p::ReserveItemInstanceIds(writer,*c,32).value();std::vector<ItemInstanceId> ids;for(unsigned n=0;n<32;++n)ids.push_back(ItemInstanceId::Create(block.first+n).value());
+        auto grant=MakeGrantCommit(*c,{25,0},state.fence,state.storages,state.items,{fish::Fish(1),0,2},std::span(ids).first(1));
+        Check(grant && p::CommitItems(writer,*c,*grant).has_value(),"live fish persisted");state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        FishProcessingRequest request{ids[0],FishAction::Use,{100,0,0,true,false,false}};
+        auto plan=MakeFishProcessingCommit(*c,{25,1},state.fence,state.storages,state.items,request,std::span(ids).subspan(1),[](auto){return 0;});
+        Check(plan.has_value(),"SQL live-fish plan");auto raced=plan->commit;++raced.items[0].before->revision;++raced.items[0].after.revision;
+        Check(!p::CommitItems(writer,*c,raced),"fish source CAS aborts reward");auto untouched=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        Check(untouched.items.size()==1 && Find(untouched,block.first).count==2,"CAS failure preserves fish and gives nothing");
+        Check(p::CommitItems(writer,*c,plan->commit).has_value() && p::CommitItems(writer,*c,plan->commit)->replay,"fish reward and receipt commit exactly once");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();Check(Find(state,block.first).count==1 && Find(state,block.first+1).key==fish::Fish(2) && Find(state,block.first+1).count==3,"live consumption and full dead-fish yield reload");
+        request={ids[1],FishAction::Grill,{100,0,0,true,false,false}};
+        Check(!MakeFishProcessingCommit(*c,{25,2},state.fence,state.storages,state.items,request,std::span(ids).subspan(2),{}),"missing fire creates no SQL plan");request.actor.campfireAvailable=true;
+        auto grilled=MakeFishProcessingCommit(*c,{25,3},state.fence,state.storages,state.items,request,std::span(ids).subspan(2),{});
+        Check(grilled && p::CommitItems(writer,*c,grilled->commit).has_value() && p::CommitItems(writer,*c,grilled->commit)->replay,"grill all units and receipt atomically");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();Check(state.items.size()==2 && std::ranges::none_of(state.items,[&](const auto& i){return i.id==ids[1];}) && Find(state,block.first+2).count==3,"all dead fish became exact cooked count");
+        Check(p::ClaimOwnerSession(writer,*c,owner).has_value(),"fish relog session");const auto reloaded=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        Check(reloaded.items==state.items && reloaded.fence.sessionGeneration>state.fence.sessionGeneration,"fish and cooked reward survive session handoff");
+        const auto old=p::CommitItems(writer,*c,grilled->commit);Check(!old || old->replay,"old session cannot reapply grill");
     }
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);

@@ -64,7 +64,7 @@ bool ValidItemStorage(const ItemStorageLayout& l) noexcept
 }
 bool SupportsPersistentItem(const ItemCatalog& c,const ItemCatalogEntry& e) noexcept
 {
-    if(std::holds_alternative<ItemPolymorphRow>(e.category) || std::holds_alternative<ItemSkillBookRow>(e.category))return true;
+    if(std::holds_alternative<ItemFishingRow>(e.category) || std::holds_alternative<ItemPolymorphRow>(e.category) || std::holds_alternative<ItemSkillBookRow>(e.category))return true;
     if(const auto* container=std::get_if<ItemContainerRow>(&e.category))return container->kind!=ContainerKind::PetEgg;
     if(const auto* consumable=std::get_if<ItemConsumableRow>(&e.category))
     {
@@ -89,6 +89,7 @@ std::expected<void,E> ValidatePersistentItem(const ItemCatalog& c,const Persiste
        (e->base.binding==BindingPolicy::OnAcquire && !p.boundTo) ||
        (p.destroyed ? (p.count || p.placement.has_value()) : (!p.count || p.count>e->base.maxStack || !p.placement)))return std::unexpected(E::InvalidItem);
     if(!c.FindRefinement(e->base.refinementProfile)->FindLevel(p.refinementLevel))return std::unexpected(E::InvalidLevel);
+    if(std::holds_alternative<ItemFishingRow>(e->category) && p.refinementLevel)return std::unexpected(E::InvalidLevel);
     if(!ValidateInstanceAttributes(c,p.key,p.attributes))return std::unexpected(E::InvalidAttributes);
     const auto* armor=std::get_if<ItemArmorRow>(&e->category);
     if(std::holds_alternative<ItemWeaponRow>(e->category) || (armor && armor->slot==EquipmentSlot::Body))
