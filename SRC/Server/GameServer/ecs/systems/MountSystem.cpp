@@ -5,6 +5,7 @@
 #include "CombatSystem.hpp"
 
 #include "MountSystem.hpp"
+#include "MountFlightSystem.hpp"
 #include "ItemSystem.hpp"
 #include "NetworkSyncSystem.hpp"
 #include "PointSystem.hpp"
@@ -561,6 +562,7 @@ void SetMountVnum(entt::entity rider, uint32_t vnum)
 
     auto& mount = g_registry.get_or_emplace<ecs::MountState>(rider);
     mount.mountVnum = vnum;
+    ecs::MountFlightSystem::Reset(rider);
     mount.mountTime = get_dword_time();
     if (vnum == 0)
         mount.horseRiding = false;

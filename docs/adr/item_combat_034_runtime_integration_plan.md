@@ -1,9 +1,11 @@
 # ADR IC-034 — F4 szerverbekötés: ütemterv és 1. szelet (katalógus induláskor)
 
 2026-10-29. Fázis: F4 ([IC-012](item_combat_012_item_runtime_first.md)).
-Állapot (2026-11-04): **C1–C24, C25a–b, C25c-1/2 és a C25d kezelő implementált a külön típusos tárgyrendszerben;
+Állapot (2026-11-05): **C1–C24, C25a–b, C25c-1/2 és a C25d kezelő implementált a külön típusos tárgyrendszerben;
 Unity 6.3 és helyi szerver együtt ellenőrizve**. A normál legacy leltár és
 a meglévő karakterek átállítása a felhasználó kérésére még nem történik meg.
+Az aktív ágak a C26a munkában megkapták a TERA pecséteket és a hátasrepülést.
+A társak típusos műveletei továbbra is nyitottak. [IC-058](item_combat_058_tera_companion_port.md)
 
 ## Közös szerver–Unity munkamenet (felhasználói döntés, 2026-11-01)
 

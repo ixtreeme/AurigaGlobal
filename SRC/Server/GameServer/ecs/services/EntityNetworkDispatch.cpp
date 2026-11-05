@@ -21,6 +21,7 @@
 #include "../components/status_components.hpp"
 #include "../components/transform_components.hpp"
 #include "../systems/MountSystem.hpp"
+#include "../systems/MountFlightSystem.hpp"
 #include "../systems/WoodcuttingSystem.hpp"
 #include "../systems/HerbalismSystem.hpp"
 #include "../systems/NetworkSyncSystem.hpp"
@@ -214,6 +215,7 @@ void SendCharacterInsert(entt::registry& reg, entt::entity source, entt::entity 
     NetworkSyncSystem::SendCharAdditionalInfo(reg, source, viewer);
     WoodcuttingSystem::SendSnapshot(source, viewer);
     HerbalismSystem::SendSnapshot(source, viewer);
+    ecs::MountFlightSystem::Send(source,viewer);
 
     const auto* dest = reg.try_get<ecs::MovementDestination>(source);
     const auto* movement = reg.try_get<ecs::MovementState>(source);

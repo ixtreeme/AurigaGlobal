@@ -235,6 +235,10 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 				return -1;
 			break;
 
+		case HEADER_CG_MOUNT_FLIGHT:
+			MountFlight(character, c_pData);
+			break;
+
 		case HEADER_CG_MOVE:
 			Move(character, c_pData);
 			// @fixme103 (removed CheckClientVersion since useless in here)

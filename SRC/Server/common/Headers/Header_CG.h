@@ -15,6 +15,8 @@ enum HEADER_CG
 	HEADER_CG_CHARACTER_DELETE = 5,
 	HEADER_CG_CHARACTER_SELECT = 6,
 	HEADER_CG_MOVE = 7,
+    // Paired mount-flight extension; 225 belongs to typed item movement.
+    HEADER_CG_MOUNT_FLIGHT = 221,
 	HEADER_CG_SYNC_POSITION = 8,
 	HEADER_CG_ENTERGAME = 10,
 

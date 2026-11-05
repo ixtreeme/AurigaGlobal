@@ -15,6 +15,7 @@
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/SocialSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MountSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/MountFlightSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/identity_components.hpp"
@@ -586,6 +587,7 @@ entt::entity FindByPlayerID(uint32_t pid) {
 }
 LPDESC GetDesc(entt::entity e) { Live(e); const auto* s = g_registry.try_get<ecs::NetworkSession>(e); return s ? s->desc : nullptr; }
 bool IsPC(entt::entity e) { Live(e); return g_registry.all_of<ecs::TagPC>(e); }
+bool IsObserverMode(entt::entity e) { Live(e); return false; }
 bool IsNPCType(entt::entity e) { Live(e); return g_registry.get<ecs::CharacterType>(e).value == CHAR_TYPE_NPC; }
 uint32_t GetRaceNum(entt::entity e) { Live(e); return g_registry.get<ecs::RaceState>(e).baseRace; }
 std::string_view GetName(entt::entity e) { Live(e); return g_registry.get<ecs::PlayerName>(e).value; }
@@ -649,7 +651,7 @@ int MINMAX(int, int, int) { Unexpected(); }
 float get_float_time() { Unexpected(); }
 namespace ecs::PlayerRuntime {
 uint32_t GetPlayerID(entt::entity) { Unexpected(); }
-uint32_t GetPacketVID(entt::entity) { Unexpected(); }
+uint32_t GetPacketVID(entt::entity e) { Live(e); return g_registry.get<ecs::VIDComponent>(e).value; }
 uint32_t GetAIFlag(entt::entity) { Unexpected(); }
 void SetLastSyncTime(entt::entity, const timeval&) { Unexpected(); }
 int32_t GetX(entt::entity) { Unexpected(); }
@@ -660,6 +662,8 @@ bool IsStone(entt::entity) { Unexpected(); }
 bool IsMonster(entt::entity) { Unexpected(); }
 }
 void CombatSystem::SendDamagePacket(entt::entity, entt::entity, int, uint8_t) { Unexpected(); }
+bool CombatSystem::IsDead(entt::entity e) { Live(e); return false; }
+bool AffectSystem::IsLoaded(entt::entity e) { Live(e); return true; }
 CHARACTER_MANAGER::CHARACTER_MANAGER() = default;
 CHARACTER_MANAGER::~CHARACTER_MANAGER() = default;
 entt::entity CHARACTER_MANAGER::FindEntity(uint32_t vid) {
@@ -677,9 +681,29 @@ int ItemSystem::GetItemValue(entt::entity, uint32_t) { Unexpected(); }
 const char* ItemSystem::GetItemName(entt::entity) { Unexpected(); }
 bool battle_is_attackable(entt::entity, entt::entity) { Unexpected(); }
 
+void MountFlightInsertIsolation() {
+    wire.clear();
+    DESC sourceDesc, modernDesc, legacyDesc;
+    auto source=Character(9901,true,&sourceDesc);
+    auto modern=Character(9902,true,&modernDesc);
+    auto legacy=Character(9903,true,&legacyDesc);
+    g_registry.emplace<ecs::MountFlightSystem::Supported>(modern);
+    ecs::EntityNetworkDispatch::SendInsert(g_registry,source,modern);
+    const auto& frames=wire.at(&modernDesc);
+    const auto found=std::find_if(frames.begin(),frames.end(),[](const auto& p){return p.front()==HEADER_GC_MOUNT_FLIGHT;});
+    Check(found!=frames.end()&&found->size()==11,"modern late viewer lost flight snapshot");
+    TPacketGCMountFlight packet{};std::memcpy(&packet,found->data(),sizeof(packet));
+    Check(packet.vid==9901&&packet.flags==0&&packet.axis==0,"late viewer flight identity/state mismatch");
+    ecs::EntityNetworkDispatch::SendInsert(g_registry,source,legacy);
+    Check(std::none_of(wire.at(&legacyDesc).begin(),wire.at(&legacyDesc).end(),[](const auto& p){return p.front()==HEADER_GC_MOUNT_FLIGHT;}),"unannounced viewer received flight extension");
+    Check(HEADER_GC_TYPED_INVENTORY==225&&HEADER_GC_MOUNT_FLIGHT==221,"flight aliases typed inventory");
+    g_registry.clear();wire.clear();
+}
+
 int main() {
     try {
         CHARACTER_MANAGER characters; SECTREE_MANAGER maps;
+        MountFlightInsertIsolation();
         NativeBuildingPackets();
         TypedLootPackets();
         MountWireRoundTrip(); ExpiredAndMissingSession();

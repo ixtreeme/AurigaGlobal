@@ -513,6 +513,8 @@ struct packet_mount
 	uint32_t	x, y;
 };
 
+struct TPacketGCMountFlight { uint8_t header; uint32_t vid; uint8_t flags; int32_t altitude; int8_t axis; };
+
 typedef struct packet_move
 {
 	uint8_t		bHeader;

@@ -93,6 +93,9 @@ typedef struct command_attack
 	uint8_t	bCRCMagicCubeFilePiece;
 } TPacketCGAttack;
 
+// Mount-flight extension; existing movement packet layout is unchanged.
+struct TPacketCGMountFlight { uint8_t header, action; int32_t altitude; uint32_t time; };
+
 typedef struct command_move
 {
 	uint8_t	bHeader;

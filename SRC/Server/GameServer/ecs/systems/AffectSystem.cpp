@@ -12,6 +12,7 @@
 #include "MovementSystem.hpp"
 #include "CombatSystem.hpp"
 #include "MountSystem.hpp"
+#include "MountFlightSystem.hpp"
 #include "VisibilitySystem.hpp"
 #include "SkillSystem.hpp"
 #include "SocialSystem.hpp"
@@ -1231,6 +1232,7 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 	LOG_ERROR("LOAD_AFFECT_BIOLOGIST_END pid={} name={}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data());
 #endif
 	LOG_ERROR("LOAD_AFFECT_END pid={} name={} count={} final_affects={}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data(), dwCount, AffectSystem::Snapshot(e).size());
+	ecs::MountFlightSystem::Send(entity, entity);
 }
 
 bool IsGoodAffect(uint8_t bAffectType)

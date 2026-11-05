@@ -219,6 +219,8 @@ enum HEADER_GC
 #endif
 
 	HEADER_GC_MOUNT_INVENTORY = 224,
+    // Paired mount-flight extension; 225 belongs to typed inventory.
+    HEADER_GC_MOUNT_FLIGHT = 221,
 	// Typed item system (F4 D1, IC-034): auriga::item::EncodeTypedInventory.
 	HEADER_GC_TYPED_INVENTORY = 225,
 	// Typed ground loot (F4 C7c, IC-035): auriga::item::EncodeTypedGround.
