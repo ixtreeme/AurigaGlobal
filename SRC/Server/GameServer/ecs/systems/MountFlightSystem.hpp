@@ -15,7 +15,7 @@
 
 namespace ecs::MountFlightSystem {
 struct Supported {};
-struct State { bool ready=false,active=false; int32_t altitude=0,map=0; uint32_t updated=0; int8_t axis=0; float credit=200.f; };
+struct State { bool ready=false,active=false,fast=false; int32_t altitude=0,map=0; uint32_t updated=0; int8_t axis=0; float credit=200.f; };
 inline bool CanFly(entt::entity e) {
     if(!PlayerRuntime::IsPC(e)||!MountSystem::GetMountVnum(e)||CombatSystem::IsDead(e)||PlayerRuntime::IsObserverMode(e))return false;
     auto item=ItemSystem::GetWearItem(e,WEAR_COSTUME_MOUNT);
@@ -29,7 +29,7 @@ inline void Send(entt::entity source,entt::entity viewer) {
     if(state.map!=PlayerRuntime::GetMapIndex(source))state.ready=false;
     if(!capable||!state.ready) {state.active=false;state.axis=0;}
     TPacketGCMountFlight p{};p.header=HEADER_GC_MOUNT_FLIGHT;p.vid=PlayerRuntime::GetPacketVID(source);
-    p.flags=(capable?1:0)|(state.active?2:0);p.altitude=state.altitude;p.axis=state.axis;
+    p.flags=(capable?1:0)|(state.active?2:0)|(state.active&&state.fast?4:0);p.altitude=state.altitude;p.axis=state.axis;
     NetworkService::Send(viewer,&p,sizeof(p));
 }
 inline void Broadcast(entt::entity e) {
@@ -37,7 +37,7 @@ inline void Broadcast(entt::entity e) {
     if(const auto* view=g_registry.try_get<ViewerMap>(e))for(const auto& pair:view->viewers)Send(e,pair);
 }
 inline void Request(entt::entity e,const TPacketCGMountFlight& p) {
-    if(!PlayerRuntime::IsPC(e)||p.action>2)return;
+    if(!PlayerRuntime::IsPC(e)||p.action>3)return;
     if(p.action==0) {
         g_registry.get_or_emplace<Supported>(e);
         auto& own=g_registry.get_or_emplace<State>(e);
@@ -64,7 +64,7 @@ inline void Request(entt::entity e,const TPacketCGMountFlight& p) {
         state.credit=allowance-float(std::abs(double(p.altitude)-state.altitude));
         state.axis=p.altitude>state.altitude+1?1:p.altitude<state.altitude-1?-1:0;
     } else {state.axis=p.action==1?1:0;}
-    state.active=p.action==1;state.altitude=p.altitude;state.updated=now;state.map=PlayerRuntime::GetMapIndex(e);
+    state.active=p.action==1||p.action==3;state.fast=state.active&&p.action==3;state.altitude=p.altitude;state.updated=now;state.map=PlayerRuntime::GetMapIndex(e);
     if(!state.active)state.axis=0;
     Broadcast(e);
 }

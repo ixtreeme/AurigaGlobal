@@ -951,10 +951,15 @@ void MountFlightChecks()
     Check(flight.active&&flight.altitude==10000,"valid takeoff failed");
     tick+=100;request.altitude=10060;ecs::MountFlightSystem::Request(owner,request);
     Check(flight.altitude==10060,"6m/s ascent failed");
+    tick+=100;request.action=3;request.altitude=10120;ecs::MountFlightSystem::Request(owner,request);
+    Check(flight.active&&flight.fast&&flight.altitude==10120,"fast flight action not accepted");
+    request.action=1;ecs::MountFlightSystem::Request(owner,request);
+    Check(flight.active&&!flight.fast,"fast flight release did not restore normal flight");
     request.altitude=20000;ecs::MountFlightSystem::Request(owner,request);
-    Check(flight.altitude==10060,"vertical teleport accepted");
+    Check(flight.altitude==10120,"vertical teleport accepted");
+    const auto beforeSpam=flight.altitude;
     for(int i=0;i<20;i++){request.altitude=flight.altitude+30;ecs::MountFlightSystem::Request(owner,request);}
-    Check(flight.altitude<=10200,"packet spam manufactured vertical speed budget");
+    Check(flight.altitude<=beforeSpam+200,"packet spam manufactured vertical speed budget");
     const auto hover=flight.altitude;State(owner).x+=5000;State(owner).y+=5000;
     Check(flight.altitude==hover,"horizontal movement changed absolute altitude");
     tick+=1000;request.action=2;request.altitude=flight.altitude-100;ecs::MountFlightSystem::Request(owner,request);
