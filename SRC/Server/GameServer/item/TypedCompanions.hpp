@@ -1,7 +1,16 @@
 #pragma once
+#include "ItemStore.hpp"
 #include <cstdint>
 #include <entt/entity/entity.hpp>
 
 std::uint64_t RefreshTypedCompanion(entt::entity owner);
 void TickTypedCompanions();
+void StopTypedGrowthPetClock(entt::entity owner);
+void FinishTypedGrowthPetClocks();
 bool HandleTypedCompanionPacket(entt::entity owner, const char* data);
+
+namespace auriga::item::runtime
+{
+std::function<void(MultiCommitOutcome*)> BeginGrowthPetClockCommit(const std::vector<OwnerRead>&,const ItemCommit&);
+bool DeferGrowthPetLogin(std::uint32_t,std::function<void()>);
+}

@@ -118,6 +118,7 @@
 #endif
 #include "../item/ItemStore.hpp"
 #include "../item/TypedAccessoryClock.hpp"
+#include "../item/TypedCompanions.hpp"
 #include "../item/TypedRecovery.hpp"
 #include "../item/TypedLoot.hpp"
 
@@ -761,7 +762,7 @@ void destroy()
 
 	// Finishes every queued typed-item job before the process goes away.
 	LOG_INFO("<shutdown> Stopping ItemStore...");
-    FinishTypedRecoveryClocks();FinishTypedAccessoryClocks();
+    FinishTypedRecoveryClocks();FinishTypedAccessoryClocks();FinishTypedGrowthPetClocks();
 	auriga::item::runtime::ItemStore::Instance().Stop();
 
 	LOG_INFO("<shutdown> Canceling ReloadSpamEvent...");

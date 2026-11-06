@@ -8,15 +8,17 @@
 
 namespace auriga::item
 {
+bool RecallRequested(const PersistentItem& item)
+{
+    return (item.companion && item.companion->recallRequested) ||
+        (item.growthPet && item.growthPet->recallRequested);
+}
 namespace
 {
 using E=ItemPersistenceError;
 constexpr std::uint16_t CompanionSealOutcome=0x2601;
 constexpr std::uint16_t PetHatchOutcome=0x2602;
-bool RecallRequested(const PersistentItem& item)
-{
-    return item.companion && item.companion->recallRequested;
-}
+constexpr std::uint16_t GrowthPetCompanionOutcome=0x2603;
 bool PermanentSeal(const ItemCompanionRow& row)
 {
     return (row.kind==CompanionKind::Pet || row.kind==CompanionKind::Mount) && row.clock==CompanionClock::Permanent;
@@ -99,6 +101,58 @@ bool AccessoryTimeOnly(const ItemChange& change)
     expected.revision=change.after.revision;
     expected.accessory=after;
     return expected==change.after;
+}
+
+bool ValidGrowthPetCompanionWrite(const ItemCatalog& c,const ItemCommit& r)
+{
+    if(r.kind!=ItemOperationKind::Service || r.owners.size()!=1 || !r.wallets.empty() ||
+        r.ground || r.recovery || r.learning || r.result.size()!=21 ||
+        r.result[0]!='G' || r.result[1]!='P' || r.result[2]!='C' || r.result[3]!=1)
+        return false;
+    const auto read=[&](std::size_t offset) {
+        std::uint64_t value=0;
+        for(unsigned i=0;i<8;++i)value|=std::uint64_t(r.result[offset+i])<<(8*i);
+        return value;
+    };
+    const auto action=r.result[4];
+    const auto now=read(5);
+    const auto elapsed=read(13);
+    if(action>static_cast<unsigned>(CompanionAction::Dismiss) || (action ? elapsed!=0 : elapsed==0))
+        return false;
+
+    const ItemChange* pet=nullptr;
+    for(const auto& change:r.items)
+    {
+        if(change.before && change.before->growthPet)
+        {
+            if(pet)return false;
+            pet=&change;
+        }
+        else if(!AccessoryTimeOnly(change))return false;
+    }
+    if(!pet || !pet->after.growthPet)return false;
+    const auto& before=*pet->before;
+    const auto& owner=r.owners.front();
+    const PetCareContext context{r.operationId,owner.owner.id,owner.sessionGeneration,1,0,0,0,true};
+    const PetCareItemSnapshot seal{before.key,before.id.Value(),before.revision,before.owner.id,before.count,
+        before.refinementLevel,false,false,false,true,elapsed!=0,elapsed ? before.id.Value() : 0};
+    const PetLifecycleRequest request{context,seal,before.revision,now,*before.growthPet};
+    const auto plan=PlanPetMaintenance(c,request,elapsed);
+    if(!plan)return false;
+    auto after=plan->pet.after;
+    if(action)
+    {
+        const bool summon=action==static_cast<unsigned>(CompanionAction::Summon);
+        if(summon==after.recallRequested || (summon && c.Find(before.key)->base.retired))return false;
+        after.recallRequested=summon;
+        after.everSummoned|=summon;
+    }
+    else if(!before.growthPet->everSummoned || after.life==before.growthPet->life)return false;
+
+    auto expected=before;
+    expected.revision=pet->after.revision;
+    expected.growthPet=std::move(after);
+    return expected==pet->after;
 }
 
 bool ValidHatchWrite(const ItemCatalog& c,const ItemCommit& r)
@@ -327,9 +381,8 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
         if(change.before)
         {
             const auto& b=*change.before;
-            if(b.growthPet || p.growthPet)
+            if((b.growthPet || p.growthPet) && r.outcomeCode!=GrowthPetCompanionOutcome)
             {
-                // Later lifecycle actions need their own guarded mutation.
                 auto expected=b;
                 expected.revision=p.revision;
                 expected.placement=p.placement;
@@ -348,7 +401,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
                 expected.companion=p.companion;
                 if(expected!=p)return std::unexpected(E::TransferDenied);
             }
-            else if(RecallRequested(b))
+            else if(b.companion && RecallRequested(b))
             {
                 auto expected=b;
                 expected.revision=p.revision;
@@ -384,6 +437,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
     }
     if(usedOwners!=owners || usedLayouts.size()!=layouts.size())return std::unexpected(E::InvalidFence);
     if(r.outcomeCode==PetHatchOutcome && !ValidHatchWrite(c,r))return std::unexpected(E::InvalidChange);
+    if(r.outcomeCode==GrowthPetCompanionOutcome && !ValidGrowthPetCompanionWrite(c,r))return std::unexpected(E::InvalidChange);
     return {};
 }
 std::expected<ItemCatalogDigest,E> ItemCommitDigest(const ItemCatalog& c,const ItemCommit& r)
@@ -722,6 +776,59 @@ std::expected<ItemCommit,E> MakeCompanionCommit(const ItemCatalog& c,ItemOwnerFe
     commit.items={{*source,after}};
     commit.outcomeCode=CompanionSealOutcome;
     commit.result={'C','M','P',1,static_cast<std::uint8_t>(request.action)};
+    if(auto valid=ValidateItemCommit(c,commit);!valid)return std::unexpected(valid.error());
+    return commit;
+}
+
+std::expected<ItemCommit,E> MakeGrowthPetCompanionCommit(const ItemCatalog& c,ItemOwnerFence owner,
+    std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> inventory,
+    const PetLifecycleRequest& request,std::optional<CompanionAction> action,std::uint64_t elapsedMs)
+{
+    if(owner.owner!=ItemOwner{ItemOwnerKind::Character,request.context.actorId} ||
+       owner.sessionGeneration!=request.context.sessionGeneration)
+        return std::unexpected(E::InvalidFence);
+    const auto id=ItemInstanceId::Create(request.seal.instanceId);
+    const auto* source=id ? Placed(inventory,owner,*id) : nullptr;
+    if(!source || !source->growthPet || source->key!=request.seal.key ||
+       source->revision!=request.seal.revision || *source->growthPet!=request.state ||
+       source->count!=request.seal.count || source->refinementLevel!=request.seal.refinementLevel ||
+       (source->boundTo && source->boundTo!=owner.owner))
+        return std::unexpected(E::InvalidChange);
+    const auto layout=std::ranges::find(storages,
+        ItemStorage{owner.owner,source->placement->kind,source->placement->storageId},&ItemStorageLayout::storage);
+    if(layout==storages.end())return std::unexpected(E::InvalidStorage);
+    auto after=*source;
+    ++after.revision;
+    if(action)
+    {
+        const bool summon=*action==CompanionAction::Summon;
+        const bool occupied=std::ranges::any_of(inventory,[&](const auto& other){
+            return other.id!=source->id && other.owner==owner.owner && RecallRequested(other);
+        });
+        const auto plan=PlanGrowthPetSummon(c,request,summon,true,occupied);
+        if(!plan)return std::unexpected(E::RequirementNotMet);
+        after.growthPet=plan->pet.after;
+    }
+    else
+    {
+        const auto plan=PlanPetMaintenance(c,request,elapsedMs);
+        if(!plan)return std::unexpected(E::InvalidChange);
+        after.growthPet=plan->pet.after;
+    }
+    ItemCommit commit;
+    commit.operationId=request.context.operationId;
+    commit.catalogRevision=c.Revision();
+    commit.catalogHash=c.ContentHash();
+    commit.kind=ItemOperationKind::Service;
+    commit.owners={owner};
+    commit.storages={*layout};
+    commit.items={{*source,std::move(after)}};
+    commit.outcomeCode=GrowthPetCompanionOutcome;
+    Writer result;
+    result.bytes={'G','P','C',1,action ? static_cast<std::uint8_t>(*action) : std::uint8_t{0}};
+    result.Put(request.nowUtcMs,8);
+    result.Put(elapsedMs,8);
+    commit.result=std::move(result.bytes);
     if(auto valid=ValidateItemCommit(c,commit);!valid)return std::unexpected(valid.error());
     return commit;
 }

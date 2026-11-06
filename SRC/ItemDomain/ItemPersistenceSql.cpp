@@ -159,11 +159,12 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
     auto items=r.items;std::ranges::sort(items,{},[](const auto& i){return i.after.id;});
     for(const auto& change:items)
     {
-        if(change.after.companion && change.after.companion->recallRequested &&
-           change.before && change.before->companion && !change.before->companion->recallRequested)
+        if(RecallRequested(change.after) && change.before && !RecallRequested(*change.before))
         {
             // Owner fence is locked above. A current read also refuses a stale channel snapshot.
-            tx.push_back({"SELECT instance_id FROM player.item_instance WHERE owner_kind=? AND owner_id=? AND companion_recall_requested=1 FOR UPDATE",
+            // PetStateCodec v1 stores recallRequested as its final byte.
+            tx.push_back({"SELECT instance_id FROM player.item_instance WHERE owner_kind=? AND owner_id=? AND "
+                "(companion_recall_requested=1 OR (LEFT(growth_pet_blob,6)=X'414750540100' AND RIGHT(growth_pet_blob,1)=X'01')) FOR UPDATE",
                 Owner(change.after.owner),{},0});
         }
     }
@@ -480,6 +481,7 @@ std::expected<LoadedItemOwner,E> LoadItemOwner(CAsyncSQL& db,const ItemCatalog& 
                 auto state=DecodeGrowthPetState(c,item.key,{reinterpret_cast<const std::uint8_t*>(row[32]->data()),row[32]->size()});
                 if(!state)throw Invalid{};
                 item.growthPet=std::move(*state);
+                if(item.growthPet->recallRequested && std::exchange(hasCompanionRecall,true))throw Invalid{};
             }
             if(!indexes.emplace(id->Value(),out.items.size()).second)throw Invalid{};out.items.push_back(item);hashes.push_back(Array<32>(row[19]));
         }

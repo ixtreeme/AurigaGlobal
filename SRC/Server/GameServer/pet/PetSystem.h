@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string_view>
 
 #include <entt/entt.hpp>
 
@@ -33,7 +34,7 @@ size_t CountSummoned(entt::entity owner);
 
 ecs::PetActorState* Summon(entt::entity owner, uint32_t vnum, entt::entity item,
     const char* petName, bool spawnFar, uint32_t options = DefaultPetOptions);
-bool SummonTyped(entt::entity owner, uint32_t vnum, uint64_t seal, bool mount);
+bool SummonTyped(entt::entity owner, uint32_t vnum, uint64_t seal, bool mount, std::string_view name = {});
 uint64_t LiveTypedSeal(entt::entity owner);
 void RecallTyped(entt::entity owner, uint64_t seal);
 void Unsummon(entt::entity owner, uint32_t vnum, bool deleteFromList = false);

@@ -398,7 +398,7 @@ ecs::PetActorState* Summon(entt::entity owner, uint32_t vnum, entt::entity item,
     return actor;
 }
 
-bool SummonTyped(entt::entity owner, uint32_t vnum, uint64_t seal, bool mount)
+bool SummonTyped(entt::entity owner, uint32_t vnum, uint64_t seal, bool mount, std::string_view name)
 {
     if (!seal || !vnum || !ecs::PlayerRuntime::IsValid(owner) || CountSummoned(owner))
         return false;
@@ -431,6 +431,8 @@ bool SummonTyped(entt::entity owner, uint32_t vnum, uint64_t seal, bool mount)
     flags.isMount = mount;
     if (mount)
         g_registry.emplace_or_replace<ecs::MountOwner>(follower, owner);
+    if (!name.empty())
+        ecs::PlayerRuntime::SetName(follower, name);
     ecs::PlayerRuntime::SetEmpire(follower, ecs::PlayerRuntime::GetEmpire(owner));
     if (!ecs::MovementSystem::Show(follower, map, x, y, z))
     {

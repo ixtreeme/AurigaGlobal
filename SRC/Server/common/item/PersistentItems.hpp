@@ -185,6 +185,11 @@ std::expected<ItemCommit,ItemPersistenceError> MakeConsumeCommit(const ItemCatal
 // Writes one permanent seal's summon or dismissal intent without consuming the seal.
 std::expected<ItemCommit,ItemPersistenceError> MakeCompanionCommit(const ItemCatalog&,ItemOwnerFence,
     std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const CompanionRequest&);
+bool RecallRequested(const PersistentItem&);
+// A missing action settles elapsed follower time. Explicit actions change intent.
+std::expected<ItemCommit,ItemPersistenceError> MakeGrowthPetCompanionCommit(const ItemCatalog&,ItemOwnerFence,
+    std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const PetLifecycleRequest&,
+    std::optional<CompanionAction> action,std::uint64_t elapsedMs=0);
 using PetHatchCommitError=std::variant<PetCareError,ItemPersistenceError>;
 // Atomically consumes one egg, pays the quoted Gold cost and places the newly
 // reserved seal with complete birth state. The last egg can free its own cell.

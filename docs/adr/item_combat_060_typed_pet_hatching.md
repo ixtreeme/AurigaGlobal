@@ -17,3 +17,11 @@ A Windows Release GameServer build és 15 natív, MariaDB- és próbapad-teszt s
 A 60 ellenőrzéses helyi Unity TLS-próba a leltárgombbal indult. Elavult token és hibás UTF-8 név után két tojás és 150 000 arany maradt. A sikeres keltetés után egy tojás, 50 000 arany és egy új pecsét maradt. Az ismételt megerősítés ugyanazt a pecsétet mutatta. Újrabelépés után egyezett a születési állapot és az egyenleg, a második keltetést az elégtelen arany miatt a felület letiltotta.
 
 Az SQL-utóellenőrzés egyetlen keltetési tranzakciót és új pecsétet talált. A natív próbapad visszaolvasta az életidőt, a születési tulajdonságokat és mind a négy lezárt képességhelyet. A 186 korábbi példány hash-e és revíziója, az öt meglévő pénztárca, a tanulási adatok és a korábbi katalógussorok egyeztek a mentéssel.
+
+## C26d — A fejlődő pet követése
+
+A fejlődő pecsét a meglévő CG249 művelettel idézhető és visszahívható. A fix pecsétek és a fejlődő pet egy közös követőhelyen osztoznak. A szerver a pet evolúciós fokozatához tartozó alakot jeleníti meg. Aktív idézési szándéknál az új munkamenet visszaállítja a követőt, amint a játékállapot ezt megengedi. A **Pet adatai** a követő állapotától függetlenül elérhető.
+
+Az aktív idejű pet életideje a tényleges követés alatt fogy. A szerver öt másodpercenként elszámolja az eltelt időt, a követés megszakadásakor pedig elmenti a maradékot. Azonos szerverfolyamaton belül a következő belépés megvárja a függő elszámolást. Lejáratkor a követő eltűnik, az idézési szándék törlődik, és a pecsét megmarad. A GC225 v9 jelzi a fejlődő pet követő, függő vagy lejárt állapotát. A már elmentett fejlődő pecsétek ugyanazt a születési állapotot használják.
+
+A párosított Unity changeset a `cs:75`. A Windows GameServer build, kilenc natív és MariaDB-teszt, valamint a Unity 6.3 validátorai sikeresek. A 113 ellenőrzéses helyi TLS-próba a keltetéstől az idézésen és az aktív újrabelépésen át a visszahívás utáni újrabelépésig futott. A kliens megkapta a követő megjelenését és törlését. A mentett életidő az offline várakozás alatt és a visszahívás után változatlan maradt. Az SQL-utóellenőrzés 190 korábbi példányt és hét pénztárcát egyeztetett a próba előtti állapottal.

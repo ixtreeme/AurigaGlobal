@@ -2,6 +2,7 @@
 #include "ItemStore.hpp"
 #include "TypedBooks.hpp"
 #include "TypedAccessoryClock.hpp"
+#include "TypedCompanions.hpp"
 #include "TypedRecovery.hpp"
 #include "../core/GameConfig.h"
 
@@ -227,6 +228,7 @@ bool RequestLoginLoad(std::uint32_t pid, std::function<void(LoginLoad)> done)
     if(DeferTypedBookLogin(pid,[pid,done]{RequestLoginLoad(pid,done);})){return true;}
     if(DeferRecoveryLogin(pid,[pid,done]{RequestLoginLoad(pid,done);})){TickTypedRecovery();return true;}
     if(DeferAccessoryLogin(pid,[pid,done]{RequestLoginLoad(pid,done);})){TickTypedAccessoryClocks();return true;}
+    if(DeferGrowthPetLogin(pid,[pid,done]{RequestLoginLoad(pid,done);}))return true;
 	const ItemOwner owner { ItemOwnerKind::Character, pid };
 	return ItemStore::Instance().Submit([owner, done = std::move(done)](CAsyncSQL& sql, const ItemCatalog& catalog) mutable -> ItemStore::Completion {
 		LoginLoad result { owner, 0, std::unexpected(ItemPersistenceError::InvalidOwner) };
@@ -309,8 +311,9 @@ bool RequestCommitMany(std::vector<OwnerRead> owners,ItemCommit commit,std::func
     if(owners.empty()) return false;
     auto clock=BeginAccessoryClockCommit(owners,commit);if(!clock)return false;
     auto recovery=BeginRecoveryClockCommit(owners,commit);if(!recovery){(*clock)(nullptr);return false;}
-    auto completed=[settle=*clock,recover=*recovery,done=std::move(done)](MultiCommitOutcome result) mutable {settle(&result);recover(&result);done(std::move(result));};
+    auto pet=BeginGrowthPetClockCommit(owners,commit);
+    auto completed=[settle=*clock,recover=*recovery,pet,done=std::move(done)](MultiCommitOutcome result) mutable {settle(&result);recover(&result);pet(&result);done(std::move(result));};
     const bool queued=QueueCommit(std::make_shared<PendingCommit>(PendingCommit{std::move(owners),std::move(commit),std::move(completed)}));
-    if(!queued){(*clock)(nullptr);(*recovery)(nullptr);}return queued;
+    if(!queued){(*clock)(nullptr);(*recovery)(nullptr);pet(nullptr);}return queued;
 }
 } // namespace auriga::item::runtime

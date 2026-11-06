@@ -85,7 +85,7 @@ int main(int argc, char** argv)
 		Check(DecodeTypedInventory(longer, f::Character()).error() == TypedInventoryWireError::TrailingBytes, "trailing byte");
 		auto header = b; header[0] = std::byte { 224 };
 		Check(DecodeTypedInventory(header, f::Character()).error() == TypedInventoryWireError::BadHeader, "wrong header");
-		auto version = b; version[5] = std::byte { 9 };
+		auto version = b; version[5] = std::byte { 10 };
 		Check(DecodeTypedInventory(version, f::Character()).error() == TypedInventoryWireError::BadVersion, "unknown version");
 		Check(DecodeTypedInventory(std::span(b).first(3), f::Character()).error() == TypedInventoryWireError::Truncated, "short header");
 		PersistentItem unknown { ItemInstanceId::Create(9).value(), ItemKey::Create(1, 999).value(), f::Character() };
@@ -145,7 +145,22 @@ int main(int argc, char** argv)
 		(*growthWire)[5] = std::byte{7};
 		Check(DecodeTypedInventory(*growthWire, f::Character()).error() == TypedInventoryWireError::BadValue,
 			"growth seal marker accepted under v7");
-
+		growth.growthPet->everSummoned = growth.growthPet->recallRequested = true;
+		for (const auto live : {growth.id.Value(), std::uint64_t{0}})
+		{
+			const auto wire = EncodeTypedInventory(**hatchCatalog, storages, {}, std::span(&growth, 1), live);
+			Check(wire && (*wire)[5] == std::byte{9}, "active growth seal uses version nine");
+			const auto view = DecodeTypedInventory(*wire, f::Character());
+			Check(view && view->companions.at(growth.id) == std::pair{CompanionKind::GrowthPet,
+				static_cast<std::uint8_t>(live ? 1 : 2)}, "growth follower and pending intent roundtrip");
+		}
+		growth.growthPet->recallRequested = false;
+		growth.growthPet->life.remainingMs = 0;
+		const auto expired = EncodeTypedInventory(**hatchCatalog, storages, {}, std::span(&growth, 1));
+		Check(expired && (*expired)[5] == std::byte{9}, "expired growth seal uses version nine");
+		const auto expiredView = DecodeTypedInventory(*expired, f::Character());
+		Check(expiredView && expiredView->companions.at(growth.id) == std::pair{CompanionKind::GrowthPet,std::uint8_t{3}},
+			"expired growth seal is represented without a live actor");
 
         auto details=EncodeTypedItemDetails(c,items,true);
         Check(details.has_value(),"details encode with stone state and refinement recipes");

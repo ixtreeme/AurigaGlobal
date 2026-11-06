@@ -176,7 +176,7 @@ void Allocator(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,unsigned 
     Check(p::ReserveItemInstanceIds(writer,c,10).error()==E::LimitExceeded,"the counter never wraps");
     Check(Scalar(admin,"SELECT next_instance_id FROM player.item_instance_id_allocator")=="18446744073709551610","a refused block moves nothing");
 }
-void GrowthPetBirthSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,ItemKey eggKey,ItemKey sealKey)
+void GrowthPetBirthSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,ItemKey eggKey,ItemKey sealKey,ItemKey fixedKey)
 {
     using E=ItemPersistenceError;
     const ItemOwner owner{ItemOwnerKind::Character,880104};
@@ -240,6 +240,66 @@ void GrowthPetBirthSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,I
     const auto original=EncodeGrowthPetState(c,sealKey,*hatched.growthPet).value();
     Query(admin,"UPDATE player.item_instance SET growth_pet_blob=? WHERE instance_id=?",{U::Blob(Bytes(original)),U::UInt(sealId.Value())});
     Check(p::LoadCurrentItemOwner(writer,c,owner)->items==relog.items,"restored bytes recover exact birth state");
+
+    const auto fixedId=ItemInstanceId::Create(ids.first+2).value();
+    const auto fixedGrant=MakeGrantCommit(c,{30,4},relog.fence,relog.storages,relog.items,{fixedKey,0,1},std::array{fixedId});
+    Check(fixedGrant && p::CommitItems(writer,c,*fixedGrant).has_value(),"fixed companion for shared channel");
+    const auto growthWrite=[&](std::uint8_t serial,std::optional<CompanionAction> action,std::uint64_t elapsed=0) {
+        auto admission=context;
+        admission.operationId={30,serial};
+        admission.sessionGeneration=state.fence.sessionGeneration;
+        const auto pet=Find(state,sealId.Value());
+        const PetLifecycleRequest use{admission,{pet.key,pet.id.Value(),pet.revision,pet.owner.id,1,0,
+            false,false,false,true,elapsed!=0,elapsed ? pet.id.Value() : 0},pet.revision,request.bornAtUtcMs+1000*serial,*pet.growthPet};
+        return MakeGrowthPetCompanionCommit(c,state.fence,state.storages,state.items,use,action,elapsed);
+    };
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto summon=growthWrite(5,CompanionAction::Summon);
+    Check(summon.has_value(),"growth summon plan");
+    auto forged=*summon;
+    forged.items.front().after.growthPet->name="Bodri";
+    Check(!ValidateItemCommit(c,forged),"companion operation cannot overwrite immutable birth state");
+    Check(p::CommitItems(writer,c,*summon).has_value() && p::CommitItems(writer,c,*summon)->replay,
+        "growth summon commits exactly once");
+    Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"summoned growth pet relog");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    Check(RecallRequested(Find(state,sealId.Value())) && Find(state,sealId.Value()).growthPet->everSummoned,
+        "growth intent survives new owner session");
+
+    const auto fixed=Find(state,fixedId.Value());
+    CompanionRequest competitor{fixed.key};
+    competitor.state=*fixed.companion;
+    competitor.instanceId=fixed.id.Value();competitor.revision=fixed.revision;competitor.ownerId=competitor.actorId=owner.id;
+    competitor.rulesetRevision=1;competitor.operationId={30,6};competitor.count=1;
+    competitor.characterLevel=50;competitor.characterClass=competitor.sex=1;competitor.action=CompanionAction::Summon;
+    competitor.admittedByServer=competitor.ownerAlive=competitor.worldAllowsCompanion=true;
+    Check(!MakeCompanionCommit(c,state.fence,state.storages,state.items,competitor),"fixed planner sees growth pet intent");
+    const auto staleView=std::array{fixed};
+    const auto staleFixed=MakeCompanionCommit(c,state.fence,state.storages,staleView,competitor);
+    Check(staleFixed.has_value(),"incomplete fixed snapshot admits plan");
+    const auto refused=p::CommitItems(writer,c,*staleFixed);
+    Check(!refused && refused.error()==E::Conflict,"SQL fence sees growth pet intent even with an incomplete snapshot");
+
+    const auto elapsed=growthWrite(7,std::nullopt,750);
+    Check(elapsed && p::CommitItems(writer,c,*elapsed).has_value(),"settle only time the growth pet followed");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto dismiss=growthWrite(8,CompanionAction::Dismiss);
+    Check(dismiss && p::CommitItems(writer,c,*dismiss).has_value(),"dismiss growth pet");
+    Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"recalled growth pet relog");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto saved=Find(state,sealId.Value());
+    Check(!RecallRequested(saved) && saved.growthPet->everSummoned &&
+        saved.growthPet->life.remainingMs==hatched.growthPet->life.remainingMs-750 && saved.boundTo==hatched.boundTo,
+        "recall preserves bound seal and exact remaining life");
+
+    const auto again=growthWrite(9,CompanionAction::Summon);
+    Check(again && p::CommitItems(writer,c,*again).has_value(),"growth pet can be summoned again");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto expiry=growthWrite(10,std::nullopt,saved.growthPet->life.remainingMs+100);
+    Check(expiry && p::CommitItems(writer,c,*expiry).has_value(),"settle beyond remaining time");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    Check(!RecallRequested(Find(state,sealId.Value())) && !Find(state,sealId.Value()).growthPet->life.remainingMs &&
+        !growthWrite(11,CompanionAction::Summon),"expiry clears intent and rejects another summon");
 }
 
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
@@ -1017,7 +1077,7 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         Query(admin,"UPDATE player.item_instance SET companion_recall_requested=0 WHERE instance_id=?",{U::UInt(petId.Value())});
         Check(p::LoadCurrentItemOwner(writer,*c,owner)->items==state.items,"exact recall intent restores valid state");
     }
-    GrowthPetBirthSql(admin,writer,*c,hatchEgg,growthSeal);
+    GrowthPetBirthSql(admin,writer,*c,hatchEgg,growthSeal,petSeal);
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);
 }

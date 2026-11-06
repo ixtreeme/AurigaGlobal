@@ -71,8 +71,12 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
 	w.Put<std::uint8_t>(TypedInventoryHeader);
 	w.Put<std::uint32_t>(0); // patched below
 	const bool hasGrowthPets = std::ranges::any_of(items, [](const auto& item) { return item.growthPet.has_value(); });
+	const bool hasGrowthStatus = std::ranges::any_of(items, [](const auto& item) {
+		return item.growthPet && (RecallRequested(item) ||
+			(item.growthPet->life.clock == CompanionClock::ActiveTime && !item.growthPet->life.remainingMs));
+	});
 	const bool hasCompanions = std::ranges::any_of(items, [](const auto& item) { return item.companion.has_value(); });
-	w.Put<std::uint8_t>(hasGrowthPets ? 8 : hasCompanions ? 7 : std::ranges::any_of(items,[](const auto& i){return i.tool.has_value();}) ? 6 : std::ranges::any_of(items,[](const auto& i){return i.polymorph.has_value();}) ? 5 : std::ranges::any_of(items,[](const auto& i){return i.bookSkill.has_value();}) ? 4 : std::ranges::any_of(items,[](const auto& i){return i.toggle.has_value();}) ? 3 : std::ranges::any_of(items,[](const auto& i){return i.automatic.has_value();}) ? 2 : TypedInventoryVersion);
+	w.Put<std::uint8_t>(hasGrowthStatus ? 9 : hasGrowthPets ? 8 : hasCompanions ? 7 : std::ranges::any_of(items,[](const auto& i){return i.tool.has_value();}) ? 6 : std::ranges::any_of(items,[](const auto& i){return i.polymorph.has_value();}) ? 5 : std::ranges::any_of(items,[](const auto& i){return i.bookSkill.has_value();}) ? 4 : std::ranges::any_of(items,[](const auto& i){return i.toggle.has_value();}) ? 3 : std::ranges::any_of(items,[](const auto& i){return i.automatic.has_value();}) ? 2 : TypedInventoryVersion);
 	w.Put<std::uint16_t>(static_cast<std::uint16_t>(storages.size()));
 	for (const auto& s : storages)
 	{
@@ -149,7 +153,8 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
 				return std::unexpected(E::BadValue);
 			const auto& row = std::get<ItemCompanionRow>(catalog.Find(item.key)->category);
 			w.Put<std::uint8_t>(static_cast<std::uint8_t>(row.kind));
-			w.Put<std::uint8_t>(!item.companion || !item.companion->recallRequested ? 0 : item.id.Value() == liveCompanion ? 1 : 2);
+			const bool expired = item.growthPet && item.growthPet->life.clock == CompanionClock::ActiveTime && !item.growthPet->life.remainingMs;
+			w.Put<std::uint8_t>(expired ? 3 : !RecallRequested(item) ? 0 : item.id.Value() == liveCompanion ? 1 : 2);
 		}
 
 	}
@@ -166,7 +171,7 @@ std::expected<TypedInventoryView, TypedInventoryWireError> DecodeTypedInventory(
 		Reader r(bytes);
 		if (r.Get<std::uint8_t>() != TypedInventoryHeader) return std::unexpected(E::BadHeader);
 		if (r.Get<std::uint32_t>() != bytes.size()) return std::unexpected(E::BadSize);
-		const auto version=r.Get<std::uint8_t>();if (version<TypedInventoryVersion || version>8) return std::unexpected(E::BadVersion);
+		const auto version=r.Get<std::uint8_t>();if (version<TypedInventoryVersion || version>9) return std::unexpected(E::BadVersion);
 		TypedInventoryView view;
 		for (auto n = r.Get<std::uint16_t>(); n; --n)
 		{
@@ -250,7 +255,8 @@ std::expected<TypedInventoryView, TypedInventoryWireError> DecodeTypedInventory(
 				const auto state = r.Get<std::uint8_t>();
 				const bool growth = companion == CompanionKind::GrowthPet;
 				if (item.key.Category()!=ItemCategory::Companion || item.count!=1 || kind!=static_cast<unsigned>(ItemStorageKind::Inventory)
-					|| (flags&126) || (growth ? version<8 || state!=0 : (companion!=CompanionKind::Pet && companion!=CompanionKind::Mount) || state>2)
+					|| (flags&126) || (growth ? version<8 || item.refinementLevel || state>(version==8 ? 0 : 3)
+						: (companion!=CompanionKind::Pet && companion!=CompanionKind::Mount) || state>2)
 					|| !view.companions.emplace(item.id, std::pair{companion, state}).second) throw Bad{};
 				if (!growth)
 				{
