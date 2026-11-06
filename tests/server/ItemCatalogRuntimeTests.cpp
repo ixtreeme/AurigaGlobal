@@ -6,6 +6,10 @@
 #include "../../SRC/Server/GameServer/item/ItemCatalogRuntime.hpp"
 #include <item/ItemCatalog.hpp>
 #include "../../SRC/Server/GameServer/item/ItemStore.hpp"
+#include "../../SRC/Server/GameServer/item/TypedAccessoryClock.hpp"
+#include "../../SRC/Server/GameServer/item/TypedBooks.hpp"
+#include "../../SRC/Server/GameServer/item/TypedCompanions.hpp"
+#include "../../SRC/Server/GameServer/item/TypedRecovery.hpp"
 #include <SQL/AsyncSQL.h>
 
 #include <chrono>
@@ -18,6 +22,23 @@
 #include <string>
 
 namespace runtime = auriga::item::runtime;
+
+// This harness runs the item worker without an ECS world or player clocks.
+bool DeferTypedBookLogin(std::uint32_t,std::function<void()>) { return false; }
+void TickTypedRecovery() {}
+void TickTypedAccessoryClocks() {}
+namespace auriga::item::runtime
+{
+bool DeferRecoveryLogin(std::uint32_t,std::function<void()>) { return false; }
+bool DeferAccessoryLogin(std::uint32_t,std::function<void()>) { return false; }
+bool DeferGrowthPetLogin(std::uint32_t,std::function<void()>) { return false; }
+std::expected<std::function<void(MultiCommitOutcome*)>,ItemPersistenceError> BeginRecoveryClockCommit(
+    const std::vector<OwnerRead>&,ItemCommit&) { return [](MultiCommitOutcome*) {}; }
+std::expected<std::function<void(MultiCommitOutcome*)>,ItemPersistenceError> BeginAccessoryClockCommit(
+    const std::vector<OwnerRead>&,ItemCommit&) { return [](MultiCommitOutcome*) {}; }
+std::function<void(MultiCommitOutcome*)> BeginGrowthPetClockCommit(const std::vector<OwnerRead>&,const ItemCommit&)
+{ return [](MultiCommitOutcome*) {}; }
+}
 
 namespace
 {

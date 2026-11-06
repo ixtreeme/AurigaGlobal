@@ -100,6 +100,13 @@ struct ItemRecoveryChange
     std::uint64_t elapsedMs=0;
 };
 struct ItemLearningChange { ItemOwner owner; BookLearning before,after; };
+struct ItemPetStudyCooldown
+{
+    std::uint32_t skill=0;
+    // Zero means no previous row or no requested update, respectively.
+    std::uint64_t beforeMs=0,afterMs=0;
+    bool operator==(const ItemPetStudyCooldown&) const=default;
+};
 struct ItemCommit
 {
     std::array<std::uint8_t,16> operationId{};
@@ -116,6 +123,7 @@ struct ItemCommit
     std::optional<ItemGroundChange> ground;
     std::optional<ItemRecoveryChange> recovery;
     std::optional<ItemLearningChange> learning;
+    std::optional<ItemPetStudyCooldown> petStudyCooldown;
 };
 inline constexpr std::size_t MaxItemCommitItems=32, MaxItemCommitOwners=8,
     MaxItemCommitStorages=16, MaxItemCommitResult=4096, MaxLoadedOwnerItems=4096;
@@ -214,6 +222,17 @@ struct GrowthPetEvolution
 std::expected<ItemCommit,ItemPersistenceError> MakeGrowthPetProgressCommit(const ItemCatalog&,ItemOwnerFence,
     std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const PetCareContext&,ItemInstanceId seal,
     std::span<const std::uint64_t> mobAwards,std::optional<GrowthPetEvolution> evolution={});
+struct PetStudyTerms
+{
+    std::optional<std::uint8_t> slot;
+    std::uint64_t nowUtcMs=0,elapsedMs=0,cooldownBeforeMs=0;
+    std::uint16_t rollBp=0;
+};
+using PetStudyCommitError=std::variant<PetLifecycleError,ItemPersistenceError>;
+struct PetStudyWrite { PetSupplyPlan plan; ItemCommit commit; };
+std::expected<PetStudyWrite,PetStudyCommitError> MakePetStudyCommit(const ItemCatalog&,ItemOwnerFence,
+    std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const PetCareContext&,
+    ItemInstanceId book,ItemInstanceId seal,const PetStudyTerms&);
 // Gives new units of one item state to the owner's inventory (F4 C7a): a drop,
 // a purchase or a reward. Stackable units first top up the owner's matching
 // inventory stacks (same key, level and binding, no instance state), in storage

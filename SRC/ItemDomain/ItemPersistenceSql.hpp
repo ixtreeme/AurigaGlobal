@@ -3,6 +3,7 @@
 #include <item/ItemMissions.hpp>
 #include <SQL/PreparedTransaction.h>
 #include <span>
+#include <map>
 class CAsyncSQL;
 struct _SQLMsg;
 
@@ -23,6 +24,7 @@ struct LoadedItemOwner
     std::vector<PersistentItem> items;
     RecoverySchedule recovery;
     BookLearning learning;
+    std::map<std::uint32_t,std::uint64_t> petStudyCooldowns;
 };
 // Dedicated existing CAsyncSQL direct connection; no second SQL engine.
 // Values are bound; all tables are fixed and fully qualified. The returned

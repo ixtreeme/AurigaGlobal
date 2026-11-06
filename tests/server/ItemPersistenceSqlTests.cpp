@@ -176,7 +176,7 @@ void Allocator(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,unsigned 
     Check(p::ReserveItemInstanceIds(writer,c,10).error()==E::LimitExceeded,"the counter never wraps");
     Check(Scalar(admin,"SELECT next_instance_id FROM player.item_instance_id_allocator")=="18446744073709551610","a refused block moves nothing");
 }
-void GrowthPetBirthSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,ItemKey eggKey,ItemKey sealKey,ItemKey fixedKey)
+void GrowthPetBirthSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,ItemKey eggKey,ItemKey sealKey,ItemKey fixedKey,ItemKey bookKey)
 {
     using E=ItemPersistenceError;
     const ItemOwner owner{ItemOwnerKind::Character,880104};
@@ -184,7 +184,7 @@ void GrowthPetBirthSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,I
     const ItemWallet wallet{owner,WalletCurrency::Gold,1,150000};
     Check(p::ProvisionOwner(admin,c,owner,std::span(&bag,1),std::span(&wallet,1)).has_value(),"hatch owner provisioned");
     auto state=p::LoadCurrentItemOwner(writer,c,owner).value();
-    const auto ids=p::ReserveItemInstanceIds(writer,c,5).value();
+    const auto ids=p::ReserveItemInstanceIds(writer,c,6).value();
     const auto eggId=ItemInstanceId::Create(ids.first).value();
     const auto sealId=ItemInstanceId::Create(ids.first+1).value();
     const auto grant=MakeGrantCommit(c,{30,1},state.fence,state.storages,state.items,{eggKey,0,2},std::array{eggId});
@@ -371,6 +371,20 @@ void GrowthPetBirthSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,I
     Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"levelled pet relog");
     state=p::LoadCurrentItemOwner(writer,c,owner).value();
     Check(Find(state,sealId.Value()).growthPet->progress==GrowthPetProgress{2,0,0,0},"level saved before evolution");
+    const auto bookId=ItemInstanceId::Create(ids.first+5).value();
+    const auto bookGrant=MakeGrantCommit(c,{33,1},state.fence,state.storages,state.items,{bookKey,0,4},std::array{bookId});
+    Check(bookGrant && p::CommitItems(writer,c,*bookGrant).has_value(),"typed pet books granted");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto study=[&](std::uint8_t serial,std::optional<std::uint8_t> slot,std::uint16_t roll,std::uint64_t cooldown=0) {
+        auto admission=context;
+        admission.operationId={33,serial};
+        admission.sessionGeneration=state.fence.sessionGeneration;
+        return MakePetStudyCommit(c,state.fence,state.storages,state.items,admission,bookId,sealId,
+            {slot,request.bornAtUtcMs+30000,10,cooldown,roll});
+    };
+    const auto locked=study(2,0,0);
+    Check(!locked && locked.error()==PetStudyCommitError{PetLifecycleError::LockedSlot},
+        "locked skill slot cannot spend a book");
     const auto evolve=progress(3,{},evolution);
     Check(evolve.has_value(),"evolution at the gate");
     auto forgedEvolution=*evolve;
@@ -384,6 +398,37 @@ void GrowthPetBirthSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,I
     Check(evolved.growthPet->progress==GrowthPetProgress{3,1,0,0} && evolved.growthPet->life.remainingMs==149880 &&
         evolved.growthPet->traits==hatched.growthPet->traits && RecallRequested(evolved) && !progress(4,{},evolution),
         "stage, level, life, name, traits and intent survive the new owner session");
+
+    const auto learned=study(3,0,0);
+    Check(learned && learned->plan.succeeded && !learned->commit.petStudyCooldown &&
+        p::CommitItems(writer,c,learned->commit).has_value() && p::CommitItems(writer,c,learned->commit)->replay,
+        "selected study learns the skill and consumes exactly one book on replay");
+    Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"learned skill relog");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    Check(Find(state,sealId.Value()).growthPet->skills[0]==PetSkillSlot{true,1,1} && Find(state,bookId.Value()).count==3,
+        "first learned rank and book debit survive a new session");
+    const auto missed=study(4,std::nullopt,9999);
+    Check(missed && !missed->plan.succeeded && p::CommitItems(writer,c,missed->commit).has_value(),
+        "chance failure consumes a book without raising the rank");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    Check(state.petStudyCooldowns.empty() && Find(state,bookId.Value()).count==2 &&
+        Find(state,sealId.Value()).growthPet->skills[0].rank==1,"missed attempt preserves rank and cooldown");
+    const auto upgrade=study(5,std::nullopt,0);
+    Check(upgrade && upgrade->plan.succeeded && p::CommitItems(writer,c,upgrade->commit).has_value(),
+        "known study commits a higher rank, its book and owner cooldown");
+    Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"upgraded skill relog");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto trained=Find(state,sealId.Value());
+    const auto ready=state.petStudyCooldowns.at(1);
+    Check(trained.growthPet->skills[0]==PetSkillSlot{true,1,2} && trained.growthPet->skills[1]==PetSkillSlot{} &&
+        trained.growthPet->progress==evolved.growthPet->progress && trained.boundTo==evolved.boundTo &&
+        Find(state,bookId.Value()).count==1 && ready==request.bornAtUtcMs+30000+10800000,
+        "upgraded rank, other slots, pet identity and cooldown reload intact");
+    const auto blocked=study(6,std::nullopt,0,ready);
+    Check(!blocked && blocked.error()==PetStudyCommitError{PetLifecycleError::Cooldown},
+        "persisted cooldown blocks another known attempt");
+    const auto incomplete=study(7,std::nullopt,0);
+    Check(incomplete && !p::CommitItems(writer,c,incomplete->commit),"SQL rejects an omitted owner cooldown snapshot");
 }
 
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
@@ -394,6 +439,7 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
     const auto mountSeal=ItemKey::Create(ItemCategory::Companion,2).value();
     const auto growthSeal=ItemKey::Create(ItemCategory::Companion,3).value();
     const auto hatchEgg=ItemKey::Create(ItemCategory::Container,98).value();
+    const auto petBook=ItemKey::Create(ItemCategory::Special,98).value();
     source.companionForms={{1,"companion.sql_pet",32500,"models/sql_pet.model"},{2,"companion.sql_mount",32000,"models/sql_mount.model"}};
     source.companions={{petSeal,CompanionKind::Pet,1,{},CompanionClock::Permanent},
         {mountSeal,CompanionKind::Mount,2,2,CompanionClock::Permanent}};
@@ -412,7 +458,17 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
     source.companionForms.push_back({3,"companion.sql_growth",34041,"models/sql_growth.model"});
     source.growthPetProfiles.push_back({1,"growth.sql_birth",3,GrowthExpPolicy::MobAndItem,
         {{1,100,5},{2,200,20},{3,0,0}},{{0,2,3},{1,3,2}}});
-    source.companions.push_back({growthSeal,CompanionKind::GrowthPet,3,{},CompanionClock::ActiveTime,300000,false,1});
+    source.companions.push_back({growthSeal,CompanionKind::GrowthPet,3,{},CompanionClock::ActiveTime,300000,false,1,1});
+    source.petTrainingProfiles.push_back({1,"training.sql_growth",0,0,0,1,6,{{0,0,0,0}},
+        {{0,1,0},{1,2,0},{2,2,0},{3,0,INT64_MAX}},
+        {{1,"pet.sql_skill",PetEffect::BossDamagePercent,{{1,100},{2,200},{3,300}}}}});
+    ItemBaseRow petBookBase{petBook};
+    petBookBase.contentCode="special.sql_pet_study";petBookBase.nameKey="item.sql_pet_study.name";
+    petBookBase.descriptionKey="item.sql_pet_study.description";petBookBase.iconAsset="icons/sql_pet_study.png";
+    petBookBase.refinementProfile=1;petBookBase.usePolicy=petBookBase.tradePolicy=1;petBookBase.maxStack=20;
+    source.items.push_back(std::move(petBookBase));
+    source.petSupplies.push_back({petBook,1});
+    source.petSupplyProfiles.push_back({1,"supply.sql_pet_study",PetSupplyKind::Study,PetStudyRule{1,true,true,7100,10800000}});
     source.petHatchProfiles.push_back({1,"hatch.sql_birth",growthSeal,100000,{30,40,5},{10,20,5},{10,20,5}});
     source.petFeedRules={{hatchEgg,PetFeedingService::Cube,PetFoodKind::LifetimeFraction,PetFoodConsumption::WholeStack,0,5000,0,0},
         {f::Leather().key,PetFeedingService::Direct,PetFoodKind::RefillOrRevive,PetFoodConsumption::ExactUnits,1,0,5000,0},
@@ -1164,7 +1220,7 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         Query(admin,"UPDATE player.item_instance SET companion_recall_requested=0 WHERE instance_id=?",{U::UInt(petId.Value())});
         Check(p::LoadCurrentItemOwner(writer,*c,owner)->items==state.items,"exact recall intent restores valid state");
     }
-    GrowthPetBirthSql(admin,writer,*c,hatchEgg,growthSeal,petSeal);
+    GrowthPetBirthSql(admin,writer,*c,hatchEgg,growthSeal,petSeal,petBook);
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);
 }

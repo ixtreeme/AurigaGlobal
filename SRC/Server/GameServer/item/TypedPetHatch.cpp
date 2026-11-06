@@ -32,14 +32,41 @@ namespace
 {
 namespace item = auriga::item;
 namespace store = item::runtime;
-enum class Action : std::uint8_t { Preview = 1, Confirm, Close, Inspect, FoodList, FeedPreview, FeedConfirm, Progress, Evolve };
+enum class Action : std::uint8_t
+{
+    Preview = 1, Confirm, Close, Inspect, FoodList, FeedPreview, FeedConfirm, Progress, Evolve,
+    StudyList, StudyPreview, StudyConfirm
+};
 enum class Status : std::uint8_t
 {
     Closed, Ready, Pending, Hatched, Invalid, Denied, Busy, Stale, Failed,
-    InsufficientGold, NoRoom, InvalidName, Details, FoodList, FeedReady, Fed, NoEffect, Evolved
+    InsufficientGold, NoRoom, InvalidName, Details, FoodList, FeedReady, Fed, NoEffect, Evolved,
+    StudyList, StudyReady, Studied, StudyMissed, StudyCooldown
 };
 
 struct PetProgressView { std::uint64_t seal; };
+
+struct StudyView
+{
+    std::uint64_t book = 0, readyAtMs = 0;
+    std::uint32_t skill = 0;
+    std::uint8_t slot = 0;
+    std::uint16_t nextRank = 0, chanceBp = 0;
+    std::vector<std::pair<std::uint64_t,std::uint8_t>> options;
+};
+
+struct PetStudySession
+{
+    item::PersistentItem book;
+    std::uint64_t seal = 0;
+    item::ItemCatalogDigest catalogHash;
+    std::optional<std::uint8_t> slot;
+    item::PetSkillSlot before;
+    StudyView view;
+    std::uint64_t token = 0;
+    std::uint32_t opened = 0;
+    Status status = Status::StudyReady;
+};
 
 struct FeedingView
 {
@@ -144,9 +171,41 @@ const item::PetHatchProfile* HatchProfile(const item::ItemCatalog& catalog, item
         ? catalog.FindPetHatchProfile(*egg->hatchProfile) : nullptr;
 }
 
+const item::PetTrainingProfile* Training(const item::ItemCatalog& catalog,item::ItemKey key)
+{
+    const auto* entry = catalog.Find(key);
+    const auto* row = entry ? std::get_if<item::ItemCompanionRow>(&entry->category) : nullptr;
+    return row && row->trainingProfile ? catalog.FindPetTrainingProfile(*row->trainingProfile) : nullptr;
+}
+
+const item::PetSkillDefinition* FindSkill(const item::PetTrainingProfile* profile,std::uint32_t skill)
+{
+    if (!profile || !skill) return nullptr;
+    const auto found = std::ranges::find(profile->skills,skill,&item::PetSkillDefinition::id);
+    return found == profile->skills.end() ? nullptr : &*found;
+}
+
+const item::PetStudyRule* StudyRule(const item::ItemCatalog& catalog,item::ItemKey key)
+{
+    const auto* entry = catalog.Find(key);
+    const auto* row = entry && !entry->base.retired ? std::get_if<item::ItemPetSupplyRow>(&entry->category) : nullptr;
+    const auto* profile = row ? catalog.FindPetSupplyProfile(row->profile) : nullptr;
+    return profile && profile->study ? &*profile->study : nullptr;
+}
+
+std::array<item::PetSkillSlot,4> StudySlots(const item::ItemCatalog& catalog,
+    const item::PersistentItem& seal,const item::ItemOwnerFence& fence)
+{
+    const item::PetCareContext context{{1},fence.owner.id,fence.sessionGeneration,1,0,0,0,true};
+    const item::PetCareItemSnapshot snapshot{seal.key,seal.id.Value(),seal.revision,seal.owner.id,
+        seal.count,seal.refinementLevel,false,false,false,true};
+    const auto age = item::PlanPetAge(catalog,{context,snapshot,seal.revision,TypedItemEffectNow(),*seal.growthPet});
+    return age ? age->after.skills : seal.growthPet->skills;
+}
+
 void Reply(entt::entity entity, Status status, std::uint64_t id, std::uint64_t token = 0,
     std::uint64_t cost = 0, std::optional<item::ItemKey> target = {}, const item::PersistentItem* seal = nullptr,
-    const FeedingView* feeding = nullptr, bool progression = false)
+    const FeedingView* feeding = nullptr, bool progression = false,const StudyView* study = nullptr)
 {
     if (!InGame(entity)) return;
     const auto* typed = g_registry.try_get<ecs::TypedItems>(entity);
@@ -159,7 +218,7 @@ void Reply(entt::entity entity, Status status, std::uint64_t id, std::uint64_t t
     PacketWriter packet;
     packet.Put<std::uint8_t>(HEADER_GC_TYPED_PET_HATCH);
     packet.Put<std::uint32_t>(0);
-    packet.Put<std::uint8_t>(progression ? 3 : feeding ? 2 : 1);
+    packet.Put<std::uint8_t>(study ? 4 : progression ? 3 : feeding ? 2 : 1);
     packet.Put<std::uint8_t>(static_cast<std::uint8_t>(status));
     packet.Put(id);
     packet.Put(token);
@@ -179,7 +238,8 @@ void Reply(entt::entity entity, Status status, std::uint64_t id, std::uint64_t t
         packet.Put(pet->progress.stage);
         packet.Put<std::uint8_t>(static_cast<std::uint8_t>(pet->life.clock));
         packet.Put(pet->life.capacityMs);
-        const bool projectTime = status == Status::Details || status == Status::FoodList || status == Status::FeedReady;
+        const bool projectTime = status == Status::Details || status == Status::FoodList || status == Status::FeedReady ||
+            status == Status::StudyList || status == Status::StudyReady;
         const auto elapsed = projectTime && pet->life.clock == item::CompanionClock::ActiveTime
             ? TypedGrowthPetElapsed(entity,seal->id.Value()) : 0;
         packet.Put(pet->life.remainingMs - (std::min)(pet->life.remainingMs,elapsed));
@@ -213,6 +273,38 @@ void Reply(entt::entity entity, Status status, std::uint64_t id, std::uint64_t t
         packet.Put(static_cast<std::uint16_t>(feeding->options.size()));
         for (const auto food : feeding->options)
             packet.Put(food);
+    }
+    if (study)
+    {
+        const auto* training = pet ? Training(*catalog,seal->key) : nullptr;
+        const auto text = [&](const item::PetSkillDefinition* skill) {
+            const auto code = skill && skill->code.size()<=128 ? std::string_view(skill->code) : std::string_view{};
+            packet.Put(static_cast<std::uint16_t>(code.size()));
+            packet.bytes.insert(packet.bytes.end(),code.begin(),code.end());
+        };
+        packet.Put(study->book);
+        packet.Put(study->skill);
+        packet.Put(study->slot);
+        packet.Put(study->nextRank);
+        packet.Put(study->chanceBp);
+        packet.Put(study->readyAtMs);
+        text(FindSkill(training,study->skill));
+        packet.Put(static_cast<std::uint16_t>(study->options.size()));
+        for (const auto& [book,mask] : study->options)
+        {
+            packet.Put(book);
+            packet.Put(mask);
+        }
+        if (pet)
+            for (const auto& slot : StudySlots(*catalog,*seal,typed->state.fence))
+            {
+                const auto* skill = FindSkill(training,slot.skill);
+                packet.Put<std::uint8_t>(slot.unlocked);
+                packet.Put(slot.skill);
+                packet.Put(slot.rank);
+                packet.Put(static_cast<std::uint16_t>(skill ? skill->ranks.size() : 0));
+                text(skill);
+            }
     }
     const auto length = static_cast<std::uint32_t>(packet.bytes.size());
     for (unsigned i = 0; i < 4; ++i)
@@ -706,6 +798,199 @@ void Evolve(entt::entity entity,const TPacketCGTypedPetHatch& packet,const item:
     if (!queued) g_registry.remove<ecs::TypedItemBusy>(entity);
     ProgressReply(entity,queued ? Status::Pending : Status::Failed,packet.itemId);
 }
+
+void StudyReply(entt::entity entity,Status status,std::uint64_t id,std::uint64_t token=0,
+    const StudyView& view={},const item::PersistentItem* seal=nullptr)
+{
+    Reply(entity,status,id,token,0,seal ? std::optional{seal->key} : std::nullopt,seal,nullptr,false,&view);
+}
+
+void ReplyStudySession(entt::entity entity,const PetStudySession& session,const item::PersistentItem* seal)
+{
+    const bool details=session.status==Status::StudyReady || session.status==Status::Studied || session.status==Status::StudyMissed;
+    if (details && seal && seal->growthPet)
+        StudyReply(entity,session.status,session.seal,session.token,session.view,seal);
+    else
+        StudyReply(entity,details ? Status::Failed : session.status,session.seal,session.token);
+}
+
+std::uint8_t StudyModes(const item::PetStudyRule& rule,const item::PetSkillDefinition& skill,
+    const std::array<item::PetSkillSlot,4>& slots)
+{
+    const auto known=std::ranges::find(slots,skill.id,&item::PetSkillSlot::skill);
+    if (known!=slots.end())
+    {
+        if (!known->unlocked || known->rank>=skill.ranks.size()) return 0;
+        return (rule.knownAllowed ? 16u : 0u) | (rule.selectedAllowed ? 1u<<(known-slots.begin()) : 0u);
+    }
+    std::uint8_t mask=0;
+    if (rule.selectedAllowed)
+        for (std::size_t i=0;i<slots.size();++i)
+            if (slots[i].unlocked && !slots[i].skill) mask|=1u<<i;
+    return mask;
+}
+
+void HandleStudy(entt::entity entity,Action action,const TPacketCGTypedPetHatch& packet,const item::ItemCatalog& catalog)
+{
+    const bool confirm=action==Action::StudyConfirm;
+    const auto token=confirm ? packet.token : 0;
+    auto* session=g_registry.try_get<PetStudySession>(entity);
+    const auto& typed=g_registry.get<ecs::TypedItems>(entity);
+    const auto* seal=InBag(typed,packet.itemId);
+    const bool matching=confirm && session && session->token==token && session->seal==packet.itemId;
+    if (matching && session->status!=Status::StudyReady)
+    {
+        ReplyStudySession(entity,*session,seal);
+        return;
+    }
+    if (!seal || !seal->growthPet || (confirm && !matching))
+    {
+        StudyReply(entity,confirm ? Status::Stale : Status::Invalid,packet.itemId,token);
+        return;
+    }
+    if (g_registry.all_of<ecs::TypedItemBusy>(entity))
+    {
+        StudyReply(entity,Status::Busy,packet.itemId,token);
+        return;
+    }
+    if (!confirm)
+        g_registry.remove<PetStudySession>(entity);
+    const auto& state=typed.state;
+    const auto* training=Training(catalog,seal->key);
+    const bool active=Admitted(entity) && RefreshTypedCompanion(entity)==packet.itemId;
+    const auto slots=StudySlots(catalog,*seal,state.fence);
+    if (action==Action::StudyList)
+    {
+        StudyView view;
+        if (active && training)
+            for (const auto& book : state.items)
+            {
+                if (!item::PlainInventoryItem(book,state.fence.owner) || book.refinementLevel) continue;
+                const auto* rule=StudyRule(catalog,book.key);
+                const auto* skill=rule ? FindSkill(training,rule->skill) : nullptr;
+                if (skill)
+                    if (const auto modes=StudyModes(*rule,*skill,slots))
+                        view.options.emplace_back(book.id.Value(),modes);
+            }
+        StudyReply(entity,Status::StudyList,packet.itemId,0,view,seal);
+        return;
+    }
+    if (!active || !training)
+    {
+        StudyReply(entity,Status::Denied,packet.itemId,token);
+        return;
+    }
+    const auto* book=InBag(typed,confirm ? session->book.id.Value() : packet.token);
+    if (confirm && (!book || *book!=session->book || session->catalogHash!=catalog.ContentHash() ||
+        get_dword_time()-session->opened>=120000u))
+    {
+        session->status=Status::Stale;
+        ReplyStudySession(entity,*session,nullptr);
+        return;
+    }
+    const auto* rule=book ? StudyRule(catalog,book->key) : nullptr;
+    const auto* skill=rule ? FindSkill(training,rule->skill) : nullptr;
+    const auto slot=confirm ? session->slot : packet.name[0]=='5' ? std::nullopt :
+        std::optional<std::uint8_t>{static_cast<std::uint8_t>(packet.name[0]-'1')};
+    if (!skill || !(StudyModes(*rule,*skill,slots)&(1u<<slot.value_or(4))))
+    {
+        StudyReply(entity,Status::NoEffect,packet.itemId,token);
+        return;
+    }
+    const auto index=slot ? *slot : std::ranges::find(slots,rule->skill,&item::PetSkillSlot::skill)-slots.begin();
+    if (confirm && slots[index]!=session->before)
+    {
+        session->status=Status::Stale;
+        ReplyStudySession(entity,*session,nullptr);
+        return;
+    }
+    const auto fence=state.fence;
+    const auto pid=ecs::PlayerRuntime::GetPlayerID(entity);
+    const auto login=g_registry.get<ecs::TypedItemLogin>(entity).token;
+    item::PetCareContext context{{},pid,fence.sessionGeneration,1,static_cast<std::uint16_t>(ecs::PointSystem::GetLevel(entity)),
+        static_cast<std::uint8_t>(ecs::PlayerRuntime::GetJob(entity)+1),static_cast<std::uint8_t>(ecs::PlayerRuntime::GetSex(entity)+1),
+        true,true,true,false,false,ecs::PlayerRuntime::GetPosition(entity)==POS_FIGHTING};
+    const auto cooldown=state.petStudyCooldowns.find(rule->skill);
+    item::PetStudyTerms terms{slot,TypedItemEffectNow(),TypedGrowthPetElapsed(entity,packet.itemId),
+        slot || cooldown==state.petStudyCooldowns.end() ? 0 : cooldown->second,0};
+    if (terms.cooldownBeforeMs>terms.nowUtcMs)
+    {
+        StudyView view;
+        view.readyAtMs=terms.cooldownBeforeMs;
+        StudyReply(entity,Status::StudyCooldown,packet.itemId,token,view);
+        return;
+    }
+    const auto roll=confirm && !slot ? Roll({0,9999,1}) : std::optional<std::uint16_t>{0};
+    if (!roll || RAND_bytes(context.operationId.data(),static_cast<int>(context.operationId.size()))!=1)
+    {
+        StudyReply(entity,Status::Failed,packet.itemId,token);
+        return;
+    }
+    terms.rollBp=*roll;
+    auto write=item::MakePetStudyCommit(catalog,fence,state.storages,state.items,context,book->id,seal->id,terms);
+    if (!write)
+    {
+        StudyReply(entity,Status::Denied,packet.itemId,token);
+        return;
+    }
+    if (!confirm)
+    {
+        const StudyView view{book->id.Value(),0,skill->id,static_cast<std::uint8_t>(index),
+            static_cast<std::uint16_t>(slots[index].rank+1),slot ? std::uint16_t{10000} : rule->knownSuccessBp};
+        PetStudySession quote{*book,packet.itemId,catalog.ContentHash(),slot,slots[index],view};
+        if (RAND_bytes(reinterpret_cast<unsigned char*>(&quote.token),sizeof(quote.token))!=1 || !quote.token)
+            StudyReply(entity,Status::Failed,packet.itemId);
+        else
+        {
+            quote.opened=get_dword_time();
+            ReplyStudySession(entity,g_registry.emplace<PetStudySession>(entity,std::move(quote)),seal);
+        }
+        return;
+    }
+
+    auto permit=ecs::resource_admission::Enter({entity},auriga::resource_admission::Operation::ItemUse);
+    if (CurrentLogin(pid,login)!=entity) return;
+    session=g_registry.try_get<PetStudySession>(entity);
+    const auto* current=g_registry.try_get<ecs::TypedItems>(entity);
+    if (!session || session->token!=token) return;
+    if (!permit || !permit->Current() || !Admitted(entity) || !current || current->state.fence!=fence ||
+        PetSystem::LiveTypedSeal(entity)!=packet.itemId || g_registry.all_of<ecs::TypedItemBusy>(entity))
+    {
+        StudyReply(entity,Status::Denied,packet.itemId,token);
+        return;
+    }
+    const auto success=write->plan.succeeded;
+    auto held=std::make_shared<auriga::resource_admission::Permit>(std::move(*permit));
+    session->status=Status::Pending;
+    g_registry.emplace_or_replace<ecs::TypedItemBusy>(entity);
+    const bool queued=store::RequestCommit(fence.owner,fence.sessionGeneration,std::move(write->commit),
+        [pid,login,token,success,held](store::CommitOutcome outcome) {
+            const auto entity=CurrentLogin(pid,login);
+            if (entity==entt::null) return;
+            if (!outcome.state)
+            {
+                LOG_ERROR("Typed pet study owner reload failed pid {}",pid);
+                if (auto* desc=ecs::PlayerRuntime::GetDesc(entity)) desc->SetPhase(PHASE_CLOSE);
+                return;
+            }
+            g_registry.emplace_or_replace<ecs::TypedItems>(entity,std::move(*outcome.state));
+            g_registry.remove<ecs::TypedItemBusy>(entity);
+            SendTypedInventory(entity);
+            if (auto* session=g_registry.try_get<PetStudySession>(entity); session && session->token==token)
+            {
+                session->status=outcome.write ? (success ? Status::Studied : Status::StudyMissed) : Status::Failed;
+                const auto* seal=InBag(g_registry.get<ecs::TypedItems>(entity),session->seal);
+                ReplyStudySession(entity,*session,seal);
+            }
+            PumpTypedItemGrants(entity);
+        });
+    if (!queued)
+    {
+        g_registry.remove<ecs::TypedItemBusy>(entity);
+        session->status=Status::Failed;
+    }
+    ReplyStudySession(entity,*session,nullptr);
+}
 }
 
 void SendTypedPetProgress(entt::entity entity,std::uint64_t id)
@@ -727,10 +1012,13 @@ bool HandleTypedPetHatchPacket(entt::entity entity, const char* data)
     TPacketCGTypedPetHatch packet{};
     std::memcpy(&packet, data, sizeof(packet));
     const auto action = static_cast<Action>(packet.action);
-    if (!packet.itemId || action < Action::Preview || action > Action::Evolve
+    const bool studyPreview=action==Action::StudyPreview;
+    if (!packet.itemId || action < Action::Preview || action > Action::StudyConfirm
         || packet.nameLength > sizeof(packet.name)
-        || (action != Action::Confirm && packet.nameLength)
+        || (action != Action::Confirm && !studyPreview && packet.nameLength)
         || (action == Action::Confirm && !packet.nameLength)
+        || (studyPreview && (packet.nameLength!=1 || packet.name[0]<'1' || packet.name[0]>'5' || !packet.token))
+        || (action==Action::StudyList && packet.token) || (action==Action::StudyConfirm && !packet.token)
         || ((action == Action::Preview || action == Action::Inspect || action == Action::FoodList || action == Action::Progress) && packet.token)
         || ((action == Action::FeedPreview || action == Action::FeedConfirm) && !packet.token)
         || (action == Action::Evolve && (!packet.token || packet.token>16))
@@ -744,6 +1032,11 @@ bool HandleTypedPetHatchPacket(entt::entity entity, const char* data)
     if (!catalog) return true;
     if (action >= Action::FoodList && action <= Action::FeedConfirm)
         return HandleFeeding(entity,action,packet,*catalog);
+    if (action>=Action::StudyList)
+    {
+        HandleStudy(entity,action,packet,*catalog);
+        return true;
+    }
     if (action == Action::Evolve)
     {
         Evolve(entity,packet,*catalog);

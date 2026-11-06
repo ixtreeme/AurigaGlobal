@@ -33,7 +33,7 @@ def setUpModule():
     if [int(path.name[:3]) for path in paths] != list(range(len(paths))): raise RuntimeError('incomplete catalog migrations')
     SANDBOX.client.query("CREATE TABLE player.player(id INT UNSIGNED PRIMARY KEY, name VARCHAR(24) NOT NULL DEFAULT '', exp INT UNSIGNED NOT NULL DEFAULT 0, skill_point SMALLINT NOT NULL DEFAULT 0, sub_skill_point SMALLINT NOT NULL DEFAULT 0, horse_skill_point SMALLINT NOT NULL DEFAULT 0, skill_level BLOB NULL) ENGINE=InnoDB")
     SANDBOX.client.query("CREATE TABLE player.player_deleted LIKE player.player")
-    for path in [*paths, ROOT / 'db/migrations/item_instance/001_item_persistence.sql', ROOT / 'db/migrations/item_instance/002_instance_id_allocator.sql', ROOT / 'db/migrations/item_instance/003_owned_ground.sql', ROOT / 'db/migrations/item_instance/004_recovery_schedule.sql', ROOT / 'db/migrations/item_instance/005_automatic_recovery.sql', ROOT / 'db/migrations/item_instance/006_item_effects.sql', ROOT / 'db/migrations/item_instance/007_book_learning.sql', ROOT / 'db/migrations/item_instance/008_polymorph.sql', ROOT / 'db/migrations/item_instance/009_gathering_tools.sql', ROOT / 'db/migrations/item_instance/010_companion_seals.sql', ROOT / 'db/migrations/item_instance/011_growth_pet_birth.sql']:
+    for path in [*paths, ROOT / 'db/migrations/item_instance/001_item_persistence.sql', ROOT / 'db/migrations/item_instance/002_instance_id_allocator.sql', ROOT / 'db/migrations/item_instance/003_owned_ground.sql', ROOT / 'db/migrations/item_instance/004_recovery_schedule.sql', ROOT / 'db/migrations/item_instance/005_automatic_recovery.sql', ROOT / 'db/migrations/item_instance/006_item_effects.sql', ROOT / 'db/migrations/item_instance/007_book_learning.sql', ROOT / 'db/migrations/item_instance/008_polymorph.sql', ROOT / 'db/migrations/item_instance/009_gathering_tools.sql', ROOT / 'db/migrations/item_instance/010_companion_seals.sql', ROOT / 'db/migrations/item_instance/011_growth_pet_birth.sql', ROOT / 'db/migrations/item_instance/012_pet_study_cooldown.sql']:
         for statement in statements(path.read_text(encoding='utf-8-sig')): SANDBOX.client.query(statement)
 
 
@@ -182,8 +182,10 @@ class BenchTests(unittest.TestCase):
         with self.assertRaises(api.EditorError) as refused: use('load')        # the TEST character is fine, #5 is not
         self.assertIn('#5', str(refused.exception))
         self.assertFalse(use('status')['pin_matches'])
+        SANDBOX.client.query('INSERT INTO player.item_pet_study_cooldown(owner_kind,owner_id,skill_id,ready_at_ms) VALUES(1,5,92001,12345)')
         reset = use('setup', owner=5, reset=True, gold=1)['state']
         self.assertEqual((reset['items'], reset['wallets'][0]['balance']), ([], 1))
+        self.assertEqual(SANDBOX.client.query('SELECT skill_id FROM player.item_pet_study_cooldown WHERE owner_id=5'), [])
         self.assertTrue(use('status')['pin_matches'])
         # A package installed before C7a: 002 alone adds the allocator, above every ID already issued.
         highest = int(SANDBOX.client.query('SELECT MAX(instance_id) FROM player.item_instance')[0][0])

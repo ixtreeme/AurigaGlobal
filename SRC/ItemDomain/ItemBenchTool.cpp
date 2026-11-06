@@ -81,7 +81,7 @@ bool Installed(CAsyncSQL& sql)
 {
     return Rows(sql,"SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN "
         "('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance',"
-        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule')").at(0).at(0)=="13" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob')").at(0).at(0)=="13";
+        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule','item_pet_study_cooldown')").at(0).at(0)=="14" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob')").at(0).at(0)=="13";
 }
 std::shared_ptr<const ItemCatalog> Catalog(CAsyncSQL& sql)
 {
@@ -265,6 +265,7 @@ Json Setup(CAsyncSQL& sql,const Json& request)
     tx.push_back({"DELETE FROM player.item_wallet WHERE owner_kind=? AND owner_id=?",owner,{},{}});
     tx.push_back({"DELETE FROM player.item_storage WHERE owner_kind=? AND owner_id=?",owner,{},{}});
     tx.push_back({"DELETE FROM player.item_recovery_schedule WHERE owner_kind=? AND owner_id=?",owner,{},{}});
+    tx.push_back({"DELETE FROM player.item_pet_study_cooldown WHERE owner_kind=? AND owner_id=?",owner,{},{}});
     tx.push_back({"DELETE FROM player.item_owner_fence WHERE owner_kind=? AND owner_id=?",owner,{},{}});
     Message result(sql.DirectTransactionPrepared(std::move(tx)));
     Require(result && !result->uiSQLErrno && result->transactionOutcome==SqlTransactionOutcome::Committed,"A korábbi tárgyak törlése nem sikerült.");

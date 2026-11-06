@@ -40,7 +40,7 @@ SqlTransaction Guards(const ItemCatalog& c)
         {"SELECT 1 WHERE @@tx_isolation='REPEATABLE-READ' AND @@foreign_key_checks=1 AND @@check_constraint_checks=1",{},{},1},
         {"SELECT 1 FROM player.item_persistence_format WHERE singleton=1 AND schema_version=1 AND catalog_revision=? AND catalog_sha256=? LOCK IN SHARE MODE",
             {U::UInt(c.Revision()),U::Blob(Bytes(c.ContentHash()))},{},1},
-        {"SELECT 1 FROM information_schema.TABLES WHERE (TABLE_SCHEMA='player' AND TABLE_NAME IN ('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance','item_instance_attribute','item_instance_socket','item_occupied_cell','item_recovery_schedule')) OR (TABLE_SCHEMA='protos' AND TABLE_NAME IN ('item_base','bonus_definition')) HAVING COUNT(*)=12 AND SUM(ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE')=12 AND (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob'))=13 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_book_learning' AND ENGINE='InnoDB')=1",{},{},1},
+        {"SELECT 1 FROM information_schema.TABLES WHERE (TABLE_SCHEMA='player' AND TABLE_NAME IN ('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance','item_instance_attribute','item_instance_socket','item_occupied_cell','item_recovery_schedule')) OR (TABLE_SCHEMA='protos' AND TABLE_NAME IN ('item_base','bonus_definition')) HAVING COUNT(*)=12 AND SUM(ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE')=12 AND (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob'))=13 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_book_learning' AND ENGINE='InnoDB')=1 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_pet_study_cooldown' AND ENGINE='InnoDB')=1",{},{},1},
     };
 }
 SqlParams ItemValues(const ItemCatalog& c,const PersistentItem& p)
@@ -143,6 +143,33 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
     {
         auto p=Owner(o.owner);Append(p,{U::UInt(o.sessionGeneration),U::UInt(o.revision)});
         tx.push_back({"UPDATE player.item_owner_fence SET state_revision=state_revision+1 WHERE owner_kind=? AND owner_id=? AND session_generation=? AND state_revision=?",std::move(p),1,{}});
+    }
+    if(r.petStudyCooldown)
+    {
+        const auto& cooldown=*r.petStudyCooldown;
+        auto key=Owner(owners.front().owner);
+        key.push_back(U::UInt(cooldown.skill));
+        if(cooldown.beforeMs)
+        {
+            auto expected=key;
+            expected.push_back(U::UInt(cooldown.beforeMs));
+            tx.push_back({"SELECT 1 FROM player.item_pet_study_cooldown WHERE owner_kind=? AND owner_id=? AND skill_id=? AND ready_at_ms=? FOR UPDATE",std::move(expected),{},1});
+            if(cooldown.afterMs && cooldown.afterMs!=cooldown.beforeMs)
+            {
+                SqlParams update{U::UInt(cooldown.afterMs)};
+                update.insert(update.end(),key.begin(),key.end());
+                tx.push_back({"UPDATE player.item_pet_study_cooldown SET ready_at_ms=? WHERE owner_kind=? AND owner_id=? AND skill_id=?",std::move(update),1,{}});
+            }
+        }
+        else
+        {
+            tx.push_back({"SELECT 1 FROM player.item_pet_study_cooldown WHERE owner_kind=? AND owner_id=? AND skill_id=? FOR UPDATE",key,{},0});
+            if(cooldown.afterMs)
+            {
+                key.push_back(U::UInt(cooldown.afterMs));
+                tx.push_back({"INSERT INTO player.item_pet_study_cooldown(owner_kind,owner_id,skill_id,ready_at_ms) VALUES(?,?,?,?)",std::move(key),1,{}});
+            }
+        }
     }
     auto storages=r.storages;std::ranges::sort(storages,{},&ItemStorageLayout::storage);
     for(const auto& s:storages)
@@ -426,15 +453,23 @@ std::expected<LoadedItemOwner,E> LoadItemOwner(CAsyncSQL& db,const ItemCatalog& 
     tx.push_back({"SELECT c.storage_kind,c.storage_id,c.cell_index,c.instance_id,c.owner_kind,c.owner_id FROM player.item_occupied_cell c LEFT JOIN player.item_instance i ON i.instance_id=c.instance_id WHERE (c.owner_kind=? AND c.owner_id=?) OR (i.owner_kind=? AND i.owner_id=? AND i.destroyed=0) LIMIT 65537",[&]{auto p=Owner(owner);Append(p,Owner(owner));return p;}(),{},{}});
     tx.push_back({"SELECT state_revision,state_blob,state_sha256 FROM player.item_recovery_schedule WHERE owner_kind=? AND owner_id=? LIMIT 2",Owner(owner),{},{}});
     tx.push_back({"SELECT state_revision,state_blob,state_sha256 FROM player.item_book_learning WHERE owner_kind=? AND owner_id=?",Owner(owner),{},{}});
+    tx.push_back({"SELECT skill_id,ready_at_ms FROM player.item_pet_study_cooldown WHERE owner_kind=? AND owner_id=? LIMIT 4097",Owner(owner),{},{}});
     Message m(db.DirectTransactionPrepared(std::move(tx)));if(!m)return std::unexpected(E::SqlFailure);
-    auto recoveryRows=Result(*m,10,3,1);auto learningRows=Result(*m,11,3,1);
+    auto recoveryRows=Result(*m,10,3,1);auto learningRows=Result(*m,11,3,1);auto petCooldownRows=Result(*m,12,2,4096);
     auto fence=Result(*m,3,1,1),storageRows=Result(*m,4,5,MaxItemCommitStorages),walletRows=Result(*m,5,3,2),
         itemRows=Result(*m,6,33,MaxLoadedOwnerItems),attributes=Result(*m,7,4,MaxLoadedOwnerItems*8),stones=Result(*m,8,7,MaxLoadedOwnerItems*3),cells=Result(*m,9,6,65536);
-    for(const auto* r:{&fence,&storageRows,&walletRows,&itemRows,&attributes,&stones,&cells,&recoveryRows,&learningRows})if(!*r)return std::unexpected(r->error());
+    for(const auto* r:{&fence,&storageRows,&walletRows,&itemRows,&attributes,&stones,&cells,&recoveryRows,&learningRows,&petCooldownRows})if(!*r)return std::unexpected(r->error());
     try
     {
         if(fence->size()!=1)throw Invalid{};
         LoadedItemOwner out;out.fence={owner,session,Number<std::uint64_t>((*fence)[0][0])};if(!out.fence.revision)throw Invalid{};
+        for(const auto& row:*petCooldownRows)
+        {
+            const auto skill=Number<std::uint32_t>(row[0]);
+            const auto ready=Number<std::uint64_t>(row[1]);
+            if(owner.kind!=ItemOwnerKind::Character || !skill || !ready || ready>INT64_MAX ||
+                !out.petStudyCooldowns.emplace(skill,ready).second)throw Invalid{};
+        }
         if(!recoveryRows->empty())
         {
             const auto& row=recoveryRows->front();if(owner.kind!=ItemOwnerKind::Character || !row[1] || row[1]->size()>MaxRecoveryStateBytes)throw Invalid{};
