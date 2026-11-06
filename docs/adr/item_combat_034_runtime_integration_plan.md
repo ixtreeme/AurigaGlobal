@@ -8,7 +8,8 @@ Az aktív ágak a C26a munkában megkapták a TERA pecséteket és a hátasrepü
 A C26b az állandó típusos pet- és hátaspecsétek mentését, idézését és visszahívását kapcsolja be.
 A C26c a típusos pettojás keltetését és a fejlődő pet születési állapotának mentését kapcsolja be.
 A C26d a fejlődő pet idézését, visszahívását és aktív életidejének mentését kapcsolja be.
-A fejlődő pet etetése és a típusos felülés továbbra is nyitott.
+A C26e a katalógusban megadott petetetés, újraélesztés és tárgytapasztalat szerver- és kliensoldali útját kapcsolja be.
+A típusos felülés továbbra is nyitott.
 [IC-058](item_combat_058_tera_companion_port.md) · [IC-059](item_combat_059_typed_companion_seals.md) · [IC-060](item_combat_060_typed_pet_hatching.md)
 
 ## Közös szerver–Unity munkamenet (felhasználói döntés, 2026-11-01)

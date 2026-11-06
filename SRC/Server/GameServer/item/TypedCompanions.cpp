@@ -295,7 +295,9 @@ std::function<void(MultiCommitOutcome*)> BeginGrowthPetClockCommit(const std::ve
             {
                 const auto before = change->before->growthPet->life.remainingMs;
                 const auto after = change->after.growthPet->life.remainingMs;
-                if (before > after)
+                if (const auto charge = item::PetFeedClockCharge(commit,clock->seal))
+                    spent = *charge;
+                else if (before > after)
                     spent = before - after;
             }
             clock->pending = true;
@@ -344,6 +346,15 @@ bool DeferGrowthPetLogin(std::uint32_t pid,std::function<void()> resume)
         }
     return false;
 }
+}
+
+std::uint64_t TypedGrowthPetElapsed(entt::entity owner,std::uint64_t seal)
+{
+    const auto* typed = g_registry.try_get<ecs::TypedItems>(owner);
+    if (!typed)
+        return 0;
+    const auto clock = growthClocks.find(Key(typed->state.fence,seal));
+    return clock == growthClocks.end() ? 0 : Elapsed(*clock->second);
 }
 
 void StopTypedGrowthPetClock(entt::entity owner)

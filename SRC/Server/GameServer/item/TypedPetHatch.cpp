@@ -2,6 +2,7 @@
 #include "TypedPetHatch.hpp"
 #include "ItemCatalogRuntime.hpp"
 #include "ItemStore.hpp"
+#include "TypedCompanions.hpp"
 #include "TypedDrops.hpp"
 #include "TypedInventorySync.hpp"
 #include "TypedRecovery.hpp"
@@ -29,11 +30,35 @@ namespace
 {
 namespace item = auriga::item;
 namespace store = item::runtime;
-enum class Action : std::uint8_t { Preview = 1, Confirm, Close, Inspect };
+enum class Action : std::uint8_t { Preview = 1, Confirm, Close, Inspect, FoodList, FeedPreview, FeedConfirm };
 enum class Status : std::uint8_t
 {
     Closed, Ready, Pending, Hatched, Invalid, Denied, Busy, Stale, Failed,
-    InsufficientGold, NoRoom, InvalidName, Details
+    InsufficientGold, NoRoom, InvalidName, Details, FoodList, FeedReady, Fed, NoEffect
+};
+
+struct FeedingView
+{
+    std::uint64_t food = 0;
+    std::uint32_t units = 0;
+    item::PetFoodKind kind{};
+    std::uint64_t after = 0;
+    std::vector<std::uint64_t> options;
+};
+
+struct PetFeedSession
+{
+    item::PersistentItem food;
+    std::uint64_t seal = 0;
+    item::ItemCatalogDigest catalogHash;
+    item::PetFeedingService service{};
+    item::GrowthPetProgress progress;
+    std::uint64_t capacity = 0;
+    bool revived = false;
+    FeedingView view;
+    std::uint64_t token = 0;
+    std::uint32_t opened = 0;
+    Status status = Status::FeedReady;
 };
 
 struct PetHatchSession
@@ -116,7 +141,8 @@ const item::PetHatchProfile* HatchProfile(const item::ItemCatalog& catalog, item
 }
 
 void Reply(entt::entity entity, Status status, std::uint64_t id, std::uint64_t token = 0,
-    std::uint64_t cost = 0, std::optional<item::ItemKey> target = {}, const item::PersistentItem* seal = nullptr)
+    std::uint64_t cost = 0, std::optional<item::ItemKey> target = {}, const item::PersistentItem* seal = nullptr,
+    const FeedingView* feeding = nullptr)
 {
     if (!InGame(entity)) return;
     const auto* typed = g_registry.try_get<ecs::TypedItems>(entity);
@@ -129,7 +155,7 @@ void Reply(entt::entity entity, Status status, std::uint64_t id, std::uint64_t t
     PacketWriter packet;
     packet.Put<std::uint8_t>(HEADER_GC_TYPED_PET_HATCH);
     packet.Put<std::uint32_t>(0);
-    packet.Put<std::uint8_t>(1);
+    packet.Put<std::uint8_t>(feeding ? 2 : 1);
     packet.Put<std::uint8_t>(static_cast<std::uint8_t>(status));
     packet.Put(id);
     packet.Put(token);
@@ -149,10 +175,23 @@ void Reply(entt::entity entity, Status status, std::uint64_t id, std::uint64_t t
         packet.Put(pet->progress.stage);
         packet.Put<std::uint8_t>(static_cast<std::uint8_t>(pet->life.clock));
         packet.Put(pet->life.capacityMs);
-        packet.Put(pet->life.remainingMs);
+        const bool projectTime = status == Status::Details || status == Status::FoodList || status == Status::FeedReady;
+        const auto elapsed = projectTime && pet->life.clock == item::CompanionClock::ActiveTime
+            ? TypedGrowthPetElapsed(entity,seal->id.Value()) : 0;
+        packet.Put(pet->life.remainingMs - (std::min)(pet->life.remainingMs,elapsed));
         packet.Put(pet->traits.maximumHpPercentTenths);
         packet.Put(pet->traits.monsterDamagePercentTenths);
         packet.Put(pet->traits.pveNormalDamagePercentTenths);
+    }
+    if (feeding)
+    {
+        packet.Put(feeding->food);
+        packet.Put(feeding->units);
+        packet.Put(static_cast<std::uint8_t>(feeding->kind));
+        packet.Put(feeding->after);
+        packet.Put(static_cast<std::uint16_t>(feeding->options.size()));
+        for (const auto food : feeding->options)
+            packet.Put(food);
     }
     const auto length = static_cast<std::uint32_t>(packet.bytes.size());
     for (unsigned i = 0; i < 4; ++i)
@@ -189,6 +228,7 @@ Status Refusal(item::PetCareError error)
     case item::PetCareError::Forbidden: return Status::Denied;
     case item::PetCareError::InvalidName: return Status::InvalidName;
     case item::PetCareError::InsufficientGold: return Status::InsufficientGold;
+    case item::PetCareError::NoEffect: return Status::NoEffect;
     default: return Status::Invalid;
     }
 }
@@ -358,6 +398,186 @@ void Confirm(entt::entity entity, const TPacketCGTypedPetHatch& packet, PetHatch
         ReplySession(entity, *active, active->status);
     }
 }
+
+void FeedReply(entt::entity entity, Status status, std::uint64_t seal, std::uint64_t token = 0,
+    const FeedingView& view = {}, const item::PersistentItem* pet = nullptr)
+{
+    Reply(entity,status,seal,token,0,pet ? std::optional{pet->key} : std::nullopt,pet,&view);
+}
+
+void ReplyFeedSession(entt::entity entity, const PetFeedSession& session, const item::PersistentItem* seal)
+{
+    const bool details = session.status == Status::FeedReady || session.status == Status::Fed;
+    if (details && (!seal || !seal->growthPet))
+        FeedReply(entity,Status::Failed,session.seal,session.token);
+    else if (details)
+        FeedReply(entity,session.status,session.seal,session.token,session.view,seal);
+    else
+        FeedReply(entity,session.status,session.seal,session.token);
+}
+
+bool HandleFeeding(entt::entity entity, Action action, const TPacketCGTypedPetHatch& packet,
+    const item::ItemCatalog& catalog)
+{
+    using Service = item::PetFeedingService;
+    auto* session = g_registry.try_get<PetFeedSession>(entity);
+    const bool confirm = action == Action::FeedConfirm;
+    const bool matching = confirm && session && session->token == packet.token && session->seal == packet.itemId;
+    const auto& state = g_registry.get<ecs::TypedItems>(entity).state;
+    const auto* seal = InBag(g_registry.get<ecs::TypedItems>(entity),packet.itemId);
+    if (matching && session->status != Status::FeedReady)
+    {
+        ReplyFeedSession(entity,*session,seal);
+        return true;
+    }
+    if (g_registry.all_of<ecs::TypedItemBusy>(entity))
+    {
+        FeedReply(entity,Status::Busy,packet.itemId,confirm ? packet.token : 0);
+        return true;
+    }
+    if (confirm && !matching)
+    {
+        FeedReply(entity,Status::Stale,packet.itemId,packet.token);
+        return true;
+    }
+    if (!confirm)
+        g_registry.remove<PetFeedSession>(entity);
+    if (!seal || !seal->growthPet || !Admitted(entity))
+    {
+        FeedReply(entity,Status::Denied,packet.itemId,confirm ? packet.token : 0);
+        return true;
+    }
+
+    const auto live = RefreshTypedCompanion(entity);
+    const auto service = live == packet.itemId ? Service::Cube : Service::Direct;
+    if ((service == Service::Cube) != item::RecallRequested(*seal) || seal->growthPet->carrierInstanceId)
+    {
+        FeedReply(entity,Status::Denied,packet.itemId,confirm ? packet.token : 0);
+        return true;
+    }
+    const auto& typed = g_registry.get<ecs::TypedItems>(entity);
+    if (action == Action::FoodList)
+    {
+        FeedingView list;
+        for (const auto& food : state.items)
+        {
+            if (food.destroyed || !food.placement || food.placement->kind != item::ItemStorageKind::Inventory ||
+                food.owner != state.fence.owner || (food.boundTo && food.boundTo != food.owner) ||
+                (food.automatic && food.automatic->active) || (food.toggle && food.toggle->active))
+                continue;
+            const auto* rule = catalog.FindPetFeedRule(food.key,service);
+            if (rule && !catalog.Find(food.key)->base.retired &&
+                (rule->consumption == item::PetFoodConsumption::WholeStack || food.count >= rule->units))
+                list.options.push_back(food.id.Value());
+        }
+        FeedReply(entity,Status::FoodList,packet.itemId,0,list,seal);
+        return true;
+    }
+
+    const auto* food = InBag(typed,confirm ? session->food.id.Value() : packet.token);
+    if (confirm && (!food || *food != session->food || service != session->service ||
+        session->catalogHash != catalog.ContentHash() || get_dword_time() - session->opened >= 120000u ||
+        seal->growthPet->progress != session->progress || seal->growthPet->life.capacityMs != session->capacity))
+    {
+        session->status = Status::Stale;
+        ReplyFeedSession(entity,*session,nullptr);
+        return true;
+    }
+    const auto* rule = food ? catalog.FindPetFeedRule(food->key,service) : nullptr;
+    if (!rule)
+    {
+        FeedReply(entity,Status::Invalid,packet.itemId,confirm ? packet.token : 0);
+        return true;
+    }
+    const auto fence = state.fence;
+    const auto pid = ecs::PlayerRuntime::GetPlayerID(entity);
+    const auto login = g_registry.get<ecs::TypedItemLogin>(entity).token;
+    item::PetCareContext context{{},pid,fence.sessionGeneration,1,static_cast<std::uint16_t>(ecs::PointSystem::GetLevel(entity)),
+        static_cast<std::uint8_t>(ecs::PlayerRuntime::GetJob(entity)+1),
+        static_cast<std::uint8_t>(ecs::PlayerRuntime::GetSex(entity)+1),true,true,true,false,false,
+        ecs::PlayerRuntime::GetPosition(entity)==POS_FIGHTING};
+    if (RAND_bytes(context.operationId.data(),static_cast<int>(context.operationId.size())) != 1)
+    {
+        FeedReply(entity,Status::Failed,packet.itemId,confirm ? packet.token : 0);
+        return true;
+    }
+    auto feed = item::MakePetFeedCommit(catalog,fence,state.storages,state.items,context,
+        food->id,seal->id,service,TypedGrowthPetElapsed(entity,packet.itemId));
+    if (!feed)
+    {
+        FeedReply(entity,std::visit([](auto error) { return Refusal(error); },feed.error()),
+            packet.itemId,confirm ? packet.token : 0);
+        return true;
+    }
+    const auto& plan = feed->plan;
+    const FeedingView view{food->id.Value(),plan.consumeFoodUnits,rule->kind,
+        plan.progress ? plan.progress->after.itemExperience : plan.after.remainingMs};
+    if (!confirm)
+    {
+        PetFeedSession quote{*food,packet.itemId,catalog.ContentHash(),service,seal->growthPet->progress,
+            seal->growthPet->life.capacityMs,plan.revived,view};
+        if (RAND_bytes(reinterpret_cast<unsigned char*>(&quote.token),sizeof(quote.token)) != 1 || !quote.token)
+            FeedReply(entity,Status::Failed,packet.itemId);
+        else
+        {
+            quote.opened = get_dword_time();
+            const auto& opened = g_registry.emplace<PetFeedSession>(entity,std::move(quote));
+            ReplyFeedSession(entity,opened,seal);
+        }
+        return true;
+    }
+    if (view.units != session->view.units || plan.revived != session->revived)
+    {
+        session->status = Status::Stale;
+        ReplyFeedSession(entity,*session,nullptr);
+        return true;
+    }
+
+    const auto nonce = session->token;
+    auto permit = ecs::resource_admission::Enter({entity},auriga::resource_admission::Operation::ItemUse);
+    if (CurrentLogin(pid,login) != entity)
+        return true;
+    session = g_registry.try_get<PetFeedSession>(entity);
+    if (!session || session->token != nonce)
+        return true;
+    if (!permit || !permit->Current() || !Admitted(entity) || g_registry.all_of<ecs::TypedItemBusy>(entity) ||
+        g_registry.get<ecs::TypedItems>(entity).state.fence != fence)
+    {
+        FeedReply(entity,Status::Busy,packet.itemId,nonce);
+        return true;
+    }
+    auto held = std::make_shared<auriga::resource_admission::Permit>(std::move(*permit));
+    session->view = view;
+    session->status = Status::Pending;
+    g_registry.emplace_or_replace<ecs::TypedItemBusy>(entity);
+    const bool queued = store::RequestCommit(fence.owner,fence.sessionGeneration,std::move(feed->commit),
+        [pid,login,nonce,held](store::CommitOutcome outcome) {
+            const auto entity = CurrentLogin(pid,login);
+            if (entity == entt::null) return;
+            if (!outcome.state)
+            {
+                LOG_ERROR("Typed pet feed owner reload failed pid {}",pid);
+                if (auto* desc = ecs::PlayerRuntime::GetDesc(entity)) desc->SetPhase(PHASE_CLOSE);
+                return;
+            }
+            g_registry.emplace_or_replace<ecs::TypedItems>(entity,std::move(*outcome.state));
+            g_registry.remove<ecs::TypedItemBusy>(entity);
+            SendTypedInventory(entity);
+            if (auto* session = g_registry.try_get<PetFeedSession>(entity); session && session->token == nonce)
+            {
+                session->status = outcome.write ? Status::Fed : Status::Failed;
+                ReplyFeedSession(entity,*session,InBag(g_registry.get<ecs::TypedItems>(entity),session->seal));
+            }
+            PumpTypedItemGrants(entity);
+        });
+    if (!queued)
+    {
+        g_registry.remove<ecs::TypedItemBusy>(entity);
+        session->status = Status::Failed;
+    }
+    ReplyFeedSession(entity,*session,nullptr);
+    return true;
+}
 }
 
 bool HandleTypedPetHatchPacket(entt::entity entity, const char* data)
@@ -369,11 +589,12 @@ bool HandleTypedPetHatchPacket(entt::entity entity, const char* data)
     TPacketCGTypedPetHatch packet{};
     std::memcpy(&packet, data, sizeof(packet));
     const auto action = static_cast<Action>(packet.action);
-    if (!packet.itemId || action < Action::Preview || action > Action::Inspect
+    if (!packet.itemId || action < Action::Preview || action > Action::FeedConfirm
         || packet.nameLength > sizeof(packet.name)
         || (action != Action::Confirm && packet.nameLength)
         || (action == Action::Confirm && !packet.nameLength)
-        || ((action == Action::Preview || action == Action::Inspect) && packet.token)
+        || ((action == Action::Preview || action == Action::Inspect || action == Action::FoodList) && packet.token)
+        || ((action == Action::FeedPreview || action == Action::FeedConfirm) && !packet.token)
         || std::any_of(packet.name + packet.nameLength, std::end(packet.name), [](char c) { return c != 0; }))
     {
         Reply(entity, Status::Invalid, packet.itemId, packet.token);
@@ -382,6 +603,8 @@ bool HandleTypedPetHatchPacket(entt::entity entity, const char* data)
 
     const auto catalog = store::CurrentCatalog();
     if (!catalog) return true;
+    if (action >= Action::FoodList)
+        return HandleFeeding(entity,action,packet,*catalog);
     auto* session = g_registry.try_get<PetHatchSession>(entity);
     if (session && session->status == Status::Pending && action != Action::Confirm)
     {

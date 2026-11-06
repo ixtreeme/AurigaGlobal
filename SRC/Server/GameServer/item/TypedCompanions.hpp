@@ -4,6 +4,7 @@
 #include <entt/entity/entity.hpp>
 
 std::uint64_t RefreshTypedCompanion(entt::entity owner);
+std::uint64_t TypedGrowthPetElapsed(entt::entity owner,std::uint64_t seal);
 void TickTypedCompanions();
 void StopTypedGrowthPetClock(entt::entity owner);
 void FinishTypedGrowthPetClocks();

@@ -184,7 +184,7 @@ void GrowthPetBirthSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,I
     const ItemWallet wallet{owner,WalletCurrency::Gold,1,150000};
     Check(p::ProvisionOwner(admin,c,owner,std::span(&bag,1),std::span(&wallet,1)).has_value(),"hatch owner provisioned");
     auto state=p::LoadCurrentItemOwner(writer,c,owner).value();
-    const auto ids=p::ReserveItemInstanceIds(writer,c,3).value();
+    const auto ids=p::ReserveItemInstanceIds(writer,c,5).value();
     const auto eggId=ItemInstanceId::Create(ids.first).value();
     const auto sealId=ItemInstanceId::Create(ids.first+1).value();
     const auto grant=MakeGrantCommit(c,{30,1},state.fence,state.storages,state.items,{eggKey,0,2},std::array{eggId});
@@ -292,14 +292,65 @@ void GrowthPetBirthSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,I
         saved.growthPet->life.remainingMs==hatched.growthPet->life.remainingMs-750 && saved.boundTo==hatched.boundTo,
         "recall preserves bound seal and exact remaining life");
 
+    const auto foodId=ItemInstanceId::Create(ids.first+3).value();
+    const auto foodGrant=MakeGrantCommit(c,{31,1},state.fence,state.storages,state.items,{f::Leather().key,0,2},std::array{foodId});
+    Check(foodGrant && p::CommitItems(writer,c,*foodGrant).has_value(),"direct feeding fixture");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto feed=[&](std::uint8_t serial,ItemInstanceId food,PetFeedingService service,std::uint64_t time=0) {
+        auto admission=context;
+        admission.operationId={31,serial};
+        admission.sessionGeneration=state.fence.sessionGeneration;
+        return MakePetFeedCommit(c,state.fence,state.storages,state.items,admission,food,sealId,service,time);
+    };
+    const auto consumed=[&](ItemInstanceId id) {
+        return std::ranges::none_of(state.items,[&](const auto& item){return item.id==id;});
+    };
+    const auto refill=feed(2,foodId,PetFeedingService::Direct);
+    Check(refill && refill->plan.restoredMs==750,"direct feed refills the exact remaining deficit");
+    auto forgedFeed=refill->commit;
+    forgedFeed.items.back().after.growthPet->traits.maximumHpPercentTenths++;
+    Check(!ValidateItemCommit(c,forgedFeed),"food cannot rewrite birth traits");
+    Check(p::CommitItems(writer,c,refill->commit).has_value() && p::CommitItems(writer,c,refill->commit)->replay,
+        "atomic food debit and refill under receipt replay");
+    Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"fed pet relog");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto refilled=Find(state,sealId.Value());
+    Check(refilled.growthPet->life.remainingMs==refilled.growthPet->life.capacityMs &&
+        refilled.growthPet->traits==hatched.growthPet->traits && Find(state,foodId.Value()).count==1 &&
+        !feed(3,foodId,PetFeedingService::Direct),"full life persists and cannot consume food twice");
+
     const auto again=growthWrite(9,CompanionAction::Summon);
     Check(again && p::CommitItems(writer,c,*again).has_value(),"growth pet can be summoned again");
     state=p::LoadCurrentItemOwner(writer,c,owner).value();
-    const auto expiry=growthWrite(10,std::nullopt,saved.growthPet->life.remainingMs+100);
+    const auto cube=feed(4,eggId,PetFeedingService::Cube,160000);
+    Check(cube && cube->plan.restoredMs==150000 && PetFeedClockCharge(cube->commit,sealId.Value())==160000 &&
+        p::CommitItems(writer,c,cube->commit).has_value(),"cube feeding settles active time before applying food");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    Check(RecallRequested(Find(state,sealId.Value())) && Find(state,sealId.Value()).growthPet->life.remainingMs==290000 &&
+        consumed(eggId),"cube food is consumed while the same pet remains active");
+    const auto gearId=ItemInstanceId::Create(ids.first+4).value();
+    const auto gear=MakeGrantCommit(c,{31,6},state.fence,state.storages,state.items,{f::Sword().key,0,1},std::array{gearId});
+    Check(gear && p::CommitItems(writer,c,*gear).has_value(),"equipment feed fixture");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto experience=feed(7,gearId,PetFeedingService::Cube,2000);
+    Check(experience && experience->plan.progress && p::CommitItems(writer,c,experience->commit).has_value(),
+        "equipment feed writes progression and active time atomically");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto experienced=Find(state,sealId.Value());
+    Check(experienced.growthPet->progress.itemExperience==5 && experienced.growthPet->life.remainingMs==288000 &&
+        consumed(gearId),"equipment feeding adds EXP and never grants life");
+    const auto expiry=growthWrite(10,std::nullopt,300000);
     Check(expiry && p::CommitItems(writer,c,*expiry).has_value(),"settle beyond remaining time");
     state=p::LoadCurrentItemOwner(writer,c,owner).value();
     Check(!RecallRequested(Find(state,sealId.Value())) && !Find(state,sealId.Value()).growthPet->life.remainingMs &&
         !growthWrite(11,CompanionAction::Summon),"expiry clears intent and rejects another summon");
+    const auto revive=feed(5,foodId,PetFeedingService::Direct);
+    Check(revive && revive->plan.revived && p::CommitItems(writer,c,revive->commit).has_value(),"direct food revives expired pet");
+    Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"revived pet relog");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    Check(Find(state,sealId.Value()).growthPet->life.remainingMs==150000 &&
+        !RecallRequested(Find(state,sealId.Value())) && consumed(foodId),
+        "revival persists half capacity without summoning or retaining the food");
 }
 
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
@@ -330,6 +381,9 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         {{1,100,10},{2,200,20},{3,0,0}},{{0,3,3}}});
     source.companions.push_back({growthSeal,CompanionKind::GrowthPet,3,{},CompanionClock::ActiveTime,300000,false,1});
     source.petHatchProfiles.push_back({1,"hatch.sql_birth",growthSeal,100000,{30,40,5},{10,20,5},{10,20,5}});
+    source.petFeedRules={{hatchEgg,PetFeedingService::Cube,PetFoodKind::LifetimeFraction,PetFoodConsumption::WholeStack,0,5000,0,0},
+        {f::Leather().key,PetFeedingService::Direct,PetFoodKind::RefillOrRevive,PetFoodConsumption::ExactUnits,1,0,5000,0},
+        {f::Sword().key,PetFeedingService::Cube,PetFoodKind::EquipmentExperience,PetFoodConsumption::WholeStack,0,0,0,20}};
     source.containers.push_back({hatchEgg,ContainerKind::PetEgg,{},0,1});
     ItemBaseRow growthBase{growthSeal};
     growthBase.contentCode="companion.sql_growth_seal";growthBase.nameKey="item.sql_growth.name";

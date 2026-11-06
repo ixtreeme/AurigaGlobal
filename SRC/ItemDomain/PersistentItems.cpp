@@ -19,6 +19,7 @@ using E=ItemPersistenceError;
 constexpr std::uint16_t CompanionSealOutcome=0x2601;
 constexpr std::uint16_t PetHatchOutcome=0x2602;
 constexpr std::uint16_t GrowthPetCompanionOutcome=0x2603;
+constexpr std::uint16_t PetFeedOutcome=0x2604;
 bool PermanentSeal(const ItemCompanionRow& row)
 {
     return (row.kind==CompanionKind::Pet || row.kind==CompanionKind::Mount) && row.clock==CompanionClock::Permanent;
@@ -101,6 +102,95 @@ bool AccessoryTimeOnly(const ItemChange& change)
     expected.revision=change.after.revision;
     expected.accessory=after;
     return expected==change.after;
+}
+
+struct PetFeedReceipt
+{
+    std::uint64_t food=0,seal=0,elapsedMs=0;
+    PetFeedingService service{};
+    std::uint16_t level=0;
+    std::uint8_t characterClass=0,sex=0;
+    bool inCombat=false;
+};
+
+std::optional<PetFeedReceipt> ReadPetFeedReceipt(const ItemCommit& commit)
+{
+    const auto& bytes=commit.result;
+    if(commit.outcomeCode!=PetFeedOutcome || bytes.size()!=34 ||
+        bytes[0]!='P' || bytes[1]!='F' || bytes[2]!='D' || bytes[3]!=1 || bytes[33]>1)
+        return {};
+    const auto read=[&](std::size_t at) {
+        std::uint64_t value=0;
+        for(unsigned i=0;i<8;++i)value|=std::uint64_t(bytes[at+i])<<(8*i);
+        return value;
+    };
+    return PetFeedReceipt{read(4),read(12),read(20),static_cast<PetFeedingService>(bytes[28]),
+        static_cast<std::uint16_t>(bytes[29] | (bytes[30]<<8)),bytes[31],bytes[32],
+        bytes[33]!=0};
+}
+
+std::expected<PetFeedPlan,PetCareError> PersistentFeedPlan(const ItemCatalog& c,const PetCareContext& context,
+    const PersistentItem& food,const PersistentItem& seal,PetFeedingService service,std::uint64_t elapsed)
+{
+    const auto inBag=[&](const PersistentItem& item) {
+        return !item.destroyed && item.placement && item.placement->kind==ItemStorageKind::Inventory &&
+            item.owner==ItemOwner{ItemOwnerKind::Character,context.actorId} && (!item.boundTo || item.boundTo==item.owner);
+    };
+    if(!inBag(food) || !inBag(seal) || !seal.growthPet || food.growthPet || food.companion ||
+        (food.automatic && food.automatic->active) || (food.toggle && food.toggle->active))
+        return std::unexpected(PetCareError::InvalidSnapshot);
+    const auto& pet=*seal.growthPet;
+    const bool following=service==PetFeedingService::Cube;
+    if(pet.carrierInstanceId || following!=pet.recallRequested ||
+        (elapsed && (!pet.everSummoned || pet.life.clock!=CompanionClock::ActiveTime)))
+        return std::unexpected(PetCareError::WrongTargetState);
+    const auto snapshot=[](const PersistentItem& item,bool active) {
+        return PetCareItemSnapshot{item.key,item.id.Value(),item.revision,item.owner.id,item.count,item.refinementLevel,
+            false,false,false,item.growthPet.has_value(),active,active ? item.id.Value() : 0};
+    };
+    const auto life=PlanPetLife(c,{context,snapshot(seal,elapsed!=0),pet.life,seal.revision,elapsed});
+    if(!life)return std::unexpected(life.error());
+    return PlanPetFeed(c,{context,snapshot(food,false),snapshot(seal,following),life->after,seal.revision,service,pet.progress});
+}
+
+PersistentItem FedPet(const PersistentItem& seal,const PetFeedPlan& plan)
+{
+    auto after=seal;
+    ++after.revision;
+    after.growthPet->life=plan.after;
+    if(plan.progress)after.growthPet->progress=plan.progress->after;
+    return after;
+}
+
+bool ValidPetFeedWrite(const ItemCatalog& c,const ItemCommit& commit)
+{
+    const auto receipt=ReadPetFeedReceipt(commit);
+    if(!receipt || receipt->food==receipt->seal || commit.kind!=ItemOperationKind::Service ||
+        commit.owners.size()!=1 || !commit.wallets.empty() || commit.ground || commit.recovery || commit.learning)
+        return false;
+    const ItemChange* food=nullptr;
+    const ItemChange* seal=nullptr;
+    for(const auto& change:commit.items)
+    {
+        if(change.after.id.Value()==receipt->food)food=&change;
+        else if(change.after.id.Value()==receipt->seal)seal=&change;
+        else if(!AccessoryTimeOnly(change))return false;
+    }
+    if(!food || !food->before || !seal || !seal->before)return false;
+    const auto& owner=commit.owners.front();
+    const PetCareContext context{commit.operationId,owner.owner.id,owner.sessionGeneration,1,
+        receipt->level,receipt->characterClass,receipt->sex,true,true,true,false,false,receipt->inCombat};
+    const auto plan=PersistentFeedPlan(c,context,*food->before,*seal->before,receipt->service,receipt->elapsedMs);
+    if(!plan || FedPet(*seal->before,*plan)!=seal->after)return false;
+    auto remaining=*food->before;
+    ++remaining.revision;
+    remaining.count-=plan->consumeFoodUnits;
+    if(!remaining.count)
+    {
+        remaining.destroyed=true;
+        remaining.placement.reset();
+    }
+    return remaining==food->after;
 }
 
 bool ValidGrowthPetCompanionWrite(const ItemCatalog& c,const ItemCommit& r)
@@ -381,7 +471,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
         if(change.before)
         {
             const auto& b=*change.before;
-            if((b.growthPet || p.growthPet) && r.outcomeCode!=GrowthPetCompanionOutcome)
+            if((b.growthPet || p.growthPet) && r.outcomeCode!=GrowthPetCompanionOutcome && r.outcomeCode!=PetFeedOutcome)
             {
                 auto expected=b;
                 expected.revision=p.revision;
@@ -438,6 +528,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
     if(usedOwners!=owners || usedLayouts.size()!=layouts.size())return std::unexpected(E::InvalidFence);
     if(r.outcomeCode==PetHatchOutcome && !ValidHatchWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==GrowthPetCompanionOutcome && !ValidGrowthPetCompanionWrite(c,r))return std::unexpected(E::InvalidChange);
+    if(r.outcomeCode==PetFeedOutcome && !ValidPetFeedWrite(c,r))return std::unexpected(E::InvalidChange);
     return {};
 }
 std::expected<ItemCatalogDigest,E> ItemCommitDigest(const ItemCatalog& c,const ItemCommit& r)
@@ -831,6 +922,48 @@ std::expected<ItemCommit,E> MakeGrowthPetCompanionCommit(const ItemCatalog& c,It
     commit.result=std::move(result.bytes);
     if(auto valid=ValidateItemCommit(c,commit);!valid)return std::unexpected(valid.error());
     return commit;
+}
+
+std::optional<std::uint64_t> PetFeedClockCharge(const ItemCommit& commit,std::uint64_t sealId)
+{
+    const auto receipt=ReadPetFeedReceipt(commit);
+    if(!receipt || receipt->seal!=sealId)return {};
+    return receipt->elapsedMs;
+}
+
+std::expected<PetFeedWrite,PetFeedCommitError> MakePetFeedCommit(const ItemCatalog& c,ItemOwnerFence owner,
+    std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> inventory,const PetCareContext& context,
+    ItemInstanceId foodId,ItemInstanceId sealId,PetFeedingService service,std::uint64_t elapsedMs)
+{
+    if(owner.owner!=ItemOwner{ItemOwnerKind::Character,context.actorId} || owner.sessionGeneration!=context.sessionGeneration)
+        return std::unexpected(PetFeedCommitError{E::InvalidFence});
+    const auto* food=Placed(inventory,owner,foodId);
+    const auto* seal=Placed(inventory,owner,sealId);
+    if(!food || !seal)return std::unexpected(PetFeedCommitError{E::MissingItem});
+    const auto plan=PersistentFeedPlan(c,context,*food,*seal,service,elapsedMs);
+    if(!plan)return std::unexpected(PetFeedCommitError{plan.error()});
+    const auto layout=std::ranges::find(storages,ItemStorage{owner.owner,seal->placement->kind,seal->placement->storageId},
+        &ItemStorageLayout::storage);
+    if(layout==storages.end())return std::unexpected(PetFeedCommitError{E::InvalidStorage});
+    auto commit=MakeConsumeCommit(c,context.operationId,owner,storages,inventory,foodId,plan->consumeFoodUnits);
+    if(!commit)return std::unexpected(PetFeedCommitError{commit.error()});
+    if(std::ranges::find(commit->storages,*layout)==commit->storages.end())commit->storages.push_back(*layout);
+    commit->items.push_back({*seal,FedPet(*seal,*plan)});
+    commit->kind=ItemOperationKind::Service;
+    commit->outcomeCode=PetFeedOutcome;
+    Writer writer;
+    writer.bytes={'P','F','D',1};
+    writer.Put(foodId.Value(),8);
+    writer.Put(sealId.Value(),8);
+    writer.Put(elapsedMs,8);
+    writer.Put(static_cast<std::uint8_t>(service),1);
+    writer.Put(context.characterLevel,2);
+    writer.Put(context.characterClass,1);
+    writer.Put(context.sex,1);
+    writer.Put(context.inCombat,1);
+    commit->result=std::move(writer.bytes);
+    if(auto valid=ValidateItemCommit(c,*commit);!valid)return std::unexpected(PetFeedCommitError{valid.error()});
+    return PetFeedWrite{*plan,std::move(*commit)};
 }
 
 std::expected<ItemCommit,PetHatchCommitError> MakePetHatchCommit(const ItemCatalog& c,ItemOwnerFence owner,
