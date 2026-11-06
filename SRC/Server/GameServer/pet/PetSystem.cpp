@@ -190,7 +190,7 @@ bool UpdateFollowAI(entt::entity owner, PetRecord& actor)
 bool UpdateActor(entt::entity owner, PetRecord& actor)
 {
     // Preserve pets across owner death; only follower death ends the summon.
-    if (!IsOwnedSummonItem(owner, actor.summonItem) || !PetSystem::IsSummoned(actor)
+    if ((!actor.typedSeal && !IsOwnedSummonItem(owner, actor.summonItem)) || !PetSystem::IsSummoned(actor)
         || CombatSystem::IsDead(actor.character))
     {
         PetSystem::Unsummon(owner, actor.vnum);
@@ -220,6 +220,7 @@ void TeardownActor(entt::entity owner, PetRecord& actor, bool keepRecord)
     const bool hadSummon = character != entt::null || item != entt::null;
     actor.character = entt::null;
     actor.summonItem = entt::null;
+    const bool typed = std::exchange(actor.typedSeal, 0u) != 0;
     // Clear the owner-side snapshot only when it still names this summon item;
     // a callback may already have installed a replacement.
     if (const auto* state = g_registry.try_get<ecs::PetComponent>(owner);
@@ -233,10 +234,19 @@ void TeardownActor(entt::entity owner, PetRecord& actor, bool keepRecord)
     ClearBuff(owner, actor);
     if (!keepRecord)
         actor.vnum = 0;
-    if (hadSummon && ecs::PlayerRuntime::IsValid(owner))
+    if (hadSummon && !typed && ecs::PlayerRuntime::IsValid(owner))
         ecs::PointSystem::Compute(owner);
     if (ecs::PlayerRuntime::IsValid(character))
         ecs::PlayerRuntime::DestroyCharacter(character);
+}
+
+void EnsureFollowEvent(entt::entity owner, PetRuntime& runtime)
+{
+    if (runtime.updateEvent)
+        return;
+    auto* info = AllocEventInfo<petsystem_event_info>();
+    info->owner = owner;
+    runtime.updateEvent = event_create(petsystem_update_event, info, PASSES_PER_SEC(1) / 4);
 }
 } // namespace
 
@@ -295,7 +305,7 @@ ecs::PetActorState* FindActorByVID(entt::entity owner, uint32_t vid)
 bool IsPetSummoned(entt::entity owner, uint32_t vnum)
 {
     const auto* actor = FindActor(owner, vnum);
-    return actor && IsSummoned(*actor);
+    return actor && !actor->typedSeal && IsSummoned(*actor);
 }
 
 size_t CountSummoned(entt::entity owner)
@@ -312,7 +322,7 @@ size_t CountSummoned(entt::entity owner)
 ecs::PetActorState* Summon(entt::entity owner, uint32_t vnum, entt::entity item,
     const char* petName, bool spawnFar, uint32_t options)
 {
-    if (!IsOwnedSummonItem(owner, item) || !ItemSystem::GetItemProto(item))
+    if (!IsOwnedSummonItem(owner, item) || !ItemSystem::GetItemProto(item) || LiveTypedSeal(owner))
         return nullptr;
     auto* runtime = Runtime(owner);
     if (!runtime || runtime->destroying)
@@ -383,14 +393,74 @@ ecs::PetActorState* Summon(entt::entity owner, uint32_t vnum, entt::entity item,
     AffectSystem::AddAffect(owner, AFFECT_RECALL1, APPLY_NONE, 0,
         ItemSystem::GetItemID(item), INFINITE_AFFECT_DURATION, 0, true, false);
 #endif
-    if (!runtime->updateEvent && runtime->updateEvent == nullptr)
-    {
-        auto* info = AllocEventInfo<petsystem_event_info>();
-        info->owner = owner;
-        runtime->updateEvent = event_create(petsystem_update_event, info, PASSES_PER_SEC(1) / 4);
-    }
+    EnsureFollowEvent(owner, *runtime);
     (void)petName;
     return actor;
+}
+
+bool SummonTyped(entt::entity owner, uint32_t vnum, uint64_t seal, bool mount)
+{
+    if (!seal || !vnum || !ecs::PlayerRuntime::IsValid(owner) || CountSummoned(owner))
+        return false;
+    auto* runtime = Runtime(owner);
+    if (!runtime || runtime->destroying)
+        return false;
+    auto* actor = FindLiveRecord(*runtime, vnum);
+    if (!actor) actor = FreeRecordSlot(*runtime);
+    if (!actor)
+    {
+        runtime->actors.emplace_back();
+        actor = &runtime->actors.back();
+    }
+    TeardownActor(owner, *actor, false);
+    const auto map = ecs::PlayerRuntime::GetMapIndex(owner);
+    const auto x = ecs::PlayerRuntime::GetX(owner) + number(-100, 100);
+    const auto y = ecs::PlayerRuntime::GetY(owner) + number(-100, 100);
+    const auto z = ecs::PlayerRuntime::GetZ(owner);
+    const auto rotation = static_cast<int>(ecs::PlayerRuntime::GetRotation(owner) + 180);
+    const auto follower = CHARACTER_MANAGER::instance().SpawnMobEntity(vnum, map, x, y, z, false, rotation, false);
+    if (!g_registry.valid(follower))
+        return false;
+    *actor = {};
+    actor->character = follower;
+    actor->typedSeal = seal;
+    actor->vnum = vnum;
+    actor->options = DefaultPetOptions;
+    auto& flags = g_registry.get_or_emplace<ecs::StatusFlags>(follower);
+    flags.isPet = !mount;
+    flags.isMount = mount;
+    if (mount)
+        g_registry.emplace_or_replace<ecs::MountOwner>(follower, owner);
+    ecs::PlayerRuntime::SetEmpire(follower, ecs::PlayerRuntime::GetEmpire(owner));
+    if (!ecs::MovementSystem::Show(follower, map, x, y, z))
+    {
+        TeardownActor(owner, *actor, false);
+        return false;
+    }
+    EnsureFollowEvent(owner, *runtime);
+    return true;
+}
+
+uint64_t LiveTypedSeal(entt::entity owner)
+{
+    const auto* runtime = g_registry.valid(owner) ? g_registry.try_get<PetRuntime>(owner) : nullptr;
+    if (runtime)
+        for (const auto& actor : runtime->actors)
+            if (actor.typedSeal && IsSummoned(actor))
+                return actor.typedSeal;
+    return 0;
+}
+
+void RecallTyped(entt::entity owner, uint64_t seal)
+{
+    const auto* runtime = g_registry.valid(owner) ? g_registry.try_get<PetRuntime>(owner) : nullptr;
+    if (runtime && seal)
+        for (const auto& actor : runtime->actors)
+            if (actor.typedSeal == seal)
+            {
+                Unsummon(owner, actor.vnum, true);
+                return;
+            }
 }
 
 void Unsummon(entt::entity owner, uint32_t vnum, bool deleteFromList)

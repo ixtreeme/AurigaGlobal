@@ -185,6 +185,7 @@ CPacketInfoCG::CPacketInfoCG()
     Set(HEADER_CG_TYPED_ATTRIBUTES, sizeof(TPacketCGTypedAttributes), "TypedAttributes", true);
     Set(HEADER_CG_TYPED_EFFECTS,sizeof(TPacketCGTypedRecovery),"TypedEffects",true);
     Set(HEADER_CG_TYPED_POLYMORPH, sizeof(TPacketCGTypedRecovery), "TypedPolymorph", true);
+    Set(HEADER_CG_TYPED_COMPANION, sizeof(TPacketCGTypedCompanion), "TypedCompanion", true);
     Set(HEADER_CG_TYPED_FISH, sizeof(TPacketCGTypedRecovery), "TypedFishProcessing", true);
     Set(HEADER_CG_TYPED_BOOKS, sizeof(TPacketCGTypedRecovery), "TypedBooks", true);
     Set(HEADER_CG_TYPED_RECOVERY, sizeof(TPacketCGTypedRecovery), "TypedRecovery", true);

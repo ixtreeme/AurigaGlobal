@@ -1,5 +1,5 @@
 #pragma once
-// GC_TYPED_INVENTORY (225), v1 / charged-instance v2 (IC-034/048).
+// GC_TYPED_INVENTORY (225), versions 1–7. Version 7 adds fixed companion seals.
 //
 // Explicit little-endian byte layout, no struct/ABI dependence. The Unity
 // client decodes the same layout (Metin2GamePacketCodec.ReadTypedInventory);
@@ -16,6 +16,8 @@
 //                   3 x { u8 state, u8 grade, u16 level, key(6) or six zero bytes },
 //                   accessory if flag 2: { u8 capacity, u8 grade, u64 remaining ms, u8 permanent } }
 //                   automatic if flag 4: { u8 supply, u64 charge raw, u8 active, u64 next tick ms }
+//                   companion if flag 128: { u8 kind (1 pet, 2 mount),
+//                                            u8 state (0 dormant, 1 following, 2 pending) }
 #include "PersistentItems.hpp"
 
 #include <cstddef>
@@ -42,10 +44,12 @@ struct TypedInventoryView
 	std::vector<ItemWallet> wallets;
 	std::map<ItemKey, std::string> names;
 	std::vector<PersistentItem> items; // owner, revision and destroyed are not on the wire
+	std::map<ItemInstanceId, std::pair<CompanionKind, std::uint8_t>> companions;
 };
 
 // The owner is the receiving character; it is not repeated on the wire.
 std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInventory(
-	const ItemCatalog&, std::span<const ItemStorageLayout>, std::span<const ItemWallet>, std::span<const PersistentItem>);
+	const ItemCatalog&, std::span<const ItemStorageLayout>, std::span<const ItemWallet>, std::span<const PersistentItem>,
+	std::uint64_t liveCompanion = 0);
 std::expected<TypedInventoryView, TypedInventoryWireError> DecodeTypedInventory(std::span<const std::byte>, ItemOwner receiver);
 } // namespace auriga::item

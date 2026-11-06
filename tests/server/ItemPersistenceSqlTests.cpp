@@ -180,6 +180,23 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
 {
     auto source=attribute_runtime_fixture::Catalog();
     effect_runtime_fixture::Extend(source);book_runtime_fixture::Extend(source);book_aid_fixture::Extend(source);polymorph_runtime_fixture::Extend(source);fish_processing_fixture::Extend(source);tool_runtime_fixture::Extend(source);
+    const auto petSeal=ItemKey::Create(ItemCategory::Companion,1).value();
+    const auto mountSeal=ItemKey::Create(ItemCategory::Companion,2).value();
+    source.companionForms={{1,"companion.sql_pet",32500,"models/sql_pet.model"},{2,"companion.sql_mount",32000,"models/sql_mount.model"}};
+    source.companions={{petSeal,CompanionKind::Pet,1,{},CompanionClock::Permanent},
+        {mountSeal,CompanionKind::Mount,2,2,CompanionClock::Permanent}};
+    source.refinements.push_back({27001,"refine.sql_companion",RefinementKind::Companion,0,{{0,{},{}}}});
+    for(const auto key:{petSeal,mountSeal})
+    {
+        ItemBaseRow base{key};
+        base.contentCode=key==petSeal ? "companion.sql_pet_seal" : "companion.sql_mount_seal";
+        base.nameKey=base.contentCode+".name";
+        base.descriptionKey=base.contentCode+".description";
+        base.iconAsset="icons/companion.png";
+        base.refinementProfile=27001;
+        base.usePolicy=base.tradePolicy=1;
+        source.items.push_back(std::move(base));
+    }
     const auto sqlBox=ItemKey::Create(8,99).value();auto boxBase=*std::ranges::find(source.items,item_catalog_fixture::GiftBox(),&ItemBaseRow::key);
     boxBase.key=sqlBox;boxBase.contentCode="container.sql_opening";source.items.push_back(boxBase);source.containers.push_back({sqlBox,ContainerKind::Locked,3,7});
     source.lootProfiles.push_back({3,"loot.sql_opening",LootPickMode::IndependentChance,{{1,LootRewardKind::Item,f::Leather().key,3,10000,0},{2,LootRewardKind::Gold,{},75,10000,0}}});
@@ -842,6 +859,76 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         auto failed=MakeResourceGatheringCommit(*c,site,{28,3},state.fence,state.storages,state.items,{rod,tool::Actor(),true,false},std::array{ItemInstanceId::Create(ids.first+1).value()},[&](auto){++draws;return 0u;});Check(failed && !failed->success && draws==0,"expired minigame plans no reward or practice RNG");
         Check(p::CommitItems(writer,*c,failed->commit).has_value() && p::CommitItems(writer,*c,failed->commit)->replay,"failed minigame is receipted once");state=p::LoadCurrentItemOwner(writer,*c,owner).value();Check(state.items.size()==1 && Find(state,ids.first).tool==ToolInstanceState{0,0},"timeout consumes bait but never grants loot or practice");
         Check(p::ClaimOwnerSession(writer,*c,owner).has_value(),"water relog claim");Check(p::LoadCurrentItemOwner(writer,*c,owner)->items==state.items,"water failure survives relog exactly");
+    }
+    {
+        const ItemOwner owner{ItemOwnerKind::Character,880103};
+        const auto bag=f::Inventory(owner);
+        Check(p::ProvisionOwner(admin,*c,owner,std::span(&bag,1),{}).has_value(),"companion owner provisioned");
+        auto state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        const auto ids=p::ReserveItemInstanceIds(writer,*c,2).value();
+        const auto petId=ItemInstanceId::Create(ids.first).value(),mountId=ItemInstanceId::Create(ids.first+1).value();
+        auto grant=MakeGrantCommit(*c,{29,1},state.fence,state.storages,state.items,{petSeal,0,1},std::array{petId});
+        Check(grant && grant->items.front().after.companion==CompanionState{} &&
+              p::CommitItems(writer,*c,*grant).has_value(),"permanent pet granted with explicit dormant state");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        grant=MakeGrantCommit(*c,{29,2},state.fence,state.storages,state.items,{mountSeal,0,1},std::array{mountId});
+        Check(grant && p::CommitItems(writer,*c,*grant).has_value(),"permanent mount seal granted");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+
+        const auto requestFor=[&](ItemInstanceId id,CompanionAction action,std::uint8_t serial){
+            const auto& seal=Find(state,id.Value());
+            CompanionRequest request{seal.key};
+            request.state=*seal.companion;
+            request.instanceId=id.Value();
+            request.revision=seal.revision;
+            request.ownerId=request.actorId=owner.id;
+            request.rulesetRevision=1;
+            request.operationId={29,serial};
+            request.count=1;
+            request.characterLevel=50;
+            request.characterClass=request.sex=1;
+            request.action=action;
+            request.admittedByServer=request.ownerAlive=request.worldAllowsCompanion=true;
+            return request;
+        };
+        const auto summon=MakeCompanionCommit(*c,state.fence,state.storages,state.items,
+            requestFor(petId,CompanionAction::Summon,3));
+        Check(summon && p::CommitItems(writer,*c,*summon).has_value() &&
+              p::CommitItems(writer,*c,*summon)->replay,"summon intent and receipt commit once");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        const auto& called=Find(state,petId.Value());
+        Check(called.count==1 && called.companion->recallRequested && called.companion->phase==CompanionPhase::Dormant &&
+              !called.companion->activeFormId,"only recall intent survives, with the intact seal");
+        const auto second=requestFor(mountId,CompanionAction::Summon,4);
+        const auto occupied=MakeCompanionCommit(*c,state.fence,state.storages,state.items,second);
+        Check(!occupied && occupied.error()==E::Conflict,
+            "a pet and mount cannot occupy the same typed follower channel");
+        const std::array staleView{Find(state,mountId.Value())};
+        const auto stalePlan=MakeCompanionCommit(*c,state.fence,state.storages,staleView,second);
+        Check(stalePlan.has_value(),"incomplete snapshot does not expose the occupied channel to the planner");
+        const auto refused=p::CommitItems(writer,*c,*stalePlan);
+        Check(!refused && refused.error()==E::Conflict,
+            "SQL current read rejects a second recall intent even with an incomplete inventory");
+        Check(!MakeConsumeCommit(*c,{29,5},state.fence,state.storages,state.items,petId,1),
+            "an active seal cannot be destroyed by a generic item operation");
+        const auto move=MakeMoveCommit(*c,{29,6},state.fence,state.storages,state.items,petId,{ItemStorageKind::Inventory,1,5});
+        Check(move && p::CommitItems(writer,*c,*move).has_value(),"active seal can move within its owner's bag");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        Check(p::ClaimOwnerSession(writer,*c,owner).has_value(),"companion relog fence claimed");
+        const auto relog=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        Check(relog.items==state.items && relog.fence.sessionGeneration>state.fence.sessionGeneration,
+            "permanent seal identity, position and recall intent survive relog");
+        state=relog;
+        const auto dismiss=MakeCompanionCommit(*c,state.fence,state.storages,state.items,
+            requestFor(petId,CompanionAction::Dismiss,7));
+        Check(dismiss && p::CommitItems(writer,*c,*dismiss).has_value(),"dismiss clears durable intent");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        Check(!Find(state,petId.Value()).companion->recallRequested &&
+              Find(state,petId.Value()).placement->anchor==5,"dismiss preserves owned seal at its new location");
+        Query(admin,"UPDATE player.item_instance SET companion_recall_requested=1 WHERE instance_id=?",{U::UInt(petId.Value())});
+        Check(!p::LoadCurrentItemOwner(writer,*c,owner),"tampered recall intent fails instance hash");
+        Query(admin,"UPDATE player.item_instance SET companion_recall_requested=0 WHERE instance_id=?",{U::UInt(petId.Value())});
+        Check(p::LoadCurrentItemOwner(writer,*c,owner)->items==state.items,"exact recall intent restores valid state");
     }
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);

@@ -426,6 +426,13 @@ typedef struct command_typed_item_use
 	uint64_t	qwItemId;
 } TPacketCGTypedItemUse;
 
+typedef struct command_typed_companion
+{
+    uint8_t bHeader;
+    uint8_t bAction;
+    uint64_t qwItemId;
+} TPacketCGTypedCompanion;
+
 // Typed item system (F4 C6): refine one typed item with one recipe at a smith.
 typedef struct command_typed_item_refine
 {

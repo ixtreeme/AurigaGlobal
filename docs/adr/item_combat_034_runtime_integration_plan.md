@@ -1,11 +1,13 @@
 # ADR IC-034 — F4 szerverbekötés: ütemterv és 1. szelet (katalógus induláskor)
 
 2026-10-29. Fázis: F4 ([IC-012](item_combat_012_item_runtime_first.md)).
-Állapot (2026-11-05): **C1–C24, C25a–b, C25c-1/2 és a C25d kezelő implementált a külön típusos tárgyrendszerben;
+Állapot (2026-11-06): **C1–C24, C25a–b, C25c-1/2 és a C25d kezelő implementált a külön típusos tárgyrendszerben;
 Unity 6.3 és helyi szerver együtt ellenőrizve**. A normál legacy leltár és
 a meglévő karakterek átállítása a felhasználó kérésére még nem történik meg.
 Az aktív ágak a C26a munkában megkapták a TERA pecséteket és a hátasrepülést.
-A társak típusos műveletei továbbra is nyitottak. [IC-058](item_combat_058_tera_companion_port.md)
+A C26b az állandó típusos pet- és hátaspecsétek mentését, idézését és visszahívását kapcsolja be.
+A fejlődő pet, keltetés és típusos felülés továbbra is nyitott.
+[IC-058](item_combat_058_tera_companion_port.md) · [IC-059](item_combat_059_typed_companion_seals.md)
 
 ## Közös szerver–Unity munkamenet (felhasználói döntés, 2026-11-01)
 
@@ -15,9 +17,10 @@ tesztelendő helyben; egy natív/SQL alap önmagában még nem kész játékfunk
 A C7d-1 alapra a C7d-2-ben elkészült a közös szerver–kliens bekötés.
 
 A kliens Unity 6.3-ra állt át (`6000.3.27f1`). Aktív workspace:
-`D:\Auriga-Unity6\SRC\AurigaUnity`, UVCS-ág:
-`/main/codex-mission-engine`. A korábbi `unity-6.3` ág tartalma ide került;
-az összevonás részletei és ellenőrzései a
+`D:\Auriga-Unity6\SRC\AurigaUnity-20261103`, UVCS-ág:
+`/main/unity63-integration-20261103`. A szerver aktív ága `20261103`.
+A korábbi `unity-6.3` ágat először a mission engine ágba vontuk össze.
+Az első összevonás részletei és ellenőrzései a
 [jelentésben](../reports/item_combat/2026-11-01_unity63_branch_consolidation.md).
 
 ## Hátralévő munka (Codex listája, 2026-10-29)

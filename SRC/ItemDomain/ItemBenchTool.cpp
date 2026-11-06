@@ -81,7 +81,7 @@ bool Installed(CAsyncSQL& sql)
 {
     return Rows(sql,"SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN "
         "('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance',"
-        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule')").at(0).at(0)=="13" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power')").at(0).at(0)=="11";
+        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule')").at(0).at(0)=="13" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested')").at(0).at(0)=="12";
 }
 std::shared_ptr<const ItemCatalog> Catalog(CAsyncSQL& sql)
 {
@@ -130,6 +130,7 @@ Json State(const ItemCatalog& c,const p::LoadedItemOwner& o)
             {"toggle",i.toggle ? Json{{"remaining_ms",i.toggle->remainingMs},{"active",i.toggle->active}} : Json(nullptr)},
             {"bound",i.boundTo.has_value()},
             {"accessory",i.accessory ? Json{{"capacity",i.accessory->unlockedCapacity},{"grade",i.accessory->activeGrade},{"remaining_ms",i.accessory->remainingMs},{"permanent",i.accessory->permanent}} : Json(nullptr)}});
+        if(i.companion)items.back()["companion"]={{"recall_requested",i.companion->recallRequested}};
     }
     Json wallets=Json::array();
     for(const auto& w:o.wallets)wallets.push_back({{"currency",static_cast<int>(w.currency)},{"balance",w.balance},{"revision",w.revision}});
@@ -322,8 +323,10 @@ Json Grant(CAsyncSQL& sql,const Json& request)
     {item.polymorph=PolymorphInstanceState{};if(request.contains("polymorph_form"))item.polymorph->boundForm=request.at("polymorph_form").get<std::uint32_t>();if(request.contains("polymorph_grade"))item.polymorph->bookGrade=request.at("polymorph_grade").get<std::uint16_t>();if(request.contains("polymorph_practice"))item.polymorph->practiceRemaining=request.at("polymorph_practice").get<std::uint32_t>();}
     if(std::holds_alternative<ItemToolRow>(entry->category))
     {const auto points=request.value("tool_points",std::uint64_t{}),bait=request.value("tool_bait",std::uint64_t{});Require(points<=UINT32_MAX && bait<=INT32_MAX,"Érvénytelen eszközállapot.");item.tool=ToolInstanceState{static_cast<std::uint32_t>(points),static_cast<std::uint32_t>(bait)};}
-    if(auto valid=ValidatePersistentItem(*c,PersistentItem{item.id,item.key,item.owner,1,item.refinementLevel,item.count,item.boundTo,false,
-        ItemPlacement{ItemStorageKind::Inventory,1,0},item.attributes,item.stones,item.accessory,item.automatic,item.toggle,item.bookSkill,item.polymorph,item.tool});!valid)
+    if(const auto* seal=std::get_if<ItemCompanionRow>(&entry->category);seal && SupportsPersistentItem(*c,*entry))
+        item.companion=CompanionState{};
+    item.placement=ItemPlacement{ItemStorageKind::Inventory,1,0};
+    if(auto valid=ValidatePersistentItem(*c,item);!valid)
         throw Failure(std::string("A tárgy nem adható: ")+PersistenceText(valid.error())+".");
     const auto occupied=Occupied(*c,o);const auto cells=std::uint32_t{Inventory.columns}*Inventory.rows*Inventory.pages;
     std::optional<std::uint32_t> anchor;

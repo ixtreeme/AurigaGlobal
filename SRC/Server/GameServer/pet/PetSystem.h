@@ -33,6 +33,9 @@ size_t CountSummoned(entt::entity owner);
 
 ecs::PetActorState* Summon(entt::entity owner, uint32_t vnum, entt::entity item,
     const char* petName, bool spawnFar, uint32_t options = DefaultPetOptions);
+bool SummonTyped(entt::entity owner, uint32_t vnum, uint64_t seal, bool mount);
+uint64_t LiveTypedSeal(entt::entity owner);
+void RecallTyped(entt::entity owner, uint64_t seal);
 void Unsummon(entt::entity owner, uint32_t vnum, bool deleteFromList = false);
 void UnsummonAll(entt::entity owner);
 void DeleteActor(entt::entity owner, uint32_t vnum);

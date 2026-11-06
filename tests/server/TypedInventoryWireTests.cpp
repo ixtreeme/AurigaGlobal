@@ -84,13 +84,46 @@ int main(int argc, char** argv)
 		Check(DecodeTypedInventory(longer, f::Character()).error() == TypedInventoryWireError::TrailingBytes, "trailing byte");
 		auto header = b; header[0] = std::byte { 224 };
 		Check(DecodeTypedInventory(header, f::Character()).error() == TypedInventoryWireError::BadHeader, "wrong header");
-		auto version = b; version[5] = std::byte { 7 };
+		auto version = b; version[5] = std::byte { 8 };
 		Check(DecodeTypedInventory(version, f::Character()).error() == TypedInventoryWireError::BadVersion, "unknown version");
 		Check(DecodeTypedInventory(std::span(b).first(3), f::Character()).error() == TypedInventoryWireError::Truncated, "short header");
 		PersistentItem unknown { ItemInstanceId::Create(9).value(), ItemKey::Create(1, 999).value(), f::Character() };
 		Check(EncodeTypedInventory(c, storages, wallets, std::span(&unknown, 1)).error() == TypedInventoryWireError::MissingCatalogItem, "unknown key");
 		auto empty = EncodeTypedInventory(c, {}, {}, {});
 		Check(empty && empty->size() == 13 && DecodeTypedInventory(*empty, f::Character()).has_value(), "empty inventory");
+		auto source = f::Catalog();
+		const auto sealKey = ItemKey::Create(ItemCategory::Companion, 1).value();
+		source.companionForms = {{1,"companion.wire_pet",32500,"models/wire_pet.model"}};
+		source.companions = {{sealKey,CompanionKind::Pet,1,{},CompanionClock::Permanent}};
+		source.refinements.push_back({27001,"refine.wire_companion",RefinementKind::Companion,0,{{0,{},{}}}});
+		ItemBaseRow sealBase{sealKey};
+		sealBase.contentCode = "companion.wire_seal";
+		sealBase.nameKey = "companion.wire_seal.name";
+		sealBase.descriptionKey = "companion.wire_seal.description";
+		sealBase.iconAsset = "icons/wire_pet.png";
+		sealBase.refinementProfile = 27001;
+		sealBase.usePolicy = sealBase.tradePolicy = 1;
+		source.items.push_back(sealBase);
+		auto companionCatalog = BuildItemCatalog(std::move(source));
+		Check(companionCatalog.has_value(), "companion fixture catalog");
+		PersistentItem seal{ItemInstanceId::Create(17).value(),sealKey,f::Character()};
+		seal.count = 1;
+		seal.revision = 1;
+		seal.placement = ItemPlacement{ItemStorageKind::Inventory,1,0};
+		seal.companion = CompanionState{};
+		for (std::uint8_t phase : {0, 1, 2})
+		{
+			seal.companion->recallRequested = phase != 0;
+			const auto live = phase == 1 ? seal.id.Value() : 0;
+			auto encoded = EncodeTypedInventory(**companionCatalog, storages, {}, std::span(&seal, 1), live);
+			Check(encoded && (*encoded)[5] == std::byte{7}, "companion inventory uses version seven");
+			auto decoded = DecodeTypedInventory(*encoded, f::Character());
+			Check(decoded && decoded->companions.at(seal.id)==std::pair{CompanionKind::Pet,phase}
+				&& decoded->items[0].companion==seal.companion, "companion presentation and recall intent roundtrip");
+			encoded->back() = std::byte{3};
+			Check(DecodeTypedInventory(*encoded, f::Character()).error() == TypedInventoryWireError::BadValue,
+				"unknown companion presentation accepted");
+		}
 
 
         auto details=EncodeTypedItemDetails(c,items,true);

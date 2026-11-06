@@ -11,6 +11,15 @@ namespace auriga::item
 namespace
 {
 using E=ItemPersistenceError;
+constexpr std::uint16_t CompanionSealOutcome=0x2601;
+bool RecallRequested(const PersistentItem& item)
+{
+    return item.companion && item.companion->recallRequested;
+}
+bool PermanentSeal(const ItemCompanionRow& row)
+{
+    return (row.kind==CompanionKind::Pet || row.kind==CompanionKind::Mount) && row.clock==CompanionClock::Permanent;
+}
 bool StorageOwner(ItemStorage s)
 {
     if(!ValidItemOwner(s.owner) || !s.id)return false;
@@ -51,6 +60,7 @@ struct Writer
         if(p.bookSkill){Put(0x31534b42,4);Put(*p.bookSkill,2);}
         if(p.polymorph){Put(0x314d4c50,4);Put(p.polymorph->boundForm.has_value(),1);if(p.polymorph->boundForm)Put(*p.polymorph->boundForm,4);Put(p.polymorph->bookGrade,2);Put(p.polymorph->practiceRemaining,4);}
         if(p.tool){Put(0x314c4f54,4);Put(p.tool->trainingPoints,4);Put(p.tool->baitPower,4);}
+        if(p.companion){Put(0x31504d43,4);Put(p.companion->recallRequested,1);}
     }
     void Money(const ItemWallet& w){Owner(w.owner);Put(static_cast<std::uint8_t>(w.currency),1);Put(w.revision,8);Put(w.balance,8);}
 };
@@ -65,6 +75,7 @@ bool ValidItemStorage(const ItemStorageLayout& l) noexcept
 }
 bool SupportsPersistentItem(const ItemCatalog& c,const ItemCatalogEntry& e) noexcept
 {
+    if(const auto* companion=std::get_if<ItemCompanionRow>(&e.category))return PermanentSeal(*companion);
     if(std::holds_alternative<ItemToolRow>(e.category))return true;
     if(std::holds_alternative<ItemFishingRow>(e.category) || std::holds_alternative<ItemPolymorphRow>(e.category) || std::holds_alternative<ItemSkillBookRow>(e.category))return true;
     if(const auto* container=std::get_if<ItemContainerRow>(&e.category))return container->kind!=ContainerKind::PetEgg;
@@ -82,7 +93,7 @@ bool SupportsPersistentItem(const ItemCatalog& c,const ItemCatalogEntry& e) noex
         std::holds_alternative<ItemContainerKeyRow>(e.category);
 }
 bool PlainInventoryItem(const PersistentItem& item,ItemOwner owner) noexcept
-{return item.owner==owner && !item.destroyed && item.placement && item.placement->kind==ItemStorageKind::Inventory && (!item.boundTo || item.boundTo==owner) && item.attributes==InstanceAttributes{} && item.stones==decltype(item.stones){} && (!item.accessory || *item.accessory==AccessorySocketState{}) && (!item.automatic || !item.automatic->active) && (!item.toggle || !item.toggle->active);}
+{return item.owner==owner && !item.destroyed && item.placement && item.placement->kind==ItemStorageKind::Inventory && (!item.boundTo || item.boundTo==owner) && item.attributes==InstanceAttributes{} && item.stones==decltype(item.stones){} && (!item.accessory || *item.accessory==AccessorySocketState{}) && (!item.automatic || !item.automatic->active) && (!item.toggle || !item.toggle->active) && !RecallRequested(item);}
 std::expected<void,E> ValidatePersistentItem(const ItemCatalog& c,const PersistentItem& p)
 {
     const auto* e=c.Find(p.key);if(!e)return std::unexpected(E::MissingItem);
@@ -139,6 +150,16 @@ std::expected<void,E> ValidatePersistentItem(const ItemCatalog& c,const Persiste
            (tool->kind!=ToolKind::Rod && p.tool->baitPower))return std::unexpected(E::InvalidItem);
     }
     else if(p.tool)return std::unexpected(E::InvalidItem);
+    if(std::holds_alternative<ItemCompanionRow>(e->category))
+    {
+        if(!p.companion || (!p.destroyed && p.count!=1) ||
+           p.companion->phase!=CompanionPhase::Dormant || p.companion->activeFormId ||
+           p.companion->lifetime!=CompanionLifetime{} ||
+           (RecallRequested(p) && (p.destroyed || p.owner.kind!=ItemOwnerKind::Character ||
+               !p.placement || p.placement->kind!=ItemStorageKind::Inventory)))
+            return std::unexpected(E::InvalidItem);
+    }
+    else if(p.companion)return std::unexpected(E::InvalidItem);
     if(p.placement && !StorageOwner({p.owner,p.placement->kind,p.placement->storageId}))return std::unexpected(E::InvalidPlacement);
     return {};
 }
@@ -212,12 +233,32 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
             const auto& b=*change.before;
             if(b.automatic && b.automatic->active && (p.owner!=b.owner || p.key!=b.key || (p.placement!=b.placement && !p.destroyed) || (p.count!=b.count && !p.destroyed) || (p.destroyed && (r.outcomeCode!=0x2003 || !p.automatic || p.automatic->remainingRaw || p.automatic->active))))return std::unexpected(E::TransferDenied);
             if(b.toggle && b.toggle->active && (p.owner!=b.owner || p.key!=b.key || (p.placement!=b.placement && !p.destroyed) || (p.count!=b.count && !p.destroyed) || (p.destroyed && (!r.recovery || r.recovery->owner!=b.owner || r.recovery->elapsedMs<b.toggle->remainingMs || !p.toggle || p.toggle->remainingMs || p.toggle->active))))return std::unexpected(E::TransferDenied);
+            if(b.companion!=p.companion || r.outcomeCode==CompanionSealOutcome)
+            {
+                if(r.kind!=ItemOperationKind::Service || r.outcomeCode!=CompanionSealOutcome ||
+                   r.items.size()!=1 || !r.wallets.empty() || r.ground || r.recovery || r.learning ||
+                   !b.companion || !p.companion || RecallRequested(b)==RecallRequested(p))
+                    return std::unexpected(E::TransferDenied);
+                auto expected=b;
+                expected.revision=p.revision;
+                expected.companion=p.companion;
+                if(expected!=p)return std::unexpected(E::TransferDenied);
+            }
+            else if(RecallRequested(b))
+            {
+                auto expected=b;
+                expected.revision=p.revision;
+                expected.placement=p.placement;
+                if(r.kind!=ItemOperationKind::Move || !p.placement ||
+                   p.placement->kind!=ItemStorageKind::Inventory || expected!=p)
+                    return std::unexpected(E::TransferDenied);
+            }
             const bool bindingUnchanged=p.boundTo==b.boundTo;
             const bool bindOnEquip=!b.boundTo && p.boundTo==p.owner && b.owner==p.owner && b.key==p.key &&
                 c.Find(p.key)->base.binding==BindingPolicy::OnEquip && p.placement && p.placement->kind==ItemStorageKind::Equipment;
             if(b.destroyed || b.id!=p.id || b.revision==UINT64_MAX || p.revision!=b.revision+1 || (!bindingUnchanged && !bindOnEquip) || b==p)return std::unexpected(E::InvalidChange);
         }
-        else if(p.destroyed || p.revision!=1)return std::unexpected(E::InvalidChange);
+        else if(p.destroyed || p.revision!=1 || RecallRequested(p) || r.outcomeCode==CompanionSealOutcome)return std::unexpected(E::InvalidChange);
         if((!change.before || change.before->key!=p.key) && c.Find(p.key)->base.retired && !IsSocketMaintenanceRecovery(c,r))return std::unexpected(E::InvalidChange);
     }
     std::set<std::pair<ItemOwner,WalletCurrency>> wallets;
@@ -498,6 +539,52 @@ std::expected<ItemCommit,E> MakeConsumeCommit(const ItemCatalog& c,std::array<st
     if(auto valid=ValidateItemCommit(c,r);!valid)return std::unexpected(valid.error());
     return r;
 }
+std::expected<ItemCommit,E> MakeCompanionCommit(const ItemCatalog& c,ItemOwnerFence owner,
+    std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> inventory,const CompanionRequest& request)
+{
+    if(owner.owner!=ItemOwner{ItemOwnerKind::Character,request.ownerId})return std::unexpected(E::InvalidFence);
+    const auto source=std::ranges::find(inventory,request.instanceId,[](const auto& item){return item.id.Value();});
+    if(source==inventory.end() || !source->companion || source->destroyed ||
+       !source->placement || source->placement->kind!=ItemStorageKind::Inventory ||
+       (source->boundTo && source->boundTo!=owner.owner) ||
+       source->owner!=owner.owner || source->key!=request.key ||
+       source->revision!=request.revision || source->count!=request.count ||
+       source->refinementLevel!=request.refinementLevel ||
+       source->companion->recallRequested!=request.state.recallRequested ||
+       source->companion->lifetime!=request.state.lifetime)
+        return std::unexpected(E::InvalidChange);
+
+    const auto* entry=c.Find(source->key);
+    const auto* row=entry ? std::get_if<ItemCompanionRow>(&entry->category) : nullptr;
+    if(!row || !PermanentSeal(*row))return std::unexpected(E::UnsupportedState);
+    if(request.action!=CompanionAction::Summon && request.action!=CompanionAction::Dismiss)
+        return std::unexpected(E::InvalidOperation);
+    auto admitted=request;
+    admitted.channelOccupiedByOther|=std::ranges::any_of(inventory,[&](const auto& other){
+        return other.id!=source->id && other.owner==owner.owner && RecallRequested(other);
+    });
+    const auto plan=PlanCompanion(c,admitted);
+    if(!plan)return std::unexpected(plan.error()==CompanionError::ChannelOccupied ? E::Conflict : E::RequirementNotMet);
+    if(plan->after.recallRequested==source->companion->recallRequested)return std::unexpected(E::InvalidChange);
+
+    const auto layout=std::ranges::find(storages,ItemStorage{owner.owner,source->placement->kind,source->placement->storageId},&ItemStorageLayout::storage);
+    if(layout==storages.end())return std::unexpected(E::InvalidStorage);
+    auto after=*source;
+    ++after.revision;
+    after.companion->recallRequested=plan->after.recallRequested;
+    ItemCommit commit;
+    commit.operationId=request.operationId;
+    commit.catalogRevision=c.Revision();
+    commit.catalogHash=c.ContentHash();
+    commit.kind=ItemOperationKind::Service;
+    commit.owners={owner};
+    commit.storages={*layout};
+    commit.items={{*source,after}};
+    commit.outcomeCode=CompanionSealOutcome;
+    commit.result={'C','M','P',1,static_cast<std::uint8_t>(request.action)};
+    if(auto valid=ValidateItemCommit(c,commit);!valid)return std::unexpected(valid.error());
+    return commit;
+}
 bool QueueGrant(std::deque<ItemGrant>& pending,const ItemGrant& grant,std::uint32_t mergeLimit)
 {
     if(!grant.count)return false;
@@ -534,9 +621,11 @@ std::expected<ItemCommit,E> MakeGrantCommit(const ItemCatalog& c,std::array<std:
     if(const auto initial=InitialToggleEffectState(c,grant.key);initial)fresh.toggle=*initial;fresh.bookSkill=grant.bookSkill;fresh.polymorph=grant.polymorph;
     if(!fresh.polymorph)if(const auto* poly=std::get_if<ItemPolymorphRow>(&entry->category);poly && poly->fixedForm)fresh.polymorph=PolymorphInstanceState{};
     fresh.tool=grant.tool;if(!fresh.tool && std::holds_alternative<ItemToolRow>(entry->category))fresh.tool=ToolInstanceState{};
+    if(const auto* companion=std::get_if<ItemCompanionRow>(&entry->category);companion && PermanentSeal(*companion))
+        fresh.companion=CompanionState{};
     const auto sameState=[&](const PersistentItem& i){
         return i.key==fresh.key && i.refinementLevel==fresh.refinementLevel && i.boundTo==fresh.boundTo &&
-               i.attributes==fresh.attributes && i.stones==fresh.stones && i.accessory==fresh.accessory && i.automatic==fresh.automatic && i.toggle==fresh.toggle && i.bookSkill==fresh.bookSkill && i.polymorph==fresh.polymorph && i.tool==fresh.tool;};
+               i.attributes==fresh.attributes && i.stones==fresh.stones && i.accessory==fresh.accessory && i.automatic==fresh.automatic && i.toggle==fresh.toggle && i.bookSkill==fresh.bookSkill && i.polymorph==fresh.polymorph && i.tool==fresh.tool && i.companion==fresh.companion;};
     std::vector<const PersistentItem*> carried;
     for(const auto& i:items)
         if(!i.destroyed && i.owner==owner.owner && i.placement && i.placement->kind==ItemStorageKind::Inventory && bagOf(i.placement->storageId)!=bags.end())

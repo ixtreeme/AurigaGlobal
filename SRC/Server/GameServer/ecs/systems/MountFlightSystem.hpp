@@ -15,9 +15,9 @@
 #include "../../core/utils.h"
 
 namespace ecs::MountFlightSystem {
-struct Supported {};
+struct Supported { bool fast = false; };
 struct State {
-    bool ready = false, active = false, anchored = false;
+    bool ready = false, active = false, anchored = false, fast = false;
     int32_t altitude = 0, map = 0;
     int32_t landingX = 0, landingY = 0;
     uint32_t updated = 0;
@@ -40,7 +40,8 @@ inline void Send(entt::entity source,entt::entity viewer) {
     if(state.map!=PlayerRuntime::GetMapIndex(source))state.ready=false;
     if(!capable||!state.ready) {state.active=false;state.axis=0;}
     TPacketGCMountFlight p{};p.header=HEADER_GC_MOUNT_FLIGHT;p.vid=PlayerRuntime::GetPacketVID(source);
-    p.flags=(capable?1:0)|(state.active?2:0);p.altitude=state.altitude;p.axis=state.axis;
+    const bool fast = state.active && state.fast && g_registry.get<Supported>(viewer).fast;
+    p.flags=(capable?1:0)|(state.active?2:0)|(fast?4:0);p.altitude=state.altitude;p.axis=state.axis;
     NetworkService::Send(viewer,&p,sizeof(p));
 }
 inline void Broadcast(entt::entity e) {
@@ -48,9 +49,9 @@ inline void Broadcast(entt::entity e) {
     if(const auto* view=g_registry.try_get<ViewerMap>(e))for(const auto& pair:view->viewers)Send(e,pair);
 }
 inline void Request(entt::entity e,const TPacketCGMountFlight& p) {
-    if(!PlayerRuntime::IsPC(e)||p.action>2)return;
+    if(!PlayerRuntime::IsPC(e)||p.action>3)return;
     if(p.action==0) {
-        g_registry.get_or_emplace<Supported>(e);
+        g_registry.get_or_emplace<Supported>(e).fast = (p.time & 1u) != 0;
         auto& own=g_registry.get_or_emplace<State>(e);
         if(own.map!=PlayerRuntime::GetMapIndex(e))own=State{};
         own.ready=true;own.map=PlayerRuntime::GetMapIndex(e);Send(e,e);
@@ -60,17 +61,19 @@ inline void Request(entt::entity e,const TPacketCGMountFlight& p) {
         }
         return;
     }
-    if(!g_registry.all_of<Supported>(e))return;
+    const auto* support = g_registry.try_get<Supported>(e);
+    if (!support || (p.action == 3 && !support->fast)) return;
     auto& state=g_registry.get_or_emplace<State>(e);
     if(!CanFly(e)||!MovementSystem::CanMove(e)) {Reset(e);Broadcast(e);return;}
     uint32_t now=get_dword_time();
     if(!state.ready||state.map!=PlayerRuntime::GetMapIndex(e)){state=State{};Broadcast(e);return;}
     if(p.altitude < -1000000 || p.altitude > 1000000) {Send(e,e);return;}
-    if(!state.anchored&&p.action!=1){Send(e,e);return;}
+    const bool flying = p.action == 1 || p.action == 3;
+    if(!state.anchored&&!flying){Send(e,e);return;}
     // The map has no server-side terrain height. A mount that moved on the
     // ground can start from the new sampled height. Stationary takeoff keeps
     // the last altitude and budget, including immediately after landing.
-    const bool newGround = !state.active && p.action == 1 &&
+    const bool newGround = !state.active && flying &&
         (state.landingX != PlayerRuntime::GetX(e) || state.landingY != PlayerRuntime::GetY(e));
     if(state.anchored && !newGround) {
         const float elapsed=std::min(1.0f,(now-state.updated)*.001f);
@@ -84,7 +87,7 @@ inline void Request(entt::entity e,const TPacketCGMountFlight& p) {
         state.credit = 200.f;
         state.axis = 1;
     }
-    state.anchored=true;state.active=p.action==1;state.altitude=p.altitude;state.updated=now;state.map=PlayerRuntime::GetMapIndex(e);
+    state.anchored=true;state.active=flying;state.fast=p.action==3;state.altitude=p.altitude;state.updated=now;state.map=PlayerRuntime::GetMapIndex(e);
     if (!state.active) {
         state.axis = 0;
         state.landingX = PlayerRuntime::GetX(e);

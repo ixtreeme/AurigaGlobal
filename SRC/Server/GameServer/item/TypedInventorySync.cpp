@@ -4,6 +4,7 @@
 #include "ItemStore.hpp"
 #include "TypedDrops.hpp"
 #include "TypedEquipment.hpp"
+#include "TypedCompanions.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../network/desc.h"
@@ -99,6 +100,7 @@ void TickTypedItemRefreshes()
 void SendTypedInventory(entt::entity character)
 {
 	RefreshTypedEquipment(character);
+	const auto companion = RefreshTypedCompanion(character);
 	if (!g_registry.valid(character))
 		return;
 	const auto* typed = g_registry.try_get<ecs::TypedItems>(character);
@@ -119,7 +121,7 @@ void SendTypedInventory(entt::entity character)
 		if (!item.destroyed && item.placement && (item.placement->kind == auriga::item::ItemStorageKind::Inventory || item.placement->kind == auriga::item::ItemStorageKind::Equipment))
 			visible.push_back(item);
 	const auto details = auriga::item::EncodeTypedItemDetails(*catalog, visible, auriga::item::runtime::ItemStore::Instance().GroundRun().has_value() && std::ranges::any_of(state.storages, [](const auto& s) { return s.storage.kind == auriga::item::ItemStorageKind::TradeEscrow && s.storage.id == auriga::item::OwnedGroundStorageId; }));
-	const auto bytes = auriga::item::EncodeTypedInventory(*catalog, storages, state.wallets, visible);
+	const auto bytes = auriga::item::EncodeTypedInventory(*catalog, storages, state.wallets, visible, companion);
 	if (!details)
 	{
 		LOG_ERROR("TypedItems: pid {} details not encodable (error {})", ecs::PlayerRuntime::GetPlayerID(character), static_cast<int>(details.error()));

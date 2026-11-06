@@ -68,6 +68,8 @@ namespace quest
 
 		uint32_t mobVnum= lua_isnumber(L, 1) ? static_cast<uint32_t>(lua_tonumber(L, 1)) : 0;
 
+		if (const auto* actor = PetSystem::FindActor(chEntity, mobVnum); actor && actor->typedSeal)
+			return 0;
 		PetSystem::Unsummon(chEntity, mobVnum);
 #ifdef ENABLE_RECALL
 		const CAffect* pAffect = AffectSystem::FindAffect(chEntity, AFFECT_RECALL1);
@@ -109,7 +111,7 @@ namespace quest
 		uint32_t mobVnum = lua_isnumber(L, 1) ? static_cast<uint32_t>(lua_tonumber(L, 1)) : 0;
 
 		const ecs::PetActorState* petActor = PetSystem::FindActor(chEntity, mobVnum);
-		if (nullptr == petActor)
+		if (!petActor || petActor->typedSeal)
 			return 0;
 		const entt::entity pet = petActor->character;
 		if (!ecs::PlayerRuntime::IsValid(pet))

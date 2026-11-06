@@ -37,6 +37,7 @@ def main():
         paths.append(ROOT / "db/migrations/item_instance/007_book_learning.sql")
         paths.append(ROOT / "db/migrations/item_instance/008_polymorph.sql")
         paths.append(ROOT / "db/migrations/item_instance/009_gathering_tools.sql")
+        paths.append(ROOT / "db/migrations/item_instance/010_companion_seals.sql")
         sandbox.client.query("CREATE TABLE player.player(id INT UNSIGNED PRIMARY KEY, name VARCHAR(24) NOT NULL DEFAULT '', exp INT UNSIGNED NOT NULL DEFAULT 0, skill_point SMALLINT NOT NULL DEFAULT 0, sub_skill_point SMALLINT NOT NULL DEFAULT 0, horse_skill_point SMALLINT NOT NULL DEFAULT 0, skill_level BLOB NULL) ENGINE=InnoDB")
         sandbox.client.query("CREATE TABLE player.player_deleted LIKE player.player")
         for path in paths:

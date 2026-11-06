@@ -73,6 +73,7 @@ struct PetActorState {
     uint32_t options { 0 };
     entt::entity character { entt::null };
     entt::entity summonItem { entt::null };
+    uint64_t typedSeal { 0 };
     uint32_t ridingVnum { 0 };
     std::array<TItemApply, ITEM_APPLY_MAX_NUM> buffApplies {};
 };

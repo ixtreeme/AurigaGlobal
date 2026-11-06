@@ -90,6 +90,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
             if(const auto* bait=std::get_if<ItemFishingRow>(&entry->category);bait && bait->kind==FishingKind::Bait)actions|=TypedActionTool;
             if(std::holds_alternative<ItemPolymorphRow>(entry->category))actions|=TypedActionPolymorph;
             if(std::holds_alternative<ItemSkillBookRow>(entry->category))actions|=TypedActionBook;
+            if(std::holds_alternative<ItemCompanionRow>(entry->category) && SupportsPersistentItem(c,*entry))actions|=TypedActionUse;
             if(slot && slot<=8) actions|=TypedActionEquip;
             if(refinable.contains(key)) actions|=TypedActionRefine;
             if(ownedDropEnabled && trade && trade->allowDrop && trade->allowTrade) actions|=TypedActionDrop;

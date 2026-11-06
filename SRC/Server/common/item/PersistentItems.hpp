@@ -64,6 +64,8 @@ struct PersistentItem
     std::optional<std::uint16_t> bookSkill;
     std::optional<PolymorphInstanceState> polymorph;
     std::optional<ToolInstanceState> tool;
+    // A permanent seal persists recall intent. Runtime phase and form are reconstructed.
+    std::optional<CompanionState> companion;
     bool operator==(const PersistentItem&) const = default;
 };
 struct ItemOwnerFence
@@ -176,6 +178,9 @@ std::expected<ItemCommit,ItemPersistenceError> MakeUnequipCommit(const ItemCatal
 // caller's own plan (e.g. PlanInstantRecovery); this only writes the item.
 std::expected<ItemCommit,ItemPersistenceError> MakeConsumeCommit(const ItemCatalog&,std::array<std::uint8_t,16> operationId,
     ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,ItemInstanceId,std::uint32_t units);
+// Writes one permanent seal's summon or dismissal intent without consuming the seal.
+std::expected<ItemCommit,ItemPersistenceError> MakeCompanionCommit(const ItemCatalog&,ItemOwnerFence,
+    std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const CompanionRequest&);
 // Gives new units of one item state to the owner's inventory (F4 C7a): a drop,
 // a purchase or a reward. Stackable units first top up the owner's matching
 // inventory stacks (same key, level and binding, no instance state), in storage

@@ -503,6 +503,34 @@ void PetMultipleAndReentrantDeletion()
     Check(!PetSystem::FindActor(owner, 34001) && !PetSystem::FindActor(owner, 34002), "Destroy retained actors");
 }
 
+void TypedFollowerLifecycle()
+{
+    Reset();
+    const auto owner = Character();
+    const auto other = Character();
+    const auto seal = UINT64_C(0x10000000017);
+    PetSystem::SetUpdatePeriod(owner, 0);
+    Check(PetSystem::SummonTyped(owner, 32500, seal, false), "typed pet spawn failed");
+    const auto pet = PetSystem::FindActor(owner, 32500)->character;
+    Check(g_registry.get<ecs::StatusFlags>(pet).isPet && PetSystem::LiveTypedSeal(owner) == seal,
+        "typed pet lost identity or pet presentation");
+    Check(!PetSystem::SummonTyped(owner, 32000, seal + 1, true), "second typed follower was admitted");
+    PetSystem::RecallTyped(other, seal);
+    PetSystem::RecallTyped(owner, seal + 1);
+    State(pet).x += 1000;
+    Check(PetSystem::Update(owner, 0) && moves == 1 && PetSystem::LiveTypedSeal(owner) == seal,
+        "typed follower required a legacy item or accepted an unrelated recall");
+    PetSystem::RecallTyped(owner, seal);
+    Check(!g_registry.valid(pet) && !PetSystem::LiveTypedSeal(owner) && !modifications,
+        "typed pet recall failed or applied legacy item bonuses");
+    Check(PetSystem::SummonTyped(owner, 32000, seal + 1, true), "typed mount follower spawn failed");
+    const auto mount = PetSystem::FindActor(owner, 32000)->character;
+    Check(g_registry.get<ecs::StatusFlags>(mount).isMount && !g_registry.get<ecs::StatusFlags>(mount).isPet,
+        "typed mount used the pet presentation");
+    PetSystem::DestroyRuntime(owner);
+    Check(!g_registry.valid(mount) && !PetSystem::LiveTypedSeal(owner), "logout left a typed follower in the world");
+}
+
 void PetStaleHandles()
 {
     for (int which = 0; which < 4; ++which)
@@ -960,10 +988,18 @@ void MountFlightChecks()
     Check(flight.active&&flight.altitude==10000,"valid takeoff failed");
     tick+=100;request.altitude=10060;ecs::MountFlightSystem::Request(owner,request);
     Check(flight.altitude==10060,"6m/s ascent failed");
+    tick+=100;request.action=3;request.altitude=10120;ecs::MountFlightSystem::Request(owner,request);
+    Check(!flight.fast && flight.altitude==10060,"unnegotiated fast flight accepted");
+    request.action=0;request.time=1;ecs::MountFlightSystem::Request(owner,request);
+    request.action=3;ecs::MountFlightSystem::Request(owner,request);
+    Check(flight.active && flight.fast && flight.altitude==10120,"fast flight did not retain the altitude limit");
+    request.action=1;ecs::MountFlightSystem::Request(owner,request);
+    Check(flight.active && !flight.fast,"fast flight flag did not clear on release");
     request.altitude=20000;ecs::MountFlightSystem::Request(owner,request);
-    Check(flight.altitude==10060,"vertical teleport accepted");
+    Check(flight.altitude==10120,"vertical teleport accepted");
+    const auto beforeSpam = flight.altitude;
     for(int i=0;i<20;i++){request.altitude=flight.altitude+30;ecs::MountFlightSystem::Request(owner,request);}
-    Check(flight.altitude<=10200,"packet spam manufactured vertical speed budget");
+    Check(flight.altitude<=beforeSpam+200,"packet spam manufactured vertical speed budget");
     const auto hover=flight.altitude;State(owner).x+=5000;State(owner).y+=5000;
     Check(flight.altitude==hover,"horizontal movement changed absolute altitude");
     tick+=1000;request.action=2;request.altitude=flight.altitude-100;ecs::MountFlightSystem::Request(owner,request);
@@ -996,6 +1032,7 @@ int main()
         DBManager database;
         MountFlightChecks();
         PetLifecycle();
+        TypedFollowerLifecycle();
         PetMultipleAndReentrantDeletion();
         PetStaleHandles();
         PetFailuresSkinsAndBonuses();
