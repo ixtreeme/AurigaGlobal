@@ -1,5 +1,6 @@
 #include "PetCareFixture.hpp"
 #include "CatalogSnapshotFixture.hpp"
+#include <item/AccessoryRuntime.hpp>
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
@@ -65,6 +66,85 @@ void Hatching() {
     reject([](auto& q){q.context.ownerAlive=false;},PetCareError::Forbidden);
     reject([](auto& q){q.context.admittedByServer=false;},PetCareError::Forbidden);
     Check(PlanContainerOpen(*c,{care::Egg(),{},1,0},[](auto){throw std::runtime_error("egg must not draw loot");return 0u;}).error()==ContainerOpenError::PetEggRequiresHatching,"ordinary loot opener cannot bypass hatching");
+}
+void DurableHatching()
+{
+    auto catalog=care::Catalog();
+    std::ranges::find(catalog.items,care::Pet(),&ItemBaseRow::key)->binding=BindingPolicy::OnAcquire;
+    const auto c=BuildItemCatalog(catalog).value();
+    auto request=Hatch();
+    const ItemOwnerFence owner{{ItemOwnerKind::Character,77},99,7};
+    const ItemStorageLayout bag{{owner.owner,ItemStorageKind::Inventory,1},2,1,1};
+    ItemWallet wallet{owner.owner,WalletCurrency::Gold,request.walletRevision,request.gold};
+    PersistentItem egg{ItemInstanceId::Create(request.egg.instanceId).value(),care::Egg(),owner.owner};
+    egg.revision=request.egg.revision;egg.count=request.egg.count;
+    egg.placement=ItemPlacement{ItemStorageKind::Inventory,1,0};
+    const auto hatch=[&](const ItemStorageLayout& layout){
+        return MakePetHatchCommit(*c,owner,std::span(&layout,1),std::span(&egg,1),std::span(&wallet,1),request);
+    };
+    const auto commit=hatch(bag);
+    Check(commit && commit->items.size()==2 && commit->wallets.size()==1,"hatch has one atomic write");
+    const auto& born=commit->items[1].after;
+    Check(commit->items[0].after.count==4 && commit->wallets[0].after.balance==100000 &&
+        born.id.Value()==request.newInstanceId && born.placement->anchor==1 && born.boundTo==owner.owner,
+        "hatch spends one unit and catalog price, then binds the output in free inventory");
+    Check(born.growthPet==MakeGrowthPetState(*c,PlanPetHatch(*c,request).value()).value(),
+        "hatch write retains every birth field");
+    const auto encoded=EncodeGrowthPetState(*c,born.key,*born.growthPet);
+    Check(encoded && DecodeGrowthPetState(*c,born.key,*encoded)==born.growthPet.value(),"complete growth state codec");
+    auto modified=born;
+    modified.growthPet->name="Luna";
+    Check(PersistentItemDigest(*c,modified)!=PersistentItemDigest(*c,born),"growth name is hashed");
+    Check(!PlainInventoryItem(born,owner.owner),"growth seal cannot enter generic consumption or transfer as plain inventory");
+    Check(!MakeGrantCommit(*c,{3,1},owner,std::span(&bag,1),{}, {born.key,0,1},std::array{born.id}),
+        "plain grant cannot create growth state");
+    auto forged=*commit;
+    forged.wallets[0].after.balance+=1;
+    Check(!ValidateItemCommit(*c,forged),"writer rejects altered price");
+    forged=*commit;
+    forged.items[1].after.growthPet->traits.maximumHpPercentTenths=31;
+    Check(!ValidateItemCommit(*c,forged),"writer rejects altered birth ranges");
+    forged=*commit;
+    forged.items[1].after.growthPet->skills[0].unlocked=true;
+    Check(!ValidateItemCommit(*c,forged),"writer rejects a forged unlocked birth slot");
+    forged=*commit;
+    forged.result.back()=1;
+    Check(!ValidateItemCommit(*c,forged),"writer binds receipt to born identity");
+    forged=*commit;
+    forged.outcomeCode=1;
+    Check(!ValidateItemCommit(*c,forged),"only the hatch write can create a growth seal");
+
+    const ItemStorageLayout equipment{{owner.owner,ItemStorageKind::Equipment,1},8,1,1};
+    PersistentItem accessory{ItemInstanceId::Create(99).value(),f::Bracelet(),owner.owner};
+    accessory.placement=ItemPlacement{ItemStorageKind::Equipment,1,static_cast<unsigned>(EquipmentSlot::Wrist)-1};
+    accessory.accessory=AccessorySocketState{1,1,86400000,false};
+    auto settled=*commit;
+    Check(SettleAccessoryTime(*c,settled,owner,std::array{bag,equipment},std::array{egg,accessory},500).has_value() &&
+        settled.items.size()==3 && settled.items.back().after.accessory->remainingMs==86399500,
+        "hatch composes with the equipped accessory clock");
+    settled.items.back().after.accessory->remainingMs=86400000;
+    Check(!ValidateItemCommit(*c,settled),"hatch cannot restore equipped accessory time");
+
+    ++request.egg.revision;
+    Check(hatch(bag).error()==PetHatchCommitError{ItemPersistenceError::InvalidChange},"stale egg snapshot refused");
+    --request.egg.revision;
+    ++request.walletRevision;
+    Check(hatch(bag).error()==PetHatchCommitError{ItemPersistenceError::InvalidWallet},"stale wallet snapshot refused");
+    --request.walletRevision;
+    request.gold=wallet.balance=99999;
+    Check(hatch(bag).error()==PetHatchCommitError{PetCareError::InsufficientGold},"not enough Gold refuses the entire hatch");
+    request.gold=wallet.balance=200000;
+    auto oneCell=bag;
+    oneCell.columns=1;
+    Check(hatch(oneCell).error()==PetHatchCommitError{ItemPersistenceError::InvalidPlacement},"a partial egg stack keeps its cell");
+    request.egg.count=egg.count=1;
+    const auto last=hatch(oneCell);
+    Check(last && last->items[0].after.destroyed && last->items[1].after.placement==egg.placement,
+        "last egg frees its cell in the same hatch");
+    catalog.petHatchProfiles[0].goldCost=0;
+    const auto free=BuildItemCatalog(catalog).value();
+    const auto freeHatch=MakePetHatchCommit(*free,owner,std::span(&oneCell,1),std::span(&egg,1),std::span(&wallet,1),request);
+    Check(freeHatch && freeHatch->wallets.empty(),"zero Gold cost leaves the wallet revision alone");
 }
 void Lifetime() {
     auto source=care::Catalog();auto c=BuildItemCatalog(source).value();auto r=Life(*c);
@@ -156,6 +236,6 @@ int main(int argc,char** argv) {
         if(argc==2 && std::string_view(argv[1])=="--hash-fixture") {
             for(auto b:BuildItemCatalog(care::Catalog()).value()->ContentHash())std::cout<<"0123456789abcdef"[b>>4]<<"0123456789abcdef"[b&15];std::cout<<'\n';return 0;
         }
-        Hatching();Lifetime();Feeding();CatalogAndCodec();std::cout<<checks<<" Pet care checks passed\n";return 0;
+        Hatching();DurableHatching();Lifetime();Feeding();CatalogAndCodec();std::cout<<checks<<" Pet care checks passed\n";return 0;
     }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
 }

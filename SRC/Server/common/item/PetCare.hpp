@@ -25,6 +25,7 @@ struct PetHatchProfile {
     PetBirthRange maximumHp,monsterDamage,pveNormalDamage;
 };
 bool ValidPetHatchProfile(const PetHatchProfile&) noexcept;
+bool ValidPetBirthTraits(const PetHatchProfile&,const PetBirthTraits&) noexcept;
 enum class PetFeedingService : std::uint8_t { Cube=1,Direct=2 };
 enum class PetFoodKind : std::uint8_t { LifetimeFraction=1,RefillOrRevive=2,EquipmentExperience=3 };
 enum class PetFoodConsumption : std::uint8_t { ExactUnits=1,WholeStack=2 };

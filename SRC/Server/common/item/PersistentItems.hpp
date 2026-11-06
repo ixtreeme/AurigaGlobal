@@ -66,6 +66,8 @@ struct PersistentItem
     std::optional<ToolInstanceState> tool;
     // A permanent seal persists recall intent. Runtime phase and form are reconstructed.
     std::optional<CompanionState> companion;
+    // A growth seal is born from a hatch transaction and retains its full state.
+    std::optional<GrowthPetState> growthPet;
     bool operator==(const PersistentItem&) const = default;
 };
 struct ItemOwnerFence
@@ -131,6 +133,8 @@ bool ValidItemStorage(const ItemStorageLayout&) noexcept;
 // lifetime/pet/tool/etc. state is not represented here. Never zero-fill them.
 // Automatic recovery carries explicit persisted charge and activation state.
 bool SupportsPersistentItem(const ItemCatalog&,const ItemCatalogEntry&) noexcept;
+// A growth pet's mandatory birth state is produced only by the hatch service.
+bool SupportsPersistentGrant(const ItemCatalog&,const ItemCatalogEntry&) noexcept;
 bool PlainInventoryItem(const PersistentItem&,ItemOwner) noexcept;
 std::expected<void,ItemPersistenceError> ValidatePersistentItem(const ItemCatalog&,const PersistentItem&);
 std::expected<std::vector<std::uint32_t>,ItemPersistenceError> OccupiedItemCells(
@@ -181,6 +185,11 @@ std::expected<ItemCommit,ItemPersistenceError> MakeConsumeCommit(const ItemCatal
 // Writes one permanent seal's summon or dismissal intent without consuming the seal.
 std::expected<ItemCommit,ItemPersistenceError> MakeCompanionCommit(const ItemCatalog&,ItemOwnerFence,
     std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const CompanionRequest&);
+using PetHatchCommitError=std::variant<PetCareError,ItemPersistenceError>;
+// Atomically consumes one egg, pays the quoted Gold cost and places the newly
+// reserved seal with complete birth state. The last egg can free its own cell.
+std::expected<ItemCommit,PetHatchCommitError> MakePetHatchCommit(const ItemCatalog&,ItemOwnerFence,
+    std::span<const ItemStorageLayout>,std::span<const PersistentItem>,std::span<const ItemWallet>,const PetHatchRequest&);
 // Gives new units of one item state to the owner's inventory (F4 C7a): a drop,
 // a purchase or a reward. Stackable units first top up the owner's matching
 // inventory stacks (same key, level and binding, no instance state), in storage

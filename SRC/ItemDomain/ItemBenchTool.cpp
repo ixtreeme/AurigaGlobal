@@ -81,7 +81,7 @@ bool Installed(CAsyncSQL& sql)
 {
     return Rows(sql,"SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN "
         "('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance',"
-        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule')").at(0).at(0)=="13" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested')").at(0).at(0)=="12";
+        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule')").at(0).at(0)=="13" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob')").at(0).at(0)=="13";
 }
 std::shared_ptr<const ItemCatalog> Catalog(CAsyncSQL& sql)
 {
@@ -131,6 +131,23 @@ Json State(const ItemCatalog& c,const p::LoadedItemOwner& o)
             {"bound",i.boundTo.has_value()},
             {"accessory",i.accessory ? Json{{"capacity",i.accessory->unlockedCapacity},{"grade",i.accessory->activeGrade},{"remaining_ms",i.accessory->remainingMs},{"permanent",i.accessory->permanent}} : Json(nullptr)}});
         if(i.companion)items.back()["companion"]={{"recall_requested",i.companion->recallRequested}};
+        if(i.growthPet)
+        {
+            const auto& pet=*i.growthPet;
+            auto skills=Json::array();
+            for(const auto& skill:pet.skills)skills.push_back({{"unlocked",skill.unlocked},{"skill",skill.skill},{"rank",skill.rank}});
+            items.back()["growth_pet"]={
+                {"name",pet.name},{"born_at_utc_ms",pet.bornAtUtcMs},{"age_ms",pet.ageMs},
+                {"progress",{{"level",pet.progress.level},{"stage",pet.progress.stage},
+                    {"mob_experience",pet.progress.mobExperience},{"item_experience",pet.progress.itemExperience}}},
+                {"life",{{"clock",static_cast<unsigned>(pet.life.clock)},{"capacity_ms",pet.life.capacityMs},
+                    {"remaining_ms",pet.life.remainingMs},{"permanent_grant",pet.life.permanentGrant}}},
+                {"traits",{{"maximum_hp_percent_tenths",pet.traits.maximumHpPercentTenths},
+                    {"monster_damage_percent_tenths",pet.traits.monsterDamagePercentTenths},
+                    {"pve_normal_damage_percent_tenths",pet.traits.pveNormalDamagePercentTenths}}},
+                {"skills",std::move(skills)},{"carrier_instance_id",pet.carrierInstanceId},
+                {"ever_summoned",pet.everSummoned},{"recall_requested",pet.recallRequested}};
+        }
     }
     Json wallets=Json::array();
     for(const auto& w:o.wallets)wallets.push_back({{"currency",static_cast<int>(w.currency)},{"balance",w.balance},{"revision",w.revision}});
@@ -296,6 +313,8 @@ Json Grant(CAsyncSQL& sql,const Json& request)
     const auto key=ItemKey::Create(static_cast<ItemCategory>(request.at("category").get<unsigned>()),request.at("local").get<std::uint32_t>());
     Require(key.has_value(),"Érvénytelen tárgykulcs.");
     const auto* entry=c->Find(*key);Require(entry,"Nincs ilyen tárgy a katalógusban.");
+    if(const auto* seal=std::get_if<ItemCompanionRow>(&entry->category);seal && seal->kind==CompanionKind::GrowthPet)
+        throw Failure("A fejlődő pet pecsétje keltetéssel hozható létre.");
     // The same shared allocator the game servers use, so a running server never collides with the bench.
     const auto ids=p::ReserveItemInstanceIds(sql,*c,1);
     Require(ids.has_value(),std::string("Nincs kiosztható tárgyazonosító: ")+(ids?"":PersistenceText(ids.error()))+".");

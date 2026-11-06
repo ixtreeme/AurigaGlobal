@@ -14,7 +14,7 @@ bool Name(std::string_view value)
 bool RecipeValid(const ItemCatalog& c,const CraftRecipe& recipe)
 {
     const auto* d=c.Find(recipe.result.key);
-    if(!recipe.id || !Name(recipe.name) || !d || d->base.retired || !SupportsPersistentItem(c,*d) ||
+    if(!recipe.id || !Name(recipe.name) || !d || d->base.retired || !SupportsPersistentGrant(c,*d) ||
        !c.RefinedBaseStats(recipe.result.key,recipe.result.refinementLevel) || !recipe.result.count || recipe.result.count>d->base.maxStack ||
        recipe.gold>std::uint64_t(INT64_MAX)/MaxCraftBatch || recipe.chance>10000 ||
        recipe.ingredients.empty() || recipe.ingredients.size()>MaxCraftIngredients)return false;

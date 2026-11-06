@@ -1,6 +1,7 @@
 // GC_TYPED_INVENTORY v1 wire format (F4 D1, IC-034). The golden file pins the
 // exact bytes the Unity decoder is tested against. --write-golden rewrites it.
 #include "PersistentItemFixture.hpp"
+#include "PetCareFixture.hpp"
 #include <item/TypedInventoryWire.hpp>
 #include <item/TypedItemDetails.hpp>
 
@@ -84,7 +85,7 @@ int main(int argc, char** argv)
 		Check(DecodeTypedInventory(longer, f::Character()).error() == TypedInventoryWireError::TrailingBytes, "trailing byte");
 		auto header = b; header[0] = std::byte { 224 };
 		Check(DecodeTypedInventory(header, f::Character()).error() == TypedInventoryWireError::BadHeader, "wrong header");
-		auto version = b; version[5] = std::byte { 8 };
+		auto version = b; version[5] = std::byte { 9 };
 		Check(DecodeTypedInventory(version, f::Character()).error() == TypedInventoryWireError::BadVersion, "unknown version");
 		Check(DecodeTypedInventory(std::span(b).first(3), f::Character()).error() == TypedInventoryWireError::Truncated, "short header");
 		PersistentItem unknown { ItemInstanceId::Create(9).value(), ItemKey::Create(1, 999).value(), f::Character() };
@@ -124,6 +125,26 @@ int main(int argc, char** argv)
 			Check(DecodeTypedInventory(*encoded, f::Character()).error() == TypedInventoryWireError::BadValue,
 				"unknown companion presentation accepted");
 		}
+
+		auto hatchCatalog = BuildItemCatalog(pet_care_fixture::Catalog());
+		Check(hatchCatalog.has_value(), "hatch fixture catalog");
+		const auto petKey = pet_care_fixture::Pet();
+		PersistentItem growth{ItemInstanceId::Create(21).value(),petKey,f::Character()};
+		growth.placement = ItemPlacement{ItemStorageKind::Inventory,1,0};
+		growth.growthPet = GrowthPetState{"Arany",1,0,MakeGrowthPetProgress(**hatchCatalog, petKey).value(),
+			MakeGrowthPetLife(**hatchCatalog, petKey).value(),{35,15,15}};
+		auto growthWire = EncodeTypedInventory(**hatchCatalog, storages, {}, std::span(&growth, 1));
+		Check(growthWire && (*growthWire)[5] == std::byte{8}, "growth seal inventory uses version eight");
+		auto growthView = DecodeTypedInventory(*growthWire, f::Character());
+		Check(growthView && growthView->companions.at(growth.id)==std::pair{CompanionKind::GrowthPet,std::uint8_t{0}}
+			&& !growthView->items[0].companion, "growth seal marker must not authorize fixed summoning");
+		growthWire->back() = std::byte{1};
+		Check(DecodeTypedInventory(*growthWire, f::Character()).error() == TypedInventoryWireError::BadValue,
+			"growth seal marker falsely claimed a live actor");
+		growthWire->back() = std::byte{0};
+		(*growthWire)[5] = std::byte{7};
+		Check(DecodeTypedInventory(*growthWire, f::Character()).error() == TypedInventoryWireError::BadValue,
+			"growth seal marker accepted under v7");
 
 
         auto details=EncodeTypedItemDetails(c,items,true);

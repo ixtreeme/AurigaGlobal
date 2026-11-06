@@ -176,12 +176,80 @@ void Allocator(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,unsigned 
     Check(p::ReserveItemInstanceIds(writer,c,10).error()==E::LimitExceeded,"the counter never wraps");
     Check(Scalar(admin,"SELECT next_instance_id FROM player.item_instance_id_allocator")=="18446744073709551610","a refused block moves nothing");
 }
+void GrowthPetBirthSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,ItemKey eggKey,ItemKey sealKey)
+{
+    using E=ItemPersistenceError;
+    const ItemOwner owner{ItemOwnerKind::Character,880104};
+    const auto bag=f::Inventory(owner);
+    const ItemWallet wallet{owner,WalletCurrency::Gold,1,150000};
+    Check(p::ProvisionOwner(admin,c,owner,std::span(&bag,1),std::span(&wallet,1)).has_value(),"hatch owner provisioned");
+    auto state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto ids=p::ReserveItemInstanceIds(writer,c,3).value();
+    const auto eggId=ItemInstanceId::Create(ids.first).value();
+    const auto sealId=ItemInstanceId::Create(ids.first+1).value();
+    const auto grant=MakeGrantCommit(c,{30,1},state.fence,state.storages,state.items,{eggKey,0,2},std::array{eggId});
+    Check(grant && p::CommitItems(writer,c,*grant).has_value(),"typed egg stack granted");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    PetCareContext context;
+    context.operationId={30,2};context.actorId=owner.id;context.sessionGeneration=state.fence.sessionGeneration;
+    context.rulesetRevision=1;context.characterClass=context.sex=1;context.characterLevel=50;
+    context.admittedByServer=context.canUseItems=context.ownerAlive=true;
+    auto source=Find(state,eggId.Value());
+    PetHatchRequest request{context,{source.key,source.id.Value(),source.revision,source.owner.id,source.count,source.refinementLevel}};
+    request.walletRevision=state.wallets.front().revision;request.gold=state.wallets.front().balance;
+    request.newInstanceId=sealId.Value();request.bornAtUtcMs=123456789;
+    request.name="\xc3\x81rv\xc3\xadz";request.recordedTraits={35,15,20};
+    request.nameAcceptedByServer=request.newInstanceReservedByServer=true;
+    const auto plan=MakePetHatchCommit(c,state.fence,state.storages,state.items,state.wallets,request);
+    Check(plan.has_value(),"hatch plan built from exact SQL egg and Gold");
+
+    Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"second session fences hatch in flight");
+    const auto stale=p::CommitItems(writer,c,*plan);
+    Check(!stale && stale.error()==E::Conflict,"stale session cannot consume egg or Gold");
+    auto relog=p::LoadCurrentItemOwner(writer,c,owner).value();
+    Check(relog.items==state.items && relog.wallets==state.wallets,"failed fenced hatch changes neither resource");
+    request.context.sessionGeneration=relog.fence.sessionGeneration;
+    const auto current=MakePetHatchCommit(c,relog.fence,relog.storages,relog.items,relog.wallets,request);
+    Check(current && p::CommitItems(writer,c,*current).has_value() && p::CommitItems(writer,c,*current)->replay,
+        "hatch result and costs commit exactly once under receipt replay");
+
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto hatched=Find(state,sealId.Value());
+    Check(Find(state,eggId.Value()).count==1 && state.wallets.front().balance==50000 &&
+        hatched.key==sealKey && hatched.growthPet && hatched.boundTo==owner && hatched.revision==1,
+        "hatch debits exactly one egg and price, then saves the bound seal");
+    Check(hatched.growthPet==current->items.back().after.growthPet,"SQL roundtrip preserves the entire growth state");
+    Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"hatch relog claimed");
+    relog=p::LoadCurrentItemOwner(writer,c,owner).value();
+    Check(relog.items==state.items && relog.wallets==state.wallets && relog.fence.sessionGeneration>state.fence.sessionGeneration,
+        "active login loads the same pet identity and debits after reconnect");
+
+    source=Find(relog,eggId.Value());
+    request.context.operationId={30,3};request.context.sessionGeneration=relog.fence.sessionGeneration;
+    request.egg.count=source.count;request.egg.revision=source.revision;
+    request.walletRevision=relog.wallets.front().revision;request.gold=relog.wallets.front().balance;
+    request.newInstanceId=ids.first+2;
+    const auto poor=MakePetHatchCommit(c,relog.fence,relog.storages,relog.items,relog.wallets,request);
+    Check(!poor && poor.error()==PetHatchCommitError{PetCareError::InsufficientGold},"another egg cannot hatch on insufficient Gold");
+
+    auto altered=*hatched.growthPet;
+    altered.name="Bodri";
+    const auto payload=EncodeGrowthPetState(c,sealKey,altered).value();
+    Query(admin,"UPDATE player.item_instance SET growth_pet_blob=? WHERE instance_id=?",{U::Blob(Bytes(payload)),U::UInt(sealId.Value())});
+    Check(!p::LoadCurrentItemOwner(writer,c,owner),"valid-but-tampered birth state fails the state hash");
+    const auto original=EncodeGrowthPetState(c,sealKey,*hatched.growthPet).value();
+    Query(admin,"UPDATE player.item_instance SET growth_pet_blob=? WHERE instance_id=?",{U::Blob(Bytes(original)),U::UInt(sealId.Value())});
+    Check(p::LoadCurrentItemOwner(writer,c,owner)->items==relog.items,"restored bytes recover exact birth state");
+}
+
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
 {
     auto source=attribute_runtime_fixture::Catalog();
     effect_runtime_fixture::Extend(source);book_runtime_fixture::Extend(source);book_aid_fixture::Extend(source);polymorph_runtime_fixture::Extend(source);fish_processing_fixture::Extend(source);tool_runtime_fixture::Extend(source);
     const auto petSeal=ItemKey::Create(ItemCategory::Companion,1).value();
     const auto mountSeal=ItemKey::Create(ItemCategory::Companion,2).value();
+    const auto growthSeal=ItemKey::Create(ItemCategory::Companion,3).value();
+    const auto hatchEgg=ItemKey::Create(ItemCategory::Container,98).value();
     source.companionForms={{1,"companion.sql_pet",32500,"models/sql_pet.model"},{2,"companion.sql_mount",32000,"models/sql_mount.model"}};
     source.companions={{petSeal,CompanionKind::Pet,1,{},CompanionClock::Permanent},
         {mountSeal,CompanionKind::Mount,2,2,CompanionClock::Permanent}};
@@ -197,10 +265,29 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         base.usePolicy=base.tradePolicy=1;
         source.items.push_back(std::move(base));
     }
+    source.companionForms.push_back({3,"companion.sql_growth",34041,"models/sql_growth.model"});
+    source.growthPetProfiles.push_back({1,"growth.sql_birth",3,GrowthExpPolicy::MobAndItem,
+        {{1,100,10},{2,200,20},{3,0,0}},{{0,3,3}}});
+    source.companions.push_back({growthSeal,CompanionKind::GrowthPet,3,{},CompanionClock::ActiveTime,300000,false,1});
+    source.petHatchProfiles.push_back({1,"hatch.sql_birth",growthSeal,100000,{30,40,5},{10,20,5},{10,20,5}});
+    source.containers.push_back({hatchEgg,ContainerKind::PetEgg,{},0,1});
+    ItemBaseRow growthBase{growthSeal};
+    growthBase.contentCode="companion.sql_growth_seal";growthBase.nameKey="item.sql_growth.name";
+    growthBase.descriptionKey="item.sql_growth.description";growthBase.iconAsset="icons/sql_growth.png";
+    growthBase.refinementProfile=1;growthBase.usePolicy=growthBase.tradePolicy=1;
+    growthBase.binding=BindingPolicy::OnAcquire;
+    source.items.push_back(std::move(growthBase));
+    ItemBaseRow eggBase{hatchEgg};
+    eggBase.contentCode="container.sql_hatch_egg";eggBase.nameKey="item.sql_hatch_egg.name";
+    eggBase.descriptionKey="item.sql_hatch_egg.description";eggBase.iconAsset="icons/sql_hatch_egg.png";
+    eggBase.refinementProfile=1;eggBase.usePolicy=eggBase.tradePolicy=1;eggBase.maxStack=20;
+    source.items.push_back(std::move(eggBase));
     const auto sqlBox=ItemKey::Create(8,99).value();auto boxBase=*std::ranges::find(source.items,item_catalog_fixture::GiftBox(),&ItemBaseRow::key);
     boxBase.key=sqlBox;boxBase.contentCode="container.sql_opening";source.items.push_back(boxBase);source.containers.push_back({sqlBox,ContainerKind::Locked,3,7});
     source.lootProfiles.push_back({3,"loot.sql_opening",LootPickMode::IndependentChance,{{1,LootRewardKind::Item,f::Leather().key,3,10000,0},{2,LootRewardKind::Gold,{},75,10000,0}}});
-    Populate(admin,source);const auto c=BuildItemCatalog(source).value();
+    const auto catalog=BuildItemCatalog(source);
+    if(!catalog)throw std::runtime_error("SQL fixture catalog rejected: "+catalog.error().field);
+    const auto c=*catalog;Populate(admin,source);
     auto loadedCatalog=s::ReadCatalog(writer,{c->Revision(),c->ContentHash()});Check(loadedCatalog.has_value(),"SQL/native catalog parity");
     Query(admin,"INSERT INTO player.item_persistence_format VALUES(1,1,?,?)",{U::UInt(c->Revision()),U::Blob(Bytes(c->ContentHash()))});
     Execute(admin,"INSERT INTO player.item_owner_fence VALUES(1,42,7,1),(1,43,8,1),(2,42,9,1),(3,42,10,1)");
@@ -930,6 +1017,7 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         Query(admin,"UPDATE player.item_instance SET companion_recall_requested=0 WHERE instance_id=?",{U::UInt(petId.Value())});
         Check(p::LoadCurrentItemOwner(writer,*c,owner)->items==state.items,"exact recall intent restores valid state");
     }
+    GrowthPetBirthSql(admin,writer,*c,hatchEgg,growthSeal);
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);
 }

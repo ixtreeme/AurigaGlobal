@@ -41,7 +41,12 @@ std::expected<void,E> ValidateItemMission(const ItemCatalog& c,const ItemMission
 {
     if(!Shape(m))return std::unexpected(E::Invalid);
     for(const auto* list:{&m.requirements,&m.costs,&m.rewards})for(const auto& value:*list)
-    {const auto* d=c.Find(value.key);if(!d || !SupportsPersistentItem(c,*d) || !c.RefinedBaseStats(value.key,value.level) || (list==&m.rewards && d->base.retired))return std::unexpected(E::Invalid);}
+    {
+        const auto* d=c.Find(value.key);
+        if(!d || !c.RefinedBaseStats(value.key,value.level))return std::unexpected(E::Invalid);
+        const bool supported=list==&m.rewards ? !d->base.retired && SupportsPersistentGrant(c,*d) : SupportsPersistentItem(c,*d);
+        if(!supported)return std::unexpected(E::Invalid);
+    }
     std::uint64_t stacks=0;for(const auto& reward:m.rewards){const auto stack=c.Find(reward.key)->base.maxStack;stacks+=(std::uint64_t(reward.count)+stack-1)/stack;}
     if(stacks>MaxItemCommitItems)return std::unexpected(E::Limit);return {};
 }

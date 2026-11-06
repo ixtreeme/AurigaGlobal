@@ -1,6 +1,7 @@
 #include "../item/TypedBooks.hpp"
 #include "../item/TypedPolymorph.hpp"
 #include "../item/TypedCompanions.hpp"
+#include "../item/TypedPetHatch.hpp"
 #include "../item/TypedFishProcessing.hpp"
 #include "stdafx.h"
 #include <Core/packet_string.h>
@@ -468,6 +469,9 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
             break;
         case HEADER_CG_TYPED_COMPANION:
             HandleTypedCompanionPacket(character, c_pData);
+            break;
+        case HEADER_CG_TYPED_PET_HATCH:
+            HandleTypedPetHatchPacket(character, c_pData);
             break;
         case HEADER_CG_TYPED_FISH:
             HandleTypedFishProcessingPacket(character,c_pData);

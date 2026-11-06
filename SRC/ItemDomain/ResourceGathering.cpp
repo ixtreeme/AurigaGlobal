@@ -53,7 +53,7 @@ std::expected<void,ResourceError> ValidateGatheringSites(const ItemCatalog& c,st
    !s.range || s.range>1000 || s.durationMs<(!s.race ? 5000u : 1000u) || s.durationMs>120000 || s.minimumPower>INT32_MAX || !s.powerStep || s.powerStep>INT32_MAX || s.baseChance>10000 || s.powerChance>10000 || s.baitChance>10000 || (s.kind!=ToolKind::Rod && s.baitChance) || s.rewards.empty() || s.rewards.size()>32)return std::unexpected(E::Invalid);
   std::uint64_t total=0;std::set<ItemKey> rewards;
   for(const auto& r:s.rewards)
-  {const auto* entry=c.Find(r.key);if(!entry || entry->base.retired || !SupportsPersistentItem(c,*entry) || !r.count || r.count>10000 || !r.weight || !rewards.insert(r.key).second)return std::unexpected(E::Invalid);total+=r.weight;}
+  {const auto* entry=c.Find(r.key);if(!entry || entry->base.retired || !SupportsPersistentGrant(c,*entry) || !r.count || r.count>10000 || !r.weight || !rewards.insert(r.key).second)return std::unexpected(E::Invalid);total+=r.weight;}
   if(total>UINT32_MAX)return std::unexpected(E::Invalid);
  }
  return {};

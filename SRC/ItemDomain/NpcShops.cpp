@@ -37,7 +37,7 @@ std::expected<void,E> ValidateNpcShops(const ItemCatalog& c,std::span<const NpcS
         {
             const auto* entry=c.Find(offer.grant.key);
             if(!offer.id || !ids.insert(offer.id).second || !entry || entry->base.retired || !entry->base.buyAmount ||
-               !SupportsPersistentItem(c,*entry) || !c.RefinedBaseStats(offer.grant.key,offer.grant.refinementLevel) ||
+               !SupportsPersistentGrant(c,*entry) || !c.RefinedBaseStats(offer.grant.key,offer.grant.refinementLevel) ||
                !offer.grant.count || offer.grant.count>entry->base.maxStack ||
                entry->base.buyAmount>std::uint64_t(INT64_MAX)/offer.grant.count)return std::unexpected(E::Invalid);
         }

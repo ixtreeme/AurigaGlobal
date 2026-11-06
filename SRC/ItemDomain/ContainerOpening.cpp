@@ -66,7 +66,7 @@ std::expected<void,E> ValidateContainerContents(const ItemCatalog& c,ItemKey key
     {
         if(reward.kind==LootRewardKind::Gold)continue;
         if(reward.kind!=LootRewardKind::Item || reward.rareAttributeChanceBp || !reward.item)return std::unexpected(E::Unsupported);
-        const auto* target=c.Find(*reward.item);if(!target || target->base.retired || !SupportsPersistentItem(c,*target) || !c.RefinedBaseStats(*reward.item,0))return std::unexpected(E::Unsupported);
+        const auto* target=c.Find(*reward.item);if(!target || target->base.retired || !SupportsPersistentGrant(c,*target) || !c.RefinedBaseStats(*reward.item,0))return std::unexpected(E::Unsupported);
         ++items;if(reward.weight<10000)++uncertain;
     }
     if(profile->Data().mode==LootPickMode::IndependentChance && (uncertain>MaxUncertainContainerItems || items+2>MaxItemCommitItems))return std::unexpected(E::Unsupported);

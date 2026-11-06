@@ -1,5 +1,5 @@
 #pragma once
-// GC_TYPED_INVENTORY (225), versions 1–7. Version 7 adds fixed companion seals.
+// GC_TYPED_INVENTORY (225), versions 1–8. V7 adds fixed seals, v8 growth seals.
 //
 // Explicit little-endian byte layout, no struct/ABI dependence. The Unity
 // client decodes the same layout (Metin2GamePacketCodec.ReadTypedInventory);
@@ -16,8 +16,9 @@
 //                   3 x { u8 state, u8 grade, u16 level, key(6) or six zero bytes },
 //                   accessory if flag 2: { u8 capacity, u8 grade, u64 remaining ms, u8 permanent } }
 //                   automatic if flag 4: { u8 supply, u64 charge raw, u8 active, u64 next tick ms }
-//                   companion if flag 128: { u8 kind (1 pet, 2 mount),
+//                   companion if flag 128: { u8 kind (1 pet, 2 mount, 3 growth pet),
 //                                            u8 state (0 dormant, 1 following, 2 pending) }
+// A growth seal always has state zero here. Its birth record is read via GC253.
 #include "PersistentItems.hpp"
 
 #include <cstddef>

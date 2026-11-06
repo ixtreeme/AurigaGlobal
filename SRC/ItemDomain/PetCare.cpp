@@ -10,7 +10,7 @@ bool ValidRange(PetBirthRange r) {
         (r.maximum-r.minimum)%r.step==0;
 }
 bool InRange(std::uint16_t value,PetBirthRange r) {
-    return value>=r.minimum && value<=r.maximum && (value-r.minimum)%r.step==0;
+    return r.step && value>=r.minimum && value<=r.maximum && (value-r.minimum)%r.step==0;
 }
 bool ContextIdentity(const PetCareContext& c) {
     return c.actorId && c.sessionGeneration && c.rulesetRevision &&
@@ -74,6 +74,12 @@ std::uint64_t Fraction(std::uint64_t value,std::uint16_t bp) {
 }
 bool ValidGrowthPetLife(const ItemCompanionRow& row,const GrowthPetLife& life) noexcept {return ValidLife(row,life);}
 bool ValidPetName(std::string_view name) noexcept {return ValidName(name);}
+bool ValidPetBirthTraits(const PetHatchProfile& hatch,const PetBirthTraits& traits) noexcept
+{
+    return InRange(traits.maximumHpPercentTenths,hatch.maximumHp) &&
+        InRange(traits.monsterDamagePercentTenths,hatch.monsterDamage) &&
+        InRange(traits.pveNormalDamagePercentTenths,hatch.pveNormalDamage);
+}
 bool ValidPetHatchProfile(const PetHatchProfile& p) noexcept {
     return p.target.Category()==ItemCategory::Companion && p.goldCost<=INT64_MAX &&
         ValidRange(p.maximumHp) && ValidRange(p.monsterDamage) && ValidRange(p.pveNormalDamage);
@@ -108,10 +114,7 @@ std::expected<PetHatchPlan,PetCareError> PlanPetHatch(const ItemCatalog& c,const
     if(!CanUse(c,(*source)->base,r.context) || !CanUse(c,target->base,r.context))return std::unexpected(E::Forbidden);
     if(!r.nameAcceptedByServer || !ValidName(r.name))return std::unexpected(E::InvalidName);
     if(!r.bornAtUtcMs || r.bornAtUtcMs>INT64_MAX)return std::unexpected(E::InvalidTime);
-    const auto& traits=r.recordedTraits;
-    if(!InRange(traits.maximumHpPercentTenths,hatch->maximumHp) ||
-       !InRange(traits.monsterDamagePercentTenths,hatch->monsterDamage) ||
-       !InRange(traits.pveNormalDamagePercentTenths,hatch->pveNormalDamage))return std::unexpected(E::InvalidBirthDecision);
+    if(!ValidPetBirthTraits(*hatch,r.recordedTraits))return std::unexpected(E::InvalidBirthDecision);
     if(r.gold<hatch->goldCost)return std::unexpected(E::InsufficientGold);
     PetHatchPlan plan{r,hatch->target,MakeGrowthPetProgress(c,hatch->target).value(),MakeGrowthPetLife(c,hatch->target).value()};
     plan.goldCost=hatch->goldCost;plan.catalogRevision=c.Revision();plan.catalogHash=c.ContentHash();return plan;

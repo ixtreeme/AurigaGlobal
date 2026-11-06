@@ -6,8 +6,9 @@ Unity 6.3 és helyi szerver együtt ellenőrizve**. A normál legacy leltár és
 a meglévő karakterek átállítása a felhasználó kérésére még nem történik meg.
 Az aktív ágak a C26a munkában megkapták a TERA pecséteket és a hátasrepülést.
 A C26b az állandó típusos pet- és hátaspecsétek mentését, idézését és visszahívását kapcsolja be.
-A fejlődő pet, keltetés és típusos felülés továbbra is nyitott.
-[IC-058](item_combat_058_tera_companion_port.md) · [IC-059](item_combat_059_typed_companion_seals.md)
+A C26c a típusos pettojás keltetését és a fejlődő pet születési állapotának mentését kapcsolja be.
+A fejlődő pet idézése, életidő-kezelése, etetése és a típusos felülés továbbra is nyitott.
+[IC-058](item_combat_058_tera_companion_port.md) · [IC-059](item_combat_059_typed_companion_seals.md) · [IC-060](item_combat_060_typed_pet_hatching.md)
 
 ## Közös szerver–Unity munkamenet (felhasználói döntés, 2026-11-01)
 

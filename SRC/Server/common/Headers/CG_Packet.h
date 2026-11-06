@@ -433,6 +433,16 @@ typedef struct command_typed_companion
     uint64_t qwItemId;
 } TPacketCGTypedCompanion;
 
+typedef struct command_typed_pet_hatch
+{
+    uint8_t header;
+    uint8_t action;
+    uint64_t itemId;
+    uint64_t token;
+    uint8_t nameLength;
+    char name[64];
+} TPacketCGTypedPetHatch;
+
 // Typed item system (F4 C6): refine one typed item with one recipe at a smith.
 typedef struct command_typed_item_refine
 {
