@@ -351,6 +351,39 @@ void GrowthPetBirthSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,I
     Check(Find(state,sealId.Value()).growthPet->life.remainingMs==150000 &&
         !RecallRequested(Find(state,sealId.Value())) && consumed(foodId),
         "revival persists half capacity without summoning or retaining the food");
+
+    const auto summonRevived=growthWrite(12,CompanionAction::Summon);
+    Check(summonRevived && p::CommitItems(writer,c,*summonRevived).has_value(),"revived pet summoned for progression");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto progress=[&](std::uint8_t serial,std::span<const std::uint64_t> awards,
+        std::optional<GrowthPetEvolution> evolution=std::nullopt) {
+        auto admission=context;
+        admission.operationId={32,serial};
+        admission.sessionGeneration=state.fence.sessionGeneration;
+        return MakeGrowthPetProgressCommit(c,state.fence,state.storages,state.items,admission,sealId,awards,evolution);
+    };
+    const GrowthPetEvolution evolution{request.bornAtUtcMs+20000,120,{}};
+    Check(!progress(1,{},evolution),"early evolution is refused");
+    const std::array<std::uint64_t,2> rewards{20,90};
+    const auto levelUp=progress(2,rewards);
+    Check(levelUp && p::CommitItems(writer,c,*levelUp).has_value() && p::CommitItems(writer,c,*levelUp)->replay,
+        "reward batch levels once at the two-EXP gate and replays once");
+    Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"levelled pet relog");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    Check(Find(state,sealId.Value()).growthPet->progress==GrowthPetProgress{2,0,0,0},"level saved before evolution");
+    const auto evolve=progress(3,{},evolution);
+    Check(evolve.has_value(),"evolution at the gate");
+    auto forgedEvolution=*evolve;
+    forgedEvolution.items.front().after.growthPet->name="Bodri";
+    Check(!ValidateItemCommit(c,forgedEvolution),"evolution cannot overwrite the pet name");
+    Check(p::CommitItems(writer,c,*evolve).has_value() && p::CommitItems(writer,c,*evolve)->replay,
+        "evolution and its life settlement commit once");
+    Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"evolved pet relog");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto evolved=Find(state,sealId.Value());
+    Check(evolved.growthPet->progress==GrowthPetProgress{3,1,0,0} && evolved.growthPet->life.remainingMs==149880 &&
+        evolved.growthPet->traits==hatched.growthPet->traits && RecallRequested(evolved) && !progress(4,{},evolution),
+        "stage, level, life, name, traits and intent survive the new owner session");
 }
 
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
@@ -378,7 +411,7 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
     }
     source.companionForms.push_back({3,"companion.sql_growth",34041,"models/sql_growth.model"});
     source.growthPetProfiles.push_back({1,"growth.sql_birth",3,GrowthExpPolicy::MobAndItem,
-        {{1,100,10},{2,200,20},{3,0,0}},{{0,3,3}}});
+        {{1,100,5},{2,200,20},{3,0,0}},{{0,2,3},{1,3,2}}});
     source.companions.push_back({growthSeal,CompanionKind::GrowthPet,3,{},CompanionClock::ActiveTime,300000,false,1});
     source.petHatchProfiles.push_back({1,"hatch.sql_birth",growthSeal,100000,{30,40,5},{10,20,5},{10,20,5}});
     source.petFeedRules={{hatchEgg,PetFeedingService::Cube,PetFoodKind::LifetimeFraction,PetFoodConsumption::WholeStack,0,5000,0,0},

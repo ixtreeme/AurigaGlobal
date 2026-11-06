@@ -159,13 +159,14 @@ std::expected<PetSummonPlan,E> PlanGrowthPetSummon(const ItemCatalog& c,const Pe
 std::expected<PetLifecyclePlan,E> PlanPetEvolution(const ItemCatalog& c,const PetLifecycleRequest& r,PetBirthTraits decisions) {
     if(auto valid=Request(c,r);!valid)return std::unexpected(valid.error());
     if(!r.seal.active || r.state.carrierInstanceId || !Alive(r.state.life))return std::unexpected(E::WrongTargetState);
-    const auto* profile=Training(c,r.seal.key);if(!profile)return std::unexpected(E::MissingTraining);
+    const auto* profile=Training(c,r.seal.key);
     GrowthPetRequest growth{r.seal.key,r.state.progress,r.seal.instanceId,r.seal.revision,r.petRevision,
         r.seal.ownerId,r.context.actorId,r.context.rulesetRevision,r.context.operationId,r.seal.count,r.seal.refinementLevel,
         GrowthPetAction::Evolve,0,true,true};
     auto result=PlanGrowthPetProgress(c,growth);if(!result)return std::unexpected(E::InvalidState);
     auto plan=Plan(c,r);plan.after.progress=result->after;
-    const std::array periods={profile->hpEvolutionPeriod,profile->monsterEvolutionPeriod,profile->pveEvolutionPeriod};
+    const auto periods=profile ? std::array{profile->hpEvolutionPeriod,profile->monsterEvolutionPeriod,profile->pveEvolutionPeriod}
+        : std::array<std::uint16_t,3>{};
     for(unsigned i=0;i<3;++i) {
         const auto delta=Trait(decisions,i);const bool due=periods[i] && result->after.level%periods[i]==0;
         if(due ? delta<profile->evolutionMinimum || delta>profile->evolutionMaximum : delta!=0)return std::unexpected(E::InvalidDecision);

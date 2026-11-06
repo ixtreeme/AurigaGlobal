@@ -20,6 +20,7 @@ constexpr std::uint16_t CompanionSealOutcome=0x2601;
 constexpr std::uint16_t PetHatchOutcome=0x2602;
 constexpr std::uint16_t GrowthPetCompanionOutcome=0x2603;
 constexpr std::uint16_t PetFeedOutcome=0x2604;
+constexpr std::uint16_t PetProgressOutcome=0x2605;
 bool PermanentSeal(const ItemCompanionRow& row)
 {
     return (row.kind==CompanionKind::Pet || row.kind==CompanionKind::Mount) && row.clock==CompanionClock::Permanent;
@@ -191,6 +192,93 @@ bool ValidPetFeedWrite(const ItemCatalog& c,const ItemCommit& commit)
         remaining.placement.reset();
     }
     return remaining==food->after;
+}
+
+std::expected<GrowthPetState,E> ApplyPetProgress(const ItemCatalog& c,const PetCareContext& context,
+    const PersistentItem& seal,std::span<const std::uint64_t> awards,const std::optional<GrowthPetEvolution>& evolution)
+{
+    if(!seal.growthPet || !seal.growthPet->everSummoned || seal.growthPet->carrierInstanceId ||
+        seal.destroyed || !seal.placement || seal.placement->kind!=ItemStorageKind::Inventory ||
+        seal.owner!=ItemOwner{ItemOwnerKind::Character,context.actorId} ||
+        (seal.boundTo && seal.boundTo!=seal.owner) || !context.admittedByServer)
+        return std::unexpected(E::InvalidChange);
+    auto pet=*seal.growthPet;
+    if(evolution)
+    {
+        if(!awards.empty() || !pet.recallRequested)return std::unexpected(E::InvalidChange);
+        const PetCareItemSnapshot snapshot{seal.key,seal.id.Value(),seal.revision,seal.owner.id,seal.count,
+            seal.refinementLevel,false,false,false,true,true,seal.id.Value()};
+        PetLifecycleRequest request{context,snapshot,seal.revision,evolution->nowUtcMs,pet};
+        const auto life=PlanPetMaintenance(c,request,evolution->elapsedMs);
+        if(!life || life->expired)return std::unexpected(E::RequirementNotMet);
+        request.state=life->pet.after;
+        const auto next=PlanPetEvolution(c,request,evolution->growth);
+        if(!next)return std::unexpected(E::RequirementNotMet);
+        return next->after;
+    }
+    if(awards.empty() || awards.size()>MaxGrowthPetMobAwards)return std::unexpected(E::InvalidOperation);
+    // Each monster reward has its own level boundary. A batch only shares a SQL receipt.
+    for(const auto experience:awards)
+    {
+        const GrowthPetRequest request{seal.key,pet.progress,seal.id.Value(),seal.revision,seal.revision,
+            seal.owner.id,context.actorId,context.rulesetRevision,context.operationId,seal.count,seal.refinementLevel,
+            GrowthPetAction::AwardMobExperience,experience,true,true};
+        const auto plan=PlanGrowthPetProgress(c,request);
+        if(!plan)return std::unexpected(E::InvalidChange);
+        pet.progress=plan->after;
+    }
+    if(pet.progress==seal.growthPet->progress)return std::unexpected(E::RequirementNotMet);
+    return pet;
+}
+
+bool ValidPetProgressWrite(const ItemCatalog& c,const ItemCommit& commit)
+{
+    const auto& bytes=commit.result;
+    if(commit.kind!=ItemOperationKind::Service || commit.owners.size()!=1 || !commit.wallets.empty() ||
+        commit.ground || commit.recovery || commit.learning || bytes.size()<6 ||
+        bytes[0]!='P' || bytes[1]!='R' || bytes[2]!='G' || bytes[3]!=1 || bytes[4]>1)
+        return false;
+    const ItemChange* seal=nullptr;
+    for(const auto& change:commit.items)
+    {
+        if(change.before && change.before->growthPet)
+        {
+            if(seal)return false;
+            seal=&change;
+        }
+        else if(!AccessoryTimeOnly(change))return false;
+    }
+    if(!seal || !seal->after.growthPet)return false;
+    const auto read=[&](std::size_t at,unsigned size) {
+        std::uint64_t value=0;
+        for(unsigned i=0;i<size;++i)value|=std::uint64_t(bytes[at+i])<<(8*i);
+        return value;
+    };
+    const auto& owner=commit.owners.front();
+    PetCareContext context{commit.operationId,owner.owner.id,owner.sessionGeneration,1,0,0,0,true};
+    std::optional<GrowthPetEvolution> evolution;
+    std::vector<std::uint64_t> awards;
+    if(bytes[4])
+    {
+        if(bytes.size()!=32 || bytes[31]>1)return false;
+        evolution=GrowthPetEvolution{read(5,8),read(13,8),{static_cast<std::uint16_t>(read(21,2)),
+            static_cast<std::uint16_t>(read(23,2)),static_cast<std::uint16_t>(read(25,2))}};
+        context.characterLevel=static_cast<std::uint16_t>(read(27,2));
+        context.characterClass=bytes[29];context.sex=bytes[30];context.inCombat=bytes[31]!=0;
+        context.canUseItems=context.ownerAlive=true;
+    }
+    else
+    {
+        const auto count=bytes[5];
+        if(count>MaxGrowthPetMobAwards || bytes.size()!=6+std::size_t(count)*8)return false;
+        for(unsigned i=0;i<count;++i)awards.push_back(read(6+std::size_t(i)*8,8));
+    }
+    const auto pet=ApplyPetProgress(c,context,*seal->before,awards,evolution);
+    if(!pet)return false;
+    auto after=*seal->before;
+    ++after.revision;
+    after.growthPet=*pet;
+    return after==seal->after;
 }
 
 bool ValidGrowthPetCompanionWrite(const ItemCatalog& c,const ItemCommit& r)
@@ -471,7 +559,8 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
         if(change.before)
         {
             const auto& b=*change.before;
-            if((b.growthPet || p.growthPet) && r.outcomeCode!=GrowthPetCompanionOutcome && r.outcomeCode!=PetFeedOutcome)
+            if((b.growthPet || p.growthPet) && r.outcomeCode!=GrowthPetCompanionOutcome &&
+                r.outcomeCode!=PetFeedOutcome && r.outcomeCode!=PetProgressOutcome)
             {
                 auto expected=b;
                 expected.revision=p.revision;
@@ -529,6 +618,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
     if(r.outcomeCode==PetHatchOutcome && !ValidHatchWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==GrowthPetCompanionOutcome && !ValidGrowthPetCompanionWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==PetFeedOutcome && !ValidPetFeedWrite(c,r))return std::unexpected(E::InvalidChange);
+    if(r.outcomeCode==PetProgressOutcome && !ValidPetProgressWrite(c,r))return std::unexpected(E::InvalidChange);
     return {};
 }
 std::expected<ItemCatalogDigest,E> ItemCommitDigest(const ItemCatalog& c,const ItemCommit& r)
@@ -964,6 +1054,55 @@ std::expected<PetFeedWrite,PetFeedCommitError> MakePetFeedCommit(const ItemCatal
     commit->result=std::move(writer.bytes);
     if(auto valid=ValidateItemCommit(c,*commit);!valid)return std::unexpected(PetFeedCommitError{valid.error()});
     return PetFeedWrite{*plan,std::move(*commit)};
+}
+
+std::expected<ItemCommit,E> MakeGrowthPetProgressCommit(const ItemCatalog& c,ItemOwnerFence owner,
+    std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> inventory,const PetCareContext& context,
+    ItemInstanceId sealId,std::span<const std::uint64_t> awards,std::optional<GrowthPetEvolution> evolution)
+{
+    if(owner.owner!=ItemOwner{ItemOwnerKind::Character,context.actorId} || owner.sessionGeneration!=context.sessionGeneration)
+        return std::unexpected(E::InvalidFence);
+    const auto* seal=Placed(inventory,owner,sealId);
+    if(!seal)return std::unexpected(E::MissingItem);
+    const auto pet=ApplyPetProgress(c,context,*seal,awards,evolution);
+    if(!pet)return std::unexpected(pet.error());
+    const auto layout=std::ranges::find(storages,ItemStorage{owner.owner,seal->placement->kind,seal->placement->storageId},
+        &ItemStorageLayout::storage);
+    if(layout==storages.end())return std::unexpected(E::InvalidStorage);
+    auto after=*seal;
+    ++after.revision;
+    after.growthPet=*pet;
+    ItemCommit commit;
+    commit.operationId=context.operationId;
+    commit.catalogRevision=c.Revision();
+    commit.catalogHash=c.ContentHash();
+    commit.kind=ItemOperationKind::Service;
+    commit.owners={owner};
+    commit.storages={*layout};
+    commit.items={{*seal,std::move(after)}};
+    commit.outcomeCode=PetProgressOutcome;
+    Writer result;
+    result.bytes={'P','R','G',1,static_cast<std::uint8_t>(evolution.has_value())};
+    if(evolution)
+    {
+        result.Put(evolution->nowUtcMs,8);
+        result.Put(evolution->elapsedMs,8);
+        result.Put(evolution->growth.maximumHpPercentTenths,2);
+        result.Put(evolution->growth.monsterDamagePercentTenths,2);
+        result.Put(evolution->growth.pveNormalDamagePercentTenths,2);
+        result.Put(context.characterLevel,2);
+        result.Put(context.characterClass,1);
+        result.Put(context.sex,1);
+        result.Put(context.inCombat,1);
+    }
+    else
+    {
+        result.Put(awards.size(),1);
+        for(const auto experience:awards)result.Put(experience,8);
+    }
+    commit.result=std::move(result.bytes);
+    if(auto valid=ValidateItemCommit(c,commit);!valid)return std::unexpected(valid.error());
+    return commit;
 }
 
 std::expected<ItemCommit,PetHatchCommitError> MakePetHatchCommit(const ItemCatalog& c,ItemOwnerFence owner,

@@ -3,6 +3,7 @@
 #include "ItemCatalogRuntime.hpp"
 #include "ItemStore.hpp"
 #include "TypedInventorySync.hpp"
+#include "TypedPetHatch.hpp"
 #include "TypedDrops.hpp"
 #include "TypedRecovery.hpp"
 #include "../ecs/Registry.hpp"
@@ -40,6 +41,8 @@ struct GrowthPetClock
     std::uint64_t token = 0;
     Clock::duration accrued{};
     std::optional<Clock::time_point> followingSince;
+    std::deque<std::uint64_t> mobAwards;
+    bool following = false;
     bool stopped = false;
     bool pending = false;
     std::vector<std::function<void()>> waiters;
@@ -53,12 +56,13 @@ ClockKey Key(item::ItemOwnerFence fence, std::uint64_t seal)
     return {fence.owner,fence.sessionGeneration,seal};
 }
 
-void SetFollowing(GrowthPetClock& clock, bool following)
+void SetFollowing(GrowthPetClock& clock, bool following, bool timed = false)
 {
+    clock.following = following;
     const auto now = Clock::now();
-    if (following && !clock.followingSince)
+    if (following && timed && !clock.followingSince)
         clock.followingSince = now;
-    else if (!following && clock.followingSince)
+    else if ((!following || !timed) && clock.followingSince)
     {
         clock.accrued += now - *clock.followingSince;
         clock.followingSince.reset();
@@ -104,6 +108,7 @@ struct CompanionProjection
 {
     std::uint64_t live = 0;
     std::uint32_t checked = 0;
+    std::uint32_t race = 0;
 };
 
 bool InGame(entt::entity owner)
@@ -186,7 +191,8 @@ void UpdateGrowthClock(entt::entity owner, const item::persistence::LoadedItemOw
         if (it->second->seal != live)
             SetFollowing(*it->second,false);
 
-    if (!live || !UsesActiveTime(FindSeal(state,live)))
+    const auto* seal = live ? FindSeal(state,live) : nullptr;
+    if (!seal || !seal->growthPet)
         return;
     const auto* login = g_registry.try_get<ecs::TypedItemLogin>(owner);
     if (!login)
@@ -195,7 +201,7 @@ void UpdateGrowthClock(entt::entity owner, const item::persistence::LoadedItemOw
     if (!clock)
         clock = std::make_shared<GrowthPetClock>(GrowthPetClock{state,live,login->token});
     if (!clock->stopped)
-        SetFollowing(*clock,true);
+        SetFollowing(*clock,true,UsesActiveTime(seal));
 }
 
 void StopGrowthClock(GrowthPetClock& clock)
@@ -223,7 +229,8 @@ void TickGrowthClocks()
         }
         const auto* seal = FindSeal(clock->state,clock->seal);
         const auto elapsed = Elapsed(*clock);
-        if (!UsesActiveTime(seal) || !seal->growthPet->life.remainingMs || (!clock->followingSince && !elapsed))
+        const bool timeOwed = UsesActiveTime(seal) && seal->growthPet->life.remainingMs && elapsed;
+        if (!seal || !seal->growthPet || (!clock->following && !timeOwed && clock->mobAwards.empty()))
         {
             for (auto& waiter : clock->waiters)
                 resume.push_back(std::move(waiter));
@@ -231,8 +238,9 @@ void TickGrowthClocks()
             continue;
         }
         ++it;
+        const bool timeDue = timeOwed && (!clock->following || elapsed >= 5000 || elapsed >= seal->growthPet->life.remainingMs);
         if ((!clock->stopped && owner != entt::null && g_registry.all_of<ecs::TypedItemBusy>(owner)) ||
-            (clock->followingSince && elapsed < 5000 && elapsed < seal->growthPet->life.remainingMs))
+            (!timeDue && clock->mobAwards.empty()))
             continue;
 
         const auto fence = clock->state.fence;
@@ -243,14 +251,27 @@ void TickGrowthClocks()
         context.admittedByServer = true;
         if (RAND_bytes(context.operationId.data(),static_cast<int>(context.operationId.size())) != 1)
             continue;
-        auto commit = item::MakeGrowthPetCompanionCommit(*catalog,fence,clock->state.storages,clock->state.items,
-            GrowthRequest(context,*seal,true),std::nullopt,elapsed);
+        const auto count = timeDue ? 0u : (std::min)(clock->mobAwards.size(),item::MaxGrowthPetMobAwards);
+        const std::vector<std::uint64_t> awards(clock->mobAwards.begin(),clock->mobAwards.begin()+count);
+        auto commit = timeDue ? item::MakeGrowthPetCompanionCommit(*catalog,fence,clock->state.storages,clock->state.items,
+            GrowthRequest(context,*seal,true),std::nullopt,elapsed)
+            : item::MakeGrowthPetProgressCommit(*catalog,fence,clock->state.storages,clock->state.items,context,seal->id,awards);
         if (!commit)
+        {
+            if (count)
+            {
+                if (commit.error() != item::ItemPersistenceError::RequirementNotMet)
+                    LOG_ERROR("Typed growth pet EXP plan failed owner {} error {}",fence.owner.id,static_cast<unsigned>(commit.error()));
+                clock->mobAwards.erase(clock->mobAwards.begin(),clock->mobAwards.begin()+count);
+            }
             continue;
+        }
         if (!clock->stopped)
             g_registry.emplace_or_replace<ecs::TypedItemBusy>(owner);
         const bool queued = store::RequestCommit(fence.owner,fence.sessionGeneration,std::move(*commit),
-            [clock](store::CommitOutcome outcome) {
+            [clock,count](store::CommitOutcome outcome) {
+                if (outcome.write && count)
+                    clock->mobAwards.erase(clock->mobAwards.begin(),clock->mobAwards.begin()+count);
                 const auto owner = CurrentOwner(*clock);
                 if (owner == entt::null || clock->stopped)
                     return;
@@ -264,6 +285,8 @@ void TickGrowthClocks()
                 g_registry.emplace_or_replace<ecs::TypedItems>(owner,std::move(*outcome.state));
                 g_registry.remove<ecs::TypedItemBusy>(owner);
                 SendTypedInventory(owner);
+                if (outcome.write && count)
+                    SendTypedPetProgress(owner,clock->seal);
                 PumpTypedItemGrants(owner);
             });
         if (!queued && !clock->stopped)
@@ -403,8 +426,11 @@ std::uint64_t RefreshTypedCompanion(entt::entity owner)
         const auto clock = growthClocks.find(Key(typed->state.fence,id));
         lifeRemaining = clock == growthClocks.end() || Elapsed(*clock->second) < desired->growthPet->life.remainingMs;
     }
-    const bool canFollow = row && lifeRemaining && !entry->base.retired && WorldAllowsFollower(owner) && !OtherFollower(owner, live);
-    if (live && (live != id || !canFollow))
+    const auto race = row ? FollowerRace(*catalog,*row,*desired) : 0;
+    const auto* previous = g_registry.try_get<CompanionProjection>(owner);
+    const bool formChanged = live && live==id && previous && previous->race!=race;
+    const bool canFollow = race && lifeRemaining && !entry->base.retired && WorldAllowsFollower(owner) && !OtherFollower(owner, live);
+    if (live && (live != id || !canFollow || formChanged))
     {
         PetSystem::RecallTyped(owner, live);
         live = 0;
@@ -421,18 +447,40 @@ std::uint64_t RefreshTypedCompanion(entt::entity owner)
     const auto now = get_dword_time();
     // Reconcile pending intent after the login affect load or a temporary map
     // restriction. Rate-limit failed materialization without changing SQL.
-    if (!live && canFollow && now - projection.checked >= 500u)
+    if (!live && canFollow && (formChanged || now - projection.checked >= 500u))
     {
-        const auto race = FollowerRace(*catalog, *row, *desired);
         const auto name = desired->growthPet ? std::string_view(desired->growthPet->name) : std::string_view{};
-        if (race && PetSystem::SummonTyped(owner, race, id, row->kind == item::CompanionKind::Mount, name))
+        if (PetSystem::SummonTyped(owner, race, id, row->kind == item::CompanionKind::Mount, name))
+        {
             live = id;
+            projection.race = race;
+        }
     }
     if (now - projection.checked >= 500u)
         projection.checked = now;
     projection.live = live;
     UpdateGrowthClock(owner,typed->state,live);
     return live;
+}
+
+void AwardTypedGrowthPetMobExperience(entt::entity owner,entt::entity defeated,int reward)
+{
+    // Match the legacy pet's 45% scale without coupling the player's reward
+    // to the asynchronous typed item transaction.
+    const auto experience = reward > 0 ? std::uint64_t(reward)*9/20 : 0;
+    if (!experience || !InGame(owner) || (!ecs::PlayerRuntime::IsMonster(defeated) &&
+        !ecs::PlayerRuntime::IsStone(defeated)))
+        return;
+    const auto live = PetSystem::LiveTypedSeal(owner);
+    const auto* typed = live ? g_registry.try_get<ecs::TypedItems>(owner) : nullptr;
+    if (!typed)
+        return;
+    const auto clock = growthClocks.find(Key(typed->state.fence,live));
+    const auto* seal = FindSeal(typed->state,live);
+    if (clock==growthClocks.end() || clock->second->stopped || !seal || !seal->growthPet ||
+        !WorldAllowsFollower(owner) || (UsesActiveTime(seal) && Elapsed(*clock->second)>=seal->growthPet->life.remainingMs))
+        return;
+    clock->second->mobAwards.push_back(experience);
 }
 
 void TickTypedCompanions()

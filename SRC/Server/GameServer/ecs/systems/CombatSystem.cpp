@@ -17,6 +17,7 @@
 #include "CombatSystem.hpp"
 #include "../../item/TypedRecovery.hpp"
 #include "../../item/TypedEquipment.hpp"
+#include "../../item/TypedCompanions.hpp"
 #include "HerbalismRules.hpp"
 #include "SessionSystem.hpp"
 #include "SkillSystem.hpp"
@@ -1685,6 +1686,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 		ecs::ChatSystem::Send(toEntity, CHAT_TYPE_INFO, "exp+minGNE+adjust(%d)", iExp);
 	// set
 	iExp=EquipmentLegacyInt(std::max<int64_t>(0,EquipmentScale(iExp,10000+TypedEquipmentBonus(toEntity,auriga::item::BonusId::ExperiencePercent))));
+	AwardTypedGrowthPetMobExperience(toEntity,fromEntity,iExp);
 	ecs::PointSystem::Change(toEntity, POINT_EXP, iExp, true);
 	CombatSystem::CreateFly(fromEntity, FLY_EXP, toEntity);
 	// marriage
@@ -1817,6 +1819,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 #endif
 
 	iExp=EquipmentLegacyInt(std::max<int64_t>(0,EquipmentScale(iExp,10000+TypedEquipmentBonus(toEntity,auriga::item::BonusId::ExperiencePercent))));
+	AwardTypedGrowthPetMobExperience(toEntity,fromEntity,iExp);
 	ecs::PointSystem::Change(toEntity, POINT_EXP, iExp, true);
 	CombatSystem::CreateFly(fromEntity, FLY_EXP, toEntity);
 

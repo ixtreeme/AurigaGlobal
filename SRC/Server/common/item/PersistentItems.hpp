@@ -205,6 +205,15 @@ std::expected<PetFeedWrite,PetFeedCommitError> MakePetFeedCommit(const ItemCatal
     std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const PetCareContext&,
     ItemInstanceId food,ItemInstanceId seal,PetFeedingService,std::uint64_t elapsedMs);
 std::optional<std::uint64_t> PetFeedClockCharge(const ItemCommit&,std::uint64_t sealId);
+inline constexpr std::size_t MaxGrowthPetMobAwards=64;
+struct GrowthPetEvolution
+{
+    std::uint64_t nowUtcMs=0,elapsedMs=0;
+    PetBirthTraits growth;
+};
+std::expected<ItemCommit,ItemPersistenceError> MakeGrowthPetProgressCommit(const ItemCatalog&,ItemOwnerFence,
+    std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const PetCareContext&,ItemInstanceId seal,
+    std::span<const std::uint64_t> mobAwards,std::optional<GrowthPetEvolution> evolution={});
 // Gives new units of one item state to the owner's inventory (F4 C7a): a drop,
 // a purchase or a reward. Stackable units first top up the owner's matching
 // inventory stacks (same key, level and binding, no instance state), in storage

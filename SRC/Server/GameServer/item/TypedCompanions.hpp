@@ -6,6 +6,7 @@
 std::uint64_t RefreshTypedCompanion(entt::entity owner);
 std::uint64_t TypedGrowthPetElapsed(entt::entity owner,std::uint64_t seal);
 void TickTypedCompanions();
+void AwardTypedGrowthPetMobExperience(entt::entity owner,entt::entity defeated,int reward);
 void StopTypedGrowthPetClock(entt::entity owner);
 void FinishTypedGrowthPetClocks();
 bool HandleTypedCompanionPacket(entt::entity owner, const char* data);

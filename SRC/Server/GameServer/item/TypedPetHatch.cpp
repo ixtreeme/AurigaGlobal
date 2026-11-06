@@ -17,7 +17,9 @@
 #include "../ecs/systems/SessionSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../entity/char_manager.h"
+#include "../entity/mob_manager.h"
 #include "../network/desc.h"
+#include "../pet/PetSystem.h"
 #include "../quest/questpc.h"
 #include "../social/banword.h"
 #include "../core/packet.h"
@@ -30,12 +32,14 @@ namespace
 {
 namespace item = auriga::item;
 namespace store = item::runtime;
-enum class Action : std::uint8_t { Preview = 1, Confirm, Close, Inspect, FoodList, FeedPreview, FeedConfirm };
+enum class Action : std::uint8_t { Preview = 1, Confirm, Close, Inspect, FoodList, FeedPreview, FeedConfirm, Progress, Evolve };
 enum class Status : std::uint8_t
 {
     Closed, Ready, Pending, Hatched, Invalid, Denied, Busy, Stale, Failed,
-    InsufficientGold, NoRoom, InvalidName, Details, FoodList, FeedReady, Fed, NoEffect
+    InsufficientGold, NoRoom, InvalidName, Details, FoodList, FeedReady, Fed, NoEffect, Evolved
 };
+
+struct PetProgressView { std::uint64_t seal; };
 
 struct FeedingView
 {
@@ -142,7 +146,7 @@ const item::PetHatchProfile* HatchProfile(const item::ItemCatalog& catalog, item
 
 void Reply(entt::entity entity, Status status, std::uint64_t id, std::uint64_t token = 0,
     std::uint64_t cost = 0, std::optional<item::ItemKey> target = {}, const item::PersistentItem* seal = nullptr,
-    const FeedingView* feeding = nullptr)
+    const FeedingView* feeding = nullptr, bool progression = false)
 {
     if (!InGame(entity)) return;
     const auto* typed = g_registry.try_get<ecs::TypedItems>(entity);
@@ -155,7 +159,7 @@ void Reply(entt::entity entity, Status status, std::uint64_t id, std::uint64_t t
     PacketWriter packet;
     packet.Put<std::uint8_t>(HEADER_GC_TYPED_PET_HATCH);
     packet.Put<std::uint32_t>(0);
-    packet.Put<std::uint8_t>(feeding ? 2 : 1);
+    packet.Put<std::uint8_t>(progression ? 3 : feeding ? 2 : 1);
     packet.Put<std::uint8_t>(static_cast<std::uint8_t>(status));
     packet.Put(id);
     packet.Put(token);
@@ -182,6 +186,23 @@ void Reply(entt::entity entity, Status status, std::uint64_t id, std::uint64_t t
         packet.Put(pet->traits.maximumHpPercentTenths);
         packet.Put(pet->traits.monsterDamagePercentTenths);
         packet.Put(pet->traits.pveNormalDamagePercentTenths);
+        if (progression)
+        {
+            const auto& companion = std::get<item::ItemCompanionRow>(entry->category);
+            const auto& profile = *catalog->FindGrowthPetProfile(*companion.growthProfile);
+            const auto& level = profile.levels[pet->progress.level-1];
+            const auto& stage = profile.stages[pet->progress.stage];
+            const bool atGate = pet->progress.level == stage.maximumLevel && pet->progress.level < profile.maximumLevel;
+            const bool following = PetSystem::LiveTypedSeal(entity)==seal->id.Value();
+            const bool canEvolve = atGate && following && !entry->base.retired &&
+                (pet->life.clock==item::CompanionClock::Permanent || elapsed<pet->life.remainingMs);
+            packet.Put(pet->progress.mobExperience);
+            packet.Put(level.mobExperience);
+            packet.Put(pet->progress.itemExperience);
+            packet.Put(level.itemExperience);
+            packet.Put<std::uint8_t>((profile.experiencePolicy==item::GrowthExpPolicy::MobAndItem ? 1 : 0) |
+                (atGate ? 2 : 0) | (canEvolve ? 4 : 0));
+        }
     }
     if (feeding)
     {
@@ -567,6 +588,8 @@ bool HandleFeeding(entt::entity entity, Action action, const TPacketCGTypedPetHa
             {
                 session->status = outcome.write ? Status::Fed : Status::Failed;
                 ReplyFeedSession(entity,*session,InBag(g_registry.get<ecs::TypedItems>(entity),session->seal));
+                if (outcome.write)
+                    SendTypedPetProgress(entity,session->seal);
             }
             PumpTypedItemGrants(entity);
         });
@@ -578,6 +601,121 @@ bool HandleFeeding(entt::entity entity, Action action, const TPacketCGTypedPetHa
     ReplyFeedSession(entity,*session,nullptr);
     return true;
 }
+
+void ProgressReply(entt::entity entity,Status status,std::uint64_t id,const item::PersistentItem* seal=nullptr)
+{
+    Reply(entity,status,id,0,0,seal ? std::optional{seal->key} : std::nullopt,seal,nullptr,true);
+}
+
+void Evolve(entt::entity entity,const TPacketCGTypedPetHatch& packet,const item::ItemCatalog& catalog)
+{
+    if (g_registry.all_of<ecs::TypedItemBusy>(entity))
+    {
+        ProgressReply(entity,Status::Busy,packet.itemId);
+        return;
+    }
+    const auto& typed = g_registry.get<ecs::TypedItems>(entity);
+    const auto* seal = InBag(typed,packet.itemId);
+    if (!seal || !seal->growthPet || !Admitted(entity) || RefreshTypedCompanion(entity)!=packet.itemId)
+    {
+        ProgressReply(entity,Status::Denied,packet.itemId);
+        return;
+    }
+    const auto& pet = *seal->growthPet;
+    if (packet.token!=std::uint64_t(pet.progress.stage)+1)
+    {
+        ProgressReply(entity,Status::Stale,packet.itemId);
+        return;
+    }
+    const auto& row = std::get<item::ItemCompanionRow>(catalog.Find(seal->key)->category);
+    const auto& profile = *catalog.FindGrowthPetProfile(*row.growthProfile);
+    const auto stage = std::size_t(pet.progress.stage);
+    if (stage+1>=profile.stages.size() || pet.progress.level!=profile.stages[stage].maximumLevel)
+    {
+        ProgressReply(entity,Status::NoEffect,packet.itemId);
+        return;
+    }
+    const auto* form = catalog.FindCompanionForm(profile.stages[stage+1].form);
+    if (!form || form->mobTemplateId>UINT16_MAX || !CMobManager::instance().Get(form->mobTemplateId))
+    {
+        ProgressReply(entity,Status::Denied,packet.itemId);
+        return;
+    }
+
+    const auto fence = typed.state.fence;
+    const auto pid = ecs::PlayerRuntime::GetPlayerID(entity);
+    const auto login = g_registry.get<ecs::TypedItemLogin>(entity).token;
+    item::PetCareContext context{{},pid,fence.sessionGeneration,1,static_cast<std::uint16_t>(ecs::PointSystem::GetLevel(entity)),
+        static_cast<std::uint8_t>(ecs::PlayerRuntime::GetJob(entity)+1),static_cast<std::uint8_t>(ecs::PlayerRuntime::GetSex(entity)+1),
+        true,true,true,false,false,ecs::PlayerRuntime::GetPosition(entity)==POS_FIGHTING};
+    item::GrowthPetEvolution evolution{TypedItemEffectNow(),TypedGrowthPetElapsed(entity,packet.itemId)};
+    const auto* training = row.trainingProfile ? catalog.FindPetTrainingProfile(*row.trainingProfile) : nullptr;
+    if (training)
+    {
+        const auto growth = [&](std::uint16_t period) -> std::optional<std::uint16_t> {
+            if (!period || (pet.progress.level+1)%period) return std::uint16_t{0};
+            return Roll({training->evolutionMinimum,training->evolutionMaximum,1});
+        };
+        const auto hp = growth(training->hpEvolutionPeriod);
+        const auto monster = growth(training->monsterEvolutionPeriod);
+        const auto pve = growth(training->pveEvolutionPeriod);
+        if (!hp || !monster || !pve)
+        {
+            ProgressReply(entity,Status::Failed,packet.itemId);
+            return;
+        }
+        evolution.growth = {*hp,*monster,*pve};
+    }
+    if (RAND_bytes(context.operationId.data(),static_cast<int>(context.operationId.size()))!=1)
+    {
+        ProgressReply(entity,Status::Failed,packet.itemId);
+        return;
+    }
+    auto commit = item::MakeGrowthPetProgressCommit(catalog,fence,typed.state.storages,typed.state.items,context,seal->id,{},evolution);
+    auto permit = ecs::resource_admission::Enter({entity},auriga::resource_admission::Operation::ItemUse);
+    if (CurrentLogin(pid,login)!=entity) return;
+    const auto* current = g_registry.try_get<ecs::TypedItems>(entity);
+    if (!commit || !permit || !permit->Current() || !Admitted(entity) || !current || current->state.fence!=fence ||
+        PetSystem::LiveTypedSeal(entity)!=packet.itemId || g_registry.all_of<ecs::TypedItemBusy>(entity))
+    {
+        ProgressReply(entity,Status::Denied,packet.itemId);
+        return;
+    }
+    auto held = std::make_shared<auriga::resource_admission::Permit>(std::move(*permit));
+    g_registry.emplace_or_replace<ecs::TypedItemBusy>(entity);
+    const bool queued = store::RequestCommit(fence.owner,fence.sessionGeneration,std::move(*commit),
+        [pid,login,id=std::uint64_t(packet.itemId),held](store::CommitOutcome outcome) {
+            const auto entity = CurrentLogin(pid,login);
+            if (entity==entt::null) return;
+            if (!outcome.state)
+            {
+                LOG_ERROR("Typed pet evolution owner reload failed pid {}",pid);
+                if (auto* desc = ecs::PlayerRuntime::GetDesc(entity)) desc->SetPhase(PHASE_CLOSE);
+                return;
+            }
+            g_registry.emplace_or_replace<ecs::TypedItems>(entity,std::move(*outcome.state));
+            g_registry.remove<ecs::TypedItemBusy>(entity);
+            SendTypedInventory(entity);
+            const auto* seal = InBag(g_registry.get<ecs::TypedItems>(entity),id);
+            if (outcome.write && seal && seal->growthPet)
+                ProgressReply(entity,Status::Evolved,id,seal);
+            else
+                ProgressReply(entity,Status::Failed,id);
+            PumpTypedItemGrants(entity);
+        });
+    if (!queued) g_registry.remove<ecs::TypedItemBusy>(entity);
+    ProgressReply(entity,queued ? Status::Pending : Status::Failed,packet.itemId);
+}
+}
+
+void SendTypedPetProgress(entt::entity entity,std::uint64_t id)
+{
+    if (!InGame(entity)) return;
+    const auto* view = g_registry.try_get<PetProgressView>(entity);
+    const auto* typed = g_registry.try_get<ecs::TypedItems>(entity);
+    const auto* seal = view && view->seal==id && typed ? InBag(*typed,id) : nullptr;
+    if (seal && seal->growthPet)
+        ProgressReply(entity,Status::Details,id,seal);
 }
 
 bool HandleTypedPetHatchPacket(entt::entity entity, const char* data)
@@ -589,12 +727,13 @@ bool HandleTypedPetHatchPacket(entt::entity entity, const char* data)
     TPacketCGTypedPetHatch packet{};
     std::memcpy(&packet, data, sizeof(packet));
     const auto action = static_cast<Action>(packet.action);
-    if (!packet.itemId || action < Action::Preview || action > Action::FeedConfirm
+    if (!packet.itemId || action < Action::Preview || action > Action::Evolve
         || packet.nameLength > sizeof(packet.name)
         || (action != Action::Confirm && packet.nameLength)
         || (action == Action::Confirm && !packet.nameLength)
-        || ((action == Action::Preview || action == Action::Inspect || action == Action::FoodList) && packet.token)
+        || ((action == Action::Preview || action == Action::Inspect || action == Action::FoodList || action == Action::Progress) && packet.token)
         || ((action == Action::FeedPreview || action == Action::FeedConfirm) && !packet.token)
+        || (action == Action::Evolve && (!packet.token || packet.token>16))
         || std::any_of(packet.name + packet.nameLength, std::end(packet.name), [](char c) { return c != 0; }))
     {
         Reply(entity, Status::Invalid, packet.itemId, packet.token);
@@ -603,8 +742,13 @@ bool HandleTypedPetHatchPacket(entt::entity entity, const char* data)
 
     const auto catalog = store::CurrentCatalog();
     if (!catalog) return true;
-    if (action >= Action::FoodList)
+    if (action >= Action::FoodList && action <= Action::FeedConfirm)
         return HandleFeeding(entity,action,packet,*catalog);
+    if (action == Action::Evolve)
+    {
+        Evolve(entity,packet,*catalog);
+        return true;
+    }
     auto* session = g_registry.try_get<PetHatchSession>(entity);
     if (session && session->status == Status::Pending && action != Action::Confirm)
     {
@@ -626,6 +770,8 @@ bool HandleTypedPetHatchPacket(entt::entity entity, const char* data)
         else
         {
             g_registry.remove<PetHatchSession>(entity);
+            if (const auto* view = g_registry.try_get<PetProgressView>(entity); view && view->seal==packet.itemId)
+                g_registry.remove<PetProgressView>(entity);
             Reply(entity, Status::Closed, packet.itemId, packet.token);
         }
         return true;
@@ -633,10 +779,20 @@ bool HandleTypedPetHatchPacket(entt::entity entity, const char* data)
 
     const auto& typed = g_registry.get<ecs::TypedItems>(entity);
     const auto* source = InBag(typed, packet.itemId);
-    if (action == Action::Inspect)
+    if (action == Action::Inspect || action == Action::Progress)
     {
         g_registry.remove<PetHatchSession>(entity);
-        if (source && source->growthPet)
+        if (action == Action::Progress)
+        {
+            if (source && source->growthPet)
+            {
+                g_registry.emplace_or_replace<PetProgressView>(entity,PetProgressView{packet.itemId});
+                ProgressReply(entity,Status::Details,packet.itemId,source);
+            }
+            else
+                ProgressReply(entity,Status::Invalid,packet.itemId);
+        }
+        else if (source && source->growthPet)
             Reply(entity, Status::Details, packet.itemId, 0, 0, source->key, source);
         else
             Reply(entity, Status::Invalid, packet.itemId);
