@@ -184,7 +184,7 @@ void GrowthPetBirthSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,I
     const ItemWallet wallet{owner,WalletCurrency::Gold,1,150000};
     Check(p::ProvisionOwner(admin,c,owner,std::span(&bag,1),std::span(&wallet,1)).has_value(),"hatch owner provisioned");
     auto state=p::LoadCurrentItemOwner(writer,c,owner).value();
-    const auto ids=p::ReserveItemInstanceIds(writer,c,6).value();
+    const auto ids=p::ReserveItemInstanceIds(writer,c,8).value();
     const auto eggId=ItemInstanceId::Create(ids.first).value();
     const auto sealId=ItemInstanceId::Create(ids.first+1).value();
     const auto grant=MakeGrantCommit(c,{30,1},state.fence,state.storages,state.items,{eggKey,0,2},std::array{eggId});
@@ -429,6 +429,48 @@ void GrowthPetBirthSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,I
         "persisted cooldown blocks another known attempt");
     const auto incomplete=study(7,std::nullopt,0);
     Check(incomplete && !p::CommitItems(writer,c,incomplete->commit),"SQL rejects an omitted owner cooldown snapshot");
+
+    const auto resetOne=ItemKey::Create(ItemCategory::Special,96).value();
+    const auto resetAll=ItemKey::Create(ItemCategory::Special,97).value();
+    const auto oneId=ItemInstanceId::Create(ids.first+6).value(),allId=ItemInstanceId::Create(ids.first+7).value();
+    for(const auto& [key,id]:std::array{std::pair{resetOne,oneId},std::pair{resetAll,allId}}) {
+        const auto grant=MakeGrantCommit(c,{34,static_cast<std::uint8_t>(key.LocalId())},state.fence,state.storages,state.items,
+            {key,0,2},std::array{id});
+        Check(grant && p::CommitItems(writer,c,*grant).has_value(),"reset supply granted");
+        state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    }
+    const auto reset=[&](std::uint8_t serial,ItemInstanceId supply,std::optional<std::uint8_t> slot) {
+        auto admission=context;admission.operationId={35,serial};admission.sessionGeneration=state.fence.sessionGeneration;
+        return MakePetSkillResetCommit(c,state.fence,state.storages,state.items,admission,supply,sealId,
+            {slot,request.bornAtUtcMs+40000,10});
+    };
+    Check(!reset(1,oneId,1),"empty locked slot cannot spend a reset supply");
+    Check(!reset(2,allId,0),"reset-all rejects a selected slot");
+    const auto forgotten=reset(3,oneId,0);
+    Check(forgotten && !forgotten->commit.petStudyCooldown,"reset does not replace owner study cooldown");
+    auto forgedReset=forgotten->commit;forgedReset.items.back().after.growthPet->name="Renamed";
+    Check(!ValidateItemCommit(c,forgedReset),"reset cannot alter unrelated pet identity");
+    Check(p::CommitItems(writer,c,forgotten->commit).has_value() && p::CommitItems(writer,c,forgotten->commit)->replay,
+        "single reset and its debit commit once");
+    Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"single reset relog");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    Check(Find(state,sealId.Value()).growthPet->skills[0]==PetSkillSlot{true,0,0} &&
+        !Find(state,sealId.Value()).growthPet->skills[1].unlocked && Find(state,oneId.Value()).count==1 &&
+        state.petStudyCooldowns.at(1)==ready,"reset retains unlocked/locked slots, cooldown and one debit after relog");
+    Check(!reset(4,oneId,0) && !reset(5,allId,std::nullopt),"empty reset consumes nothing");
+    const auto relearn=study(8,0,0);
+    Check(relearn && p::CommitItems(writer,c,relearn->commit).has_value(),"forgotten slot can learn again");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto cleared=reset(6,allId,std::nullopt);
+    Check(cleared && p::CommitItems(writer,c,cleared->commit).has_value() && p::CommitItems(writer,c,cleared->commit)->replay,
+        "all reset commits once");
+    Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"all reset relog");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto final=Find(state,sealId.Value());
+    Check(final.growthPet->skills[0]==PetSkillSlot{true,0,0} && final.growthPet->progress==trained.growthPet->progress &&
+        final.growthPet->traits==trained.growthPet->traits && final.growthPet->name==trained.growthPet->name &&
+        Find(state,allId.Value()).count==1 && state.petStudyCooldowns.at(1)==ready,
+        "all reset persists without changing progression, birth traits or owner cooldown");
 }
 
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
@@ -469,6 +511,12 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
     source.items.push_back(std::move(petBookBase));
     source.petSupplies.push_back({petBook,1});
     source.petSupplyProfiles.push_back({1,"supply.sql_pet_study",PetSupplyKind::Study,PetStudyRule{1,true,true,7100,10800000}});
+    for(unsigned kind=2;kind<=3;++kind) {
+        auto base=source.items.back();base.key=ItemKey::Create(ItemCategory::Special,94+kind).value();
+        base.contentCode="special.sql_pet_reset_"+std::to_string(kind);
+        source.items.push_back(base);source.petSupplies.push_back({base.key,kind});
+        source.petSupplyProfiles.push_back({kind,"supply.sql_pet_reset_"+std::to_string(kind),static_cast<PetSupplyKind>(kind)});
+    }
     source.petHatchProfiles.push_back({1,"hatch.sql_birth",growthSeal,100000,{30,40,5},{10,20,5},{10,20,5}});
     source.petFeedRules={{hatchEgg,PetFeedingService::Cube,PetFoodKind::LifetimeFraction,PetFoodConsumption::WholeStack,0,5000,0,0},
         {f::Leather().key,PetFeedingService::Direct,PetFoodKind::RefillOrRevive,PetFoodConsumption::ExactUnits,1,0,5000,0},

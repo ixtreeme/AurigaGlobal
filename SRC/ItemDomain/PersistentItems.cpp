@@ -22,6 +22,7 @@ constexpr std::uint16_t GrowthPetCompanionOutcome=0x2603;
 constexpr std::uint16_t PetFeedOutcome=0x2604;
 constexpr std::uint16_t PetProgressOutcome=0x2605;
 constexpr std::uint16_t PetStudyOutcome=0x2606;
+constexpr std::uint16_t PetSkillResetOutcome=0x2607;
 bool PermanentSeal(const ItemCompanionRow& row)
 {
     return (row.kind==CompanionKind::Pet || row.kind==CompanionKind::Mount) && row.clock==CompanionClock::Permanent;
@@ -282,23 +283,27 @@ bool ValidPetProgressWrite(const ItemCatalog& c,const ItemCommit& commit)
     return after==seal->after;
 }
 
-const PetStudyRule* StudyRule(const ItemCatalog& c,ItemKey key)
+const PetSupplyProfile* TrainingSupply(const ItemCatalog& c,ItemKey key)
 {
     const auto* entry=c.Find(key);
     const auto* row=entry ? std::get_if<ItemPetSupplyRow>(&entry->category) : nullptr;
     const auto* profile=row ? c.FindPetSupplyProfile(row->profile) : nullptr;
-    return profile && profile->kind==PetSupplyKind::Study ? &*profile->study : nullptr;
+    return profile && (profile->kind==PetSupplyKind::Study || profile->kind==PetSupplyKind::ResetOne ||
+        profile->kind==PetSupplyKind::ResetAll) ? profile : nullptr;
 }
 
 std::expected<PetSupplyPlan,PetLifecycleError> PersistentStudyPlan(const ItemCatalog& c,ItemOwnerFence owner,
     const PetCareContext& context,const PersistentItem& book,const PersistentItem& seal,const PetStudyTerms& terms)
 {
     using Error=PetLifecycleError;
+    const auto* profile=TrainingSupply(c,book.key);
     if(owner.owner!=ItemOwner{ItemOwnerKind::Character,context.actorId} || owner.sessionGeneration!=context.sessionGeneration ||
-        !StudyRule(c,book.key) || !PlainInventoryItem(book,owner.owner) || !seal.growthPet || !seal.growthPet->recallRequested ||
+        !profile || !PlainInventoryItem(book,owner.owner) || !seal.growthPet || !seal.growthPet->recallRequested ||
         seal.owner!=owner.owner || seal.destroyed || !seal.placement || seal.placement->kind!=ItemStorageKind::Inventory ||
         (seal.boundTo && seal.boundTo!=owner.owner) || (terms.slot && terms.cooldownBeforeMs))
         return std::unexpected(Error::InvalidSnapshot);
+    if(profile->kind!=PetSupplyKind::Study && (terms.rollBp || terms.cooldownBeforeMs ||
+        (profile->kind==PetSupplyKind::ResetAll && terms.slot)))return std::unexpected(Error::InvalidDecision);
     const PetCareItemSnapshot target{seal.key,seal.id.Value(),seal.revision,seal.owner.id,seal.count,
         seal.refinementLevel,false,false,false,true,true,seal.id.Value()};
     PetLifecycleRequest pet{context,target,seal.revision,terms.nowUtcMs,*seal.growthPet};
@@ -310,22 +315,24 @@ std::expected<PetSupplyPlan,PetLifecycleError> PersistentStudyPlan(const ItemCat
     return PlanPetSupply(c,{pet,supply,terms.slot,0,terms.rollBp,owner.revision,terms.cooldownBeforeMs});
 }
 
-std::optional<ItemPetStudyCooldown> StudyCooldown(const PetStudyRule& rule,const PetSupplyPlan& plan,const PetStudyTerms& terms)
+std::optional<ItemPetStudyCooldown> StudyCooldown(const PetSupplyProfile& profile,const PetSupplyPlan& plan,const PetStudyTerms& terms)
 {
-    if(terms.slot)return {};
+    if(profile.kind!=PetSupplyKind::Study || terms.slot)return {};
+    const auto& rule=*profile.study;
     return ItemPetStudyCooldown{rule.skill,terms.cooldownBeforeMs,plan.writeOwnerCooldown ? plan.ownerSkillNotBeforeUtcMs : 0};
 }
 
 bool ValidPetStudyWrite(const ItemCatalog& c,const ItemCommit& commit)
 {
     const auto& bytes=commit.result;
+    const bool reset=commit.outcomeCode==PetSkillResetOutcome;
     if(commit.kind!=ItemOperationKind::Service || commit.owners.size()!=1 || !commit.wallets.empty() ||
         commit.ground || commit.recovery || commit.learning || bytes.size()!=28 ||
-        bytes[0]!='P' || bytes[1]!='S' || bytes[2]!='T' || bytes[3]!=1 || bytes[4]>4 || bytes[27]>1)
+        bytes[0]!='P' || bytes[1]!='S' || bytes[2]!=(reset ? 'R' : 'T') || bytes[3]!=1 || bytes[4]>4 || bytes[27]>1)
         return false;
     const ItemChange* book=nullptr;
     const ItemChange* seal=nullptr;
-    const PetStudyRule* rule=nullptr;
+    const PetSupplyProfile* rule=nullptr;
     for(const auto& change:commit.items)
     {
         if(change.before && change.before->growthPet)
@@ -333,15 +340,15 @@ bool ValidPetStudyWrite(const ItemCatalog& c,const ItemCommit& commit)
             if(seal)return false;
             seal=&change;
         }
-        else if(change.before && StudyRule(c,change.before->key))
+        else if(change.before && TrainingSupply(c,change.before->key))
         {
             if(book)return false;
             book=&change;
-            rule=StudyRule(c,change.before->key);
+            rule=TrainingSupply(c,change.before->key);
         }
         else if(!AccessoryTimeOnly(change))return false;
     }
-    if(!book || !seal)return false;
+    if(!book || !seal || (rule->kind==PetSupplyKind::Study)==reset)return false;
     const auto read=[&](std::size_t offset,unsigned size) {
         std::uint64_t value=0;
         for(unsigned i=0;i<size;++i)value|=std::uint64_t(bytes[offset+i])<<(8*i);
@@ -479,7 +486,7 @@ bool ValidItemStorage(const ItemStorageLayout& l) noexcept
 bool SupportsPersistentItem(const ItemCatalog& c,const ItemCatalogEntry& e) noexcept
 {
     if(const auto* companion=std::get_if<ItemCompanionRow>(&e.category))return PermanentSeal(*companion) || companion->kind==CompanionKind::GrowthPet;
-    if(std::holds_alternative<ItemPetSupplyRow>(e.category))return StudyRule(c,e.base.key)!=nullptr;
+    if(std::holds_alternative<ItemPetSupplyRow>(e.category))return TrainingSupply(c,e.base.key)!=nullptr;
     if(std::holds_alternative<ItemToolRow>(e.category))return true;
     if(std::holds_alternative<ItemFishingRow>(e.category) || std::holds_alternative<ItemPolymorphRow>(e.category) || std::holds_alternative<ItemSkillBookRow>(e.category))return true;
     if(std::holds_alternative<ItemContainerRow>(e.category))return true;
@@ -650,7 +657,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
         {
             const auto& b=*change.before;
             if((b.growthPet || p.growthPet) && r.outcomeCode!=GrowthPetCompanionOutcome &&
-                r.outcomeCode!=PetFeedOutcome && r.outcomeCode!=PetProgressOutcome && r.outcomeCode!=PetStudyOutcome)
+                r.outcomeCode!=PetFeedOutcome && r.outcomeCode!=PetProgressOutcome && r.outcomeCode!=PetStudyOutcome && r.outcomeCode!=PetSkillResetOutcome)
             {
                 auto expected=b;
                 expected.revision=p.revision;
@@ -709,7 +716,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
     if(r.outcomeCode==GrowthPetCompanionOutcome && !ValidGrowthPetCompanionWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==PetFeedOutcome && !ValidPetFeedWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==PetProgressOutcome && !ValidPetProgressWrite(c,r))return std::unexpected(E::InvalidChange);
-    if(r.outcomeCode==PetStudyOutcome && !ValidPetStudyWrite(c,r))return std::unexpected(E::InvalidChange);
+    if((r.outcomeCode==PetStudyOutcome || r.outcomeCode==PetSkillResetOutcome) && !ValidPetStudyWrite(c,r))return std::unexpected(E::InvalidChange);
     return {};
 }
 std::expected<ItemCatalogDigest,E> ItemCommitDigest(const ItemCatalog& c,const ItemCommit& r)
@@ -1201,13 +1208,16 @@ std::expected<ItemCommit,E> MakeGrowthPetProgressCommit(const ItemCatalog& c,Ite
     return commit;
 }
 
-std::expected<PetStudyWrite,PetStudyCommitError> MakePetStudyCommit(const ItemCatalog& c,ItemOwnerFence owner,
+static std::expected<PetStudyWrite,PetStudyCommitError> MakePetTrainingCommit(const ItemCatalog& c,ItemOwnerFence owner,
     std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> inventory,const PetCareContext& context,
-    ItemInstanceId bookId,ItemInstanceId sealId,const PetStudyTerms& terms)
+    ItemInstanceId bookId,ItemInstanceId sealId,const PetStudyTerms& terms,bool reset)
 {
     const auto* book=Placed(inventory,owner,bookId);
     const auto* seal=Placed(inventory,owner,sealId);
     if(!book || !seal)return std::unexpected(PetStudyCommitError{E::MissingItem});
+    const auto* profile=TrainingSupply(c,book->key);
+    if(!profile || (profile->kind==PetSupplyKind::Study)==reset)
+        return std::unexpected(PetStudyCommitError{PetLifecycleError::WrongSupply});
     const auto plan=PersistentStudyPlan(c,owner,context,*book,*seal,terms);
     if(!plan)return std::unexpected(PetStudyCommitError{plan.error()});
     const auto layout=std::ranges::find(storages,ItemStorage{owner.owner,seal->placement->kind,seal->placement->storageId},
@@ -1221,10 +1231,11 @@ std::expected<PetStudyWrite,PetStudyCommitError> MakePetStudyCommit(const ItemCa
     after.growthPet=plan->after;
     commit->items.push_back({*seal,std::move(after)});
     commit->kind=ItemOperationKind::Service;
-    commit->outcomeCode=PetStudyOutcome;
-    commit->petStudyCooldown=StudyCooldown(*StudyRule(c,book->key),*plan,terms);
+    commit->outcomeCode=reset ? PetSkillResetOutcome : PetStudyOutcome;
+    commit->petStudyCooldown=StudyCooldown(*profile,*plan,terms);
     Writer result;
     result.bytes={'P','S','T',1,static_cast<std::uint8_t>(terms.slot ? *terms.slot+1 : 0)};
+    if(reset)result.bytes[2]='R';
     result.Put(terms.nowUtcMs,8);
     result.Put(terms.elapsedMs,8);
     result.Put(terms.rollBp,2);
@@ -1236,6 +1247,16 @@ std::expected<PetStudyWrite,PetStudyCommitError> MakePetStudyCommit(const ItemCa
     if(auto valid=ValidateItemCommit(c,*commit);!valid)return std::unexpected(PetStudyCommitError{valid.error()});
     return PetStudyWrite{*plan,std::move(*commit)};
 }
+
+std::expected<PetStudyWrite,PetStudyCommitError> MakePetStudyCommit(const ItemCatalog& c,ItemOwnerFence owner,
+    std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> inventory,const PetCareContext& context,
+    ItemInstanceId bookId,ItemInstanceId sealId,const PetStudyTerms& terms)
+{return MakePetTrainingCommit(c,owner,storages,inventory,context,bookId,sealId,terms,false);}
+
+std::expected<PetStudyWrite,PetStudyCommitError> MakePetSkillResetCommit(const ItemCatalog& c,ItemOwnerFence owner,
+    std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> inventory,const PetCareContext& context,
+    ItemInstanceId supplyId,ItemInstanceId sealId,const PetSkillResetTerms& terms)
+{return MakePetTrainingCommit(c,owner,storages,inventory,context,supplyId,sealId,{terms.slot,terms.nowUtcMs,terms.elapsedMs,0,0},true);}
 
 std::expected<ItemCommit,PetHatchCommitError> MakePetHatchCommit(const ItemCatalog& c,ItemOwnerFence owner,
     std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> inventory,

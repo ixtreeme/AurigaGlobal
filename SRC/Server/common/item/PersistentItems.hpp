@@ -233,6 +233,14 @@ struct PetStudyWrite { PetSupplyPlan plan; ItemCommit commit; };
 std::expected<PetStudyWrite,PetStudyCommitError> MakePetStudyCommit(const ItemCatalog&,ItemOwnerFence,
     std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const PetCareContext&,
     ItemInstanceId book,ItemInstanceId seal,const PetStudyTerms&);
+struct PetSkillResetTerms
+{
+    std::optional<std::uint8_t> slot; // null: every learned skill
+    std::uint64_t nowUtcMs=0,elapsedMs=0;
+};
+std::expected<PetStudyWrite,PetStudyCommitError> MakePetSkillResetCommit(const ItemCatalog&,ItemOwnerFence,
+    std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const PetCareContext&,
+    ItemInstanceId supply,ItemInstanceId seal,const PetSkillResetTerms&);
 // Gives new units of one item state to the owner's inventory (F4 C7a): a drop,
 // a purchase or a reward. Stackable units first top up the owner's matching
 // inventory stacks (same key, level and binding, no instance state), in storage
