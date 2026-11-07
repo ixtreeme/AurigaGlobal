@@ -466,10 +466,12 @@ void TypedEquipmentChecks() {
     P::Change(e,POINT_ATT_SPEED,-3);Check(P::Get(e,POINT_ATT_SPEED)==113,"buff removal does not compound equipment multiplier");
     P::Change(e,POINT_ATT_GRADE_BONUS,4);Check(P::Get(e,POINT_ATT_GRADE)==113,"attack buff enters before equipment percentage");
     P::Change(e,POINT_ATT_GRADE_BONUS,-4);Check(P::Get(e,POINT_ATT_GRADE)==108,"attack buff removal restores exact source");
-    auto& pet=g_registry.get<ecs::TypedEquipmentProjection>(e).stats->petSkills;
+    auto& pet=g_registry.get<ecs::TypedEquipmentProjection>(e).stats->petBonuses;
     pet.seal=123;
-    pet.values[unsigned(auriga::item::PetEffect::MaximumHpFlat)]=250;
-    pet.values[unsigned(auriga::item::PetEffect::MaximumHpPercent)]=1250;
+    pet.bonuses.total[unsigned(auriga::item::PetEffect::MaximumHpFlat)]=250;
+    pet.bonuses.total[unsigned(auriga::item::PetEffect::MaximumHpPercent)]=1250;
+    pet.bonuses.age[1]=200;pet.bonuses.skills[1]=50;
+    pet.bonuses.traits[2]=1000;pet.bonuses.skills[2]=250;
     for(unsigned i=0;i<5;++i) {
         P::Compute(e);
         Check(P::GetMaxHP(e)==2205,"ranked pet flat and percent HP apply once on every compute");

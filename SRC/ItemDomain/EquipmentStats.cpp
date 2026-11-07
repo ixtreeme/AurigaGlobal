@@ -119,21 +119,28 @@ std::vector<std::byte> EncodeEquipmentStats(const EquipmentStats* stats,std::uin
 {
     const EquipmentStats empty;const auto& s=stats ? *stats : empty;
     std::vector<std::byte> bytes;const auto put=[&](std::uint64_t value,unsigned size){for(unsigned i=0;i<size;++i)bytes.push_back(std::byte((value>>(8*i))&255));};
-    put(231,1);put(0,4);put(s.petSkills.seal ? 3 : s.tool ? 2 : 1,1);put(stats ? 0 : 1,1);put(vid,4);put(revision,8);put(inventoryRevision,8);
+    const auto nonzero=[](const auto& values){return std::ranges::any_of(values,[](auto v){return v!=0;});};
+    const bool natural=s.petBonuses.seal && (nonzero(s.petBonuses.bonuses.age) || nonzero(s.petBonuses.bonuses.traits));
+    put(231,1);put(0,4);put(s.petBonuses.seal ? natural ? 4 : 3 : s.tool ? 2 : 1,1);put(stats ? 0 : 1,1);put(vid,4);put(revision,8);put(inventoryRevision,8);
     put(s.weapon ? static_cast<unsigned>(*s.weapon) : 0,1);for(auto value:s.flat.Values())put(static_cast<std::uint64_t>(value),8);
     for(auto value:points)put(static_cast<std::uint64_t>(value),8);
     put(std::ranges::count_if(s.bonuses,[](auto value){return value!=0;}),1);
     for(unsigned id=1;id<s.bonuses.size();++id)if(s.bonuses[id]){put(id,4);put(static_cast<std::uint64_t>(s.bonuses[id]),8);}
     for(auto value:s.resistances)put(static_cast<std::uint64_t>(value),8);
-    if(s.tool || s.petSkills.seal)put(s.tool ? static_cast<unsigned>(*s.tool) : 0,1);
-    if(s.petSkills.seal)
+    if(s.tool || s.petBonuses.seal)put(s.tool ? static_cast<unsigned>(*s.tool) : 0,1);
+    if(s.petBonuses.seal)
     {
-        put(s.petSkills.seal,8);
-        put(std::ranges::count_if(s.petSkills.values,[](auto value){return value!=0;}),1);
-        for(unsigned effect=1;effect<s.petSkills.values.size();++effect)if(s.petSkills.values[effect])
+        put(s.petBonuses.seal,8);
+        const auto effects=[&](const PetBonusValues& values) {
+            put(std::ranges::count_if(values,[](auto value){return value!=0;}),1);
+            for(unsigned effect=1;effect<values.size();++effect)if(values[effect])
+            {put(effect,1);put(static_cast<std::uint64_t>(values[effect]),8);}
+        };
+        effects(s.petBonuses.bonuses.total);
+        if(natural)
         {
-            put(effect,1);
-            put(static_cast<std::uint64_t>(s.petSkills.values[effect]),8);
+            put(s.petBonuses.bonuses.ageTierMinimumMs,8);
+            effects(s.petBonuses.bonuses.age);effects(s.petBonuses.bonuses.traits);effects(s.petBonuses.bonuses.skills);
         }
     }
     for(unsigned i=0;i<4;++i)bytes[1+i]=std::byte((bytes.size()>>(8*i))&255);return bytes;

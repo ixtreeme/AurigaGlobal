@@ -869,7 +869,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 
         if(const auto* typed=g_registry.try_get<ecs::TypedEquipmentProjection>(e);typed && typed->stats)
         {
-            const auto& pet=typed->stats->petSkills;
+            const auto& pet=typed->stats->petBonuses;
             const auto withFlat=auriga::item::AddEquipmentValue(newMax,pet.Bonus(auriga::item::PetEffect::MaximumHpFlat));
             if(withFlat)
                 newMax=auriga::item::ScaleEquipmentValue(*withFlat,10000+pet.Bonus(auriga::item::PetEffect::MaximumHpPercent)).value_or(newMax);

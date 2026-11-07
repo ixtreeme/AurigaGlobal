@@ -161,16 +161,25 @@ struct PetBonusPlan {
     std::vector<PetBonusContribution> contributions;
     bool replaceSource=true;
 };
-using PetSkillBonusValues=std::array<std::int64_t,19>;
-std::expected<PetSkillBonusValues,PetLifecycleError> CollectPetSkillBonuses(const ItemCatalog&,
+using PetBonusValues=std::array<std::int64_t,19>;
+struct PetPassiveBonuses {
+    PetBonusValues age{},traits{},skills{},total{};
+    // Stable between tier boundaries: wall-clock age must not invalidate the
+    // character's entire stat projection on every game tick.
+    std::uint64_t ageTierMinimumMs=0;
+    bool operator==(const PetPassiveBonuses&) const=default;
+};
+std::expected<PetPassiveBonuses,PetLifecycleError> CollectPetPassiveBonuses(const ItemCatalog&,
+    const PetLifecycleRequest&,bool worldAllowsPet,bool inDungeon);
+std::expected<PetBonusValues,PetLifecycleError> CollectPetSkillBonuses(const ItemCatalog&,
     const PetLifecycleRequest&,bool worldAllowsPet,bool inDungeon);
 struct PetCombatant
 {
     bool player=false,monster=false,stone=false,boss=false;
     std::uint8_t characterClass=0; // zero-based class, used only for players
 };
-std::expected<std::int64_t,PetLifecycleError> ApplyPetSkillDamage(const PetSkillBonusValues& attacker,
-    const PetSkillBonusValues& victim,std::int64_t damage,const PetCombatant&,const PetCombatant&,
+std::expected<std::int64_t,PetLifecycleError> ApplyPetDamage(const PetBonusValues& attacker,
+    const PetBonusValues& victim,std::int64_t damage,const PetCombatant&,const PetCombatant&,
     bool normal,bool physical);
 std::expected<PetBonusPlan,PetLifecycleError> PlanPetBonuses(const ItemCatalog&,const PetLifecycleRequest&,bool worldAllowsPet,bool inDungeon);
 struct PetTransportRequest {

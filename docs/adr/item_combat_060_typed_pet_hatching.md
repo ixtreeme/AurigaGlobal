@@ -54,7 +54,7 @@ A párosított Unity changeset a `cs:78`. A Windows GameServer build, tíz natí
 
 A párosított Unity changeset a `cs:79`.
 
-A karakter a ténylegesen követő fejlődő pet megtanult képességeinek aktuális rangértékeit kapja meg. Az egész forráscsomag cserélődik, ezért az ismételt idézés és statújraszámítás nem halmozza a bónuszt. Visszahívás, lejárat vagy a követést tiltó világállapot megszünteti a forrást. Újrabelépéskor a mentett képességek és idézési szándék alapján épül vissza, a követő létrejötte után. A pet életkorából és születési tulajdonságaiból eredő külön bónuszok bekötése továbbra is külön feladat.
+A karakter a ténylegesen követő fejlődő pet megtanult képességeinek aktuális rangértékeit kapja meg. Az egész forráscsomag cserélődik, ezért az ismételt idézés és statújraszámítás nem halmozza a bónuszt. Visszahívás, lejárat vagy a követést tiltó világállapot megszünteti a forrást. Újrabelépéskor a mentett képességek és idézési szándék alapján épül vissza, a követő létrejötte után. Az életkorból és születési tulajdonságokból eredő bónuszokat a C26i kapcsolja ehhez a forráshoz.
 
 A 18 képességhatás a maximális HP-t, a fizikai támadási bónuszt, a megfelelő PvE-, főellenfél- és metinsebzést, a szörny-/játékos-/kasztellenállásokat, a PvE kritikus esélyt, a blokkolást, a nyílkikerülést, a harci EXP-t és az aranydobási esélyt módosítja. A százalékos értékek bázispontosak; az egész HP-bónusz külön egységet használ. Az újraszámítás nem gyógyítja fel a karaktert.
 
@@ -73,3 +73,13 @@ A párosított Unity changeset a `cs:80`.
 A külön Unity teszt mind a 18 képességhez külön petet keltet és könyvet használ. Négy további karakterrel vizsgálja a kasztellenállásokat, külön próbaszörnyekkel a normál, főellenfél-, metin- és beérkező sebzést, íjász AI-val a nyílkikerülést, valódi ölésekkel az EXP-t és az aranydobást. Minden esetben megméri az alapértéket, az idézett állapotot, az aktív újrabelépést, a visszahívást és a visszahívott újrabelépést. Az aktív hatást a Unity statablakában is ellenőrzi.
 
 Mind a 18 eset és 1412 élő ellenőrzés sikeres. A hat natív regresszió, a Unity 6.3 fordítás és a statcsomag 1118 ellenőrzése is átment. Az SQL-utóellenőrzés mind a 18 képességet visszaolvasta a saját pecsétjéből; a 243 korábbi példány, 22 pénztárca és a korábbi tanulási adatok megmaradtak. Az ideiglenes próbaszörnyek és a regenfájl helyreállítása sikeres. A mérési táblázat és a futtatók a [jelentésben](../reports/item_combat/2026-11-07_pet_passive_live_combat.md) találhatók.
+
+## C26i — Életkori és születési bónuszok
+
+A párosított Unity changeset a `cs:81`, a `/main/unity63-integration-20261103` ágon.
+
+Az életkori profil egész maximális HP-t, szörnyellenállást és játékosok elleni ellenállást ad. A születési tulajdonságok a maximális HP százalékát, a szörnyek elleni sebzést és a normál PvE-sebzést módosítják. A már definiált egész százalékra lefelé kerekítés megmarad. A szerver külön gyűjti az életkori, születési és tanult forrásokat, és az ellenőrzött összegüket egyszer alkalmazza. Az életkori küszöb követés közben, új idézés nélkül is frissíti a statokat; a gyorsítótár a küszöböt őrzi, nem a folyamatosan változó életkort.
+
+A GC231 v4 a teljes bónusz mellett a három forráscsoportot és az életkori küszöböt is átadja. A Unity ellenőrzi a csoportok összegét, és a **Harci statok** külön jeleníti meg a forrásokat. A pet nélküli v1/v2 és a csak tanult bónuszos v3 út megmarad. Új SQL-migráció nem szükséges.
+
+A Windows Release GameServer build, hat natív regresszió és a Unity 6.3 fordítás sikeres. A Unity 1640 statcsomag-, 390 petcsomag-, 340 pecsét- és 4179 leltárellenőrzése átment. A 365 ellenőrzéses helyi Unity TLS-próba mind a hat természetes hatást, a követés közbeni életkori fokozatváltást és a tanult HP-bónusszal együtt alkalmazást vizsgálta. Az idézés, aktív újrabelépés, visszahívás és visszahívott újrabelépés HP-, PvE-, PvP- és szörnyellenállási mérései sikeresek. Az SQL-utóellenőrzés a megőrzött életkort, születési értékeket és tanult rangot visszaolvasta; a 312 korábbi példány, 32 pénztárca és korábbi tanulási adatok megmaradtak. Az ideiglenes világ helyreállt, a szokásos öt szerverfolyamat fut. A pontos mérések és a futtatók a [jelentésben](../reports/item_combat/2026-11-07_pet_age_birth_bonuses.md) találhatók.

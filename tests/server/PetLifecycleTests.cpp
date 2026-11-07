@@ -92,16 +92,36 @@ void BuffTransportAndSkin() {
     Check(bonus.contributions[0].effect==PetEffect::MaximumHpFlat && bonus.contributions[0].value==3000,"age tier boundary uses integer HP");
     Check(bonus.contributions[3].effect==PetEffect::MaximumHpPercent && bonus.contributions[3].value==300,"trait 3.5 percent preserves source truncation to 3 percent");
     Check(bonus.contributions.back().effect==PetEffect::WarriorResistancePercent && bonus.contributions.back().value==100,"skill rank uses explicit basis points");
+    const auto all=CollectPetPassiveBonuses(*c,r,true,false).value();
+    Check(all.ageTierMinimumMs==3000 && all.age[unsigned(PetEffect::MaximumHpFlat)]==3000 &&
+        all.age[unsigned(PetEffect::MonsterResistancePercent)]==1000 && all.age[unsigned(PetEffect::HumanResistancePercent)]==1000,
+        "current age tier exposes integer HP and independent resistance sources");
+    Check(all.traits[unsigned(PetEffect::MaximumHpPercent)]==300 && all.skills[unsigned(PetEffect::WarriorResistancePercent)]==100,
+        "birth and learned effects retain their own source maps");
+    for(unsigned effect=1;effect<all.total.size();++effect)
+        Check(all.total[effect]==all.age[effect]+all.traits[effect]+all.skills[effect],"each source enters the total exactly once");
+    auto same=r;++same.nowUtcMs;
+    Check(CollectPetPassiveBonuses(*c,same,true,false).value()==all,"wall-clock age between tiers does not invalidate the stat bundle");
+    auto boundary=Request(*c);boundary.nowUtcMs=boundary.state.bornAtUtcMs+999;
+    Check(CollectPetPassiveBonuses(*c,boundary,true,false)->age[unsigned(PetEffect::MaximumHpFlat)]==500,"age bonus immediately before a tier boundary");
+    ++boundary.nowUtcMs;
+    Check(CollectPetPassiveBonuses(*c,boundary,true,false)->age[unsigned(PetEffect::MaximumHpFlat)]==1200,"age bonus changes on the exact tier boundary");
+    auto overlap=r;overlap.state.skills[3]={true,2,1};
+    auto data=f::Catalog();data.petTrainingProfiles[0].skills[1].effect=PetEffect::MaximumHpFlat;
+    const auto overlapping=BuildItemCatalog(data).value();
+    const auto combined=CollectPetPassiveBonuses(*overlapping,overlap,true,false).value();
+    Check(combined.age[1]==3000 && combined.skills[1]==200 && combined.total[1]==3200,"age and learned HP share one checked sum");
     for(unsigned i=0;i<5;++i) {
         auto absent=r;if(i==0){absent.seal.active=false;absent.seal.actorGeneration=0;}if(i==1)absent.context.ownerAlive=false;
         if(i==2)absent.context.polymorphed=true;if(i==3)absent.context.observer=true;if(i==4)absent.state.life.remainingMs=0;
         Check(PlanPetBonuses(*c,absent,true,false)->contributions.empty(),"inactive/invalid world state removes the source bundle");
+        Check(CollectPetPassiveBonuses(*c,absent,true,false).value()==PetPassiveBonuses{},"inactive pet clears all source maps and tier metadata");
     }
     Check(PlanPetBonuses(*c,r,false,false)->contributions.empty(),"world policy suppresses all pet contributions");
     const auto skills=CollectPetSkillBonuses(*c,r,true,false).value();
     Check(skills[unsigned(PetEffect::WarriorResistancePercent)]==100 &&
         std::ranges::count_if(skills,[](auto value){return value!=0;})==1,"only learned skill sources enter the passive runtime");
-    Check(CollectPetSkillBonuses(*c,r,false,false)==PetSkillBonusValues{},"forbidden map removes skill bonuses");
+    Check(CollectPetSkillBonuses(*c,r,false,false)==PetBonusValues{},"forbidden map removes skill bonuses");
     for(unsigned effect=1;effect<=18;++effect) {
         auto data=f::Catalog();
         data.petTrainingProfiles[0].skills[0].effect=static_cast<PetEffect>(effect);
@@ -112,7 +132,7 @@ void BuffTransportAndSkin() {
         Check(values[effect]==200 && std::ranges::count_if(values,[](auto value){return value!=0;})==1,
             "all passive effects retain their exact ranked unit");
         request.seal.active=false;request.seal.actorGeneration=0;
-        Check(CollectPetSkillBonuses(*catalog,request,true,false)==PetSkillBonusValues{},"recalled pet has no passive source");
+        Check(CollectPetSkillBonuses(*catalog,request,true,false)==PetBonusValues{},"recalled pet has no passive source");
     }
     PetTransportRequest transport{Request(*c,false),{f::Supply(7),300,4,77,1},false,false,5,0};
     transport.pet.state.skills[0]={true,1,2};transport.pet.state.life.remainingMs=1234;
@@ -133,28 +153,28 @@ void BuffTransportAndSkin() {
 void PassiveDamage() {
     const PetCombatant warrior{true,false,false,false,0},monster{false,true,false,false,0},
         boss{false,true,false,true,0},stone{false,false,true,false,0};
-    PetSkillBonusValues attacker{},victim{};
+    PetBonusValues attacker{},victim{};
     attacker[unsigned(PetEffect::MonsterDamagePercent)]=250;
     attacker[unsigned(PetEffect::NormalPveDamagePercent)]=500;
-    Check(ApplyPetSkillDamage(attacker,victim,10000,warrior,monster,true,true)==10763,"fractional monster and normal PvE bonuses");
-    Check(ApplyPetSkillDamage(attacker,victim,10000,warrior,monster,false,false)==10250,"normal-only bonus excludes skills");
-    Check(ApplyPetSkillDamage(attacker,victim,10000,warrior,warrior,true,true)==10000,"PvE bonuses exclude player targets");
+    Check(ApplyPetDamage(attacker,victim,10000,warrior,monster,true,true)==10763,"fractional monster and normal PvE bonuses");
+    Check(ApplyPetDamage(attacker,victim,10000,warrior,monster,false,false)==10250,"normal-only bonus excludes skills");
+    Check(ApplyPetDamage(attacker,victim,10000,warrior,warrior,true,true)==10000,"PvE bonuses exclude player targets");
     attacker={};attacker[unsigned(PetEffect::BossDamagePercent)]=1000;
-    Check(ApplyPetSkillDamage(attacker,victim,10000,warrior,boss,false,false)==11000 &&
-        ApplyPetSkillDamage(attacker,victim,10000,warrior,stone,true,true)==10000,"boss bonus excludes stones");
+    Check(ApplyPetDamage(attacker,victim,10000,warrior,boss,false,false)==11000 &&
+        ApplyPetDamage(attacker,victim,10000,warrior,stone,true,true)==10000,"boss bonus excludes stones");
     attacker={};attacker[unsigned(PetEffect::MetinDamagePercent)]=750;
-    Check(ApplyPetSkillDamage(attacker,victim,10000,warrior,stone,true,true)==10750,"metin bonus reaches its target family");
+    Check(ApplyPetDamage(attacker,victim,10000,warrior,stone,true,true)==10750,"metin bonus reaches its target family");
     attacker={};attacker[unsigned(PetEffect::AttackBonusPercent)]=500;
-    Check(ApplyPetSkillDamage(attacker,victim,10000,warrior,warrior,true,true)==10500 &&
-        ApplyPetSkillDamage(attacker,victim,10000,warrior,warrior,false,false)==10000,"attack bonus applies to physical damage");
+    Check(ApplyPetDamage(attacker,victim,10000,warrior,warrior,true,true)==10500 &&
+        ApplyPetDamage(attacker,victim,10000,warrior,warrior,false,false)==10000,"attack bonus applies to physical damage");
     attacker={};victim[unsigned(PetEffect::MonsterResistancePercent)]=500;
-    Check(ApplyPetSkillDamage(attacker,victim,10000,monster,warrior,true,true)==9500,"monster resistance reduces incoming damage");
+    Check(ApplyPetDamage(attacker,victim,10000,monster,warrior,true,true)==9500,"monster resistance reduces incoming damage");
     victim={};victim[unsigned(PetEffect::HumanResistancePercent)]=250;
     constexpr std::array classes{PetEffect::WarriorResistancePercent,PetEffect::NinjaResistancePercent,
         PetEffect::SuraResistancePercent,PetEffect::ShamanResistancePercent};
     for(unsigned job=0;job<classes.size();++job) {
         auto bonuses=victim;bonuses[unsigned(classes[job])]=1000;
-        Check(ApplyPetSkillDamage(attacker,bonuses,10000,PetCombatant{true,false,false,false,static_cast<std::uint8_t>(job)},
+        Check(ApplyPetDamage(attacker,bonuses,10000,PetCombatant{true,false,false,false,static_cast<std::uint8_t>(job)},
             warrior,false,false)==8775,"human and class resistance retain independent basis-point stages");
     }
 }

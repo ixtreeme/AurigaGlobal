@@ -54,13 +54,19 @@ std::vector<std::byte> Run()
     Check(wire.size()==285+12*std::ranges::count_if(stats->bonuses,[](auto v){return v!=0;}),"wire length includes each bonus once");
     Check(EncodeEquipmentStats(nullptr,12345,8,10,{}).size()==285,"rejected projection has no item contribution");
     auto pet=*stats;
-    pet.petSkills.seal=321;
-    pet.petSkills.values[unsigned(PetEffect::MaximumHpFlat)]=250;
-    pet.petSkills.values[unsigned(PetEffect::PveCriticalChance)]=125;
+    pet.petBonuses.seal=321;
+    pet.petBonuses.bonuses.total[unsigned(PetEffect::MaximumHpFlat)]=250;
+    pet.petBonuses.bonuses.total[unsigned(PetEffect::PveCriticalChance)]=125;
     const auto petWire=EncodeEquipmentStats(&pet,12345,8,9,{});
     Check(petWire[5]==std::byte{3} && petWire.size()==wire.size()+28,"passive source appends a versioned owner-only view");
     Check(std::to_integer<unsigned>(petWire[petWire.size()-18])==1 &&
         std::to_integer<unsigned>(petWire[petWire.size()-9])==13,"passive view retains effect identities and separate units");
+    pet.petBonuses.bonuses.skills=pet.petBonuses.bonuses.total;
+    pet.petBonuses.bonuses.age[1]=500;pet.petBonuses.bonuses.traits[2]=300;
+    pet.petBonuses.bonuses.total[1]+=500;pet.petBonuses.bonuses.total[2]=300;
+    pet.petBonuses.bonuses.ageTierMinimumMs=86400000;
+    const auto natural=EncodeEquipmentStats(&pet,12345,9,9,{});
+    Check(natural[5]==std::byte{4} && natural.size()==petWire.size()+56,"v4 adds the tier and separate natural/skill groups to the total view");
     return wire;
 }
 }

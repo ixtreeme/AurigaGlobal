@@ -13,6 +13,7 @@ A C26f a harci pet-EXP-t, a szintlépést és az evolúciós fokozatváltást ka
 A C26g a pet képességtanulását, rangfejlesztését és a könyves fejlesztés tartós várakozási idejét kapcsolja be.
 A C26h a követő fejlődő pet megtanult képességeinek passzív bónuszait kapcsolja a karakter számított statjaihoz és a Unity statablakához.
 A teljes helyi Unity harci regresszió mind a 18 képességhatást, az idézést, visszahívást és mindkét újrabelépési állapotot ellenőrizte ([jelentés](../reports/item_combat/2026-11-07_pet_passive_live_combat.md)).
+A C26i az életkori és születési petbónuszokat is beköti szerveren és Unityben; a hat természetes hatás, az automatikus életkori fokozatváltás és a tanult HP-bónusszal összegzés helyi idézési, visszahívási és újrabelépési próbája sikeres ([jelentés](../reports/item_combat/2026-11-07_pet_age_birth_bonuses.md)).
 A típusos felülés továbbra is nyitott.
 [IC-058](item_combat_058_tera_companion_port.md) · [IC-059](item_combat_059_typed_companion_seals.md) · [IC-060](item_combat_060_typed_pet_hatching.md)
 

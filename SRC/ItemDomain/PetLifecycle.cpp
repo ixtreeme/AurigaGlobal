@@ -273,23 +273,35 @@ std::expected<PetBonusPlan,E> PlanPetBonuses(const ItemCatalog& c,const PetLifec
     }
     return plan;
 }
-std::expected<PetSkillBonusValues,E> CollectPetSkillBonuses(const ItemCatalog& c,const PetLifecycleRequest& r,
+std::expected<PetPassiveBonuses,E> CollectPetPassiveBonuses(const ItemCatalog& c,const PetLifecycleRequest& r,
     bool worldAllowsPet,bool inDungeon) {
     const auto plan=PlanPetBonuses(c,r,worldAllowsPet,inDungeon);
     if(!plan)return std::unexpected(plan.error());
-    PetSkillBonusValues values{};
-    for(const auto& contribution:plan->contributions)if(contribution.source==PetBonusSource::Skill) {
-        auto& value=values[static_cast<unsigned>(contribution.effect)];
-        const auto sum=AddEquipmentValue(value,contribution.value);
-        if(!sum)return std::unexpected(E::InvalidState);
-        value=*sum;
+    PetPassiveBonuses bonuses;
+    if(!plan->contributions.empty())if(const auto* training=Training(c,r.seal.key))
+        for(const auto& tier:training->ages)if(plan->pet.after.ageMs>=tier.minimumAgeMs)
+            bonuses.ageTierMinimumMs=tier.minimumAgeMs;
+    for(const auto& contribution:plan->contributions) {
+        const auto effect=static_cast<unsigned>(contribution.effect);
+        auto& values=contribution.source==PetBonusSource::Age ? bonuses.age :
+            contribution.source==PetBonusSource::Trait ? bonuses.traits : bonuses.skills;
+        const auto source=AddEquipmentValue(values[effect],contribution.value);
+        const auto total=AddEquipmentValue(bonuses.total[effect],contribution.value);
+        if(!source || !total)return std::unexpected(E::InvalidState);
+        values[effect]=*source;bonuses.total[effect]=*total;
     }
-    return values;
+    return bonuses;
 }
-std::expected<std::int64_t,E> ApplyPetSkillDamage(const PetSkillBonusValues& attacker,
-    const PetSkillBonusValues& victim,std::int64_t damage,const PetCombatant& source,const PetCombatant& target,
+std::expected<PetBonusValues,E> CollectPetSkillBonuses(const ItemCatalog& c,const PetLifecycleRequest& r,
+    bool worldAllowsPet,bool inDungeon) {
+    const auto bonuses=CollectPetPassiveBonuses(c,r,worldAllowsPet,inDungeon);
+    if(!bonuses)return std::unexpected(bonuses.error());
+    return bonuses->skills;
+}
+std::expected<std::int64_t,E> ApplyPetDamage(const PetBonusValues& attacker,
+    const PetBonusValues& victim,std::int64_t damage,const PetCombatant& source,const PetCombatant& target,
     bool normal,bool physical) {
-    const auto value=[](const PetSkillBonusValues& values,PetEffect effect){return values[static_cast<unsigned>(effect)];};
+    const auto value=[](const PetBonusValues& values,PetEffect effect){return values[static_cast<unsigned>(effect)];};
     const auto scale=[&](std::int64_t factor) {
         const auto result=ScaleEquipmentValue(damage,(std::max)(std::int64_t{0},factor));
         if(!result)return false;
