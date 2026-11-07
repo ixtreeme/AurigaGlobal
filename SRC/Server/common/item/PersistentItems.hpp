@@ -22,7 +22,7 @@ struct ItemOwner
 enum class ItemStorageKind : std::uint8_t
 {
     Inventory=1, Equipment=2, Safebox=3, Mall=4, GuildStorage=5,
-    MountInventory=6, TradeEscrow=7, Mail=8, PendingAward=9,
+    MountInventory=6, TradeEscrow=7, Mail=8, PendingAward=9, PetCarrier=10,
 };
 struct ItemStorage
 {
@@ -44,6 +44,16 @@ struct ItemPlacement
     std::uint32_t anchor=0;
     bool operator==(const ItemPlacement&) const = default;
 };
+struct PetSupplyState
+{
+    std::uint64_t containedSeal=0,equippedSeal=0,createdAtUtcMs=0;
+    CostumeLifetimeState lifetime;
+    bool operator==(const PetSupplyState&) const=default;
+};
+enum class ItemPersistenceError;
+bool ValidatePetSupplyState(const ItemCatalog&,ItemKey,const PetSupplyState&,bool destroyed=false);
+std::expected<std::vector<std::uint8_t>,ItemPersistenceError> EncodePetSupplyState(const ItemCatalog&,ItemKey,const PetSupplyState&);
+std::expected<PetSupplyState,ItemPersistenceError> DecodePetSupplyState(const ItemCatalog&,ItemKey,std::span<const std::uint8_t>);
 struct PersistentItem
 {
     ItemInstanceId id;
@@ -68,6 +78,7 @@ struct PersistentItem
     std::optional<CompanionState> companion;
     // A growth seal is born from a hatch transaction and retains its full state.
     std::optional<GrowthPetState> growthPet;
+    std::optional<PetSupplyState> petSupply;
     bool operator==(const PersistentItem&) const = default;
 };
 struct ItemOwnerFence
@@ -127,6 +138,7 @@ struct ItemCommit
 };
 inline constexpr std::size_t MaxItemCommitItems=32, MaxItemCommitOwners=8,
     MaxItemCommitStorages=16, MaxItemCommitResult=4096, MaxLoadedOwnerItems=4096;
+inline constexpr std::size_t MaxLoadedOwnerStorages=4096;
 enum class ItemPersistenceError
 {
     InvalidOwner, InvalidStorage, InvalidItem, MissingItem, UnsupportedState,
@@ -246,11 +258,13 @@ struct PetServiceTerms
     std::uint8_t selector=0; // extension, permanent life, HP/monster/PvE enchant
     std::uint64_t nowUtcMs=0,elapsedMs=0;
     std::uint16_t rollBp=0;
+    std::optional<ItemPlacement> placement; // Server-reserved unpack destination.
 };
 std::expected<PetStudyWrite,PetStudyCommitError> MakePetServiceCommit(const ItemCatalog&,ItemOwnerFence,
     std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const PetCareContext&,
     ItemInstanceId supply,ItemInstanceId seal,const PetServiceTerms&);
 bool ValidatePetServiceCommit(const ItemCatalog&,const ItemCommit&);
+bool ValidPetCarrierLinks(std::span<const PersistentItem>);
 // Gives new units of one item state to the owner's inventory (F4 C7a): a drop,
 // a purchase or a reward. Stackable units first top up the owner's matching
 // inventory stacks (same key, level and binding, no instance state), in storage

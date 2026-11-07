@@ -115,10 +115,10 @@ void SendTypedInventory(entt::entity character)
 	std::vector<auriga::item::ItemStorageLayout> storages;
 	std::vector<auriga::item::PersistentItem> visible;
 	for (const auto& layout : state.storages)
-		if (layout.storage.kind == auriga::item::ItemStorageKind::Inventory || layout.storage.kind == auriga::item::ItemStorageKind::Equipment)
+		if (layout.storage.kind == auriga::item::ItemStorageKind::Inventory || layout.storage.kind == auriga::item::ItemStorageKind::Equipment || layout.storage.kind == auriga::item::ItemStorageKind::PetCarrier)
 			storages.push_back(layout);
 	for (const auto& item : state.items)
-		if (!item.destroyed && item.placement && (item.placement->kind == auriga::item::ItemStorageKind::Inventory || item.placement->kind == auriga::item::ItemStorageKind::Equipment))
+		if (!item.destroyed && item.placement && (item.placement->kind == auriga::item::ItemStorageKind::Inventory || item.placement->kind == auriga::item::ItemStorageKind::Equipment || item.placement->kind == auriga::item::ItemStorageKind::PetCarrier))
 			visible.push_back(item);
 	const auto details = auriga::item::EncodeTypedItemDetails(*catalog, visible, auriga::item::runtime::ItemStore::Instance().GroundRun().has_value() && std::ranges::any_of(state.storages, [](const auto& s) { return s.storage.kind == auriga::item::ItemStorageKind::TradeEscrow && s.storage.id == auriga::item::OwnedGroundStorageId; }));
 	const auto bytes = auriga::item::EncodeTypedInventory(*catalog, storages, state.wallets, visible, companion);

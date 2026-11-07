@@ -2,6 +2,7 @@
 // exact bytes the Unity decoder is tested against. --write-golden rewrites it.
 #include "PersistentItemFixture.hpp"
 #include "PetCareFixture.hpp"
+#include "PetLifecycleFixture.hpp"
 #include <item/TypedInventoryWire.hpp>
 #include <item/TypedItemDetails.hpp>
 
@@ -85,7 +86,7 @@ int main(int argc, char** argv)
 		Check(DecodeTypedInventory(longer, f::Character()).error() == TypedInventoryWireError::TrailingBytes, "trailing byte");
 		auto header = b; header[0] = std::byte { 224 };
 		Check(DecodeTypedInventory(header, f::Character()).error() == TypedInventoryWireError::BadHeader, "wrong header");
-		auto version = b; version[5] = std::byte { 10 };
+		auto version = b; version[5] = std::byte { 11 };
 		Check(DecodeTypedInventory(version, f::Character()).error() == TypedInventoryWireError::BadVersion, "unknown version");
 		Check(DecodeTypedInventory(std::span(b).first(3), f::Character()).error() == TypedInventoryWireError::Truncated, "short header");
 		PersistentItem unknown { ItemInstanceId::Create(9).value(), ItemKey::Create(1, 999).value(), f::Character() };
@@ -161,6 +162,21 @@ int main(int argc, char** argv)
 		const auto expiredView = DecodeTypedInventory(*expired, f::Character());
 		Check(expiredView && expiredView->companions.at(growth.id) == std::pair{CompanionKind::GrowthPet,std::uint8_t{3}},
 			"expired growth seal is represented without a live actor");
+
+        auto transportCatalog=BuildItemCatalog(pet_lifecycle_fixture::Catalog());
+        Check(transportCatalog.has_value(),"carrier catalog");
+        PersistentItem box{ItemInstanceId::Create(22).value(),pet_lifecycle_fixture::Supply(7),f::Character()};
+        box.placement=ItemPlacement{ItemStorageKind::Inventory,1,1};box.petSupply=PetSupplyState{growth.id.Value()};
+        growth.growthPet->carrierInstanceId=box.id.Value();growth.growthPet->life.remainingMs=100;
+        growth.placement=ItemPlacement{ItemStorageKind::PetCarrier,box.id.Value(),0};
+        auto transportLayouts=storages;transportLayouts.push_back({{f::Character(),ItemStorageKind::PetCarrier,box.id.Value()},1,1,1});
+        std::vector<PersistentItem> transportItems{growth,box};
+        auto transportWire=EncodeTypedInventory(**transportCatalog,transportLayouts,{},transportItems);
+        Check(transportWire && (*transportWire)[5]==std::byte{10},"carrier uses v10");
+        auto transportView=DecodeTypedInventory(*transportWire,f::Character());
+        Check(transportView && transportView->items.size()==2 && transportView->items[1].petSupply==box.petSupply && transportView->companions.at(growth.id).second==4,"packed seal and carrier links roundtrip");
+        transportWire->at(transportWire->size()-41)=std::byte{0};
+        Check(!DecodeTypedInventory(*transportWire,f::Character()),"broken carrier link rejected");
 
         auto details=EncodeTypedItemDetails(c,items,true);
         Check(details.has_value(),"details encode with stone state and refinement recipes");

@@ -1,5 +1,14 @@
 # ADR IC-060 — Típusos pettojás-keltetés
 
+## C26m — Teljes állapotú szállítódoboz
+
+A párosított Unity changeset `cs:84`. A Pet tárgyai felület csomagolja és
+kiveszi a visszahívott petet. A doboz a teljes eredeti pecsétet tárolja,
+idő- és képességvesztés nélkül. A SQL-migráció `013_pet_supplies.sql`,
+a leltárcsomag GC225 v10. Natív MariaDB-, codec- és Unity-validálás,
+valamint 300 ellenőrzéses helyi TLS-próba sikeres; részletek a
+[jelentésben](../reports/item_combat/2026-11-07_pet_carrier.md).
+
 C26c a szerver `20261103` és a Unity `/main/unity63-integration-20261103` ágán. A párosított Unity changeset `cs:74`.
 
 A típusos leltár **Keltetés** művelete megmutatja a katalógusban megadott árat és a jelenlegi típusos aranyegyenleget. A szerver két percig érvényes megerősítést ad a tojás, a pénztárca és a katalógus állapotához. A név legfeljebb 25 Unicode-karakter és 64 UTF-8 bájt lehet. A szerver ellenőrzi a nevet és a tiltott szavakat. A név a példányhoz tartozó megjelenítési név, több pet használhatja ugyanazt a nevet.

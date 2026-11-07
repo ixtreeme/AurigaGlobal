@@ -185,6 +185,13 @@ const item::ItemWallet* Gold(const ecs::TypedItems& typed)
     return found != state.wallets.end() ? &*found : nullptr;
 }
 
+const item::PersistentItem* PetInStorage(const ecs::TypedItems& typed,std::uint64_t id)
+{
+    const auto found=std::ranges::find_if(typed.state.items,[&](const auto& p){return p.id.Value()==id && !p.destroyed && p.growthPet &&
+        p.owner==typed.state.fence.owner && p.placement && (p.placement->kind==item::ItemStorageKind::Inventory || p.placement->kind==item::ItemStorageKind::PetCarrier);});
+    return found==typed.state.items.end() ? nullptr : &*found;
+}
+
 const item::PetHatchProfile* HatchProfile(const item::ItemCatalog& catalog, item::ItemKey key)
 {
     const auto* entry = catalog.Find(key);
@@ -874,7 +881,7 @@ void HandleService(entt::entity entity,Action action,const TPacketCGTypedPetHatc
     const bool confirm=action==Action::ServiceConfirm;
     const auto token=confirm ? packet.token : 0;
     const auto& state=g_registry.get<ecs::TypedItems>(entity).state;
-    const auto* seal=InBag(g_registry.get<ecs::TypedItems>(entity),packet.itemId);
+    const auto* seal=PetInStorage(g_registry.get<ecs::TypedItems>(entity),packet.itemId);
     auto* session=g_registry.try_get<PetServiceSession>(entity);
     const auto reply=[&](Status status,std::uint64_t quote=0,const ServiceView& view=ServiceView{},bool details=false) {
         Reply(entity,status,packet.itemId,quote,0,details && seal ? std::optional{seal->key} : std::nullopt,
@@ -904,9 +911,9 @@ void HandleService(entt::entity entity,Action action,const TPacketCGTypedPetHatc
     if(action==Action::ServiceList) {
         g_registry.remove<PetServiceSession>(entity);ServiceView view;
         for(const auto& source:state.items) {
-            if(!profile(source) || !item::PlainInventoryItem(source,fence.owner))continue;
+            if(!profile(source) || source.destroyed || source.owner!=fence.owner || !source.placement || source.placement->kind!=item::ItemStorageKind::Inventory)continue;
             std::uint16_t mask=0;
-            for(std::uint8_t mode=0;mode<5;++mode)
+            for(std::uint8_t mode=0;mode<7;++mode)
                 if(item::MakePetServiceCommit(catalog,fence,state.storages,state.items,context,source.id,seal->id,{mode,TypedItemEffectNow()}))mask|=1u<<mode;
             if(mask)view.options.emplace_back(source.id.Value(),mask);
         }
@@ -919,7 +926,7 @@ void HandleService(entt::entity entity,Action action,const TPacketCGTypedPetHatc
     }
     const auto mode=confirm ? session->view.selector : static_cast<std::uint8_t>(packet.name[0]-'A');
     const auto* rule=profile(*source);
-    const auto roll=confirm && mode>=2 ? Roll({0,9999,1}) : std::optional<std::uint16_t>{0};
+    const auto roll=confirm && mode>=2 && mode<=4 ? Roll({0,9999,1}) : std::optional<std::uint16_t>{0};
     if(!rule || !roll || RAND_bytes(context.operationId.data(),static_cast<int>(context.operationId.size()))!=1){reply(Status::Failed,token);return;}
     const auto write=item::MakePetServiceCommit(catalog,fence,state.storages,state.items,context,source->id,seal->id,{mode,TypedItemEffectNow(),0,*roll});
     if(!write){reply(Status::NoEffect,token);return;}
@@ -944,7 +951,7 @@ void HandleService(entt::entity entity,Action action,const TPacketCGTypedPetHatc
         g_registry.emplace_or_replace<ecs::TypedItems>(entity,std::move(*outcome.state));g_registry.remove<ecs::TypedItemBusy>(entity);SendTypedInventory(entity);
         if(auto* current=g_registry.try_get<PetServiceSession>(entity);current && current->token==token) {
             current->status=outcome.write ? success ? Status::ServiceApplied : Status::ServiceMissed : Status::Failed;
-            const auto* pet=InBag(g_registry.get<ecs::TypedItems>(entity),current->seal.id.Value());
+            const auto* pet=PetInStorage(g_registry.get<ecs::TypedItems>(entity),current->seal.id.Value());
             const bool details=outcome.write && pet;
             const ServiceView empty;
             Reply(entity,current->status,current->seal.id.Value(),token,0,details ? std::optional{pet->key} : std::nullopt,details ? pet : nullptr,nullptr,false,nullptr,false,details ? &current->view : &empty);
@@ -966,7 +973,7 @@ void HandleStudy(entt::entity entity,Action action,const TPacketCGTypedPetHatch&
     const auto token=confirm ? packet.token : 0;
     auto* session=g_registry.try_get<PetStudySession>(entity);
     const auto& typed=g_registry.get<ecs::TypedItems>(entity);
-    const auto* seal=InBag(typed,packet.itemId);
+    const auto* seal=action==Action::StudyList || action==Action::ResetList ? PetInStorage(typed,packet.itemId) : InBag(typed,packet.itemId);
     const bool matching=confirm && session && session->token==token && session->seal==packet.itemId && session->resetting==resetting;
     if (matching && session->status!=ready)
     {
@@ -1162,7 +1169,7 @@ bool HandleTypedPetHatchPacket(entt::entity entity, const char* data)
         || (action != Action::Confirm && !studyPreview && !servicePreview && packet.nameLength)
         || (action == Action::Confirm && !packet.nameLength)
         || (studyPreview && (packet.nameLength!=1 || packet.name[0]<'1' || packet.name[0]>'5' || !packet.token))
-        || (servicePreview && (packet.nameLength!=1 || packet.name[0]<'A' || packet.name[0]>'E' || !packet.token))
+        || (servicePreview && (packet.nameLength!=1 || packet.name[0]<'A' || packet.name[0]>'G' || !packet.token))
         || (action==Action::ServiceList && packet.token) || (action==Action::ServiceConfirm && !packet.token)
         || ((action==Action::StudyList || action==Action::ResetList) && packet.token) || ((action==Action::StudyConfirm || action==Action::ResetConfirm) && !packet.token)
         || ((action == Action::Preview || action == Action::Inspect || action == Action::FoodList || action == Action::Progress) && packet.token)
@@ -1218,7 +1225,7 @@ bool HandleTypedPetHatchPacket(entt::entity entity, const char* data)
     }
 
     const auto& typed = g_registry.get<ecs::TypedItems>(entity);
-    const auto* source = InBag(typed, packet.itemId);
+    const auto* source = action==Action::Inspect || action==Action::Progress ? PetInStorage(typed,packet.itemId) : InBag(typed, packet.itemId);
     if (action == Action::Inspect || action == Action::Progress)
     {
         g_registry.remove<PetHatchSession>(entity);

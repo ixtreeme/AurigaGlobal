@@ -71,12 +71,13 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
 	w.Put<std::uint8_t>(TypedInventoryHeader);
 	w.Put<std::uint32_t>(0); // patched below
 	const bool hasGrowthPets = std::ranges::any_of(items, [](const auto& item) { return item.growthPet.has_value(); });
+	const bool hasPetSupplies=std::ranges::any_of(items,[](const auto& item){return item.petSupply.has_value();});
 	const bool hasGrowthStatus = std::ranges::any_of(items, [](const auto& item) {
 		return item.growthPet && (RecallRequested(item) ||
 			(item.growthPet->life.clock == CompanionClock::ActiveTime && !item.growthPet->life.remainingMs));
 	});
 	const bool hasCompanions = std::ranges::any_of(items, [](const auto& item) { return item.companion.has_value(); });
-	w.Put<std::uint8_t>(hasGrowthStatus ? 9 : hasGrowthPets ? 8 : hasCompanions ? 7 : std::ranges::any_of(items,[](const auto& i){return i.tool.has_value();}) ? 6 : std::ranges::any_of(items,[](const auto& i){return i.polymorph.has_value();}) ? 5 : std::ranges::any_of(items,[](const auto& i){return i.bookSkill.has_value();}) ? 4 : std::ranges::any_of(items,[](const auto& i){return i.toggle.has_value();}) ? 3 : std::ranges::any_of(items,[](const auto& i){return i.automatic.has_value();}) ? 2 : TypedInventoryVersion);
+	w.Put<std::uint8_t>(hasPetSupplies ? 10 : hasGrowthStatus ? 9 : hasGrowthPets ? 8 : hasCompanions ? 7 : std::ranges::any_of(items,[](const auto& i){return i.tool.has_value();}) ? 6 : std::ranges::any_of(items,[](const auto& i){return i.polymorph.has_value();}) ? 5 : std::ranges::any_of(items,[](const auto& i){return i.bookSkill.has_value();}) ? 4 : std::ranges::any_of(items,[](const auto& i){return i.toggle.has_value();}) ? 3 : std::ranges::any_of(items,[](const auto& i){return i.automatic.has_value();}) ? 2 : TypedInventoryVersion);
 	w.Put<std::uint16_t>(static_cast<std::uint16_t>(storages.size()));
 	for (const auto& s : storages)
 	{
@@ -149,13 +150,24 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
         if(item.tool){if(!ValidatePersistentItem(catalog,item))return std::unexpected(E::BadValue);w.Put<std::uint32_t>(item.tool->trainingPoints);w.Put<std::uint32_t>(item.tool->baitPower);}
 		if (item.companion || item.growthPet)
 		{
-			if (!ValidatePersistentItem(catalog, item) || !item.placement || item.placement->kind != ItemStorageKind::Inventory)
+			if (!ValidatePersistentItem(catalog, item) || !item.placement ||
+                (item.placement->kind!=ItemStorageKind::Inventory && item.placement->kind!=ItemStorageKind::PetCarrier))
 				return std::unexpected(E::BadValue);
 			const auto& row = std::get<ItemCompanionRow>(catalog.Find(item.key)->category);
 			w.Put<std::uint8_t>(static_cast<std::uint8_t>(row.kind));
 			const bool expired = item.growthPet && item.growthPet->life.clock == CompanionClock::ActiveTime && !item.growthPet->life.remainingMs;
-			w.Put<std::uint8_t>(expired ? 3 : !RecallRequested(item) ? 0 : item.id.Value() == liveCompanion ? 1 : 2);
+			w.Put<std::uint8_t>(item.growthPet && item.growthPet->carrierInstanceId ? 4 : expired ? 3 : !RecallRequested(item) ? 0 : item.id.Value() == liveCompanion ? 1 : 2);
 		}
+
+        if(hasPetSupplies) {
+            const auto* row=std::get_if<ItemPetSupplyRow>(&catalog.Find(item.key)->category);
+            const auto* profile=row ? catalog.FindPetSupplyProfile(row->profile) : nullptr;
+            w.Put<std::uint8_t>(item.petSupply ? static_cast<unsigned>(profile->kind) : 0);
+            if(item.petSupply) {
+                const auto payload=EncodePetSupplyState(catalog,item.key,*item.petSupply);if(!payload)return std::unexpected(E::BadValue);
+                for(auto byte:*payload)w.Put(byte);
+            }
+        }
 
 	}
 	if (w.out.size() > MaxPacket) return std::unexpected(E::TooLarge);
@@ -171,7 +183,7 @@ std::expected<TypedInventoryView, TypedInventoryWireError> DecodeTypedInventory(
 		Reader r(bytes);
 		if (r.Get<std::uint8_t>() != TypedInventoryHeader) return std::unexpected(E::BadHeader);
 		if (r.Get<std::uint32_t>() != bytes.size()) return std::unexpected(E::BadSize);
-		const auto version=r.Get<std::uint8_t>();if (version<TypedInventoryVersion || version>9) return std::unexpected(E::BadVersion);
+		const auto version=r.Get<std::uint8_t>();if (version<TypedInventoryVersion || version>10) return std::unexpected(E::BadVersion);
 		TypedInventoryView view;
 		for (auto n = r.Get<std::uint16_t>(); n; --n)
 		{
@@ -254,8 +266,8 @@ std::expected<TypedInventoryView, TypedInventoryWireError> DecodeTypedInventory(
 				const auto companion = static_cast<CompanionKind>(r.Get<std::uint8_t>());
 				const auto state = r.Get<std::uint8_t>();
 				const bool growth = companion == CompanionKind::GrowthPet;
-				if (item.key.Category()!=ItemCategory::Companion || item.count!=1 || kind!=static_cast<unsigned>(ItemStorageKind::Inventory)
-					|| (flags&126) || (growth ? version<8 || item.refinementLevel || state>(version==8 ? 0 : 3)
+				if (item.key.Category()!=ItemCategory::Companion || item.count!=1 || (kind!=static_cast<unsigned>(ItemStorageKind::Inventory) && !(version>=10 && growth && kind==10))
+					|| (flags&126) || (growth ? version<8 || item.refinementLevel || state>(version==8 ? 0 : version<10 ? 3 : 4) || (state==4)!=(kind==10)
 						: (companion!=CompanionKind::Pet && companion!=CompanionKind::Mount) || state>2)
 					|| !view.companions.emplace(item.id, std::pair{companion, state}).second) throw Bad{};
 				if (!growth)
@@ -265,8 +277,32 @@ std::expected<TypedInventoryView, TypedInventoryWireError> DecodeTypedInventory(
 				}
 			}
 			if (item.key.Category()==ItemCategory::Companion && !(flags&128)) throw Bad{};
+            if(version>=10) {
+                const auto supply=r.Get<std::uint8_t>();
+                if(supply) {
+                    if((supply!=7 && supply!=8) || item.key.Category()!=ItemCategory::Special || item.count!=1 || item.refinementLevel || (flags&254) || kind!=1)throw Bad{};
+                    const auto bytes=r.Take(51);
+                    const auto get=[&](unsigned at,unsigned n){std::uint64_t v=0;for(unsigned i=0;i<n;++i)v|=std::to_integer<std::uint64_t>(bytes[at+i])<<(8*i);return v;};
+                    if(get(0,4)!=0x01495350 || get(4,2)!=static_cast<unsigned>(item.key.Category()) || get(6,4)!=item.key.LocalId() || get(34,1)>3)throw Bad{};
+                    PetSupplyState s{get(10,8),get(18,8),get(26,8)};
+                    s.lifetime.started=get(34,1)&1;s.lifetime.expired=get(34,1)&2;s.lifetime.deadlineUtcMs=get(35,8);s.lifetime.remainingMs=get(43,8);
+                    if(s.createdAtUtcMs>INT64_MAX || s.lifetime.deadlineUtcMs>INT64_MAX || s.lifetime.remainingMs>INT64_MAX ||
+                        (supply==7 && (s.equippedSeal || s.createdAtUtcMs || s.lifetime!=CostumeLifetimeState{})))throw Bad{};
+                    item.petSupply=s;
+                }
+            }
             view.items.push_back(std::move(item));
 		}
+        for(const auto& item:view.items) {
+            if(item.placement && item.placement->kind==ItemStorageKind::PetCarrier) {
+                const auto box=std::ranges::find(view.items,item.placement->storageId,[](const auto& p){return p.id.Value();});
+                if(box==view.items.end() || !box->petSupply || box->petSupply->containedSeal!=item.id.Value())throw Bad{};
+            }
+            if(item.petSupply && item.petSupply->containedSeal) {
+                const auto pet=std::ranges::find(view.items,item.petSupply->containedSeal,[](const auto& p){return p.id.Value();});
+                if(pet==view.items.end() || !pet->placement || pet->placement->kind!=ItemStorageKind::PetCarrier || pet->placement->storageId!=item.id.Value())throw Bad{};
+            }
+        }
 		if (!r.Done()) return std::unexpected(E::TrailingBytes);
 		return view;
 	}

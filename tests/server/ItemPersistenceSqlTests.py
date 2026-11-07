@@ -40,21 +40,30 @@ def main():
         paths.append(ROOT / "db/migrations/item_instance/010_companion_seals.sql")
         paths.append(ROOT / "db/migrations/item_instance/011_growth_pet_birth.sql")
         paths.append(ROOT / "db/migrations/item_instance/012_pet_study_cooldown.sql")
+        paths.append(ROOT / "db/migrations/item_instance/013_pet_supplies.sql")
         sandbox.client.query("CREATE TABLE player.player(id INT UNSIGNED PRIMARY KEY, name VARCHAR(24) NOT NULL DEFAULT '', exp INT UNSIGNED NOT NULL DEFAULT 0, skill_point SMALLINT NOT NULL DEFAULT 0, sub_skill_point SMALLINT NOT NULL DEFAULT 0, horse_skill_point SMALLINT NOT NULL DEFAULT 0, skill_level BLOB NULL) ENGINE=InnoDB")
         sandbox.client.query("CREATE TABLE player.player_deleted LIKE player.player")
         for path in paths:
             for statement in statements(path.read_text(encoding="utf-8")):
-                sandbox.client.query(statement)
+                try:
+                    sandbox.client.query(statement)
+                except Exception:
+                    if path.name=='013_pet_supplies.sql':
+                        print('PET_STORAGE_MIGRATION_DDL',sandbox.client.query('SHOW CREATE TABLE player.item_storage'),flush=True)
+                        print('PET_STORAGE_MIGRATION_PLAN',sandbox.client.query('SELECT @pet_storage_ddl'),flush=True)
+                    raise
         sandbox.client.query("CREATE TABLE protos.ic_persistence_owner(token CHAR(32) NOT NULL) ENGINE=InnoDB")
         sandbox.client.query("INSERT INTO protos.ic_persistence_owner VALUES('" + token + "')")
         sandbox.client.query("CREATE USER 'item_writer'@'localhost' IDENTIFIED BY '" + sandbox.password + "'")
         sandbox.client.query("GRANT SELECT ON protos.* TO 'item_writer'@'localhost'")
         sandbox.client.query("GRANT SELECT ON player.* TO 'item_writer'@'localhost'")
-        for table in ("item_owner_fence", "item_wallet", "item_operation_receipt", "item_instance",
+        for table in ("item_wallet", "item_operation_receipt", "item_instance",
                       "item_instance_attribute", "item_instance_socket", "item_occupied_cell", "item_ground_core", "item_ground_entry", "item_recovery_schedule"):
             sandbox.client.query("GRANT INSERT,UPDATE,DELETE ON player." + table + " TO 'item_writer'@'localhost'")
         sandbox.client.query("GRANT INSERT,UPDATE,DELETE ON player.item_book_learning TO 'item_writer'@'localhost'")
         sandbox.client.query("GRANT INSERT,UPDATE ON player.item_pet_study_cooldown TO 'item_writer'@'localhost'")
+        sandbox.client.query("GRANT INSERT,DELETE ON player.item_storage TO 'item_writer'@'localhost'")
+        sandbox.client.query("GRANT UPDATE ON player.item_owner_fence TO 'item_writer'@'localhost'")
         sandbox.client.query("GRANT UPDATE ON player.player TO 'item_writer'@'localhost'")
         sandbox.client.query("GRANT UPDATE ON player.item_instance_id_allocator TO 'item_writer'@'localhost'")
         metadata = {"version": sandbox.client.query("SELECT VERSION()")[0][0],

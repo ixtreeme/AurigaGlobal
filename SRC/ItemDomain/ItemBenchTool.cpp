@@ -148,6 +148,9 @@ Json State(const ItemCatalog& c,const p::LoadedItemOwner& o)
                 {"skills",std::move(skills)},{"carrier_instance_id",pet.carrierInstanceId},
                 {"ever_summoned",pet.everSummoned},{"recall_requested",pet.recallRequested}};
         }
+        if(i.petSupply)items.back()["pet_supply"]={{"contained_seal",i.petSupply->containedSeal},{"equipped_seal",i.petSupply->equippedSeal},
+            {"created_at_utc_ms",i.petSupply->createdAtUtcMs},{"remaining_ms",i.petSupply->lifetime.remainingMs},
+            {"deadline_utc_ms",i.petSupply->lifetime.deadlineUtcMs},{"started",i.petSupply->lifetime.started},{"expired",i.petSupply->lifetime.expired}};
     }
     Json wallets=Json::array();
     for(const auto& w:o.wallets)wallets.push_back({{"currency",static_cast<int>(w.currency)},{"balance",w.balance},{"revision",w.revision}});
@@ -345,6 +348,8 @@ Json Grant(CAsyncSQL& sql,const Json& request)
     {const auto points=request.value("tool_points",std::uint64_t{}),bait=request.value("tool_bait",std::uint64_t{});Require(points<=UINT32_MAX && bait<=INT32_MAX,"Érvénytelen eszközállapot.");item.tool=ToolInstanceState{static_cast<std::uint32_t>(points),static_cast<std::uint32_t>(bait)};}
     if(const auto* seal=std::get_if<ItemCompanionRow>(&entry->category);seal && SupportsPersistentItem(*c,*entry))
         item.companion=CompanionState{};
+    if(const auto* supply=std::get_if<ItemPetSupplyRow>(&entry->category);supply && c->FindPetSupplyProfile(supply->profile)->kind==PetSupplyKind::Carrier)
+        item.petSupply=PetSupplyState{};
     item.placement=ItemPlacement{ItemStorageKind::Inventory,1,0};
     if(auto valid=ValidatePersistentItem(*c,item);!valid)
         throw Failure(std::string("A tárgy nem adható: ")+PersistenceText(valid.error())+".");

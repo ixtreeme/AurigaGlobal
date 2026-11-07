@@ -21,7 +21,7 @@ using Cell=std::optional<std::string>;
 using Row=std::vector<Cell>;
 using Rows=std::vector<Row>;
 using U=SqlParam;
-constexpr std::string_view Columns="instance_id,category_id,local_id,owner_kind,owner_id,state_revision,refinement_level,stack_count,destroyed,bound_kind,bound_id,storage_kind,storage_id,anchor_cell,locked_attribute,accessory_capacity,accessory_grade,accessory_remaining_ms,accessory_permanent,state_sha256,automatic_remaining_raw,automatic_active,automatic_next_ms,toggle_remaining_ms,toggle_active,book_skill_id,polymorph_form_id,polymorph_book_grade,polymorph_practice,tool_training_points,tool_bait_power,companion_recall_requested,growth_pet_blob";
+constexpr std::string_view Columns="instance_id,category_id,local_id,owner_kind,owner_id,state_revision,refinement_level,stack_count,destroyed,bound_kind,bound_id,storage_kind,storage_id,anchor_cell,locked_attribute,accessory_capacity,accessory_grade,accessory_remaining_ms,accessory_permanent,state_sha256,automatic_remaining_raw,automatic_active,automatic_next_ms,toggle_remaining_ms,toggle_active,book_skill_id,polymorph_form_id,polymorph_book_grade,polymorph_practice,tool_training_points,tool_bait_power,companion_recall_requested,growth_pet_blob,pet_supply_blob";
 template<class Range> std::string Bytes(const Range& values){std::string out;out.reserve(values.size());for(auto b:values)out.push_back(static_cast<char>(b));return out;}
 SqlParams Owner(ItemOwner o){return {U::UInt(static_cast<unsigned>(o.kind)),U::UInt(o.id)};}
 void Append(SqlParams& to,SqlParams from){for(auto& p:from)to.push_back(std::move(p));}
@@ -40,7 +40,7 @@ SqlTransaction Guards(const ItemCatalog& c)
         {"SELECT 1 WHERE @@tx_isolation='REPEATABLE-READ' AND @@foreign_key_checks=1 AND @@check_constraint_checks=1",{},{},1},
         {"SELECT 1 FROM player.item_persistence_format WHERE singleton=1 AND schema_version=1 AND catalog_revision=? AND catalog_sha256=? LOCK IN SHARE MODE",
             {U::UInt(c.Revision()),U::Blob(Bytes(c.ContentHash()))},{},1},
-        {"SELECT 1 FROM information_schema.TABLES WHERE (TABLE_SCHEMA='player' AND TABLE_NAME IN ('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance','item_instance_attribute','item_instance_socket','item_occupied_cell','item_recovery_schedule')) OR (TABLE_SCHEMA='protos' AND TABLE_NAME IN ('item_base','bonus_definition')) HAVING COUNT(*)=12 AND SUM(ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE')=12 AND (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob'))=13 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_book_learning' AND ENGINE='InnoDB')=1 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_pet_study_cooldown' AND ENGINE='InnoDB')=1",{},{},1},
+        {"SELECT 1 FROM information_schema.TABLES WHERE (TABLE_SCHEMA='player' AND TABLE_NAME IN ('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance','item_instance_attribute','item_instance_socket','item_occupied_cell','item_recovery_schedule')) OR (TABLE_SCHEMA='protos' AND TABLE_NAME IN ('item_base','bonus_definition')) HAVING COUNT(*)=12 AND SUM(ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE')=12 AND (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob','pet_supply_blob'))=14 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_book_learning' AND ENGINE='InnoDB')=1 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_pet_study_cooldown' AND ENGINE='InnoDB')=1",{},{},1},
     };
 }
 SqlParams ItemValues(const ItemCatalog& c,const PersistentItem& p)
@@ -63,6 +63,7 @@ SqlParams ItemValues(const ItemCatalog& c,const PersistentItem& p)
     a.push_back(p.companion ? U::UInt(p.companion->recallRequested) : U::Null());
     // PrepareItemWrite has already validated the complete typed state.
     a.push_back(p.growthPet ? U::Blob(Bytes(*EncodeGrowthPetState(c,p.key,*p.growthPet))) : U::Null());
+    a.push_back(p.petSupply ? U::Blob(Bytes(*EncodePetSupplyState(c,p.key,*p.petSupply))) : U::Null());
     return a;
 }
 std::string Marks(std::size_t n){std::string s;for(std::size_t i=0;i<n;++i){if(i)s+=",";s+="?";}return s;}
@@ -175,6 +176,10 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
     for(const auto& s:storages)
     {
         auto p=Storage(s.storage);Append(p,{U::UInt(s.columns),U::UInt(s.rows),U::UInt(s.pages)});
+        if(s.storage.kind==ItemStorageKind::PetCarrier) {
+            auto create=p;Append(create,Storage(s.storage));
+            tx.push_back({"INSERT INTO player.item_storage(owner_kind,owner_id,storage_kind,storage_id,grid_columns,grid_rows,grid_pages) SELECT ?,?,?,?,?,?,? WHERE NOT EXISTS (SELECT 1 FROM player.item_storage WHERE owner_kind=? AND owner_id=? AND storage_kind=? AND storage_id=?)",std::move(create),{},{}});
+        }
         tx.push_back({"SELECT 1 FROM player.item_storage WHERE owner_kind=? AND owner_id=? AND storage_kind=? AND storage_id=? AND grid_columns=? AND grid_rows=? AND grid_pages=? LOCK IN SHARE MODE",std::move(p),{},1});
     }
     auto wallets=r.wallets;std::ranges::sort(wallets,{},[](const auto& v){return std::pair{v.before.owner,v.before.currency};});
@@ -254,6 +259,12 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
             for(auto cell:*cells){if(!values.empty())values+=",";values+="(?,?,?,?,?,?)";Append(pCells,Storage({i.after.owner,i.after.placement->kind,i.after.placement->storageId}));Append(pCells,{U::UInt(cell),U::UInt(i.after.id.Value())});}
             tx.push_back({"INSERT INTO player.item_occupied_cell(owner_kind,owner_id,storage_kind,storage_id,cell_index,instance_id) VALUES"+values,std::move(pCells),cells->size(),{}});
         }
+    }
+    for(const auto& change:r.items)if(change.before && change.before->placement &&
+        change.before->placement->kind==ItemStorageKind::PetCarrier &&
+        (!change.after.placement || change.after.placement->kind!=ItemStorageKind::PetCarrier)) {
+        tx.push_back({"DELETE FROM player.item_storage WHERE owner_kind=? AND owner_id=? AND storage_kind=? AND storage_id=?",
+            Storage({change.before->owner,ItemStorageKind::PetCarrier,change.before->placement->storageId}),1,{}});
     }
     if(r.ground)
     {
@@ -456,8 +467,8 @@ std::expected<LoadedItemOwner,E> LoadItemOwner(CAsyncSQL& db,const ItemCatalog& 
     tx.push_back({"SELECT skill_id,ready_at_ms FROM player.item_pet_study_cooldown WHERE owner_kind=? AND owner_id=? LIMIT 4097",Owner(owner),{},{}});
     Message m(db.DirectTransactionPrepared(std::move(tx)));if(!m)return std::unexpected(E::SqlFailure);
     auto recoveryRows=Result(*m,10,3,1);auto learningRows=Result(*m,11,3,1);auto petCooldownRows=Result(*m,12,2,4096);
-    auto fence=Result(*m,3,1,1),storageRows=Result(*m,4,5,MaxItemCommitStorages),walletRows=Result(*m,5,3,2),
-        itemRows=Result(*m,6,33,MaxLoadedOwnerItems),attributes=Result(*m,7,4,MaxLoadedOwnerItems*8),stones=Result(*m,8,7,MaxLoadedOwnerItems*3),cells=Result(*m,9,6,65536);
+    auto fence=Result(*m,3,1,1),storageRows=Result(*m,4,5,MaxLoadedOwnerStorages),walletRows=Result(*m,5,3,2),
+        itemRows=Result(*m,6,34,MaxLoadedOwnerItems),attributes=Result(*m,7,4,MaxLoadedOwnerItems*8),stones=Result(*m,8,7,MaxLoadedOwnerItems*3),cells=Result(*m,9,6,65536);
     for(const auto* r:{&fence,&storageRows,&walletRows,&itemRows,&attributes,&stones,&cells,&recoveryRows,&learningRows,&petCooldownRows})if(!*r)return std::unexpected(r->error());
     try
     {
@@ -518,6 +529,10 @@ std::expected<LoadedItemOwner,E> LoadItemOwner(CAsyncSQL& db,const ItemCatalog& 
                 item.growthPet=std::move(*state);
                 if(item.growthPet->recallRequested && std::exchange(hasCompanionRecall,true))throw Invalid{};
             }
+            if(row[33]) {
+                const auto state=DecodePetSupplyState(c,item.key,{reinterpret_cast<const std::uint8_t*>(row[33]->data()),row[33]->size()});
+                if(!state)throw Invalid{};item.petSupply=*state;
+            }
             if(!indexes.emplace(id->Value(),out.items.size()).second)throw Invalid{};out.items.push_back(item);hashes.push_back(Array<32>(row[19]));
         }
         std::set<std::pair<std::uint64_t,unsigned>> seenAttributes,seenStones;
@@ -541,7 +556,7 @@ std::expected<LoadedItemOwner,E> LoadItemOwner(CAsyncSQL& db,const ItemCatalog& 
         std::set<std::uint32_t> toggleGroups;
         for(const auto& item:out.items)if(item.toggle && item.toggle->active)
         {const auto* e=c.Find(item.key);const auto* r=e ? std::get_if<ItemConsumableRow>(&e->category) : nullptr;const auto* p=r && r->toggleEffectProfile ? c.FindToggleEffect(*r->toggleEffectProfile) : nullptr;if(!p || !toggleGroups.insert(p->group).second || toggleGroups.size()>MaxRuntimeToggleEffects)throw Invalid{};}
-        if(seenStones.size()!=out.items.size()*3)throw Invalid{};
+        if(seenStones.size()!=out.items.size()*3 || !ValidPetCarrierLinks(out.items))throw Invalid{};
         using Reservation=std::tuple<ItemStorage,std::uint32_t,std::uint64_t>;std::set<Reservation> actual,expected;
         for(std::size_t n=0;n<out.items.size();++n)
         {

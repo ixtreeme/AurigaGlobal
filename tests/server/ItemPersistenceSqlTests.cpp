@@ -133,7 +133,8 @@ void Sessions(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c)
     const ItemWallet coins{fresh,WalletCurrency::DragonCoin,1,1};bad=p::ProvisionOwner(admin,c,fresh,std::span(&bag,1),std::span(&coins,1));
     Check(!bad && bad.error()==E::InvalidWallet,"character dragon-coin wallet");
     Check(Scalar(admin,"SELECT COUNT(*) FROM player.item_owner_fence WHERE owner_id=4242")=="0","rejected provisioning wrote nothing");
-    // The item writer account has no storage privilege: it can never invent an owner.
+    // The writer may create internal carrier storage but only advances existing
+    // owner fences: it still cannot invent an owner or provision its balances.
     bad=p::ProvisionOwner(writer,c,fresh,std::span(&bag,1),std::span(&gold,1));Check(!bad,"item writer cannot provision");
     Check(Scalar(admin,"SELECT COUNT(*) FROM player.item_owner_fence WHERE owner_id=4242")=="0","failed provisioning is atomic");
     const ItemStorageLayout layouts[]{bag,safe};
@@ -184,7 +185,7 @@ void GrowthPetBirthSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,I
     const ItemWallet wallet{owner,WalletCurrency::Gold,1,150000};
     Check(p::ProvisionOwner(admin,c,owner,std::span(&bag,1),std::span(&wallet,1)).has_value(),"hatch owner provisioned");
     auto state=p::LoadCurrentItemOwner(writer,c,owner).value();
-    const auto ids=p::ReserveItemInstanceIds(writer,c,12).value();
+    const auto ids=p::ReserveItemInstanceIds(writer,c,14).value();
     const auto eggId=ItemInstanceId::Create(ids.first).value();
     const auto sealId=ItemInstanceId::Create(ids.first+1).value();
     const auto grant=MakeGrantCommit(c,{30,1},state.fence,state.storages,state.items,{eggKey,0,2},std::array{eggId});
@@ -508,6 +509,47 @@ void GrowthPetBirthSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,I
     state=p::LoadCurrentItemOwner(writer,c,owner).value();
     Check(Find(state,sealId.Value()).growthPet->life==permanent->plan.after.life && !service(0,0,5) && !service(1,1,6),
         "permanent life persists and rejects no-effect repeat supplies");
+    const auto carrierKey=ItemKey::Create(ItemCategory::Special,89).value();
+    const auto carrierId=ItemInstanceId::Create(ids.first+12).value(),anotherBook=ItemInstanceId::Create(ids.first+13).value();
+    for(const auto& [key,id]:std::array{std::pair{carrierKey,carrierId},std::pair{bookKey,anotherBook}}) {
+        const auto grant=MakeGrantCommit(c,{38,static_cast<std::uint8_t>(key.LocalId())},state.fence,state.storages,state.items,{key,0,1},std::array{id});
+        Check(grant && p::CommitItems(writer,c,*grant).has_value(),"carrier and book granted");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    }
+    const auto summonForCarrier=growthWrite(14,CompanionAction::Summon);
+    Check(summonForCarrier && p::CommitItems(writer,c,*summonForCarrier).has_value(),"summon pet before carrier skill test");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    auto learnContext=context;learnContext.operationId={38,1};learnContext.sessionGeneration=state.fence.sessionGeneration;
+    const auto learnForCarrier=MakePetStudyCommit(c,state.fence,state.storages,state.items,learnContext,anotherBook,sealId,{0,request.bornAtUtcMs+60000});
+    Check(learnForCarrier && p::CommitItems(writer,c,learnForCarrier->commit).has_value(),"carrier test pet retains a learned skill");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto recallForCarrier=growthWrite(15,CompanionAction::Dismiss);
+    Check(recallForCarrier && p::CommitItems(writer,c,*recallForCarrier).has_value(),"recall before packing");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();const auto beforeCarrier=*Find(state,sealId.Value()).growthPet;
+    const auto packed=service(4,5,7);
+    Check(packed.has_value(),"native carrier plan");
+    const auto packedWrite=p::CommitItems(writer,c,packed->commit);
+    if(!packedWrite) {
+        const auto sql=p::PrepareItemWrite(c,packed->commit);
+        Message diagnostic(writer.DirectTransactionPrepared(*sql));
+        if(diagnostic && diagnostic->transactionFailedStep<sql->size())
+            std::cerr<<"PET_CARRIER_SQL_FAILED_STEP="<<diagnostic->transactionFailedStep<<" query="<<(*sql)[diagnostic->transactionFailedStep].query<<'\n';
+    }
+    Check(packedWrite.has_value(),("pack SQL error "+std::to_string(packedWrite ? 0 : static_cast<unsigned>(packedWrite.error()))).c_str());
+    const auto packedReplay=p::CommitItems(writer,c,packed->commit);
+    Check(packedReplay && packedReplay->replay,"packed receipt replay");
+    Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"packed pet relog");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto stored=Find(state,sealId.Value());
+    auto expectedStored=beforeCarrier;expectedStored.carrierInstanceId=carrierId.Value();
+    Check(stored.growthPet==expectedStored && stored.placement==ItemPlacement{ItemStorageKind::PetCarrier,carrierId.Value(),0} &&
+        Find(state,carrierId.Value()).petSupply->containedSeal==sealId.Value(),"full pet state and bidirectional box link reload");
+    Check(!MakeConsumeCommit(c,{38,2},state.fence,state.storages,state.items,carrierId,1),"ordinary consumption cannot delete a packed pet");
+    const auto unpacked=service(4,6,8);
+    Check(unpacked && p::CommitItems(writer,c,unpacked->commit).has_value() && p::CommitItems(writer,c,unpacked->commit)->replay,
+        "unpack consumes one box and reserves the destination once");
+    Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"unpacked pet relog");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    Check(Find(state,sealId.Value()).growthPet==beforeCarrier && Find(state,sealId.Value()).placement->kind==ItemStorageKind::Inventory &&
+        std::ranges::none_of(state.storages,[](const auto& l){return l.storage.kind==ItemStorageKind::PetCarrier;}) &&
+        std::ranges::none_of(state.items,[&](const auto& p){return p.id==carrierId;}),"same seal returns intact, without refilling life or leaking its internal storage");
 }
 
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
@@ -563,6 +605,10 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         if(index==0)rule.extension=PetExtensionRule{60000,86400000};
         if(index>=2)rule.enchant=PetEnchantRule{static_cast<std::uint16_t>(index==2 ? 10000 : 0),5,{150,100,100}};
         source.petSupplyProfiles.push_back(rule);
+    }
+    {
+        auto base=source.items.back();base.key=ItemKey::Create(ItemCategory::Special,89).value();base.contentCode="special.sql_pet_carrier";base.maxStack=1;
+        source.items.push_back(base);source.petSupplies.push_back({base.key,20});source.petSupplyProfiles.push_back({20,"supply.sql_pet_carrier",PetSupplyKind::Carrier});
     }
     source.petHatchProfiles.push_back({1,"hatch.sql_birth",growthSeal,100000,{30,40,5},{10,20,5},{10,20,5}});
     source.petFeedRules={{hatchEgg,PetFeedingService::Cube,PetFoodKind::LifetimeFraction,PetFoodConsumption::WholeStack,0,5000,0,0},
