@@ -11,6 +11,7 @@ bool ValidState(const ItemCompanionRow& row,const CompanionState& state) {
     if(state.phase<CompanionPhase::Dormant || state.phase>CompanionPhase::Riding ||
        ((state.phase==CompanionPhase::Dormant)!=(state.activeFormId==0)) ||
        (row.kind==CompanionKind::Pet && state.phase==CompanionPhase::Riding) ||
+       (state.ridingRequested && (row.kind!=CompanionKind::Mount || !state.recallRequested)) ||
        (state.phase!=CompanionPhase::Dormant && !state.recallRequested) ||
        (t.expired && (state.phase!=CompanionPhase::Dormant || state.recallRequested)) ||
        t.deadlineUtcMs>MaxTime || t.remainingMs>MaxTime)return false;
@@ -99,6 +100,9 @@ std::expected<CompanionPlan,CompanionError> PlanCompanion(const ItemCatalog& cat
     else if(r.action==A::Mount)plan.after.phase=P::Riding;
     else if(r.action==A::Dismount || (plan.after.phase==P::Riding && !r.worldAllowsRiding))plan.after.phase=P::Following;
     plan.after.activeFormId=plan.after.phase==P::Following ? row->form : plan.after.phase==P::Riding ? *row->ridingForm : 0;
+    if(!plan.after.recallRequested)plan.after.ridingRequested=false;
+    else if(r.action==A::Mount)plan.after.ridingRequested=true;
+    else if(r.action==A::Dismount)plan.after.ridingRequested=false;
     const bool differentForm=plan.after.activeFormId!=r.state.activeFormId;
     plan.spawnFollower=plan.after.phase==P::Following && (r.state.phase!=P::Following || differentForm);
     plan.despawnFollower=r.state.phase==P::Following && (plan.after.phase!=P::Following || differentForm);

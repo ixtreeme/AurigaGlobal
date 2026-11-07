@@ -21,6 +21,8 @@
 #include "../network/desc.h"
 #include "../pet/New_PetSystem.h"
 #include "../pet/PetSystem.h"
+#include "../story/CaravanQuestSystem.hpp"
+#include "../world/arena.h"
 #include "../core/packet.h"
 #include <algorithm>
 #include <chrono>
@@ -109,7 +111,14 @@ struct CompanionProjection
     std::uint64_t live = 0;
     std::uint32_t checked = 0;
     std::uint32_t race = 0;
+    std::uint32_t ridingRace = 0;
 };
+
+bool OwnRiding(entt::entity owner)
+{
+    const auto* projection=g_registry.try_get<CompanionProjection>(owner);
+    return projection && projection->ridingRace && MountSystem::GetMountVnum(owner)==projection->ridingRace;
+}
 
 bool InGame(entt::entity owner)
 {
@@ -131,12 +140,24 @@ bool WorldAllowsFollower(entt::entity owner)
 bool OtherFollower(entt::entity owner, std::uint64_t live)
 {
     return PetSystem::CountSummoned(owner) > (live ? 1u : 0u)
-        || MountSystem::IsCostumeMountSummoned(owner) || MountSystem::IsRiding(owner)
+        || MountSystem::IsCostumeMountSummoned(owner) || (MountSystem::IsRiding(owner) && !OwnRiding(owner))
         || MountSystem::GetSummonedHorse(owner) != entt::null
 #ifdef __NEWPET_SYSTEM__
         || NewPetSystem::CountSummoned(owner)
 #endif
         ;
+}
+
+bool WorldAllowsRiding(entt::entity owner)
+{
+    return WorldAllowsFollower(owner) && !CaravanQuest::Locked(owner)
+        && !CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(owner));
+}
+
+std::uint32_t RidingRace(const item::ItemCatalog& catalog,const item::ItemCompanionRow& row)
+{
+    const auto* form=row.kind==item::CompanionKind::Mount && row.ridingForm ? catalog.FindCompanionForm(*row.ridingForm) : nullptr;
+    return form && form->mobTemplateId<=UINT16_MAX && CMobManager::instance().Get(form->mobTemplateId) ? form->mobTemplateId : 0;
 }
 
 bool CanSummonFromBag(entt::entity owner)
@@ -465,7 +486,16 @@ std::uint64_t RefreshTypedCompanion(entt::entity owner)
     const auto* previous = g_registry.try_get<CompanionProjection>(owner);
     const bool formChanged = live && live==id && previous && previous->race!=race;
     const bool canFollow = race && lifeRemaining && !entry->base.retired && WorldAllowsFollower(owner) && !OtherFollower(owner, live);
-    if (live && (live != id || !canFollow || formChanged))
+    const bool wantsRide=desired && desired->companion && desired->companion->ridingRequested;
+    const auto rideRace=wantsRide && row ? RidingRace(*catalog,*row) : 0;
+    const bool canRide=wantsRide && canFollow && rideRace && WorldAllowsRiding(owner);
+    if(previous && previous->ridingRace && (!canRide || previous->live!=id || previous->ridingRace!=rideRace))
+    {
+        const bool own=OwnRiding(owner);
+        g_registry.get<CompanionProjection>(owner).ridingRace=0;
+        if(own)MountSystem::SetMountVnum(owner,0);
+    }
+    if (live && (wantsRide || live != id || !canFollow || formChanged))
     {
         PetSystem::RecallTyped(owner, live);
         live = 0;
@@ -483,6 +513,21 @@ std::uint64_t RefreshTypedCompanion(entt::entity owner)
 
     auto& projection = g_registry.get_or_emplace<CompanionProjection>(owner);
     const auto now = get_dword_time();
+    if(wantsRide)
+    {
+        if(canRide && !OwnRiding(owner) && !MountSystem::IsRiding(owner))
+        {
+            // Own the projection before publishing the normal rider insert.
+            projection.ridingRace=rideRace;
+            MountSystem::SetMountVnum(owner,rideRace);
+        }
+        projection.live=canRide && OwnRiding(owner) ? id : 0;
+        projection.checked=now;
+        UpdateGrowthClock(owner,typed->state,0);
+        UpdateTypedPetSkins(owner,typed->state,0);
+        return projection.live;
+    }
+    projection.ridingRace=0;
     // Reconcile pending intent after the login affect load or a temporary map
     // restriction. Rate-limit failed materialization without changing SQL.
     if (!live && canFollow && (formChanged || now - projection.checked >= 500u))
@@ -551,7 +596,7 @@ bool HandleTypedCompanionPacket(entt::entity owner, const char* data)
     TPacketCGTypedCompanion packet{};
     std::memcpy(&packet, data, sizeof(packet));
     const auto action = static_cast<Action>(packet.bAction);
-    if (!packet.qwItemId || (action != Action::Summon && action != Action::Dismiss))
+    if (!packet.qwItemId || action<Action::Summon || action>Action::Dismount)
         return true;
     const auto* typed = g_registry.try_get<ecs::TypedItems>(owner);
     const auto* login = g_registry.try_get<ecs::TypedItemLogin>(owner);
@@ -572,12 +617,19 @@ bool HandleTypedCompanionPacket(entt::entity owner, const char* data)
         return true;
     }
     const bool summon = action == Action::Summon;
-    if (item::RecallRequested(*found) == summon)
+    const auto* row = CompanionRow(*catalog, found->key);
+    const bool rideAction=action==Action::Mount || action==Action::Dismount;
+    if(rideAction && (!row || row->kind!=item::CompanionKind::Mount || !found->companion))
+    {
+        SendRefusal(owner,"Csak hátaspecsétre ülhetsz fel.");return true;
+    }
+    if ((action==Action::Summon && item::RecallRequested(*found)) ||
+        (action==Action::Dismiss && !item::RecallRequested(*found)) ||
+        (rideAction && found->companion->ridingRequested==(action==Action::Mount)))
     {
         SendTypedInventory(owner);
         return true;
     }
-    const auto* row = CompanionRow(*catalog, found->key);
     const auto* active = Requested(*typed);
     const auto live = PetSystem::LiveTypedSeal(owner);
     const auto facts = TypedItemEffectFacts(owner);
@@ -587,6 +639,12 @@ bool HandleTypedCompanionPacket(entt::entity owner, const char* data)
     {
         SendRefusal(owner, "A társ ebben az állapotban nem idézhető meg.");
         return true;
+    }
+    if(action==Action::Mount && (!facts.allowed || !facts.alive || !CanSummonFromBag(owner) ||
+        !WorldAllowsRiding(owner) || live!=found->id.Value() || !active || active->id!=found->id ||
+        OtherFollower(owner,live) || !RidingRace(*catalog,*row)))
+    {
+        SendRefusal(owner,"A megidézett hátasra ebben az állapotban nem ülhetsz fel.");return true;
     }
 
     const auto pid = ecs::PlayerRuntime::GetPlayerID(owner);
@@ -608,7 +666,12 @@ bool HandleTypedCompanionPacket(entt::entity owner, const char* data)
         }
         item::CompanionRequest request{found->key};
         request.state = *found->companion;
-        if (live == found->id.Value())
+        if(request.state.ridingRequested)
+        {
+            request.state.phase=item::CompanionPhase::Riding;
+            request.state.activeFormId=*row->ridingForm;
+        }
+        else if (live == found->id.Value())
         {
             request.state.phase = item::CompanionPhase::Following;
             request.state.activeFormId = row->form;
@@ -629,6 +692,7 @@ bool HandleTypedCompanionPacket(entt::entity owner, const char* data)
         request.ownerAlive = facts.alive;
         request.inCombat = facts.actor.inCombat;
         request.worldAllowsCompanion = worldAllowsFollower;
+        request.worldAllowsRiding = WorldAllowsRiding(owner);
         request.operationId = operationId;
         return item::MakeCompanionCommit(*catalog, state.fence, state.storages, state.items, request);
     }();

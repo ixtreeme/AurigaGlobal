@@ -55,8 +55,10 @@ void Actions() {
     r.state=p.after;r.action=CompanionAction::Mount;r.elapsedOwnerMs=700;p=PlanCompanion(*c,r).value();
     Check(p.despawnFollower && !p.spawnFollower && p.changeRider && p.bonusEnabled && p.ridingForm->id==2,"mounting hides follower and switches one rider model");
     Check(p.after.lifetime.remainingMs==4300,"active clock debits validated owner time before mounting");
+    Check(p.after.ridingRequested,"mounting records a separate durable rider intent");
     r.state=p.after;r.action=CompanionAction::Dismount;r.elapsedOwnerMs=300;p=PlanCompanion(*c,r).value();
     Check(p.spawnFollower && p.changeRider && !p.bonusEnabled && p.after.lifetime.remainingMs==4000,"dismount restores exactly one follower without refilling lifetime");
+    Check(!p.after.ridingRequested && p.after.recallRequested,"dismount clears riding intent while preserving follower intent");
     r.state=p.after;r.action=CompanionAction::Maintain;r.elapsedOwnerMs=4000;p=PlanCompanion(*c,r).value();
     Check(p.after.lifetime.expired && p.despawnFollower,"active budget expiry cleans mount");
     r=Request(*c,2);r.elapsedOwnerMs=4000;Check(PlanCompanion(*c,r)->after.lifetime.remainingMs==5000,"dormant active clock does not debit offline elapsed time");

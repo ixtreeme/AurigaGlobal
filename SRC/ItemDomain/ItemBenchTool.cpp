@@ -82,7 +82,7 @@ bool Installed(CAsyncSQL& sql)
 {
     return Rows(sql,"SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN "
         "('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance',"
-        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule','item_pet_study_cooldown')").at(0).at(0)=="14" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob')").at(0).at(0)=="13";
+        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule','item_pet_study_cooldown')").at(0).at(0)=="14" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob','companion_riding_requested')").at(0).at(0)=="14";
 }
 std::shared_ptr<const ItemCatalog> Catalog(CAsyncSQL& sql)
 {
@@ -131,7 +131,7 @@ Json State(const ItemCatalog& c,const p::LoadedItemOwner& o)
             {"toggle",i.toggle ? Json{{"remaining_ms",i.toggle->remainingMs},{"active",i.toggle->active}} : Json(nullptr)},
             {"bound",i.boundTo.has_value()},
             {"accessory",i.accessory ? Json{{"capacity",i.accessory->unlockedCapacity},{"grade",i.accessory->activeGrade},{"remaining_ms",i.accessory->remainingMs},{"permanent",i.accessory->permanent}} : Json(nullptr)}});
-        if(i.companion)items.back()["companion"]={{"recall_requested",i.companion->recallRequested}};
+        if(i.companion)items.back()["companion"]={{"recall_requested",i.companion->recallRequested},{"riding_requested",i.companion->ridingRequested}};
         if(i.growthPet)
         {
             const auto& pet=*i.growthPet;

@@ -86,7 +86,7 @@ int main(int argc, char** argv)
 		Check(DecodeTypedInventory(longer, f::Character()).error() == TypedInventoryWireError::TrailingBytes, "trailing byte");
 		auto header = b; header[0] = std::byte { 224 };
 		Check(DecodeTypedInventory(header, f::Character()).error() == TypedInventoryWireError::BadHeader, "wrong header");
-		auto version = b; version[5] = std::byte { 11 };
+		auto version = b; version[5] = std::byte { 12 };
 		Check(DecodeTypedInventory(version, f::Character()).error() == TypedInventoryWireError::BadVersion, "unknown version");
 		Check(DecodeTypedInventory(std::span(b).first(3), f::Character()).error() == TypedInventoryWireError::Truncated, "short header");
 		PersistentItem unknown { ItemInstanceId::Create(9).value(), ItemKey::Create(1, 999).value(), f::Character() };
@@ -106,7 +106,7 @@ int main(int argc, char** argv)
 		sealBase.refinementProfile = 27001;
 		sealBase.usePolicy = sealBase.tradePolicy = 1;
 		source.items.push_back(sealBase);
-		auto companionCatalog = BuildItemCatalog(std::move(source));
+		auto companionCatalog = BuildItemCatalog(source);
 		Check(companionCatalog.has_value(), "companion fixture catalog");
 		PersistentItem seal{ItemInstanceId::Create(17).value(),sealKey,f::Character()};
 		seal.count = 1;
@@ -127,6 +127,17 @@ int main(int argc, char** argv)
 				"unknown companion presentation accepted");
 		}
 
+        source.companions[0].kind=CompanionKind::Mount;source.companions[0].ridingForm=1;
+        const auto mountCatalog=BuildItemCatalog(source).value();
+        seal.companion->recallRequested=seal.companion->ridingRequested=true;
+        for(const auto live : {std::uint64_t{0},seal.id.Value()}) {
+            const auto wire=EncodeTypedInventory(*mountCatalog,storages,{},std::span(&seal,1),live);
+            Check(wire && (*wire)[5]==std::byte{11},"riding mount uses version eleven and the v10 sidecar");
+            const auto view=DecodeTypedInventory(*wire,f::Character());
+            Check(view && view->companions.at(seal.id)==std::pair{CompanionKind::Mount,static_cast<std::uint8_t>(live ? 5 : 6)} &&
+                view->items[0].companion==seal.companion,"rider projection and pending intent roundtrip");
+            auto old=*wire;old[5]=std::byte{10};Check(!DecodeTypedInventory(old,f::Character()),"older wire cannot claim a ridden mount");
+        }
 		auto hatchCatalog = BuildItemCatalog(pet_care_fixture::Catalog());
 		Check(hatchCatalog.has_value(), "hatch fixture catalog");
 		const auto petKey = pet_care_fixture::Pet();

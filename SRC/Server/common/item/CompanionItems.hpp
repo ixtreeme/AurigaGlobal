@@ -40,6 +40,7 @@ struct CompanionState {
     std::uint32_t activeFormId=0; // Actual runtime presentation, zero when dormant.
     bool recallRequested=false; // Intent, never proof that an actor exists.
     CompanionLifetime lifetime;
+    bool ridingRequested=false; // Durable intent; phase remains runtime presentation.
     bool operator==(const CompanionState&) const = default;
 };
 enum class CompanionAction : std::uint8_t { Summon=1, Dismiss=2, Mount=3, Dismount=4, Maintain=5 };

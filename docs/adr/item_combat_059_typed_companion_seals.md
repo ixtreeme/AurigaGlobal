@@ -2,6 +2,12 @@
 
 2026-11-06, C26b. Szerverág: `20261103`. Unity-ág: `/main/unity63-integration-20261103`. Az aktív munkaterületeket az [AGENTS.md](../../AGENTS.md) sorolja fel.
 
+2026-11-07-i kiegészítés: az állandó hátaspecsét tartós felülése és
+leszállása a [C27a-ban](item_combat_061_typed_mount_riding.md) elkészült,
+szerverrel és Unityvel együtt, sikeres helyi újrabelépéssel. A fejlődőpet-
+csomagot az [IC-060](item_combat_060_typed_pet_hatching.md) már lezárta.
+Az alábbi bekezdések a C26b eredeti határát rögzítik.
+
 A 15-ös kategória állandó pet- és hátaspecsétjei tartós példányként kioszthatók. A Unity leltárból a **Megidézés** és **Visszahívás** művelet a pecsét példányazonosítóját küldi. Egyszerre egy típusos követő lehet aktív. A hátaspecsét ebben a lépésben követőt idéz. A típusos felülés, időkorlát, bónuszok, fejlődő pet és tojáskeltetés későbbi lépések.
 
 Az `010_companion_seals.sql` a példányhoz adja az idézési szándékot. A tulajdonos munkamenete és revíziója védi a tranzakciót. A pecsét azonosítója, darabszáma és helye idézéskor megmarad. Aktív szándéknál a példány a tulajdonos leltárában marad. A szerver mentés után hozza létre vagy hívja vissza a követőt. Újrabelépéskor a szerver az érvényes szándékból új szereplőt hoz létre, amint a karakter és a térkép készen áll. Elérhetetlen megjelenítéskor a pecsét függő állapotot mutat. A visszahívás törli a szándékot.

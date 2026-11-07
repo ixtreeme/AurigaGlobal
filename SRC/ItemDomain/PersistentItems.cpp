@@ -68,6 +68,7 @@ struct Writer
         if(p.polymorph){Put(0x314d4c50,4);Put(p.polymorph->boundForm.has_value(),1);if(p.polymorph->boundForm)Put(*p.polymorph->boundForm,4);Put(p.polymorph->bookGrade,2);Put(p.polymorph->practiceRemaining,4);}
         if(p.tool){Put(0x314c4f54,4);Put(p.tool->trainingPoints,4);Put(p.tool->baitPower,4);}
         if(p.companion){Put(0x31504d43,4);Put(p.companion->recallRequested,1);}
+        if(p.companion && p.companion->ridingRequested){Put(0x31544e4d,4);Put(1,1);}
         if(p.growthPet)
         {
             const auto state=EncodeGrowthPetState(c,p.key,*p.growthPet);
@@ -603,6 +604,7 @@ std::expected<void,E> ValidatePersistentItem(const ItemCatalog& c,const Persiste
         if(!p.companion || (!p.destroyed && p.count!=1) ||
            p.companion->phase!=CompanionPhase::Dormant || p.companion->activeFormId ||
            p.companion->lifetime!=CompanionLifetime{} ||
+           (p.companion->ridingRequested && (seal->kind!=CompanionKind::Mount || !p.companion->recallRequested)) ||
            (RecallRequested(p) && (p.destroyed || p.owner.kind!=ItemOwnerKind::Character ||
                !p.placement || p.placement->kind!=ItemStorageKind::Inventory)))
             return std::unexpected(E::InvalidItem);
@@ -707,8 +709,27 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
             {
                 if(r.kind!=ItemOperationKind::Service || r.outcomeCode!=CompanionSealOutcome ||
                    r.items.size()!=1 || !r.wallets.empty() || r.ground || r.recovery || r.learning ||
-                   !b.companion || !p.companion || RecallRequested(b)==RecallRequested(p))
+                   !b.companion || !p.companion || r.result.size()!=5 ||
+                   r.result[0]!='C' || r.result[1]!='M' || r.result[2]!='P' ||
+                   (r.result[3]==1 ? r.result[4]<1 || r.result[4]>2 : r.result[3]!=2 || r.result[4]<3 || r.result[4]>4))
                     return std::unexpected(E::TransferDenied);
+                auto intent=*b.companion;
+                switch(static_cast<CompanionAction>(r.result[4])) {
+                case CompanionAction::Summon:
+                    if(intent.recallRequested)return std::unexpected(E::InvalidChange);
+                    intent.recallRequested=true;break;
+                case CompanionAction::Dismiss:
+                    if(!intent.recallRequested)return std::unexpected(E::InvalidChange);
+                    intent.recallRequested=intent.ridingRequested=false;break;
+                case CompanionAction::Mount:
+                    if(!intent.recallRequested || intent.ridingRequested)return std::unexpected(E::InvalidChange);
+                    intent.ridingRequested=true;break;
+                case CompanionAction::Dismount:
+                    if(!intent.ridingRequested)return std::unexpected(E::InvalidChange);
+                    intent.ridingRequested=false;break;
+                default:return std::unexpected(E::InvalidChange);
+                }
+                if(intent!=*p.companion)return std::unexpected(E::InvalidChange);
                 auto expected=b;
                 expected.revision=p.revision;
                 expected.companion=p.companion;
@@ -1072,13 +1093,14 @@ std::expected<ItemCommit,E> MakeCompanionCommit(const ItemCatalog& c,ItemOwnerFe
        source->revision!=request.revision || source->count!=request.count ||
        source->refinementLevel!=request.refinementLevel ||
        source->companion->recallRequested!=request.state.recallRequested ||
+       source->companion->ridingRequested!=request.state.ridingRequested ||
        source->companion->lifetime!=request.state.lifetime)
         return std::unexpected(E::InvalidChange);
 
     const auto* entry=c.Find(source->key);
     const auto* row=entry ? std::get_if<ItemCompanionRow>(&entry->category) : nullptr;
     if(!row || !PermanentSeal(*row))return std::unexpected(E::UnsupportedState);
-    if(request.action!=CompanionAction::Summon && request.action!=CompanionAction::Dismiss)
+    if(request.action<CompanionAction::Summon || request.action>CompanionAction::Dismount)
         return std::unexpected(E::InvalidOperation);
     auto admitted=request;
     admitted.channelOccupiedByOther|=std::ranges::any_of(inventory,[&](const auto& other){
@@ -1086,13 +1108,15 @@ std::expected<ItemCommit,E> MakeCompanionCommit(const ItemCatalog& c,ItemOwnerFe
     });
     const auto plan=PlanCompanion(c,admitted);
     if(!plan)return std::unexpected(plan.error()==CompanionError::ChannelOccupied ? E::Conflict : E::RequirementNotMet);
-    if(plan->after.recallRequested==source->companion->recallRequested)return std::unexpected(E::InvalidChange);
+    if(plan->after.recallRequested==source->companion->recallRequested &&
+        plan->after.ridingRequested==source->companion->ridingRequested)return std::unexpected(E::InvalidChange);
 
     const auto layout=std::ranges::find(storages,ItemStorage{owner.owner,source->placement->kind,source->placement->storageId},&ItemStorageLayout::storage);
     if(layout==storages.end())return std::unexpected(E::InvalidStorage);
     auto after=*source;
     ++after.revision;
     after.companion->recallRequested=plan->after.recallRequested;
+    after.companion->ridingRequested=plan->after.ridingRequested;
     ItemCommit commit;
     commit.operationId=request.operationId;
     commit.catalogRevision=c.Revision();
@@ -1102,7 +1126,7 @@ std::expected<ItemCommit,E> MakeCompanionCommit(const ItemCatalog& c,ItemOwnerFe
     commit.storages={*layout};
     commit.items={{*source,after}};
     commit.outcomeCode=CompanionSealOutcome;
-    commit.result={'C','M','P',1,static_cast<std::uint8_t>(request.action)};
+    commit.result={'C','M','P',static_cast<std::uint8_t>(request.action<=CompanionAction::Dismiss ? 1 : 2),static_cast<std::uint8_t>(request.action)};
     if(auto valid=ValidateItemCommit(c,commit);!valid)return std::unexpected(valid.error());
     return commit;
 }

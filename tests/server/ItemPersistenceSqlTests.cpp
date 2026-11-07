@@ -1388,6 +1388,8 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         grant=MakeGrantCommit(*c,{29,2},state.fence,state.storages,state.items,{mountSeal,0,1},std::array{mountId});
         Check(grant && p::CommitItems(writer,*c,*grant).has_value(),"permanent mount seal granted");
         state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        Message invalidRiding(admin.DirectQueryPrepared("UPDATE player.item_instance SET companion_recall_requested=NULL,companion_riding_requested=1 WHERE instance_id=?",{U::UInt(mountId.Value())}));
+        Check(invalidRiding && invalidRiding->uiSQLErrno,"SQL CHECK rejects NULL recall intent rather than accepting UNKNOWN");
 
         const auto requestFor=[&](ItemInstanceId id,CompanionAction action,std::uint8_t serial){
             const auto& seal=Find(state,id.Value());
@@ -1443,6 +1445,37 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         Check(!p::LoadCurrentItemOwner(writer,*c,owner),"tampered recall intent fails instance hash");
         Query(admin,"UPDATE player.item_instance SET companion_recall_requested=0 WHERE instance_id=?",{U::UInt(petId.Value())});
         Check(p::LoadCurrentItemOwner(writer,*c,owner)->items==state.items,"exact recall intent restores valid state");
+        auto request=requestFor(mountId,CompanionAction::Summon,8);
+        auto mountWrite=MakeCompanionCommit(*c,state.fence,state.storages,state.items,request);
+        Check(mountWrite && p::CommitItems(writer,*c,*mountWrite).has_value(),"mount follower intent saved");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        request=requestFor(mountId,CompanionAction::Mount,9);request.worldAllowsRiding=true;
+        request.state.phase=CompanionPhase::Following;request.state.activeFormId=2;
+        mountWrite=MakeCompanionCommit(*c,state.fence,state.storages,state.items,request);
+        Check(mountWrite && p::CommitItems(writer,*c,*mountWrite).has_value() && p::CommitItems(writer,*c,*mountWrite)->replay,"riding intent commits and replays exactly once");
+        auto forged=*mountWrite;forged.result[4]=static_cast<std::uint8_t>(CompanionAction::Dismount);
+        Check(!ValidateItemCommit(*c,forged),"receipt action must match the exact intent transition");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        Check(Find(state,mountId.Value()).companion->ridingRequested && Find(state,mountId.Value()).companion->phase==CompanionPhase::Dormant,"SQL stores riding intent without claiming a live rider");
+        Check(p::ClaimOwnerSession(writer,*c,owner).has_value() && p::LoadCurrentItemOwner(writer,*c,owner)->items==state.items,"mounted seal survives a new owner session exactly");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        Query(admin,"UPDATE player.item_instance SET companion_riding_requested=0 WHERE instance_id=?",{U::UInt(mountId.Value())});
+        Check(!p::LoadCurrentItemOwner(writer,*c,owner),"tampered riding intent fails canonical digest");
+        Query(admin,"UPDATE player.item_instance SET companion_riding_requested=1 WHERE instance_id=?",{U::UInt(mountId.Value())});
+        request=requestFor(mountId,CompanionAction::Dismount,10);request.state.phase=CompanionPhase::Riding;request.state.activeFormId=2;
+        mountWrite=MakeCompanionCommit(*c,state.fence,state.storages,state.items,request);
+        Check(mountWrite && p::CommitItems(writer,*c,*mountWrite).has_value(),"dismount clears riding intent atomically");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        Check(!Find(state,mountId.Value()).companion->ridingRequested && Find(state,mountId.Value()).companion->recallRequested,"dismounted mount remains a requested follower");
+        Check(p::ClaimOwnerSession(writer,*c,owner).has_value() && p::LoadCurrentItemOwner(writer,*c,owner)->items==state.items,"dismount survives relog exactly");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        request=requestFor(mountId,CompanionAction::Mount,11);request.worldAllowsRiding=true;request.state.phase=CompanionPhase::Following;request.state.activeFormId=2;
+        mountWrite=MakeCompanionCommit(*c,state.fence,state.storages,state.items,request);
+        Check(mountWrite && p::CommitItems(writer,*c,*mountWrite).has_value(),"mount can be ridden again");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        request=requestFor(mountId,CompanionAction::Dismiss,12);request.state.phase=CompanionPhase::Riding;request.state.activeFormId=2;
+        mountWrite=MakeCompanionCommit(*c,state.fence,state.storages,state.items,request);
+        Check(mountWrite && p::CommitItems(writer,*c,*mountWrite).has_value(),"recall while riding clears both durable intents");
     }
     GrowthPetBirthSql(admin,writer,*c,hatchEgg,growthSeal,petSeal,petBook);
     Sessions(admin,writer,*c);

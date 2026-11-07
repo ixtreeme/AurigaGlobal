@@ -77,7 +77,8 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
 			(item.growthPet->life.clock == CompanionClock::ActiveTime && !item.growthPet->life.remainingMs));
 	});
 	const bool hasCompanions = std::ranges::any_of(items, [](const auto& item) { return item.companion.has_value(); });
-	w.Put<std::uint8_t>(hasPetSupplies ? 10 : hasGrowthStatus ? 9 : hasGrowthPets ? 8 : hasCompanions ? 7 : std::ranges::any_of(items,[](const auto& i){return i.tool.has_value();}) ? 6 : std::ranges::any_of(items,[](const auto& i){return i.polymorph.has_value();}) ? 5 : std::ranges::any_of(items,[](const auto& i){return i.bookSkill.has_value();}) ? 4 : std::ranges::any_of(items,[](const auto& i){return i.toggle.has_value();}) ? 3 : std::ranges::any_of(items,[](const auto& i){return i.automatic.has_value();}) ? 2 : TypedInventoryVersion);
+	const bool hasRiding = std::ranges::any_of(items, [](const auto& item) { return item.companion && item.companion->ridingRequested; });
+	w.Put<std::uint8_t>(hasRiding ? 11 : hasPetSupplies ? 10 : hasGrowthStatus ? 9 : hasGrowthPets ? 8 : hasCompanions ? 7 : std::ranges::any_of(items,[](const auto& i){return i.tool.has_value();}) ? 6 : std::ranges::any_of(items,[](const auto& i){return i.polymorph.has_value();}) ? 5 : std::ranges::any_of(items,[](const auto& i){return i.bookSkill.has_value();}) ? 4 : std::ranges::any_of(items,[](const auto& i){return i.toggle.has_value();}) ? 3 : std::ranges::any_of(items,[](const auto& i){return i.automatic.has_value();}) ? 2 : TypedInventoryVersion);
 	w.Put<std::uint16_t>(static_cast<std::uint16_t>(storages.size()));
 	for (const auto& s : storages)
 	{
@@ -156,10 +157,11 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
 			const auto& row = std::get<ItemCompanionRow>(catalog.Find(item.key)->category);
 			w.Put<std::uint8_t>(static_cast<std::uint8_t>(row.kind));
 			const bool expired = item.growthPet && item.growthPet->life.clock == CompanionClock::ActiveTime && !item.growthPet->life.remainingMs;
-			w.Put<std::uint8_t>(item.growthPet && item.growthPet->carrierInstanceId ? 4 : expired ? 3 : !RecallRequested(item) ? 0 : item.id.Value() == liveCompanion ? 1 : 2);
+			w.Put<std::uint8_t>(item.growthPet && item.growthPet->carrierInstanceId ? 4 : expired ? 3 : !RecallRequested(item) ? 0 :
+                item.companion && item.companion->ridingRequested ? item.id.Value()==liveCompanion ? 5 : 6 : item.id.Value() == liveCompanion ? 1 : 2);
 		}
 
-        if(hasPetSupplies) {
+        if(hasPetSupplies || hasRiding) {
             const auto* row=std::get_if<ItemPetSupplyRow>(&catalog.Find(item.key)->category);
             const auto* profile=row ? catalog.FindPetSupplyProfile(row->profile) : nullptr;
             w.Put<std::uint8_t>(item.petSupply ? static_cast<unsigned>(profile->kind) : 0);
@@ -184,7 +186,7 @@ std::expected<TypedInventoryView, TypedInventoryWireError> DecodeTypedInventory(
 		Reader r(bytes);
 		if (r.Get<std::uint8_t>() != TypedInventoryHeader) return std::unexpected(E::BadHeader);
 		if (r.Get<std::uint32_t>() != bytes.size()) return std::unexpected(E::BadSize);
-		const auto version=r.Get<std::uint8_t>();if (version<TypedInventoryVersion || version>10) return std::unexpected(E::BadVersion);
+		const auto version=r.Get<std::uint8_t>();if (version<TypedInventoryVersion || version>11) return std::unexpected(E::BadVersion);
 		TypedInventoryView view;
 		for (auto n = r.Get<std::uint16_t>(); n; --n)
 		{
@@ -269,12 +271,14 @@ std::expected<TypedInventoryView, TypedInventoryWireError> DecodeTypedInventory(
 				const bool growth = companion == CompanionKind::GrowthPet;
 				if (item.key.Category()!=ItemCategory::Companion || item.count!=1 || (kind!=static_cast<unsigned>(ItemStorageKind::Inventory) && !(version>=10 && growth && kind==10))
 					|| (flags&126) || (growth ? version<8 || item.refinementLevel || state>(version==8 ? 0 : version<10 ? 3 : 4) || (state==4)!=(kind==10)
-						: (companion!=CompanionKind::Pet && companion!=CompanionKind::Mount) || state>2)
+						: (companion!=CompanionKind::Pet && companion!=CompanionKind::Mount) ||
+                            (state>2 && !(version>=11 && companion==CompanionKind::Mount && (state==5 || state==6))))
 					|| !view.companions.emplace(item.id, std::pair{companion, state}).second) throw Bad{};
 				if (!growth)
 				{
 					item.companion = CompanionState{};
 					item.companion->recallRequested = state != 0;
+					item.companion->ridingRequested = state==5 || state==6;
 				}
 			}
 			if (item.key.Category()==ItemCategory::Companion && !(flags&128)) throw Bad{};
