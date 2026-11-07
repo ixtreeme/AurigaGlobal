@@ -185,7 +185,7 @@ void GrowthPetBirthSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,I
     const ItemWallet wallet{owner,WalletCurrency::Gold,1,150000};
     Check(p::ProvisionOwner(admin,c,owner,std::span(&bag,1),std::span(&wallet,1)).has_value(),"hatch owner provisioned");
     auto state=p::LoadCurrentItemOwner(writer,c,owner).value();
-    const auto ids=p::ReserveItemInstanceIds(writer,c,14).value();
+    const auto ids=p::ReserveItemInstanceIds(writer,c,15).value();
     const auto eggId=ItemInstanceId::Create(ids.first).value();
     const auto sealId=ItemInstanceId::Create(ids.first+1).value();
     const auto grant=MakeGrantCommit(c,{30,1},state.fence,state.storages,state.items,{eggKey,0,2},std::array{eggId});
@@ -550,6 +550,29 @@ void GrowthPetBirthSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,I
     Check(Find(state,sealId.Value()).growthPet==beforeCarrier && Find(state,sealId.Value()).placement->kind==ItemStorageKind::Inventory &&
         std::ranges::none_of(state.storages,[](const auto& l){return l.storage.kind==ItemStorageKind::PetCarrier;}) &&
         std::ranges::none_of(state.items,[&](const auto& p){return p.id==carrierId;}),"same seal returns intact, without refilling life or leaking its internal storage");
+    const auto skinKey=ItemKey::Create(ItemCategory::Special,88).value();const auto skinId=ItemInstanceId::Create(ids.first+14).value();
+    ItemGrant skinGrant{skinKey};skinGrant.createdAtUtcMs=request.bornAtUtcMs+60000;
+    const auto mintedSkin=MakeGrantCommit(c,{39,1},state.fence,state.storages,state.items,skinGrant,std::array{skinId});
+    Check(mintedSkin && p::CommitItems(writer,c,*mintedSkin).has_value(),"skin with factory clock granted");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto summonSkin=growthWrite(16,CompanionAction::Summon);Check(summonSkin && p::CommitItems(writer,c,*summonSkin).has_value(),"summon for appearance");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto skinService=[&](std::uint8_t mode,std::uint8_t nonce,std::uint64_t elapsed=0) {
+        auto actor=context;actor.operationId={39,nonce};actor.sessionGeneration=state.fence.sessionGeneration;
+        PetServiceTerms terms{mode,request.bornAtUtcMs+60001,elapsed};terms.following=true;
+        return MakePetServiceCommit(c,state.fence,state.storages,state.items,actor,skinId,sealId,terms);
+    };
+    const auto petBeforeSkin=Find(state,sealId.Value()).growthPet;
+    const auto equipSkin=skinService(7,2);Check(equipSkin && p::CommitItems(writer,c,equipSkin->commit).has_value() && p::CommitItems(writer,c,equipSkin->commit)->replay,"skin equip replay is idempotent");
+    Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"equipped skin relog");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    Check(Find(state,skinId.Value()).petSupply->equippedSeal==sealId.Value() && Find(state,sealId.Value()).growthPet==petBeforeSkin,"skin relog retains binding without touching pet progression or bonuses");
+    Check(!MakeConsumeCommit(c,{39,3},state.fence,state.storages,state.items,skinId,1),"equipped skin cannot be consumed normally");
+    const auto removeSkin=skinService(8,4,321);Check(removeSkin && p::CommitItems(writer,c,removeSkin->commit).has_value(),"skin removal settles exactly the accrued equipped time");
+    Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"removed skin relog");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    Check(!Find(state,skinId.Value()).petSupply->equippedSeal && Find(state,skinId.Value()).petSupply->lifetime.remainingMs==9679,"removed skin time survives relog");
+    const auto reEquip=skinService(7,5);Check(reEquip && p::CommitItems(writer,c,reEquip->commit).has_value(),"skin re-equip");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto expireSkin=MakePetSkinClockCommit(c,{39,6},state.fence,state.storages,state.items,skinId,request.bornAtUtcMs+80000,9679,true);
+    Check(expireSkin && p::CommitItems(writer,c,*expireSkin).has_value() && p::CommitItems(writer,c,*expireSkin)->replay,"expiry removes skin exactly once");
+    Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"expired skin relog");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    Check(std::ranges::none_of(state.items,[&](const auto& i){return i.id==skinId;}) && Find(state,sealId.Value()).growthPet==petBeforeSkin,"expired skin stays removed and the entire pet survives");
 }
 
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
@@ -609,6 +632,11 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
     {
         auto base=source.items.back();base.key=ItemKey::Create(ItemCategory::Special,89).value();base.contentCode="special.sql_pet_carrier";base.maxStack=1;
         source.items.push_back(base);source.petSupplies.push_back({base.key,20});source.petSupplyProfiles.push_back({20,"supply.sql_pet_carrier",PetSupplyKind::Carrier});
+    }
+    {
+        auto base=source.items.back();base.key=ItemKey::Create(ItemCategory::Special,88).value();base.contentCode="special.sql_pet_skin";base.maxStack=1;
+        source.items.push_back(base);source.petSupplies.push_back({base.key,21});
+        PetSupplyProfile skin{21,"supply.sql_pet_skin",PetSupplyKind::Skin};skin.skin=PetSkinRule{2,CostumeClock::EquippedTime,10000};source.petSupplyProfiles.push_back(skin);
     }
     source.petHatchProfiles.push_back({1,"hatch.sql_birth",growthSeal,100000,{30,40,5},{10,20,5},{10,20,5}});
     source.petFeedRules={{hatchEgg,PetFeedingService::Cube,PetFoodKind::LifetimeFraction,PetFoodConsumption::WholeStack,0,5000,0,0},

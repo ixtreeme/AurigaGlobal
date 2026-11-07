@@ -23,7 +23,7 @@ std::expected<void,CraftError> ValidateCraftWorkshops(const ItemCatalog&,std::sp
 // receipt. All attempts, ingredients, gold and produced units commit together.
 std::expected<CraftPlan,CraftError> MakeCraftCommit(const ItemCatalog&,std::array<std::uint8_t,16>,
     ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,std::span<const ItemWallet>,
-    const CraftRecipe&,std::uint32_t attempts,std::span<const std::uint16_t> rolls,std::span<const ItemInstanceId> ids);
+    const CraftRecipe&,std::uint32_t attempts,std::span<const std::uint16_t> rolls,std::span<const ItemInstanceId> ids,std::uint64_t nowUtcMs=0);
 // GC230 v1: header,size:u32,version,status,npc:u32,session:u64,request:u64,
 // recipe:u32,attempts:u32,successes:u32,name:text16,recipes:u16
 // {id:u32,name:text16,result:key,level:u16,units:u32,gold:u64,chance:u16,

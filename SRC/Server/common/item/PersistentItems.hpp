@@ -52,6 +52,7 @@ struct PetSupplyState
 };
 enum class ItemPersistenceError;
 bool ValidatePetSupplyState(const ItemCatalog&,ItemKey,const PetSupplyState&,bool destroyed=false);
+std::expected<PetSupplyState,ItemPersistenceError> InitialPetSupplyState(const ItemCatalog&,ItemKey,std::uint64_t createdAtUtcMs);
 std::expected<std::vector<std::uint8_t>,ItemPersistenceError> EncodePetSupplyState(const ItemCatalog&,ItemKey,const PetSupplyState&);
 std::expected<PetSupplyState,ItemPersistenceError> DecodePetSupplyState(const ItemCatalog&,ItemKey,std::span<const std::uint8_t>);
 struct PersistentItem
@@ -255,16 +256,20 @@ std::expected<PetStudyWrite,PetStudyCommitError> MakePetSkillResetCommit(const I
     ItemInstanceId supply,ItemInstanceId seal,const PetSkillResetTerms&);
 struct PetServiceTerms
 {
-    std::uint8_t selector=0; // extension, permanent life, HP/monster/PvE enchant
+    std::uint8_t selector=0; // life/enchant 0..4, carrier 5..6, appearance 7..8
     std::uint64_t nowUtcMs=0,elapsedMs=0;
     std::uint16_t rollBp=0;
     std::optional<ItemPlacement> placement; // Server-reserved unpack destination.
+    bool following=false; // Actual, server-observed following state for a skin.
 };
 std::expected<PetStudyWrite,PetStudyCommitError> MakePetServiceCommit(const ItemCatalog&,ItemOwnerFence,
     std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const PetCareContext&,
     ItemInstanceId supply,ItemInstanceId seal,const PetServiceTerms&);
 bool ValidatePetServiceCommit(const ItemCatalog&,const ItemCommit&);
 bool ValidPetCarrierLinks(std::span<const PersistentItem>);
+std::expected<ItemCommit,ItemPersistenceError> MakePetSkinClockCommit(const ItemCatalog&,std::array<std::uint8_t,16>,ItemOwnerFence,
+    std::span<const ItemStorageLayout>,std::span<const PersistentItem>,ItemInstanceId skin,std::uint64_t nowUtcMs,std::uint64_t elapsedMs,bool following);
+bool ValidatePetSkinClockCommit(const ItemCatalog&,const ItemCommit&);
 // Gives new units of one item state to the owner's inventory (F4 C7a): a drop,
 // a purchase or a reward. Stackable units first top up the owner's matching
 // inventory stacks (same key, level and binding, no instance state), in storage
@@ -281,6 +286,7 @@ struct ItemGrant
     std::optional<std::uint16_t> bookSkill;
     std::optional<PolymorphInstanceState> polymorph;
     std::optional<ToolInstanceState> tool;
+    std::uint64_t createdAtUtcMs=0; // Server UTC for a newly issued pet skin; never rebuilt on load.
 };
 std::expected<ItemCommit,ItemPersistenceError> MakeGrantCommit(const ItemCatalog&,std::array<std::uint8_t,16> operationId,
     ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const ItemGrant&,std::span<const ItemInstanceId> ids);

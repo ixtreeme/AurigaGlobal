@@ -14,7 +14,7 @@ struct FishProcessingActor
     std::uint8_t characterClass=0,sex=0;
     bool admitted=false,inCombat=false,campfireAvailable=false;
 };
-struct FishProcessingRequest { ItemInstanceId source; FishAction action{}; FishProcessingActor actor; };
+struct FishProcessingRequest { ItemInstanceId source; FishAction action{}; FishProcessingActor actor; std::uint64_t nowUtcMs=0; };
 struct FishProcessingQuote
 {
     FishingKind kind{};

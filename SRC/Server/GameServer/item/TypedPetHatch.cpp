@@ -905,16 +905,20 @@ void HandleService(entt::entity entity,Action action,const TPacketCGTypedPetHatc
         false,false,ecs::PlayerRuntime::GetPosition(entity)==POS_FIGHTING};
     const auto profile=[&](const item::PersistentItem& source) {
         const auto* entry=catalog.Find(source.key);
-        const auto* row=entry && !entry->base.retired ? std::get_if<item::ItemPetSupplyRow>(&entry->category) : nullptr;
+        const auto* row=entry ? std::get_if<item::ItemPetSupplyRow>(&entry->category) : nullptr;
         return row ? catalog.FindPetSupplyProfile(row->profile) : nullptr;
+    };
+    const auto terms=[&](const item::PersistentItem& source,std::uint8_t mode,std::uint16_t roll=0) {
+        item::PetServiceTerms t{mode,TypedItemEffectNow(),mode>=7 ? TypedPetSkinElapsed(entity,source.id.Value()) : 0,roll};
+        t.following=mode>=7 && PetSystem::LiveTypedSeal(entity)==seal->id.Value();return t;
     };
     if(action==Action::ServiceList) {
         g_registry.remove<PetServiceSession>(entity);ServiceView view;
         for(const auto& source:state.items) {
             if(!profile(source) || source.destroyed || source.owner!=fence.owner || !source.placement || source.placement->kind!=item::ItemStorageKind::Inventory)continue;
             std::uint16_t mask=0;
-            for(std::uint8_t mode=0;mode<7;++mode)
-                if(item::MakePetServiceCommit(catalog,fence,state.storages,state.items,context,source.id,seal->id,{mode,TypedItemEffectNow()}))mask|=1u<<mode;
+            for(std::uint8_t mode=0;mode<9;++mode)
+                if(item::MakePetServiceCommit(catalog,fence,state.storages,state.items,context,source.id,seal->id,terms(source,mode)))mask|=1u<<mode;
             if(mask)view.options.emplace_back(source.id.Value(),mask);
         }
         reply(Status::ServiceList,0,view,true);return;
@@ -928,7 +932,7 @@ void HandleService(entt::entity entity,Action action,const TPacketCGTypedPetHatc
     const auto* rule=profile(*source);
     const auto roll=confirm && mode>=2 && mode<=4 ? Roll({0,9999,1}) : std::optional<std::uint16_t>{0};
     if(!rule || !roll || RAND_bytes(context.operationId.data(),static_cast<int>(context.operationId.size()))!=1){reply(Status::Failed,token);return;}
-    const auto write=item::MakePetServiceCommit(catalog,fence,state.storages,state.items,context,source->id,seal->id,{mode,TypedItemEffectNow(),0,*roll});
+    const auto write=item::MakePetServiceCommit(catalog,fence,state.storages,state.items,context,source->id,seal->id,terms(*source,mode,*roll));
     if(!write){reply(Status::NoEffect,token);return;}
     ServiceView view{source->id.Value(),static_cast<std::uint8_t>(rule->kind),mode,
         rule->enchant ? rule->enchant->successBp : std::uint16_t{10000},write->plan.after.life,write->plan.after.traits};
@@ -1169,7 +1173,7 @@ bool HandleTypedPetHatchPacket(entt::entity entity, const char* data)
         || (action != Action::Confirm && !studyPreview && !servicePreview && packet.nameLength)
         || (action == Action::Confirm && !packet.nameLength)
         || (studyPreview && (packet.nameLength!=1 || packet.name[0]<'1' || packet.name[0]>'5' || !packet.token))
-        || (servicePreview && (packet.nameLength!=1 || packet.name[0]<'A' || packet.name[0]>'G' || !packet.token))
+        || (servicePreview && (packet.nameLength!=1 || packet.name[0]<'A' || packet.name[0]>'I' || !packet.token))
         || (action==Action::ServiceList && packet.token) || (action==Action::ServiceConfirm && !packet.token)
         || ((action==Action::StudyList || action==Action::ResetList) && packet.token) || ((action==Action::StudyConfirm || action==Action::ResetConfirm) && !packet.token)
         || ((action == Action::Preview || action == Action::Inspect || action == Action::FoodList || action == Action::Progress) && packet.token)

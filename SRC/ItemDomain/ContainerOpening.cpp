@@ -29,7 +29,7 @@ std::expected<ContainerOpeningPlan,E> Build(const ItemCatalog& c,std::array<std:
         plan.won.push_back(reward.entry);
         if(reward.kind==LootRewardKind::Gold)
         {if(reward.amount>std::uint64_t(INT64_MAX)-plan.gold)return std::unexpected(E::WalletLimit);plan.gold+=reward.amount;continue;}
-        const auto grant=MakeGrantCommit(c,operation,fence,layouts,working,{*reward.item,0,static_cast<std::uint32_t>(reward.amount)},ids.subspan(usedIds));
+        const auto grant=MakeGrantCommit(c,operation,fence,layouts,working,{*reward.item,0,static_cast<std::uint32_t>(reward.amount),{},{},{},request.nowUtcMs},ids.subspan(usedIds));
         if(!grant)return std::unexpected(grant.error()==ItemPersistenceError::InvalidPlacement ? E::NoRoom : grant.error()==ItemPersistenceError::LimitExceeded ? E::Unavailable : E::Invalid);
         for(const auto& change:grant->items)
         {if(change.before)*std::ranges::find(working,change.after.id,&PersistentItem::id)=change.after;else{working.push_back(change.after);++usedIds;}}

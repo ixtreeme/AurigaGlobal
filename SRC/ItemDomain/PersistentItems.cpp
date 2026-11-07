@@ -493,7 +493,7 @@ bool SupportsPersistentItem(const ItemCatalog& c,const ItemCatalogEntry& e) noex
     if(const auto* companion=std::get_if<ItemCompanionRow>(&e.category))return PermanentSeal(*companion) || companion->kind==CompanionKind::GrowthPet;
     if(const auto* supply=std::get_if<ItemPetSupplyRow>(&e.category)) {
         const auto* profile=c.FindPetSupplyProfile(supply->profile);
-        return profile && profile->kind>=PetSupplyKind::Study && profile->kind<=PetSupplyKind::Carrier;
+        return profile && profile->kind>=PetSupplyKind::Study && profile->kind<=PetSupplyKind::Skin;
     }
     if(std::holds_alternative<ItemToolRow>(e.category))return true;
     if(std::holds_alternative<ItemFishingRow>(e.category) || std::holds_alternative<ItemPolymorphRow>(e.category) || std::holds_alternative<ItemSkillBookRow>(e.category))return true;
@@ -595,7 +595,7 @@ std::expected<void,E> ValidatePersistentItem(const ItemCatalog& c,const Persiste
     else if(p.companion)return std::unexpected(E::InvalidItem);
     const auto* supplyRow=std::get_if<ItemPetSupplyRow>(&e->category);
     const auto* supply=supplyRow ? c.FindPetSupplyProfile(supplyRow->profile) : nullptr;
-    if(supply && supply->kind==PetSupplyKind::Carrier) {
+    if(supply && (supply->kind==PetSupplyKind::Carrier || supply->kind==PetSupplyKind::Skin)) {
         if(!p.petSupply || (!p.destroyed && p.count!=1) || p.refinementLevel || !ValidatePetSupplyState(c,p.key,*p.petSupply,p.destroyed))return std::unexpected(E::InvalidItem);
     } else if(p.petSupply)return std::unexpected(E::InvalidItem);
     if(p.placement && !StorageOwner({p.owner,p.placement->kind,p.placement->storageId}))return std::unexpected(E::InvalidPlacement);
@@ -674,7 +674,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
         if(change.before)
         {
             const auto& b=*change.before;
-            if(b.petSupply && r.outcomeCode!=0x2608 &&
+            if(b.petSupply && r.outcomeCode!=0x2608 && r.outcomeCode!=0x2609 &&
                 (b.petSupply!=p.petSupply || ((b.petSupply->containedSeal || b.petSupply->equippedSeal) &&
                     (p.destroyed || p.owner!=b.owner || !p.placement || p.placement->kind!=ItemStorageKind::Inventory))))
                 return std::unexpected(E::InvalidChange);
@@ -715,6 +715,10 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
         }
         else if(p.destroyed || p.revision!=1 || RecallRequested(p) || r.outcomeCode==CompanionSealOutcome ||
             (p.growthPet && r.outcomeCode!=PetHatchOutcome))return std::unexpected(E::InvalidChange);
+        if(!change.before && p.petSupply) {
+            const auto initial=InitialPetSupplyState(c,p.key,p.petSupply->createdAtUtcMs);
+            if(!initial || *initial!=*p.petSupply)return std::unexpected(E::InvalidChange);
+        }
         if((!change.before || change.before->key!=p.key) && c.Find(p.key)->base.retired && !IsSocketMaintenanceRecovery(c,r))return std::unexpected(E::InvalidChange);
     }
     std::set<std::pair<ItemOwner,WalletCurrency>> wallets;
@@ -740,6 +744,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
     if(r.outcomeCode==PetProgressOutcome && !ValidPetProgressWrite(c,r))return std::unexpected(E::InvalidChange);
     if((r.outcomeCode==PetStudyOutcome || r.outcomeCode==PetSkillResetOutcome) && !ValidPetStudyWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==0x2608 && !ValidatePetServiceCommit(c,r))return std::unexpected(E::InvalidChange);
+    if(r.outcomeCode==0x2609 && !ValidatePetSkinClockCommit(c,r))return std::unexpected(E::InvalidChange);
     return {};
 }
 std::expected<ItemCatalogDigest,E> ItemCommitDigest(const ItemCatalog& c,const ItemCommit& r)
@@ -1370,7 +1375,7 @@ std::expected<ItemCommit,E> MakeGrantCommit(const ItemCatalog& c,std::array<std:
     const auto bagOf=[&](std::uint64_t id){return std::ranges::find_if(bags,[&](const ItemStorageLayout& l){return l.storage.id==id;});};
     const auto* supplyRow=std::get_if<ItemPetSupplyRow>(&entry->category);
     const auto* supply=supplyRow ? c.FindPetSupplyProfile(supplyRow->profile) : nullptr;
-    const std::uint32_t stack=supply && supply->kind==PetSupplyKind::Carrier ? 1 : entry->base.maxStack ? entry->base.maxStack : 1;
+    const std::uint32_t stack=supply && (supply->kind==PetSupplyKind::Carrier || supply->kind==PetSupplyKind::Skin) ? 1 : entry->base.maxStack ? entry->base.maxStack : 1;
     // The template of a new unit; each new item takes its own ID below.
     PersistentItem fresh{ItemInstanceId::Create(1).value(),grant.key,owner.owner};fresh.refinementLevel=grant.refinementLevel;
     if(entry->base.binding==BindingPolicy::OnAcquire)fresh.boundTo=owner.owner;
@@ -1382,7 +1387,10 @@ std::expected<ItemCommit,E> MakeGrantCommit(const ItemCatalog& c,std::array<std:
     fresh.tool=grant.tool;if(!fresh.tool && std::holds_alternative<ItemToolRow>(entry->category))fresh.tool=ToolInstanceState{};
     if(const auto* companion=std::get_if<ItemCompanionRow>(&entry->category);companion && PermanentSeal(*companion))
         fresh.companion=CompanionState{};
-    if(supply && supply->kind==PetSupplyKind::Carrier)fresh.petSupply=PetSupplyState{};
+    if(supply && (supply->kind==PetSupplyKind::Carrier || supply->kind==PetSupplyKind::Skin)) {
+        const auto initial=InitialPetSupplyState(c,grant.key,grant.createdAtUtcMs);
+        if(!initial)return std::unexpected(initial.error());fresh.petSupply=*initial;
+    }
     const auto sameState=[&](const PersistentItem& i){
         return i.key==fresh.key && i.refinementLevel==fresh.refinementLevel && i.boundTo==fresh.boundTo &&
                i.attributes==fresh.attributes && i.stones==fresh.stones && i.accessory==fresh.accessory && i.automatic==fresh.automatic && i.toggle==fresh.toggle && i.bookSkill==fresh.bookSkill && i.polymorph==fresh.polymorph && i.tool==fresh.tool && i.companion==fresh.companion && i.petSupply==fresh.petSupply;};

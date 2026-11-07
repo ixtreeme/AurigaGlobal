@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "TypedRecovery.hpp"
 #include "TypedGathering.hpp"
 #include "TypedTools.hpp"
 #include "TypedFishProcessing.hpp"
@@ -76,7 +77,7 @@ void Complete(entt::entity e,bool eligible=true)
  auto& s=g_registry.get<TypedResourceSession>(e);const auto c=store::CurrentCatalog();const auto& state=g_registry.get<ecs::TypedItems>(e).state;
  auto permit=ecs::resource_admission::Enter({e},auriga::resource_admission::Operation::ItemUse);if(!permit || !permit->Current()){Cancel(e,1);return;}
  std::expected<item::ResourcePlan,item::ResourceError> plan=std::unexpected(item::ResourceError::Unavailable);
- try{plan=item::MakeResourceGatheringCommit(*c,*s.site,s.operation,state.fence,state.storages,state.items,{s.tool->id,Actor(e),true,eligible},store::PeekInstanceIds(item::MaxItemCommitItems),Draw);}catch(const std::exception&){}
+ try{plan=item::MakeResourceGatheringCommit(*c,*s.site,s.operation,state.fence,state.storages,state.items,{s.tool->id,Actor(e),true,eligible,TypedItemEffectNow()},store::PeekInstanceIds(item::MaxItemCommitItems),Draw);}catch(const std::exception&){}
  if(!plan){Cancel(e,static_cast<std::uint8_t>(plan.error()));return;}
  const auto pid=ecs::PlayerRuntime::GetPlayerID(e);const auto token=s.token;const auto owner=state.fence;auto held=std::make_shared<auriga::resource_admission::Permit>(std::move(*permit));
  if(s.water){s.fishing.elapsedMs=Elapsed(s);Motion(e,FISHING_SUBHEADER_GC_STOP);auto& receipt=plan->commit.result;receipt.insert(receipt.end(),{'M','I','N',1,s.fishing.state.hits,s.fishing.state.misses});for(auto n:{s.fishing.state.seed,s.fishing.state.sequence,s.fishing.elapsedMs})for(unsigned i=0;i<4;++i)receipt.push_back(static_cast<std::uint8_t>(n>>(8*i)));}

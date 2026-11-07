@@ -166,6 +166,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
             if(item.petSupply) {
                 const auto payload=EncodePetSupplyState(catalog,item.key,*item.petSupply);if(!payload)return std::unexpected(E::BadValue);
                 for(auto byte:*payload)w.Put(byte);
+                if(profile->skin){w.Put<std::uint8_t>(static_cast<unsigned>(profile->skin->clock));w.Put(profile->skin->durationMs);w.Put(profile->skin->form);}
             }
         }
 
@@ -289,6 +290,11 @@ std::expected<TypedInventoryView, TypedInventoryWireError> DecodeTypedInventory(
                     if(s.createdAtUtcMs>INT64_MAX || s.lifetime.deadlineUtcMs>INT64_MAX || s.lifetime.remainingMs>INT64_MAX ||
                         (supply==7 && (s.equippedSeal || s.createdAtUtcMs || s.lifetime!=CostumeLifetimeState{})))throw Bad{};
                     item.petSupply=s;
+                    if(supply==8) {
+                        const auto clock=static_cast<CostumeClock>(r.Get<std::uint8_t>());const auto duration=r.Get<std::uint64_t>();const auto form=r.Get<std::uint32_t>();
+                        if(s.containedSeal || !s.createdAtUtcMs || (s.lifetime.expired && s.equippedSeal) || !form ||
+                            !AdvanceItemClock({clock,duration},s.lifetime,{0,0,s.equippedSeal!=0,false}))throw Bad{};
+                    }
                 }
             }
             view.items.push_back(std::move(item));

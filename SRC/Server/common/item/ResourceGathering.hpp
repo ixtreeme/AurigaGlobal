@@ -15,7 +15,7 @@ struct GatheringSite
     std::vector<GatheringReward> rewards;
 };
 enum class ResourceError:std::uint8_t { Invalid,Forbidden,WrongTool,NoBait,NoRoom,Unavailable,InvalidDecision,NotCompleted };
-struct ResourceRequest { ItemInstanceId tool;ToolRuntimeActor actor;bool completed=false,eligible=true; };
+struct ResourceRequest { ItemInstanceId tool;ToolRuntimeActor actor;bool completed=false,eligible=true; std::uint64_t nowUtcMs=0; };
 struct ResourcePlan { ItemCommit commit;bool success=false;std::uint32_t points=0,bait=0;std::vector<FishingYield> yields; };
 std::expected<void,ResourceError> ValidateGatheringSites(const ItemCatalog&,std::span<const GatheringSite>);
 std::expected<std::vector<GatheringSite>,std::string> ParseGatheringSites(std::string_view,const ItemCatalog&);

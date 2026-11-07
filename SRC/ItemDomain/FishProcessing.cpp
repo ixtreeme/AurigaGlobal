@@ -20,7 +20,7 @@ std::expected<FishProcessingPlan,E> Build(const ItemCatalog& c,std::array<std::u
     std::size_t used=0;
     for(const auto& reward:yields)
     {
-        auto grant=MakeGrantCommit(c,op,fence,layouts,working,{reward.item,0,reward.count},ids.subspan(used));
+        auto grant=MakeGrantCommit(c,op,fence,layouts,working,{reward.item,0,reward.count,{},{},{},request.nowUtcMs},ids.subspan(used));
         if(!grant)return std::unexpected(grant.error()==ItemPersistenceError::InvalidPlacement ? E::NoRoom :
             grant.error()==ItemPersistenceError::LimitExceeded ? E::Unavailable : E::Unsupported);
         for(const auto& change:grant->items)

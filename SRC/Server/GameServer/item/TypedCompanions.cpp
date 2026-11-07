@@ -164,13 +164,15 @@ const item::ItemCompanionRow* CompanionRow(const item::ItemCatalog& catalog, ite
 }
 
 std::uint32_t FollowerRace(const item::ItemCatalog& catalog, const item::ItemCompanionRow& row,
-    const item::PersistentItem& seal)
+    const item::PersistentItem& seal,entt::entity owner)
 {
     auto formId = row.form;
     if (seal.growthPet)
     {
         const auto* profile = catalog.FindGrowthPetProfile(*row.growthProfile);
         formId = profile->stages[seal.growthPet->progress.stage].form;
+        if(const auto* typed=g_registry.try_get<ecs::TypedItems>(owner))
+            if(const auto skin=TypedPetSkinForm(owner,typed->state,seal.id.Value()))formId=skin;
     }
     const auto* form = catalog.FindCompanionForm(formId);
     if (!form || form->mobTemplateId > UINT16_MAX || !CMobManager::instance().Get(form->mobTemplateId))
@@ -413,6 +415,7 @@ item::PetPassiveSource TypedGrowthPetPassiveSource(entt::entity owner)
 
 void StopTypedGrowthPetClock(entt::entity owner)
 {
+    StopTypedPetSkins(owner);
     const auto* typed = g_registry.try_get<ecs::TypedItems>(owner);
     if (!typed)
         return;
@@ -436,6 +439,7 @@ void FinishTypedGrowthPetClocks()
         if (!growthClocks.empty())
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
+    FinishTypedPetSkins();
 }
 
 std::uint64_t RefreshTypedCompanion(entt::entity owner)
@@ -457,7 +461,7 @@ std::uint64_t RefreshTypedCompanion(entt::entity owner)
         const auto clock = growthClocks.find(Key(typed->state.fence,id));
         lifeRemaining = clock == growthClocks.end() || Elapsed(*clock->second) < desired->growthPet->life.remainingMs;
     }
-    const auto race = row ? FollowerRace(*catalog,*row,*desired) : 0;
+    const auto race = row ? FollowerRace(*catalog,*row,*desired,owner) : 0;
     const auto* previous = g_registry.try_get<CompanionProjection>(owner);
     const bool formChanged = live && live==id && previous && previous->race!=race;
     const bool canFollow = race && lifeRemaining && !entry->base.retired && WorldAllowsFollower(owner) && !OtherFollower(owner, live);
@@ -469,7 +473,10 @@ std::uint64_t RefreshTypedCompanion(entt::entity owner)
     if (!desired)
     {
         if (typed)
+        {
             UpdateGrowthClock(owner,typed->state,0);
+            UpdateTypedPetSkins(owner,typed->state,0);
+        }
         g_registry.remove<CompanionProjection>(owner);
         return 0;
     }
@@ -491,6 +498,7 @@ std::uint64_t RefreshTypedCompanion(entt::entity owner)
         projection.checked = now;
     projection.live = live;
     UpdateGrowthClock(owner,typed->state,live);
+    UpdateTypedPetSkins(owner,typed->state,live);
     return live;
 }
 
@@ -532,6 +540,7 @@ void TickTypedCompanions()
             SendTypedInventory(owner);
     }
     TickGrowthClocks();
+    TickTypedPetSkins();
 }
 
 bool HandleTypedCompanionPacket(entt::entity owner, const char* data)
@@ -574,7 +583,7 @@ bool HandleTypedCompanionPacket(entt::entity owner, const char* data)
     const auto facts = TypedItemEffectFacts(owner);
     const bool worldAllowsFollower = WorldAllowsFollower(owner);
     if (!row || (summon && (!facts.allowed || !facts.alive || !worldAllowsFollower || !CanSummonFromBag(owner)
-        || (active && active->id != found->id) || OtherFollower(owner, live) || !FollowerRace(*catalog, *row, *found))))
+        || (active && active->id != found->id) || OtherFollower(owner, live) || !FollowerRace(*catalog, *row, *found,owner))))
     {
         SendRefusal(owner, "A társ ebben az állapotban nem idézhető meg.");
         return true;

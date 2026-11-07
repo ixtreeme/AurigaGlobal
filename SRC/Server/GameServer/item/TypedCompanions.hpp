@@ -6,6 +6,12 @@
 
 std::uint64_t RefreshTypedCompanion(entt::entity owner);
 std::uint64_t TypedGrowthPetElapsed(entt::entity owner,std::uint64_t seal);
+std::uint64_t TypedPetSkinElapsed(entt::entity owner,std::uint64_t skin);
+std::uint32_t TypedPetSkinForm(entt::entity owner,const auriga::item::persistence::LoadedItemOwner&,std::uint64_t seal);
+void UpdateTypedPetSkins(entt::entity owner,const auriga::item::persistence::LoadedItemOwner&,std::uint64_t live);
+void TickTypedPetSkins();
+void StopTypedPetSkins(entt::entity);
+void FinishTypedPetSkins();
 auriga::item::PetPassiveSource TypedGrowthPetPassiveSource(entt::entity owner);
 void TickTypedCompanions();
 void AwardTypedGrowthPetMobExperience(entt::entity owner,entt::entity defeated,int reward);
@@ -17,4 +23,6 @@ namespace auriga::item::runtime
 {
 std::function<void(MultiCommitOutcome*)> BeginGrowthPetClockCommit(const std::vector<OwnerRead>&,const ItemCommit&);
 bool DeferGrowthPetLogin(std::uint32_t,std::function<void()>);
+bool DeferPetSkinLogin(std::uint32_t,std::function<void()>);
+std::function<void(MultiCommitOutcome*)> BeginPetSkinCommit(const std::vector<OwnerRead>&,const ItemCommit&);
 }

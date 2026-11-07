@@ -41,8 +41,9 @@ def main():
     parser.add_argument('--skill-reset', action='store_true', help='Test forgetting one or all learned skills')
     parser.add_argument('--services',action='store_true',help='Test life extension, permanent life and trait enchantment')
     parser.add_argument('--carrier',action='store_true',help='Test full-state pet packing and unpacking')
+    parser.add_argument('--skins',action='store_true',help='Test pet appearance binding and all four clock kinds')
     args = parser.parse_args()
-    assert sum((args.natural,args.skill_reset,args.services,args.carrier))<=1
+    assert sum((args.natural,args.skill_reset,args.services,args.carrier,args.skins))<=1
     root, manager, ownership, auth = item_bench.connection(args.package.resolve())
     os.environ['PATH'] = str(root/'bin')+os.pathsep+os.environ['PATH']
     fixture = args.fixture.resolve()
@@ -62,7 +63,8 @@ def main():
                 resetting=config.get('SkillReset',False)
                 services=config.get('Services',False)
                 carrier=config.get('Carrier',False)
-                assert ('METIN2_TYPED_PET_CARRIER_LIVE=SUCCESS' if carrier else 'METIN2_TYPED_PET_SERVICES_LIVE=SUCCESS' if services else 'METIN2_TYPED_PET_SKILL_RESET_LIVE=SUCCESS' if resetting else 'METIN2_TYPED_PET_NATURAL_LIVE=SUCCESS' if natural else 'METIN2_TYPED_PET_COMBAT_LIVE=SUCCESS effects=18') in log
+                skins=config.get('Skins',False)
+                assert ('METIN2_TYPED_PET_SKINS_LIVE=SUCCESS' if skins else 'METIN2_TYPED_PET_CARRIER_LIVE=SUCCESS' if carrier else 'METIN2_TYPED_PET_SERVICES_LIVE=SUCCESS' if services else 'METIN2_TYPED_PET_SKILL_RESET_LIVE=SUCCESS' if resetting else 'METIN2_TYPED_PET_NATURAL_LIVE=SUCCESS' if natural else 'METIN2_TYPED_PET_COMBAT_LIVE=SUCCESS effects=18') in log
                 if carrier:
                     assert all('PET_CARRIER_PHASE=SUCCESS phase='+p in log for p in ('packed-relog','unpacked-relog'))
                 elif services:
@@ -72,14 +74,14 @@ def main():
                 elif natural:
                     assert sorted(re.findall(r'PET_NATURAL_PHASE=SUCCESS phase=([a-z-]+)',log)) == ['active-relog','dormant-relog','recall','summon']
                     assert sorted(re.findall(r'PET_NATURAL_MONSTER_PHASE=SUCCESS phase=([a-z-]+)',log)) == ['active-relog','dormant-relog','recall','summon']
-                else:
+                elif not skins:
                     assert sorted(map(int,re.findall(r'METIN2_TYPED_PET_COMBAT_CASE=SUCCESS effect=(\d+)',log))) == list(range(1,19))
                 assert sorted(c['Effect'] for c in config['Cases']) == list(range(1,19))
                 for account in config['Accounts']:
                     assert db.query(f"SELECT account_id,job FROM player.player WHERE id={int(account['Pid'])}") == [[str(account['AccountId']), str(account['Race'])]]
                 state = item_bench.run_tool(dict(action='status', owner=owners[0], connection=auth), tool)['state']
                 pets = [item['growth_pet'] for item in state['items'] if item.get('growth_pet')]
-                assert len(pets) == (1 if natural or resetting or services or carrier else 18) and all(not p['recall_requested'] for p in pets)
+                assert len(pets) == (1 if natural or resetting or services or carrier or skins else 18) and all(not p['recall_requested'] for p in pets)
                 if services:
                     assert pets[0]['life']==dict(clock=1,capacity_ms=0,remaining_ms=0,permanent_grant=True)
                     assert pets[0]['traits']==dict(maximum_hp_percent_tenths=40,monster_damage_percent_tenths=210,pve_normal_damage_percent_tenths=310)
@@ -91,7 +93,7 @@ def main():
                     for field,remaining in [('ResetOneLocal',2),('ResetAllLocal',1)]:
                         assert sum(i['count'] for i in state['items'] if i['category']==17 and i['local']==config[field] and not i['destroyed'])==remaining
                 else:
-                    assert sorted(p['skills'][0]['skill'] for p in pets) == ([93001] if natural or carrier else list(range(93001, 93019)))
+                    assert sorted(p['skills'][0]['skill'] for p in pets) == ([93001] if natural or carrier or skins else list(range(93001, 93019)))
                     assert all(p['skills'][0]['rank'] == 1 and all(not s['skill'] for s in p['skills'][1:]) for p in pets)
                 if natural or resetting:
                     assert pets[0]['age_ms']>=config['NaturalTierMs'] and pets[0]['traits']==dict(maximum_hp_percent_tenths=35,monster_damage_percent_tenths=205,pve_normal_damage_percent_tenths=305)
@@ -99,7 +101,11 @@ def main():
                     assert not pets[0]['carrier_instance_id']
                     assert not [i for i in state['items'] if i['category']==17 and i['local']==config['CarrierLocal']]
                     assert not db.query(f'SELECT storage_id FROM player.item_storage WHERE owner_kind=1 AND owner_id={owners[0]} AND storage_kind=10')
-                print('PET_PASSIVE_LOCAL_SQL=SUCCESS mode='+('carrier' if carrier else 'services' if services else 'reset' if resetting else 'natural' if natural else 'skills')+' preserved_items='+str(len(read(backup/'typed-before.json')['items'])))
+                if skins:
+                    remaining=[i for i in state['items'] if i.get('pet_supply') and i['local'] in config['SkinLocals']]
+                    assert len(remaining)==1 and remaining[0]['local']==config['SkinLocals'][0] and not remaining[0]['pet_supply']['equipped_seal']
+                    assert all('PET_SKIN_PHASE=SUCCESS clock='+str(k) in log for k in range(1,5))
+                print('PET_PASSIVE_LOCAL_SQL=SUCCESS mode='+('skins' if skins else 'carrier' if carrier else 'services' if services else 'reset' if resetting else 'natural' if natural else 'skills')+' preserved_items='+str(len(read(backup/'typed-before.json')['items'])))
                 return
             with manager.supervisor_lock():
                 assert not backend.describe(root)['running']
@@ -140,8 +146,8 @@ def main():
             Pin=profile['Tls']['PinnedCertificateSha256'], Version=profile['ClientVersion'],
             AuthPort=profile['AuthPort'], GamePort=30078, Backup=str(backup), GrowthRace=32500,
             NormalRace=65070, BossRace=65071, StoneRace=65072, MobAttackerRace=65073, RewardRace=65074,
-            MobArrowRace=65075, ProbeRaces=list(range(65070,65076)), Cases=[],Natural=args.natural,SkillReset=args.skill_reset,Services=args.services,Carrier=args.carrier,NaturalTierMs=20000 if args.natural else 0)
-        suffix='carrier' if args.carrier else 'services' if args.services else 'reset' if args.skill_reset else 'natural' if args.natural else 'skills_v2'
+            MobArrowRace=65075, ProbeRaces=list(range(65070,65076)), Cases=[],Natural=args.natural,SkillReset=args.skill_reset,Services=args.services,Carrier=args.carrier,Skins=args.skins,NaturalTierMs=20000 if args.natural else 0)
+        suffix='skins' if args.skins else 'carrier' if args.carrier else 'services' if args.services else 'reset' if args.skill_reset else 'natural' if args.natural else 'skills_v2'
         values = {effect: 5000 for effect in range(1,19)}
         values.update({1:250, 2:2500, 13:10000, 14:10000, 15:1000000, 17:10000, 18:10000})
         def save(category, code, configure):
@@ -171,7 +177,7 @@ def main():
             doc['pet_age_tiers'] = ([dict(minimum_age_ms='0',max_hp_flat='500',monster_resistance_bp='1000',human_resistance_bp='1500'),
                 dict(minimum_age_ms='20000',max_hp_flat='1200',monster_resistance_bp='2000',human_resistance_bp='2500')] if args.natural else
                 [dict(minimum_age_ms='0',max_hp_flat='0',monster_resistance_bp='0',human_resistance_bp='0')])
-            if args.skill_reset or args.services or args.carrier: doc['pet_age_tiers']=[dict(minimum_age_ms='0',max_hp_flat='500',monster_resistance_bp='1000',human_resistance_bp='1500')]
+            if args.skill_reset or args.services or args.carrier or args.skins: doc['pet_age_tiers']=[dict(minimum_age_ms='0',max_hp_flat='500',monster_resistance_bp='1000',human_resistance_bp='1500')]
             doc['pet_slot_rules'] = [dict(slot=str(i), minimum_stage='0', minimum_age_ms='0' if i==0 else '1296000000') for i in range(4)]
             if args.skill_reset: doc['pet_slot_rules'][1]['minimum_age_ms']='0'
             doc['pet_skills'] = [dict(skill_id=str(93000+i), code='pet.local_combat_'+str(i), effect_kind=str(i)) for i in range(1,19)]
@@ -181,7 +187,7 @@ def main():
             doc['child'].update(container_kind='4', loot_profile_id=None, lock_id='0', hatch_profile_id=None)
             doc['loot'] = None
             doc['hatch'] = dict(item_catalog.Catalog.hatch_defaults(), target_category_id='15', target_local_id=str(config['GrowthLocal']), gold_cost='1')
-            for trait,value in zip(('hp','monster','pve_normal'),(35,205,305) if args.natural or args.skill_reset or args.services or args.carrier else (0,0,0)):
+            for trait,value in zip(('hp','monster','pve_normal'),(35,205,305) if args.natural or args.skill_reset or args.services or args.carrier or args.skins else (0,0,0)):
                 doc['hatch'].update({trait+'_min':str(value),trait+'_max':str(value),trait+'_step':'1'})
         config['EggLocal'] = save(8, 'container.local_passive_combat_'+suffix, egg)
         for effect in range(1,19):
@@ -207,6 +213,18 @@ def main():
         if args.carrier:
             def carrier(doc):doc['supply']['supply_kind']='7'
             config['CarrierLocal']=save(17,'special.local_complete_pet_carrier',carrier)
+        if args.skins:
+            def reference(doc):
+                doc['new_companion_form']=dict(code='pet.local_skin_wolf',mob_template_id='101',model_asset='Metin2RacePrefabs/101')
+            save(15,'companion.local_skin_form_reference',reference)
+            editor=item_catalog.Catalog(packet)
+            skin_form=next(r['form_id'] for r in editor.tables['companion_form'] if r['code']=='pet.local_skin_wolf')
+            config.update(SkinLocals=[],SkinRace=101)
+            for kind in range(1,5):
+                def skin(doc,kind=kind):
+                    doc['supply']['supply_kind']='8'
+                    doc['pet_skin'].update(form_id=skin_form,clock_kind=str(kind),duration_ms=str(0 if kind==1 else 180000 if kind==2 else 30000 if kind==3 else 45000))
+                config['SkinLocals'].append(save(17,'special.local_pet_skin_clock_'+str(kind),skin))
         for field, subtype, attack in [('SwordLocal',1,500000), ('CleanupLocal',1,1000000000000)]:
             def weapon(doc, subtype=subtype, attack=attack):
                 doc['child'].update(weapon_subtype=str(subtype), physical_attack_base_raw=str(attack))
@@ -247,6 +265,9 @@ def main():
                         item_bench.run_tool(dict(action='grant',owner=pid,category=17,local=config[field],count=count,connection=auth),tool)
                 if args.carrier:
                     item_bench.run_tool(dict(action='grant',owner=pid,category=17,local=config['CarrierLocal'],count=1,connection=auth),tool)
+                if args.skins:
+                    for local in config['SkinLocals']:
+                        item_bench.run_tool(dict(action='grant',owner=pid,category=17,local=local,count=1,connection=auth),tool)
         proto_columns = [r[0] for r in db.query('SHOW COLUMNS FROM player.mob_proto')]
         # Persist the private identities before adding temporary world rows, so
         # a provisioning failure never loses access to the isolated accounts.

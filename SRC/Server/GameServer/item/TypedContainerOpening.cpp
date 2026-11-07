@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "TypedRecovery.hpp"
 #include "TypedContainerOpening.hpp"
 #include "TypedInventorySync.hpp"
 #include "TypedAccessoryClock.hpp"
@@ -109,7 +110,7 @@ bool HandleTypedContainerOpeningPacket(entt::entity e,const char* data)
             if(!r.key && !candidates.empty())next.key=*candidates.front();
         }
         if(r.key){const auto keyId=items::ItemInstanceId::Create(r.key);const auto found=keyId ? std::ranges::find(typed->state.items,*keyId,&items::PersistentItem::id) : typed->state.items.end();if(found!=typed->state.items.end())next.key=*found;}
-        const auto checked=items::CheckContainerOpening(*c,{*id,next.key ? std::optional(next.key->id) : std::nullopt,Actor(e)},next.fence.owner,typed->state.items);
+        const auto checked=items::CheckContainerOpening(*c,{*id,next.key ? std::optional(next.key->id) : std::nullopt,Actor(e),TypedItemEffectNow()},next.fence.owner,typed->state.items);
         next.status=checked ? Status::Ready : Refusal(checked.error());
         if(r.key && (!next.key || next.key->id.Value()!=r.key))next.status=Status::WrongKey;
         g_registry.emplace_or_replace<TypedContainerOpeningSession>(e,std::move(next));s=g_registry.try_get<TypedContainerOpeningSession>(e);if(s)Reply(e,s->status);return true;
@@ -133,7 +134,7 @@ bool HandleTypedContainerOpeningPacket(entt::entity e,const char* data)
 #endif
     const auto operation=Operation();if(!operation){s->status=Status::Failed;Reply(e,s->status);return true;}
     auto plan=items::MakeContainerOpeningCommit(*c,*operation,s->fence,typed->state.storages,typed->state.items,typed->state.wallets,
-        {s->box->id,s->key ? std::optional(s->key->id) : std::nullopt,Actor(e)},store::PeekInstanceIds(items::MaxItemCommitItems),
+        {s->box->id,s->key ? std::optional(s->key->id) : std::nullopt,Actor(e),TypedItemEffectNow()},store::PeekInstanceIds(items::MaxItemCommitItems),
         Draw);
     if(!plan){s->status=Refusal(plan.error());Reply(e,s->status);return true;}
     const auto fence=s->fence;const auto pid=ecs::PlayerRuntime::GetPlayerID(e);const auto token=login->token;const auto nonce=s->token;

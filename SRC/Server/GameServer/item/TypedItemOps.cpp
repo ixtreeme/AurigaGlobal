@@ -671,7 +671,8 @@ std::expected<void, TypedGrantRefusal> RequestTypedItemGrant(entt::entity charac
 		return std::unexpected(TypedGrantRefusal::Invalid);
 	const auto ids = items::runtime::PeekInstanceIds(most);
 	const auto& state = typed->state;
-	auto commit = items::MakeGrantCommit(*catalog, NewOperationId(), state.fence, state.storages, state.items, grant, ids);
+	auto timedGrant=grant;timedGrant.createdAtUtcMs=TypedItemEffectNow();
+	auto commit = items::MakeGrantCommit(*catalog, NewOperationId(), state.fence, state.storages, state.items, timedGrant, ids);
 	if (!commit)
 	{
 		switch (commit.error())

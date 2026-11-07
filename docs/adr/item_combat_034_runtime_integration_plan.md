@@ -18,6 +18,8 @@ A C26j a fejlődő pet egy kiválasztott vagy összes tanult képességének tá
 A C26k–l az életidő növelését, a külön tárgyas korlátlanítást és mindhárom születési tulajdonság fejlesztését kapcsolja be, sikeres helyi Unity- és újrabelépési próbával.
 
 A C26m a teljes állapotú szállítódobozt köti be, dobozban és kivétel után is sikeres Unity-újrabelépéssel: [jelentés](../reports/item_combat/2026-11-07_pet_carrier.md).
+
+A C26n a pet megjelenési tárgyait és mind a négy órafajtát köti be, 531 ellenőrzéses helyi Unity-próbával: [jelentés](../reports/item_combat/2026-11-07_pet_skins.md).
 A típusos felülés továbbra is nyitott.
 [IC-058](item_combat_058_tera_companion_port.md) · [IC-059](item_combat_059_typed_companion_seals.md) · [IC-060](item_combat_060_typed_pet_hatching.md)
 

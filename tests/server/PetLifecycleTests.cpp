@@ -1,5 +1,6 @@
 #include "PetLifecycleFixture.hpp"
 #include "CatalogSnapshotFixture.hpp"
+#include <item/PersistentItems.hpp>
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
@@ -85,6 +86,42 @@ void LifeAndEnchantment() {
     r.recordedRollBp=3000;enchanted=PlanPetSupply(*c,r).value();Check(!enchanted.succeeded && enchanted.consumeUnits==1 && enchanted.after.traits==r.pet.state.traits,"30 percent boundary and failure consumption");
     r.pet.state.traits.maximumHpPercentTenths=150;Check(PlanPetSupply(*c,r).error()==PetLifecycleError::NoEffect,"capped trait refuses consumption");
     r.traitIndex=3;Check(PlanPetSupply(*c,r).error()==PetLifecycleError::InvalidDecision,"invalid enchant target refused");
+}
+void PersistentSkins() {
+    for(unsigned kind=1;kind<=4;++kind) {
+        auto source=f::Catalog();source.petSupplyProfiles.back().skin=PetSkinRule{2,static_cast<CostumeClock>(kind),kind==1 ? 0u : 10000u};
+        const auto c=BuildItemCatalog(source).value();auto request=Request(*c);request.state.everSummoned=request.state.recallRequested=true;
+        const ItemOwner owner{ItemOwnerKind::Character,77};const ItemOwnerFence fence{owner,9,1};
+        const std::vector<ItemStorageLayout> layouts{{{owner,ItemStorageKind::Inventory,1},5,9,1}};
+        PersistentItem seal{ItemInstanceId::Create(120).value(),care::Pet(),owner};seal.revision=3;seal.placement=ItemPlacement{ItemStorageKind::Inventory,1,0};seal.growthPet=request.state;
+        std::vector<PersistentItem> items{seal};ItemGrant grant{f::Supply(8)};grant.createdAtUtcMs=100000;
+        const auto minted=MakeGrantCommit(*c,{22},fence,layouts,items,grant,std::array{ItemInstanceId::Create(200).value()});
+        Check(minted.has_value(),"all four skin clock kinds receive persisted factory state");items.push_back(minted->items[0].after);
+        const auto apply=[&](const ItemCommit& commit){for(const auto& change:commit.items)*std::ranges::find(items,change.after.id,&PersistentItem::id)=change.after;};
+        auto before=items[0].growthPet;
+        PetServiceTerms terms{7,100010};terms.following=true;
+        const auto equip=MakePetServiceCommit(*c,fence,layouts,items,request.context,items[1].id,seal.id,terms);
+        Check(equip.has_value(),"skin equip service");apply(equip->commit);
+        Check(items[0].growthPet==before && items[1].petSupply->equippedSeal==seal.id.Value(),"skin binding cannot alter pet stats, life or learned state");
+        auto forged=equip->commit;forged.items[0].after.petSupply->createdAtUtcMs++;
+        Check(!ValidateItemCommit(*c,forged),"skin receipt cannot rewrite creation time");
+        Check(!MakeConsumeCommit(*c,{23},fence,layouts,items,items[1].id,1),"ordinary consumption cannot destroy an equipped skin");
+        terms={8,100110,kind==4 ? 1234u : 0u};
+        const auto remove=MakePetServiceCommit(*c,fence,layouts,items,request.context,items[1].id,seal.id,terms);
+        Check(remove.has_value(),"skin remove service");apply(remove->commit);
+        const auto saved=*items[1].petSupply;const auto bytes=EncodePetSupplyState(*c,items[1].key,saved);
+        Check(bytes && DecodePetSupplyState(*c,items[1].key,*bytes)==saved,"skin clock and binding roundtrip without refilling");
+        terms={7,100210};terms.following=true;
+        const auto again=MakePetServiceCommit(*c,fence,layouts,items,request.context,items[1].id,seal.id,terms);
+        Check(again.has_value(),"re-equip an unexpired skin");apply(again->commit);
+        Check(items[1].petSupply->lifetime==saved.lifetime,"re-equip never resets a started clock");
+        const auto expiry=MakePetSkinClockCommit(*c,{24},fence,layouts,items,items[1].id,110010,kind==4 ? 8766u : 0u,true);
+        if(kind==1)Check(!expiry,"permanent skin cannot expire");
+        else {
+            Check(expiry && expiry->items[0].after.destroyed && !expiry->items[0].after.petSupply->equippedSeal,"time expiry consumes the skin and removes its binding atomically");
+            auto forged=*expiry;forged.items[0].after.key=f::Supply(7);Check(!ValidateItemCommit(*c,forged),"clock cannot change skin identity");
+        }
+    }
 }
 void BuffTransportAndSkin() {
     const auto c=BuildItemCatalog(f::Catalog()).value();auto r=Request(*c);r.state.skills[0]={true,1,1};r.nowUtcMs+=3000;
@@ -244,7 +281,7 @@ int main(int argc,char** argv) {
             const auto c=BuildItemCatalog(f::Catalog()).value();auto r=Request(*c,false);r.state.skills[0]={true,1,2};r.state.skills[3]={true,2,1};r.state.carrierInstanceId=300;r.state.ageMs=123456789;r.state.life.remainingMs=1234;
             for(auto b:EncodeGrowthPetState(*c,care::Pet(),r.state).value())std::cout<<"0123456789abcdef"[b>>4]<<"0123456789abcdef"[b&15];std::cout<<'\n';return 0;
         }
-        AgeAndEvolution();StudyResetAndCooldown();LifeAndEnchantment();BuffTransportAndSkin();PassiveDamage();PersistenceAndCatalog();CompleteJourney();
+        AgeAndEvolution();StudyResetAndCooldown();LifeAndEnchantment();BuffTransportAndSkin();PersistentSkins();PassiveDamage();PersistenceAndCatalog();CompleteJourney();
         std::cout<<checks<<" Pet lifecycle checks passed\n";return 0;
     }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
 }

@@ -177,6 +177,14 @@ int main(int argc, char** argv)
         Check(transportView && transportView->items.size()==2 && transportView->items[1].petSupply==box.petSupply && transportView->companions.at(growth.id).second==4,"packed seal and carrier links roundtrip");
         transportWire->at(transportWire->size()-41)=std::byte{0};
         Check(!DecodeTypedInventory(*transportWire,f::Character()),"broken carrier link rejected");
+        PersistentItem skin{ItemInstanceId::Create(23).value(),pet_lifecycle_fixture::Supply(8),f::Character()};
+        skin.placement=ItemPlacement{ItemStorageKind::Inventory,1,2};skin.petSupply=InitialPetSupplyState(**transportCatalog,skin.key,100).value();
+        transportItems.push_back(skin);
+        const auto skinWire=EncodeTypedInventory(**transportCatalog,transportLayouts,{},transportItems);
+        const auto skinView=skinWire ? DecodeTypedInventory(*skinWire,f::Character()) : std::expected<TypedInventoryView,TypedInventoryWireError>{std::unexpected(TypedInventoryWireError::BadValue)};
+        Check(skinView && skinView->items.back().petSupply==skin.petSupply,"skin v10 definition and persisted clock roundtrip");
+        auto badSkin=*skinWire;std::fill(badSkin.end()-4,badSkin.end(),std::byte{});
+        Check(!DecodeTypedInventory(badSkin,f::Character()),"zero skin form rejected");
 
         auto details=EncodeTypedItemDetails(c,items,true);
         Check(details.has_value(),"details encode with stone state and refinement recipes");

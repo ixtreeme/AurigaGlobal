@@ -7,7 +7,7 @@ namespace auriga::item
 enum class ContainerOpeningError { Invalid, Denied, KeyRequired, WrongKey, NoRoom, WalletLimit, Unsupported, Level, Unavailable };
 enum class ContainerOpeningStatus : std::uint8_t { Closed, Ready, Opened, Pending, Busy, Invalid, Denied, KeyRequired, WrongKey, NoRoom, WalletLimit, Unsupported, Stale, Failed, Level, Cooldown };
 struct ContainerActor { std::uint16_t level=0; std::uint8_t characterClass=0,sex=0; bool inCombat=false; };
-struct ContainerOpeningRequest { ItemInstanceId box; std::optional<ItemInstanceId> key; ContainerActor actor; };
+struct ContainerOpeningRequest { ItemInstanceId box; std::optional<ItemInstanceId> key; ContainerActor actor; std::uint64_t nowUtcMs=0; };
 struct ContainerOpeningPlan { ItemCommit commit; std::vector<std::uint16_t> won; std::uint64_t gold=0; };
 inline constexpr std::uint16_t ContainerOpeningOutcome=0x1301;
 // Exhaustive admission of all independent item outcomes is bounded. Gold is

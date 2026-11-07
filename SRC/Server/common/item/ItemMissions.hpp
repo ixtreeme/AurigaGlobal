@@ -27,7 +27,7 @@ std::expected<std::array<std::uint8_t,16>,ItemMissionError> ItemMissionOperation
 std::expected<std::vector<std::uint8_t>,ItemMissionError> ItemMissionReceipt(const ItemMission&,ItemMissionProof);
 std::expected<ItemCommit,ItemMissionError> MakeItemMissionCommit(const ItemCatalog&,const ItemMission&,ItemMissionProof,
     std::uint16_t level,ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,
-    std::span<const ItemWallet>,std::span<const ItemInstanceId>);
+    std::span<const ItemWallet>,std::span<const ItemInstanceId>,std::uint64_t nowUtcMs=0);
 // GC232 v1: header,size:u32,version,status,npc:u32,session:u64,request:u64,
 // selected:u32,name:text16,missions:u8 {id:u32,version:u32,code/name/description:text16,
 // minLevel:u16,completed:u8,goldCost/goldReward:u64,3x (count:u8,{key,level:u16,units:u32})},

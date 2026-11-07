@@ -14,7 +14,7 @@ enum class NpcShopStatus : std::uint8_t
 std::expected<void,NpcShopError> ValidateNpcShops(const ItemCatalog&,std::span<const NpcShop>);
 std::expected<ItemCommit,NpcShopError> MakeNpcBuyCommit(const ItemCatalog&,std::array<std::uint8_t,16>,
     ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,std::span<const ItemWallet>,
-    const NpcShopOffer&,std::uint32_t quantity,std::span<const ItemInstanceId>);
+    const NpcShopOffer&,std::uint32_t quantity,std::span<const ItemInstanceId>,std::uint64_t nowUtcMs=0);
 std::expected<ItemCommit,NpcShopError> MakeNpcSellCommit(const ItemCatalog&,std::array<std::uint8_t,16>,
     ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,std::span<const ItemWallet>,
     ItemInstanceId,std::uint32_t count);

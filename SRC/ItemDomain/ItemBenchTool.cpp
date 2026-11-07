@@ -7,6 +7,7 @@
 #include <Core/Logging.hpp>
 #include <nlohmann/json.hpp>
 #include <algorithm>
+#include <chrono>
 #include <iostream>
 #include <limits>
 #include <random>
@@ -348,8 +349,10 @@ Json Grant(CAsyncSQL& sql,const Json& request)
     {const auto points=request.value("tool_points",std::uint64_t{}),bait=request.value("tool_bait",std::uint64_t{});Require(points<=UINT32_MAX && bait<=INT32_MAX,"Érvénytelen eszközállapot.");item.tool=ToolInstanceState{static_cast<std::uint32_t>(points),static_cast<std::uint32_t>(bait)};}
     if(const auto* seal=std::get_if<ItemCompanionRow>(&entry->category);seal && SupportsPersistentItem(*c,*entry))
         item.companion=CompanionState{};
-    if(const auto* supply=std::get_if<ItemPetSupplyRow>(&entry->category);supply && c->FindPetSupplyProfile(supply->profile)->kind==PetSupplyKind::Carrier)
-        item.petSupply=PetSupplyState{};
+    if(const auto* supply=std::get_if<ItemPetSupplyRow>(&entry->category);supply && c->FindPetSupplyProfile(supply->profile)->kind>=PetSupplyKind::Carrier) {
+        const auto now=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        const auto initial=InitialPetSupplyState(*c,item.key,now);Require(initial.has_value(),"Érvénytelen petkellék-óra.");item.petSupply=*initial;
+    }
     item.placement=ItemPlacement{ItemStorageKind::Inventory,1,0};
     if(auto valid=ValidatePersistentItem(*c,item);!valid)
         throw Failure(std::string("A tárgy nem adható: ")+PersistenceText(valid.error())+".");

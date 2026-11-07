@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "TypedRecovery.hpp"
 #include "TypedFishProcessing.hpp"
 #include "TypedTools.hpp"
 #include "TypedGathering.hpp"
@@ -114,7 +115,7 @@ bool HandleTypedFishProcessingPacket(entt::entity e,const char* bytes)
     const auto& t=g_registry.get<ecs::TypedItems>(e).state;const auto found=std::ranges::find(t.items,s->source->id,&item::PersistentItem::id);
     if(t.fence.sessionGeneration!=s->ownerSession || c->Revision()!=s->catalogRevision || c->ContentHash()!=s->catalog || found==t.items.end() || *found!=*s->source){Reply(e,Status::Stale);return true;}
     auto permit=ecs::resource_admission::Enter({e},auriga::resource_admission::Operation::ItemUse);if(!permit || !permit->Current()){Reply(e,Status::Denied);return true;}
-    auto plan=item::MakeFishProcessingCommit(*c,s->operation,t.fence,t.storages,t.items,{s->source->id,s->action,Actor(e,s->fire)},store::PeekInstanceIds(item::MaxItemCommitItems),Draw);
+    auto plan=item::MakeFishProcessingCommit(*c,s->operation,t.fence,t.storages,t.items,{s->source->id,s->action,Actor(e,s->fire),TypedItemEffectNow()},store::PeekInstanceIds(item::MaxItemCommitItems),Draw);
     if(!plan){Reply(e,Status::Denied,static_cast<std::uint8_t>(plan.error()));return true;}
     const auto pid=ecs::PlayerRuntime::GetPlayerID(e);const auto token=g_registry.get<ecs::TypedItemLogin>(e).token;const auto owner=t.fence;
     auto held=std::make_shared<auriga::resource_admission::Permit>(std::move(*permit));s->pending=true;s->yields=plan->yields;g_registry.emplace_or_replace<ecs::TypedItemBusy>(e);

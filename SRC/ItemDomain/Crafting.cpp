@@ -49,7 +49,7 @@ std::expected<void,E> ValidateCraftWorkshops(const ItemCatalog& c,std::span<cons
 }
 std::expected<CraftPlan,E> MakeCraftCommit(const ItemCatalog& c,std::array<std::uint8_t,16> op,ItemOwnerFence fence,
     std::span<const ItemStorageLayout> layouts,std::span<const PersistentItem> inventory,std::span<const ItemWallet> wallets,
-    const CraftRecipe& recipe,std::uint32_t attempts,std::span<const std::uint16_t> rolls,std::span<const ItemInstanceId> ids)
+    const CraftRecipe& recipe,std::uint32_t attempts,std::span<const std::uint16_t> rolls,std::span<const ItemInstanceId> ids,std::uint64_t nowUtcMs)
 {
     if(fence.owner.kind!=ItemOwnerKind::Character || !RecipeValid(c,recipe) || !attempts || attempts>MaxCraftBatch ||
        rolls.size()!=attempts || std::ranges::any_of(rolls,[](auto roll){return roll>=10000;}) || inventory.size()>MaxLoadedOwnerItems)return std::unexpected(E::Invalid);
@@ -79,7 +79,7 @@ std::expected<CraftPlan,E> MakeCraftCommit(const ItemCatalog& c,std::array<std::
     std::vector<ItemChange> produced;
     if(plan.successes)
     {
-        auto grant=recipe.result;const auto units=std::uint64_t{grant.count}*plan.successes;
+        auto grant=recipe.result;grant.createdAtUtcMs=nowUtcMs;const auto units=std::uint64_t{grant.count}*plan.successes;
         if(units>UINT32_MAX)return std::unexpected(E::Limit);grant.count=static_cast<std::uint32_t>(units);
         const auto stack=c.Find(grant.key)->base.maxStack;
         if((units+stack-1)/stack>MaxItemCommitItems)return std::unexpected(E::Limit);

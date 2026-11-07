@@ -46,7 +46,7 @@ std::expected<void,E> ValidateNpcShops(const ItemCatalog& c,std::span<const NpcS
 }
 std::expected<ItemCommit,E> MakeNpcBuyCommit(const ItemCatalog& c,std::array<std::uint8_t,16> op,ItemOwnerFence fence,
     std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> items,std::span<const ItemWallet> wallets,
-    const NpcShopOffer& offer,std::uint32_t quantity,std::span<const ItemInstanceId> ids)
+    const NpcShopOffer& offer,std::uint32_t quantity,std::span<const ItemInstanceId> ids,std::uint64_t nowUtcMs)
 {
     const auto* entry=c.Find(offer.grant.key);const auto* wallet=Gold(wallets,fence.owner);
     const auto units=std::uint64_t{offer.grant.count}*quantity;
@@ -54,7 +54,7 @@ std::expected<ItemCommit,E> MakeNpcBuyCommit(const ItemCatalog& c,std::array<std
        entry->base.retired || !entry->base.buyAmount || entry->base.buyAmount>std::uint64_t(INT64_MAX)/units)return std::unexpected(E::Invalid);
     const auto cost=units*entry->base.buyAmount;
     if(wallet->balance<cost)return std::unexpected(E::NoMoney);
-    auto grant=offer.grant;grant.count=static_cast<std::uint32_t>(units);
+    auto grant=offer.grant;grant.count=static_cast<std::uint32_t>(units);grant.createdAtUtcMs=nowUtcMs;
     auto commit=MakeGrantCommit(c,op,fence,storages,items,grant,ids);
     if(!commit)return std::unexpected(commit.error()==ItemPersistenceError::InvalidPlacement ? E::NoRoom : E::Unavailable);
     auto after=*wallet;after.balance-=cost;++after.revision;

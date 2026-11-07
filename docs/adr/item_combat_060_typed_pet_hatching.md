@@ -1,5 +1,14 @@
 # ADR IC-060 — Típusos pettojás-keltetés
 
+## C26n — Megjelenési tárgyak
+
+A párosított Unity changeset `cs:85`. A Pet tárgyai felületen felvehető és
+levehető a megjelenés. A tényleges követő formája cserélődik, a pet minden
+értéke megmarad. A korlátlan, létrehozási, első használati és aktív óra
+tartósan mentett; a lejárat eltávolítja a tárgyat és visszaállítja az alapformát.
+Natív, SQL- és Unity-validálás, valamint 531 ellenőrzéses helyi TLS-próba
+sikeres; a pontos hatókör a [jelentésben](../reports/item_combat/2026-11-07_pet_skins.md).
+
 ## C26m — Teljes állapotú szállítódoboz
 
 A párosított Unity changeset `cs:84`. A Pet tárgyai felület csomagolja és

@@ -23,7 +23,7 @@ std::expected<ResourcePlan,E> Build(const ItemCatalog& c,const GatheringSite& si
  out.points=tool->tool->trainingPoints;out.bait=tool->tool->baitPower;
  if(reward)
  {
-  auto grant=MakeGrantCommit(c,op,fence,layouts,working,{reward->key,0,reward->count},ids);
+  auto grant=MakeGrantCommit(c,op,fence,layouts,working,{reward->key,0,reward->count,{},{},{},request.nowUtcMs},ids);
   if(!grant)return std::unexpected(grant.error()==ItemPersistenceError::InvalidPlacement ? E::NoRoom : E::Unavailable);
   for(const auto& change:grant->items)if(change.before)*std::ranges::find(working,change.after.id,&PersistentItem::id)=change.after;else working.push_back(change.after);
   out.yields.push_back({reward->key,reward->count});

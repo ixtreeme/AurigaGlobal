@@ -69,7 +69,7 @@ std::expected<std::vector<std::uint8_t>,E> ItemMissionReceipt(const ItemMission&
 }
 std::expected<ItemCommit,E> MakeItemMissionCommit(const ItemCatalog& c,const ItemMission& m,ItemMissionProof proof,std::uint16_t level,
     ItemOwnerFence fence,std::span<const ItemStorageLayout> layouts,std::span<const PersistentItem> inventory,
-    std::span<const ItemWallet> wallets,std::span<const ItemInstanceId> ids)
+    std::span<const ItemWallet> wallets,std::span<const ItemInstanceId> ids,std::uint64_t nowUtcMs)
 {
     if(!ValidateItemMission(c,m) || proof.owner!=fence.owner || inventory.size()>MaxLoadedOwnerItems)return std::unexpected(E::Invalid);
     if(level<m.minimumLevel)return std::unexpected(E::Level);
@@ -95,7 +95,7 @@ std::expected<ItemCommit,E> MakeItemMissionCommit(const ItemCatalog& c,const Ite
     std::size_t usedIds=0;
     for(const auto& reward:m.rewards)
     {
-        const auto grant=MakeGrantCommit(c,*op,fence,layouts,working,{reward.key,reward.level,reward.count},ids.subspan(usedIds));
+        const auto grant=MakeGrantCommit(c,*op,fence,layouts,working,{reward.key,reward.level,reward.count,{},{},{},nowUtcMs},ids.subspan(usedIds));
         if(!grant)return std::unexpected(grant.error()==ItemPersistenceError::InvalidPlacement ? E::NoRoom : grant.error()==ItemPersistenceError::LimitExceeded ? E::Unavailable : E::Invalid);
         for(const auto& change:grant->items)
         {if(change.before)*std::ranges::find(working,change.after.id,&PersistentItem::id)=change.after;else{working.push_back(change.after);++usedIds;}}
