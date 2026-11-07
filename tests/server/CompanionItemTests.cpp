@@ -1,6 +1,8 @@
 #include "ItemCatalogFixture.hpp"
 #include "CatalogSnapshotFixture.hpp"
 #include <item/CompanionItems.hpp>
+#include <item/EquipmentStats.hpp>
+#include <item/AccessoryRuntime.hpp>
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
@@ -102,6 +104,7 @@ void Rejections() {
     reject([&](auto& r){r.state=PlanCompanion(*c,r)->after;r.state.activeFormId=99;r.action=CompanionAction::Maintain;},E::InvalidState);
     auto invalid=[&](auto mutate){auto s=Fixture();mutate(s);Check(!BuildItemCatalog(s),"invalid catalog cannot publish");};
     invalid([](auto& s){s.companions[0].ridingForm=1;});invalid([](auto& s){s.companions[1].ridingForm.reset();});
+    invalid([](auto& s){s.companions[0].flyingMount=true;});
     invalid([](auto& s){s.companions[0].form=99;});invalid([](auto& s){s.companions[1].ridingForm=99;});
     invalid([](auto& s){s.companions[0].clock=CompanionClock::Permanent;});invalid([](auto& s){s.companions[0].durationMs=0;});
     invalid([](auto& s){s.companions[0].durationMs=UINT64_MAX;});invalid([](auto& s){s.companionForms[0].modelAsset="../unsafe";});
@@ -117,9 +120,70 @@ void Rejections() {
     snapshot[db::Table::Companions][0][4]="0";Check(!db::DecodeSnapshot(snapshot,{77,{}}),"SQL NULL and zero riding form differ");
     Check(!ValidateRefinementRecipe({1,"refine.invalid_companion",Key(1),10,Key(1),11,0,10000,RefinementFailure::Keep,{},{}},*c),"ordinary smith cannot bypass companion state writer");
 }
+void PersistentClocksAndBonuses() {
+    for(unsigned kind=1;kind<=2;++kind)for(unsigned clock=1;clock<=4;++clock) {
+        auto source=Fixture();auto& row=source.companions[kind-1];row.clock=static_cast<CompanionClock>(clock);row.durationMs=clock==1 ? 0 : 5000;row.dungeonOnlyBonus=false;row.flyingMount=kind==2;
+        source.bonuses.push_back({101,"bonus.fixed_base",BonusSource::ItemBase,{{BonusId::Strength,3},{BonusId::PhysicalAttackFlat,1000}}});
+        source.bonuses.push_back({102,"bonus.fixed_refinement",BonusSource::Refinement,{{BonusId::Strength,2},{BonusId::PhysicalAttackFlat,2000}}});
+        for(auto& base:source.items)if(base.key==Key(kind))base.baseBonusProfile=101;
+        source.refinements.back().levels[1].extraBonusProfile=102;
+        const auto c=BuildItemCatalog(source).value();const ItemOwner owner{ItemOwnerKind::Character,7};const ItemOwnerFence fence{owner,1,1};
+        const std::vector<ItemStorageLayout> layouts{{{owner,ItemStorageKind::Inventory,1},5,5,1}};
+        const auto id=ItemInstanceId::Create(10).value();const std::array ids{id};
+        const auto grant=MakeGrantCommit(*c,{31,1},fence,layouts,{},ItemGrant{Key(kind),1,1,{},{},{},100000},ids);
+        Check(grant.has_value(),"all four fixed clock kinds can be granted durably");auto seal=grant->items[0].after;
+        Check(seal.companion==MakeCompanionState(*c,seal.key,100000).value(),"fixed factory starts creation/active clocks exactly once");
+        Check(DecodeCompanionLifetime(EncodeCompanionLifetime(seal.companion->lifetime))==seal.companion->lifetime,"versioned fixed lifetime codec roundtrip");
+        auto request=Request(*c,kind);request.instanceId=id.Value();request.revision=seal.revision;request.refinementLevel=1;request.state=*seal.companion;request.nowUtcMs=100500;
+        auto write=MakeCompanionCommit(*c,fence,layouts,std::span(&seal,1),request);
+        Check(write.has_value(),"timed fixed summon is a validated durable commit");seal=write->items[0].after;
+        {
+            PersistentItem accessory{ItemInstanceId::Create(11).value(),f::Bracelet(),owner};accessory.count=1;
+            accessory.placement=ItemPlacement{ItemStorageKind::Equipment,1,static_cast<unsigned>(EquipmentSlot::Wrist)-1};
+            accessory.accessory=AccessorySocketState{1,1,1000,false};
+            auto allLayouts=layouts;allLayouts.push_back({{owner,ItemStorageKind::Equipment,1},32,1,1});
+            const std::array snapshot{*write->items[0].before,accessory};auto compound=*write;
+            Check(SettleAccessoryTime(*c,compound,fence,allLayouts,snapshot,100).has_value() && compound.items.size()==2 && compound.items[1].after.accessory->remainingMs==900,"fixed companion actions allow the owner clock's ancillary accessory debit");
+            auto tampered=compound;tampered.items[1].after.refinementLevel=1;
+            Check(!ValidateItemCommit(*c,tampered),"companion receipt cannot smuggle accessory refinement with its time debit");
+            std::ranges::reverse(compound.items);Check(ValidateItemCommit(*c,compound).has_value(),"compound companion receipt is independent of item vector order");
+        }
+        if(clock==2)Check(seal.companion->lifetime.deadlineUtcMs==105000,"creation deadline never restarts at summon");
+        if(clock==3)Check(seal.companion->lifetime.deadlineUtcMs==105500,"first-use deadline starts at the accepted summon");
+        const auto following=CollectFixedCompanionBonuses(*c,seal,true,false,true,100600,0);
+        Check(following && (following->seal!=0)==(kind==1),"pet bonuses follow; mount bonuses require riding");
+        if(kind==2) {
+            request.state=*seal.companion;request.state.phase=CompanionPhase::Following;request.state.activeFormId=row.form;
+            request.revision=seal.revision;request.action=CompanionAction::Mount;request.operationId={31,2};
+            write=MakeCompanionCommit(*c,fence,layouts,std::span(&seal,1),request);Check(write.has_value(),"timed mount preserves its life when mounted");seal=write->items[0].after;
+        }
+        const auto bonus=CollectFixedCompanionBonuses(*c,seal,true,kind==2,true,100600,0);
+        Check(bonus && bonus->bonuses==std::vector<BonusEntry>{{BonusId::PhysicalAttackFlat,3000},{BonusId::Strength,5}},"base and current refinement companion bonuses combine once");
+        const auto stats=BuildEquipmentStats(*c,owner,std::span(&seal,1),bonus->bonuses);
+        Check(stats && stats->flat.physicalAttackRaw==3000 && stats->Bonus(BonusId::Strength)==5,"fixed bonuses enter the existing equipment stat pipeline");
+        Check(!CollectFixedCompanionBonuses(*c,seal,false,false,true,100600,0)->seal,"pending or recalled companion gives no bonus");
+        auto dungeonSource=source;dungeonSource.companions[kind-1].dungeonOnlyBonus=true;const auto dungeonCatalog=BuildItemCatalog(dungeonSource).value();
+        Check(!CollectFixedCompanionBonuses(*dungeonCatalog,seal,true,kind==2,false,100600,0)->seal && CollectFixedCompanionBonuses(*dungeonCatalog,seal,true,kind==2,true,100600,0)->seal==id.Value(),"dungeon restriction is applied to the whole source");
+        if(clock==4) {
+            request.state=*seal.companion;request.revision=seal.revision;request.action=CompanionAction::Dismiss;request.operationId={31,3};
+            request.elapsedOwnerMs=700;request.elapsedWasActive=true;
+            write=MakeCompanionCommit(*c,fence,layouts,std::span(&seal,1),request);Check(write && write->items[0].after.companion->lifetime.remainingMs==4300,"recall settles measured active time before clearing intent");seal=write->items[0].after;
+            request.state=*seal.companion;request.revision=seal.revision;request.action=CompanionAction::Maintain;request.operationId={31,4};request.elapsedOwnerMs=300;
+            write=MakeCompanionCommit(*c,fence,layouts,std::span(&seal,1),request);Check(write && write->items[0].after.companion->lifetime.remainingMs==4000,"late owner-clock debit remains legal after recall");seal=write->items[0].after;
+            request.state=*seal.companion;request.revision=seal.revision;request.nowUtcMs=500000;request.elapsedOwnerMs=0;request.elapsedWasActive=false;
+            Check(!MakeCompanionCommit(*c,fence,layouts,std::span(&seal,1),request),"offline wall time does not debit paused active life");
+        }
+        request.state=*seal.companion;request.revision=seal.revision;request.action=CompanionAction::Maintain;request.operationId={31,5};
+        request.elapsedOwnerMs=clock==4 ? seal.companion->lifetime.remainingMs : 0;request.elapsedWasActive=request.elapsedOwnerMs!=0;
+        request.nowUtcMs=clock==2 || clock==3 ? seal.companion->lifetime.deadlineUtcMs : 500000;
+        write=MakeCompanionCommit(*c,fence,layouts,std::span(&seal,1),request);
+        if(clock==1)Check(!write,"permanent life cannot expire by elapsed wall time");
+        else Check(write && write->items[0].after.destroyed && !write->items[0].after.placement && !write->items[0].after.count && write->items[0].after.companion->lifetime.expired && !RecallRequested(write->items[0].after),"expiry removes item, placement and both durable intents atomically");
+    }
+}
 }
 int main(int argc,char** argv) {
     try{if(argc==2 && std::string_view(argv[1])=="--hash-fixture"){auto c=BuildItemCatalog(Fixture()).value();for(auto b:c->ContentHash())std::cout<<std::hex<<std::setw(2)<<std::setfill('0')<<unsigned(b);std::cout<<'\n';return 0;}
-        Actions();Rejections();std::cout<<checks<<" Companion checks passed\n";return 0;
+        Actions();Rejections();PersistentClocksAndBonuses();std::cout<<checks<<" Companion checks passed\n";return 0;
     }catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}
 }

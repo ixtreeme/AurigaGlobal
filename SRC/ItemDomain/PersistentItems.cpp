@@ -23,9 +23,71 @@ constexpr std::uint16_t PetFeedOutcome=0x2604;
 constexpr std::uint16_t PetProgressOutcome=0x2605;
 constexpr std::uint16_t PetStudyOutcome=0x2606;
 constexpr std::uint16_t PetSkillResetOutcome=0x2607;
-bool PermanentSeal(const ItemCompanionRow& row)
+bool AccessoryTimeOnly(const ItemChange& change);
+bool FixedSeal(const ItemCompanionRow& row)
 {
-    return (row.kind==CompanionKind::Pet || row.kind==CompanionKind::Mount) && row.clock==CompanionClock::Permanent;
+    return row.kind==CompanionKind::Pet || row.kind==CompanionKind::Mount;
+}
+std::expected<PersistentItem,E> FixedCompanionMutation(const ItemCatalog& c,const PersistentItem& before,const CompanionRequest& request)
+{
+    const auto* entry=c.Find(before.key);const auto* row=entry ? std::get_if<ItemCompanionRow>(&entry->category) : nullptr;
+    if(!row || !FixedSeal(*row) || !before.companion || request.lockedByOther || request.exchanging ||
+       request.elapsedWasActive!=(request.elapsedOwnerMs!=0) || (request.elapsedOwnerMs && row->clock!=CompanionClock::ActiveTime) ||
+       request.state.phase<CompanionPhase::Dormant || request.state.phase>CompanionPhase::Riding ||
+       (request.state.phase==CompanionPhase::Riding && row->kind!=CompanionKind::Mount))return std::unexpected(E::InvalidChange);
+    auto expected=*before.companion;expected.phase=request.state.phase;
+    expected.activeFormId=expected.phase==CompanionPhase::Dormant ? 0 : expected.phase==CompanionPhase::Following ? row->form : *row->ridingForm;
+    if(expected!=request.state)return std::unexpected(E::InvalidChange);
+    const auto plan=PlanCompanion(c,request);
+    if(!plan)return std::unexpected(plan.error()==CompanionError::ChannelOccupied ? E::Conflict : E::RequirementNotMet);
+    auto after=before;++after.revision;
+    after.companion->recallRequested=plan->after.recallRequested;after.companion->ridingRequested=plan->after.ridingRequested;
+    after.companion->lifetime=plan->after.lifetime;
+    if(plan->removeItem){after.destroyed=true;after.count=0;after.placement.reset();}
+    auto unchanged=after;unchanged.revision=before.revision;
+    if(unchanged==before)return std::unexpected(E::InvalidChange);
+    return after;
+}
+bool ValidFixedCompanionWrite(const ItemCatalog& c,const ItemCommit& commit)
+{
+    if(commit.kind!=ItemOperationKind::Service || commit.outcomeCode!=CompanionSealOutcome ||
+       commit.owners.size()!=1 || !commit.wallets.empty() || commit.ground || commit.recovery || commit.learning)return false;
+    const ItemChange* seal=nullptr;
+    for(const auto& change:commit.items) {
+        if(change.before && change.before->companion && change.after.companion) {
+            if(seal)return false;seal=&change;
+        } else if(!AccessoryTimeOnly(change))return false;
+    }
+    if(!seal)return false;
+    const auto& b=*seal->before;const auto& p=seal->after;const auto& bytes=commit.result;
+    if(bytes.size()<5 || bytes[0]!='C' || bytes[1]!='M' || bytes[2]!='P')return false;
+    const auto* row=std::get_if<ItemCompanionRow>(&c.Find(b.key)->category);if(!row || !FixedSeal(*row))return false;
+    if(bytes[3]==3) {
+        if(bytes.size()!=28 || bytes[4]<1 || bytes[4]>5)return false;
+        const auto read=[&](unsigned offset,unsigned count){std::uint64_t value=0;for(unsigned n=0;n<count;++n)value|=std::uint64_t{bytes[offset+n]}<<(8*n);return value;};
+        const auto flags=read(26,2);if(flags>511)return false;
+        CompanionRequest r{b.key};r.state=*b.companion;r.state.phase=static_cast<CompanionPhase>(bytes[21]);
+        if(r.state.phase<CompanionPhase::Dormant || r.state.phase>CompanionPhase::Riding || (r.state.phase==CompanionPhase::Riding && !row->ridingForm))return false;
+        r.state.activeFormId=r.state.phase==CompanionPhase::Dormant ? 0 : r.state.phase==CompanionPhase::Following ? row->form : *row->ridingForm;
+        r.instanceId=b.id.Value();r.revision=b.revision;r.ownerId=b.owner.id;r.actorId=commit.owners[0].owner.id;
+        r.rulesetRevision=1;r.operationId=commit.operationId;r.count=b.count;r.refinementLevel=b.refinementLevel;
+        r.action=static_cast<CompanionAction>(bytes[4]);r.nowUtcMs=read(5,8);r.elapsedOwnerMs=read(13,8);
+        r.characterLevel=static_cast<std::uint16_t>(read(22,2));r.characterClass=bytes[24];r.sex=bytes[25];r.admittedByServer=true;
+        r.ownerAlive=flags&1;r.polymorphed=flags&2;r.observer=flags&4;r.inCombat=flags&8;r.inDungeon=flags&16;
+        r.worldAllowsCompanion=flags&32;r.worldAllowsRiding=flags&64;r.channelOccupiedByOther=flags&128;r.elapsedWasActive=flags&256;
+        const auto expected=FixedCompanionMutation(c,b,r);return expected && *expected==p;
+    }
+    if(bytes.size()!=5 || row->clock!=CompanionClock::Permanent ||
+        (bytes[3]==1 ? bytes[4]<1 || bytes[4]>2 : bytes[3]!=2 || bytes[4]<3 || bytes[4]>4))return false;
+    auto after=b;++after.revision;auto& intent=*after.companion;
+    switch(static_cast<CompanionAction>(bytes[4])) {
+    case CompanionAction::Summon:if(intent.recallRequested)return false;intent.recallRequested=true;break;
+    case CompanionAction::Dismiss:if(!intent.recallRequested)return false;intent.recallRequested=intent.ridingRequested=false;break;
+    case CompanionAction::Mount:if(!intent.recallRequested || intent.ridingRequested)return false;intent.ridingRequested=true;break;
+    case CompanionAction::Dismount:if(!intent.ridingRequested)return false;intent.ridingRequested=false;break;
+    default:return false;
+    }
+    return after==p;
 }
 bool StorageOwner(ItemStorage s)
 {
@@ -69,6 +131,7 @@ struct Writer
         if(p.tool){Put(0x314c4f54,4);Put(p.tool->trainingPoints,4);Put(p.tool->baitPower,4);}
         if(p.companion){Put(0x31504d43,4);Put(p.companion->recallRequested,1);}
         if(p.companion && p.companion->ridingRequested){Put(0x31544e4d,4);Put(1,1);}
+        if(p.companion && p.companion->lifetime!=CompanionLifetime{}){const auto clock=EncodeCompanionLifetime(p.companion->lifetime);bytes.insert(bytes.end(),clock.begin(),clock.end());}
         if(p.growthPet)
         {
             const auto state=EncodeGrowthPetState(c,p.key,*p.growthPet);
@@ -505,7 +568,7 @@ bool ValidItemStorage(const ItemStorageLayout& l) noexcept
 }
 bool SupportsPersistentItem(const ItemCatalog& c,const ItemCatalogEntry& e) noexcept
 {
-    if(const auto* companion=std::get_if<ItemCompanionRow>(&e.category))return PermanentSeal(*companion) || companion->kind==CompanionKind::GrowthPet;
+    if(const auto* companion=std::get_if<ItemCompanionRow>(&e.category))return FixedSeal(*companion) || companion->kind==CompanionKind::GrowthPet;
     if(const auto* supply=std::get_if<ItemPetSupplyRow>(&e.category)) {
         const auto* profile=c.FindPetSupplyProfile(supply->profile);
         return profile && profile->kind>=PetSupplyKind::Study && profile->kind<=PetSupplyKind::Skin;
@@ -599,11 +662,11 @@ std::expected<void,E> ValidatePersistentItem(const ItemCatalog& c,const Persiste
             !ValidateGrowthPetState(c,p.key,*p.growthPet))return std::unexpected(E::InvalidItem);
     }
     else if(p.growthPet)return std::unexpected(E::InvalidItem);
-    if(seal && PermanentSeal(*seal))
+    if(seal && FixedSeal(*seal))
     {
         if(!p.companion || (!p.destroyed && p.count!=1) ||
            p.companion->phase!=CompanionPhase::Dormant || p.companion->activeFormId ||
-           p.companion->lifetime!=CompanionLifetime{} ||
+           !ValidCompanionState(*seal,*p.companion) || (p.companion->lifetime.expired && !p.destroyed) ||
            (p.companion->ridingRequested && (seal->kind!=CompanionKind::Mount || !p.companion->recallRequested)) ||
            (RecallRequested(p) && (p.destroyed || p.owner.kind!=ItemOwnerKind::Character ||
                !p.placement || p.placement->kind!=ItemStorageKind::Inventory)))
@@ -707,33 +770,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
             if(b.toggle && b.toggle->active && (p.owner!=b.owner || p.key!=b.key || (p.placement!=b.placement && !p.destroyed) || (p.count!=b.count && !p.destroyed) || (p.destroyed && (!r.recovery || r.recovery->owner!=b.owner || r.recovery->elapsedMs<b.toggle->remainingMs || !p.toggle || p.toggle->remainingMs || p.toggle->active))))return std::unexpected(E::TransferDenied);
             if(b.companion!=p.companion || r.outcomeCode==CompanionSealOutcome)
             {
-                if(r.kind!=ItemOperationKind::Service || r.outcomeCode!=CompanionSealOutcome ||
-                   r.items.size()!=1 || !r.wallets.empty() || r.ground || r.recovery || r.learning ||
-                   !b.companion || !p.companion || r.result.size()!=5 ||
-                   r.result[0]!='C' || r.result[1]!='M' || r.result[2]!='P' ||
-                   (r.result[3]==1 ? r.result[4]<1 || r.result[4]>2 : r.result[3]!=2 || r.result[4]<3 || r.result[4]>4))
-                    return std::unexpected(E::TransferDenied);
-                auto intent=*b.companion;
-                switch(static_cast<CompanionAction>(r.result[4])) {
-                case CompanionAction::Summon:
-                    if(intent.recallRequested)return std::unexpected(E::InvalidChange);
-                    intent.recallRequested=true;break;
-                case CompanionAction::Dismiss:
-                    if(!intent.recallRequested)return std::unexpected(E::InvalidChange);
-                    intent.recallRequested=intent.ridingRequested=false;break;
-                case CompanionAction::Mount:
-                    if(!intent.recallRequested || intent.ridingRequested)return std::unexpected(E::InvalidChange);
-                    intent.ridingRequested=true;break;
-                case CompanionAction::Dismount:
-                    if(!intent.ridingRequested)return std::unexpected(E::InvalidChange);
-                    intent.ridingRequested=false;break;
-                default:return std::unexpected(E::InvalidChange);
-                }
-                if(intent!=*p.companion)return std::unexpected(E::InvalidChange);
-                auto expected=b;
-                expected.revision=p.revision;
-                expected.companion=p.companion;
-                if(expected!=p)return std::unexpected(E::TransferDenied);
+                if(!ValidFixedCompanionWrite(c,r))return std::unexpected(E::TransferDenied);
             }
             else if(b.companion && RecallRequested(b))
             {
@@ -754,6 +791,14 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
         if(!change.before && p.petSupply) {
             const auto initial=InitialPetSupplyState(c,p.key,p.petSupply->createdAtUtcMs);
             if(!initial || *initial!=*p.petSupply)return std::unexpected(E::InvalidChange);
+        }
+        if(!change.before && p.companion) {
+            const auto& row=std::get<ItemCompanionRow>(c.Find(p.key)->category);
+            const auto deadline=p.companion->lifetime.deadlineUtcMs;
+            if(row.clock==CompanionClock::SinceCreation && deadline<=row.durationMs)return std::unexpected(E::InvalidChange);
+            const auto created=row.clock==CompanionClock::SinceCreation ? deadline-row.durationMs : 0;
+            const auto initial=MakeCompanionState(c,p.key,created);
+            if(!initial || *initial!=*p.companion)return std::unexpected(E::InvalidChange);
         }
         if((!change.before || change.before->key!=p.key) && c.Find(p.key)->base.retired && !IsSocketMaintenanceRecovery(c,r))return std::unexpected(E::InvalidChange);
     }
@@ -1099,24 +1144,14 @@ std::expected<ItemCommit,E> MakeCompanionCommit(const ItemCatalog& c,ItemOwnerFe
 
     const auto* entry=c.Find(source->key);
     const auto* row=entry ? std::get_if<ItemCompanionRow>(&entry->category) : nullptr;
-    if(!row || !PermanentSeal(*row))return std::unexpected(E::UnsupportedState);
-    if(request.action<CompanionAction::Summon || request.action>CompanionAction::Dismount)
-        return std::unexpected(E::InvalidOperation);
+    if(!row || !FixedSeal(*row))return std::unexpected(E::UnsupportedState);
+    if(request.action<CompanionAction::Summon || request.action>CompanionAction::Maintain)return std::unexpected(E::InvalidOperation);
     auto admitted=request;
-    admitted.channelOccupiedByOther|=std::ranges::any_of(inventory,[&](const auto& other){
-        return other.id!=source->id && other.owner==owner.owner && RecallRequested(other);
-    });
-    const auto plan=PlanCompanion(c,admitted);
-    if(!plan)return std::unexpected(plan.error()==CompanionError::ChannelOccupied ? E::Conflict : E::RequirementNotMet);
-    if(plan->after.recallRequested==source->companion->recallRequested &&
-        plan->after.ridingRequested==source->companion->ridingRequested)return std::unexpected(E::InvalidChange);
-
+    admitted.channelOccupiedByOther|=std::ranges::any_of(inventory,[&](const auto& other){return other.id!=source->id && other.owner==owner.owner && RecallRequested(other);});
+    const auto after=FixedCompanionMutation(c,*source,admitted);
+    if(!after)return std::unexpected(after.error());
     const auto layout=std::ranges::find(storages,ItemStorage{owner.owner,source->placement->kind,source->placement->storageId},&ItemStorageLayout::storage);
     if(layout==storages.end())return std::unexpected(E::InvalidStorage);
-    auto after=*source;
-    ++after.revision;
-    after.companion->recallRequested=plan->after.recallRequested;
-    after.companion->ridingRequested=plan->after.ridingRequested;
     ItemCommit commit;
     commit.operationId=request.operationId;
     commit.catalogRevision=c.Revision();
@@ -1124,9 +1159,19 @@ std::expected<ItemCommit,E> MakeCompanionCommit(const ItemCatalog& c,ItemOwnerFe
     commit.kind=ItemOperationKind::Service;
     commit.owners={owner};
     commit.storages={*layout};
-    commit.items={{*source,after}};
+    commit.items={{*source,*after}};
     commit.outcomeCode=CompanionSealOutcome;
-    commit.result={'C','M','P',static_cast<std::uint8_t>(request.action<=CompanionAction::Dismiss ? 1 : 2),static_cast<std::uint8_t>(request.action)};
+    if(row->clock==CompanionClock::Permanent && request.action<=CompanionAction::Dismount && !request.elapsedOwnerMs)
+        commit.result={'C','M','P',static_cast<std::uint8_t>(request.action<=CompanionAction::Dismiss ? 1 : 2),static_cast<std::uint8_t>(request.action)};
+    else {
+        Writer proof;proof.bytes={'C','M','P',3,static_cast<std::uint8_t>(request.action)};
+        proof.Put(request.nowUtcMs,8);proof.Put(request.elapsedOwnerMs,8);proof.Put(static_cast<unsigned>(request.state.phase),1);
+        proof.Put(request.characterLevel,2);proof.Put(request.characterClass,1);proof.Put(request.sex,1);
+        const auto flags=request.ownerAlive | (request.polymorphed<<1) | (request.observer<<2) | (request.inCombat<<3) |
+            (request.inDungeon<<4) | (request.worldAllowsCompanion<<5) | (request.worldAllowsRiding<<6) |
+            (admitted.channelOccupiedByOther<<7) | (request.elapsedWasActive<<8);
+        proof.Put(flags,2);commit.result=std::move(proof.bytes);
+    }
     if(auto valid=ValidateItemCommit(c,commit);!valid)return std::unexpected(valid.error());
     return commit;
 }
@@ -1438,8 +1483,10 @@ std::expected<ItemCommit,E> MakeGrantCommit(const ItemCatalog& c,std::array<std:
     if(const auto initial=InitialToggleEffectState(c,grant.key);initial)fresh.toggle=*initial;fresh.bookSkill=grant.bookSkill;fresh.polymorph=grant.polymorph;
     if(!fresh.polymorph)if(const auto* poly=std::get_if<ItemPolymorphRow>(&entry->category);poly && poly->fixedForm)fresh.polymorph=PolymorphInstanceState{};
     fresh.tool=grant.tool;if(!fresh.tool && std::holds_alternative<ItemToolRow>(entry->category))fresh.tool=ToolInstanceState{};
-    if(const auto* companion=std::get_if<ItemCompanionRow>(&entry->category);companion && PermanentSeal(*companion))
-        fresh.companion=CompanionState{};
+    if(const auto* companion=std::get_if<ItemCompanionRow>(&entry->category);companion && FixedSeal(*companion)) {
+        if(companion->clock==CompanionClock::SinceCreation && !grant.createdAtUtcMs)return std::unexpected(E::InvalidItem);
+        const auto initial=MakeCompanionState(c,grant.key,grant.createdAtUtcMs);if(!initial)return std::unexpected(E::InvalidItem);fresh.companion=*initial;
+    }
     if(supply && (supply->kind==PetSupplyKind::Carrier || supply->kind==PetSupplyKind::Skin)) {
         const auto initial=InitialPetSupplyState(c,grant.key,grant.createdAtUtcMs);
         if(!initial)return std::unexpected(initial.error());fresh.petSupply=*initial;

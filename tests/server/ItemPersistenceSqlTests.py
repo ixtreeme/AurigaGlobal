@@ -26,8 +26,8 @@ def main():
         sandbox.verify()
         sandbox.client.query("CREATE DATABASE player CHARACTER SET utf8mb4 COLLATE utf8mb4_bin")
         paths = sorted((ROOT / "db/migrations/item_combat").glob("[0-9][0-9][0-9]_*.sql"))
-        if [int(path.name[:3]) for path in paths] != list(range(33)):
-            raise RuntimeError("expected complete native catalog drafts 000..031")
+        if [int(path.name[:3]) for path in paths] != list(range(34)):
+            raise RuntimeError("expected complete native catalog drafts 000..033")
         paths.append(ROOT / "db/migrations/item_instance/001_item_persistence.sql")
         paths.append(ROOT / "db/migrations/item_instance/002_instance_id_allocator.sql")
         paths.append(ROOT / "db/migrations/item_instance/003_owned_ground.sql")
@@ -42,6 +42,7 @@ def main():
         paths.append(ROOT / "db/migrations/item_instance/012_pet_study_cooldown.sql")
         paths.append(ROOT / "db/migrations/item_instance/013_pet_supplies.sql")
         paths.append(ROOT / "db/migrations/item_instance/014_mount_riding.sql")
+        paths.append(ROOT / "db/migrations/item_instance/015_companion_lifetime.sql")
         sandbox.client.query("CREATE TABLE player.player(id INT UNSIGNED PRIMARY KEY, name VARCHAR(24) NOT NULL DEFAULT '', exp INT UNSIGNED NOT NULL DEFAULT 0, skill_point SMALLINT NOT NULL DEFAULT 0, sub_skill_point SMALLINT NOT NULL DEFAULT 0, horse_skill_point SMALLINT NOT NULL DEFAULT 0, skill_level BLOB NULL) ENGINE=InnoDB")
         sandbox.client.query("CREATE TABLE player.player_deleted LIKE player.player")
         for path in paths:
@@ -69,7 +70,7 @@ def main():
         sandbox.client.query("GRANT UPDATE ON player.item_instance_id_allocator TO 'item_writer'@'localhost'")
         metadata = {"version": sandbox.client.query("SELECT VERSION()")[0][0],
                     "owned_datadir_verified": True, "catalog_select_only": True,
-                    "catalog_drafts": 32, "instance_schema": 1}
+                    "catalog_drafts": sum(path.parent.name=='item_combat' for path in paths), "instance_schema": 1}
         (sandbox.work / "environment.json").write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
         result = subprocess.run([str(args.test_executable.resolve()), "--owned-sandbox"],
                                 input=f"{sandbox.port}\n{sandbox.password}\n{token}\n",

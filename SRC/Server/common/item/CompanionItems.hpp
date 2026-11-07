@@ -5,6 +5,7 @@
 #include <expected>
 #include <optional>
 #include <string>
+#include <span>
 
 namespace auriga::item {
 // Growth seals carry their own progression profile. Fixed-summon planning
@@ -27,6 +28,7 @@ struct ItemCompanionRow {
     bool dungeonOnlyBonus=false;
     std::optional<std::uint32_t> growthProfile;
     std::optional<std::uint32_t> trainingProfile;
+    bool flyingMount=false;
 };
 bool ValidCompanion(const ItemCompanionRow&) noexcept;
 struct CompanionLifetime {
@@ -43,6 +45,9 @@ struct CompanionState {
     bool ridingRequested=false; // Durable intent; phase remains runtime presentation.
     bool operator==(const CompanionState&) const = default;
 };
+bool ValidCompanionState(const ItemCompanionRow&,const CompanionState&) noexcept;
+std::array<std::uint8_t,22> EncodeCompanionLifetime(const CompanionLifetime&);
+std::optional<CompanionLifetime> DecodeCompanionLifetime(std::span<const std::uint8_t>);
 enum class CompanionAction : std::uint8_t { Summon=1, Dismiss=2, Mount=3, Dismount=4, Maintain=5 };
 struct CompanionRequest {
     ItemKey key;
@@ -57,6 +62,7 @@ struct CompanionRequest {
     bool admittedByServer=false,lockedByOther=false,exchanging=false;
     bool ownerAlive=false,polymorphed=false,observer=false,inCombat=false,inDungeon=false;
     bool worldAllowsCompanion=false,worldAllowsRiding=false,channelOccupiedByOther=false;
+    bool elapsedWasActive=false; // Owner-clock debit may finish after recall/logout.
 };
 struct CompanionPlan {
     CompanionRequest expected;

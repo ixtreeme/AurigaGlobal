@@ -99,6 +99,12 @@ bool UsesActiveTime(const item::PersistentItem* seal)
 {
     return seal && seal->growthPet && seal->growthPet->life.clock == item::CompanionClock::ActiveTime;
 }
+bool FixedHasLife(entt::entity owner,const item::PersistentItem& seal,const item::ItemCompanionRow& row)
+{
+    const auto& life=seal.companion->lifetime;if(life.expired)return false;
+    if(row.clock==item::CompanionClock::ActiveTime)return TypedFixedCompanionElapsed(owner,seal.id.Value())<life.remainingMs;
+    return row.clock==item::CompanionClock::Permanent || !life.started || TypedItemEffectNow()<life.deadlineUtcMs;
+}
 
 item::PetLifecycleRequest GrowthRequest(item::PetCareContext context, const item::PersistentItem& seal, bool active)
 {
@@ -434,8 +440,32 @@ item::PetPassiveSource TypedGrowthPetPassiveSource(entt::entity owner)
     return source;
 }
 
+std::optional<bool> TypedMountFlightPermission(entt::entity owner)
+{
+    if(!OwnRiding(owner))return std::nullopt;
+    const auto* typed=g_registry.try_get<ecs::TypedItems>(owner);const auto catalog=store::CurrentCatalog();
+    const auto* seal=typed ? Requested(*typed) : nullptr;const auto* row=seal && catalog ? CompanionRow(*catalog,seal->key) : nullptr;
+    return row && seal->companion && row->kind==item::CompanionKind::Mount && row->flyingMount &&
+        seal->companion->ridingRequested && FixedHasLife(owner,*seal,*row) && WorldAllowsRiding(owner);
+}
+item::FixedCompanionSource TypedFixedCompanionBonuses(entt::entity owner)
+{
+    if(!InGame(owner))return {};
+    const auto* typed=g_registry.try_get<ecs::TypedItems>(owner);const auto catalog=store::CurrentCatalog();
+    const auto* seal=typed ? Requested(*typed) : nullptr;const auto* row=seal && catalog ? CompanionRow(*catalog,seal->key) : nullptr;
+    const auto* projection=g_registry.try_get<CompanionProjection>(owner);
+    if(!row || !seal->companion || !projection || projection->live!=seal->id.Value() || !WorldAllowsFollower(owner) ||
+        OtherFollower(owner,PetSystem::LiveTypedSeal(owner)))return {};
+    const bool riding=row->kind==item::CompanionKind::Mount;
+    if(riding ? !OwnRiding(owner) || !WorldAllowsRiding(owner) : PetSystem::LiveTypedSeal(owner)!=seal->id.Value())return {};
+    const auto bonuses=item::CollectFixedCompanionBonuses(*catalog,*seal,true,riding,ecs::SocialSystem::GetDungeon(owner)!=entt::null,
+        TypedItemEffectNow(),TypedFixedCompanionElapsed(owner,seal->id.Value()));
+    if(!bonuses){LOG_ERROR("Fixed companion bonus projection failed owner {}",typed->state.fence.owner.id);return {};}
+    return *bonuses;
+}
 void StopTypedGrowthPetClock(entt::entity owner)
 {
+    StopTypedFixedCompanions(owner);
     StopTypedPetSkins(owner);
     const auto* typed = g_registry.try_get<ecs::TypedItems>(owner);
     if (!typed)
@@ -461,6 +491,7 @@ void FinishTypedGrowthPetClocks()
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     FinishTypedPetSkins();
+    FinishTypedFixedCompanions();
 }
 
 std::uint64_t RefreshTypedCompanion(entt::entity owner)
@@ -482,6 +513,7 @@ std::uint64_t RefreshTypedCompanion(entt::entity owner)
         const auto clock = growthClocks.find(Key(typed->state.fence,id));
         lifeRemaining = clock == growthClocks.end() || Elapsed(*clock->second) < desired->growthPet->life.remainingMs;
     }
+    if(desired && desired->companion && row)lifeRemaining=FixedHasLife(owner,*desired,*row);
     const auto race = row ? FollowerRace(*catalog,*row,*desired,owner) : 0;
     const auto* previous = g_registry.try_get<CompanionProjection>(owner);
     const bool formChanged = live && live==id && previous && previous->race!=race;
@@ -506,6 +538,7 @@ std::uint64_t RefreshTypedCompanion(entt::entity owner)
         {
             UpdateGrowthClock(owner,typed->state,0);
             UpdateTypedPetSkins(owner,typed->state,0);
+            UpdateTypedFixedCompanions(owner,typed->state,0);
         }
         g_registry.remove<CompanionProjection>(owner);
         return 0;
@@ -525,6 +558,7 @@ std::uint64_t RefreshTypedCompanion(entt::entity owner)
         projection.checked=now;
         UpdateGrowthClock(owner,typed->state,0);
         UpdateTypedPetSkins(owner,typed->state,0);
+        UpdateTypedFixedCompanions(owner,typed->state,projection.live);
         return projection.live;
     }
     projection.ridingRace=0;
@@ -544,6 +578,7 @@ std::uint64_t RefreshTypedCompanion(entt::entity owner)
     projection.live = live;
     UpdateGrowthClock(owner,typed->state,live);
     UpdateTypedPetSkins(owner,typed->state,live);
+    UpdateTypedFixedCompanions(owner,typed->state,live);
     return live;
 }
 
@@ -586,6 +621,7 @@ void TickTypedCompanions()
     }
     TickGrowthClocks();
     TickTypedPetSkins();
+    TickTypedFixedCompanions();
 }
 
 bool HandleTypedCompanionPacket(entt::entity owner, const char* data)
@@ -688,9 +724,13 @@ bool HandleTypedCompanionPacket(entt::entity owner, const char* data)
         request.sex = facts.actor.sexIndex + 1;
         request.action = action;
         request.nowUtcMs = TypedItemEffectNow();
+        request.elapsedOwnerMs=TypedFixedCompanionElapsed(owner,found->id.Value());
+        request.elapsedWasActive=request.elapsedOwnerMs!=0;
         request.admittedByServer = true;
         request.ownerAlive = facts.alive;
         request.inCombat = facts.actor.inCombat;
+        request.observer=ecs::PlayerRuntime::IsObserverMode(owner);
+        request.polymorphed=AffectSystem::IsPolymorphed(owner);
         request.worldAllowsCompanion = worldAllowsFollower;
         request.worldAllowsRiding = WorldAllowsRiding(owner);
         request.operationId = operationId;

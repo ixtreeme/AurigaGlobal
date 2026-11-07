@@ -17,6 +17,13 @@ struct PetPassiveSource
     bool operator==(const PetPassiveSource&) const=default;
     std::int64_t Bonus(PetEffect effect) const noexcept {return bonuses.total[static_cast<unsigned>(effect)];}
 };
+struct FixedCompanionSource
+{
+    std::uint64_t seal=0;
+    CompanionKind kind{};bool riding=false;
+    std::vector<BonusEntry> bonuses;
+    bool operator==(const FixedCompanionSource&) const=default;
+};
 struct EquipmentStats
 {
     ItemBaseStats flat;
@@ -28,10 +35,13 @@ struct EquipmentStats
     std::uint32_t reachMillimeters=0;
     std::uint16_t automaticHpBonusBp=0,automaticSpBonusBp=0;
     PetPassiveSource petBonuses;
+    FixedCompanionSource fixedCompanion;
     bool operator==(const EquipmentStats&) const = default;
     std::int64_t Bonus(BonusId id) const noexcept {return bonuses[static_cast<unsigned>(id)];}
 };
 enum class EquipmentStatsError { InvalidItem, InvalidSlot, Duplicate, Overflow, UnsupportedState };
+std::expected<FixedCompanionSource,EquipmentStatsError> CollectFixedCompanionBonuses(const ItemCatalog&,const PersistentItem&,
+    bool active,bool riding,bool inDungeon,std::uint64_t nowUtcMs,std::uint64_t elapsedMs);
 std::expected<EquipmentStats,EquipmentStatsError> BuildEquipmentStats(const ItemCatalog&,ItemOwner,std::span<const PersistentItem>,std::span<const BonusEntry> effects={});
 // Checked signed nearest rounding (ties away from zero). No floating point or
 // balance clamp. A negative factor is interpreted as zero at the call site.

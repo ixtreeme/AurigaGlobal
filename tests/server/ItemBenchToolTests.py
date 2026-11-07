@@ -7,6 +7,7 @@ follows a catalog edit and refuses a catalog that invalidates its items.
 import argparse
 from pathlib import Path
 import sys
+import time
 import unittest
 import uuid
 
@@ -33,7 +34,7 @@ def setUpModule():
     if [int(path.name[:3]) for path in paths] != list(range(len(paths))): raise RuntimeError('incomplete catalog migrations')
     SANDBOX.client.query("CREATE TABLE player.player(id INT UNSIGNED PRIMARY KEY, name VARCHAR(24) NOT NULL DEFAULT '', exp INT UNSIGNED NOT NULL DEFAULT 0, skill_point SMALLINT NOT NULL DEFAULT 0, sub_skill_point SMALLINT NOT NULL DEFAULT 0, horse_skill_point SMALLINT NOT NULL DEFAULT 0, skill_level BLOB NULL) ENGINE=InnoDB")
     SANDBOX.client.query("CREATE TABLE player.player_deleted LIKE player.player")
-    for path in [*paths, ROOT / 'db/migrations/item_instance/001_item_persistence.sql', ROOT / 'db/migrations/item_instance/002_instance_id_allocator.sql', ROOT / 'db/migrations/item_instance/003_owned_ground.sql', ROOT / 'db/migrations/item_instance/004_recovery_schedule.sql', ROOT / 'db/migrations/item_instance/005_automatic_recovery.sql', ROOT / 'db/migrations/item_instance/006_item_effects.sql', ROOT / 'db/migrations/item_instance/007_book_learning.sql', ROOT / 'db/migrations/item_instance/008_polymorph.sql', ROOT / 'db/migrations/item_instance/009_gathering_tools.sql', ROOT / 'db/migrations/item_instance/010_companion_seals.sql', ROOT / 'db/migrations/item_instance/011_growth_pet_birth.sql', ROOT / 'db/migrations/item_instance/012_pet_study_cooldown.sql', ROOT / 'db/migrations/item_instance/013_pet_supplies.sql', ROOT / 'db/migrations/item_instance/014_mount_riding.sql']:
+    for path in [*paths, ROOT / 'db/migrations/item_instance/001_item_persistence.sql', ROOT / 'db/migrations/item_instance/002_instance_id_allocator.sql', ROOT / 'db/migrations/item_instance/003_owned_ground.sql', ROOT / 'db/migrations/item_instance/004_recovery_schedule.sql', ROOT / 'db/migrations/item_instance/005_automatic_recovery.sql', ROOT / 'db/migrations/item_instance/006_item_effects.sql', ROOT / 'db/migrations/item_instance/007_book_learning.sql', ROOT / 'db/migrations/item_instance/008_polymorph.sql', ROOT / 'db/migrations/item_instance/009_gathering_tools.sql', ROOT / 'db/migrations/item_instance/010_companion_seals.sql', ROOT / 'db/migrations/item_instance/011_growth_pet_birth.sql', ROOT / 'db/migrations/item_instance/012_pet_study_cooldown.sql', ROOT / 'db/migrations/item_instance/013_pet_supplies.sql', ROOT / 'db/migrations/item_instance/014_mount_riding.sql', ROOT / 'db/migrations/item_instance/015_companion_lifetime.sql']:
         for statement in statements(path.read_text(encoding='utf-8-sig')): SANDBOX.client.query(statement)
 
 
@@ -69,6 +70,30 @@ def item(state, key):
 
 
 class BenchTests(unittest.TestCase):
+    def test_fixed_companion_issuance_clocks(self):
+        packet=editor('read');keys=[]
+        for kind in (1,2):
+            for clock in (1,2,3,4):
+                doc=catalog.Catalog(packet).new(15);local=int(doc['base']['local_id'])
+                duration=0 if clock==1 else 60000
+                doc['base']['binding_policy']='2'
+                doc['child'].update(companion_kind=str(kind),clock_kind=str(clock),duration_ms=str(duration),flying_mount='1' if kind==2 else '0')
+                doc['new_companion_form']=dict(code=f'bench_fixed_{kind}_{clock}',mob_template_id='32000',model_asset='models/companion.model')
+                doc['riding_same_form']=kind==2
+                packet=commit(packet,doc);keys.append((local,clock,duration))
+        use('setup',owner=701,gold=0)
+        for local,clock,duration in keys:
+            now=int(time.time()*1000)
+            state=use('grant',owner=701,category=15,local=local,count=1)['state']
+            seal=item(state,(15,local));life=seal['companion']['lifetime']
+            self.assertFalse(seal['companion']['recall_requested']);self.assertFalse(seal['companion']['riding_requested'])
+            self.assertEqual((life['started'],life['expired']), (clock in (2,4),False))
+            self.assertEqual(life['remaining_ms'], duration if clock==4 else 0)
+            if clock==2:self.assertLessEqual(now+duration,life['deadline_ms']);self.assertLessEqual(life['deadline_ms'],int(time.time()*1000)+duration)
+            else:self.assertEqual(life['deadline_ms'],0)
+        before=use('status',owner=701)['state']
+        self.assertEqual(stable(use('load',owner=701)['state']),stable(before))
+
     def test_bench_flow(self):
         packet = editor('read')
         material = catalog.Catalog(packet).new(6); material['base']['max_stack'] = '200'

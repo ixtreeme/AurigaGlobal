@@ -41,7 +41,8 @@ def main():
             assert db.query(f"SELECT account_id,name FROM player.player WHERE id={int(account['Pid'])}")==[[str(account['AccountId']),account['Name']]]
         state=item_bench.run_tool(dict(action='status',owner=owner,connection=auth),tool)['state']
         assert len(state['items'])==2 and {i['local'] for i in state['items']}=={config['PetLocal'],config['MountLocal']}
-        assert all(i['category']==15 and i['count']==1 and i['companion']==dict(recall_requested=False,riding_requested=False) for i in state['items'])
+        assert all(i['category']==15 and i['count']==1 and i['companion']==dict(recall_requested=False,riding_requested=False,
+            lifetime=dict(started=False,expired=False,deadline_ms=0,remaining_ms=0)) for i in state['items'])
         if args.action=='prepare':
             assert args.template and not fixture.exists() and not baseline.exists()
             config['RidingRace']=config['MountRace']

@@ -77,8 +77,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
 			(item.growthPet->life.clock == CompanionClock::ActiveTime && !item.growthPet->life.remainingMs));
 	});
 	const bool hasCompanions = std::ranges::any_of(items, [](const auto& item) { return item.companion.has_value(); });
-	const bool hasRiding = std::ranges::any_of(items, [](const auto& item) { return item.companion && item.companion->ridingRequested; });
-	w.Put<std::uint8_t>(hasRiding ? 11 : hasPetSupplies ? 10 : hasGrowthStatus ? 9 : hasGrowthPets ? 8 : hasCompanions ? 7 : std::ranges::any_of(items,[](const auto& i){return i.tool.has_value();}) ? 6 : std::ranges::any_of(items,[](const auto& i){return i.polymorph.has_value();}) ? 5 : std::ranges::any_of(items,[](const auto& i){return i.bookSkill.has_value();}) ? 4 : std::ranges::any_of(items,[](const auto& i){return i.toggle.has_value();}) ? 3 : std::ranges::any_of(items,[](const auto& i){return i.automatic.has_value();}) ? 2 : TypedInventoryVersion);
+	w.Put<std::uint8_t>(hasCompanions ? 12 : hasPetSupplies ? 10 : hasGrowthStatus ? 9 : hasGrowthPets ? 8 : std::ranges::any_of(items,[](const auto& i){return i.tool.has_value();}) ? 6 : std::ranges::any_of(items,[](const auto& i){return i.polymorph.has_value();}) ? 5 : std::ranges::any_of(items,[](const auto& i){return i.bookSkill.has_value();}) ? 4 : std::ranges::any_of(items,[](const auto& i){return i.toggle.has_value();}) ? 3 : std::ranges::any_of(items,[](const auto& i){return i.automatic.has_value();}) ? 2 : TypedInventoryVersion);
 	w.Put<std::uint16_t>(static_cast<std::uint16_t>(storages.size()));
 	for (const auto& s : storages)
 	{
@@ -159,9 +158,13 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
 			const bool expired = item.growthPet && item.growthPet->life.clock == CompanionClock::ActiveTime && !item.growthPet->life.remainingMs;
 			w.Put<std::uint8_t>(item.growthPet && item.growthPet->carrierInstanceId ? 4 : expired ? 3 : !RecallRequested(item) ? 0 :
                 item.companion && item.companion->ridingRequested ? item.id.Value()==liveCompanion ? 5 : 6 : item.id.Value() == liveCompanion ? 1 : 2);
+            if(item.companion) {
+                const auto& life=item.companion->lifetime;w.Put<std::uint8_t>(static_cast<unsigned>(row.clock));w.Put<std::uint8_t>(life.started);
+                w.Put(row.durationMs);w.Put(life.deadlineUtcMs);w.Put(life.remainingMs);w.Put<std::uint8_t>(row.flyingMount);
+            }
 		}
 
-        if(hasPetSupplies || hasRiding) {
+        if(hasPetSupplies || hasCompanions) {
             const auto* row=std::get_if<ItemPetSupplyRow>(&catalog.Find(item.key)->category);
             const auto* profile=row ? catalog.FindPetSupplyProfile(row->profile) : nullptr;
             w.Put<std::uint8_t>(item.petSupply ? static_cast<unsigned>(profile->kind) : 0);
@@ -186,7 +189,7 @@ std::expected<TypedInventoryView, TypedInventoryWireError> DecodeTypedInventory(
 		Reader r(bytes);
 		if (r.Get<std::uint8_t>() != TypedInventoryHeader) return std::unexpected(E::BadHeader);
 		if (r.Get<std::uint32_t>() != bytes.size()) return std::unexpected(E::BadSize);
-		const auto version=r.Get<std::uint8_t>();if (version<TypedInventoryVersion || version>11) return std::unexpected(E::BadVersion);
+		const auto version=r.Get<std::uint8_t>();if (version<TypedInventoryVersion || version>12) return std::unexpected(E::BadVersion);
 		TypedInventoryView view;
 		for (auto n = r.Get<std::uint16_t>(); n; --n)
 		{
@@ -279,6 +282,14 @@ std::expected<TypedInventoryView, TypedInventoryWireError> DecodeTypedInventory(
 					item.companion = CompanionState{};
 					item.companion->recallRequested = state != 0;
 					item.companion->ridingRequested = state==5 || state==6;
+                    if(version>=12) {
+                        const auto clock=static_cast<CompanionClock>(r.Get<std::uint8_t>());const auto started=r.Get<std::uint8_t>();
+                        const auto duration=r.Get<std::uint64_t>();CompanionLifetime life;life.started=started;life.deadlineUtcMs=r.Get<std::uint64_t>();life.remainingMs=r.Get<std::uint64_t>();
+                        const auto flying=r.Get<std::uint8_t>();ItemCompanionRow rule{item.key,companion,1,companion==CompanionKind::Mount ? std::optional<std::uint32_t>{1} : std::nullopt,clock,duration};rule.flyingMount=flying;
+                        item.companion->lifetime=life;
+                        if(started>1 || flying>1 || !ValidCompanion(rule) || !ValidCompanionState(rule,*item.companion))throw Bad{};
+                        view.fixedRules.emplace(item.id,TypedInventoryView::FixedRule{clock,duration,flying!=0});
+                    }
 				}
 			}
 			if (item.key.Category()==ItemCategory::Companion && !(flags&128)) throw Bad{};

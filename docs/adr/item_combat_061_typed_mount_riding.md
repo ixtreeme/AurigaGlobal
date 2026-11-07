@@ -56,5 +56,10 @@ fix társak statbónuszai és a típusos repülési jogosultság a következő
 csomag. A meglévő repülési engedély továbbra is a legacy felvett
 pecsétből származik. A normál legacy leltár teljes átállítása külön munka.
 
+Későbbi kiegészítés: az említett következő csomag a
+[C27b-ban](item_combat_062_fixed_companion_clocks_bonuses_flight.md)
+elkészült, időkorláttal, bónuszokkal és a típusos hátas saját repülési
+engedélyével. A fenti hatókör a C27a történeti állapotát írja le.
+
 Az ellenőrzések a [C27a jelentésben](../reports/item_combat/2026-11-07_typed_mount_riding.md),
 a tágabb fennmaradó lista a [commit- és kódauditban](../reports/item_combat/2026-11-07_item_remaining_work.md).

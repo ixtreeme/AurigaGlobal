@@ -6,7 +6,8 @@
 namespace auriga::item {
 namespace {
 constexpr auto MaxTime=std::uint64_t{INT64_MAX};
-bool ValidState(const ItemCompanionRow& row,const CompanionState& state) {
+}
+bool ValidCompanionState(const ItemCompanionRow& row,const CompanionState& state) noexcept {
     const auto& t=state.lifetime;
     if(state.phase<CompanionPhase::Dormant || state.phase>CompanionPhase::Riding ||
        ((state.phase==CompanionPhase::Dormant)!=(state.activeFormId==0)) ||
@@ -16,16 +17,25 @@ bool ValidState(const ItemCompanionRow& row,const CompanionState& state) {
        (t.expired && (state.phase!=CompanionPhase::Dormant || state.recallRequested)) ||
        t.deadlineUtcMs>MaxTime || t.remainingMs>MaxTime)return false;
     if(row.clock==CompanionClock::Permanent)return !t.started && !t.expired && !t.deadlineUtcMs && !t.remainingMs;
-    if(row.clock==CompanionClock::ActiveTime)return t.started && !t.deadlineUtcMs && (t.expired==!t.remainingMs);
+    if(row.clock==CompanionClock::ActiveTime)return t.started && !t.deadlineUtcMs && t.remainingMs<=row.durationMs && (t.expired==!t.remainingMs);
     if(!t.started)return row.clock==CompanionClock::SinceFirstUse && state.phase==CompanionPhase::Dormant &&
         !t.deadlineUtcMs && !t.remainingMs && !t.expired && !state.recallRequested;
     return t.deadlineUtcMs && !t.remainingMs;
 }
+std::array<std::uint8_t,22> EncodeCompanionLifetime(const CompanionLifetime& t) {
+    std::array<std::uint8_t,22> b{'C','P','L',1,static_cast<std::uint8_t>(t.started),static_cast<std::uint8_t>(t.expired)};
+    for(unsigned n=0;n<8;++n){b[6+n]=static_cast<std::uint8_t>(t.deadlineUtcMs>>(8*n));b[14+n]=static_cast<std::uint8_t>(t.remainingMs>>(8*n));}return b;
+}
+std::optional<CompanionLifetime> DecodeCompanionLifetime(std::span<const std::uint8_t> b) {
+    if(b.size()!=22 || b[0]!='C' || b[1]!='P' || b[2]!='L' || b[3]!=1 || b[4]>1 || b[5]>1)return {};
+    CompanionLifetime t;t.started=b[4];t.expired=b[5];
+    for(unsigned n=0;n<8;++n){t.deadlineUtcMs|=std::uint64_t{b[6+n]}<<(8*n);t.remainingMs|=std::uint64_t{b[14+n]}<<(8*n);}
+    if(t.deadlineUtcMs>MaxTime || t.remainingMs>MaxTime)return {};return t;
 }
 bool ValidCompanion(const ItemCompanionRow& row) noexcept {
     return row.key.Category()==ItemCategory::Companion &&
         (row.kind==CompanionKind::Pet || row.kind==CompanionKind::Mount || row.kind==CompanionKind::GrowthPet) && row.form &&
-        (row.kind==CompanionKind::Mount ? row.ridingForm && *row.ridingForm : !row.ridingForm) &&
+        (row.kind==CompanionKind::Mount ? row.ridingForm && *row.ridingForm : !row.ridingForm && !row.flyingMount) &&
         (row.kind==CompanionKind::GrowthPet ? row.growthProfile && *row.growthProfile &&
             (row.clock==CompanionClock::Permanent || row.clock==CompanionClock::ActiveTime) : !row.growthProfile) &&
         row.clock>=CompanionClock::Permanent && row.clock<=CompanionClock::ActiveTime &&
@@ -56,7 +66,7 @@ std::expected<CompanionPlan,CompanionError> PlanCompanion(const ItemCatalog& cat
     if(row->kind==CompanionKind::GrowthPet)return std::unexpected(E::NotCompanion);
     const auto* refinement=catalog.FindRefinement(entry->base.refinementProfile);
     const auto* level=refinement->FindLevel(r.refinementLevel);if(!level)return std::unexpected(E::InvalidLevel);
-    if(!ValidState(*row,r.state) || (r.state.activeFormId && !catalog.FindCompanionForm(r.state.activeFormId)))return std::unexpected(E::InvalidState);
+    if(!ValidCompanionState(*row,r.state) || (r.state.activeFormId && !catalog.FindCompanionForm(r.state.activeFormId)))return std::unexpected(E::InvalidState);
     if(r.action<A::Summon || r.action>A::Maintain)return std::unexpected(E::InvalidAction);
     if(r.nowUtcMs>MaxTime || r.elapsedOwnerMs>MaxTime)return std::unexpected(E::InvalidTime);
     const bool use=r.action==A::Summon || r.action==A::Mount;
@@ -83,7 +93,7 @@ std::expected<CompanionPlan,CompanionError> PlanCompanion(const ItemCatalog& cat
     auto& t=plan.after.lifetime;
     if(!t.expired && row->clock!=CompanionClock::Permanent) {
         if(row->clock==CompanionClock::ActiveTime) {
-            if(r.state.phase!=P::Dormant)t.remainingMs=r.elapsedOwnerMs>=t.remainingMs ? 0 : t.remainingMs-r.elapsedOwnerMs;
+            if(r.state.phase!=P::Dormant || r.elapsedWasActive)t.remainingMs=r.elapsedOwnerMs>=t.remainingMs ? 0 : t.remainingMs-r.elapsedOwnerMs;
             if(!t.remainingMs)t.expired=true;
         } else {
             if(!t.started && use) {

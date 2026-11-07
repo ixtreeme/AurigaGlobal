@@ -23,7 +23,8 @@ A C26n a pet megjelenési tárgyait és mind a négy órafajtát köti be, 531 e
 
 A C26o–p a tárgyból szerzett tanulási várakozáskihagyást és a teljes pet felhasználását köti be; 602 és 803 helyi Unity-ellenőrzés sikeres: [jelentés](../reports/item_combat/2026-11-07_pet_study_bypass_sacrifice.md).
 A C26q lezárta a tervezett fejlődőpet-rendszert: teljes szerver/MariaDB-újraindítás három korábbi pet újrabelépésével, négy skinóra és mind a 18 képességhatás végső Unity-próbája sikeres. A C26c–p funkciólista szerveren és Unityben kész: [lezárási jelentés](../reports/item_combat/2026-11-07_pet_completion.md).
-A C27a az állandó típusos hátasra felülést és leszállást is bekötötte, sikeres kétklienses és újrabelépéses Unity-próbával: [jelentés](../reports/item_combat/2026-11-07_typed_mount_riding.md). Az időkorlátos fix társak, fix társbónuszok és typed repülési engedély a következő rész.
+A C27a az állandó típusos hátasra felülést és leszállást is bekötötte, sikeres kétklienses és újrabelépéses Unity-próbával: [jelentés](../reports/item_combat/2026-11-07_typed_mount_riding.md).
+A C27b a fix társak négy óráját, bónuszait és típusos repülési engedélyét is bekötötte; 8 helyi TLS/Unity-eset és 829 ellenőrzés sikeres, aktív/visszahívott/lejárt újrabelépéssel: [jelentés](../reports/item_combat/2026-11-07_fixed_companions.md).
 [IC-058](item_combat_058_tera_companion_port.md) · [IC-059](item_combat_059_typed_companion_seals.md) · [IC-060](item_combat_060_typed_pet_hatching.md)
 
 ## Közös szerver–Unity munkamenet (felhasználói döntés, 2026-11-01)
@@ -43,7 +44,7 @@ Az első összevonás részletei és ellenőrzései a
 ## Aktuális hátralévő munka (2026-11-07)
 
 A commitok és a tényleges runtime támogatás összevetése alapján a következő
-hiányok a C27b fix társak, jelmezek, stóla/rúna és speciális bónuszok,
+hiányok a jelmezek, stóla/rúna és speciális bónuszok,
 lélektárgyak, lőszer és fejlesztési segédek, fiókpénztárca/tárolók,
 általános Mission/quest, teljes konverzió és kiadási ellenőrzés.
 A pontos határok és sorrend a [friss auditban](../reports/item_combat/2026-11-07_item_remaining_work.md).

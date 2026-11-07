@@ -629,6 +629,57 @@ void GrowthPetBirthSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,I
     Check(row && std::string(row[0])=="1" && std::string(row[1],sizes[1])==history,"destroyed donor retains its exact complete birth and learned history for audit");
 }
 
+void FixedCompanionSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c)
+{
+    for(unsigned kind=1;kind<=2;++kind)for(unsigned clock=2;clock<=4;++clock) {
+        const ItemOwner owner{ItemOwnerKind::Character,880200+kind*10+clock};const auto bag=f::Inventory(owner);
+        Check(p::ProvisionOwner(admin,c,owner,std::span(&bag,1),{}).has_value(),"timed fixed SQL owner provisioned");
+        auto state=p::LoadCurrentItemOwner(writer,c,owner).value();const auto key=ItemKey::Create(15,10+(kind-1)*3+clock-2).value();
+        const auto id=ItemInstanceId::Create(p::ReserveItemInstanceIds(writer,c,1)->first).value();
+        auto op=[&](unsigned serial){return std::array<std::uint8_t,16>{60,static_cast<std::uint8_t>(kind),static_cast<std::uint8_t>(clock),static_cast<std::uint8_t>(serial)};};
+        auto write=MakeGrantCommit(c,op(1),state.fence,state.storages,state.items,ItemGrant{key,0,1,{},{},{},100000},std::array{id});
+        Check(write && p::CommitItems(writer,c,*write).has_value(),"all timed fixed clocks can be granted in SQL");
+        state=p::LoadCurrentItemOwner(writer,c,owner).value();
+        auto request=[&](CompanionAction action,unsigned serial){
+            const auto seal=Find(state,id.Value());CompanionRequest r{key};r.state=*seal.companion;r.instanceId=id.Value();r.revision=seal.revision;
+            r.ownerId=r.actorId=owner.id;r.count=1;r.rulesetRevision=1;r.operationId=op(serial);r.characterLevel=50;r.characterClass=r.sex=1;
+            r.action=action;r.nowUtcMs=100500;r.admittedByServer=r.ownerAlive=r.worldAllowsCompanion=r.worldAllowsRiding=true;return r;
+        };
+        auto r=request(CompanionAction::Summon,2);write=MakeCompanionCommit(c,state.fence,state.storages,state.items,r);
+        Check(write && p::CommitItems(writer,c,*write).has_value() && p::CommitItems(writer,c,*write)->replay,"timed summon and its first-use start replay once");
+        state=p::LoadCurrentItemOwner(writer,c,owner).value();
+        if(kind==2) {
+            r=request(CompanionAction::Mount,3);r.state.phase=CompanionPhase::Following;r.state.activeFormId=2;
+            write=MakeCompanionCommit(c,state.fence,state.storages,state.items,r);
+            Check(write && p::CommitItems(writer,c,*write).has_value(),"timed riding intent saved with unchanged lifetime");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+        }
+        Check(p::ClaimOwnerSession(writer,c,owner).has_value() && p::LoadCurrentItemOwner(writer,c,owner)->items==state.items,"active fixed seal and lifetime survive a new session exactly");
+        state=p::LoadCurrentItemOwner(writer,c,owner).value();
+        const auto original=Scalar(admin,"SELECT companion_lifetime_blob FROM player.item_instance WHERE instance_id=?",{U::UInt(id.Value())});
+        auto damaged=original;damaged[clock==4 ? 14 : 6]^=1;
+        Query(admin,"UPDATE player.item_instance SET companion_lifetime_blob=? WHERE instance_id=?",{U::Blob(damaged),U::UInt(id.Value())});
+        Check(!p::LoadCurrentItemOwner(writer,c,owner),"tampered fixed lifetime fails canonical item validation");
+        Query(admin,"UPDATE player.item_instance SET companion_lifetime_blob=? WHERE instance_id=?",{U::Blob(original),U::UInt(id.Value())});
+        r=request(CompanionAction::Dismiss,4);r.elapsedOwnerMs=clock==4 ? 300 : 0;r.elapsedWasActive=clock==4;
+        write=MakeCompanionCommit(c,state.fence,state.storages,state.items,r);
+        Check(write && p::CommitItems(writer,c,*write).has_value(),"recall and active-clock charge saved together");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+        if(clock==4) {
+            r=request(CompanionAction::Maintain,5);r.elapsedOwnerMs=500;r.elapsedWasActive=true;
+            write=MakeCompanionCommit(c,state.fence,state.storages,state.items,r);
+            Check(write && p::CommitItems(writer,c,*write).has_value(),"post-recall owner-clock settlement survives SQL");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+            Check(Find(state,id.Value()).companion->lifetime.remainingMs==4200,"exact active budget saved");
+            r=request(CompanionAction::Maintain,6);r.nowUtcMs=500000;
+            Check(!MakeCompanionCommit(c,state.fence,state.storages,state.items,r),"offline UTC interval never consumes active budget");
+        }
+        Check(p::ClaimOwnerSession(writer,c,owner).has_value() && p::LoadCurrentItemOwner(writer,c,owner)->items==state.items,"recalled lifetime survives a new session exactly");
+        state=p::LoadCurrentItemOwner(writer,c,owner).value();const auto life=Find(state,id.Value()).companion->lifetime;
+        r=request(CompanionAction::Maintain,7);r.nowUtcMs=clock==4 ? 500000 : life.deadlineUtcMs;r.elapsedOwnerMs=clock==4 ? life.remainingMs : 0;r.elapsedWasActive=clock==4;
+        write=MakeCompanionCommit(c,state.fence,state.storages,state.items,r);
+        Check(write && p::CommitItems(writer,c,*write).has_value() && p::CommitItems(writer,c,*write)->replay,"expiry tombstones once and releases the seal footprint");
+        Check(p::ClaimOwnerSession(writer,c,owner).has_value() && p::LoadCurrentItemOwner(writer,c,owner)->items.empty(),"expired fixed seal does not return after relog");
+        Check(Scalar(admin,"SELECT COUNT(*) FROM player.item_instance WHERE instance_id=? AND destroyed=1 AND stack_count=0 AND companion_recall_requested=0 AND companion_riding_requested=0 AND OCTET_LENGTH(companion_lifetime_blob)=22",{U::UInt(id.Value())})=="1","expired lifetime remains in the destroyed audit row");
+    }
+}
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
 {
     auto source=attribute_runtime_fixture::Catalog();
@@ -654,6 +705,12 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         source.items.push_back(std::move(base));
     }
     source.companionForms.push_back({3,"companion.sql_growth",34041,"models/sql_growth.model"});
+    for(unsigned kind=1;kind<=2;++kind)for(unsigned clock=2;clock<=4;++clock) {
+        const auto key=ItemKey::Create(15,10+(kind-1)*3+clock-2).value();
+        auto base=*std::ranges::find(source.items,kind==1 ? petSeal : mountSeal,&ItemBaseRow::key);base.key=key;
+        base.contentCode="companion.sql_timed_"+std::to_string(kind)+"_"+std::to_string(clock);base.nameKey=base.contentCode+".name";base.descriptionKey=base.contentCode+".description";source.items.push_back(base);
+        ItemCompanionRow row{key,static_cast<CompanionKind>(kind),kind,kind==2 ? std::optional<std::uint32_t>{2} : std::nullopt,static_cast<CompanionClock>(clock),5000};row.flyingMount=kind==2;source.companions.push_back(row);
+    }
     source.growthPetProfiles.push_back({1,"growth.sql_birth",3,GrowthExpPolicy::MobAndItem,
         {{1,100,5},{2,200,20},{3,0,0}},{{0,2,3},{1,3,2}}});
     source.companions.push_back({growthSeal,CompanionKind::GrowthPet,3,{},CompanionClock::ActiveTime,300000,false,1,1});
@@ -1478,6 +1535,7 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         Check(mountWrite && p::CommitItems(writer,*c,*mountWrite).has_value(),"recall while riding clears both durable intents");
     }
     GrowthPetBirthSql(admin,writer,*c,hatchEgg,growthSeal,petSeal,petBook);
+    FixedCompanionSql(admin,writer,*c);
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);
 }

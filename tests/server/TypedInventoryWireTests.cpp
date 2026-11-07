@@ -86,7 +86,7 @@ int main(int argc, char** argv)
 		Check(DecodeTypedInventory(longer, f::Character()).error() == TypedInventoryWireError::TrailingBytes, "trailing byte");
 		auto header = b; header[0] = std::byte { 224 };
 		Check(DecodeTypedInventory(header, f::Character()).error() == TypedInventoryWireError::BadHeader, "wrong header");
-		auto version = b; version[5] = std::byte { 12 };
+		auto version = b; version[5] = std::byte { 13 };
 		Check(DecodeTypedInventory(version, f::Character()).error() == TypedInventoryWireError::BadVersion, "unknown version");
 		Check(DecodeTypedInventory(std::span(b).first(3), f::Character()).error() == TypedInventoryWireError::Truncated, "short header");
 		PersistentItem unknown { ItemInstanceId::Create(9).value(), ItemKey::Create(1, 999).value(), f::Character() };
@@ -118,11 +118,11 @@ int main(int argc, char** argv)
 			seal.companion->recallRequested = phase != 0;
 			const auto live = phase == 1 ? seal.id.Value() : 0;
 			auto encoded = EncodeTypedInventory(**companionCatalog, storages, {}, std::span(&seal, 1), live);
-			Check(encoded && (*encoded)[5] == std::byte{7}, "companion inventory uses version seven");
+			Check(encoded && (*encoded)[5] == std::byte{12}, "fixed companion inventory uses version twelve");
 			auto decoded = DecodeTypedInventory(*encoded, f::Character());
 			Check(decoded && decoded->companions.at(seal.id)==std::pair{CompanionKind::Pet,phase}
 				&& decoded->items[0].companion==seal.companion, "companion presentation and recall intent roundtrip");
-			encoded->back() = std::byte{3};
+			(*encoded)[encoded->size()-29] = std::byte{3};
 			Check(DecodeTypedInventory(*encoded, f::Character()).error() == TypedInventoryWireError::BadValue,
 				"unknown companion presentation accepted");
 		}
@@ -132,7 +132,7 @@ int main(int argc, char** argv)
         seal.companion->recallRequested=seal.companion->ridingRequested=true;
         for(const auto live : {std::uint64_t{0},seal.id.Value()}) {
             const auto wire=EncodeTypedInventory(*mountCatalog,storages,{},std::span(&seal,1),live);
-            Check(wire && (*wire)[5]==std::byte{11},"riding mount uses version eleven and the v10 sidecar");
+            Check(wire && (*wire)[5]==std::byte{12},"riding mount carries clock metadata and the v10 sidecar");
             const auto view=DecodeTypedInventory(*wire,f::Character());
             Check(view && view->companions.at(seal.id)==std::pair{CompanionKind::Mount,static_cast<std::uint8_t>(live ? 5 : 6)} &&
                 view->items[0].companion==seal.companion,"rider projection and pending intent roundtrip");

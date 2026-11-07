@@ -13,6 +13,7 @@
 #include "AffectSystem.hpp"
 #include "../../core/packet.h"
 #include "../../core/utils.h"
+#include "../../item/TypedCompanions.hpp"
 
 namespace ecs::MountFlightSystem {
 struct Supported { bool fast = false; };
@@ -28,6 +29,7 @@ inline bool CanFly(entt::entity e) {
     if(!PlayerRuntime::IsPC(e)||!MountSystem::GetMountVnum(e)||CombatSystem::IsDead(e)||PlayerRuntime::IsObserverMode(e))return false;
     // Login restores mount affects after entering the game phase.
     if (!AffectSystem::IsLoaded(e)) return false;
+    if(const auto typed=TypedMountFlightPermission(e))return *typed;
     auto item=ItemSystem::GetWearItem(e,WEAR_COSTUME_MOUNT);
     return ItemSystem::IsValidItem(item)&&ItemSystem::GetItemValue(item,5)==1&&
         ItemSystem::GetItemValue(item,1)==MountSystem::GetMountVnum(e);

@@ -24,7 +24,7 @@ commitok és jelentések adják.
 | Sorrend | Még hiányzó rész | Kódban ellenőrzött határ |
 |---|---|---|
 | 1. C27a — elkészült | Állandó típusos hátasra felülés és leszállás, tartós szándékkal | A kiinduló kód csak Summon/Dismiss műveletet fogadott. Ebben a munkában elkészült a közös szerver/Unity-út, 171 élő ellenőrzéssel és háromféle újrabelépéssel. |
-| 2. C27b | Időkorlátos fix petek és hátasok; fix társak bónuszai; típusos repülési engedély | `SupportsPersistentItem` a nem fejlődő társaknál csak Permanent órát enged. A fix társak bónuszai nem jutnak a typed statforrásba. A repülés jelenleg legacy felvett pecsétet ellenőriz. |
+| 2. C27b — elkészült | Időkorlátos fix petek és hátasok; fix társak bónuszai; típusos repülési engedély | Mindkét fix társ négy órával támogatott; a bónusz a tényleges követéshez/felüléshez kötött. Saját typed repülési engedély, szerver/Unity-bekötés, nyolc élő eset és 829 ellenőrzés sikeres, lejárattal és újrabelépéssel. [Jelentés](2026-11-07_fixed_companions.md). |
 | 3. Jelmezek | Test-, haj- és fegyverjelmez felszerelése, modellje és tartós időzítői | Az F2 domain/katalógus/szerkesztő létezik, `ItemCostumeRow` még nincs a támogatott tartós runtime tárgyak között. [IC-022](../../adr/item_combat_022_costumes_and_lifetime.md). |
 | 4. Stóla, rúna és speciális bónuszműveletek | Saját példányállapot, használat/felszerelés, bónuszátvitel és kapcsolt addon | A normál C18 attribútumszolgáltatás nem zárta le ezeket. [IC-031](../../adr/item_combat_031_instance_attributes.md), [IC-046](../../adr/item_combat_046_attribute_services_runtime.md). |
 | 5. Önálló lélektárgyak | Töltés, fejlesztés és a tényleges találathoz kötött egyszeri fogyás, tartós aktív állapot | Az új Soul domain és katalógus létezik, `ItemSoulRow` még nincs a tartós runtime támogatási listában. [IC-025](../../adr/item_combat_025_independent_soul_items.md). |
@@ -45,3 +45,5 @@ játékfunkciónak.
 
 Az első kiválasztott rész a C27a. Eredménye és pontos próbahatóköre a
 [hátasjelentésben](2026-11-07_typed_mount_riding.md) szerepel.
+A C27b is elkészült; a következő nyitott munkacsomag a jelmezek
+szerver- és Unity-runtime bekötése.

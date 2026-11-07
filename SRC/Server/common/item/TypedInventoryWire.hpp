@@ -1,5 +1,5 @@
 #pragma once
-// GC_TYPED_INVENTORY (225), versions 1–11. V11 adds ridden/pending mount intent.
+// GC_TYPED_INVENTORY (225), versions 1–12. V12 adds fixed seal clocks/flight policy.
 //
 // Explicit little-endian byte layout, no struct/ABI dependence. The Unity
 // client decodes the same layout (Metin2GamePacketCodec.ReadTypedInventory);
@@ -47,6 +47,8 @@ struct TypedInventoryView
 	std::map<ItemKey, std::string> names;
 	std::vector<PersistentItem> items; // owner, revision and destroyed are not on the wire
 	std::map<ItemInstanceId, std::pair<CompanionKind, std::uint8_t>> companions;
+    struct FixedRule {CompanionClock clock;std::uint64_t durationMs;bool flying;bool operator==(const FixedRule&) const=default;};
+    std::map<ItemInstanceId,FixedRule> fixedRules;
 };
 
 // The owner is the receiving character; it is not repeated on the wire.

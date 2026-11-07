@@ -82,7 +82,7 @@ bool Installed(CAsyncSQL& sql)
 {
     return Rows(sql,"SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN "
         "('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance',"
-        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule','item_pet_study_cooldown')").at(0).at(0)=="14" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob','companion_riding_requested')").at(0).at(0)=="14";
+        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule','item_pet_study_cooldown')").at(0).at(0)=="14" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob','companion_riding_requested','companion_lifetime_blob')").at(0).at(0)=="15";
 }
 std::shared_ptr<const ItemCatalog> Catalog(CAsyncSQL& sql)
 {
@@ -131,7 +131,7 @@ Json State(const ItemCatalog& c,const p::LoadedItemOwner& o)
             {"toggle",i.toggle ? Json{{"remaining_ms",i.toggle->remainingMs},{"active",i.toggle->active}} : Json(nullptr)},
             {"bound",i.boundTo.has_value()},
             {"accessory",i.accessory ? Json{{"capacity",i.accessory->unlockedCapacity},{"grade",i.accessory->activeGrade},{"remaining_ms",i.accessory->remainingMs},{"permanent",i.accessory->permanent}} : Json(nullptr)}});
-        if(i.companion)items.back()["companion"]={{"recall_requested",i.companion->recallRequested},{"riding_requested",i.companion->ridingRequested}};
+        if(i.companion)items.back()["companion"]={{"recall_requested",i.companion->recallRequested},{"riding_requested",i.companion->ridingRequested},{"lifetime",{{"started",i.companion->lifetime.started},{"expired",i.companion->lifetime.expired},{"deadline_ms",i.companion->lifetime.deadlineUtcMs},{"remaining_ms",i.companion->lifetime.remainingMs}}}};
         if(i.growthPet)
         {
             const auto& pet=*i.growthPet;
@@ -348,8 +348,10 @@ Json Grant(CAsyncSQL& sql,const Json& request)
     {item.polymorph=PolymorphInstanceState{};if(request.contains("polymorph_form"))item.polymorph->boundForm=request.at("polymorph_form").get<std::uint32_t>();if(request.contains("polymorph_grade"))item.polymorph->bookGrade=request.at("polymorph_grade").get<std::uint16_t>();if(request.contains("polymorph_practice"))item.polymorph->practiceRemaining=request.at("polymorph_practice").get<std::uint32_t>();}
     if(std::holds_alternative<ItemToolRow>(entry->category))
     {const auto points=request.value("tool_points",std::uint64_t{}),bait=request.value("tool_bait",std::uint64_t{});Require(points<=UINT32_MAX && bait<=INT32_MAX,"Érvénytelen eszközállapot.");item.tool=ToolInstanceState{static_cast<std::uint32_t>(points),static_cast<std::uint32_t>(bait)};}
-    if(const auto* seal=std::get_if<ItemCompanionRow>(&entry->category);seal && SupportsPersistentItem(*c,*entry))
-        item.companion=CompanionState{};
+    if(const auto* seal=std::get_if<ItemCompanionRow>(&entry->category);seal && SupportsPersistentItem(*c,*entry)) {
+        const auto now=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        const auto initial=MakeCompanionState(*c,item.key,now);Require(initial.has_value(),"Érvénytelen társ-élettartam.");item.companion=*initial;
+    }
     if(const auto* supply=std::get_if<ItemPetSupplyRow>(&entry->category);supply && c->FindPetSupplyProfile(supply->profile)->kind>=PetSupplyKind::Carrier) {
         const auto now=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         const auto initial=InitialPetSupplyState(*c,item.key,now);Require(initial.has_value(),"Érvénytelen petkellék-óra.");item.petSupply=*initial;

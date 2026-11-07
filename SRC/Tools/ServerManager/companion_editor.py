@@ -12,6 +12,7 @@ class CompanionPanel(QWidget):
         self.kind=self.settings.add('child','companion_kind','Társ típusa','choice',choices=[(1,'Fix követő pet'),(2,'Lovagolható mount'),(3,'Fejlődő pet')])
         self.clock=self.settings.add('child','clock_kind','Időszámítás','choice',choices=[(1,'Korlátlan'),(2,'Létrehozástól valós idő'),(3,'Első idézéstől valós idő'),(4,'Aktív követés és lovaglás ideje')])
         self.duration=self.settings.add('child','duration_ms','Időtartam','scaled',scale=1000,unit='mp',range=(1,2**63-1))
+        self.flying=self.settings.add('child','flying_mount','Repülési engedély','choice',choices=[(0,'Nem repülhet'),(1,'Felülve repülhet')])
         self.dungeon=self.settings.add('child','dungeon_only_bonus','Bónusz érvényessége','choice',choices=[(0,'Minden engedélyezett térképen'),(1,'Csak dungeonban')])
         self.settings.note('A pet bónusza követéskor, a mount bónusza lovagláskor érvényes. '
                            'Felüléskor a követő eltűnik; leszálláskor egy követő tér vissza. A fejlődő pet saját szintjét és evolúcióját az alábbi külön táblák szabályozzák.')
@@ -43,6 +44,7 @@ class CompanionPanel(QWidget):
         mount=self.kind.value()=='2';growth=self.kind.value()=='3';self.growth.setVisible(growth);self.training.setVisible(growth)
         for value in ('2','3'):self.clock.widget.model().item(self.clock.widget.findData(value)).setEnabled(not growth)
         if growth and self.clock.value() in ('2','3'):self.clock.load('4')
+        self.flying.widget.setEnabled(mount)
         self.riding.setEnabled(mount);self.riding_label.setVisible(mount);self.riding.setVisible(mount)
         self.new_riding.setVisible(mount and self.riding.currentData()=='new')
         self.new_follower.setVisible(self.follower.currentData()=='new')
@@ -76,7 +78,7 @@ class CompanionPanel(QWidget):
     def collect(self,document):
         child=document['child'];child['companion_kind']=self.kind.value();child['clock_kind']=self.clock.value()
         child['duration_ms']='0' if child['clock_kind']=='1' else self.duration.value()
-        child['dungeon_only_bonus']=self.dungeon.value()
+        child['dungeon_only_bonus']=self.dungeon.value();child['flying_mount']=self.flying.value() if child['companion_kind']=='2' else '0'
         if child['companion_kind']=='3':self.growth.collect(document);self.training.collect(document)
         form=self.follower.currentData()
         if form is None:raise api.EditorError('Válassz követőformát.')

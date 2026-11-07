@@ -8,6 +8,10 @@ szerverrel és Unityvel együtt, sikeres helyi újrabelépéssel. A fejlődőpet
 csomagot az [IC-060](item_combat_060_typed_pet_hatching.md) már lezárta.
 Az alábbi bekezdések a C26b eredeti határát rögzítik.
 
+A [C27b](item_combat_062_fixed_companion_clocks_bonuses_flight.md) a fix
+társak négy óráját, bónuszait és típusos repülési engedélyét is bekötötte,
+nyolc sikeres helyi Unity-/újrabelépési esettel.
+
 A 15-ös kategória állandó pet- és hátaspecsétjei tartós példányként kioszthatók. A Unity leltárból a **Megidézés** és **Visszahívás** művelet a pecsét példányazonosítóját küldi. Egyszerre egy típusos követő lehet aktív. A hátaspecsét ebben a lépésben követőt idéz. A típusos felülés, időkorlát, bónuszok, fejlődő pet és tojáskeltetés későbbi lépések.
 
 Az `010_companion_seals.sql` a példányhoz adja az idézési szándékot. A tulajdonos munkamenete és revíziója védi a tranzakciót. A pecsét azonosítója, darabszáma és helye idézéskor megmarad. Aktív szándéknál a példány a tulajdonos leltárában marad. A szerver mentés után hozza létre vagy hívja vissza a követőt. Újrabelépéskor a szerver az érvényes szándékból új szereplőt hoz létre, amint a karakter és a térkép készen áll. Elérhetetlen megjelenítéskor a pecsét függő állapotot mutat. A visszahívás törli a szándékot.

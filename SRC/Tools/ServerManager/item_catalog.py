@@ -333,7 +333,7 @@ class Catalog:
             item['child'].update(dispatch_kind='1', group_code='', allowed_contexts='0', allow_observer='0')
         if category == 15:
             forms=self.tables['companion_form']
-            item['child'].update(companion_kind='1',form_id=forms[0]['form_id'] if forms else None,riding_form_id=None,clock_kind='1',duration_ms='0',dungeon_only_bonus='0',growth_profile_id=None,training_profile_id=None)
+            item['child'].update(companion_kind='1',form_id=forms[0]['form_id'] if forms else None,riding_form_id=None,clock_kind='1',duration_ms='0',dungeon_only_bonus='0',growth_profile_id=None,training_profile_id=None,flying_mount='0')
             item.update(self.growth_defaults(),training=None)
             identity=self.allocate('companion_form','form_id')
             item.update(new_companion_form=None if forms else dict(code=f'companion.new_form_{identity}',mob_template_id='101',model_asset='models/companion.model'),new_riding_form=None,riding_same_form=False)
@@ -673,7 +673,7 @@ class Catalog:
             identity=existing['form_id'] if existing else self.allocate('companion_form','form_id')
             if not existing:self.replace('companion_form',{'form_id':identity},[dict(form,form_id=identity)])
             child[target]=identity
-        if child['companion_kind']!='2':child['riding_form_id']=None
+        if child['companion_kind']!='2':child['riding_form_id']=None;child['flying_mount']='0'
         elif document.get('riding_same_form'):child['riding_form_id']=child['form_id']
         if child['companion_kind']=='3':
             self.apply_growth(document,child,key);self.apply_training(document,child,key)

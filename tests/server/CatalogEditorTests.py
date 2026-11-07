@@ -1135,13 +1135,16 @@ class EditorPageTests(PageCase):
         packet,key=create(catalog.blank(TOOL),15);self.page.dirty=False;self.page.loaded(packet,key);panel=self.page.companion_panel
         self.assertFalse(self.page.stack_field.edit.isEnabled());self.assertFalse(self.page.appearance_field.widget.isEnabled())
         self.page.refinement.maximum.setValue(30);panel.kind.widget.setCurrentIndex(1);panel.clock.widget.setCurrentIndex(2);panel.duration.edit.setText('2.5')
+        panel.flying.widget.setCurrentIndex(1)
         d=self.page.collect();self.assertEqual(d['refinement']['max_level'],'30');self.assertEqual(d['child']['duration_ms'],'2500')
+        self.assertEqual(d['child']['flying_mount'],'1')
         catalog.validate(packet,d,key,TOOL);validated=catalog.Catalog(packet).apply(d,key)
         self.assertEqual(catalog.Catalog(saved(packet,validated)).item(key)['child']['riding_form_id'],d['child']['form_id'])
         panel.riding.setCurrentIndex(panel.riding.findData('new'))
         panel.new_riding.fields[1].edit.setText('bad');panel.kind.widget.setCurrentIndex(0)
         panel.clock.widget.setCurrentIndex(0);panel.duration.edit.setText('invalid inactive duration')
         d=self.page.collect();self.assertIsNone(d['child']['riding_form_id']);self.assertEqual(d['child']['duration_ms'],'0')
+        self.assertEqual(d['child']['flying_mount'],'0');self.assertFalse(panel.flying.widget.isEnabled())
         self.assertIsNone(d['new_riding_form']);catalog.validate(packet,d,key,TOOL)
 
     def test_soul_panel_levels_scroll_and_inactive_fields(self):

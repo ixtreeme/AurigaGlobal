@@ -143,7 +143,7 @@ class CategorySchemaTests(unittest.TestCase):
             for update,code in [('stage=16','4025'),('maximum_level=0','4025'),('form_id=9892','1452')]:
                 with self.assertRaisesRegex(RuntimeError,'^'+code+':'):self.q('UPDATE protos.growth_pet_stage SET '+update+' WHERE profile_id=9891')
             self.q("INSERT INTO protos.item_base SELECT 15,9891,'growth.sql_item','item.growth_sql.name','item.growth_sql.desc',icon_asset,inventory_width,inventory_height,1,weight_grams,min_level,binding_policy,use_policy_id,trade_policy_id,refinement_profile_id,NULL,NULL,currency_kind,buy_amount,sell_amount,retired FROM protos.item_base WHERE category_id=6 AND local_id=1")
-            self.q('INSERT INTO protos.item_companion VALUES(15,9891,3,9891,NULL,4,300000,0,9891,NULL)')
+            self.q('INSERT INTO protos.item_companion VALUES(15,9891,3,9891,NULL,4,300000,0,9891,NULL,0)')
             for update,code in [('growth_profile_id=NULL','4025'),('riding_form_id=9891','4025'),('clock_kind=3','4025'),('growth_profile_id=9892','1452')]:
                 with self.assertRaisesRegex(RuntimeError,'^'+code+':'):self.q('UPDATE protos.item_companion SET '+update+' WHERE local_id=9891')
         finally:self.q('ROLLBACK')
@@ -155,7 +155,11 @@ class CategorySchemaTests(unittest.TestCase):
         try:
             self.q("INSERT INTO protos.companion_form VALUES(9881,'companion.sql_test',20110,'models/mount.model')")
             self.q("INSERT INTO protos.item_base SELECT 15,9881,'companion.sql_seal','item.companion_sql.name','item.companion_sql.desc',icon_asset,inventory_width,inventory_height,1,weight_grams,min_level,binding_policy,use_policy_id,trade_policy_id,refinement_profile_id,NULL,NULL,currency_kind,buy_amount,sell_amount,retired FROM protos.item_base WHERE category_id=6 AND local_id=1")
-            self.q('INSERT INTO protos.item_companion VALUES(15,9881,2,9881,9881,4,300000,0,NULL,NULL)')
+            self.q('INSERT INTO protos.item_companion VALUES(15,9881,2,9881,9881,4,300000,0,NULL,NULL,0)')
+            self.q('UPDATE protos.item_companion SET flying_mount=1 WHERE local_id=9881')
+            with self.assertRaisesRegex(RuntimeError,'^4025:'):self.q('UPDATE protos.item_companion SET flying_mount=2 WHERE local_id=9881')
+            with self.assertRaisesRegex(RuntimeError,'^4025:'):self.q('UPDATE protos.item_companion SET companion_kind=1,riding_form_id=NULL WHERE local_id=9881')
+            self.q('UPDATE protos.item_companion SET flying_mount=0 WHERE local_id=9881')
             for update,code in [('companion_kind=3','4025'),('riding_form_id=NULL','4025'),('form_id=9882','1452'),('riding_form_id=9882','1452'),('clock_kind=0','4025'),('clock_kind=1','4025'),('duration_ms=0','4025'),('duration_ms=9223372036854775808','4025'),('dungeon_only_bonus=2','4025')]:
                 with self.subTest(update=update),self.assertRaisesRegex(RuntimeError,'^'+code+':'):
                     self.q('UPDATE protos.item_companion SET '+update+' WHERE local_id=9881')
@@ -203,7 +207,7 @@ class CategorySchemaTests(unittest.TestCase):
                          "003_equipment_profiles.sql", "004_refinement_profiles.sql", "005_weapon_armor_catalog.sql",
                          "006_bonus_profiles.sql", "007_bonus_registry_seed.sql", "008_accessory_material_catalog.sql",
                          "009_accessory_socket_profiles.sql", "010_recovery_consumables.sql", "011_catalog_format.sql", "012_containers.sql",
-                         "013_currency_tokens.sql", "014_timed_consumables.sql", "015_automatic_recovery.sql", "016_toggle_effects.sql", "017_skill_books.sql", "018_refinement_recipes.sql", "019_quest_items.sql", "020_socket_stones.sql", "021_costumes.sql", "022_gathering_items.sql", "023_polymorph_items.sql", "024_soul_items.sql", "025_companion_items.sql", "026_growth_pet_progression.sql", "027_pet_care.sql", "028_pet_lifecycle.sql", "029_socket_services.sql", "030_instance_attributes.sql", "031_mob_drops.sql", "032_book_aids.sql"):
+                         "013_currency_tokens.sql", "014_timed_consumables.sql", "015_automatic_recovery.sql", "016_toggle_effects.sql", "017_skill_books.sql", "018_refinement_recipes.sql", "019_quest_items.sql", "020_socket_stones.sql", "021_costumes.sql", "022_gathering_items.sql", "023_polymorph_items.sql", "024_soul_items.sql", "025_companion_items.sql", "026_growth_pet_progression.sql", "027_pet_care.sql", "028_pet_lifecycle.sql", "029_socket_services.sql", "030_instance_attributes.sql", "031_mob_drops.sql", "032_book_aids.sql", "033_companion_flight.sql"):
                 text = (ROOT / "db/migrations/item_combat" / name).read_text(encoding="utf-8")
                 for statement in statements(text):
                     cls.connection.query(statement)
@@ -728,7 +732,7 @@ class CategorySchemaTests(unittest.TestCase):
                 self.q(sql)
 
     def test_containers_keys_and_loot(self):
-        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["26", "auriga.item_catalog.v26"]])
+        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["27", "auriga.item_catalog.v27"]])
         self.assertEqual(self.q("SELECT category_id,local_id,container_kind,loot_profile_id,lock_id FROM protos.item_container ORDER BY local_id"),
                          [["8","1","1","1","0"],["8","2","2","2","7"],["8","3","3",None,"0"]])
         self.assertEqual(self.q("SELECT category_id,local_id,lock_id FROM protos.item_container_key"), [["18","1","7"]])

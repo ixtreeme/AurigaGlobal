@@ -203,7 +203,7 @@ std::expected<ItemCommit,ItemPersistenceError> MakeUnequipCommit(const ItemCatal
 // caller's own plan (e.g. PlanInstantRecovery); this only writes the item.
 std::expected<ItemCommit,ItemPersistenceError> MakeConsumeCommit(const ItemCatalog&,std::array<std::uint8_t,16> operationId,
     ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,ItemInstanceId,std::uint32_t units);
-// Writes one permanent seal's summon or dismissal intent without consuming the seal.
+// Writes a fixed seal's intent and lifetime. Maintain expires the seal atomically.
 std::expected<ItemCommit,ItemPersistenceError> MakeCompanionCommit(const ItemCatalog&,ItemOwnerFence,
     std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const CompanionRequest&);
 bool RecallRequested(const PersistentItem&);
@@ -288,7 +288,7 @@ struct ItemGrant
     std::optional<std::uint16_t> bookSkill;
     std::optional<PolymorphInstanceState> polymorph;
     std::optional<ToolInstanceState> tool;
-    std::uint64_t createdAtUtcMs=0; // Server UTC for a newly issued pet skin; never rebuilt on load.
+    std::uint64_t createdAtUtcMs=0; // Issuance UTC for timed seals/skins; never rebuilt on load.
 };
 std::expected<ItemCommit,ItemPersistenceError> MakeGrantCommit(const ItemCatalog&,std::array<std::uint8_t,16> operationId,
     ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const ItemGrant&,std::span<const ItemInstanceId> ids);

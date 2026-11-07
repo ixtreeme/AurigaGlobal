@@ -28,6 +28,25 @@ std::expected<std::int64_t,E> ScaleEquipmentValue(std::int64_t value,std::int64_
     if(fraction>std::uint64_t(INT64_MAX)-whole)return std::unexpected(E::Overflow);
     const auto result=static_cast<std::int64_t>(whole+fraction);return negative ? -result : result;
 }
+std::expected<FixedCompanionSource,E> CollectFixedCompanionBonuses(const ItemCatalog& c,const PersistentItem& seal,
+    bool active,bool riding,bool inDungeon,std::uint64_t now,std::uint64_t elapsed)
+{
+    if(!ValidatePersistentItem(c,seal) || !seal.companion)return std::unexpected(E::InvalidItem);
+    const auto& row=std::get<ItemCompanionRow>(c.Find(seal.key)->category);
+    if(!active || !seal.companion->recallRequested || (row.kind==CompanionKind::Mount)!=riding || (row.dungeonOnlyBonus && !inDungeon))return FixedCompanionSource{};
+    CompanionRequest request{seal.key};request.state=*seal.companion;request.state.phase=riding ? CompanionPhase::Riding : CompanionPhase::Following;
+    request.state.activeFormId=riding ? *row.ridingForm : row.form;request.instanceId=seal.id.Value();request.revision=seal.revision;
+    request.ownerId=request.actorId=seal.owner.id;request.rulesetRevision=1;request.operationId={1};request.count=seal.count;request.refinementLevel=seal.refinementLevel;
+    request.action=CompanionAction::Maintain;request.nowUtcMs=now;request.elapsedOwnerMs=elapsed;request.elapsedWasActive=elapsed!=0;
+    request.admittedByServer=request.ownerAlive=request.worldAllowsCompanion=true;request.worldAllowsRiding=riding;request.inDungeon=inDungeon;
+    const auto plan=PlanCompanion(c,request);if(!plan)return std::unexpected(E::InvalidItem);if(!plan->bonusEnabled)return FixedCompanionSource{};
+    FixedCompanionSource source{seal.id.Value(),row.kind,riding};std::map<BonusId,std::int64_t> values;
+    const auto profiles=c.BonusProfilesAt(seal.key,seal.refinementLevel);if(!profiles)return std::unexpected(E::InvalidItem);
+    for(const auto* profile:{profiles->base,profiles->refinement})if(profile)for(const auto& bonus:profile->Data().entries)
+        if(!Add(values[bonus.bonus],bonus.valueScaled))return std::unexpected(E::Overflow);
+    for(const auto& slot:seal.attributes.slots)if(slot && !Add(values[slot->bonus],slot->valueScaled))return std::unexpected(E::Overflow);
+    for(const auto [id,value]:values)if(value)source.bonuses.push_back({id,value});return source;
+}
 std::expected<EquipmentStats,E> BuildEquipmentStats(const ItemCatalog& c,ItemOwner owner,std::span<const PersistentItem> inventory,std::span<const BonusEntry> effects)
 {
     EquipmentStats out;std::set<ItemInstanceId> ids;std::set<unsigned> slots;
@@ -121,14 +140,15 @@ std::vector<std::byte> EncodeEquipmentStats(const EquipmentStats* stats,std::uin
     std::vector<std::byte> bytes;const auto put=[&](std::uint64_t value,unsigned size){for(unsigned i=0;i<size;++i)bytes.push_back(std::byte((value>>(8*i))&255));};
     const auto nonzero=[](const auto& values){return std::ranges::any_of(values,[](auto v){return v!=0;});};
     const bool natural=s.petBonuses.seal && (nonzero(s.petBonuses.bonuses.age) || nonzero(s.petBonuses.bonuses.traits));
-    put(231,1);put(0,4);put(s.petBonuses.seal ? natural ? 4 : 3 : s.tool ? 2 : 1,1);put(stats ? 0 : 1,1);put(vid,4);put(revision,8);put(inventoryRevision,8);
+    const bool fixed=s.fixedCompanion.seal!=0;
+    put(231,1);put(0,4);put(fixed ? 5 : s.petBonuses.seal ? natural ? 4 : 3 : s.tool ? 2 : 1,1);put(stats ? 0 : 1,1);put(vid,4);put(revision,8);put(inventoryRevision,8);
     put(s.weapon ? static_cast<unsigned>(*s.weapon) : 0,1);for(auto value:s.flat.Values())put(static_cast<std::uint64_t>(value),8);
     for(auto value:points)put(static_cast<std::uint64_t>(value),8);
     put(std::ranges::count_if(s.bonuses,[](auto value){return value!=0;}),1);
     for(unsigned id=1;id<s.bonuses.size();++id)if(s.bonuses[id]){put(id,4);put(static_cast<std::uint64_t>(s.bonuses[id]),8);}
     for(auto value:s.resistances)put(static_cast<std::uint64_t>(value),8);
-    if(s.tool || s.petBonuses.seal)put(s.tool ? static_cast<unsigned>(*s.tool) : 0,1);
-    if(s.petBonuses.seal)
+    if(s.tool || s.petBonuses.seal || fixed)put(s.tool ? static_cast<unsigned>(*s.tool) : 0,1);
+    if(s.petBonuses.seal || fixed)
     {
         put(s.petBonuses.seal,8);
         const auto effects=[&](const PetBonusValues& values) {
@@ -137,11 +157,16 @@ std::vector<std::byte> EncodeEquipmentStats(const EquipmentStats* stats,std::uin
             {put(effect,1);put(static_cast<std::uint64_t>(values[effect]),8);}
         };
         effects(s.petBonuses.bonuses.total);
-        if(natural)
+        if(natural || fixed)
         {
             put(s.petBonuses.bonuses.ageTierMinimumMs,8);
             effects(s.petBonuses.bonuses.age);effects(s.petBonuses.bonuses.traits);effects(s.petBonuses.bonuses.skills);
         }
+    }
+    if(fixed) {
+        put(s.fixedCompanion.seal,8);put(static_cast<unsigned>(s.fixedCompanion.kind),1);put(s.fixedCompanion.riding,1);
+        put(s.fixedCompanion.bonuses.size(),1);
+        for(const auto& bonus:s.fixedCompanion.bonuses){put(static_cast<unsigned>(bonus.bonus),4);put(static_cast<std::uint64_t>(bonus.valueScaled),8);}
     }
     for(unsigned i=0;i<4;++i)bytes[1+i]=std::byte((bytes.size()>>(8*i))&255);return bytes;
 }

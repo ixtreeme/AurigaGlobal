@@ -187,7 +187,11 @@ void Compute(entt::entity e)
             {POINT_DX, ridingHorse ? horse.iDX : 18}, {POINT_HT, ridingHorse ? horse.iHT : 53},
             {POINT_IQ, ridingHorse ? horse.iIQ : 71}}) {
             if (!HasPointState(e)) return;
-            if (value > Get(e, type)) Change(e, type, value - Get(e, type));
+            // A mount raises the base stat before equipment/companion bonuses.
+            // Typed bonuses are exposed by Get(), while legacy items apply
+            // later below; comparing Get() here would swallow a typed bonus.
+            const auto base = HasTypedEquipment(e) ? g_registry.get<CharacterStatsComponent>(e).points[type] : Get(e, type);
+            if (value > base) Change(e, type, value - base);
         }
     }
     if (!HasTypedEquipment(e)) ApplyBeltPoints(e);

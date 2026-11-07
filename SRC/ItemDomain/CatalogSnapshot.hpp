@@ -24,8 +24,8 @@ struct TableSpec
 inline constexpr std::size_t TableCount = static_cast<std::size_t>(Table::Count);
 inline constexpr std::size_t CapturedByteBudget = 256 * 1024 * 1024;
 inline constexpr std::size_t CellBudgetOverhead = 160;
-inline constexpr std::uint32_t CatalogSchemaVersion = 26;
-inline constexpr std::string_view CanonicalDomain = "auriga.item_catalog.v26";
+inline constexpr std::uint32_t CatalogSchemaVersion = 27;
+inline constexpr std::string_view CanonicalDomain = "auriga.item_catalog.v27";
 std::span<const TableSpec, TableCount> Tables() noexcept;
 std::size_t ColumnCount(const TableSpec& spec) noexcept;
 
