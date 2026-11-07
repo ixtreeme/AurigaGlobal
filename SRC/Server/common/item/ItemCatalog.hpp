@@ -40,6 +40,7 @@ enum class ItemCurrency : std::uint8_t { Gold = 1 };
 enum class EquipmentSlot : std::uint8_t
 {
     Weapon = 1, Body = 2, Head = 3, Shield = 4, Feet = 5, Wrist = 6, Neck = 7, Ear = 8,
+    CostumeBody=9, CostumeHair=10, CostumeWeapon=11,
 };
 enum class AmmoKind : std::uint8_t { None = 1, ConsumeStack = 2 };
 // Plain crafting inputs. Soul-refinement catalysts/resources need their own

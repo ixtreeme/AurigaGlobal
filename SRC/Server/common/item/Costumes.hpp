@@ -6,6 +6,7 @@
 #include <expected>
 #include <optional>
 #include <string>
+#include <span>
 
 namespace auriga::item
 {
@@ -34,6 +35,9 @@ struct CostumeLifetimeState
     std::uint64_t deadlineUtcMs = 0, remainingMs = 0;
     bool operator==(const CostumeLifetimeState&) const = default;
 };
+bool ValidCostumeLifetime(const ItemCostumeRow&,const CostumeLifetimeState&,bool equipped=false) noexcept;
+std::array<std::uint8_t,22> EncodeCostumeLifetime(const CostumeLifetimeState&);
+std::optional<CostumeLifetimeState> DecodeCostumeLifetime(std::span<const std::uint8_t>);
 struct CostumeClockStep
 {
     std::uint64_t nowUtcMs = 0, elapsedMs = 0; // Server UTC and monotonic delta.

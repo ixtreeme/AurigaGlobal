@@ -104,7 +104,8 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
             const bool hatch = PetHatchAction(c, *entry);
             if (companion && SupportsPersistentItem(c,*entry)) actions|=TypedActionUse;
             if (hatch) actions|=TypedActionPetHatch;
-            if(slot && slot<=8) actions|=TypedActionEquip;
+            if(const auto* costume=std::get_if<ItemCostumeRow>(&entry->category))slot=CostumeSlot(costume->kind);
+            if(slot && slot<=11) actions|=TypedActionEquip;
             if(!growth && refinable.contains(key)) actions|=TypedActionRefine;
             if(!growth && ownedDropEnabled && trade && trade->allowDrop && trade->allowTrade) actions|=TypedActionDrop;
             if(b.retired) actions=hatch && companion ? TypedActionPetHatch : 0;

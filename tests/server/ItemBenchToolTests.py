@@ -34,7 +34,7 @@ def setUpModule():
     if [int(path.name[:3]) for path in paths] != list(range(len(paths))): raise RuntimeError('incomplete catalog migrations')
     SANDBOX.client.query("CREATE TABLE player.player(id INT UNSIGNED PRIMARY KEY, name VARCHAR(24) NOT NULL DEFAULT '', exp INT UNSIGNED NOT NULL DEFAULT 0, skill_point SMALLINT NOT NULL DEFAULT 0, sub_skill_point SMALLINT NOT NULL DEFAULT 0, horse_skill_point SMALLINT NOT NULL DEFAULT 0, skill_level BLOB NULL) ENGINE=InnoDB")
     SANDBOX.client.query("CREATE TABLE player.player_deleted LIKE player.player")
-    for path in [*paths, ROOT / 'db/migrations/item_instance/001_item_persistence.sql', ROOT / 'db/migrations/item_instance/002_instance_id_allocator.sql', ROOT / 'db/migrations/item_instance/003_owned_ground.sql', ROOT / 'db/migrations/item_instance/004_recovery_schedule.sql', ROOT / 'db/migrations/item_instance/005_automatic_recovery.sql', ROOT / 'db/migrations/item_instance/006_item_effects.sql', ROOT / 'db/migrations/item_instance/007_book_learning.sql', ROOT / 'db/migrations/item_instance/008_polymorph.sql', ROOT / 'db/migrations/item_instance/009_gathering_tools.sql', ROOT / 'db/migrations/item_instance/010_companion_seals.sql', ROOT / 'db/migrations/item_instance/011_growth_pet_birth.sql', ROOT / 'db/migrations/item_instance/012_pet_study_cooldown.sql', ROOT / 'db/migrations/item_instance/013_pet_supplies.sql', ROOT / 'db/migrations/item_instance/014_mount_riding.sql', ROOT / 'db/migrations/item_instance/015_companion_lifetime.sql']:
+    for path in [*paths, ROOT / 'db/migrations/item_instance/001_item_persistence.sql', ROOT / 'db/migrations/item_instance/002_instance_id_allocator.sql', ROOT / 'db/migrations/item_instance/003_owned_ground.sql', ROOT / 'db/migrations/item_instance/004_recovery_schedule.sql', ROOT / 'db/migrations/item_instance/005_automatic_recovery.sql', ROOT / 'db/migrations/item_instance/006_item_effects.sql', ROOT / 'db/migrations/item_instance/007_book_learning.sql', ROOT / 'db/migrations/item_instance/008_polymorph.sql', ROOT / 'db/migrations/item_instance/009_gathering_tools.sql', ROOT / 'db/migrations/item_instance/010_companion_seals.sql', ROOT / 'db/migrations/item_instance/011_growth_pet_birth.sql', ROOT / 'db/migrations/item_instance/012_pet_study_cooldown.sql', ROOT / 'db/migrations/item_instance/013_pet_supplies.sql', ROOT / 'db/migrations/item_instance/014_mount_riding.sql', ROOT / 'db/migrations/item_instance/015_companion_lifetime.sql', ROOT / 'db/migrations/item_instance/016_costume_lifetime.sql']:
         for statement in statements(path.read_text(encoding='utf-8-sig')): SANDBOX.client.query(statement)
 
 
@@ -70,6 +70,40 @@ def item(state, key):
 
 
 class BenchTests(unittest.TestCase):
+    def test_costume_clocks_equipment_and_sql_reload(self):
+        packet=editor('read');keys=[]
+        sword=catalog.Catalog(packet).new(1);sword_key=(1,int(sword['base']['local_id']));packet=commit(packet,sword)
+        for kind in (1,2,3):
+            for clock in (1,2,3,4):
+                doc=catalog.Catalog(packet).new(4);local=int(doc['base']['local_id'])
+                doc['base']['binding_policy']='3'
+                doc['child'].update(costume_kind=str(kind),weapon_subtype='1' if kind==3 else None,clock_kind=str(clock),duration_ms='0' if clock==1 else '600000')
+                packet=commit(packet,doc);keys.append((local,kind,clock))
+        for index,(local,kind,clock) in enumerate(keys):
+            owner=720+index;use('setup',owner=owner,gold=0)
+            state=use('grant',owner=owner,category=1,local=sword_key[1])['state'];weapon=item(state,sword_key)
+            state=use('grant',owner=owner,category=4,local=local)['state'];costume=item(state,(4,local));original_id=costume['id']
+            deadline=0
+            if kind==3 and clock==3:
+                state=use('equip',owner=owner,item=original_id)['state'];costume=item(state,(4,local))
+                self.assertIsNone(costume['equipped_slot']);self.assertTrue(costume['costume']['started']);deadline=costume['costume']['deadline_ms']
+            use('equip',owner=owner,item=weapon['id'])
+            state=use('equip',owner=owner,item=original_id)['state'];costume=item(state,(4,local))
+            self.assertEqual(costume['equipped_slot'],kind+8);self.assertTrue(costume['bound'])
+            if deadline:self.assertEqual(costume['costume']['deadline_ms'],deadline)
+            before=state;self.assertEqual(stable(use('load',owner=owner)['state']),stable(before))
+            state=use('unequip',owner=owner,item=original_id,cell=20,elapsed_ms=1000 if clock==4 else 0)['state'];costume=item(state,(4,local))
+            self.assertIsNone(costume['equipped_slot']);self.assertEqual(costume['id'],original_id)
+            self.assertEqual(costume['costume']['remaining_ms'],599000 if clock==4 else 0)
+            before=state;self.assertEqual(stable(use('load',owner=owner)['state']),stable(before))
+            saved=SANDBOX.client.query(f'SELECT HEX(costume_lifetime_blob) FROM player.item_instance WHERE instance_id={original_id}')[0][0]
+            self.assertEqual(len(bytes.fromhex(saved)),22)
+            damaged=bytearray.fromhex(saved);damaged[-1]^=1
+            SANDBOX.client.query(f"UPDATE player.item_instance SET costume_lifetime_blob=UNHEX('{damaged.hex()}') WHERE instance_id={original_id}")
+            try:
+                with self.assertRaises(api.EditorError):use('load',owner=owner)
+            finally:SANDBOX.client.query(f"UPDATE player.item_instance SET costume_lifetime_blob=UNHEX('{saved}') WHERE instance_id={original_id}")
+
     def test_fixed_companion_issuance_clocks(self):
         packet=editor('read');keys=[]
         for kind in (1,2):

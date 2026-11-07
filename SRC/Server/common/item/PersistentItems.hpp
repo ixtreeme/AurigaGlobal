@@ -80,6 +80,7 @@ struct PersistentItem
     // A growth seal is born from a hatch transaction and retains its full state.
     std::optional<GrowthPetState> growthPet;
     std::optional<PetSupplyState> petSupply;
+    std::optional<CostumeLifetimeState> costume;
     bool operator==(const PersistentItem&) const = default;
 };
 struct ItemOwnerFence
@@ -182,22 +183,33 @@ std::expected<ItemCommit,ItemPersistenceError> MakeSocketServiceCommit(const Ite
 std::expected<ItemCommit,ItemPersistenceError> MakeMoveCommit(const ItemCatalog&,std::array<std::uint8_t,16> operationId,
     ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,ItemInstanceId,ItemPlacement target);
 // The character facts the equip rules read; the owner thread supplies them.
+struct CostumeElapsed {std::uint64_t instance=0,elapsedMs=0;};
 struct EquipContext
 {
     std::uint16_t level=0;
     std::uint8_t characterClass=0; // 0..3: warrior, assassin, sura, shaman (use policy bits)
     std::uint8_t sex=0;            // 0 male, 1 female
+    std::uint64_t nowUtcMs=0;
+    std::span<const CostumeElapsed> costumeElapsed{};
+    bool inCombat=false;
 };
+inline constexpr std::uint16_t CostumeOutcome=0x2801;
+std::uint32_t CostumeSlot(CostumeKind);
+bool ValidCostumeWrite(const ItemCatalog&,const ItemCommit&);
+std::expected<ItemCommit,ItemPersistenceError> MakeCostumeWearCommit(const ItemCatalog&,std::array<std::uint8_t,16>,
+    ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,ItemInstanceId,ItemPlacement,EquipContext,bool equip);
+std::expected<ItemCommit,ItemPersistenceError> MakeCostumeClockCommit(const ItemCatalog&,std::array<std::uint8_t,16>,
+    ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,ItemInstanceId,std::uint64_t now,std::uint64_t elapsed);
 // Equips one inventory item into its own slot of the owner's equipment
 // storage 1 (weapon/armor/accessory row decides; F4 C4). An item already in
 // that slot swaps back into the freed inventory place when it fits there.
 // An OnEquip item binds to the owner. RequirementNotMet: level, class or sex.
-// Costumes and other categories are later slices (UnsupportedState).
+// Costumes use their own clock-validated writer and semantic slots 9..11.
 std::expected<ItemCommit,ItemPersistenceError> MakeEquipCommit(const ItemCatalog&,std::array<std::uint8_t,16> operationId,
     ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,ItemInstanceId,EquipContext);
 // Takes an equipped item off into free inventory cells.
 std::expected<ItemCommit,ItemPersistenceError> MakeUnequipCommit(const ItemCatalog&,std::array<std::uint8_t,16> operationId,
-    ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,ItemInstanceId,ItemPlacement target);
+    ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,ItemInstanceId,ItemPlacement target,EquipContext who={});
 // Uses up `units` of one inventory item (F4 C5). The last unit destroys it:
 // a tombstone with no count and no placement. The effect of the use is the
 // caller's own plan (e.g. PlanInstantRecovery); this only writes the item.

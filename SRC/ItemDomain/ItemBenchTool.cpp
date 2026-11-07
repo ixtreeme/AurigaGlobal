@@ -30,7 +30,7 @@ std::uint64_t BenchSession=0;
 constexpr std::uint64_t BenchCatalogRevision=1;
 ItemStorageLayout Inventory{{BenchOwner,ItemStorageKind::Inventory,1},5,9,4};
 // Slots 1..8 (weapon, body, head, shield, feet, wrist, neck, ear) at anchors 0..7.
-ItemStorageLayout Equipment{{BenchOwner,ItemStorageKind::Equipment,1},8,1,1};
+ItemStorageLayout Equipment{{BenchOwner,ItemStorageKind::Equipment,1},11,1,1};
 
 struct Failure : std::runtime_error { using std::runtime_error::runtime_error; };
 void Require(bool condition,const std::string& reason){if(!condition)throw Failure(reason);}
@@ -82,7 +82,7 @@ bool Installed(CAsyncSQL& sql)
 {
     return Rows(sql,"SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN "
         "('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance',"
-        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule','item_pet_study_cooldown')").at(0).at(0)=="14" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob','companion_riding_requested','companion_lifetime_blob')").at(0).at(0)=="15";
+        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule','item_pet_study_cooldown')").at(0).at(0)=="14" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob','companion_riding_requested','companion_lifetime_blob','costume_lifetime_blob')").at(0).at(0)=="16";
 }
 std::shared_ptr<const ItemCatalog> Catalog(CAsyncSQL& sql)
 {
@@ -131,6 +131,7 @@ Json State(const ItemCatalog& c,const p::LoadedItemOwner& o)
             {"toggle",i.toggle ? Json{{"remaining_ms",i.toggle->remainingMs},{"active",i.toggle->active}} : Json(nullptr)},
             {"bound",i.boundTo.has_value()},
             {"accessory",i.accessory ? Json{{"capacity",i.accessory->unlockedCapacity},{"grade",i.accessory->activeGrade},{"remaining_ms",i.accessory->remainingMs},{"permanent",i.accessory->permanent}} : Json(nullptr)}});
+        if(i.costume) items.back()["costume"]={{"started",i.costume->started},{"expired",i.costume->expired},{"deadline_ms",i.costume->deadlineUtcMs},{"remaining_ms",i.costume->remainingMs}};
         if(i.companion)items.back()["companion"]={{"recall_requested",i.companion->recallRequested},{"riding_requested",i.companion->ridingRequested},{"lifetime",{{"started",i.companion->lifetime.started},{"expired",i.companion->lifetime.expired},{"deadline_ms",i.companion->lifetime.deadlineUtcMs},{"remaining_ms",i.companion->lifetime.remainingMs}}}};
         if(i.growthPet)
         {
@@ -356,6 +357,10 @@ Json Grant(CAsyncSQL& sql,const Json& request)
         const auto now=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         const auto initial=InitialPetSupplyState(*c,item.key,now);Require(initial.has_value(),"Érvénytelen petkellék-óra.");item.petSupply=*initial;
     }
+    if(const auto* costume=std::get_if<ItemCostumeRow>(&entry->category)) {
+        const auto now=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        const auto initial=MakeCostumeLifetime(*costume,now);Require(initial.has_value(),"Érvénytelen jelmezóra.");item.costume=*initial;
+    }
     item.placement=ItemPlacement{ItemStorageKind::Inventory,1,0};
     if(auto valid=ValidatePersistentItem(*c,item);!valid)
         throw Failure(std::string("A tárgy nem adható: ")+PersistenceText(valid.error())+".");
@@ -374,6 +379,17 @@ Json Move(CAsyncSQL& sql,const Json& request)
     Require(Fits(*c,item,cell,Occupied(*c,o,item.id.Value())),"A tárgy nem fér el ezen a helyen.");
     auto after=item;after.revision++;after.placement->anchor=cell;
     auto r=Base(*c,o,ItemOperationKind::Move);r.items.push_back({item,after});return Commit(sql,*c,r);
+}
+Json Wear(CAsyncSQL& sql,const Json& request,bool equip)
+{
+    const auto c=Catalog(sql);const auto o=Load(sql,*c);const auto& item=Item(o,request,"item");
+    EquipContext who{static_cast<std::uint16_t>(request.value("character_level",120u)),
+        static_cast<std::uint8_t>(request.value("character_class",0u)),static_cast<std::uint8_t>(request.value("sex",0u))};
+    who.nowUtcMs=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    const std::array elapsed{CostumeElapsed{item.id.Value(),request.value("elapsed_ms",std::uint64_t{})}};who.costumeElapsed=elapsed;
+    const auto commit=equip ? MakeEquipCommit(*c,OperationId(),o.fence,o.storages,o.items,item.id,who) :
+        MakeUnequipCommit(*c,OperationId(),o.fence,o.storages,o.items,item.id,{ItemStorageKind::Inventory,1,request.value("cell",0u)},who);
+    Require(commit.has_value(),"A felszerelési művelet nem engedélyezett.");return Commit(sql,*c,*commit);
 }
 Json Destroy(CAsyncSQL& sql,const Json& request)
 {
@@ -496,6 +512,7 @@ Json Dispatch(CAsyncSQL& sql,const std::string& action,const Json& request)
     if(action=="wallet")return Wallet(sql,request);
     if(action=="grant")return Grant(sql,request);
     if(action=="move")return Move(sql,request);
+    if(action=="equip" || action=="unequip")return Wear(sql,request,action=="equip");
     if(action=="destroy")return Destroy(sql,request);
     if(action=="refine")return Refine(sql,request);
     if(action=="attribute")return Attribute(sql,request);

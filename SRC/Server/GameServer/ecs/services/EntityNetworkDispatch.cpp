@@ -1,3 +1,4 @@
+#include "../../item/TypedCostumes.hpp"
 #include "../../core/stdafx.h"
 
 #include "EntityNetworkDispatch.hpp"
@@ -216,6 +217,7 @@ void SendCharacterInsert(entt::registry& reg, entt::entity source, entt::entity 
     WoodcuttingSystem::SendSnapshot(source, viewer);
     HerbalismSystem::SendSnapshot(source, viewer);
     ecs::MountFlightSystem::Send(source,viewer);
+    SendTypedCostumeAppearance(source,viewer);
 
     const auto* dest = reg.try_get<ecs::MovementDestination>(source);
     const auto* movement = reg.try_get<ecs::MovementState>(source);

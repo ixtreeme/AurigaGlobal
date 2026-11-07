@@ -1,3 +1,4 @@
+#include "TypedCostumes.hpp"
 #include "stdafx.h"
 #include "ItemStore.hpp"
 #include "TypedBooks.hpp"
@@ -230,6 +231,7 @@ bool RequestLoginLoad(std::uint32_t pid, std::function<void(LoginLoad)> done)
     if(DeferAccessoryLogin(pid,[pid,done]{RequestLoginLoad(pid,done);})){TickTypedAccessoryClocks();return true;}
     if(DeferGrowthPetLogin(pid,[pid,done]{RequestLoginLoad(pid,done);}))return true;
     if(DeferPetSkinLogin(pid,[pid,done]{RequestLoginLoad(pid,done);}))return true;
+    if(DeferCostumeLogin(pid,[pid,done]{RequestLoginLoad(pid,done);}))return true;
     if(DeferFixedCompanionLogin(pid,[pid,done]{RequestLoginLoad(pid,done);}))return true;
 	const ItemOwner owner { ItemOwnerKind::Character, pid };
 	return ItemStore::Instance().Submit([owner, done = std::move(done)](CAsyncSQL& sql, const ItemCatalog& catalog) mutable -> ItemStore::Completion {
@@ -316,8 +318,9 @@ bool RequestCommitMany(std::vector<OwnerRead> owners,ItemCommit commit,std::func
     auto pet=BeginGrowthPetClockCommit(owners,commit);
     auto skins=BeginPetSkinCommit(owners,commit);
     auto fixed=BeginFixedCompanionCommit(owners,commit);
-    auto completed=[settle=*clock,recover=*recovery,pet,skins,fixed,done=std::move(done)](MultiCommitOutcome result) mutable {settle(&result);recover(&result);pet(&result);skins(&result);fixed(&result);done(std::move(result));};
+    auto costumes=BeginCostumeCommit(owners,commit);
+    auto completed=[settle=*clock,recover=*recovery,pet,skins,fixed,costumes,done=std::move(done)](MultiCommitOutcome result) mutable {settle(&result);recover(&result);pet(&result);skins(&result);fixed(&result);costumes(&result);done(std::move(result));};
     const bool queued=QueueCommit(std::make_shared<PendingCommit>(PendingCommit{std::move(owners),std::move(commit),std::move(completed)}));
-    if(!queued){(*clock)(nullptr);(*recovery)(nullptr);pet(nullptr);skins(nullptr);fixed(nullptr);}return queued;
+    if(!queued){(*clock)(nullptr);(*recovery)(nullptr);pet(nullptr);skins(nullptr);fixed(nullptr);costumes(nullptr);}return queued;
 }
 } // namespace auriga::item::runtime

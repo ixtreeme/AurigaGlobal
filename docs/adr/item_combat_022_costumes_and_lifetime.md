@@ -3,6 +3,10 @@
 2026-10-28. Állapot: az IC-012 F2 részeként megvalósítva, helyi tesztelés.
 Kezdő Git HEAD: `da184bd4`, ág: `codex/mission-engine`.
 
+A fenti állapot az eredeti F2 checkpoint. A 2026-11-07-i C28 a tartós
+felszerelést, három jelmezmodellt, bónuszokat és mind a négy órát szerveren
+és Unityben is beköti: [IC-063](item_combat_063_costume_runtime.md).
+
 ## Kategória és megjelenés
 
 A 4-es kategória `ItemCostumeRow` sora test-, haj- vagy fegyverkosztümöt ír le.

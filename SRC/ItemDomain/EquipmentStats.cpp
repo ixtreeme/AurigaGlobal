@@ -97,7 +97,8 @@ std::expected<EquipmentStats,E> BuildEquipmentStats(const ItemCatalog& c,ItemOwn
         unsigned slot=0;std::uint32_t resistance=0;
         std::visit([&](const auto& row){if constexpr(requires{row.slot;})slot=static_cast<unsigned>(row.slot);if constexpr(requires{row.resistanceProfile;})resistance=row.resistanceProfile;},d->category);
         if(const auto* tool=std::get_if<ItemToolRow>(&d->category)){slot=1;out.tool=tool->kind;}
-        if(!slot || slot>8 || item->placement->anchor!=slot-1)return std::unexpected(E::InvalidSlot);
+        if(const auto* costume=std::get_if<ItemCostumeRow>(&d->category)){slot=CostumeSlot(costume->kind);if(costume->kind==CostumeKind::Weapon && out.weapon!=costume->weapon)continue;}
+        if(!slot || slot>11 || item->placement->anchor!=slot-1)return std::unexpected(E::InvalidSlot);
         const AccessorySocketGrade* grade=nullptr;
         if(item->accessory && item->accessory->activeGrade)
         {

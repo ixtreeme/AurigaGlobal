@@ -4,6 +4,7 @@
 #include "ItemStore.hpp"
 #include "TypedDrops.hpp"
 #include "TypedEquipment.hpp"
+#include "TypedCostumes.hpp"
 #include "TypedCompanions.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
@@ -99,6 +100,7 @@ void TickTypedItemRefreshes()
 
 void SendTypedInventory(entt::entity character)
 {
+	UpdateTypedCostumes(character);
 	const auto companion = RefreshTypedCompanion(character);
 	RefreshTypedEquipment(character);
 	if (!g_registry.valid(character))
@@ -139,4 +141,5 @@ void SendTypedInventory(entt::entity character)
 	else
 		desc->Packet(bytes->data(), size);
 	SendTypedEquipment(character);
+    SendTypedCostumeAppearance(character,character);
 }

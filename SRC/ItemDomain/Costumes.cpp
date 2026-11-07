@@ -35,6 +35,20 @@ bool ValidCostume(const ItemCostumeRow& row) noexcept
     if(row.clock<CostumeClock::Permanent || row.clock>CostumeClock::EquippedTime || row.durationMs>MaxTime)return false;
     return row.clock==CostumeClock::Permanent ? row.durationMs==0 : row.durationMs>0;
 }
+bool ValidCostumeLifetime(const ItemCostumeRow& row,const CostumeLifetimeState& state,bool equipped) noexcept
+{return ValidCostume(row) && ValidState({row.clock,row.durationMs},state,equipped) && (row.clock!=CostumeClock::EquippedTime || state.expired==!state.remainingMs);}
+std::array<std::uint8_t,22> EncodeCostumeLifetime(const CostumeLifetimeState& t)
+{
+    std::array<std::uint8_t,22> b{'C','T','L',1,static_cast<std::uint8_t>(t.started),static_cast<std::uint8_t>(t.expired)};
+    for(unsigned n=0;n<8;++n){b[6+n]=static_cast<std::uint8_t>(t.deadlineUtcMs>>(8*n));b[14+n]=static_cast<std::uint8_t>(t.remainingMs>>(8*n));}return b;
+}
+std::optional<CostumeLifetimeState> DecodeCostumeLifetime(std::span<const std::uint8_t> b)
+{
+    if(b.size()!=22 || b[0]!='C' || b[1]!='T' || b[2]!='L' || b[3]!=1 || b[4]>1 || b[5]>1)return {};
+    CostumeLifetimeState t{b[4]!=0,b[5]!=0};
+    for(unsigned n=0;n<8;++n){t.deadlineUtcMs|=std::uint64_t{b[6+n]}<<(8*n);t.remainingMs|=std::uint64_t{b[14+n]}<<(8*n);}
+    if(t.deadlineUtcMs>MaxTime || t.remainingMs>MaxTime)return {};return t;
+}
 std::expected<CostumeLifetimeState,CostumeLifetimeError> MakeCostumeLifetime(
     const ItemCostumeRow& definition,std::uint64_t created)
 {

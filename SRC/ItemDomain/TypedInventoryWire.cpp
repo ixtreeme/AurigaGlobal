@@ -76,8 +76,9 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
 		return item.growthPet && (RecallRequested(item) ||
 			(item.growthPet->life.clock == CompanionClock::ActiveTime && !item.growthPet->life.remainingMs));
 	});
+    const bool hasCostumes=std::ranges::any_of(items,[](const auto& i){return i.costume.has_value();});
 	const bool hasCompanions = std::ranges::any_of(items, [](const auto& item) { return item.companion.has_value(); });
-	w.Put<std::uint8_t>(hasCompanions ? 12 : hasPetSupplies ? 10 : hasGrowthStatus ? 9 : hasGrowthPets ? 8 : std::ranges::any_of(items,[](const auto& i){return i.tool.has_value();}) ? 6 : std::ranges::any_of(items,[](const auto& i){return i.polymorph.has_value();}) ? 5 : std::ranges::any_of(items,[](const auto& i){return i.bookSkill.has_value();}) ? 4 : std::ranges::any_of(items,[](const auto& i){return i.toggle.has_value();}) ? 3 : std::ranges::any_of(items,[](const auto& i){return i.automatic.has_value();}) ? 2 : TypedInventoryVersion);
+	w.Put<std::uint8_t>(hasCostumes ? 13 : hasCompanions ? 12 : hasPetSupplies ? 10 : hasGrowthStatus ? 9 : hasGrowthPets ? 8 : std::ranges::any_of(items,[](const auto& i){return i.tool.has_value();}) ? 6 : std::ranges::any_of(items,[](const auto& i){return i.polymorph.has_value();}) ? 5 : std::ranges::any_of(items,[](const auto& i){return i.bookSkill.has_value();}) ? 4 : std::ranges::any_of(items,[](const auto& i){return i.toggle.has_value();}) ? 3 : std::ranges::any_of(items,[](const auto& i){return i.automatic.has_value();}) ? 2 : TypedInventoryVersion);
 	w.Put<std::uint16_t>(static_cast<std::uint16_t>(storages.size()));
 	for (const auto& s : storages)
 	{
@@ -164,7 +165,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
             }
 		}
 
-        if(hasPetSupplies || hasCompanions) {
+        if(hasPetSupplies || hasCompanions || hasCostumes) {
             const auto* row=std::get_if<ItemPetSupplyRow>(&catalog.Find(item.key)->category);
             const auto* profile=row ? catalog.FindPetSupplyProfile(row->profile) : nullptr;
             w.Put<std::uint8_t>(item.petSupply ? static_cast<unsigned>(profile->kind) : 0);
@@ -173,6 +174,11 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
                 for(auto byte:*payload)w.Put(byte);
                 if(profile->skin){w.Put<std::uint8_t>(static_cast<unsigned>(profile->skin->clock));w.Put(profile->skin->durationMs);w.Put(profile->skin->form);}
             }
+        }
+
+        if(hasCostumes) {
+            w.Put<std::uint8_t>(item.costume.has_value());
+            if(item.costume){const auto& row=std::get<ItemCostumeRow>(catalog.Find(item.key)->category);w.Put<std::uint8_t>(static_cast<unsigned>(row.kind));w.Put<std::uint8_t>(row.weapon ? static_cast<unsigned>(*row.weapon) : 0);w.Put<std::uint8_t>(static_cast<unsigned>(row.clock));w.Put(row.durationMs);for(auto byte:EncodeCostumeLifetime(*item.costume))w.Put(byte);}
         }
 
 	}
@@ -189,7 +195,7 @@ std::expected<TypedInventoryView, TypedInventoryWireError> DecodeTypedInventory(
 		Reader r(bytes);
 		if (r.Get<std::uint8_t>() != TypedInventoryHeader) return std::unexpected(E::BadHeader);
 		if (r.Get<std::uint32_t>() != bytes.size()) return std::unexpected(E::BadSize);
-		const auto version=r.Get<std::uint8_t>();if (version<TypedInventoryVersion || version>12) return std::unexpected(E::BadVersion);
+		const auto version=r.Get<std::uint8_t>();if (version<TypedInventoryVersion || version>13) return std::unexpected(E::BadVersion);
 		TypedInventoryView view;
 		for (auto n = r.Get<std::uint16_t>(); n; --n)
 		{
@@ -311,6 +317,16 @@ std::expected<TypedInventoryView, TypedInventoryWireError> DecodeTypedInventory(
                             !AdvanceItemClock({clock,duration},s.lifetime,{0,0,s.equippedSeal!=0,false}))throw Bad{};
                     }
                 }
+            }
+            if(version>=13) {
+                const auto present=r.Get<std::uint8_t>();if(present>1)throw Bad{};
+                if(present) {
+                    const auto costumeKind=static_cast<CostumeKind>(r.Get<std::uint8_t>());const auto weapon=r.Get<std::uint8_t>();const auto clock=static_cast<CostumeClock>(r.Get<std::uint8_t>());const auto duration=r.Get<std::uint64_t>();
+                    const auto raw=r.Take(22);std::array<std::uint8_t,22> data;for(unsigned n=0;n<22;++n)data[n]=std::to_integer<std::uint8_t>(raw[n]);const auto life=DecodeCostumeLifetime(data);
+                    ItemCostumeRow rule{item.key,costumeKind,weapon ? std::optional{static_cast<WeaponSubtype>(weapon)} : std::nullopt,clock,duration};
+                    if(!life || !ValidCostumeLifetime(rule,*life,kind==2) || life->expired || item.count!=1 || (kind==2 && item.placement->anchor!=CostumeSlot(costumeKind)-1))throw Bad{};
+                    item.costume=*life;view.costumeRules.emplace(item.id,rule);
+                } else if(item.key.Category()==ItemCategory::Costume)throw Bad{};
             }
             view.items.push_back(std::move(item));
 		}

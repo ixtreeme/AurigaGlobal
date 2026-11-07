@@ -1,5 +1,8 @@
 #include "CatalogSnapshotFixture.hpp"
 #include <item/Costumes.hpp>
+#include <item/EquipmentStats.hpp>
+#include <item/TypedInventoryWire.hpp>
+#include <item/AccessoryRuntime.hpp>
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
@@ -187,12 +190,57 @@ void Publication()
     Check(db::DecodeSnapshot(catalog_snapshot_fixture::Snapshot(body),{1,{}}).has_value(),"SQL NULL weapon is explicit");
 }
 }
+void Persistence()
+{
+    for(unsigned kind=1;kind<=3;++kind)for(unsigned clock=1;clock<=4;++clock) {
+        auto source=Fixture();auto& row=source.costumes[0];row.kind=static_cast<CostumeKind>(kind);row.weapon=kind==3 ? std::optional{WeaponSubtype::Sword} : std::nullopt;
+        row.clock=static_cast<CostumeClock>(clock);row.durationMs=clock==1 ? 0 : 10000;
+        const auto c=BuildItemCatalog(source).value();const ItemOwner owner{ItemOwnerKind::Character,7};const ItemOwnerFence fence{owner,1,1};
+        const std::vector<ItemStorageLayout> layouts{{{owner,ItemStorageKind::Inventory,1},5,9,2},{{owner,ItemStorageKind::Equipment,1},11,1,1}};
+        const auto id=ItemInstanceId::Create(100).value();const std::array ids{id};
+        const auto grant=MakeGrantCommit(*c,{1,1},fence,layouts,{},ItemGrant{Key(),10,1,{},{},{},1000},ids);
+        Check(grant.has_value(),"all costume kinds/clocks grant durable state");auto costume=grant->items[0].after;
+        Check(DecodeCostumeLifetime(EncodeCostumeLifetime(*costume.costume))==costume.costume,"versioned costume clock roundtrip");
+        EquipContext who{50,0,0,2000};std::vector<PersistentItem> items{costume};
+        auto denied=who;denied.characterClass=4;Check(!MakeEquipCommit(*c,{2,9},fence,layouts,items,id,denied),"unadmitted character cannot start or change a costume clock");
+        if(kind==3) {
+            auto missing=MakeEquipCommit(*c,{2,1},fence,layouts,items,id,who);
+            if(clock==3){Check(missing && missing->items[0].after.placement==costume.placement && missing->items[0].after.costume->deadlineUtcMs==12000,"admitted missing-weapon attempt durably starts first-use clock");costume=missing->items[0].after;items[0]=costume;}
+            else Check(!missing,"missing real weapon cannot equip a costume");
+        }
+        const auto wid=ItemInstanceId::Create(101).value();const std::array weaponIds{wid};
+        const auto weaponGrant=MakeGrantCommit(*c,{1,2},fence,layouts,items,ItemGrant{f::Sword(),0,1},weaponIds).value();items.push_back(weaponGrant.items[0].after);
+        auto real=MakeEquipCommit(*c,{2,2},fence,layouts,items,wid,who).value();items[1]=real.items[0].after;
+        who.nowUtcMs=3000;auto equipped=MakeEquipCommit(*c,{2,3},fence,layouts,items,id,who);
+        Check(equipped && equipped->items[0].after.placement->anchor==kind+7,"costume uses its own equipment slot");items[0]=equipped->items[0].after;
+        const auto stats=BuildEquipmentStats(*c,owner,items);Check(stats && stats->Bonus(BonusId::CritChance)==100,"costume refinement bonuses enter equipped stats once");
+        const auto bytes=EncodeTypedInventory(*c,layouts,{},items);Check(bytes && std::to_integer<unsigned>((*bytes)[5])==13,"costume selects inventory version 13");
+        const auto decoded=DecodeTypedInventory(*bytes,owner);Check(decoded && decoded->items[0].costume==items[0].costume && decoded->costumeRules.at(id).kind==row.kind,"inventory preserves owned costume clock and rules");
+        auto malformed=*bytes;malformed.pop_back();Check(!DecodeTypedInventory(malformed,owner),"truncated costume sidecar is rejected");
+        auto tampered=*equipped;tampered.items[0].after.costume->remainingMs+=1;Check(!ValidateItemCommit(*c,tampered),"clock cannot be altered behind a costume receipt");
+        const std::array elapsed{CostumeElapsed{id.Value(),clock==4 ? 400u : 0u}};who.costumeElapsed=elapsed;who.nowUtcMs=4000;
+        const auto unequipped=MakeUnequipCommit(*c,{2,4},fence,layouts,items,id,{ItemStorageKind::Inventory,1,0},who);
+        Check(unequipped && unequipped->items[0].after.placement->kind==ItemStorageKind::Inventory,"costume can be taken off through the same move handler");items[0]=unequipped->items[0].after;
+        if(clock==4)Check(items[0].costume->remainingMs==9600,"unequip settles the preceding worn interval");
+        who.costumeElapsed={};who.nowUtcMs=5000;
+        const auto again=MakeEquipCommit(*c,{2,5},fence,layouts,items,id,who);Check(again.has_value(),"costume re-equip preserves its issued clock");items[0]=again->items[0].after;
+        if(clock==4)Check(items[0].costume->remainingMs==9600,"paused wall time never refills or spends wear time");
+        const auto expired=MakeCostumeClockCommit(*c,{2,6},fence,layouts,items,id,500000,clock==4 ? 9600 : 0);
+        if(clock==1)Check(!expired,"permanent costume has no maintenance write");
+        else Check(expired && expired->items[0].after.destroyed && expired->items[0].after.costume->expired && !expired->items[0].after.placement && expired->items[0].after.count==0,"expiry keeps an audited tombstone and frees equipment atomically");
+        // An ordinary equipment timer may settle with the costume operation.
+        PersistentItem accessory{ItemInstanceId::Create(102).value(),f::Bracelet(),owner};accessory.accessory=AccessorySocketState{1,1,1000,false};accessory.placement=ItemPlacement{ItemStorageKind::Equipment,1,5};
+        auto compound=*again;auto before=items;before[0]=*again->items[0].before;before.push_back(accessory);
+        Check(SettleAccessoryTime(*c,compound,fence,layouts,before,100).has_value(),"costume receipt permits ancillary accessory clock debit");
+        compound.items.back().after.refinementLevel=1;Check(!ValidateItemCommit(*c,compound),"ancillary debit cannot conceal accessory refinement");
+    }
+}
 int main(int argc,char** argv)
 {
     try
     {
         if(argc==2 && std::string_view(argv[1])=="--hash-fixture"){std::cout<<Hex(BuildItemCatalog(Fixture()).value()->ContentHash())<<'\n';return 0;}
-        Lifetime();Equip();Publication();std::cout<<checks<<" costume checks passed\n";return 0;
+        Lifetime();Equip();Publication();Persistence();std::cout<<checks<<" costume checks passed\n";return 0;
     }
     catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}
 }

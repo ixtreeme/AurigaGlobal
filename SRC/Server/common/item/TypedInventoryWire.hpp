@@ -1,5 +1,5 @@
 #pragma once
-// GC_TYPED_INVENTORY (225), versions 1–12. V12 adds fixed seal clocks/flight policy.
+// GC_TYPED_INVENTORY (225), versions 1–13. V13 adds owned costume clocks and rules.
 //
 // Explicit little-endian byte layout, no struct/ABI dependence. The Unity
 // client decodes the same layout (Metin2GamePacketCodec.ReadTypedInventory);
@@ -49,6 +49,7 @@ struct TypedInventoryView
 	std::map<ItemInstanceId, std::pair<CompanionKind, std::uint8_t>> companions;
     struct FixedRule {CompanionClock clock;std::uint64_t durationMs;bool flying;bool operator==(const FixedRule&) const=default;};
     std::map<ItemInstanceId,FixedRule> fixedRules;
+    std::map<ItemInstanceId,ItemCostumeRow> costumeRules;
 };
 
 // The owner is the receiving character; it is not repeated on the wire.

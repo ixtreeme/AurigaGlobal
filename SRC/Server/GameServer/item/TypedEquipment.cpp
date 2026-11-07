@@ -4,6 +4,7 @@
 #include "TypedAccessoryClock.hpp"
 #include "TypedRecovery.hpp"
 #include "TypedCompanions.hpp"
+#include "TypedCostumes.hpp"
 #include <item/EffectRuntime.hpp>
 #include <item/AccessoryRuntime.hpp>
 #include "ItemStore.hpp"
@@ -29,8 +30,8 @@ void RefreshTypedEquipment(entt::entity e)
     const auto elapsed=TypedAccessoryElapsed(e);
     const bool mayExpire=std::ranges::any_of(items->state.items,[elapsed](const auto& i){return !i.destroyed && i.placement && i.placement->kind==auriga::item::ItemStorageKind::Equipment && i.accessory && i.accessory->activeGrade && !i.accessory->permanent && elapsed>=i.accessory->remainingMs;});
     if(old && old->fence==items->state.fence && old->applied && old->stats && old->stats->petBonuses==petBonuses && old->stats->fixedCompanion==companion &&
-        !mayExpire && items->state.recovery.effects.empty() && std::ranges::none_of(items->state.items,[](const auto& i){return i.toggle && i.toggle->active;}))return;
-    auto effective=items->state.items;
+        !mayExpire && std::ranges::none_of(items->state.items,[](const auto& i){return i.costume.has_value();}) && items->state.recovery.effects.empty() && std::ranges::none_of(items->state.items,[](const auto& i){return i.toggle && i.toggle->active;}))return;
+    auto effective=items->state.items;ProjectTypedCostumes(e,effective);
     const auto time=auriga::item::ProjectAccessoryTime(*catalog,effective,elapsed);
     const auto facts=TypedItemEffectFacts(e);const auto toggles=auriga::item::ProjectToggleItems(*catalog,effective,TypedRecoveryElapsed(e),facts);if(toggles)effective=*toggles;
     auto schedule=auriga::item::AdvanceRecoverySchedule(*catalog,items->state.recovery,TypedRecoveryElapsed(e));if(schedule)auriga::item::NormalizeTimedItems(*catalog,*schedule,TypedItemEffectNow(),&facts);

@@ -25,14 +25,14 @@ commitok és jelentések adják.
 |---|---|---|
 | 1. C27a — elkészült | Állandó típusos hátasra felülés és leszállás, tartós szándékkal | A kiinduló kód csak Summon/Dismiss műveletet fogadott. Ebben a munkában elkészült a közös szerver/Unity-út, 171 élő ellenőrzéssel és háromféle újrabelépéssel. |
 | 2. C27b — elkészült | Időkorlátos fix petek és hátasok; fix társak bónuszai; típusos repülési engedély | Mindkét fix társ négy órával támogatott; a bónusz a tényleges követéshez/felüléshez kötött. Saját typed repülési engedély, szerver/Unity-bekötés, nyolc élő eset és 829 ellenőrzés sikeres, lejárattal és újrabelépéssel. [Jelentés](2026-11-07_fixed_companions.md). |
-| 3. Jelmezek | Test-, haj- és fegyverjelmez felszerelése, modellje és tartós időzítői | Az F2 domain/katalógus/szerkesztő létezik, `ItemCostumeRow` még nincs a támogatott tartós runtime tárgyak között. [IC-022](../../adr/item_combat_022_costumes_and_lifetime.md). |
+| 3. C28 — elkészült | Test-, haj- és fegyverjelmez felszerelése, modellje és tartós időzítői | A tartós runtime, szerver/Unity-felszerelés, három jelmezmodell és mind a négy óra kész; 12 élő eset és 1606 ellenőrzés, felszerelt/levett/lejárt újrabelépéssel. [Jelentés](2026-11-07_costumes.md), [IC-063](../../adr/item_combat_063_costume_runtime.md). |
 | 4. Stóla, rúna és speciális bónuszműveletek | Saját példányállapot, használat/felszerelés, bónuszátvitel és kapcsolt addon | A normál C18 attribútumszolgáltatás nem zárta le ezeket. [IC-031](../../adr/item_combat_031_instance_attributes.md), [IC-046](../../adr/item_combat_046_attribute_services_runtime.md). |
 | 5. Önálló lélektárgyak | Töltés, fejlesztés és a tényleges találathoz kötött egyszeri fogyás, tartós aktív állapot | Az új Soul domain és katalógus létezik, `ItemSoulRow` még nincs a tartós runtime támogatási listában. [IC-025](../../adr/item_combat_025_independent_soul_items.md). |
 | 6. Lőszer és további fejlesztési segédek | Typed íj/lőszer-életciklus, elfogadott lövéshez kötött fogyás; még hiányzó kovácssegéd-utak | `EquipmentStats.cpp` elutasítja a `AmmoKind::None`-tól eltérő igényű fegyver felvételét. A könyvsegéd nem általános kovácssegéd. [IC-039](../../adr/item_combat_039_equipment_stats.md). |
 | 7. Fiókpénztárca és további tárolók | Fiókszintű valuta, typed bank/mall/céh/levél tárgyutak és kapcsolódó gazdasági műveletek | A modell tároló-/tulajdonostípusa önmagában nem játékbeli bekötés. A jelenlegi typed item-hálózati kezelőkben ezeknek nincs végigvezetett kliensművelete; a fiókpénztárcát az IC-034 is nyitottnak jelöli. |
 | 8. Mission és quest | Az általános Mission-események, tárgykövetelmények/jutalmak és Lua-questek teljes typed átállítása | A C12 az NPC-s tárgyleadó tranzakciót készítette el. A teljes missziórendszer ettől még külön, nagyobb munka. |
 | 9. Teljes tartalom- és karakterkonverzió | Prototípusok, példányok, receptek, droppok, boltok és minden hivatkozás egyszeri konverziója; régi tárgyút kivezetése | A konverteralap és auditok megvannak; a normál legacy leltár átállítását a felhasználó korábban későbbre kérte. Nem kapcsoljuk át e részfeladat mellékhatásaként. |
-| 10. Kiadási ellenőrzés és grafikai integráció | Teljes világjelenet, távoli avatarok typed megjelenése, standalone kliens, FreeBSD, teljes gazdasági/mission regresszió és terhelés | Az izolált Unity-próbák és Windows natív build nem helyettesítik ezeket. A távoli avatar typed felszerelésmodell-publikálása az IC-039 nyitott határa. |
+| 10. Kiadási ellenőrzés és grafikai integráció | Teljes világjelenet, távoli avatarok typed megjelenésének végső próbája, standalone kliens, FreeBSD, teljes gazdasági/mission regresszió és terhelés | A C28 publikálja a typed alap- és jelmezmodelleket a megfigyelőnek, az izolált próba tényleges mesheket hoz létre mindkét actoron. A teljes világjelenetes, animációs és production Addressables-próba továbbra is szükséges. |
 
 ## Az audit módszere
 
@@ -45,5 +45,5 @@ játékfunkciónak.
 
 Az első kiválasztott rész a C27a. Eredménye és pontos próbahatóköre a
 [hátasjelentésben](2026-11-07_typed_mount_riding.md) szerepel.
-A C27b is elkészült; a következő nyitott munkacsomag a jelmezek
-szerver- és Unity-runtime bekötése.
+A C27b és a C28 is elkészült; a következő nyitott munkacsomag a stóla/rúna
+és a speciális bónuszműveletek szerver- és Unity-runtime bekötése.

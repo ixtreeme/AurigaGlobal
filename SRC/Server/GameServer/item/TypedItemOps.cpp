@@ -6,6 +6,7 @@
 #include "ItemStore.hpp"
 #include "TypedInventorySync.hpp"
 #include "TypedEquipment.hpp"
+#include "TypedCostumes.hpp"
 #include "TypedTools.hpp"
 #include "refine.h"
 #include "../command/cmd.h"
@@ -102,16 +103,18 @@ void RequestTypedItemMove(entt::entity character, std::uint64_t itemId, std::uin
 	std::expected<items::ItemCommit, items::ItemPersistenceError> commit = std::unexpected(items::ItemPersistenceError::MissingItem);
 	if (current != state.items.end() && current->placement)
 	{
+        const auto elapsed=TypedCostumeElapsed(character);
+        items::EquipContext who{static_cast<std::uint16_t>(std::max(0,ecs::PointSystem::GetLevel(character))),ecs::PlayerRuntime::GetJob(character),ecs::PlayerRuntime::GetSex(character)};
+        who.nowUtcMs=TypedItemEffectNow();who.costumeElapsed=elapsed;who.inCombat=TypedItemEffectFacts(character).actor.inCombat;
 		// One request, three operations: equip into the item's own slot, take
 		// off into the inventory, or move inside the inventory (C3/C4).
 		if (target.kind == items::ItemStorageKind::Equipment)
 		{
-			const items::EquipContext who { static_cast<std::uint16_t>(std::max(0, ecs::PointSystem::GetLevel(character))),
-				ecs::PlayerRuntime::GetJob(character), ecs::PlayerRuntime::GetSex(character) };
+
 			commit = items::MakeEquipCommit(*catalog, NewOperationId(), state.fence, state.storages, state.items, *id, who);
 		}
 		else if (current->placement->kind == items::ItemStorageKind::Equipment)
-			commit = items::MakeUnequipCommit(*catalog, NewOperationId(), state.fence, state.storages, state.items, *id, target);
+			commit = items::MakeUnequipCommit(*catalog, NewOperationId(), state.fence, state.storages, state.items, *id, target,who);
 		else
 			commit = items::MakeMoveCommit(*catalog, NewOperationId(), state.fence, state.storages, state.items, *id, target);
 	}

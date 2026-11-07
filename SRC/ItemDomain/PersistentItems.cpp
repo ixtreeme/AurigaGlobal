@@ -140,6 +140,7 @@ struct Writer
             Put(state->size(),2);
             bytes.insert(bytes.end(),state->begin(),state->end());
         }
+        if(p.costume){const auto clock=EncodeCostumeLifetime(*p.costume);bytes.insert(bytes.end(),clock.begin(),clock.end());}
         if(p.petSupply) {
             const auto state=EncodePetSupplyState(c,p.key,*p.petSupply);if(!state)return false;
             Put(0x31495350,4);Put(state->size(),2);bytes.insert(bytes.end(),state->begin(),state->end());
@@ -573,7 +574,7 @@ bool SupportsPersistentItem(const ItemCatalog& c,const ItemCatalogEntry& e) noex
         const auto* profile=c.FindPetSupplyProfile(supply->profile);
         return profile && profile->kind>=PetSupplyKind::Study && profile->kind<=PetSupplyKind::Skin;
     }
-    if(std::holds_alternative<ItemToolRow>(e.category))return true;
+    if(std::holds_alternative<ItemCostumeRow>(e.category) || std::holds_alternative<ItemToolRow>(e.category))return true;
     if(std::holds_alternative<ItemFishingRow>(e.category) || std::holds_alternative<ItemPolymorphRow>(e.category) || std::holds_alternative<ItemSkillBookRow>(e.category))return true;
     if(std::holds_alternative<ItemContainerRow>(e.category))return true;
     if(const auto* consumable=std::get_if<ItemConsumableRow>(&e.category))
@@ -652,6 +653,9 @@ std::expected<void,E> ValidatePersistentItem(const ItemCatalog& c,const Persiste
            (tool->kind!=ToolKind::Rod && p.tool->baitPower))return std::unexpected(E::InvalidItem);
     }
     else if(p.tool)return std::unexpected(E::InvalidItem);
+    if(const auto* costume=std::get_if<ItemCostumeRow>(&e->category)) {
+        if(!p.costume || (!p.destroyed && p.count!=1) || !ValidCostumeLifetime(*costume,*p.costume,p.placement && p.placement->kind==ItemStorageKind::Equipment) || (p.costume->expired && !p.destroyed))return std::unexpected(E::InvalidItem);
+    } else if(p.costume)return std::unexpected(E::InvalidItem);
     const auto* seal=std::get_if<ItemCompanionRow>(&e->category);
     if(seal && seal->kind==CompanionKind::GrowthPet)
     {
@@ -700,6 +704,7 @@ std::expected<std::vector<std::uint32_t>,E> OccupiedItemCells(const ItemCatalog&
         if(std::holds_alternative<ItemToolRow>(category))slot=EquipmentSlot::Weapon;
         if(const auto* a=std::get_if<ItemArmorRow>(&category))slot=a->slot;
         if(const auto* a=std::get_if<ItemAccessoryRow>(&category))slot=a->slot;
+        if(const auto* costume=std::get_if<ItemCostumeRow>(&category))slot=static_cast<EquipmentSlot>(CostumeSlot(costume->kind));
         if(!slot || anchor+1!=static_cast<unsigned>(*slot))return std::unexpected(E::InvalidPlacement);
         return std::vector<std::uint32_t>{anchor};
     }
@@ -728,6 +733,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
     if((r.items.empty() && r.wallets.empty() && !r.recovery && !r.learning) || !r.outcomeCode || r.kind<ItemOperationKind::Grant || r.kind>ItemOperationKind::Trade ||
        (r.petStudyCooldown && r.outcomeCode!=PetStudyOutcome) ||
        std::ranges::all_of(r.operationId,[](auto n){return !n;}))return std::unexpected(E::InvalidOperation);
+    if(r.outcomeCode==CostumeOutcome && !ValidCostumeWrite(c,r))return std::unexpected(E::InvalidChange);
     std::set<ItemOwner> owners;
     for(const auto& o:r.owners)if(!ValidItemOwner(o.owner) || !o.sessionGeneration || !o.revision || o.revision==UINT64_MAX || !owners.insert(o.owner).second)return std::unexpected(E::InvalidFence);
     std::map<ItemStorage,ItemStorageLayout> layouts;
@@ -781,6 +787,9 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
                    p.placement->kind!=ItemStorageKind::Inventory || expected!=p)
                     return std::unexpected(E::TransferDenied);
             }
+            if(b.costume!=p.costume || (b.costume && b.placement!=p.placement &&
+                ((b.placement && b.placement->kind==ItemStorageKind::Equipment) || (p.placement && p.placement->kind==ItemStorageKind::Equipment))))
+                if(r.outcomeCode!=CostumeOutcome)return std::unexpected(E::InvalidChange);
             const bool bindingUnchanged=p.boundTo==b.boundTo;
             const bool bindOnEquip=!b.boundTo && p.boundTo==p.owner && b.owner==p.owner && b.key==p.key &&
                 c.Find(p.key)->base.binding==BindingPolicy::OnEquip && p.placement && p.placement->kind==ItemStorageKind::Equipment;
@@ -791,6 +800,12 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
         if(!change.before && p.petSupply) {
             const auto initial=InitialPetSupplyState(c,p.key,p.petSupply->createdAtUtcMs);
             if(!initial || *initial!=*p.petSupply)return std::unexpected(E::InvalidChange);
+        }
+        if(!change.before && p.costume) {
+            const auto& row=std::get<ItemCostumeRow>(c.Find(p.key)->category);
+            if(row.clock==CostumeClock::SinceCreation && p.costume->deadlineUtcMs<=row.durationMs)return std::unexpected(E::InvalidChange);
+            const auto created=row.clock==CostumeClock::SinceCreation ? p.costume->deadlineUtcMs-row.durationMs : 0;
+            const auto initial=MakeCostumeLifetime(row,created);if(!initial || *initial!=*p.costume)return std::unexpected(E::InvalidChange);
         }
         if(!change.before && p.companion) {
             const auto& row=std::get<ItemCompanionRow>(c.Find(p.key)->category);
@@ -1065,6 +1080,7 @@ const ItemStorageLayout* PlaceFirst(const ItemCatalog& c,PersistentItem& item,
 std::optional<EquipmentSlot> SlotOf(const ItemCatalogEntry& entry)
 {
     if(std::holds_alternative<ItemToolRow>(entry.category))return EquipmentSlot::Weapon;
+    if(const auto* costume=std::get_if<ItemCostumeRow>(&entry.category))return static_cast<EquipmentSlot>(CostumeSlot(costume->kind));
     if(const auto* w=std::get_if<ItemWeaponRow>(&entry.category))return w->slot;
     if(const auto* a=std::get_if<ItemArmorRow>(&entry.category))return a->slot;
     if(const auto* a=std::get_if<ItemAccessoryRow>(&entry.category))return a->slot;
@@ -1089,6 +1105,7 @@ std::expected<ItemCommit,E> MakeEquipCommit(const ItemCatalog& c,std::array<std:
     const auto* source=Placed(inventory,owner,id);if(!source)return std::unexpected(E::MissingItem);
     if(source->placement->kind!=ItemStorageKind::Inventory)return std::unexpected(E::UnsupportedState);
     const auto* entry=c.Find(source->key);if(!entry)return std::unexpected(E::MissingItem);
+    if(source->costume)return MakeCostumeWearCommit(c,operationId,owner,storages,inventory,id,{ItemStorageKind::Equipment,1,0},who,true);
     const auto slot=SlotOf(*entry);if(!slot)return std::unexpected(E::UnsupportedState);
     if(entry->base.minimumLevel>who.level || who.characterClass>3 || who.sex>1)return std::unexpected(E::RequirementNotMet);
     if(entry->base.usePolicy)
@@ -1483,6 +1500,10 @@ std::expected<ItemCommit,E> MakeGrantCommit(const ItemCatalog& c,std::array<std:
     if(const auto initial=InitialToggleEffectState(c,grant.key);initial)fresh.toggle=*initial;fresh.bookSkill=grant.bookSkill;fresh.polymorph=grant.polymorph;
     if(!fresh.polymorph)if(const auto* poly=std::get_if<ItemPolymorphRow>(&entry->category);poly && poly->fixedForm)fresh.polymorph=PolymorphInstanceState{};
     fresh.tool=grant.tool;if(!fresh.tool && std::holds_alternative<ItemToolRow>(entry->category))fresh.tool=ToolInstanceState{};
+    if(const auto* costume=std::get_if<ItemCostumeRow>(&entry->category)) {
+        if(costume->clock==CostumeClock::SinceCreation && !grant.createdAtUtcMs)return std::unexpected(E::InvalidItem);
+        const auto initial=MakeCostumeLifetime(*costume,grant.createdAtUtcMs);if(!initial)return std::unexpected(E::InvalidItem);fresh.costume=*initial;
+    }
     if(const auto* companion=std::get_if<ItemCompanionRow>(&entry->category);companion && FixedSeal(*companion)) {
         if(companion->clock==CompanionClock::SinceCreation && !grant.createdAtUtcMs)return std::unexpected(E::InvalidItem);
         const auto initial=MakeCompanionState(c,grant.key,grant.createdAtUtcMs);if(!initial)return std::unexpected(E::InvalidItem);fresh.companion=*initial;
@@ -1493,7 +1514,7 @@ std::expected<ItemCommit,E> MakeGrantCommit(const ItemCatalog& c,std::array<std:
     }
     const auto sameState=[&](const PersistentItem& i){
         return i.key==fresh.key && i.refinementLevel==fresh.refinementLevel && i.boundTo==fresh.boundTo &&
-               i.attributes==fresh.attributes && i.stones==fresh.stones && i.accessory==fresh.accessory && i.automatic==fresh.automatic && i.toggle==fresh.toggle && i.bookSkill==fresh.bookSkill && i.polymorph==fresh.polymorph && i.tool==fresh.tool && i.companion==fresh.companion && i.petSupply==fresh.petSupply;};
+               i.attributes==fresh.attributes && i.stones==fresh.stones && i.accessory==fresh.accessory && i.automatic==fresh.automatic && i.toggle==fresh.toggle && i.bookSkill==fresh.bookSkill && i.polymorph==fresh.polymorph && i.tool==fresh.tool && i.companion==fresh.companion && i.petSupply==fresh.petSupply && i.costume==fresh.costume;};
     std::vector<const PersistentItem*> carried;
     for(const auto& i:items)
         if(!i.destroyed && i.owner==owner.owner && i.placement && i.placement->kind==ItemStorageKind::Inventory && bagOf(i.placement->storageId)!=bags.end())
@@ -1562,11 +1583,12 @@ std::expected<OwnerRefinement,OwnerRefinementError> MakeOwnerRefinement(const It
     return OwnerRefinement{std::move(*plan),std::move(*commit)};
 }
 std::expected<ItemCommit,E> MakeUnequipCommit(const ItemCatalog& c,std::array<std::uint8_t,16> operationId,ItemOwnerFence owner,
-    std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> inventory,ItemInstanceId id,ItemPlacement target)
+    std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> inventory,ItemInstanceId id,ItemPlacement target,EquipContext who)
 {
     if(std::ranges::all_of(operationId,[](auto b){return b==0;}))return std::unexpected(E::InvalidOperation);
     if(target.kind!=ItemStorageKind::Inventory)return std::unexpected(E::UnsupportedState);
     const auto* source=Placed(inventory,owner,id);if(!source)return std::unexpected(E::MissingItem);
+    if(source->costume)return MakeCostumeWearCommit(c,operationId,owner,storages,inventory,id,target,who,false);
     if(source->placement->kind!=ItemStorageKind::Equipment)return std::unexpected(E::UnsupportedState);
     auto taken=*source;taken.revision++;taken.placement=target;
     return Relocate(c,operationId,owner,storages,inventory,{{*source,taken}});

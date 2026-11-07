@@ -1,3 +1,4 @@
+#include "TypedCostumes.hpp"
 #include "stdafx.h"
 #include "TypedCompanions.hpp"
 #include "ItemCatalogRuntime.hpp"
@@ -465,6 +466,7 @@ item::FixedCompanionSource TypedFixedCompanionBonuses(entt::entity owner)
 }
 void StopTypedGrowthPetClock(entt::entity owner)
 {
+    StopTypedCostumes(owner);
     StopTypedFixedCompanions(owner);
     StopTypedPetSkins(owner);
     const auto* typed = g_registry.try_get<ecs::TypedItems>(owner);
@@ -478,6 +480,7 @@ void StopTypedGrowthPetClock(entt::entity owner)
 
 void FinishTypedGrowthPetClocks()
 {
+    FinishTypedCostumes();
     for (auto& [key,clock] : growthClocks)
     {
         StopGrowthClock(*clock);
