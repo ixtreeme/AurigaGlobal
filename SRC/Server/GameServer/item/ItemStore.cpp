@@ -5,6 +5,7 @@
 #include "TypedAccessoryClock.hpp"
 #include "TypedCompanions.hpp"
 #include "TypedRecovery.hpp"
+#include "TypedSoulClock.hpp"
 #include "../core/GameConfig.h"
 
 #include <SQL/AsyncSQL.h>
@@ -231,6 +232,7 @@ bool RequestLoginLoad(std::uint32_t pid, std::function<void(LoginLoad)> done)
     if(DeferAccessoryLogin(pid,[pid,done]{RequestLoginLoad(pid,done);})){TickTypedAccessoryClocks();return true;}
     if(DeferGrowthPetLogin(pid,[pid,done]{RequestLoginLoad(pid,done);}))return true;
     if(DeferPetSkinLogin(pid,[pid,done]{RequestLoginLoad(pid,done);}))return true;
+    if(DeferSoulLogin(pid,[pid,done]{RequestLoginLoad(pid,done);}))return true;
     if(DeferCostumeLogin(pid,[pid,done]{RequestLoginLoad(pid,done);}))return true;
     if(DeferFixedCompanionLogin(pid,[pid,done]{RequestLoginLoad(pid,done);}))return true;
 	const ItemOwner owner { ItemOwnerKind::Character, pid };
@@ -319,8 +321,9 @@ bool RequestCommitMany(std::vector<OwnerRead> owners,ItemCommit commit,std::func
     auto skins=BeginPetSkinCommit(owners,commit);
     auto fixed=BeginFixedCompanionCommit(owners,commit);
     auto costumes=BeginCostumeCommit(owners,commit);
-    auto completed=[settle=*clock,recover=*recovery,pet,skins,fixed,costumes,done=std::move(done)](MultiCommitOutcome result) mutable {settle(&result);recover(&result);pet(&result);skins(&result);fixed(&result);costumes(&result);done(std::move(result));};
+    auto souls=BeginSoulCommit(owners,commit);
+    auto completed=[settle=*clock,recover=*recovery,pet,skins,fixed,costumes,souls,done=std::move(done)](MultiCommitOutcome result) mutable {settle(&result);recover(&result);pet(&result);skins(&result);fixed(&result);costumes(&result);souls(&result);done(std::move(result));};
     const bool queued=QueueCommit(std::make_shared<PendingCommit>(PendingCommit{std::move(owners),std::move(commit),std::move(completed)}));
-    if(!queued){(*clock)(nullptr);(*recovery)(nullptr);pet(nullptr);skins(nullptr);fixed(nullptr);costumes(nullptr);}return queued;
+    if(!queued){(*clock)(nullptr);(*recovery)(nullptr);pet(nullptr);skins(nullptr);fixed(nullptr);costumes(nullptr);souls(nullptr);}return queued;
 }
 } // namespace auriga::item::runtime

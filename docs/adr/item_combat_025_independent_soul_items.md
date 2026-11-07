@@ -128,3 +128,9 @@ Az auditált prototípusok nem kész konvertált release. A teljes policy/asset,
 ár, refine-szint, instance- és referencia-leképezés, az aktív állapot tartós
 életciklusa, lejelentkezés/halál és Unity-megjelenítés még F3..F6 feladat.
 Távoli változtatás vagy éles telepítés ebből az ADR-ből nem következik.
+
+2026-11-07-i kiegészítés: a [C30 / IC-065](item_combat_065_soul_runtime.md)
+beköti a gyári állapotot, tartós töltést, aktiválást, tekercses fejlesztést
+és a végső elfogadott sebzéshez kapcsolt, eseményenként egyszeri fogyást
+szerveren és Unityben. A fenti F2-only határ történeti; aktuális helyi
+próbák és a combat/ECS crash-határ a [jelentésben](../reports/item_combat/2026-11-07_soul_runtime.md).

@@ -1,3 +1,4 @@
+#include <item/SoulRuntime.hpp>
 #include "ItemPersistenceSql.hpp"
 #include <item/OwnedGround.hpp>
 #include <random>
@@ -21,7 +22,7 @@ using Cell=std::optional<std::string>;
 using Row=std::vector<Cell>;
 using Rows=std::vector<Row>;
 using U=SqlParam;
-constexpr std::string_view Columns="instance_id,category_id,local_id,owner_kind,owner_id,state_revision,refinement_level,stack_count,destroyed,bound_kind,bound_id,storage_kind,storage_id,anchor_cell,locked_attribute,accessory_capacity,accessory_grade,accessory_remaining_ms,accessory_permanent,state_sha256,automatic_remaining_raw,automatic_active,automatic_next_ms,toggle_remaining_ms,toggle_active,book_skill_id,polymorph_form_id,polymorph_book_grade,polymorph_practice,tool_training_points,tool_bait_power,companion_recall_requested,growth_pet_blob,pet_supply_blob,companion_riding_requested,companion_lifetime_blob,costume_lifetime_blob,regalia_blob,bonus_tool_blob";
+constexpr std::string_view Columns="instance_id,category_id,local_id,owner_kind,owner_id,state_revision,refinement_level,stack_count,destroyed,bound_kind,bound_id,storage_kind,storage_id,anchor_cell,locked_attribute,accessory_capacity,accessory_grade,accessory_remaining_ms,accessory_permanent,state_sha256,automatic_remaining_raw,automatic_active,automatic_next_ms,toggle_remaining_ms,toggle_active,book_skill_id,polymorph_form_id,polymorph_book_grade,polymorph_practice,tool_training_points,tool_bait_power,companion_recall_requested,growth_pet_blob,pet_supply_blob,companion_riding_requested,companion_lifetime_blob,costume_lifetime_blob,regalia_blob,bonus_tool_blob,soul_blob,soul_channel,soul_active";
 template<class Range> std::string Bytes(const Range& values){std::string out;out.reserve(values.size());for(auto b:values)out.push_back(static_cast<char>(b));return out;}
 SqlParams Owner(ItemOwner o){return {U::UInt(static_cast<unsigned>(o.kind)),U::UInt(o.id)};}
 void Append(SqlParams& to,SqlParams from){for(auto& p:from)to.push_back(std::move(p));}
@@ -40,7 +41,7 @@ SqlTransaction Guards(const ItemCatalog& c)
         {"SELECT 1 WHERE @@tx_isolation='REPEATABLE-READ' AND @@foreign_key_checks=1 AND @@check_constraint_checks=1",{},{},1},
         {"SELECT 1 FROM player.item_persistence_format WHERE singleton=1 AND schema_version=1 AND catalog_revision=? AND catalog_sha256=? LOCK IN SHARE MODE",
             {U::UInt(c.Revision()),U::Blob(Bytes(c.ContentHash()))},{},1},
-        {"SELECT 1 FROM information_schema.TABLES WHERE (TABLE_SCHEMA='player' AND TABLE_NAME IN ('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance','item_instance_attribute','item_instance_socket','item_occupied_cell','item_recovery_schedule')) OR (TABLE_SCHEMA='protos' AND TABLE_NAME IN ('item_base','bonus_definition')) HAVING COUNT(*)=12 AND SUM(ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE')=12 AND (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob','pet_supply_blob','companion_riding_requested','companion_lifetime_blob','costume_lifetime_blob','regalia_blob','bonus_tool_blob'))=19 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_book_learning' AND ENGINE='InnoDB')=1 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_pet_study_cooldown' AND ENGINE='InnoDB')=1",{},{},1},
+        {"SELECT 1 FROM information_schema.TABLES WHERE (TABLE_SCHEMA='player' AND TABLE_NAME IN ('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance','item_instance_attribute','item_instance_socket','item_occupied_cell','item_recovery_schedule')) OR (TABLE_SCHEMA='protos' AND TABLE_NAME IN ('item_base','bonus_definition')) HAVING COUNT(*)=12 AND SUM(ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE')=12 AND (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob','pet_supply_blob','companion_riding_requested','companion_lifetime_blob','costume_lifetime_blob','regalia_blob','bonus_tool_blob','soul_blob','soul_channel','soul_active'))=22 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_book_learning' AND ENGINE='InnoDB')=1 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_pet_study_cooldown' AND ENGINE='InnoDB')=1 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_soul_strike_event' AND ENGINE='InnoDB')=1",{},{},1},
     };
 }
 SqlParams ItemValues(const ItemCatalog& c,const PersistentItem& p)
@@ -69,6 +70,10 @@ SqlParams ItemValues(const ItemCatalog& c,const PersistentItem& p)
     a.push_back(p.costume ? U::Blob(Bytes(EncodeCostumeLifetime(*p.costume))) : U::Null());
     a.push_back(p.regalia ? U::Blob(Bytes(EncodeRegaliaState(*p.regalia))) : U::Null());
     a.push_back(p.bonusTool ? U::Blob(Bytes(EncodeBonusToolState(*p.bonusTool))) : U::Null());
+    a.push_back(p.soul ? U::Blob(Bytes(EncodeSoulState(*p.soul))) : U::Null());
+    const auto* soul=std::get_if<ItemSoulRow>(&c.Find(p.key)->category);
+    a.push_back(soul && soul->channel ? U::UInt(static_cast<unsigned>(*soul->channel)) : U::Null());
+    a.push_back(U::UInt(p.soul && p.soul->active && !p.destroyed));
     return a;
 }
 std::string Marks(std::size_t n){std::string s;for(std::size_t i=0;i<n;++i){if(i)s+=",";s+="?";}return s;}
@@ -144,6 +149,11 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
         {U::Blob(r.ground->core),U::UInt(r.ground->run)},{},1});
     tx.push_back({"INSERT INTO player.item_operation_receipt(operation_id,request_sha256,catalog_revision,catalog_sha256,operation_kind,outcome_code,result_payload) VALUES(?,?,?,?,?,?,?)",
         {U::Blob(Bytes(r.operationId)),U::Blob(Bytes(*digest)),U::UInt(r.catalogRevision),U::Blob(Bytes(r.catalogHash)),U::UInt(static_cast<unsigned>(r.kind)),U::UInt(r.outcomeCode),U::Blob(Bytes(r.result))},1,{}});
+    if(r.outcomeCode==SoulOutcome && r.result[4]==static_cast<unsigned>(SoulAction::Strike)){
+        const auto read=[&](unsigned at){std::uint64_t v=0;for(unsigned j=0;j<8;++j)v|=std::uint64_t{r.result[at+j]}<<(8*j);return v;};
+        auto values=Owner(r.owners.front().owner);Append(values,{U::UInt(read(40)),U::Blob(Bytes(r.operationId)),U::UInt(read(48)),U::UInt(read(56)),U::Int(static_cast<std::int64_t>(read(64))),U::Int(static_cast<std::int64_t>(read(72)))});
+        tx.push_back({"INSERT INTO player.item_soul_strike_event(owner_kind,owner_id,event_id,operation_id,target_id,target_revision,input_damage_raw,output_damage_raw) VALUES(?,?,?,?,?,?,?,?)",std::move(values),1,{}});
+    }
     auto owners=r.owners;std::ranges::sort(owners,{},&ItemOwnerFence::owner);
     for(const auto& o:owners)
     {
@@ -473,7 +483,7 @@ std::expected<LoadedItemOwner,E> LoadItemOwner(CAsyncSQL& db,const ItemCatalog& 
     Message m(db.DirectTransactionPrepared(std::move(tx)));if(!m)return std::unexpected(E::SqlFailure);
     auto recoveryRows=Result(*m,10,3,1);auto learningRows=Result(*m,11,3,1);auto petCooldownRows=Result(*m,12,2,4096);
     auto fence=Result(*m,3,1,1),storageRows=Result(*m,4,5,MaxLoadedOwnerStorages),walletRows=Result(*m,5,3,2),
-        itemRows=Result(*m,6,39,MaxLoadedOwnerItems),attributes=Result(*m,7,4,MaxLoadedOwnerItems*8),stones=Result(*m,8,7,MaxLoadedOwnerItems*3),cells=Result(*m,9,6,65536);
+        itemRows=Result(*m,6,42,MaxLoadedOwnerItems),attributes=Result(*m,7,4,MaxLoadedOwnerItems*8),stones=Result(*m,8,7,MaxLoadedOwnerItems*3),cells=Result(*m,9,6,65536);
     for(const auto* r:{&fence,&storageRows,&walletRows,&itemRows,&attributes,&stones,&cells,&recoveryRows,&learningRows,&petCooldownRows})if(!*r)return std::unexpected(r->error());
     try
     {
@@ -552,6 +562,8 @@ std::expected<LoadedItemOwner,E> LoadItemOwner(CAsyncSQL& db,const ItemCatalog& 
             }
             if(row[37]){const auto state=DecodeRegaliaState({reinterpret_cast<const std::uint8_t*>(row[37]->data()),row[37]->size()});if(!state)throw Invalid{};item.regalia=*state;}
             if(row[38]){const auto state=DecodeBonusToolState({reinterpret_cast<const std::uint8_t*>(row[38]->data()),row[38]->size()});if(!state)throw Invalid{};item.bonusTool=*state;}
+            if(row[39]){const auto decoded=DecodeSoulState({reinterpret_cast<const std::uint8_t*>(row[39]->data()),row[39]->size()});if(!decoded)throw Invalid{};item.soul=*decoded;}
+            {const auto* definition=std::get_if<ItemSoulRow>(&c.Find(item.key)->category);const auto channel=definition && definition->channel ? std::optional{std::to_string(static_cast<unsigned>(*definition->channel))} : std::nullopt;if(row[40]!=channel || row[41]!=std::optional<std::string>{item.soul && item.soul->active && !item.destroyed ? "1" : "0"})throw Invalid{};}
             if(!indexes.emplace(id->Value(),out.items.size()).second)throw Invalid{};out.items.push_back(item);hashes.push_back(Array<32>(row[19]));
         }
         std::set<std::pair<std::uint64_t,unsigned>> seenAttributes,seenStones;

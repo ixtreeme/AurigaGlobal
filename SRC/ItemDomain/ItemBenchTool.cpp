@@ -82,7 +82,7 @@ bool Installed(CAsyncSQL& sql)
 {
     return Rows(sql,"SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN "
         "('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance',"
-        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule','item_pet_study_cooldown')").at(0).at(0)=="14" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob','companion_riding_requested','companion_lifetime_blob','costume_lifetime_blob','regalia_blob','bonus_tool_blob')").at(0).at(0)=="18";
+        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule','item_pet_study_cooldown','item_soul_strike_event')").at(0).at(0)=="15" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob','companion_riding_requested','companion_lifetime_blob','costume_lifetime_blob','regalia_blob','bonus_tool_blob','soul_blob','soul_channel','soul_active')").at(0).at(0)=="21";
 }
 std::shared_ptr<const ItemCatalog> Catalog(CAsyncSQL& sql)
 {
@@ -131,6 +131,7 @@ Json State(const ItemCatalog& c,const p::LoadedItemOwner& o)
             {"toggle",i.toggle ? Json{{"remaining_ms",i.toggle->remainingMs},{"active",i.toggle->active}} : Json(nullptr)},
             {"bound",i.boundTo.has_value()},
             {"accessory",i.accessory ? Json{{"capacity",i.accessory->unlockedCapacity},{"grade",i.accessory->activeGrade},{"remaining_ms",i.accessory->remainingMs},{"permanent",i.accessory->permanent}} : Json(nullptr)}});
+        if(i.soul)items.back()["soul"]={{"charge",i.soul->charge},{"strikes",i.soul->strikes},{"remainder_ms",i.soul->rechargeRemainderMs},{"active",i.soul->active}};
         if(i.regalia){const auto& s=*i.regalia;Json bonuses=Json::array();for(const auto& b:s.bonuses)if(b)bonuses.push_back({{"bonus",static_cast<unsigned>(b->bonus)},{"value",b->valueScaled}});items.back()["regalia"]={{"active",s.active},{"capacity_ms",s.capacityMs},{"remaining_ms",s.remainingMs},{"bonuses",bonuses}};}
         if(i.bonusTool){items.back()["bonus_tool"]={{"remaining_bp",i.bonusTool->remainingBp}};if(i.bonusTool->payload)items.back()["bonus_tool"]["payload"]={{"bonus",static_cast<unsigned>(i.bonusTool->payload->bonus)},{"value",i.bonusTool->payload->valueScaled}};}
         if(i.costume) items.back()["costume"]={{"started",i.costume->started},{"expired",i.costume->expired},{"deadline_ms",i.costume->deadlineUtcMs},{"remaining_ms",i.costume->remainingMs}};
@@ -359,6 +360,7 @@ Json Grant(CAsyncSQL& sql,const Json& request)
         const auto now=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         const auto initial=InitialPetSupplyState(*c,item.key,now);Require(initial.has_value(),"Érvénytelen petkellék-óra.");item.petSupply=*initial;
     }
+    if(const auto* soul=std::get_if<ItemSoulRow>(&entry->category);soul && soul->kind==SoulKind::Core){const auto initial=MakeSoulState(*c,item.key,item.refinementLevel);Require(initial.has_value(),"Érvénytelen lélekállapot.");item.soul=*initial;}
     const auto grantEntropy=OperationId();
     if(const auto* regalia=std::get_if<ItemRegaliaRow>(&entry->category))item.regalia=InitialRegalia(*regalia,grantEntropy,item.id.Value());
     if(const auto* bonusTool=std::get_if<ItemBonusToolRow>(&entry->category))item.bonusTool=InitialBonusTool(*bonusTool);

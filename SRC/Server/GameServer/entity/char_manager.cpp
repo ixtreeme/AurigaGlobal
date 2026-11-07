@@ -1,3 +1,4 @@
+#include "../item/TypedSoulClock.hpp"
 #include "stdafx.h"
 #include "../ecs/systems/ViewSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
@@ -515,6 +516,7 @@ void CHARACTER_MANAGER::DestroyCharacter(entt::entity character)
 			members.erase(character);
 		return;
 	}
+    if (DeferTypedSoulDestroy(character))return;
 	if (m_destroyingCharacters.contains(character))
 		return;
 	if (m_bUsePendingDestroy)

@@ -1,8 +1,10 @@
 #include <item/TypedInventoryWire.hpp>
 #include <item/ItemCatalog.hpp>
 #include <item/ItemWireCodec.hpp>
+#include <item/SoulRuntime.hpp>
 
 #include <limits>
+#include <set>
 #include <algorithm>
 
 namespace auriga::item
@@ -76,10 +78,11 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
 		return item.growthPet && (RecallRequested(item) ||
 			(item.growthPet->life.clock == CompanionClock::ActiveTime && !item.growthPet->life.remainingMs));
 	});
+    const bool hasSoul=std::ranges::any_of(items,[&](const auto& i){return i.key.Category()==ItemCategory::Soul;});
     const bool hasSpecial=std::ranges::any_of(items,[](const auto& i){return i.regalia || i.bonusTool;});
     const bool hasCostumes=std::ranges::any_of(items,[](const auto& i){return i.costume.has_value();});
 	const bool hasCompanions = std::ranges::any_of(items, [](const auto& item) { return item.companion.has_value(); });
-	w.Put<std::uint8_t>(hasSpecial ? 14 : hasCostumes ? 13 : hasCompanions ? 12 : hasPetSupplies ? 10 : hasGrowthStatus ? 9 : hasGrowthPets ? 8 : std::ranges::any_of(items,[](const auto& i){return i.tool.has_value();}) ? 6 : std::ranges::any_of(items,[](const auto& i){return i.polymorph.has_value();}) ? 5 : std::ranges::any_of(items,[](const auto& i){return i.bookSkill.has_value();}) ? 4 : std::ranges::any_of(items,[](const auto& i){return i.toggle.has_value();}) ? 3 : std::ranges::any_of(items,[](const auto& i){return i.automatic.has_value();}) ? 2 : TypedInventoryVersion);
+	w.Put<std::uint8_t>(hasSoul ? 15 : hasSpecial ? 14 : hasCostumes ? 13 : hasCompanions ? 12 : hasPetSupplies ? 10 : hasGrowthStatus ? 9 : hasGrowthPets ? 8 : std::ranges::any_of(items,[](const auto& i){return i.tool.has_value();}) ? 6 : std::ranges::any_of(items,[](const auto& i){return i.polymorph.has_value();}) ? 5 : std::ranges::any_of(items,[](const auto& i){return i.bookSkill.has_value();}) ? 4 : std::ranges::any_of(items,[](const auto& i){return i.toggle.has_value();}) ? 3 : std::ranges::any_of(items,[](const auto& i){return i.automatic.has_value();}) ? 2 : TypedInventoryVersion);
 	w.Put<std::uint16_t>(static_cast<std::uint16_t>(storages.size()));
 	for (const auto& s : storages)
 	{
@@ -166,7 +169,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
             }
 		}
 
-        if(hasPetSupplies || hasCompanions || hasCostumes || hasSpecial) {
+        if(hasPetSupplies || hasCompanions || hasCostumes || hasSpecial || hasSoul) {
             const auto* row=std::get_if<ItemPetSupplyRow>(&catalog.Find(item.key)->category);
             const auto* profile=row ? catalog.FindPetSupplyProfile(row->profile) : nullptr;
             w.Put<std::uint8_t>(item.petSupply ? static_cast<unsigned>(profile->kind) : 0);
@@ -177,16 +180,17 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
             }
         }
 
-        if(hasCostumes || hasSpecial) {
+        if(hasCostumes || hasSpecial || hasSoul) {
             w.Put<std::uint8_t>(item.costume.has_value());
             if(item.costume){const auto& row=std::get<ItemCostumeRow>(catalog.Find(item.key)->category);w.Put<std::uint8_t>(static_cast<unsigned>(row.kind));w.Put<std::uint8_t>(row.weapon ? static_cast<unsigned>(*row.weapon) : 0);w.Put<std::uint8_t>(static_cast<unsigned>(row.clock));w.Put(row.durationMs);for(auto byte:EncodeCostumeLifetime(*item.costume))w.Put(byte);}
         }
 
-        if(hasSpecial){
+        if(hasSpecial || hasSoul){
             if(!ValidatePersistentItem(catalog,item))return std::unexpected(E::BadValue);
             w.Put<std::uint8_t>(item.regalia.has_value());if(item.regalia){const auto& row=std::get<ItemRegaliaRow>(catalog.Find(item.key)->category);w.Put<std::uint8_t>(static_cast<unsigned>(row.kind));w.Put(row.slot);w.Put(row.grade);for(auto b:EncodeRegaliaState(*item.regalia))w.Put(b);w.Put<std::uint8_t>(row.rules.size());for(const auto& rule:row.rules){w.Put(rule.index);w.Put(rule.variant);w.Put(rule.minimumChargeBp);w.Put<std::uint32_t>(static_cast<unsigned>(rule.bonus.bonus));w.Put<std::uint64_t>(rule.bonus.valueScaled);}}
             w.Put<std::uint8_t>(item.bonusTool.has_value());if(item.bonusTool){const auto& row=std::get<ItemBonusToolRow>(catalog.Find(item.key)->category);w.Put<std::uint8_t>(static_cast<unsigned>(row.operation));w.Put(row.units);w.Put(row.parameter);for(auto b:EncodeBonusToolState(*item.bonusTool))w.Put(b);w.Put<std::uint8_t>(row.tiers.size());for(const auto& t:row.tiers){w.Put(t.draw);w.Put(t.tier);w.Put(t.chanceBp);}}
         }
+        if(hasSoul){const auto* row=std::get_if<ItemSoulRow>(&catalog.Find(item.key)->category);w.Put<std::uint8_t>(row ? static_cast<unsigned>(row->kind) : 0);if(row){if(!ValidatePersistentItem(catalog,item))return std::unexpected(E::BadValue);w.Put<std::uint8_t>(row->channel ? static_cast<unsigned>(*row->channel) : 0);w.Put(row->refineChanceBp);if(item.soul){for(auto b:EncodeSoulState(*item.soul))w.Put(b);const auto& levels=catalog.FindSoulProfile(*row->profile)->levels;w.Put<std::uint16_t>(levels.size());for(const auto& l:levels){w.Put(l.level);w.Put(l.chargeCapacity);w.Put(l.cycleChargeCost);w.Put(l.strikesPerCycle);w.Put(l.initialCharge);w.Put(l.initialStrikes);w.Put(l.rechargeIntervalMs);w.Put(l.firstMultiplierBp);w.Put(l.secondMultiplierBp);w.Put(l.thirdMultiplierBp);}}}}
 	}
 	if (w.out.size() > MaxPacket) return std::unexpected(E::TooLarge);
 	const auto size = static_cast<std::uint32_t>(w.out.size());
@@ -201,7 +205,7 @@ std::expected<TypedInventoryView, TypedInventoryWireError> DecodeTypedInventory(
 		Reader r(bytes);
 		if (r.Get<std::uint8_t>() != TypedInventoryHeader) return std::unexpected(E::BadHeader);
 		if (r.Get<std::uint32_t>() != bytes.size()) return std::unexpected(E::BadSize);
-		const auto version=r.Get<std::uint8_t>();if (version<TypedInventoryVersion || version>14) return std::unexpected(E::BadVersion);
+		const auto version=r.Get<std::uint8_t>();if (version<TypedInventoryVersion || version>15) return std::unexpected(E::BadVersion);
 		TypedInventoryView view;
 		for (auto n = r.Get<std::uint16_t>(); n; --n)
 		{
@@ -342,8 +346,10 @@ std::expected<TypedInventoryView, TypedInventoryWireError> DecodeTypedInventory(
                 if(tool){ItemBonusToolRow rule{item.key,static_cast<SpecialBonusOperation>(r.Get<std::uint8_t>()),r.Get<std::uint16_t>(),r.Get<std::uint16_t>()};const auto raw=r.Take(18);std::vector<std::uint8_t> blob;for(auto b:raw)blob.push_back(std::to_integer<std::uint8_t>(b));const auto state=DecodeBonusToolState(blob);if(!state)throw Bad{};rule.payload=state->payload;const auto n=r.Get<std::uint8_t>();if(n>48)throw Bad{};for(unsigned j=0;j<n;++j)rule.tiers.push_back({r.Get<std::uint8_t>(),r.Get<std::uint8_t>(),r.Get<std::uint16_t>()});if(!ValidBonusToolState(rule,*state) || kind!=1)throw Bad{};item.bonusTool=*state;view.bonusToolRules.emplace(item.id,rule);}
                 else if(item.key.Category()==ItemCategory::BonusTool)throw Bad{};
             }
+            if(version>=15){const auto type=r.Get<std::uint8_t>();if(type>2)throw Bad{};if(type){ItemSoulRow row{item.key,static_cast<SoulKind>(type)};const auto channel=r.Get<std::uint8_t>();row.refineChanceBp=r.Get<std::uint16_t>();if(item.key.Category()!=ItemCategory::Soul || kind!=1 || row.refineChanceBp>10000)throw Bad{};if(type==1){if(channel<1 || channel>2 || row.refineChanceBp || item.count!=1)throw Bad{};row.channel=static_cast<SoulChannel>(channel);const auto raw=r.Take(21);std::vector<std::uint8_t> b;for(auto v:raw)b.push_back(std::to_integer<std::uint8_t>(v));item.soul=DecodeSoulState(b);SoulProfile profile{1,"wire.soul",{}};const auto n=r.Get<std::uint16_t>();if(n<1 || n>256 || item.refinementLevel>=n)throw Bad{};for(unsigned j=0;j<n;++j)profile.levels.push_back({r.Get<std::uint16_t>(),r.Get<std::uint32_t>(),r.Get<std::uint32_t>(),r.Get<std::uint32_t>(),r.Get<std::uint32_t>(),r.Get<std::uint32_t>(),r.Get<std::uint64_t>(),r.Get<std::uint32_t>(),r.Get<std::uint32_t>(),r.Get<std::uint32_t>()});if(!item.soul || !ValidSoulProfile(profile))throw Bad{};const auto& l=profile.levels[item.refinementLevel];const auto& s=*item.soul;if(s.charge>l.chargeCapacity || s.strikes>l.strikesPerCycle || s.rechargeRemainderMs>=l.rechargeIntervalMs || (s.charge==l.chargeCapacity && s.rechargeRemainderMs) || (s.active && s.charge<l.cycleChargeCost))throw Bad{};view.soulRules.emplace(item.id,std::move(profile));}else if(channel || item.refinementLevel)throw Bad{};view.souls.emplace(item.id,row);}else if(item.key.Category()==ItemCategory::Soul)throw Bad{};}
             view.items.push_back(std::move(item));
 		}
+        std::set<SoulChannel> activeSouls;for(const auto& i:view.items)if(i.soul && i.soul->active && !activeSouls.insert(*view.souls.at(i.id).channel).second)throw Bad{};
         for(const auto& item:view.items) {
             if(item.placement && item.placement->kind==ItemStorageKind::PetCarrier) {
                 const auto box=std::ranges::find(view.items,item.placement->storageId,[](const auto& p){return p.id.Value();});

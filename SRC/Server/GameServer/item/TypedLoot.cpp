@@ -1,3 +1,4 @@
+#include "TypedSoulClock.hpp"
 #include "TypedCostumes.hpp"
 #include "stdafx.h"
 #include "TypedLoot.hpp"
@@ -258,7 +259,7 @@ bool PickupTypedLoot(entt::entity character, std::uint32_t vid)
 void TickTypedLoot()
 {
     TickTypedGathering();
-	TickTypedCompanions();TickTypedCostumes();
+	TickTypedCompanions();TickTypedCostumes();TickTypedSouls();
 	TickTypedItemRefreshes();
     TickTypedRecovery();TickTypedAccessoryClocks();
 	TickTypedEquipment();

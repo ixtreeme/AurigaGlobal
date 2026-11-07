@@ -52,6 +52,8 @@ struct TypedInventoryView
     std::map<ItemInstanceId,ItemCostumeRow> costumeRules;
     std::map<ItemInstanceId,ItemRegaliaRow> regaliaRules;
     std::map<ItemInstanceId,ItemBonusToolRow> bonusToolRules;
+    std::map<ItemInstanceId,ItemSoulRow> souls;
+    std::map<ItemInstanceId,SoulProfile> soulRules;
 };
 
 // The owner is the receiving character; it is not repeated on the wire.

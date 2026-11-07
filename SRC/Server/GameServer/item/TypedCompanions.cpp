@@ -1,3 +1,4 @@
+#include "TypedSoulClock.hpp"
 #include "TypedCostumes.hpp"
 #include "stdafx.h"
 #include "TypedCompanions.hpp"
@@ -466,6 +467,7 @@ item::FixedCompanionSource TypedFixedCompanionBonuses(entt::entity owner)
 }
 void StopTypedGrowthPetClock(entt::entity owner)
 {
+    StopTypedSouls(owner);
     StopTypedCostumes(owner);
     StopTypedFixedCompanions(owner);
     StopTypedPetSkins(owner);
@@ -480,6 +482,7 @@ void StopTypedGrowthPetClock(entt::entity owner)
 
 void FinishTypedGrowthPetClocks()
 {
+    FinishTypedSouls();
     FinishTypedCostumes();
     for (auto& [key,clock] : growthClocks)
     {

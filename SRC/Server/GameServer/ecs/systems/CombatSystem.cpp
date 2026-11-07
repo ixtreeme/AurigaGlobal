@@ -1,3 +1,4 @@
+#include "../../item/TypedSoulClock.hpp"
 #include "../../core/stdafx.h"
 #include "../../story/SpyQuestSystem.hpp"
 #include "../../story/CaravanQuestSystem.hpp"
@@ -4666,6 +4667,7 @@ namespace CombatSystem {
 // was a read on the victim; that is what the entity in each call is.
 bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t damageType)
 {
+    if(TypedSoulDamageLocked(victim) || TypedSoulDamageLocked(attacker))return false;
     if (HasTypedEquipment(attacker)) RefreshTypedEquipment(attacker);
     if (HasTypedEquipment(victim)) RefreshTypedEquipment(victim);
     if (HasTypedEquipment(attacker) && !TypedEquipmentView(attacker)) return false;
@@ -5400,6 +5402,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	}
 
 	//PROF_UNIT puRest1("Rest1");
+	uint8_t damageFlag = 0;
 	if (attackerIsCharacter)
 	{
 		if (ecs::PlayerRuntime::IsMonster(attacker) && CombatSystem::IsDeathBlower(attacker))
@@ -5414,7 +5417,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			}
 		}
 
-		uint8_t damageFlag = 0;
+
 
 		if (type == DAMAGE_TYPE_POISON)
 			damageFlag = DAMAGE_POISON;
@@ -5714,6 +5717,10 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		}
 #endif
 
+    }
+    auto accepted=[=](int64_t finalDamage) mutable -> bool {
+        int64_t dam=finalDamage;
+        if(attackerIsCharacter){
 		if (attackerIsCharacter)
 			CombatSystem::SendDamagePacket(victim, attacker, dam, damageFlag);
 #ifdef LEADERBOARD_RAZOR93
@@ -5961,6 +5968,9 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 #endif
 
 	return false;
+    };
+    if(QueueTypedSoulDamage(victim,attacker,dam,damageType,[accepted](int64_t result)mutable{accepted(result);}))return false;
+    return accepted(dam);
 }
 } // namespace CombatSystem
 #endif

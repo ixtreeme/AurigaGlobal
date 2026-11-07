@@ -1,3 +1,4 @@
+#include "SoulRuntimeFixture.hpp"
 #include "PersistentItemFixture.hpp"
 #include "AttributeRuntimeFixture.hpp"
 #include "EffectRuntimeFixture.hpp"
@@ -680,9 +681,26 @@ void FixedCompanionSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c)
         Check(Scalar(admin,"SELECT COUNT(*) FROM player.item_instance WHERE instance_id=? AND destroyed=1 AND stack_count=0 AND companion_recall_requested=0 AND companion_riding_requested=0 AND OCTET_LENGTH(companion_lifetime_blob)=22",{U::UInt(id.Value())})=="1","expired lifetime remains in the destroyed audit row");
     }
 }
+void SoulSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c){
+    const ItemOwner owner{ItemOwnerKind::Character,880130};const ItemStorageLayout bag{{owner,ItemStorageKind::Inventory,1},10,9,1};const ItemWallet wallet{owner,WalletCurrency::Gold,1,0};Check(p::ProvisionOwner(admin,c,owner,std::span(&bag,1),std::span(&wallet,1)).has_value(),"soul owner provision");unsigned serial=0;const auto op=[&](){std::array<std::uint8_t,16> b{0x30,0x73};b[2]=static_cast<std::uint8_t>(++serial);return b;};auto state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    for(unsigned j=1;j<=4;++j){ItemGrant g{ItemKey::Create(14,30000+(j==4 ? 1 : j)).value()};g.count=j==3 ? 4 : 1;std::array ids{ItemInstanceId::Create(7000000+j).value()};auto grant=MakeGrantCommit(c,op(),state.fence,state.storages,state.items,g,ids);Check(grant && p::CommitItems(writer,c,*grant).has_value(),"SQL soul grant");state=p::LoadCurrentItemOwner(writer,c,owner).value();}
+    const auto core=ItemInstanceId::Create(7000001).value(),other=ItemInstanceId::Create(7000004).value();SoulContext context;context.actor.level=120;
+    const auto plan=[&](ItemInstanceId id,SoulAction action,std::uint64_t elapsed=0,std::optional<ItemInstanceId> scroll={}){return MakeSoulCommit(c,op(),state.fence,state.storages,state.items,id,scroll,action,elapsed,0,context);};
+    auto charged=plan(core,SoulAction::Recharge,30000);Check(charged && p::CommitItems(writer,c,charged->commit).has_value(),"SQL charge");state=p::LoadCurrentItemOwner(writer,c,owner).value();auto activated=plan(core,SoulAction::Activate);Check(activated && p::CommitItems(writer,c,activated->commit).has_value(),"SQL activation");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    auto otherCharged=plan(other,SoulAction::Recharge,30000);Check(otherCharged && p::CommitItems(writer,c,otherCharged->commit).has_value(),"second red charge");state=p::LoadCurrentItemOwner(writer,c,owner).value();Check(!plan(other,SoulAction::Activate),"one active core per owner-channel");
+    // Forge only an incomplete owner view. The SQL generated unique index still rejects it.
+    auto incomplete=state.items;std::erase_if(incomplete,[&](const auto& i){return i.id==core;});auto competing=MakeSoulCommit(c,op(),state.fence,state.storages,incomplete,other,{},SoulAction::Activate,0,0,context);Check(competing && !p::CommitItems(writer,c,competing->commit),"SQL enforces channel uniqueness independently of caller snapshot");
+    context.channel=SoulChannel::NormalAttack;context.event=30001;context.target=301;context.targetRevision=1;context.targetIsNpc=true;context.damage=10001;auto strike=plan(core,SoulAction::Strike);Check(strike && p::CommitItems(writer,c,strike->commit).has_value(),"accepted hit and debit in one transaction");Check(p::CommitItems(writer,c,strike->commit)->replay,"same operation replay is idempotent");state=p::LoadCurrentItemOwner(writer,c,owner).value();auto duplicate=plan(core,SoulAction::Strike);Check(duplicate && !p::CommitItems(writer,c,duplicate->commit),"same damage event with a new operation never debits twice");
+    Check(Scalar(admin,"SELECT COUNT(*) FROM player.item_soul_strike_event WHERE owner_id=880130")=="1","one durable combat event");Check(Find(p::LoadCurrentItemOwner(writer,c,owner).value(),core.Value()).soul->strikes==1,"exactly one accepted strike debit");
+    auto saved=state.items;Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"soul relog session");state=p::LoadCurrentItemOwner(writer,c,owner).value();Check(state.items==saved,"active charge and strikes reload exactly");context={};context.actor.level=120;auto off=plan(core,SoulAction::Deactivate);Check(off && p::CommitItems(writer,c,off->commit).has_value(),"SQL deactivation");state=p::LoadCurrentItemOwner(writer,c,owner).value();auto refined=plan(core,SoulAction::Refine,0,ItemInstanceId::Create(7000003).value());Check(refined && p::CommitItems(writer,c,refined->commit).has_value(),"SQL level and one scroll atomic");state=p::LoadCurrentItemOwner(writer,c,owner).value();saved=state.items;Check(p::ClaimOwnerSession(writer,c,owner).has_value() && p::LoadCurrentItemOwner(writer,c,owner)->items==saved,"refined soul and scroll survive relog");
+}
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
 {
     auto source=attribute_runtime_fixture::Catalog();
+    auto soulFixture=soul_runtime_fixture::Catalog();auto soulRef=soulFixture.refinements.back();soulRef.id=30030;source.refinements.push_back(soulRef);auto soulProfile=soulFixture.soulProfiles.back();soulProfile.id=30030;source.soulProfiles.push_back(soulProfile);
+    for(auto base:soulFixture.items)if(base.key.Category()==ItemCategory::Soul){base.key=ItemKey::Create(14,30000+base.key.LocalId()).value();if(base.refinementProfile==5)base.refinementProfile=30030;source.items.push_back(base);}
+    for(auto row:soulFixture.soulItems){row.key=ItemKey::Create(14,30000+row.key.LocalId()).value();if(row.profile)row.profile=30030;source.soulItems.push_back(row);}
+
     effect_runtime_fixture::Extend(source);book_runtime_fixture::Extend(source);book_aid_fixture::Extend(source);polymorph_runtime_fixture::Extend(source);fish_processing_fixture::Extend(source);tool_runtime_fixture::Extend(source);
     const auto petSeal=ItemKey::Create(ItemCategory::Companion,1).value();
     const auto mountSeal=ItemKey::Create(ItemCategory::Companion,2).value();
@@ -1536,6 +1554,7 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
     }
     GrowthPetBirthSql(admin,writer,*c,hatchEgg,growthSeal,petSeal,petBook);
     FixedCompanionSql(admin,writer,*c);
+    SoulSql(admin,writer,*c);
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);
 }

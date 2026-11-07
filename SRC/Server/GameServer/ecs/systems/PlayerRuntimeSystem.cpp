@@ -1,3 +1,4 @@
+#include "../../item/TypedSoulClock.hpp"
 #include "../../item/TypedBooks.hpp"
 #include "../../core/stdafx.h"
 #include "../../story/SpyQuestSystem.hpp"
@@ -2230,6 +2231,8 @@ bool InventorySystem::CanTakeInventoryItem(entt::entity e, entt::entity item, TI
 #ifdef ENABLE_SOUL_SYSTEM
 int CombatSystem::GetSoulItemDamage(entt::entity attacker, entt::entity victim, int iDamage, uint8_t bSoulType)
 {
+    if(HasTypedSoulChannel(attacker,bSoulType==RED_SOUL ? 1u : 2u))return 0;
+
     if (!ecs::IsCharacter(victim))
         return 0;
 
