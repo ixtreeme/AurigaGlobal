@@ -128,6 +128,8 @@ ItemBaseStats BaseStats(const ItemSkillBookRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemQuestRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemSocketStoneRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemCostumeRow&) { return {}; }
+ItemBaseStats BaseStats(const ItemRegaliaRow&) { return {}; }
+ItemBaseStats BaseStats(const ItemBonusToolRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemToolRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemFishingRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemPolymorphRow&) { return {}; }
@@ -139,7 +141,7 @@ auto VisualKey(const CostumeVisualRow& row) { return std::tuple{row.key,row.char
 
 std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCatalog(ItemCatalogSource source)
 {
-    if (source.schemaVersion != 27 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
+    if (source.schemaVersion != 28 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
     if (auto result = Budget(source); !result) return std::unexpected(result.error());
     for(auto& p:source.attributeProfiles){std::ranges::sort(p.groups,{},&AttributeGroup::pool);std::ranges::sort(p.candidates,[](const auto& a,const auto& b){return std::pair{a.pool,a.bonus}<std::pair{b.pool,b.bonus};});for(auto& a:p.candidates)std::ranges::sort(a.values,{},&AttributeValue::tier);}
     for(auto& p:source.attributeServices)std::ranges::sort(p.tiers,{},&AttributeTierChance::tier);
@@ -345,6 +347,11 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         row = validated->Data(); // normalized levels also feed canonical hashing
         catalog->refinements_.emplace(row.id, std::move(*validated));
     }
+    std::ranges::sort(source.regalia,{},&ItemRegaliaRow::key);std::ranges::sort(source.bonusTools,{},&ItemBonusToolRow::key);
+    std::map<ItemKey,const ItemRegaliaRow*> regalia;std::map<ItemKey,const ItemBonusToolRow*> bonusTools;
+    if(source.regalia.size()>ItemCatalogLimits::Items || source.bonusTools.size()>ItemCatalogLimits::Items)return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"regalia"));
+    for(auto& r:source.regalia){if(!ValidRegalia(r) || !regalia.emplace(r.key,&r).second)return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"regalia",r.key));std::ranges::sort(r.rules,[](const auto& a,const auto& b){return std::tuple{a.index,a.minimumChargeBp,a.variant}<std::tuple{b.index,b.minimumChargeBp,b.variant};});}
+    for(auto& r:source.bonusTools){if(!ValidBonusTool(r) || !bonusTools.emplace(r.key,&r).second)return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"bonus.tool",r.key));std::ranges::sort(r.tiers,[](const auto& a,const auto& b){return std::pair{a.draw,a.tier}<std::pair{b.draw,b.tier};});}
     std::ranges::sort(source.items, {}, &ItemBaseRow::key);
     std::ranges::sort(source.weapons, {}, &ItemWeaponRow::key);
     std::ranges::sort(source.armors, {}, &ItemArmorRow::key);
@@ -554,8 +561,9 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         const bool polymorph = category == ItemCategory::Polymorph;
         const bool soul = category == ItemCategory::Soul, companion = category == ItemCategory::Companion;
         const bool petSupply=category==ItemCategory::Special;
-        const bool stackable = petSupply || material || consumable || container || containerKey || currencyToken || skillBook || questItem || socketStone || fish || polymorph;
-        if (category != ItemCategory::Weapon && category != ItemCategory::Armor && category != ItemCategory::Accessory && !costume && !tool && !soul && !companion && !stackable)
+        const bool isRegalia=category==ItemCategory::Regalia,isBonusTool=category==ItemCategory::BonusTool;
+        const bool stackable = isBonusTool || petSupply || material || consumable || container || containerKey || currencyToken || skillBook || questItem || socketStone || fish || polymorph;
+        if (category != ItemCategory::Weapon && category != ItemCategory::Armor && category != ItemCategory::Accessory && !costume && !tool && !soul && !companion && !isRegalia && !stackable)
             return std::unexpected(Error(ItemCatalogErrorCode::UnsupportedCategory, "item_base", row.key));
         if (!detail::ContentCode(row.contentCode) || !detail::ContentCode(row.nameKey, 128) ||
             !detail::ContentCode(row.descriptionKey, 128) || !detail::AssetReference(row.iconAsset) ||
@@ -589,6 +597,11 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         if (profile->Data().kind != RefinementKind::None && profile->Data().kind != expectedKind)
             return std::unexpected(Error(ItemCatalogErrorCode::WrongRefinementKind, "refinement", row.key, row.refinementProfile));
         std::optional<ItemCategoryRow> child;
+        if(isRegalia && regalia.contains(row.key)){child=*regalia.at(row.key);if(row.baseBonusProfile || (regalia.at(row.key)->kind==RegaliaKind::Rune && row.appearanceProfile))return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase,"regalia.state",row.key));}
+        if(isBonusTool && bonusTools.contains(row.key)){
+            const auto& tool=*bonusTools.at(row.key);child=tool;
+            if(tool.units>row.maxStack || ((tool.operation==SpecialBonusOperation::RuneCharge || tool.operation==SpecialBonusOperation::CostumeGrant) && row.maxStack!=1))return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase,"bonus.tool.stack",row.key));
+        }
         if(petSupply && petSupplies.contains(row.key)) {
             const auto* p=FindProfile(source.petSupplyProfiles,petSupplies.at(row.key)->profile);child=*petSupplies.at(row.key);
             if(row.baseBonusProfile || ((p->kind==PetSupplyKind::Carrier || p->kind==PetSupplyKind::Skin) && row.maxStack!=1))
@@ -777,6 +790,8 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
     auto digest = detail::CanonicalCatalogHash(source);
     if (!digest) return std::unexpected(Error(digest.error(), "content_hash"));
     catalog->digest_ = *digest;
+    for(const auto& r:source.regalia)if(!catalog->Find(r.key))return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow,"regalia",r.key));
+    for(const auto& r:source.bonusTools)if(!catalog->Find(r.key))return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow,"bonus.tool",r.key));
     catalog->source_ = std::move(source);
     for (std::size_t i = 0; i < catalog->source_.mobDropGroups.size(); ++i)
     {

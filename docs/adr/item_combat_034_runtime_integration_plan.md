@@ -26,6 +26,7 @@ A C26q lezárta a tervezett fejlődőpet-rendszert: teljes szerver/MariaDB-újra
 A C27a az állandó típusos hátasra felülést és leszállást is bekötötte, sikeres kétklienses és újrabelépéses Unity-próbával: [jelentés](../reports/item_combat/2026-11-07_typed_mount_riding.md).
 A C27b a fix társak négy óráját, bónuszait és típusos repülési engedélyét is bekötötte; 8 helyi TLS/Unity-eset és 829 ellenőrzés sikeres, aktív/visszahívott/lejárt újrabelépéssel: [jelentés](../reports/item_combat/2026-11-07_fixed_companions.md).
 A C28 a test-, haj- és fegyverjelmezeket is bekötötte: felszerelés, csere, bónusz, publikus megjelenés és négy tartós óra; 12 helyi TLS/Unity-eset és 1606 ellenőrzés sikeres, felszerelt/levett/lejárt újrabelépéssel: [jelentés](../reports/item_combat/2026-11-07_costumes.md), [IC-063](item_combat_063_costume_runtime.md).
+A C29 beköti a hat bónuszos stólát, hét rúnát, részleges rúnatöltést, jelmezresetet és ritka donor/törlés műveleteket, valamint a kapcsolt Gauss-addont: [jelentés](../reports/item_combat/2026-11-07_regalia_special_bonuses.md), [IC-064](item_combat_064_regalia_special_bonuses.md).
 [IC-058](item_combat_058_tera_companion_port.md) · [IC-059](item_combat_059_typed_companion_seals.md) · [IC-060](item_combat_060_typed_pet_hatching.md)
 
 ## Közös szerver–Unity munkamenet (felhasználói döntés, 2026-11-01)
@@ -45,8 +46,7 @@ Az első összevonás részletei és ellenőrzései a
 ## Aktuális hátralévő munka (2026-11-07)
 
 A commitok és a tényleges runtime támogatás összevetése alapján a következő
-hiányok a stóla/rúna és speciális bónuszok,
-lélektárgyak, lőszer és fejlesztési segédek, fiókpénztárca/tárolók,
+hiányok az önálló lélektárgyak, lőszer és fejlesztési segédek, fiókpénztárca/tárolók,
 általános Mission/quest, teljes konverzió és kiadási ellenőrzés.
 A pontos határok és sorrend a [friss auditban](../reports/item_combat/2026-11-07_item_remaining_work.md).
 

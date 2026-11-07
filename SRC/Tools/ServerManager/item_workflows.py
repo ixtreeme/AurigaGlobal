@@ -29,6 +29,8 @@ CATEGORY_HELP = {
     15: ('Társak', 'Pet vagy hátas megidézése, időtartama, képességei és fejlődése.'),
     16: ('Használható tárgy', 'Használatkor Yangra vagy Sárkányérmére váltható tárgy.'),
     17: ('Társak', 'Pet tanítására, élettartamára, képességeire vagy külsejére ható ellátmány.'),
+    19: ('Felszerelés','Hat bónuszos stóla vagy a hét töltéses rúnahely felszerelése.'),
+    20: ('Használható tárgy','Stólabűvölés, rúnatöltés, jelmezreset, bónuszadás és kapcsolt bónusz.'),
     18: ('Használható tárgy', 'Az azonos zárazonosítójú láda kinyitásához szükséges kulcs.'),
 }
 SECTION_HELP = {
@@ -47,7 +49,7 @@ TYPE_SECTION = {1: 'Fegyver és támadás', 2: 'Páncél és ellenállások', 3:
     7: 'Kő és behelyezés', 8: 'Nyitás és jutalmak', 9: 'Képességtanulás',
     10: 'Küldetéskezelés', 11: 'Eszköz és fejlődés', 12: 'Hal, csali és feldolgozás',
     13: 'Átváltozási hatás', 14: 'Lélek és fejlesztés', 15: 'Pet vagy hátas',
-    16: 'Beváltás és érték', 17: 'Petellátmány hatása', 18: 'Kulcs és zárazonosító'}
+    16: 'Beváltás és érték', 17: 'Petellátmány hatása', 18: 'Kulcs és zárazonosító',19:'Stóla és rúna',20:'Speciális bónuszművelet'}
 SUBTYPES = {
     1: ('weapon_subtype', [('1', 'Kard'), ('2', 'Tőr'), ('3', 'Íj'), ('4', 'Kétkezes fegyver'), ('5', 'Csengő'), ('6', 'Legyező'), ('7', 'Lovas lándzsa')]),
     2: ('equip_slot', [('2', 'Testpáncél'), ('3', 'Sisak'), ('4', 'Pajzs'), ('5', 'Cipő')]),

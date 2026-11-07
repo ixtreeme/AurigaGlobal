@@ -89,3 +89,10 @@ Részletek: [C18 tesztjelentés](../reports/item_combat/2026-11-03_attribute_ser
 Kapcsolt/Gauss addon, jelmez/stóla/rúna/reset és a teljes APPLY-konverzió
 külön munka marad. A lock az IC-031 szerinti véletlen választás, nem kézi
 sorválasztó. A C17 időelszámolásának crash/handoff korlátja nem változott.
+
+2026-11-07-i kiegészítés: a kapcsolt addon, jelmezreset/donor/törlés,
+stóla és rúna közös szerver–Unity útját a
+[C29 / IC-064](item_combat_064_regalia_special_bonuses.md) készíti el.
+A C18 normál attribútumszolgáltatása és új protokollt használó C29 együtt
+él; a C18 korábbi lezárásának fenti határa történeti. Teljes APPLY- és
+tartalomkonverzió nem történt.

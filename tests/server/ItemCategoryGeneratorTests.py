@@ -23,7 +23,7 @@ class RegistryTests(unittest.TestCase):
 
     def test_reviewed_registry(self):
         rows = generator.validate_registry(self.document)
-        self.assertEqual([row["id"] for row in rows], list(range(1, 19)))
+        self.assertEqual([row["id"] for row in rows], list(range(1, 21)))
         self.assertEqual(rows[0]["cpp_name"], "Weapon")
         self.assertEqual(rows[-1]["cpp_name"], "ContainerKey")
         header = ROOT / "SRC/Server/common/item/ItemCategory.hpp"

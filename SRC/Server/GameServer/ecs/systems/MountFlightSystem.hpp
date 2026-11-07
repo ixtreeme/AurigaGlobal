@@ -17,7 +17,7 @@
 #include "../../item/TypedCostumes.hpp"
 
 namespace ecs::MountFlightSystem {
-struct Supported { bool fast = false,costumes=false; };
+struct Supported { bool fast = false,costumes=false,specialBonuses=false; };
 struct State {
     bool ready = false, active = false, anchored = false, fast = false;
     int32_t altitude = 0, map = 0;
@@ -54,7 +54,7 @@ inline void Broadcast(entt::entity e) {
 inline void Request(entt::entity e,const TPacketCGMountFlight& p) {
     if(!PlayerRuntime::IsPC(e)||p.action>3)return;
     if(p.action==0) {
-        auto& supported=g_registry.get_or_emplace<Supported>(e);supported.fast=(p.time&1u)!=0;supported.costumes=(p.time&2u)!=0;
+        auto& supported=g_registry.get_or_emplace<Supported>(e);supported.fast=(p.time&1u)!=0;supported.costumes=(p.time&2u)!=0;supported.specialBonuses=(p.time&4u)!=0;
         auto& own=g_registry.get_or_emplace<State>(e);
         if(own.map!=PlayerRuntime::GetMapIndex(e))own=State{};
         own.ready=true;own.map=PlayerRuntime::GetMapIndex(e);Send(e,e);ReplayTypedCostumeAppearances(e);

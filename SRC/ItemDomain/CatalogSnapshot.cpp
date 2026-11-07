@@ -237,6 +237,10 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
         Parent(s.refinementRecipes,recipes,r).ingredients.push_back({r.Key(1),r.U16(3),r.U32(4)});
     });
     Each(source,Table::QuestItems,[&](const Reader& r){s.questItems.push_back({r.Key(),static_cast<QuestItemDispatch>(r.U8(2)),r.Text(3,96),r.U8(4),r.Bool(5)});});
+    Each(source,Table::Regalia,[&](const Reader& r){s.regalia.push_back({r.Key(),static_cast<RegaliaKind>(r.U8(2)),r.U8(3),r.U8(4),r.U64(5),r.U64(6),{}});});
+    Each(source,Table::RegaliaRules,[&](const Reader& r){auto i=std::ranges::find(s.regalia,r.Key(),&ItemRegaliaRow::key);if(i==s.regalia.end())r.Fail(ReadErrorCode::OrphanRow);i->rules.push_back({r.U8(2),r.U8(4),r.U16(3),{static_cast<BonusId>(r.U32(5)),r.I64(6)}});});
+    Each(source,Table::BonusTools,[&](const Reader& r){s.bonusTools.push_back({r.Key(),static_cast<SpecialBonusOperation>(r.U8(2)),r.U16(3),r.U16(4),r.row[5] ? std::optional{BonusEntry{static_cast<BonusId>(r.U32(5)),r.I64(6)}} : std::nullopt,{}});if(bool(r.row[5])!=bool(r.row[6]))r.Fail(ReadErrorCode::InvalidChild);});
+    Each(source,Table::SpecialBonusTiers,[&](const Reader& r){auto i=std::ranges::find(s.bonusTools,r.Key(),&ItemBonusToolRow::key);if(i==s.bonusTools.end())r.Fail(ReadErrorCode::OrphanRow);i->tiers.push_back({r.U8(2),r.U8(3),r.U16(4)});});
     Each(source,Table::Costumes,[&](const Reader& r){s.costumes.push_back({r.Key(),static_cast<CostumeKind>(r.U8(2)),r.row[3] ? std::optional{static_cast<WeaponSubtype>(r.U8(3))} : std::nullopt,static_cast<CostumeClock>(r.U8(4)),r.U64(5)});});
     Each(source,Table::CostumeVisuals,[&](const Reader& r){s.costumeVisuals.push_back({r.Key(),r.U8(2),r.U8(3),r.Text(4)});});
     Each(source,Table::SocketStones,[&](const Reader& r){s.socketStones.push_back({r.Key(),static_cast<SocketStoneKind>(r.U8(2)),r.U8(3),r.U8(4),r.Text(5,96),r.Text(6,96)});});

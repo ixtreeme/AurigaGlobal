@@ -7,6 +7,7 @@
 #include "SocketServices.hpp"
 #include "InstanceAttributes.hpp"
 #include "Costumes.hpp"
+#include "SpecialBonuses.hpp"
 #include "GatheringItems.hpp"
 #include "PolymorphItems.hpp"
 #include "SoulItems.hpp"
@@ -173,10 +174,10 @@ struct ItemSkillBookRow
     std::uint32_t profile = 0;
 };
 using ItemCategoryRow = std::variant<ItemWeaponRow, ItemArmorRow, ItemAccessoryRow, ItemMaterialRow, ItemConsumableRow,
-                                     ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow, ItemSocketStoneRow, ItemCostumeRow, ItemToolRow, ItemFishingRow, ItemPolymorphRow, ItemSoulRow, ItemCompanionRow, ItemPetSupplyRow>;
+                                     ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow, ItemSocketStoneRow, ItemCostumeRow, ItemToolRow, ItemFishingRow, ItemPolymorphRow, ItemSoulRow, ItemCompanionRow, ItemPetSupplyRow, ItemRegaliaRow, ItemBonusToolRow>;
 struct ItemCatalogSource
 {
-    std::uint32_t schemaVersion = 27;
+    std::uint32_t schemaVersion = 28;
     std::uint64_t revision = 0;
     std::vector<ItemBaseRow> items;
     std::vector<ItemWeaponRow> weapons;
@@ -210,6 +211,8 @@ struct ItemCatalogSource
     std::vector<ItemQuestRow> questItems;
     std::vector<ItemSocketStoneRow> socketStones;
     std::vector<ItemCostumeRow> costumes;
+    std::vector<ItemRegaliaRow> regalia;
+    std::vector<ItemBonusToolRow> bonusTools;
     std::vector<CostumeVisualRow> costumeVisuals;
     std::vector<AttributeProfile> attributeProfiles;
     std::vector<AttributeServiceProfile> attributeServices;

@@ -30,7 +30,7 @@ void RefreshTypedEquipment(entt::entity e)
     const auto elapsed=TypedAccessoryElapsed(e);
     const bool mayExpire=std::ranges::any_of(items->state.items,[elapsed](const auto& i){return !i.destroyed && i.placement && i.placement->kind==auriga::item::ItemStorageKind::Equipment && i.accessory && i.accessory->activeGrade && !i.accessory->permanent && elapsed>=i.accessory->remainingMs;});
     if(old && old->fence==items->state.fence && old->applied && old->stats && old->stats->petBonuses==petBonuses && old->stats->fixedCompanion==companion &&
-        !mayExpire && std::ranges::none_of(items->state.items,[](const auto& i){return i.costume.has_value();}) && items->state.recovery.effects.empty() && std::ranges::none_of(items->state.items,[](const auto& i){return i.toggle && i.toggle->active;}))return;
+        !mayExpire && std::ranges::none_of(items->state.items,[](const auto& i){return i.costume.has_value() || i.regalia.has_value();}) && items->state.recovery.effects.empty() && std::ranges::none_of(items->state.items,[](const auto& i){return i.toggle && i.toggle->active;}))return;
     auto effective=items->state.items;ProjectTypedCostumes(e,effective);
     const auto time=auriga::item::ProjectAccessoryTime(*catalog,effective,elapsed);
     const auto facts=TypedItemEffectFacts(e);const auto toggles=auriga::item::ProjectToggleItems(*catalog,effective,TypedRecoveryElapsed(e),facts);if(toggles)effective=*toggles;

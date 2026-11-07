@@ -16,6 +16,7 @@ import backend as api
 import item_catalog as catalog
 from skill_book_editor import SkillBookPanel
 from costume_editor import CostumePanel
+from special_bonus_editor import SpecialBonusPanel
 from gathering_editor import ToolPanel, FishingPanel
 from polymorph_editor import PolymorphPanel
 from soul_editor import SoulPanel
@@ -1821,6 +1822,7 @@ class ItemPage(QWidget):
         potion_layout.addWidget(self.effects); potion_layout.addStretch()
         self.book_panel = SkillBookPanel(changed, Form)
         self.costume_panel = CostumePanel(changed)
+        self.regalia_panel=SpecialBonusPanel(changed);self.special_bonus_panel=SpecialBonusPanel(changed,tools=True)
         self.companion_panel=CompanionPanel(changed,Form)
         self.companion_panel.kind.widget.currentIndexChanged.connect(self.companion_controls)
         self.soul_panel=SoulPanel(changed,Form)
@@ -1834,7 +1836,7 @@ class ItemPage(QWidget):
         self.category_forms = {1: weapon, 2: armor, 3: accessory, 5: recovery, 6: material, 7: stone_form, 8: container_form,
                                10: quest_form, 16: token_form, 18: key_form}
         self.category_pages = {1: scroll(weapon), 2: scroll(armor), 3: scroll(accessory), 4: self.costume_panel, 5: scroll(potion), 6: scroll(material),
-                               7: scroll(stone_form), 8: scroll(container), 9: self.book_panel, 10: scroll(quest_form), 11: self.tool_panel, 12: self.fishing_panel, 13: self.poly_panel, 14: self.soul_panel, 15: scroll(self.companion_panel), 16: scroll(token_form), 17: scroll(self.pet_supply_panel), 18: scroll(key_form)}
+                               7: scroll(stone_form), 8: scroll(container), 9: self.book_panel, 10: scroll(quest_form), 11: self.tool_panel, 12: self.fishing_panel, 13: self.poly_panel, 14: self.soul_panel, 15: scroll(self.companion_panel), 16: scroll(token_form), 17: scroll(self.pet_supply_panel), 18: scroll(key_form),19:scroll(self.regalia_panel),20:scroll(self.special_bonus_panel)}
         # Timed stat effects are another typed consumable, never a recovery subtype.
         timed_page = QWidget(); timed_layout = QVBoxLayout(timed_page)
         self.timed_form = Form(changed)
@@ -2229,8 +2231,8 @@ class ItemPage(QWidget):
             self.workspace.setCurrentWidget(self.catalog_page)
             self.loading = False; self.update_badge(); self.controls(); return
         base = document['base']; category = int(base['category_id'])
-        equipment = category in (1, 2, 3, 4, 11, 15)
-        refinable = equipment or category==7
+        equipment = category in (1, 2, 3, 4, 11, 15, 19)
+        refinable = (equipment or category==7) and category!=19
         self.tabs.addTab(self.overview_page, 'Áttekintés')
         self.tabs.addTab(self.base_page, 'Alapbeállítások')
         self.tabs.addTab(self.category_pages[category], TYPE_SECTION[category])
@@ -2238,7 +2240,7 @@ class ItemPage(QWidget):
         if refinable:
             self.tabs.addTab(self.refinement, 'Fejlesztés és receptek'); self.tabs.addTab(self.bonus_page, 'Állandó bónuszok')
         self.stack_field.edit.setEnabled(not equipment)
-        self.appearance_field.widget.setEnabled(category in (1,2,3,4,11,7,10))
+        self.appearance_field.widget.setEnabled(category in (1,2,3,4,11,7,10,19))
         self.base_form.load(document); self.use_form.load(document);self.pet_food_panel.load(document)
         if category in (1,2,3,4):
             self.tabs.addTab(self.attribute_page,'Véletlen bónuszok');self.attribute_panel.load(document,self.packet['bonuses'])
@@ -2305,6 +2307,8 @@ class ItemPage(QWidget):
         elif category == 12:
             self.fishing_panel.set_items(catalog.Catalog(self.packet).items())
             self.fishing_panel.load(document)
+        elif category in (19,20):
+            (self.regalia_panel if category==19 else self.special_bonus_panel).load(document,self.packet['bonuses'])
         elif category == 4:
             self.costume_panel.load(document)
         elif category == 17:
@@ -2415,6 +2419,8 @@ class ItemPage(QWidget):
             self.tool_panel.collect(document)
         elif category == 12:
             self.fishing_panel.collect(document)
+        elif category in (19,20):
+            (self.regalia_panel if category==19 else self.special_bonus_panel).collect(document)
         elif category == 4:
             self.costume_panel.collect(document)
         elif category == 17:

@@ -98,7 +98,8 @@ std::expected<EquipmentStats,E> BuildEquipmentStats(const ItemCatalog& c,ItemOwn
         std::visit([&](const auto& row){if constexpr(requires{row.slot;})slot=static_cast<unsigned>(row.slot);if constexpr(requires{row.resistanceProfile;})resistance=row.resistanceProfile;},d->category);
         if(const auto* tool=std::get_if<ItemToolRow>(&d->category)){slot=1;out.tool=tool->kind;}
         if(const auto* costume=std::get_if<ItemCostumeRow>(&d->category)){slot=CostumeSlot(costume->kind);if(costume->kind==CostumeKind::Weapon && out.weapon!=costume->weapon)continue;}
-        if(!slot || slot>11 || item->placement->anchor!=slot-1)return std::unexpected(E::InvalidSlot);
+        if(const auto* regalia=std::get_if<ItemRegaliaRow>(&d->category))slot=RegaliaSlot(*regalia);
+        if(!slot || slot>19 || item->placement->anchor!=slot-1)return std::unexpected(E::InvalidSlot);
         const AccessorySocketGrade* grade=nullptr;
         if(item->accessory && item->accessory->activeGrade)
         {
@@ -114,6 +115,11 @@ std::expected<EquipmentStats,E> BuildEquipmentStats(const ItemCatalog& c,ItemOwn
         }
         const auto* appearance=d->base.appearanceProfile ? c.FindAppearance(*d->base.appearanceProfile) : nullptr;
         out.equipped.push_back({static_cast<std::uint8_t>(slot),item->id,item->key,item->refinementLevel,appearance ? appearance->modelAsset : std::string{}});
+        if(const auto* regalia=std::get_if<ItemRegaliaRow>(&d->category)){
+            bool enabled=true;
+            if(regalia->kind==RegaliaKind::Rune && regalia->slot==7)for(unsigned rune=1;rune<7;++rune){const auto found=std::ranges::find_if(equipped,[&](const auto* p){const auto* r=std::get_if<ItemRegaliaRow>(&c.Find(p->key)->category);return r && r->kind==RegaliaKind::Rune && r->slot==rune;});if(found==equipped.end() || !(*found)->regalia->active || (*found)->regalia->remainingMs<((*found)->regalia->capacityMs/2+(*found)->regalia->capacityMs%2)){enabled=false;break;}}
+            if(enabled)for(const auto& b:RegaliaContributions(*regalia,*item->regalia))if(!Add(out.bonuses[static_cast<unsigned>(b.bonus)],b.valueScaled))return std::unexpected(E::Overflow);
+        }
         if(!base(item->key,item->refinementLevel,grade))return std::unexpected(E::Overflow);
         for(const auto& entry:item->attributes.slots)if(entry && !Add(out.bonuses[static_cast<unsigned>(entry->bonus)],entry->valueScaled))return std::unexpected(E::Overflow);
         for(const auto& stone:item->stones)if(stone.state==StoneSocketState::Occupied)

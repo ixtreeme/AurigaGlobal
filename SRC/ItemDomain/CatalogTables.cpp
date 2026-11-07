@@ -8,6 +8,7 @@ namespace
 constexpr auto Profiles = ItemCatalogLimits::ProfilesPerKind;
 constexpr auto Items = ItemCatalogLimits::Items;
 constexpr std::array<TableSpec, TableCount> Specs {{
+
     {Table::Format, "catalog_format", "singleton,schema_version,canonical_domain", 1},
     {Table::Categories, "item_category", "category_id,code,prototype_table", ItemCategories.size()},
     {Table::BonusDefinitions, "bonus_definition", "bonus_id,code,display_key,unit_kind,target_kind,stage_kind,channel_filter,action_filter,mode_filter,family_filter,rank_filter,element_filter,stack_policy,aggregate_cap,allowed_sources,minimum_value,maximum_value", BonusDefinitions.size()},
@@ -96,6 +97,10 @@ constexpr std::array<TableSpec, TableCount> Specs {{
     {Table::MobDropGroups,"mob_drop_group","group_id,code,target_kind,target_value,roll_kind,kills_per_drop,minimum_killer_level",MaxMobDropGroups},
     {Table::MobDropEntries,"mob_drop_entry","group_id,entry_no,category_id,local_id,refinement_level,amount,chance_ppb,weight,rare_attribute_chance_bp,killer_level_min,killer_level_max",MaxMobDropGroups*MaxMobDropEntries},
     {Table::BookAids,"book_aid_profile","profile_id,code,aid_kind,units_per_use,charges_per_use,maximum_charges",Profiles},
+    {Table::Regalia,"item_regalia","category_id,local_id,regalia_kind,rune_slot,stole_grade,capacity_ms,initial_ms",Items},
+    {Table::RegaliaRules,"regalia_bonus_rule","category_id,local_id,bonus_index,minimum_charge_bp,variant_no,bonus_id,value_scaled",Items*48},
+    {Table::BonusTools,"item_bonus_tool","category_id,local_id,operation_kind,units,parameter,bonus_id,value_scaled",Items},
+    {Table::SpecialBonusTiers,"special_bonus_tier","category_id,local_id,draw_no,tier,chance_bp",Items*48},
 }};
 static_assert([] { for (std::size_t i = 0; i < Specs.size(); ++i) if (static_cast<std::size_t>(Specs[i].table) != i) return false; return true; }());
 }

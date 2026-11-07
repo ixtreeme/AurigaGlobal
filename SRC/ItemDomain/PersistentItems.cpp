@@ -1,4 +1,5 @@
 #include <item/PersistentItems.hpp>
+#include <item/SpecialBonusRuntime.hpp>
 #include <item/SocketMaintenance.hpp>
 #include <algorithm>
 #include <limits>
@@ -140,6 +141,8 @@ struct Writer
             Put(state->size(),2);
             bytes.insert(bytes.end(),state->begin(),state->end());
         }
+        if(p.regalia){const auto blob=EncodeRegaliaState(*p.regalia);bytes.insert(bytes.end(),blob.begin(),blob.end());}
+        if(p.bonusTool){const auto blob=EncodeBonusToolState(*p.bonusTool);bytes.insert(bytes.end(),blob.begin(),blob.end());}
         if(p.costume){const auto clock=EncodeCostumeLifetime(*p.costume);bytes.insert(bytes.end(),clock.begin(),clock.end());}
         if(p.petSupply) {
             const auto state=EncodePetSupplyState(c,p.key,*p.petSupply);if(!state)return false;
@@ -574,7 +577,7 @@ bool SupportsPersistentItem(const ItemCatalog& c,const ItemCatalogEntry& e) noex
         const auto* profile=c.FindPetSupplyProfile(supply->profile);
         return profile && profile->kind>=PetSupplyKind::Study && profile->kind<=PetSupplyKind::Skin;
     }
-    if(std::holds_alternative<ItemCostumeRow>(e.category) || std::holds_alternative<ItemToolRow>(e.category))return true;
+    if(std::holds_alternative<ItemRegaliaRow>(e.category) || std::holds_alternative<ItemBonusToolRow>(e.category) || std::holds_alternative<ItemCostumeRow>(e.category) || std::holds_alternative<ItemToolRow>(e.category))return true;
     if(std::holds_alternative<ItemFishingRow>(e.category) || std::holds_alternative<ItemPolymorphRow>(e.category) || std::holds_alternative<ItemSkillBookRow>(e.category))return true;
     if(std::holds_alternative<ItemContainerRow>(e.category))return true;
     if(const auto* consumable=std::get_if<ItemConsumableRow>(&e.category))
@@ -653,6 +656,14 @@ std::expected<void,E> ValidatePersistentItem(const ItemCatalog& c,const Persiste
            (tool->kind!=ToolKind::Rod && p.tool->baitPower))return std::unexpected(E::InvalidItem);
     }
     else if(p.tool)return std::unexpected(E::InvalidItem);
+    if(const auto* regalia=std::get_if<ItemRegaliaRow>(&e->category)) {
+        if(!p.regalia || p.count>1 || !ValidRegaliaState(*regalia,*p.regalia) || (p.regalia->active && (!p.placement || p.placement->kind!=ItemStorageKind::Equipment)))return std::unexpected(E::InvalidItem);
+    } else if(p.regalia)return std::unexpected(E::InvalidItem);
+    if(const auto* tool=std::get_if<ItemBonusToolRow>(&e->category)) {
+        if(!p.bonusTool)return std::unexpected(E::InvalidItem);auto state=*p.bonusTool;
+        if(p.destroyed && tool->operation==SpecialBonusOperation::RuneCharge && !state.remainingBp)state.remainingBp=1;
+        if(!ValidBonusToolState(*tool,state))return std::unexpected(E::InvalidItem);
+    } else if(p.bonusTool)return std::unexpected(E::InvalidItem);
     if(const auto* costume=std::get_if<ItemCostumeRow>(&e->category)) {
         if(!p.costume || (!p.destroyed && p.count!=1) || !ValidCostumeLifetime(*costume,*p.costume,p.placement && p.placement->kind==ItemStorageKind::Equipment) || (p.costume->expired && !p.destroyed))return std::unexpected(E::InvalidItem);
     } else if(p.costume)return std::unexpected(E::InvalidItem);
@@ -704,6 +715,7 @@ std::expected<std::vector<std::uint32_t>,E> OccupiedItemCells(const ItemCatalog&
         if(std::holds_alternative<ItemToolRow>(category))slot=EquipmentSlot::Weapon;
         if(const auto* a=std::get_if<ItemArmorRow>(&category))slot=a->slot;
         if(const auto* a=std::get_if<ItemAccessoryRow>(&category))slot=a->slot;
+        if(const auto* regalia=std::get_if<ItemRegaliaRow>(&category))slot=static_cast<EquipmentSlot>(RegaliaSlot(*regalia));
         if(const auto* costume=std::get_if<ItemCostumeRow>(&category))slot=static_cast<EquipmentSlot>(CostumeSlot(costume->kind));
         if(!slot || anchor+1!=static_cast<unsigned>(*slot))return std::unexpected(E::InvalidPlacement);
         return std::vector<std::uint32_t>{anchor};
@@ -733,6 +745,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
     if((r.items.empty() && r.wallets.empty() && !r.recovery && !r.learning) || !r.outcomeCode || r.kind<ItemOperationKind::Grant || r.kind>ItemOperationKind::Trade ||
        (r.petStudyCooldown && r.outcomeCode!=PetStudyOutcome) ||
        std::ranges::all_of(r.operationId,[](auto n){return !n;}))return std::unexpected(E::InvalidOperation);
+    if(r.outcomeCode==SpecialBonusOutcome && !ValidSpecialBonusWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==CostumeOutcome && !ValidCostumeWrite(c,r))return std::unexpected(E::InvalidChange);
     std::set<ItemOwner> owners;
     for(const auto& o:r.owners)if(!ValidItemOwner(o.owner) || !o.sessionGeneration || !o.revision || o.revision==UINT64_MAX || !owners.insert(o.owner).second)return std::unexpected(E::InvalidFence);
@@ -787,6 +800,11 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
                    p.placement->kind!=ItemStorageKind::Inventory || expected!=p)
                     return std::unexpected(E::TransferDenied);
             }
+            if(b.bonusTool!=p.bonusTool && r.outcomeCode!=SpecialBonusOutcome)return std::unexpected(E::InvalidChange);
+            if(b.regalia!=p.regalia && r.outcomeCode!=SpecialBonusOutcome){
+                auto expected=b.regalia;if(expected)expected->active=false;
+                if(r.kind!=ItemOperationKind::Move || !b.placement || b.placement->kind!=ItemStorageKind::Equipment || !p.placement || p.placement->kind!=ItemStorageKind::Inventory || expected!=p.regalia)return std::unexpected(E::InvalidChange);
+            }
             if(b.costume!=p.costume || (b.costume && b.placement!=p.placement &&
                 ((b.placement && b.placement->kind==ItemStorageKind::Equipment) || (p.placement && p.placement->kind==ItemStorageKind::Equipment))))
                 if(r.outcomeCode!=CostumeOutcome)return std::unexpected(E::InvalidChange);
@@ -797,6 +815,8 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
         }
         else if(p.destroyed || p.revision!=1 || RecallRequested(p) || r.outcomeCode==CompanionSealOutcome ||
             (p.growthPet && r.outcomeCode!=PetHatchOutcome))return std::unexpected(E::InvalidChange);
+        if(!change.before && p.regalia && *p.regalia!=InitialRegalia(std::get<ItemRegaliaRow>(c.Find(p.key)->category),r.operationId,p.id.Value()))return std::unexpected(E::InvalidChange);
+        if(!change.before && p.bonusTool && *p.bonusTool!=InitialBonusTool(std::get<ItemBonusToolRow>(c.Find(p.key)->category)))return std::unexpected(E::InvalidChange);
         if(!change.before && p.petSupply) {
             const auto initial=InitialPetSupplyState(c,p.key,p.petSupply->createdAtUtcMs);
             if(!initial || *initial!=*p.petSupply)return std::unexpected(E::InvalidChange);
@@ -1080,6 +1100,7 @@ const ItemStorageLayout* PlaceFirst(const ItemCatalog& c,PersistentItem& item,
 std::optional<EquipmentSlot> SlotOf(const ItemCatalogEntry& entry)
 {
     if(std::holds_alternative<ItemToolRow>(entry.category))return EquipmentSlot::Weapon;
+    if(const auto* regalia=std::get_if<ItemRegaliaRow>(&entry.category))return static_cast<EquipmentSlot>(RegaliaSlot(*regalia));
     if(const auto* costume=std::get_if<ItemCostumeRow>(&entry.category))return static_cast<EquipmentSlot>(CostumeSlot(costume->kind));
     if(const auto* w=std::get_if<ItemWeaponRow>(&entry.category))return w->slot;
     if(const auto* a=std::get_if<ItemArmorRow>(&entry.category))return a->slot;
@@ -1121,7 +1142,7 @@ std::expected<ItemCommit,E> MakeEquipCommit(const ItemCatalog& c,std::array<std:
     if(occupant!=inventory.end())
     {
         // The worn item takes the freed place; Relocate refuses it if it does not fit there.
-        auto back=*occupant;back.revision++;back.placement=source->placement;
+        auto back=*occupant;back.revision++;back.placement=source->placement;if(back.regalia)back.regalia->active=false;
         changes.push_back({*occupant,back});
     }
     return Relocate(c,operationId,owner,storages,inventory,std::move(changes));
@@ -1500,6 +1521,8 @@ std::expected<ItemCommit,E> MakeGrantCommit(const ItemCatalog& c,std::array<std:
     if(const auto initial=InitialToggleEffectState(c,grant.key);initial)fresh.toggle=*initial;fresh.bookSkill=grant.bookSkill;fresh.polymorph=grant.polymorph;
     if(!fresh.polymorph)if(const auto* poly=std::get_if<ItemPolymorphRow>(&entry->category);poly && poly->fixedForm)fresh.polymorph=PolymorphInstanceState{};
     fresh.tool=grant.tool;if(!fresh.tool && std::holds_alternative<ItemToolRow>(entry->category))fresh.tool=ToolInstanceState{};
+    if(const auto* regalia=std::get_if<ItemRegaliaRow>(&entry->category))fresh.regalia=InitialRegalia(*regalia,operationId,fresh.id.Value());
+    if(const auto* tool=std::get_if<ItemBonusToolRow>(&entry->category))fresh.bonusTool=InitialBonusTool(*tool);
     if(const auto* costume=std::get_if<ItemCostumeRow>(&entry->category)) {
         if(costume->clock==CostumeClock::SinceCreation && !grant.createdAtUtcMs)return std::unexpected(E::InvalidItem);
         const auto initial=MakeCostumeLifetime(*costume,grant.createdAtUtcMs);if(!initial)return std::unexpected(E::InvalidItem);fresh.costume=*initial;
@@ -1514,7 +1537,7 @@ std::expected<ItemCommit,E> MakeGrantCommit(const ItemCatalog& c,std::array<std:
     }
     const auto sameState=[&](const PersistentItem& i){
         return i.key==fresh.key && i.refinementLevel==fresh.refinementLevel && i.boundTo==fresh.boundTo &&
-               i.attributes==fresh.attributes && i.stones==fresh.stones && i.accessory==fresh.accessory && i.automatic==fresh.automatic && i.toggle==fresh.toggle && i.bookSkill==fresh.bookSkill && i.polymorph==fresh.polymorph && i.tool==fresh.tool && i.companion==fresh.companion && i.petSupply==fresh.petSupply && i.costume==fresh.costume;};
+               i.attributes==fresh.attributes && i.stones==fresh.stones && i.accessory==fresh.accessory && i.automatic==fresh.automatic && i.toggle==fresh.toggle && i.bookSkill==fresh.bookSkill && i.polymorph==fresh.polymorph && i.tool==fresh.tool && i.companion==fresh.companion && i.petSupply==fresh.petSupply && i.costume==fresh.costume && i.regalia==fresh.regalia && i.bonusTool==fresh.bonusTool;};
     std::vector<const PersistentItem*> carried;
     for(const auto& i:items)
         if(!i.destroyed && i.owner==owner.owner && i.placement && i.placement->kind==ItemStorageKind::Inventory && bagOf(i.placement->storageId)!=bags.end())
@@ -1590,7 +1613,7 @@ std::expected<ItemCommit,E> MakeUnequipCommit(const ItemCatalog& c,std::array<st
     const auto* source=Placed(inventory,owner,id);if(!source)return std::unexpected(E::MissingItem);
     if(source->costume)return MakeCostumeWearCommit(c,operationId,owner,storages,inventory,id,target,who,false);
     if(source->placement->kind!=ItemStorageKind::Equipment)return std::unexpected(E::UnsupportedState);
-    auto taken=*source;taken.revision++;taken.placement=target;
+    auto taken=*source;taken.revision++;taken.placement=target;if(taken.regalia)taken.regalia->active=false;
     return Relocate(c,operationId,owner,storages,inventory,{{*source,taken}});
 }
 } // namespace auriga::item

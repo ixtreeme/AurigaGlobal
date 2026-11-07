@@ -26,7 +26,7 @@ commitok és jelentések adják.
 | 1. C27a — elkészült | Állandó típusos hátasra felülés és leszállás, tartós szándékkal | A kiinduló kód csak Summon/Dismiss műveletet fogadott. Ebben a munkában elkészült a közös szerver/Unity-út, 171 élő ellenőrzéssel és háromféle újrabelépéssel. |
 | 2. C27b — elkészült | Időkorlátos fix petek és hátasok; fix társak bónuszai; típusos repülési engedély | Mindkét fix társ négy órával támogatott; a bónusz a tényleges követéshez/felüléshez kötött. Saját typed repülési engedély, szerver/Unity-bekötés, nyolc élő eset és 829 ellenőrzés sikeres, lejárattal és újrabelépéssel. [Jelentés](2026-11-07_fixed_companions.md). |
 | 3. C28 — elkészült | Test-, haj- és fegyverjelmez felszerelése, modellje és tartós időzítői | A tartós runtime, szerver/Unity-felszerelés, három jelmezmodell és mind a négy óra kész; 12 élő eset és 1606 ellenőrzés, felszerelt/levett/lejárt újrabelépéssel. [Jelentés](2026-11-07_costumes.md), [IC-063](../../adr/item_combat_063_costume_runtime.md). |
-| 4. Stóla, rúna és speciális bónuszműveletek | Saját példányállapot, használat/felszerelés, bónuszátvitel és kapcsolt addon | A normál C18 attribútumszolgáltatás nem zárta le ezeket. [IC-031](../../adr/item_combat_031_instance_attributes.md), [IC-046](../../adr/item_combat_046_attribute_services_runtime.md). |
+| 4. C29 — elkészült | Hat bónuszos stóla, hét rúna, részleges töltés, jelmezreset/ritka donor/törlés, kapcsolt addon | Tartós példányállapot, külön szerver/Unity-művelet, stat- és modell-/effektút. [Jelentés](2026-11-07_regalia_special_bonuses.md), [IC-064](../../adr/item_combat_064_regalia_special_bonuses.md). Az önálló Acce-elnyelés és a teljes APPLY-konverzió ettől külön feladat. |
 | 5. Önálló lélektárgyak | Töltés, fejlesztés és a tényleges találathoz kötött egyszeri fogyás, tartós aktív állapot | Az új Soul domain és katalógus létezik, `ItemSoulRow` még nincs a tartós runtime támogatási listában. [IC-025](../../adr/item_combat_025_independent_soul_items.md). |
 | 6. Lőszer és további fejlesztési segédek | Typed íj/lőszer-életciklus, elfogadott lövéshez kötött fogyás; még hiányzó kovácssegéd-utak | `EquipmentStats.cpp` elutasítja a `AmmoKind::None`-tól eltérő igényű fegyver felvételét. A könyvsegéd nem általános kovácssegéd. [IC-039](../../adr/item_combat_039_equipment_stats.md). |
 | 7. Fiókpénztárca és további tárolók | Fiókszintű valuta, typed bank/mall/céh/levél tárgyutak és kapcsolódó gazdasági műveletek | A modell tároló-/tulajdonostípusa önmagában nem játékbeli bekötés. A jelenlegi typed item-hálózati kezelőkben ezeknek nincs végigvezetett kliensművelete; a fiókpénztárcát az IC-034 is nyitottnak jelöli. |
@@ -45,5 +45,5 @@ játékfunkciónak.
 
 Az első kiválasztott rész a C27a. Eredménye és pontos próbahatóköre a
 [hátasjelentésben](2026-11-07_typed_mount_riding.md) szerepel.
-A C27b és a C28 is elkészült; a következő nyitott munkacsomag a stóla/rúna
-és a speciális bónuszműveletek szerver- és Unity-runtime bekötése.
+A C27b, C28 és C29 is elkészült; a következő nyitott munkacsomag az önálló
+lélektárgyak töltése, fejlesztése és találathoz kötött fogyása szerveren és Unityben.

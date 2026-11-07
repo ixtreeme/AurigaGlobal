@@ -82,3 +82,9 @@ műveletek F2/F6 kapuk maradnak. Unity és távoli gép nem módosul.
 szerver–Unity útját a [C18](item_combat_046_attribute_services_runtime.md)
 befejezte, atomikus írással, valódi szerveres dobásokkal és helyi TLS-próbával.
 A kapcsolt addon és a jelmez/stóla/rúna külön viselkedések nyitottak maradtak.
+
+2026-11-07-i kiegészítés: a [C29 / IC-064](item_combat_064_regalia_special_bonuses.md)
+beköti a kapcsolt Gauss-addont, a hat saját bónuszos stólát, a hét rúnát,
+a jelmezresetet, a példányon tárolt ritka donort és a kiválasztott ritka sor
+törlését. A fenti nyitott határ a C18 akkori állapotát írja le; a teljes
+APPLY-konverzió és az önálló Acce-elnyelés továbbra is külön feladat.

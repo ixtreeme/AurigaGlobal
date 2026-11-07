@@ -20,12 +20,12 @@ import sys
 
 import backend as api
 
-CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 4: 'Kosztüm', 5: 'Fogyasztható', 6: 'Alapanyag', 7: 'Foglalatkő', 8: 'Tároló', 9: 'Képességkönyv', 10: 'Küldetéstárgy', 11: 'Eszköz', 12: 'Hal és csali', 13: 'Átváltozás', 14: 'Lélek és lélektekercs', 15: 'Pet és mount hívó', 16: 'Pénzjegy', 17: 'Különleges petellátmány', 18: 'Kulcs'}
+CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 4: 'Kosztüm', 5: 'Fogyasztható', 6: 'Alapanyag', 7: 'Foglalatkő', 8: 'Tároló', 9: 'Képességkönyv', 10: 'Küldetéstárgy', 11: 'Eszköz', 12: 'Hal és csali', 13: 'Átváltozás', 14: 'Lélek és lélektekercs', 15: 'Pet és mount hívó', 16: 'Pénzjegy', 17: 'Különleges petellátmány', 18: 'Kulcs',19:'Stóla és rúna',20:'Speciális bónusztárgy'}
 CHILD_TABLES = {1: 'item_weapon', 2: 'item_armor', 3: 'item_accessory', 4: 'item_costume', 5: 'item_consumable', 6: 'item_material',
-                7: 'item_socket_stone', 8: 'item_container', 9: 'item_skill_book', 10: 'item_quest', 11: 'item_tool', 12: 'item_fishing', 13: 'item_polymorph', 14: 'item_soul', 15: 'item_companion', 16: 'item_currency_token', 17: 'item_special', 18: 'item_container_key'}
+                7: 'item_socket_stone', 8: 'item_container', 9: 'item_skill_book', 10: 'item_quest', 11: 'item_tool', 12: 'item_fishing', 13: 'item_polymorph', 14: 'item_soul', 15: 'item_companion', 16: 'item_currency_token', 17: 'item_special', 18: 'item_container_key',19:'item_regalia',20:'item_bonus_tool'}
 CODE_PREFIX = {1: 'weapon', 2: 'armor', 3: 'accessory', 4: 'costume', 5: 'consumable', 6: 'material', 8: 'container', 9: 'skill_book', 10: 'quest', 11: 'tool', 12: 'fishing', 13: 'polymorph', 14: 'soul', 15: 'companion',
-               7: 'socket_stone', 16: 'currency_token', 17: 'special', 18: 'container_key'}
-STACKABLE = (5, 6, 7, 8, 9, 10, 12, 13, 14, 16, 17, 18)
+               7: 'socket_stone', 16: 'currency_token', 17: 'special', 18: 'container_key',19:'regalia',20:'bonus_tool'}
+STACKABLE = (5, 6, 7, 8, 9, 10, 12, 13, 14, 16, 17, 18, 20)
 LOOT_FIELDS = ['entry_no', 'reward_kind', 'item_category_id', 'item_local_id', 'amount', 'weight', 'rare_attribute_chance_bp']
 REFINEMENT_KIND = {1: 2, 2: 3, 3: 4, 4: 6, 7: 5, 11: 7, 15: 9}
 EFFECT_TABLES = {1: 'instant_recovery_profile', 2: 'reserve_recovery_profile', 3: 'periodic_recovery_profile', 4: 'automatic_recovery_profile'}
@@ -138,6 +138,8 @@ class Catalog:
         result['recipes'] = self.recipes_of(key)
         result['pet_food_rules']=[{k:v for k,v in r.items() if k not in ('category_id','local_id')} for r in sorted(self.tables['pet_feed_rule'],key=lambda r:int(r['service_kind'])) if (int(r['category_id']),int(r['local_id']))==tuple(key)]
         if category==8:result['hatch']=self.linked('pet_hatch_profile',child,'hatch_profile_id')
+        if category==19:result['regalia_rules']=[{k:v for k,v in r.items() if k not in ('category_id','local_id')} for r in self.tables['regalia_bonus_rule'] if (int(r['category_id']),int(r['local_id']))==tuple(key)]
+        if category==20:result['special_tiers']=[{k:v for k,v in r.items() if k not in ('category_id','local_id')} for r in self.tables['special_bonus_tier'] if (int(r['category_id']),int(r['local_id']))==tuple(key)]
         if category == 4:
             result['visuals'] = [{k: r[k] for k in ('character_class', 'sex', 'model_asset')} for r in self.tables['item_costume_visual']
                                  if r['category_id'] == base['category_id'] and r['local_id'] == base['local_id']]
@@ -309,6 +311,11 @@ class Catalog:
         if category == 4:
             item['child'].update(costume_kind='1', weapon_subtype=None, clock_kind='1', duration_ms='0')
             item['visuals'] = [dict(character_class=str(c), sex=str(s), model_asset='models/costume_body.model') for c in range(1,5) for s in range(1,3)]
+        if category==19:
+            item['child'].update(regalia_kind='1',rune_slot='0',stole_grade='1',capacity_ms='0',initial_ms='0')
+            item['regalia_rules']=[dict(bonus_index=str(j),variant_no=str(v),minimum_charge_bp='0',bonus_id=str(bonus),value_scaled=str((v+1)*(1000 if bonus<=4 else 1))) for j,bonus in enumerate((29,30,31,32,1,3)) for v in range(4)]
+        if category==20:
+            item['child'].update(operation_kind='1',units='1',parameter='0',bonus_id=None,value_scaled=None);item['special_tiers']=[]
         item['pet_food_rules']=[]
         if category == 6: item['child']['material_kind'] = '1'
         if category == 7: item['child'].update(stone_kind='1', allowed_targets='1', minimum_socket_grade='1', primary_group='', secondary_group='')
@@ -582,6 +589,8 @@ class Catalog:
             self.replace('item_costume_visual', {'category_id': base['category_id'], 'local_id': base['local_id']},
                          [dict(v, category_id=base['category_id'], local_id=base['local_id']) for v in document['visuals']])
         self.replace(CHILD_TABLES[category], {'category_id': key[0], 'local_id': key[1]}, [child])
+        if category==19:self.replace('regalia_bonus_rule',{'category_id':key[0],'local_id':key[1]},[dict(r,category_id=str(key[0]),local_id=str(key[1])) for r in document['regalia_rules']])
+        if category==20:self.replace('special_bonus_tier',{'category_id':key[0],'local_id':key[1]},[dict(r,category_id=str(key[0]),local_id=str(key[1])) for r in document['special_tiers']])
         self.replace('pet_feed_rule',{'category_id':key[0],'local_id':key[1]},
                      [dict(r,category_id=key[0],local_id=key[1]) for r in document.get('pet_food_rules',[])])
         # A document without the section (older callers) leaves recipes alone.

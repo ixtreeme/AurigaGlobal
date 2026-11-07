@@ -50,6 +50,8 @@ struct TypedInventoryView
     struct FixedRule {CompanionClock clock;std::uint64_t durationMs;bool flying;bool operator==(const FixedRule&) const=default;};
     std::map<ItemInstanceId,FixedRule> fixedRules;
     std::map<ItemInstanceId,ItemCostumeRow> costumeRules;
+    std::map<ItemInstanceId,ItemRegaliaRow> regaliaRules;
+    std::map<ItemInstanceId,ItemBonusToolRow> bonusToolRules;
 };
 
 // The owner is the receiving character; it is not repeated on the wire.

@@ -1,6 +1,6 @@
 """Run companion/mount validators in the owned pinned Unity 6.3 snapshot."""
 from pathlib import Path
-import argparse,json,socket,subprocess,sys,time
+import argparse,hashlib,json,socket,ssl,subprocess,sys,time
 
 REPO=Path(__file__).resolve().parents[2]
 def main():
@@ -24,11 +24,20 @@ def main():
         sys.path.insert(0,str(REPO/'SRC/Tools/ServerManager'))
         import item_bench
         item_bench.connection(args.package.resolve())
-        deadline=time.monotonic()+60
+        # A bound game socket precedes FinalizeBoot. Wait for the actual pinned
+        # TLS endpoint before launching Unity's shorter connection timeout.
+        deadline=time.monotonic()+120
+        readiness=ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        readiness.check_hostname=False;readiness.verify_mode=ssl.CERT_NONE
+        expected_pin=config['Pin'].replace(':','').replace(' ','').lower()
+        assert len(expected_pin)==64 and all(c in '0123456789abcdef' for c in expected_pin)
         for port in (config['AuthPort'],config['GamePort']):
             while True:
                 try:
-                    with socket.create_connection(('127.0.0.1',int(port)),timeout=2):break
+                    with socket.create_connection(('127.0.0.1',int(port)),timeout=2) as raw:
+                        with readiness.wrap_socket(raw,server_hostname=config['ServerName']) as tls:
+                            assert hashlib.sha256(tls.getpeercert(binary_form=True)).hexdigest()==expected_pin,'Owned TLS endpoint certificate mismatch'
+                    break
                 except OSError:
                     if time.monotonic()>deadline:raise TimeoutError('Owned local endpoints not listening') from None
                     time.sleep(.2)

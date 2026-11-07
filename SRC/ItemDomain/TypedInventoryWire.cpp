@@ -76,9 +76,10 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
 		return item.growthPet && (RecallRequested(item) ||
 			(item.growthPet->life.clock == CompanionClock::ActiveTime && !item.growthPet->life.remainingMs));
 	});
+    const bool hasSpecial=std::ranges::any_of(items,[](const auto& i){return i.regalia || i.bonusTool;});
     const bool hasCostumes=std::ranges::any_of(items,[](const auto& i){return i.costume.has_value();});
 	const bool hasCompanions = std::ranges::any_of(items, [](const auto& item) { return item.companion.has_value(); });
-	w.Put<std::uint8_t>(hasCostumes ? 13 : hasCompanions ? 12 : hasPetSupplies ? 10 : hasGrowthStatus ? 9 : hasGrowthPets ? 8 : std::ranges::any_of(items,[](const auto& i){return i.tool.has_value();}) ? 6 : std::ranges::any_of(items,[](const auto& i){return i.polymorph.has_value();}) ? 5 : std::ranges::any_of(items,[](const auto& i){return i.bookSkill.has_value();}) ? 4 : std::ranges::any_of(items,[](const auto& i){return i.toggle.has_value();}) ? 3 : std::ranges::any_of(items,[](const auto& i){return i.automatic.has_value();}) ? 2 : TypedInventoryVersion);
+	w.Put<std::uint8_t>(hasSpecial ? 14 : hasCostumes ? 13 : hasCompanions ? 12 : hasPetSupplies ? 10 : hasGrowthStatus ? 9 : hasGrowthPets ? 8 : std::ranges::any_of(items,[](const auto& i){return i.tool.has_value();}) ? 6 : std::ranges::any_of(items,[](const auto& i){return i.polymorph.has_value();}) ? 5 : std::ranges::any_of(items,[](const auto& i){return i.bookSkill.has_value();}) ? 4 : std::ranges::any_of(items,[](const auto& i){return i.toggle.has_value();}) ? 3 : std::ranges::any_of(items,[](const auto& i){return i.automatic.has_value();}) ? 2 : TypedInventoryVersion);
 	w.Put<std::uint16_t>(static_cast<std::uint16_t>(storages.size()));
 	for (const auto& s : storages)
 	{
@@ -165,7 +166,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
             }
 		}
 
-        if(hasPetSupplies || hasCompanions || hasCostumes) {
+        if(hasPetSupplies || hasCompanions || hasCostumes || hasSpecial) {
             const auto* row=std::get_if<ItemPetSupplyRow>(&catalog.Find(item.key)->category);
             const auto* profile=row ? catalog.FindPetSupplyProfile(row->profile) : nullptr;
             w.Put<std::uint8_t>(item.petSupply ? static_cast<unsigned>(profile->kind) : 0);
@@ -176,11 +177,16 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedInvent
             }
         }
 
-        if(hasCostumes) {
+        if(hasCostumes || hasSpecial) {
             w.Put<std::uint8_t>(item.costume.has_value());
             if(item.costume){const auto& row=std::get<ItemCostumeRow>(catalog.Find(item.key)->category);w.Put<std::uint8_t>(static_cast<unsigned>(row.kind));w.Put<std::uint8_t>(row.weapon ? static_cast<unsigned>(*row.weapon) : 0);w.Put<std::uint8_t>(static_cast<unsigned>(row.clock));w.Put(row.durationMs);for(auto byte:EncodeCostumeLifetime(*item.costume))w.Put(byte);}
         }
 
+        if(hasSpecial){
+            if(!ValidatePersistentItem(catalog,item))return std::unexpected(E::BadValue);
+            w.Put<std::uint8_t>(item.regalia.has_value());if(item.regalia){const auto& row=std::get<ItemRegaliaRow>(catalog.Find(item.key)->category);w.Put<std::uint8_t>(static_cast<unsigned>(row.kind));w.Put(row.slot);w.Put(row.grade);for(auto b:EncodeRegaliaState(*item.regalia))w.Put(b);w.Put<std::uint8_t>(row.rules.size());for(const auto& rule:row.rules){w.Put(rule.index);w.Put(rule.variant);w.Put(rule.minimumChargeBp);w.Put<std::uint32_t>(static_cast<unsigned>(rule.bonus.bonus));w.Put<std::uint64_t>(rule.bonus.valueScaled);}}
+            w.Put<std::uint8_t>(item.bonusTool.has_value());if(item.bonusTool){const auto& row=std::get<ItemBonusToolRow>(catalog.Find(item.key)->category);w.Put<std::uint8_t>(static_cast<unsigned>(row.operation));w.Put(row.units);w.Put(row.parameter);for(auto b:EncodeBonusToolState(*item.bonusTool))w.Put(b);w.Put<std::uint8_t>(row.tiers.size());for(const auto& t:row.tiers){w.Put(t.draw);w.Put(t.tier);w.Put(t.chanceBp);}}
+        }
 	}
 	if (w.out.size() > MaxPacket) return std::unexpected(E::TooLarge);
 	const auto size = static_cast<std::uint32_t>(w.out.size());
@@ -195,7 +201,7 @@ std::expected<TypedInventoryView, TypedInventoryWireError> DecodeTypedInventory(
 		Reader r(bytes);
 		if (r.Get<std::uint8_t>() != TypedInventoryHeader) return std::unexpected(E::BadHeader);
 		if (r.Get<std::uint32_t>() != bytes.size()) return std::unexpected(E::BadSize);
-		const auto version=r.Get<std::uint8_t>();if (version<TypedInventoryVersion || version>13) return std::unexpected(E::BadVersion);
+		const auto version=r.Get<std::uint8_t>();if (version<TypedInventoryVersion || version>14) return std::unexpected(E::BadVersion);
 		TypedInventoryView view;
 		for (auto n = r.Get<std::uint16_t>(); n; --n)
 		{
@@ -327,6 +333,14 @@ std::expected<TypedInventoryView, TypedInventoryWireError> DecodeTypedInventory(
                     if(!life || !ValidCostumeLifetime(rule,*life,kind==2) || life->expired || item.count!=1 || (kind==2 && item.placement->anchor!=CostumeSlot(costumeKind)-1))throw Bad{};
                     item.costume=*life;view.costumeRules.emplace(item.id,rule);
                 } else if(item.key.Category()==ItemCategory::Costume)throw Bad{};
+            }
+            if(version>=14){
+                const auto regalia=r.Get<std::uint8_t>();if(regalia>1)throw Bad{};
+                if(regalia){const auto type=static_cast<RegaliaKind>(r.Get<std::uint8_t>());const auto slot=r.Get<std::uint8_t>(),grade=r.Get<std::uint8_t>();const auto raw=r.Take(93);std::vector<std::uint8_t> blob;for(auto b:raw)blob.push_back(std::to_integer<std::uint8_t>(b));const auto state=DecodeRegaliaState(blob);if(!state)throw Bad{};ItemRegaliaRow rule{item.key,type,slot,grade,state->capacityMs,0,{}};const auto n=r.Get<std::uint8_t>();if(n>48)throw Bad{};for(unsigned j=0;j<n;++j)rule.rules.push_back({r.Get<std::uint8_t>(),r.Get<std::uint8_t>(),r.Get<std::uint16_t>(),{static_cast<BonusId>(r.Get<std::uint32_t>()),static_cast<std::int64_t>(r.Get<std::uint64_t>())}});if(!ValidRegaliaState(rule,*state) || item.count!=1 || (state->active && kind!=2) || (kind==2 && item.placement->anchor!=RegaliaSlot(rule)-1))throw Bad{};item.regalia=*state;view.regaliaRules.emplace(item.id,rule);}
+                else if(item.key.Category()==ItemCategory::Regalia)throw Bad{};
+                const auto tool=r.Get<std::uint8_t>();if(tool>1)throw Bad{};
+                if(tool){ItemBonusToolRow rule{item.key,static_cast<SpecialBonusOperation>(r.Get<std::uint8_t>()),r.Get<std::uint16_t>(),r.Get<std::uint16_t>()};const auto raw=r.Take(18);std::vector<std::uint8_t> blob;for(auto b:raw)blob.push_back(std::to_integer<std::uint8_t>(b));const auto state=DecodeBonusToolState(blob);if(!state)throw Bad{};rule.payload=state->payload;const auto n=r.Get<std::uint8_t>();if(n>48)throw Bad{};for(unsigned j=0;j<n;++j)rule.tiers.push_back({r.Get<std::uint8_t>(),r.Get<std::uint8_t>(),r.Get<std::uint16_t>()});if(!ValidBonusToolState(rule,*state) || kind!=1)throw Bad{};item.bonusTool=*state;view.bonusToolRules.emplace(item.id,rule);}
+                else if(item.key.Category()==ItemCategory::BonusTool)throw Bad{};
             }
             view.items.push_back(std::move(item));
 		}

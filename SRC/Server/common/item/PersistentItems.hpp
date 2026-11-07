@@ -81,6 +81,8 @@ struct PersistentItem
     std::optional<GrowthPetState> growthPet;
     std::optional<PetSupplyState> petSupply;
     std::optional<CostumeLifetimeState> costume;
+    std::optional<RegaliaState> regalia;
+    std::optional<BonusToolState> bonusTool;
     bool operator==(const PersistentItem&) const = default;
 };
 struct ItemOwnerFence

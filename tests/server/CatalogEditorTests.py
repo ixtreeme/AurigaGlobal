@@ -355,7 +355,7 @@ class OfflineModelTests(unittest.TestCase):
 
     def test_blank_registry_is_a_valid_empty_catalog(self):
         self.assertEqual(self.check(self.blank), self.blank['hash'])
-        self.assertEqual(set(self.blank['sequences']), {str(i) for i in range(1, 19)})
+        self.assertEqual(set(self.blank['sequences']), {str(i) for i in range(1, 21)})
         self.assertEqual(len(self.blank['bonuses']), len(rows(self.blank, 'bonus_definition')))
 
     def test_every_editable_category_starts_with_a_valid_document(self):
@@ -2308,7 +2308,7 @@ class SqlCommitTests(unittest.TestCase):
             document = catalog.Catalog(packet).new(category)
             packet = self.commit(packet, document)
             created[category] = key_of(document)
-        self.assertEqual(packet['sequences'], {**{str(i): '1' for i in range(1, 19)}, **{str(c): '2' for c in catalog.CATEGORIES}})
+        self.assertEqual(packet['sequences'], {**{str(i): '1' for i in range(1, 21)}, **{str(c): '2' for c in catalog.CATEGORIES}})
         stale = packet
         document = catalog.Catalog(packet).item(created[1])
         document['base']['name_key'] = 'item.sword.renamed'

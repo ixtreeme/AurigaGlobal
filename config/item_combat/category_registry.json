@@ -19,6 +19,8 @@
     {"id": 15, "code": "companion", "cpp_name": "Companion", "table": "item_companion"},
     {"id": 16, "code": "currency_token", "cpp_name": "CurrencyToken", "table": "item_currency_token"},
     {"id": 17, "code": "special", "cpp_name": "Special", "table": "item_special"},
-    {"id": 18, "code": "container_key", "cpp_name": "ContainerKey", "table": "item_container_key"}
+    {"id": 18, "code": "container_key", "cpp_name": "ContainerKey", "table": "item_container_key"},
+    {"id": 19, "code": "regalia", "cpp_name": "Regalia", "table": "item_regalia"},
+    {"id": 20, "code": "bonus_tool", "cpp_name": "BonusTool", "table": "item_bonus_tool"}
   ]
 }
