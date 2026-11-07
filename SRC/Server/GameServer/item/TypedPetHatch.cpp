@@ -35,13 +35,33 @@ namespace store = item::runtime;
 enum class Action : std::uint8_t
 {
     Preview = 1, Confirm, Close, Inspect, FoodList, FeedPreview, FeedConfirm, Progress, Evolve,
-    StudyList, StudyPreview, StudyConfirm, ResetList, ResetPreview, ResetConfirm
+    StudyList, StudyPreview, StudyConfirm, ResetList, ResetPreview, ResetConfirm, ServiceList, ServicePreview, ServiceConfirm
 };
 enum class Status : std::uint8_t
 {
     Closed, Ready, Pending, Hatched, Invalid, Denied, Busy, Stale, Failed,
     InsufficientGold, NoRoom, InvalidName, Details, FoodList, FeedReady, Fed, NoEffect, Evolved,
-    StudyList, StudyReady, Studied, StudyMissed, StudyCooldown, ResetList, ResetReady, SkillsReset
+    StudyList, StudyReady, Studied, StudyMissed, StudyCooldown, ResetList, ResetReady, SkillsReset,
+    ServiceList, ServiceReady, ServiceApplied, ServiceMissed
+};
+
+struct ServiceView
+{
+    std::uint64_t source=0;
+    std::uint8_t kind=0,selector=0;
+    std::uint16_t chance=0;
+    item::GrowthPetLife life;
+    item::PetBirthTraits traits;
+    std::vector<std::pair<std::uint64_t,std::uint16_t>> options;
+};
+struct PetServiceSession
+{
+    item::PersistentItem source,seal;
+    item::ItemCatalogDigest catalogHash;
+    ServiceView view;
+    std::uint64_t token=0;
+    std::uint32_t opened=0;
+    Status status=Status::ServiceReady;
 };
 
 struct PetProgressView { std::uint64_t seal; };
@@ -216,7 +236,7 @@ std::array<item::PetSkillSlot,4> StudySlots(const item::ItemCatalog& catalog,
 
 void Reply(entt::entity entity, Status status, std::uint64_t id, std::uint64_t token = 0,
     std::uint64_t cost = 0, std::optional<item::ItemKey> target = {}, const item::PersistentItem* seal = nullptr,
-    const FeedingView* feeding = nullptr, bool progression = false,const StudyView* study = nullptr,bool resetting=false)
+    const FeedingView* feeding = nullptr, bool progression = false,const StudyView* study = nullptr,bool resetting=false,const ServiceView* service=nullptr)
 {
     if (!InGame(entity)) return;
     const auto* typed = g_registry.try_get<ecs::TypedItems>(entity);
@@ -229,7 +249,7 @@ void Reply(entt::entity entity, Status status, std::uint64_t id, std::uint64_t t
     PacketWriter packet;
     packet.Put<std::uint8_t>(HEADER_GC_TYPED_PET_HATCH);
     packet.Put<std::uint32_t>(0);
-    packet.Put<std::uint8_t>(study ? resetting ? 5 : 4 : progression ? 3 : feeding ? 2 : 1);
+    packet.Put<std::uint8_t>(service ? 6 : study ? resetting ? 5 : 4 : progression ? 3 : feeding ? 2 : 1);
     packet.Put<std::uint8_t>(static_cast<std::uint8_t>(status));
     packet.Put(id);
     packet.Put(token);
@@ -316,6 +336,13 @@ void Reply(entt::entity entity, Status status, std::uint64_t id, std::uint64_t t
                 packet.Put(static_cast<std::uint16_t>(skill ? skill->ranks.size() : 0));
                 text(skill);
             }
+    }
+    if(service) {
+        packet.Put(service->source);packet.Put(service->kind);packet.Put(service->selector);packet.Put(service->chance);
+        packet.Put(static_cast<std::uint8_t>(service->life.clock));packet.Put(service->life.capacityMs);packet.Put(service->life.remainingMs);
+        packet.Put(service->traits.maximumHpPercentTenths);packet.Put(service->traits.monsterDamagePercentTenths);packet.Put(service->traits.pveNormalDamagePercentTenths);
+        packet.Put(static_cast<std::uint16_t>(service->options.size()));
+        for(const auto& [source,modes]:service->options){packet.Put(source);packet.Put(modes);}
     }
     const auto length = static_cast<std::uint32_t>(packet.bytes.size());
     for (unsigned i = 0; i < 4; ++i)
@@ -842,6 +869,92 @@ std::uint8_t StudyModes(const item::PetStudyRule& rule,const item::PetSkillDefin
     return mask;
 }
 
+void HandleService(entt::entity entity,Action action,const TPacketCGTypedPetHatch& packet,const item::ItemCatalog& catalog)
+{
+    const bool confirm=action==Action::ServiceConfirm;
+    const auto token=confirm ? packet.token : 0;
+    const auto& state=g_registry.get<ecs::TypedItems>(entity).state;
+    const auto* seal=InBag(g_registry.get<ecs::TypedItems>(entity),packet.itemId);
+    auto* session=g_registry.try_get<PetServiceSession>(entity);
+    const auto reply=[&](Status status,std::uint64_t quote=0,const ServiceView& view=ServiceView{},bool details=false) {
+        Reply(entity,status,packet.itemId,quote,0,details && seal ? std::optional{seal->key} : std::nullopt,
+            details ? seal : nullptr,nullptr,false,nullptr,false,&view);
+    };
+    if(confirm && session && session->token==token && session->seal.id.Value()==packet.itemId && session->status!=Status::ServiceReady) {
+        const bool details=session->status==Status::ServiceApplied || session->status==Status::ServiceMissed;
+        reply(session->status,token,details ? session->view : ServiceView{},details);return;
+    }
+    if(!seal || !seal->growthPet || !Admitted(entity)){reply(Status::Denied,token);return;}
+    // Recalling and settling the last active milliseconds are separate store
+    // writes. Capacity-changing services must wait for that settlement.
+    if(g_registry.all_of<ecs::TypedItemBusy>(entity) ||
+        (!item::RecallRequested(*seal) && TypedGrowthPetElapsed(entity,packet.itemId)>0)) {
+        reply(Status::Busy,token);return;
+    }
+    const auto pid=ecs::PlayerRuntime::GetPlayerID(entity);
+    const auto fence=state.fence;const auto login=g_registry.get<ecs::TypedItemLogin>(entity).token;
+    item::PetCareContext context{{1},pid,fence.sessionGeneration,1,static_cast<std::uint16_t>(ecs::PointSystem::GetLevel(entity)),
+        static_cast<std::uint8_t>(ecs::PlayerRuntime::GetJob(entity)+1),static_cast<std::uint8_t>(ecs::PlayerRuntime::GetSex(entity)+1),true,true,true,
+        false,false,ecs::PlayerRuntime::GetPosition(entity)==POS_FIGHTING};
+    const auto profile=[&](const item::PersistentItem& source) {
+        const auto* entry=catalog.Find(source.key);
+        const auto* row=entry && !entry->base.retired ? std::get_if<item::ItemPetSupplyRow>(&entry->category) : nullptr;
+        return row ? catalog.FindPetSupplyProfile(row->profile) : nullptr;
+    };
+    if(action==Action::ServiceList) {
+        g_registry.remove<PetServiceSession>(entity);ServiceView view;
+        for(const auto& source:state.items) {
+            if(!profile(source) || !item::PlainInventoryItem(source,fence.owner))continue;
+            std::uint16_t mask=0;
+            for(std::uint8_t mode=0;mode<5;++mode)
+                if(item::MakePetServiceCommit(catalog,fence,state.storages,state.items,context,source.id,seal->id,{mode,TypedItemEffectNow()}))mask|=1u<<mode;
+            if(mask)view.options.emplace_back(source.id.Value(),mask);
+        }
+        reply(Status::ServiceList,0,view,true);return;
+    }
+    if(confirm && (!session || session->token!=token || session->seal.id!=seal->id)){reply(Status::Stale,token);return;}
+    const auto* source=InBag(g_registry.get<ecs::TypedItems>(entity),confirm ? session->source.id.Value() : packet.token);
+    if(!source || (confirm && (*source!=session->source || *seal!=session->seal || catalog.ContentHash()!=session->catalogHash || get_dword_time()-session->opened>=120000u))) {
+        reply(Status::Stale,token);return;
+    }
+    const auto mode=confirm ? session->view.selector : static_cast<std::uint8_t>(packet.name[0]-'A');
+    const auto* rule=profile(*source);
+    const auto roll=confirm && mode>=2 ? Roll({0,9999,1}) : std::optional<std::uint16_t>{0};
+    if(!rule || !roll || RAND_bytes(context.operationId.data(),static_cast<int>(context.operationId.size()))!=1){reply(Status::Failed,token);return;}
+    const auto write=item::MakePetServiceCommit(catalog,fence,state.storages,state.items,context,source->id,seal->id,{mode,TypedItemEffectNow(),0,*roll});
+    if(!write){reply(Status::NoEffect,token);return;}
+    ServiceView view{source->id.Value(),static_cast<std::uint8_t>(rule->kind),mode,
+        rule->enchant ? rule->enchant->successBp : std::uint16_t{10000},write->plan.after.life,write->plan.after.traits};
+    if(!confirm) {
+        PetServiceSession quote{*source,*seal,catalog.ContentHash(),view};
+        if(RAND_bytes(reinterpret_cast<unsigned char*>(&quote.token),sizeof(quote.token))!=1 || !quote.token){reply(Status::Failed);return;}
+        quote.opened=get_dword_time();g_registry.emplace_or_replace<PetServiceSession>(entity,std::move(quote));
+        reply(Status::ServiceReady,g_registry.get<PetServiceSession>(entity).token,view,true);return;
+    }
+    auto permit=ecs::resource_admission::Enter({entity},auriga::resource_admission::Operation::ItemUse);
+    if(!permit || !permit->Current() || CurrentLogin(pid,login)!=entity || !Admitted(entity) || g_registry.all_of<ecs::TypedItemBusy>(entity)) {
+        reply(Status::Denied,token);return;
+    }
+    auto held=std::make_shared<auriga::resource_admission::Permit>(std::move(*permit));
+    session->status=Status::Pending;session->view=view;g_registry.emplace_or_replace<ecs::TypedItemBusy>(entity);
+    const bool success=write->plan.succeeded;
+    const bool queued=store::RequestCommit(fence.owner,fence.sessionGeneration,write->commit,[pid,login,token,success,held](store::CommitOutcome outcome) {
+        const auto entity=CurrentLogin(pid,login);if(entity==entt::null)return;
+        if(!outcome.state){if(auto* desc=ecs::PlayerRuntime::GetDesc(entity))desc->SetPhase(PHASE_CLOSE);return;}
+        g_registry.emplace_or_replace<ecs::TypedItems>(entity,std::move(*outcome.state));g_registry.remove<ecs::TypedItemBusy>(entity);SendTypedInventory(entity);
+        if(auto* current=g_registry.try_get<PetServiceSession>(entity);current && current->token==token) {
+            current->status=outcome.write ? success ? Status::ServiceApplied : Status::ServiceMissed : Status::Failed;
+            const auto* pet=InBag(g_registry.get<ecs::TypedItems>(entity),current->seal.id.Value());
+            const bool details=outcome.write && pet;
+            const ServiceView empty;
+            Reply(entity,current->status,current->seal.id.Value(),token,0,details ? std::optional{pet->key} : std::nullopt,details ? pet : nullptr,nullptr,false,nullptr,false,details ? &current->view : &empty);
+        }
+        PumpTypedItemGrants(entity);
+    });
+    if(!queued){g_registry.remove<ecs::TypedItemBusy>(entity);session->status=Status::Failed;}
+    reply(session->status,token);
+}
+
 void HandleStudy(entt::entity entity,Action action,const TPacketCGTypedPetHatch& packet,const item::ItemCatalog& catalog)
 {
     const bool resetting=action>=Action::ResetList;
@@ -1043,11 +1156,14 @@ bool HandleTypedPetHatchPacket(entt::entity entity, const char* data)
     std::memcpy(&packet, data, sizeof(packet));
     const auto action = static_cast<Action>(packet.action);
     const bool studyPreview=action==Action::StudyPreview || action==Action::ResetPreview;
-    if (!packet.itemId || action < Action::Preview || action > Action::ResetConfirm
+    const bool servicePreview=action==Action::ServicePreview;
+    if (!packet.itemId || action < Action::Preview || action > Action::ServiceConfirm
         || packet.nameLength > sizeof(packet.name)
-        || (action != Action::Confirm && !studyPreview && packet.nameLength)
+        || (action != Action::Confirm && !studyPreview && !servicePreview && packet.nameLength)
         || (action == Action::Confirm && !packet.nameLength)
         || (studyPreview && (packet.nameLength!=1 || packet.name[0]<'1' || packet.name[0]>'5' || !packet.token))
+        || (servicePreview && (packet.nameLength!=1 || packet.name[0]<'A' || packet.name[0]>'E' || !packet.token))
+        || (action==Action::ServiceList && packet.token) || (action==Action::ServiceConfirm && !packet.token)
         || ((action==Action::StudyList || action==Action::ResetList) && packet.token) || ((action==Action::StudyConfirm || action==Action::ResetConfirm) && !packet.token)
         || ((action == Action::Preview || action == Action::Inspect || action == Action::FoodList || action == Action::Progress) && packet.token)
         || ((action == Action::FeedPreview || action == Action::FeedConfirm) && !packet.token)
@@ -1060,6 +1176,7 @@ bool HandleTypedPetHatchPacket(entt::entity entity, const char* data)
 
     const auto catalog = store::CurrentCatalog();
     if (!catalog) return true;
+    if(action>=Action::ServiceList){HandleService(entity,action,packet,*catalog);return true;}
     if (action >= Action::FoodList && action <= Action::FeedConfirm)
         return HandleFeeding(entity,action,packet,*catalog);
     if (action>=Action::StudyList)

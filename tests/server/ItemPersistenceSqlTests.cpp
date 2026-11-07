@@ -184,7 +184,7 @@ void GrowthPetBirthSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,I
     const ItemWallet wallet{owner,WalletCurrency::Gold,1,150000};
     Check(p::ProvisionOwner(admin,c,owner,std::span(&bag,1),std::span(&wallet,1)).has_value(),"hatch owner provisioned");
     auto state=p::LoadCurrentItemOwner(writer,c,owner).value();
-    const auto ids=p::ReserveItemInstanceIds(writer,c,8).value();
+    const auto ids=p::ReserveItemInstanceIds(writer,c,12).value();
     const auto eggId=ItemInstanceId::Create(ids.first).value();
     const auto sealId=ItemInstanceId::Create(ids.first+1).value();
     const auto grant=MakeGrantCommit(c,{30,1},state.fence,state.storages,state.items,{eggKey,0,2},std::array{eggId});
@@ -471,6 +471,43 @@ void GrowthPetBirthSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,I
         final.growthPet->traits==trained.growthPet->traits && final.growthPet->name==trained.growthPet->name &&
         Find(state,allId.Value()).count==1 && state.petStudyCooldowns.at(1)==ready,
         "all reset persists without changing progression, birth traits or owner cooldown");
+    const auto recalled=growthWrite(13,CompanionAction::Dismiss);
+    Check(recalled && p::CommitItems(writer,c,*recalled).has_value(),"recall before pet item services");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    for(unsigned index=0;index<4;++index) {
+        const auto key=ItemKey::Create(ItemCategory::Special,90+index).value();
+        const auto id=ItemInstanceId::Create(ids.first+8+index).value();
+        const auto grant=MakeGrantCommit(c,{36,static_cast<std::uint8_t>(index)},state.fence,state.storages,state.items,{key,0,2},std::array{id});
+        Check(grant && p::CommitItems(writer,c,*grant).has_value(),"pet service supply granted");
+        state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    }
+    const auto service=[&](unsigned source,std::uint8_t mode,std::uint8_t serial,std::uint16_t roll=0) {
+        auto admission=context;admission.operationId={37,serial};admission.sessionGeneration=state.fence.sessionGeneration;
+        return MakePetServiceCommit(c,state.fence,state.storages,state.items,admission,ItemInstanceId::Create(ids.first+8+source).value(),sealId,
+            {mode,request.bornAtUtcMs+50000,0,roll});
+    };
+    const auto remaining=Find(state,sealId.Value()).growthPet->life.remainingMs;
+    const auto extended=service(0,0,1);
+    Check(extended && extended->plan.after.life.remainingMs==remaining+60000 && extended->plan.after.life.capacityMs==remaining+60000 &&
+        p::CommitItems(writer,c,extended->commit).has_value() && p::CommitItems(writer,c,extended->commit)->replay,"extension adds to saved remainder once");
+    Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"extended life relog");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    Check(Find(state,sealId.Value()).growthPet->life==extended->plan.after.life,"extended capacity and remainder persist");
+    const auto enchanted=service(2,2,2);
+    Check(enchanted && enchanted->plan.succeeded && p::CommitItems(writer,c,enchanted->commit).has_value(),"enchantment and its supply commit together");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto traits=Find(state,sealId.Value()).growthPet->traits;
+    const auto missedEnchant=service(3,2,3,9999);
+    Check(missedEnchant && !missedEnchant->plan.succeeded && p::CommitItems(writer,c,missedEnchant->commit).has_value(),"failed enchant consumes its supply");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    Check(Find(state,sealId.Value()).growthPet->traits==traits,"failed enchant preserves birth traits");
+    const auto permanent=service(1,1,4);
+    Check(permanent && permanent->plan.after.life==GrowthPetLife{CompanionClock::Permanent,0,0,true} &&
+        p::CommitItems(writer,c,permanent->commit).has_value() && p::CommitItems(writer,c,permanent->commit)->replay,"permanent life grants explicit durable permission once");
+    Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"permanent life relog");
+    state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    Check(Find(state,sealId.Value()).growthPet->life==permanent->plan.after.life && !service(0,0,5) && !service(1,1,6),
+        "permanent life persists and rejects no-effect repeat supplies");
 }
 
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
@@ -516,6 +553,16 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         base.contentCode="special.sql_pet_reset_"+std::to_string(kind);
         source.items.push_back(base);source.petSupplies.push_back({base.key,kind});
         source.petSupplyProfiles.push_back({kind,"supply.sql_pet_reset_"+std::to_string(kind),static_cast<PetSupplyKind>(kind)});
+    }
+    for(unsigned index=0;index<4;++index) {
+        auto base=source.items.back();base.key=ItemKey::Create(ItemCategory::Special,90+index).value();
+        base.contentCode="special.sql_pet_service_"+std::to_string(index);source.items.push_back(base);
+        const auto profile=10+index;source.petSupplies.push_back({base.key,profile});
+        PetSupplyProfile rule{profile,"supply.sql_pet_service_"+std::to_string(index),
+            index==0 ? PetSupplyKind::ExtendLife : index==1 ? PetSupplyKind::PermanentLife : PetSupplyKind::Enchant};
+        if(index==0)rule.extension=PetExtensionRule{60000,86400000};
+        if(index>=2)rule.enchant=PetEnchantRule{static_cast<std::uint16_t>(index==2 ? 10000 : 0),5,{150,100,100}};
+        source.petSupplyProfiles.push_back(rule);
     }
     source.petHatchProfiles.push_back({1,"hatch.sql_birth",growthSeal,100000,{30,40,5},{10,20,5},{10,20,5}});
     source.petFeedRules={{hatchEgg,PetFeedingService::Cube,PetFoodKind::LifetimeFraction,PetFoodConsumption::WholeStack,0,5000,0,0},

@@ -241,6 +241,16 @@ struct PetSkillResetTerms
 std::expected<PetStudyWrite,PetStudyCommitError> MakePetSkillResetCommit(const ItemCatalog&,ItemOwnerFence,
     std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const PetCareContext&,
     ItemInstanceId supply,ItemInstanceId seal,const PetSkillResetTerms&);
+struct PetServiceTerms
+{
+    std::uint8_t selector=0; // extension, permanent life, HP/monster/PvE enchant
+    std::uint64_t nowUtcMs=0,elapsedMs=0;
+    std::uint16_t rollBp=0;
+};
+std::expected<PetStudyWrite,PetStudyCommitError> MakePetServiceCommit(const ItemCatalog&,ItemOwnerFence,
+    std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const PetCareContext&,
+    ItemInstanceId supply,ItemInstanceId seal,const PetServiceTerms&);
+bool ValidatePetServiceCommit(const ItemCatalog&,const ItemCommit&);
 // Gives new units of one item state to the owner's inventory (F4 C7a): a drop,
 // a purchase or a reward. Stackable units first top up the owner's matching
 // inventory stacks (same key, level and binding, no instance state), in storage

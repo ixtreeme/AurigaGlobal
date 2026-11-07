@@ -486,7 +486,10 @@ bool ValidItemStorage(const ItemStorageLayout& l) noexcept
 bool SupportsPersistentItem(const ItemCatalog& c,const ItemCatalogEntry& e) noexcept
 {
     if(const auto* companion=std::get_if<ItemCompanionRow>(&e.category))return PermanentSeal(*companion) || companion->kind==CompanionKind::GrowthPet;
-    if(std::holds_alternative<ItemPetSupplyRow>(e.category))return TrainingSupply(c,e.base.key)!=nullptr;
+    if(const auto* supply=std::get_if<ItemPetSupplyRow>(&e.category)) {
+        const auto* profile=c.FindPetSupplyProfile(supply->profile);
+        return profile && profile->kind>=PetSupplyKind::Study && profile->kind<=PetSupplyKind::Enchant;
+    }
     if(std::holds_alternative<ItemToolRow>(e.category))return true;
     if(std::holds_alternative<ItemFishingRow>(e.category) || std::holds_alternative<ItemPolymorphRow>(e.category) || std::holds_alternative<ItemSkillBookRow>(e.category))return true;
     if(std::holds_alternative<ItemContainerRow>(e.category))return true;
@@ -657,7 +660,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
         {
             const auto& b=*change.before;
             if((b.growthPet || p.growthPet) && r.outcomeCode!=GrowthPetCompanionOutcome &&
-                r.outcomeCode!=PetFeedOutcome && r.outcomeCode!=PetProgressOutcome && r.outcomeCode!=PetStudyOutcome && r.outcomeCode!=PetSkillResetOutcome)
+                r.outcomeCode!=PetFeedOutcome && r.outcomeCode!=PetProgressOutcome && r.outcomeCode!=PetStudyOutcome && r.outcomeCode!=PetSkillResetOutcome && r.outcomeCode!=0x2608)
             {
                 auto expected=b;
                 expected.revision=p.revision;
@@ -717,6 +720,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
     if(r.outcomeCode==PetFeedOutcome && !ValidPetFeedWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==PetProgressOutcome && !ValidPetProgressWrite(c,r))return std::unexpected(E::InvalidChange);
     if((r.outcomeCode==PetStudyOutcome || r.outcomeCode==PetSkillResetOutcome) && !ValidPetStudyWrite(c,r))return std::unexpected(E::InvalidChange);
+    if(r.outcomeCode==0x2608 && !ValidatePetServiceCommit(c,r))return std::unexpected(E::InvalidChange);
     return {};
 }
 std::expected<ItemCatalogDigest,E> ItemCommitDigest(const ItemCatalog& c,const ItemCommit& r)

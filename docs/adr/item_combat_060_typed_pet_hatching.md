@@ -95,3 +95,13 @@ A CG250 új `ResetList`, `ResetPreview`, `ResetConfirm` műveletei a meglévő r
 A szerver egy receiptelt SQL-tranzakcióban menti a törlést és az ellátmány levonását. A `PSR` műveleti bizonyíték csak az adott katalógusszabályból megengedett változást fogadja el. Ismételt megerősítés vagy receipt-visszajátszás nem von le újabb tárgyat. A karakterhez és képességhez kötött tanulási várakozási idő változatlanul megmarad. Új SQL-migráció nem szükséges.
 
 A Windows Release GameServer build és hat natív regresszió sikeres, beleértve a MariaDB-visszaolvasást és a második rangú képesség törlését. A Unity 6.3 fordítás, 1189 petcsomag-, 1640 statcsomag-, 340 pecsét- és 4179 leltárellenőrzés átment. A 268 ellenőrzéses helyi TLS-próba a kiválasztott és teljes törlést, az újratanulást, a hibás tokent, az üres célpontot és az ismételt megerősítést is vizsgálta. Mindkét törlés utáni újrabelépés megőrizte a képességeket és üres helyeket; a tanult bónuszok eltűntek, a természetes bónuszok megmaradtak. Az SQL-utóellenőrzés a végső állapotot és a 359 korábbi példány, 38 pénztárca változatlanságát igazolta. A mérési táblázat és a pontos próbahatókör a [jelentésben](../reports/item_combat/2026-11-07_pet_skill_reset.md) szerepel.
+
+## C26k–l — Életidő és születési tulajdonságok fejlesztése
+
+A párosított Unity changeset a `cs:83`.
+
+A **Pet adatai → Pet tárgyai** felület a visszahívott peten külön kezeli az időhosszabbító, korlátlanító és tulajdonságfejlesztő ellátmányokat. A növelés a megmaradt időhöz adja a katalógusban megadott mennyiséget; ez lesz az új kapacitás is. A korlátlanítás explicit tartós engedélyt és állandó órát ment. Korlátlan peten egyik életidő-tárgy sem fogyhat el újra.
+
+Az enchant a három születési tulajdonság egyikét fejleszti, a profil esélyével, lépésével és felső határával. Elfogadott sikertelen próbánál egy tárgy fogy; értékhatáron, hibás tokennél és elavult állapotban nincs levonás. A növelés és az egy tárgy levonása egy `PSU` bizonyítékkal ellenőrzött SQL-tranzakció. A visszahívás utolsó aktív idejének elszámolása megelőzi a kapacitás módosítását. A CG250 három új művelete és a GC253 v6 viszi a forráslistát, előnézetet és eredményt. Új SQL-migráció nem szükséges.
+
+A Windows GameServer build, `pet_lifecycle` és `item_persistence_mariadb`, a Unity 6.3 fordítás és 2811 petcsomag-, 1640 statcsomag-, 340 pecsét-, 4179 leltárellenőrzés sikeres. A 371 ellenőrzéses helyi TLS-próba az időhosszabbítást, korlátlanítást, három sikeres és egy sikertelen enchantot, az ismételt megerősítést, értékhatárt és újrabelépést ellenőrizte. Az SQL-visszaolvasás 387 korábbi példány és 43 pénztárca megőrzését is igazolta. A részletes mérés a [jelentésben](../reports/item_combat/2026-11-07_pet_life_enchantment.md) található.
