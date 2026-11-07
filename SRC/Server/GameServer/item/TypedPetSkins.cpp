@@ -12,12 +12,13 @@
 #include "../core/packet.h"
 #include <chrono>
 #include <map>
+#include <set>
 #include <openssl/rand.h>
 
 namespace {
 namespace item=auriga::item;namespace store=item::runtime;using Clock=std::chrono::steady_clock;
 struct SkinClock {
-    item::persistence::LoadedItemOwner state;std::uint64_t id=0,token=0;
+    std::shared_ptr<item::persistence::LoadedItemOwner> state;std::uint64_t id=0,token=0;
     Clock::duration accrued{};std::optional<Clock::time_point> since;
     bool stopped=false,pending=false;std::vector<std::function<void()>> waiters;
 };
@@ -26,9 +27,9 @@ std::map<Key,std::shared_ptr<SkinClock>> clocks;
 Key Identity(item::ItemOwnerFence f,std::uint64_t id){return {f.owner,f.sessionGeneration,id};}
 std::uint64_t Elapsed(const SkinClock& c){return std::chrono::duration_cast<std::chrono::milliseconds>(c.accrued+(c.since ? Clock::now()-*c.since : Clock::duration{})).count();}
 void Following(SkinClock& c,bool live){if(live && !c.since)c.since=Clock::now();else if(!live && c.since){c.accrued+=Clock::now()-*c.since;c.since.reset();}}
-const item::PersistentItem* Skin(const SkinClock& c){const auto it=std::ranges::find(c.state.items,c.id,[](const auto& p){return p.id.Value();});return it!=c.state.items.end() && !it->destroyed && it->petSupply && it->petSupply->createdAtUtcMs ? &*it : nullptr;}
+const item::PersistentItem* Skin(const SkinClock& c){const auto it=std::ranges::find(c.state->items,c.id,[](const auto& p){return p.id.Value();});return it!=c.state->items.end() && !it->destroyed && it->petSupply && it->petSupply->createdAtUtcMs ? &*it : nullptr;}
 const item::PetSkinRule* Rule(const item::ItemCatalog& c,const item::PersistentItem& i){const auto* e=c.Find(i.key);const auto* r=e ? std::get_if<item::ItemPetSupplyRow>(&e->category) : nullptr;const auto* p=r ? c.FindPetSupplyProfile(r->profile) : nullptr;return p && p->skin ? &*p->skin : nullptr;}
-entt::entity Owner(const SkinClock& c){const auto e=CHARACTER_MANAGER::instance().FindEntityByPID(static_cast<std::uint32_t>(c.state.fence.owner.id));const auto* login=g_registry.valid(e) ? g_registry.try_get<ecs::TypedItemLogin>(e) : nullptr;return login && login->token==c.token ? e : entt::null;}
+entt::entity Owner(const SkinClock& c){const auto e=CHARACTER_MANAGER::instance().FindEntityByPID(static_cast<std::uint32_t>(c.state->fence.owner.id));const auto* login=g_registry.valid(e) ? g_registry.try_get<ecs::TypedItemLogin>(e) : nullptr;return login && login->token==c.token ? e : entt::null;}
 void Stop(SkinClock& c){Following(c,false);c.stopped=true;}
 }
 std::uint64_t TypedPetSkinElapsed(entt::entity owner,std::uint64_t id){const auto* state=g_registry.try_get<ecs::TypedItems>(owner);if(!state)return 0;const auto it=clocks.find(Identity(state->state.fence,id));return it==clocks.end() ? 0 : Elapsed(*it->second);}
@@ -45,9 +46,13 @@ std::uint32_t TypedPetSkinForm(entt::entity owner,const item::persistence::Loade
 }
 void UpdateTypedPetSkins(entt::entity owner,const item::persistence::LoadedItemOwner& state,std::uint64_t live){
     const auto* login=g_registry.try_get<ecs::TypedItemLogin>(owner);const auto c=store::CurrentCatalog();if(!login || !c)return;
+    std::shared_ptr<item::persistence::LoadedItemOwner> shared;
+    const auto existing=clocks.lower_bound(Identity(state.fence,0));
+    if(existing!=clocks.end() && std::get<0>(existing->first)==state.fence.owner && std::get<1>(existing->first)==state.fence.sessionGeneration)shared=existing->second->state;
+    if(shared && shared->fence.revision<state.fence.revision)*shared=state;
     for(const auto& i:state.items)if(!i.destroyed && i.petSupply && i.petSupply->createdAtUtcMs) {
         const auto* rule=Rule(*c,i);if(!rule)continue;
-        auto& clock=clocks[Identity(state.fence,i.id.Value())];if(!clock)clock=std::make_shared<SkinClock>(SkinClock{state,i.id.Value(),login->token});
+        auto& clock=clocks[Identity(state.fence,i.id.Value())];if(!clock){if(!shared)shared=std::make_shared<item::persistence::LoadedItemOwner>(state);clock=std::make_shared<SkinClock>(SkinClock{shared,i.id.Value(),login->token});}
         if(!clock->stopped)Following(*clock,rule->clock==item::CostumeClock::EquippedTime && live && i.petSupply->equippedSeal==live);
     }
 }
@@ -67,10 +72,10 @@ void TickTypedPetSkins(){
         const bool charge=rule->clock==item::CostumeClock::EquippedTime && elapsed && (!clock->since || elapsed>=5000 || elapsed>=skin->petSupply->lifetime.remainingMs);
         if(!due || (!due->removeItem && !charge))continue;
         std::array<std::uint8_t,16> op{};if(RAND_bytes(op.data(),static_cast<int>(op.size()))!=1)continue;
-        const auto commit=item::MakePetSkinClockCommit(*c,op,clock->state.fence,clock->state.storages,clock->state.items,skin->id,TypedItemEffectNow(),elapsed,clock->since.has_value());
-        if(!commit){LOG_ERROR("Pet skin clock plan failed owner {} error {}",clock->state.fence.owner.id,static_cast<unsigned>(commit.error()));continue;}
+        const auto commit=item::MakePetSkinClockCommit(*c,op,clock->state->fence,clock->state->storages,clock->state->items,skin->id,TypedItemEffectNow(),elapsed,clock->since.has_value());
+        if(!commit){LOG_ERROR("Pet skin clock plan failed owner {} error {}",clock->state->fence.owner.id,static_cast<unsigned>(commit.error()));continue;}
         if(!clock->stopped)g_registry.emplace_or_replace<ecs::TypedItemBusy>(owner);
-        const bool queued=store::RequestCommit(clock->state.fence.owner,clock->state.fence.sessionGeneration,*commit,[clock](store::CommitOutcome outcome){
+        const bool queued=store::RequestCommit(clock->state->fence.owner,clock->state->fence.sessionGeneration,*commit,[clock](store::CommitOutcome outcome){
             const auto owner=Owner(*clock);if(owner==entt::null || clock->stopped)return;
             if(!outcome.state){if(auto* d=ecs::PlayerRuntime::GetDesc(owner))d->SetPhase(PHASE_CLOSE);return;}
             g_registry.emplace_or_replace<ecs::TypedItems>(owner,std::move(*outcome.state));g_registry.remove<ecs::TypedItemBusy>(owner);SendTypedInventory(owner);PumpTypedItemGrants(owner);
@@ -97,10 +102,10 @@ std::function<void(MultiCommitOutcome*)> BeginPetSkinCommit(const std::vector<Ow
             c->pending=true;writes.push_back({c,static_cast<std::size_t>(owner-owners.begin()),spent,reset});
         }
     }
-    return [writes=std::move(writes)](MultiCommitOutcome* out){for(const auto& w:writes){auto& c=*w.clock;c.pending=false;if(!out)continue;
+    return [writes=std::move(writes)](MultiCommitOutcome* out){std::set<item::persistence::LoadedItemOwner*> updated;for(const auto& w:writes){auto& c=*w.clock;c.pending=false;if(!out)continue;
         if(out->write){const auto now=Clock::now();auto total=c.accrued+(c.since ? now-*c.since : Clock::duration{});if(c.since)c.since=now;
             c.accrued=std::max(Clock::duration::zero(),total-std::chrono::milliseconds(w.spent));if(w.reset){c.accrued={};c.since.reset();}}
-        if(out->states[w.index])c.state=*out->states[w.index];else{Stop(c);c.state.items.clear();}
+        if(out->states[w.index]){if(updated.insert(c.state.get()).second)*c.state=*out->states[w.index];}else{Stop(c);c.state->items.clear();}
     }};
 }
 }

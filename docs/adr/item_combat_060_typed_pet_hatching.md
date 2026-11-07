@@ -1,5 +1,31 @@
 # ADR IC-060 — Típusos pettojás-keltetés
 
+## C26q — A tervezett fejlődőpet-csomag kész
+
+A C26c–p teljes funkciósora szerveren és Unityben elkészült. A C26k–q
+párosított Unity changesetjei `cs:83`–`cs:86`. A végső builden mind a négy
+skinóra 1019, mind a 18 képességhatás 3607 Unity-ellenőrzéssel sikeres.
+Három korábbi pet az öt saját szerverfolyamat és a MariaDB szabályos
+újraindítása után is helyesen visszaállt; a tárolási pillanatképek pontosan
+egyeztek. A tesztvilág helyreállt, az öt helyi szerver újra fut.
+A teljes funkciólista, mérés és ellenőrzési hatókör a
+[lezárási jelentésben](../reports/item_combat/2026-11-07_pet_completion.md).
+A normál legacy leltár teljes átállítása a korábbi felhasználói döntés
+szerint továbbra is külön munka.
+
+## C26o–p — Várakozáskihagyás és donorpet
+
+A párosított Unity changeset `cs:86`.
+
+A képességablak külön műveletben költi el a könyvsegédből szerzett
+várakozáskihagyó töltetet. Az etetőablak külön, név szerinti megerősítéssel
+használhat fel másik, visszahívott fejlődő pecsétet. A könyv/töltet/rang és
+a donor/életidő változása atomi, replay-biztos SQL-művelet. A donor teljes
+állapota megmarad a megsemmisített sorban. A CG250 mérete változatlan;
+a GC253 v7 a tanulási töltetet, a v8 a donorazonosságot viszi.
+Natív, SQL-, Qt- és Unity-validálás, valamint 602 és 803 ellenőrzéses helyi
+próba sikeres. A részletes hatókör a [jelentésben](../reports/item_combat/2026-11-07_pet_study_bypass_sacrifice.md).
+
 ## C26n — Megjelenési tárgyak
 
 A párosított Unity changeset `cs:85`. A Pet tárgyai felületen felvehető és

@@ -107,6 +107,7 @@ struct PetFeedRequest {
     std::uint64_t petRevision=0;
     PetFeedingService service{};
     std::optional<GrowthPetProgress> progress;
+    bool sacrificePet=false; // Explicit pet-feeding service; ordinary food cannot own pet state.
 };
 struct PetFeedPlan {
     PetFeedRequest expected;

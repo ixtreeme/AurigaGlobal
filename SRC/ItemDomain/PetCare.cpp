@@ -144,12 +144,15 @@ std::expected<PetFeedPlan,PetCareError> PlanPetFeed(const ItemCatalog& c,const P
     auto target=Snapshot(c,r.target,r.context.actorId);if(!target)return std::unexpected(target.error());
     const auto* row=Growth(**target);if(!row)return std::unexpected(E::NotGrowthPet);
     if(!ValidPetSnapshot(r.target,r.petRevision) || r.food.instanceId==r.target.instanceId)return std::unexpected(E::InvalidSnapshot);
-    if(r.food.hasPetState || r.food.containsPet || r.food.active)return std::unexpected(E::PetStateSource);
+    if(r.food.containsPet || r.food.active || (r.food.hasPetState && !r.sacrificePet) ||
+        (r.sacrificePet && (!r.food.hasPetState || !Growth(**food) || r.food.count!=1 || r.food.refinementLevel)))
+        return std::unexpected(E::PetStateSource);
     if(!ValidLife(*row,r.life))return std::unexpected(E::InvalidLife);
     if(!CanUse(c,(*food)->base,r.context) || !CanUse(c,(*target)->base,r.context))return std::unexpected(E::Forbidden);
     if((r.service==PetFeedingService::Cube)!=r.target.active ||
        (r.target.active && r.life.clock==CompanionClock::ActiveTime && !r.life.remainingMs))return std::unexpected(E::WrongTargetState);
     const auto* rule=c.FindPetFeedRule(r.food.key,r.service);if(!rule)return std::unexpected(E::MissingFeedRule);
+    if(r.sacrificePet && rule->kind!=PetFoodKind::LifetimeFraction)return std::unexpected(E::PetStateSource);
     const auto units=rule->consumption==PetFoodConsumption::WholeStack ? r.food.count : rule->units;
     if(r.food.count<units)return std::unexpected(E::InvalidSnapshot);
     PetFeedPlan plan{r,r.life};plan.consumeFoodUnits=units;plan.catalogRevision=c.Revision();plan.catalogHash=c.ContentHash();

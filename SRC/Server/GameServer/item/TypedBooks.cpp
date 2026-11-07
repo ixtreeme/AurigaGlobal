@@ -107,6 +107,23 @@ bool ApplyTypedBookLogin(entt::entity e)
     const auto* typed=g_registry.try_get<ecs::TypedItems>(e);const auto* revision=g_registry.try_get<ecs::TypedBookRevision>(e);if(!typed || !revision || revision->value>typed->state.learning.revision)return false;
     if(revision->value<typed->state.learning.revision)Apply(e,typed->state.learning);return true;
 }
+std::optional<item::BookCharacter> TypedBookCharacter(entt::entity e){return Character(e);}
+std::function<void(bool,bool)> HoldTypedBookCheckpoint(entt::entity e)
+{
+    const auto* login=g_registry.try_get<ecs::TypedItemLogin>(e);const auto pid=ecs::PlayerRuntime::GetPlayerID(e);
+    if(!login || !Character(e) || pending.contains(pid) || g_registry.all_of<PendingBook>(e))return {};
+    auto work=std::make_shared<Pending>();work->pid=pid;work->login=login->token;pending[pid]=work;g_registry.emplace<PendingBook>(e,work);
+    return [work](bool apply,bool replay) {
+        const auto entity=CHARACTER_MANAGER::instance().FindEntityByPID(work->pid);
+        const auto* login=g_registry.valid(entity) ? g_registry.try_get<ecs::TypedItemLogin>(entity) : nullptr;
+        if(login && login->token==work->login) {
+            if(apply)if(const auto* t=g_registry.try_get<ecs::TypedItems>(entity))Apply(entity,t->state.learning);
+            g_registry.remove<PendingBook>(entity);
+            if(replay)for(auto& mutation:work->mutations)if(g_registry.valid(entity))mutation();
+        }
+        pending.erase(work->pid);for(auto& waiter:work->waiters)waiter();
+    };
+}
 bool HandleTypedBooksPacket(entt::entity e,const char* data)
 {
     static_assert(sizeof(TPacketCGTypedRecovery)==26);const auto r=*reinterpret_cast<const TPacketCGTypedRecovery*>(data);if(!InGame(e))return true;auto* s=State(e);const auto c=store::CurrentCatalog();const auto* typed=g_registry.try_get<ecs::TypedItems>(e);if(!s || !c || !typed)return true;

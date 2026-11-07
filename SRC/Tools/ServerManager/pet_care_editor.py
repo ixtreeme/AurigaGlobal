@@ -45,12 +45,13 @@ class PetHatchPanel(QWidget):
 
 class PetFoodPanel(QWidget):
     def __init__(self,changed,Form):
-        super().__init__();self.changed=changed;self.loading=True
+        super().__init__();self.changed=changed;self.loading=True;self.companion=False
         layout=QVBoxLayout(self)
         hint=QLabel('Az etetési szabály külön a tárgy rendes használatától. A petablak aktív petet, '
                     'a közvetlen töltés inaktív petet igényel. A „Teljes halom” az összes kijelölt darabot fogyasztja '
                     'egyetlen hatásért. Tele időkeretnél és hatás nélküli etetésnél nincs fogyasztás. '
-                    'Petállapotot hordozó tárgyat ez a művelet nem áldoz fel.')
+                    'Fejlődő pecsét is adhat kapacitásarányos töltést: ilyenkor egy visszahívott pet teljesen elfogy. '
+                    'A játék a forráspet adataival külön végleges megerősítést kér. A dobozt és megjelenést előbb el kell távolítani.')
         hint.setWordWrap(True);layout.addWidget(hint)
         self.cube_enabled=QCheckBox('Használható a pet etetőablakában');layout.addWidget(self.cube_enabled)
         self.cube=Form(changed)
@@ -75,10 +76,14 @@ class PetFoodPanel(QWidget):
         self.cube.setEnabled(self.cube_enabled.isChecked());self.direct.setEnabled(self.direct_enabled.isChecked())
         self.cube_units.widget.setEnabled(self.cube_consumption.value()=='1');self.direct_units.widget.setEnabled(self.direct_consumption.value()=='1')
         self.fraction.widget.setEnabled(self.kind.value()=='1');self.divisor.widget.setEnabled(self.kind.value()=='3')
+        if self.companion:
+            for field in (self.kind,self.cube_consumption,self.cube_units):field.widget.setEnabled(False)
         if not self.loading:self.changed()
 
     def load(self,document):
-        self.loading=True;rules={r['service_kind']:r for r in document.get('pet_food_rules',[])}
+        self.loading=True;self.companion=False;rules={r['service_kind']:r for r in document.get('pet_food_rules',[])}
+        self.cube_enabled.setEnabled(True);self.direct_enabled.setEnabled(True)
+        self.kind.widget.setEnabled(True);self.cube_consumption.widget.setEnabled(True)
         # Price-derived EXP exists only for equipment; do not offer a choice
         # that the native catalog must reject for every other category.
         equipment=str(document.get('base',{}).get('category_id')) in ('1','2')
@@ -88,6 +93,15 @@ class PetFoodPanel(QWidget):
         self.cube.load(dict(food=cube));self.direct.load(dict(food=direct))
         self.cube_enabled.setChecked('1' in rules);self.direct_enabled.setChecked('2' in rules)
         self.controls();self.loading=False
+
+    def companion_source(self,growth):
+        previous=self.loading;self.loading=True;self.companion=True
+        self.direct_enabled.setChecked(False);self.direct_enabled.setEnabled(False)
+        self.cube_enabled.setEnabled(growth)
+        if not growth:self.cube_enabled.setChecked(False)
+        for field,name in ((self.kind,'food_kind'),(self.cube_consumption,'consumption_kind'),(self.cube_units,'units')):
+            field.load('1')
+        self.controls();self.loading=previous
 
     @staticmethod
     def consumption(choice,units):

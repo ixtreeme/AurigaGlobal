@@ -185,7 +185,7 @@ void GrowthPetBirthSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,I
     const ItemWallet wallet{owner,WalletCurrency::Gold,1,150000};
     Check(p::ProvisionOwner(admin,c,owner,std::span(&bag,1),std::span(&wallet,1)).has_value(),"hatch owner provisioned");
     auto state=p::LoadCurrentItemOwner(writer,c,owner).value();
-    const auto ids=p::ReserveItemInstanceIds(writer,c,15).value();
+    const auto ids=p::ReserveItemInstanceIds(writer,c,19).value();
     const auto eggId=ItemInstanceId::Create(ids.first).value();
     const auto sealId=ItemInstanceId::Create(ids.first+1).value();
     const auto grant=MakeGrantCommit(c,{30,1},state.fence,state.storages,state.items,{eggKey,0,2},std::array{eggId});
@@ -573,6 +573,60 @@ void GrowthPetBirthSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c,I
     Check(expireSkin && p::CommitItems(writer,c,*expireSkin).has_value() && p::CommitItems(writer,c,*expireSkin)->replay,"expiry removes skin exactly once");
     Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"expired skin relog");state=p::LoadCurrentItemOwner(writer,c,owner).value();
     Check(std::ranges::none_of(state.items,[&](const auto& i){return i.id==skinId;}) && Find(state,sealId.Value()).growthPet==petBeforeSkin,"expired skin stays removed and the entire pet survives");
+    const auto waitBook=ItemInstanceId::Create(ids.first+15).value(),aidId=ItemInstanceId::Create(ids.first+16).value();
+    for(const auto& [key,id,count]:std::array{std::tuple{bookKey,waitBook,3u},std::tuple{book_aid_fixture::Key(1),aidId,2u}}) {
+        const auto grant=MakeGrantCommit(c,{40,static_cast<std::uint8_t>(count)},state.fence,state.storages,state.items,{key,0,count},std::array{id});
+        Check(grant && p::CommitItems(writer,c,*grant).has_value(),"waiting test book and aid granted");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    }
+    Query(admin,"INSERT INTO player.player(id,exp,skill_level) VALUES(880104,4321,?)",{U::Blob(std::string(2550,'\0'))});
+    BookCharacter live;live.experience=4321;
+    const auto aid=MakeBookAidRuntimeCommit(c,{40,4},state.fence,state.storages,state.items,state.learning,live,aidId,book_runtime_fixture::Facts());
+    Check(aid && p::CommitItems(writer,c,aid->commit).has_value(),"real book aid credits pet study bypass charges");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto waitStudy=[&](std::uint8_t serial,std::uint16_t roll,bool skip) {
+        auto actor=context;actor.operationId={41,serial};actor.sessionGeneration=state.fence.sessionGeneration;
+        PetStudyTerms t{{},request.bornAtUtcMs+80000+serial,0,state.petStudyCooldowns.at(1),roll};
+        if(skip)t.bypass=PetStudyBypass{state.learning,live};
+        return MakePetStudyCommit(c,state.fence,state.storages,state.items,actor,waitBook,sealId,t);
+    };
+    Check(state.learning.bypassTokens==2 && !waitStudy(1,0,false),"normal known study does not silently spend available bypass");
+    const auto missWait=waitStudy(2,9999,true);Check(missWait && !missWait->plan.succeeded,"accepted cooldown-skip failure");
+    Execute(admin,"UPDATE player.player SET typed_book_revision=999 WHERE id=880104");
+    Check(!p::CommitItems(writer,c,missWait->commit),"legacy character CAS rolls book, pet and bypass back together");
+    Execute(admin,"UPDATE player.player SET typed_book_revision=1 WHERE id=880104");
+    Check(p::LoadCurrentItemOwner(writer,c,owner)->learning==state.learning && Find(p::LoadCurrentItemOwner(writer,c,owner).value(),waitBook.Value()).count==3,"failed checkpoint preserves charges and books");
+    const auto oldDeadline=state.petStudyCooldowns.at(1);
+    Check(p::CommitItems(writer,c,missWait->commit).has_value() && p::CommitItems(writer,c,missWait->commit)->replay,"failed bypass attempt debits exactly once");
+    Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"failed bypass relog");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    Check(state.learning.bypassTokens==1 && state.learning.character==live && state.petStudyCooldowns.at(1)==oldDeadline && Find(state,sealId.Value()).growthPet->skills[0].rank==1,"failed bypass retains its rank, live character and old cooldown across relog");
+    const auto learnedWait=waitStudy(3,0,true);Check(learnedWait && p::CommitItems(writer,c,learnedWait->commit).has_value(),"successful cooldown bypass committed");
+    Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"successful bypass relog");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    Check(!state.learning.bypassTokens && state.learning.character==live && Find(state,sealId.Value()).growthPet->skills[0].rank==2 && Find(state,waitBook.Value()).count==1 && !waitStudy(4,0,true),"rank, empty charge balance and book count survive relog; no-charge attempt is refused");
+    ItemCommit credit;credit.operationId={42,1};credit.catalogRevision=c.Revision();credit.catalogHash=c.ContentHash();credit.kind=ItemOperationKind::Grant;credit.owners={state.fence};credit.outcomeCode=1;credit.result={1};
+    auto gold=state.wallets.front();++gold.revision;gold.balance+=100000;credit.wallets={{state.wallets.front(),gold}};
+    Check(p::CommitItems(writer,c,credit).has_value(),"second hatch fixture budget granted");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto foodEggId=ItemInstanceId::Create(ids.first+18).value();
+    const auto foodEgg=MakeGrantCommit(c,{42,5},state.fence,state.storages,state.items,{eggKey,0,1},std::array{foodEggId});
+    Check(foodEgg && p::CommitItems(writer,c,*foodEgg).has_value(),"second hatch egg granted");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    auto another=request;another.context.operationId={42,2};another.context.sessionGeneration=state.fence.sessionGeneration;
+    const auto egg=Find(state,foodEggId.Value());another.egg={egg.key,egg.id.Value(),egg.revision,owner.id,egg.count,0};
+    another.walletRevision=state.wallets.front().revision;another.gold=state.wallets.front().balance;another.newInstanceId=ids.first+17;another.name="Consumer";another.bornAtUtcMs=request.bornAtUtcMs+90000;
+    const auto secondHatch=MakePetHatchCommit(c,state.fence,state.storages,state.items,state.wallets,another);
+    Check(secondHatch && p::CommitItems(writer,c,*secondHatch).has_value(),"second pet hatched through the real factory");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto retireFood=growthWrite(17,CompanionAction::Dismiss);Check(retireFood && p::CommitItems(writer,c,*retireFood).has_value(),"recall the learned donor");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto consumerId=ItemInstanceId::Create(another.newInstanceId).value();const auto consumer=Find(state,consumerId.Value());
+    auto actor=context;actor.operationId={42,3};actor.sessionGeneration=state.fence.sessionGeneration;
+    PetLifecycleRequest use{actor,{consumer.key,consumer.id.Value(),consumer.revision,owner.id,1,0,false,false,false,true},consumer.revision,another.bornAtUtcMs,*consumer.growthPet};
+    const auto callConsumer=MakeGrowthPetCompanionCommit(c,state.fence,state.storages,state.items,use,CompanionAction::Summon,0);
+    Check(callConsumer && p::CommitItems(writer,c,*callConsumer).has_value(),"summon the receiving pet");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    const auto donorHistory=*Find(state,sealId.Value()).growthPet;actor.operationId={42,4};
+    const auto sacrifice=MakePetFeedCommit(c,state.fence,state.storages,state.items,actor,sealId,consumerId,PetFeedingService::Cube,5000);
+    Check(sacrifice && p::CommitItems(writer,c,sacrifice->commit).has_value() && p::CommitItems(writer,c,sacrifice->commit)->replay,"pet sacrifice and restored lifetime commit exactly once");
+    Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"sacrificed pet relog");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    Check(std::ranges::none_of(state.items,[&](const auto& i){return i.id==sealId;}) && Find(state,consumerId.Value()).growthPet->life.remainingMs==300000,"donor stays removed and receiving lifetime survives relog");
+    const auto historyBytes=EncodeGrowthPetState(c,sealKey,donorHistory).value();const std::string history(historyBytes.begin(),historyBytes.end());
+    const auto audit=Query(admin,"SELECT destroyed,growth_pet_blob FROM player.item_instance WHERE instance_id=?",{U::UInt(sealId.Value())});
+    const auto row=audit->Get()->FetchRow();const auto sizes=audit->Get()->FetchLengths();
+    Check(row && std::string(row[0])=="1" && std::string(row[1],sizes[1])==history,"destroyed donor retains its exact complete birth and learned history for audit");
 }
 
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
@@ -641,7 +695,8 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
     source.petHatchProfiles.push_back({1,"hatch.sql_birth",growthSeal,100000,{30,40,5},{10,20,5},{10,20,5}});
     source.petFeedRules={{hatchEgg,PetFeedingService::Cube,PetFoodKind::LifetimeFraction,PetFoodConsumption::WholeStack,0,5000,0,0},
         {f::Leather().key,PetFeedingService::Direct,PetFoodKind::RefillOrRevive,PetFoodConsumption::ExactUnits,1,0,5000,0},
-        {f::Sword().key,PetFeedingService::Cube,PetFoodKind::EquipmentExperience,PetFoodConsumption::WholeStack,0,0,0,20}};
+        {f::Sword().key,PetFeedingService::Cube,PetFoodKind::EquipmentExperience,PetFoodConsumption::WholeStack,0,0,0,20},
+        {growthSeal,PetFeedingService::Cube,PetFoodKind::LifetimeFraction,PetFoodConsumption::ExactUnits,1,5000,0,0}};
     source.containers.push_back({hatchEgg,ContainerKind::PetEgg,{},0,1});
     ItemBaseRow growthBase{growthSeal};
     growthBase.contentCode="companion.sql_growth_seal";growthBase.nameKey="item.sql_growth.name";

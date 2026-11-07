@@ -143,7 +143,8 @@ std::expected<PetFeedPlan,PetCareError> PersistentFeedPlan(const ItemCatalog& c,
         return !item.destroyed && item.placement && item.placement->kind==ItemStorageKind::Inventory &&
             item.owner==ItemOwner{ItemOwnerKind::Character,context.actorId} && (!item.boundTo || item.boundTo==item.owner);
     };
-    if(!inBag(food) || !inBag(seal) || !seal.growthPet || food.growthPet || food.companion ||
+    if(!inBag(food) || !inBag(seal) || !seal.growthPet || food.companion ||
+        (food.growthPet && (food.growthPet->carrierInstanceId || RecallRequested(food))) ||
         (food.automatic && food.automatic->active) || (food.toggle && food.toggle->active))
         return std::unexpected(PetCareError::InvalidSnapshot);
     const auto& pet=*seal.growthPet;
@@ -157,7 +158,7 @@ std::expected<PetFeedPlan,PetCareError> PersistentFeedPlan(const ItemCatalog& c,
     };
     const auto life=PlanPetLife(c,{context,snapshot(seal,elapsed!=0),pet.life,seal.revision,elapsed});
     if(!life)return std::unexpected(life.error());
-    return PlanPetFeed(c,{context,snapshot(food,false),snapshot(seal,following),life->after,seal.revision,service,pet.progress});
+    return PlanPetFeed(c,{context,snapshot(food,false),snapshot(seal,following),life->after,seal.revision,service,pet.progress,food.growthPet.has_value()});
 }
 
 PersistentItem FedPet(const PersistentItem& seal,const PetFeedPlan& plan)
@@ -306,6 +307,10 @@ std::expected<PetSupplyPlan,PetLifecycleError> PersistentStudyPlan(const ItemCat
         seal.owner!=owner.owner || seal.destroyed || !seal.placement || seal.placement->kind!=ItemStorageKind::Inventory ||
         (seal.boundTo && seal.boundTo!=owner.owner) || (terms.slot && terms.cooldownBeforeMs))
         return std::unexpected(Error::InvalidSnapshot);
+    if(terms.bypass && (profile->kind!=PetSupplyKind::Study || terms.slot ||
+        !ValidBookLearning(terms.bypass->before) || !ValidBookCharacter(terms.bypass->character) ||
+        !terms.bypass->before.revision || terms.bypass->before.revision==UINT64_MAX || !terms.bypass->before.bypassTokens))
+        return std::unexpected(Error::InvalidDecision);
     if(profile->kind!=PetSupplyKind::Study && (terms.rollBp || terms.cooldownBeforeMs ||
         (profile->kind==PetSupplyKind::ResetAll && terms.slot)))return std::unexpected(Error::InvalidDecision);
     const PetCareItemSnapshot target{seal.key,seal.id.Value(),seal.revision,seal.owner.id,seal.count,
@@ -316,7 +321,10 @@ std::expected<PetSupplyPlan,PetLifecycleError> PersistentStudyPlan(const ItemCat
     if(time->expired)return std::unexpected(Error::WrongTargetState);
     pet.state=time->pet.after;
     const PetCareItemSnapshot supply{book.key,book.id.Value(),book.revision,book.owner.id,book.count,book.refinementLevel};
-    return PlanPetSupply(c,{pet,supply,terms.slot,0,terms.rollBp,owner.revision,terms.cooldownBeforeMs});
+    const auto plan=PlanPetSupply(c,{pet,supply,terms.slot,0,terms.rollBp,owner.revision,terms.cooldownBeforeMs,
+        terms.bypass ? terms.bypass->before.revision : 0,terms.bypass.has_value()});
+    if(plan && terms.bypass && !plan->consumeBypass)return std::unexpected(Error::NoEffect);
+    return plan;
 }
 
 std::optional<ItemPetStudyCooldown> StudyCooldown(const PetSupplyProfile& profile,const PetSupplyPlan& plan,const PetStudyTerms& terms)
@@ -331,8 +339,9 @@ bool ValidPetStudyWrite(const ItemCatalog& c,const ItemCommit& commit)
     const auto& bytes=commit.result;
     const bool reset=commit.outcomeCode==PetSkillResetOutcome;
     if(commit.kind!=ItemOperationKind::Service || commit.owners.size()!=1 || !commit.wallets.empty() ||
-        commit.ground || commit.recovery || commit.learning || bytes.size()!=28 ||
-        bytes[0]!='P' || bytes[1]!='S' || bytes[2]!=(reset ? 'R' : 'T') || bytes[3]!=1 || bytes[4]>4 || bytes[27]>1)
+        commit.ground || commit.recovery || bytes.size()<28 ||
+        bytes[0]!='P' || bytes[1]!='S' || bytes[2]!=(reset ? 'R' : 'T') ||
+        (bytes[3]==1 ? bytes.size()!=28 || commit.learning.has_value() : bytes[3]!=2 || reset || bytes.size()!=29 || bytes[28]!=1 || !commit.learning) || bytes[4]>4 || bytes[27]>1)
         return false;
     const ItemChange* book=nullptr;
     const ItemChange* seal=nullptr;
@@ -361,11 +370,16 @@ bool ValidPetStudyWrite(const ItemCatalog& c,const ItemCommit& commit)
     const auto& owner=commit.owners.front();
     const PetCareContext context{commit.operationId,owner.owner.id,owner.sessionGeneration,1,
         static_cast<std::uint16_t>(read(23,2)),bytes[25],bytes[26],true,true,true,false,false,bytes[27]!=0};
-    const PetStudyTerms terms{bytes[4] ? std::optional<std::uint8_t>{static_cast<std::uint8_t>(bytes[4]-1)} : std::nullopt,
+    PetStudyTerms terms{bytes[4] ? std::optional<std::uint8_t>{static_cast<std::uint8_t>(bytes[4]-1)} : std::nullopt,
         read(5,8),read(13,8),commit.petStudyCooldown ? commit.petStudyCooldown->beforeMs : 0,
         static_cast<std::uint16_t>(read(21,2))};
+    if(commit.learning)terms.bypass=PetStudyBypass{commit.learning->before,commit.learning->after.character};
     const auto plan=PersistentStudyPlan(c,owner,context,*book->before,*seal->before,terms);
     if(!plan || StudyCooldown(*rule,*plan,terms)!=commit.petStudyCooldown)return false;
+    if(plan->consumeBypass) {
+        auto after=terms.bypass->before;++after.revision;--after.bypassTokens;after.character=terms.bypass->character;
+        if(commit.learning->owner!=owner.owner || commit.learning->after!=after)return false;
+    } else if(commit.learning)return false;
     auto after=*seal->before;
     ++after.revision;
     after.growthPet=plan->after;
@@ -577,9 +591,10 @@ std::expected<void,E> ValidatePersistentItem(const ItemCatalog& c,const Persiste
     const auto* seal=std::get_if<ItemCompanionRow>(&e->category);
     if(seal && seal->kind==CompanionKind::GrowthPet)
     {
-        if(!p.growthPet || p.companion || p.destroyed || p.count!=1 || p.refinementLevel ||
+        if(!p.growthPet || p.companion || p.refinementLevel ||
             p.owner.kind!=ItemOwnerKind::Character ||
-            (p.growthPet->carrierInstanceId ? p.placement->kind!=ItemStorageKind::PetCarrier || p.placement->storageId!=p.growthPet->carrierInstanceId || p.placement->anchor!=0 || RecallRequested(p) : p.placement->kind!=ItemStorageKind::Inventory) ||
+            (p.destroyed ? p.count || p.placement || RecallRequested(p) || p.growthPet->carrierInstanceId : p.count!=1 || !p.placement ||
+                (p.growthPet->carrierInstanceId ? p.placement->kind!=ItemStorageKind::PetCarrier || p.placement->storageId!=p.growthPet->carrierInstanceId || p.placement->anchor!=0 || RecallRequested(p) : p.placement->kind!=ItemStorageKind::Inventory)) ||
             !ValidateGrowthPetState(c,p.key,*p.growthPet))return std::unexpected(E::InvalidItem);
     }
     else if(p.growthPet)return std::unexpected(E::InvalidItem);
@@ -1161,12 +1176,21 @@ std::expected<PetFeedWrite,PetFeedCommitError> MakePetFeedCommit(const ItemCatal
     const auto* food=Placed(inventory,owner,foodId);
     const auto* seal=Placed(inventory,owner,sealId);
     if(!food || !seal)return std::unexpected(PetFeedCommitError{E::MissingItem});
+    if(food->growthPet && std::ranges::any_of(inventory,[&](const auto& i){return !i.destroyed && i.petSupply && i.petSupply->equippedSeal==foodId.Value();}))
+        return std::unexpected(PetFeedCommitError{PetCareError::PetStateSource});
     const auto plan=PersistentFeedPlan(c,context,*food,*seal,service,elapsedMs);
     if(!plan)return std::unexpected(PetFeedCommitError{plan.error()});
     const auto layout=std::ranges::find(storages,ItemStorage{owner.owner,seal->placement->kind,seal->placement->storageId},
         &ItemStorageLayout::storage);
     if(layout==storages.end())return std::unexpected(PetFeedCommitError{E::InvalidStorage});
     auto commit=MakeConsumeCommit(c,context.operationId,owner,storages,inventory,foodId,plan->consumeFoodUnits);
+    if(food->growthPet) {
+        ItemCommit sacrifice;sacrifice.operationId=context.operationId;sacrifice.catalogRevision=c.Revision();sacrifice.catalogHash=c.ContentHash();sacrifice.owners={owner};
+        const auto layout=std::ranges::find(storages,ItemStorage{owner.owner,food->placement->kind,food->placement->storageId},&ItemStorageLayout::storage);
+        if(layout==storages.end())return std::unexpected(PetFeedCommitError{E::InvalidStorage});
+        sacrifice.storages={*layout};auto after=*food;++after.revision;after.count=0;after.destroyed=true;after.placement.reset();
+        sacrifice.items={{*food,std::move(after)}};commit=std::move(sacrifice);
+    }
     if(!commit)return std::unexpected(PetFeedCommitError{commit.error()});
     if(std::ranges::find(commit->storages,*layout)==commit->storages.end())commit->storages.push_back(*layout);
     commit->items.push_back({*seal,FedPet(*seal,*plan)});
@@ -1261,6 +1285,10 @@ static std::expected<PetStudyWrite,PetStudyCommitError> MakePetTrainingCommit(co
     commit->kind=ItemOperationKind::Service;
     commit->outcomeCode=reset ? PetSkillResetOutcome : PetStudyOutcome;
     commit->petStudyCooldown=StudyCooldown(*profile,*plan,terms);
+    if(plan->consumeBypass) {
+        auto after=terms.bypass->before;++after.revision;--after.bypassTokens;after.character=terms.bypass->character;
+        commit->learning=ItemLearningChange{owner.owner,terms.bypass->before,std::move(after)};
+    }
     Writer result;
     result.bytes={'P','S','T',1,static_cast<std::uint8_t>(terms.slot ? *terms.slot+1 : 0)};
     if(reset)result.bytes[2]='R';
@@ -1271,6 +1299,7 @@ static std::expected<PetStudyWrite,PetStudyCommitError> MakePetTrainingCommit(co
     result.Put(context.characterClass,1);
     result.Put(context.sex,1);
     result.Put(context.inCombat,1);
+    if(terms.bypass){result.bytes[3]=2;result.Put(1,1);}
     commit->result=std::move(result.bytes);
     if(auto valid=ValidateItemCommit(c,*commit);!valid)return std::unexpected(PetStudyCommitError{valid.error()});
     return PetStudyWrite{*plan,std::move(*commit)};

@@ -1076,6 +1076,13 @@ class EditorPageTests(PageCase):
         self.assertFalse(self.page.stack_field.edit.isEnabled());self.page.dirty=False
 
 
+    def test_growth_seal_feeding_form_requires_one_whole_pet(self):
+        packet,key=create(catalog.blank(TOOL),15,growth);self.page.loaded(packet,key)
+        food=self.page.pet_food_panel;food.cube_enabled.setChecked(True);food.fraction.edit.setText('50')
+        self.assertFalse(food.direct_enabled.isEnabled());self.assertFalse(food.cube_units.widget.isEnabled())
+        document=self.page.collect();self.assertEqual(document['pet_food_rules'],[food_rule()|{'lifetime_fraction_bp':'5000'}])
+        catalog.validate(packet,document,key,TOOL);self.page.dirty=False
+
     def test_pet_hatch_and_feeding_forms_ignore_inactive_fields(self):
         packet,pet=create(catalog.blank(TOOL),15,growth);packet,key=create(packet,8,lambda d:egg(d,pet))
         self.page.loaded(packet,key);hatch=self.page.pet_hatch_panel

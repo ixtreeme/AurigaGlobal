@@ -723,7 +723,9 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         const auto* item=catalog->Find(rule.key);
         if(!item || !ValidPetFeedRule(rule) || (previousFood && *previousFood==foodKey(rule)) ||
            (rule.consumption==PetFoodConsumption::ExactUnits && rule.units>item->base.maxStack) ||
-           std::holds_alternative<ItemCompanionRow>(item->category) ||
+           (std::holds_alternative<ItemCompanionRow>(item->category) &&
+               (std::get<ItemCompanionRow>(item->category).kind!=CompanionKind::GrowthPet || rule.kind!=PetFoodKind::LifetimeFraction ||
+                   (rule.consumption==PetFoodConsumption::ExactUnits && rule.units!=1))) ||
            (rule.kind==PetFoodKind::EquipmentExperience && rule.key.Category()!=ItemCategory::Weapon && rule.key.Category()!=ItemCategory::Armor))
             return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"pet.feed",rule.key));
         previousFood=foodKey(rule);

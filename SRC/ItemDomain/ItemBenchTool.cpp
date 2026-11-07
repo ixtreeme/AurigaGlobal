@@ -156,6 +156,7 @@ Json State(const ItemCatalog& c,const p::LoadedItemOwner& o)
     Json wallets=Json::array();
     for(const auto& w:o.wallets)wallets.push_back({{"currency",static_cast<int>(w.currency)},{"balance",w.balance},{"revision",w.revision}});
     return {{"owner",BenchOwner.id},{"session",o.fence.sessionGeneration},{"revision",o.fence.revision},{"wallets",wallets},
+            {"learning",{{"revision",o.learning.revision},{"experience",o.learning.character.experience},{"chance_tokens",o.learning.chanceTokens},{"bypass_tokens",o.learning.bypassTokens}}},
             {"layout",{{"columns",Inventory.columns},{"rows",Inventory.rows},{"pages",Inventory.pages}}},{"items",items}};
 }
 const PersistentItem& Item(const p::LoadedItemOwner& o,const Json& request,const char* field)

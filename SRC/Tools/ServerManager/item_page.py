@@ -1929,6 +1929,7 @@ class ItemPage(QWidget):
         growth=self.companion_panel.kind.value()=='3'
         if growth and not self.loading:self.refinement.kind.setCurrentIndex(self.refinement.kind.findData('1'))
         self.refinement.setEnabled(not growth)
+        self.pet_food_panel.companion_source(growth)
 
     def stone_controls(self, *_):
         usable=self.stone_kind_field.value()=='1'
@@ -2329,7 +2330,7 @@ class ItemPage(QWidget):
         if category==7:self.stone_controls()
         if category==15:self.companion_controls()
         if category==17:self.pet_supply_controls()
-        if category != 15: self.tabs.addTab(self.pet_food_page, 'Pet táplálása')
+        self.tabs.addTab(self.pet_food_page, 'Pet táplálása')
         self.tabs.addTab(self.identity_page, 'Azonosítók és megjelenés')
         self.tabs.addTab(self.review_page, 'Mentés áttekintése')
         for index in range(self.tabs.count()):
@@ -2446,8 +2447,7 @@ class ItemPage(QWidget):
                 document['bonuses']=[];document['refinement']=dict(profile_kind='1',max_level='0')
                 document['levels']=[dict(level='0',**{field:'0' for field in catalog.GAINS},extra_bonus_profile_id=None,bonuses=[])]
                 document['recipes']=[]
-        if category!=15:self.pet_food_panel.collect(document)
-        else:document['pet_food_rules']=[]
+        self.pet_food_panel.collect(document)
         return document
 
     def check(self):

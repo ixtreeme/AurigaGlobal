@@ -217,7 +217,9 @@ void CatalogAndCodec() {
     reject([](auto& s){s.containers.back().hatchProfile.reset();});
     reject([](auto& s){s.containers.back().lootProfile=1;});
     reject([](auto& s){s.petFeedRules.push_back(s.petFeedRules[0]);});
-    reject([](auto& s){s.petFeedRules[0].key=care::Pet();});
+    auto sacrifice=source;sacrifice.petFeedRules[0].key=care::Pet();
+    Check(BuildItemCatalog(sacrifice).has_value(),"explicit growth-seal lifetime feeding can be published");
+    reject([](auto& s){s.petFeedRules[1].key=care::Pet();});
     reject([](auto& s){s.petFeedRules[0].lifetimeFractionBp=10001;});
     reject([](auto& s){s.petFeedRules[0].units=1;});
     reject([](auto& s){s.petFeedRules[1].key=f::Leather();});

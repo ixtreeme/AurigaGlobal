@@ -6,6 +6,7 @@
 #include "TypedDrops.hpp"
 #include "TypedInventorySync.hpp"
 #include "TypedRecovery.hpp"
+#include "TypedBooks.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/ResourceAdmission.hpp"
 #include "../ecs/components/quest_components.hpp"
@@ -73,6 +74,7 @@ struct StudyView
     std::uint8_t slot = 0;
     std::uint16_t nextRank = 0, chanceBp = 0;
     std::vector<std::pair<std::uint64_t,std::uint8_t>> options;
+    bool usesBypass=false;
 };
 
 struct PetStudySession
@@ -87,6 +89,7 @@ struct PetStudySession
     std::uint32_t opened = 0;
     Status status = Status::StudyReady;
     bool resetting = false;
+    bool bypass=false;
     std::array<item::PetSkillSlot,4> resetBefore{};
 };
 
@@ -97,6 +100,9 @@ struct FeedingView
     item::PetFoodKind kind{};
     std::uint64_t after = 0;
     std::vector<std::uint64_t> options;
+    std::string sacrificeName;
+    std::uint16_t sacrificeLevel=0;
+    std::uint8_t sacrificeStage=0,sacrificeSkills=0;
 };
 
 struct PetFeedSession
@@ -256,7 +262,7 @@ void Reply(entt::entity entity, Status status, std::uint64_t id, std::uint64_t t
     PacketWriter packet;
     packet.Put<std::uint8_t>(HEADER_GC_TYPED_PET_HATCH);
     packet.Put<std::uint32_t>(0);
-    packet.Put<std::uint8_t>(service ? 6 : study ? resetting ? 5 : 4 : progression ? 3 : feeding ? 2 : 1);
+    packet.Put<std::uint8_t>(service ? 6 : study ? resetting ? 5 : 7 : progression ? 3 : feeding ? 8 : 1);
     packet.Put<std::uint8_t>(static_cast<std::uint8_t>(status));
     packet.Put(id);
     packet.Put(token);
@@ -311,6 +317,12 @@ void Reply(entt::entity entity, Status status, std::uint64_t id, std::uint64_t t
         packet.Put(static_cast<std::uint16_t>(feeding->options.size()));
         for (const auto food : feeding->options)
             packet.Put(food);
+        packet.Put<std::uint8_t>(!feeding->sacrificeName.empty());
+        if(!feeding->sacrificeName.empty()) {
+            packet.Put(static_cast<std::uint16_t>(feeding->sacrificeName.size()));
+            packet.bytes.insert(packet.bytes.end(),feeding->sacrificeName.begin(),feeding->sacrificeName.end());
+            packet.Put(feeding->sacrificeLevel);packet.Put(feeding->sacrificeStage);packet.Put(feeding->sacrificeSkills);
+        }
     }
     if (study)
     {
@@ -343,6 +355,7 @@ void Reply(entt::entity entity, Status status, std::uint64_t id, std::uint64_t t
                 packet.Put(static_cast<std::uint16_t>(skill ? skill->ranks.size() : 0));
                 text(skill);
             }
+        if(!resetting){packet.Put(typed ? typed->state.learning.bypassTokens : 0u);packet.Put<std::uint8_t>(study->usesBypass);}
     }
     if(service) {
         packet.Put(service->source);packet.Put(service->kind);packet.Put(service->selector);packet.Put(service->chance);
@@ -619,10 +632,12 @@ bool HandleFeeding(entt::entity entity, Action action, const TPacketCGTypedPetHa
         FeedingView list;
         for (const auto& food : state.items)
         {
-            if (food.destroyed || !food.placement || food.placement->kind != item::ItemStorageKind::Inventory ||
+            if (food.id==seal->id || food.destroyed || !food.placement || food.placement->kind != item::ItemStorageKind::Inventory ||
                 food.owner != state.fence.owner || (food.boundTo && food.boundTo != food.owner) ||
                 (food.automatic && food.automatic->active) || (food.toggle && food.toggle->active))
                 continue;
+            if(food.growthPet && (item::RecallRequested(food) || food.growthPet->carrierInstanceId || TypedGrowthPetElapsed(entity,food.id.Value()) ||
+                std::ranges::any_of(state.items,[&](const auto& i){return !i.destroyed && i.petSupply && i.petSupply->equippedSeal==food.id.Value();})))continue;
             const auto* rule = catalog.FindPetFeedRule(food.key,service);
             if (rule && !catalog.Find(food.key)->base.retired &&
                 (rule->consumption == item::PetFoodConsumption::WholeStack || food.count >= rule->units))
@@ -647,6 +662,8 @@ bool HandleFeeding(entt::entity entity, Action action, const TPacketCGTypedPetHa
         FeedReply(entity,Status::Invalid,packet.itemId,confirm ? packet.token : 0);
         return true;
     }
+    if(food->id==seal->id || (food->growthPet && item::RecallRequested(*food))){FeedReply(entity,Status::Invalid,packet.itemId,confirm ? packet.token : 0);return true;}
+    if(food->growthPet && TypedGrowthPetElapsed(entity,food->id.Value())){FeedReply(entity,Status::Busy,packet.itemId,confirm ? packet.token : 0);return true;}
     const auto fence = state.fence;
     const auto pid = ecs::PlayerRuntime::GetPlayerID(entity);
     const auto login = g_registry.get<ecs::TypedItemLogin>(entity).token;
@@ -668,8 +685,12 @@ bool HandleFeeding(entt::entity entity, Action action, const TPacketCGTypedPetHa
         return true;
     }
     const auto& plan = feed->plan;
-    const FeedingView view{food->id.Value(),plan.consumeFoodUnits,rule->kind,
+    FeedingView view{food->id.Value(),plan.consumeFoodUnits,rule->kind,
         plan.progress ? plan.progress->after.itemExperience : plan.after.remainingMs};
+    if(food->growthPet) {
+        view.sacrificeName=food->growthPet->name;view.sacrificeLevel=food->growthPet->progress.level;view.sacrificeStage=food->growthPet->progress.stage;
+        view.sacrificeSkills=static_cast<std::uint8_t>(std::ranges::count_if(food->growthPet->skills,[](const auto& slot){return slot.skill!=0;}));
+    }
     if (!confirm)
     {
         PetFeedSession quote{*food,packet.itemId,catalog.ContentHash(),service,seal->growthPet->progress,
@@ -1018,9 +1039,12 @@ void HandleStudy(entt::entity entity,Action action,const TPacketCGTypedPetHatch&
                 }
                 const auto* rule=StudyRule(catalog,book.key);
                 const auto* skill=rule ? FindSkill(training,rule->skill) : nullptr;
-                if (skill)
-                    if (const auto modes=StudyModes(*rule,*skill,slots))
-                        view.options.emplace_back(book.id.Value(),modes);
+                if (skill) {
+                    auto modes=StudyModes(*rule,*skill,slots);
+                    const auto cooldown=state.petStudyCooldowns.find(rule->skill);
+                    if((modes&16) && state.learning.bypassTokens && cooldown!=state.petStudyCooldowns.end() && cooldown->second>TypedItemEffectNow())modes|=32;
+                    if(modes)view.options.emplace_back(book.id.Value(),modes);
+                }
             }
         reply(resetting ? Status::ResetList : Status::StudyList,packet.itemId,0,view,seal);
         return;
@@ -1039,7 +1063,8 @@ void HandleStudy(entt::entity entity,Action action,const TPacketCGTypedPetHatch&
         return;
     }
     const auto* rule=book ? StudyRule(catalog,book->key) : nullptr;
-    const auto slot=confirm ? session->slot : packet.name[0]=='5' ? std::nullopt :
+    const bool bypass=!resetting && (confirm ? session->bypass : packet.name[0]=='6');
+    const auto slot=confirm ? session->slot : packet.name[0]>='5' ? std::nullopt :
         std::optional<std::uint8_t>{static_cast<std::uint8_t>(packet.name[0]-'1')};
     const auto* skill=resetting ? slot && *slot<4 ? FindSkill(training,slots[*slot].skill) : nullptr : rule ? FindSkill(training,rule->skill) : nullptr;
     const auto modes=resetting ? resetModes(book ? ResetKind(catalog,book->key) : item::PetSupplyKind{}) :
@@ -1065,7 +1090,12 @@ void HandleStudy(entt::entity entity,Action action,const TPacketCGTypedPetHatch&
     const auto cooldown=rule && !resetting ? state.petStudyCooldowns.find(rule->skill) : state.petStudyCooldowns.end();
     item::PetStudyTerms terms{slot,TypedItemEffectNow(),TypedGrowthPetElapsed(entity,packet.itemId),
         slot || cooldown==state.petStudyCooldowns.end() ? 0 : cooldown->second,0};
-    if (terms.cooldownBeforeMs>terms.nowUtcMs)
+    if(bypass) {
+        const auto character=TypedBookCharacter(entity);
+        if(!character || !state.learning.bypassTokens || terms.cooldownBeforeMs<=terms.nowUtcMs){reply(Status::NoEffect,packet.itemId,token);return;}
+        terms.bypass=item::PetStudyBypass{state.learning,*character};
+    }
+    if (!bypass && terms.cooldownBeforeMs>terms.nowUtcMs)
     {
         StudyView view;
         view.readyAtMs=terms.cooldownBeforeMs;
@@ -1088,10 +1118,11 @@ void HandleStudy(entt::entity entity,Action action,const TPacketCGTypedPetHatch&
     }
     if (!confirm)
     {
-        const StudyView view{book->id.Value(),0,skill ? skill->id : 0,static_cast<std::uint8_t>(index),
+        StudyView view{book->id.Value(),0,skill ? skill->id : 0,static_cast<std::uint8_t>(index),
             static_cast<std::uint16_t>(resetting ? 0 : slots[index].rank+1),resetting ? std::uint16_t{0} : slot ? std::uint16_t{10000} : rule->knownSuccessBp};
+        view.usesBypass=bypass;
         PetStudySession quote{*book,packet.itemId,catalog.ContentHash(),slot,index<4 ? slots[index] : item::PetSkillSlot{},view};
-        quote.resetting=resetting;quote.resetBefore=slots;quote.status=ready;
+        quote.resetting=resetting;quote.bypass=bypass;quote.resetBefore=slots;quote.status=ready;
         if (RAND_bytes(reinterpret_cast<unsigned char*>(&quote.token),sizeof(quote.token))!=1 || !quote.token)
             reply(Status::Failed,packet.itemId);
         else
@@ -1114,21 +1145,25 @@ void HandleStudy(entt::entity entity,Action action,const TPacketCGTypedPetHatch&
         return;
     }
     const auto success=write->plan.succeeded;
+    const auto checkpoint=bypass ? HoldTypedBookCheckpoint(entity) : std::function<void(bool,bool)>{};
+    if(bypass && !checkpoint){reply(Status::Busy,packet.itemId,token);return;}
     auto held=std::make_shared<auriga::resource_admission::Permit>(std::move(*permit));
     session->status=Status::Pending;
     g_registry.emplace_or_replace<ecs::TypedItemBusy>(entity);
     const bool queued=store::RequestCommit(fence.owner,fence.sessionGeneration,std::move(write->commit),
-        [pid,login,token,success,held](store::CommitOutcome outcome) {
+        [pid,login,token,success,held,checkpoint](store::CommitOutcome outcome) {
             const auto entity=CurrentLogin(pid,login);
-            if (entity==entt::null) return;
+            if (entity==entt::null) {if(checkpoint)checkpoint(false,false);return;}
             if (!outcome.state)
             {
                 LOG_ERROR("Typed pet study owner reload failed pid {}",pid);
                 if (auto* desc=ecs::PlayerRuntime::GetDesc(entity)) desc->SetPhase(PHASE_CLOSE);
+                if(checkpoint)checkpoint(false,false);
                 return;
             }
             g_registry.emplace_or_replace<ecs::TypedItems>(entity,std::move(*outcome.state));
             g_registry.remove<ecs::TypedItemBusy>(entity);
+            if(checkpoint)checkpoint(outcome.write.has_value(),true);
             SendTypedInventory(entity);
             if (auto* session=g_registry.try_get<PetStudySession>(entity); session && session->token==token)
             {
@@ -1141,6 +1176,7 @@ void HandleStudy(entt::entity entity,Action action,const TPacketCGTypedPetHatch&
     if (!queued)
     {
         g_registry.remove<ecs::TypedItemBusy>(entity);
+        if(checkpoint)checkpoint(false,true);
         session->status=Status::Failed;
     }
     ReplyStudySession(entity,*session,nullptr);
@@ -1172,7 +1208,7 @@ bool HandleTypedPetHatchPacket(entt::entity entity, const char* data)
         || packet.nameLength > sizeof(packet.name)
         || (action != Action::Confirm && !studyPreview && !servicePreview && packet.nameLength)
         || (action == Action::Confirm && !packet.nameLength)
-        || (studyPreview && (packet.nameLength!=1 || packet.name[0]<'1' || packet.name[0]>'5' || !packet.token))
+        || (studyPreview && (packet.nameLength!=1 || packet.name[0]<'1' || packet.name[0]>(action==Action::StudyPreview ? '6' : '5') || !packet.token))
         || (servicePreview && (packet.nameLength!=1 || packet.name[0]<'A' || packet.name[0]>'I' || !packet.token))
         || (action==Action::ServiceList && packet.token) || (action==Action::ServiceConfirm && !packet.token)
         || ((action==Action::StudyList || action==Action::ResetList) && packet.token) || ((action==Action::StudyConfirm || action==Action::ResetConfirm) && !packet.token)

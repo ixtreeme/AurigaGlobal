@@ -87,6 +87,37 @@ void LifeAndEnchantment() {
     r.pet.state.traits.maximumHpPercentTenths=150;Check(PlanPetSupply(*c,r).error()==PetLifecycleError::NoEffect,"capped trait refuses consumption");
     r.traitIndex=3;Check(PlanPetSupply(*c,r).error()==PetLifecycleError::InvalidDecision,"invalid enchant target refused");
 }
+void PersistentStudyBypassAndSacrifice() {
+    auto source=f::Catalog();source.petFeedRules.push_back({care::Pet(),PetFeedingService::Cube,PetFoodKind::LifetimeFraction,PetFoodConsumption::ExactUnits,1,5000,0,0});
+    const auto c=BuildItemCatalog(source).value();auto request=Request(*c);request.state.everSummoned=request.state.recallRequested=true;
+    request.state.skills[0]={true,1,1};request.state.life.remainingMs=100000;
+    const ItemOwner owner{ItemOwnerKind::Character,77};const ItemOwnerFence fence{owner,9,1};
+    const std::vector<ItemStorageLayout> layouts{{{owner,ItemStorageKind::Inventory,1},5,9,1}};
+    PersistentItem seal{ItemInstanceId::Create(120).value(),care::Pet(),owner};seal.revision=3;seal.placement=ItemPlacement{ItemStorageKind::Inventory,1,0};seal.growthPet=request.state;
+    auto donor=seal;donor.id=ItemInstanceId::Create(121).value();donor.placement->anchor=1;donor.growthPet->name="Food";donor.growthPet->recallRequested=false;
+    PersistentItem book{ItemInstanceId::Create(200).value(),f::Supply(1),owner};book.count=3;book.placement=ItemPlacement{ItemStorageKind::Inventory,1,2};
+    std::vector<PersistentItem> items{seal,donor,book};BookLearning learning;learning.revision=1;learning.bypassTokens=2;learning.chanceTokens=1;
+    BookCharacter live;live.experience=1234;
+    PetStudyTerms terms{{},100001,0,200000,9999};terms.bypass=PetStudyBypass{learning,live};
+    const auto missed=MakePetStudyCommit(*c,fence,layouts,items,request.context,book.id,seal.id,terms);
+    Check(missed && !missed->plan.succeeded && missed->plan.consumeBypass && missed->commit.learning->after.bypassTokens==1 &&
+        missed->commit.learning->after.chanceTokens==1 && missed->commit.learning->after.character==live,"failed known study spends one bypass and checkpoints live character atomically");
+    auto forged=missed->commit;++forged.learning->after.chanceTokens;Check(!ValidateItemCommit(*c,forged),"pet study cannot manufacture another aid charge");
+    terms.bypass.reset();Check(!MakePetStudyCommit(*c,fence,layouts,items,request.context,book.id,seal.id,terms),"normal study keeps its cooldown despite available charges elsewhere");
+    terms.bypass=PetStudyBypass{learning,live};terms.rollBp=0;
+    const auto learned=MakePetStudyCommit(*c,fence,layouts,items,request.context,book.id,seal.id,terms);
+    Check(learned && learned->plan.succeeded && learned->commit.petStudyCooldown->afterMs==100001+10800000 && learned->commit.learning->after.bypassTokens==1,"successful bypass writes rank, book, charge and next deadline together");
+    terms.cooldownBeforeMs=0;Check(!MakePetStudyCommit(*c,fence,layouts,items,request.context,book.id,seal.id,terms),"explicit bypass without an active cooldown does not consume anything");
+    Check(!MakeConsumeCommit(*c,{31},fence,layouts,items,donor.id,1),"ordinary consumption cannot sacrifice a pet");
+    const auto feed=MakePetFeedCommit(*c,fence,layouts,items,request.context,donor.id,seal.id,PetFeedingService::Cube,500);
+    Check(feed && feed->plan.after.remainingMs==249500 && feed->commit.items[0].after.destroyed &&
+        feed->commit.items[0].after.growthPet==donor.growthPet,"dedicated feeding consumes the entire donor while preserving its audit state");
+    auto bad=feed->commit;bad.items[0].after.growthPet->skills[0].rank=2;Check(!ValidateItemCommit(*c,bad),"feeding cannot rewrite the destroyed pet's learned history");
+    Check(!MakePetFeedCommit(*c,fence,layouts,items,request.context,seal.id,seal.id,PetFeedingService::Cube,0),"pet cannot eat itself");
+    items[1].growthPet->recallRequested=true;Check(!MakePetFeedCommit(*c,fence,layouts,items,request.context,donor.id,seal.id,PetFeedingService::Cube,0),"a following donor cannot be sacrificed");items[1]=donor;
+    PersistentItem skin{ItemInstanceId::Create(201).value(),f::Supply(8),owner};skin.placement=ItemPlacement{ItemStorageKind::Inventory,1,3};skin.petSupply=InitialPetSupplyState(*c,skin.key,100000).value();skin.petSupply->equippedSeal=donor.id.Value();items.push_back(skin);
+    Check(!MakePetFeedCommit(*c,fence,layouts,items,request.context,donor.id,seal.id,PetFeedingService::Cube,0),"a donor with a bound appearance must be undressed first");
+}
 void PersistentSkins() {
     for(unsigned kind=1;kind<=4;++kind) {
         auto source=f::Catalog();source.petSupplyProfiles.back().skin=PetSkinRule{2,static_cast<CostumeClock>(kind),kind==1 ? 0u : 10000u};
@@ -281,7 +312,7 @@ int main(int argc,char** argv) {
             const auto c=BuildItemCatalog(f::Catalog()).value();auto r=Request(*c,false);r.state.skills[0]={true,1,2};r.state.skills[3]={true,2,1};r.state.carrierInstanceId=300;r.state.ageMs=123456789;r.state.life.remainingMs=1234;
             for(auto b:EncodeGrowthPetState(*c,care::Pet(),r.state).value())std::cout<<"0123456789abcdef"[b>>4]<<"0123456789abcdef"[b&15];std::cout<<'\n';return 0;
         }
-        AgeAndEvolution();StudyResetAndCooldown();LifeAndEnchantment();BuffTransportAndSkin();PersistentSkins();PassiveDamage();PersistenceAndCatalog();CompleteJourney();
+        AgeAndEvolution();StudyResetAndCooldown();LifeAndEnchantment();BuffTransportAndSkin();PersistentSkins();PersistentStudyBypassAndSacrifice();PassiveDamage();PersistenceAndCatalog();CompleteJourney();
         std::cout<<checks<<" Pet lifecycle checks passed\n";return 0;
     }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
 }

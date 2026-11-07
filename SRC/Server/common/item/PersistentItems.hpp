@@ -235,11 +235,13 @@ struct GrowthPetEvolution
 std::expected<ItemCommit,ItemPersistenceError> MakeGrowthPetProgressCommit(const ItemCatalog&,ItemOwnerFence,
     std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const PetCareContext&,ItemInstanceId seal,
     std::span<const std::uint64_t> mobAwards,std::optional<GrowthPetEvolution> evolution={});
+struct PetStudyBypass { BookLearning before; BookCharacter character; };
 struct PetStudyTerms
 {
     std::optional<std::uint8_t> slot;
     std::uint64_t nowUtcMs=0,elapsedMs=0,cooldownBeforeMs=0;
     std::uint16_t rollBp=0;
+    std::optional<PetStudyBypass> bypass; // Explicit opt-in using one existing typed book-aid charge.
 };
 using PetStudyCommitError=std::variant<PetLifecycleError,ItemPersistenceError>;
 struct PetStudyWrite { PetSupplyPlan plan; ItemCommit commit; };
