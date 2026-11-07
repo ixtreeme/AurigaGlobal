@@ -98,6 +98,22 @@ void BuffTransportAndSkin() {
         Check(PlanPetBonuses(*c,absent,true,false)->contributions.empty(),"inactive/invalid world state removes the source bundle");
     }
     Check(PlanPetBonuses(*c,r,false,false)->contributions.empty(),"world policy suppresses all pet contributions");
+    const auto skills=CollectPetSkillBonuses(*c,r,true,false).value();
+    Check(skills[unsigned(PetEffect::WarriorResistancePercent)]==100 &&
+        std::ranges::count_if(skills,[](auto value){return value!=0;})==1,"only learned skill sources enter the passive runtime");
+    Check(CollectPetSkillBonuses(*c,r,false,false)==PetSkillBonusValues{},"forbidden map removes skill bonuses");
+    for(unsigned effect=1;effect<=18;++effect) {
+        auto data=f::Catalog();
+        data.petTrainingProfiles[0].skills[0].effect=static_cast<PetEffect>(effect);
+        const auto catalog=BuildItemCatalog(data).value();
+        auto request=Request(*catalog);
+        request.state.skills[0]={true,1,2};
+        const auto values=CollectPetSkillBonuses(*catalog,request,true,false).value();
+        Check(values[effect]==200 && std::ranges::count_if(values,[](auto value){return value!=0;})==1,
+            "all passive effects retain their exact ranked unit");
+        request.seal.active=false;request.seal.actorGeneration=0;
+        Check(CollectPetSkillBonuses(*catalog,request,true,false)==PetSkillBonusValues{},"recalled pet has no passive source");
+    }
     PetTransportRequest transport{Request(*c,false),{f::Supply(7),300,4,77,1},false,false,5,0};
     transport.pet.state.skills[0]={true,1,2};transport.pet.state.life.remainingMs=1234;
     const auto original=transport.pet.state;auto packed=PlanPetTransport(*c,transport).value();
@@ -113,6 +129,34 @@ void BuffTransportAndSkin() {
     visual=PlanPetAppearance(*c,skin).value();Check(!visual.equip && visual.form==1 && visual.lifetime.removeItem && visual.lifetime.unequip,"expired skin restores the pet evolution form");
     Check(skin.pet.state==Request(*c).state,"appearance never rewrites pet stats or lifecycle state");
     skin.skin.ownerId=78;Check(!PlanPetAppearance(*c,skin),"foreign skin rejected");
+}
+void PassiveDamage() {
+    const PetCombatant warrior{true,false,false,false,0},monster{false,true,false,false,0},
+        boss{false,true,false,true,0},stone{false,false,true,false,0};
+    PetSkillBonusValues attacker{},victim{};
+    attacker[unsigned(PetEffect::MonsterDamagePercent)]=250;
+    attacker[unsigned(PetEffect::NormalPveDamagePercent)]=500;
+    Check(ApplyPetSkillDamage(attacker,victim,10000,warrior,monster,true,true)==10763,"fractional monster and normal PvE bonuses");
+    Check(ApplyPetSkillDamage(attacker,victim,10000,warrior,monster,false,false)==10250,"normal-only bonus excludes skills");
+    Check(ApplyPetSkillDamage(attacker,victim,10000,warrior,warrior,true,true)==10000,"PvE bonuses exclude player targets");
+    attacker={};attacker[unsigned(PetEffect::BossDamagePercent)]=1000;
+    Check(ApplyPetSkillDamage(attacker,victim,10000,warrior,boss,false,false)==11000 &&
+        ApplyPetSkillDamage(attacker,victim,10000,warrior,stone,true,true)==10000,"boss bonus excludes stones");
+    attacker={};attacker[unsigned(PetEffect::MetinDamagePercent)]=750;
+    Check(ApplyPetSkillDamage(attacker,victim,10000,warrior,stone,true,true)==10750,"metin bonus reaches its target family");
+    attacker={};attacker[unsigned(PetEffect::AttackBonusPercent)]=500;
+    Check(ApplyPetSkillDamage(attacker,victim,10000,warrior,warrior,true,true)==10500 &&
+        ApplyPetSkillDamage(attacker,victim,10000,warrior,warrior,false,false)==10000,"attack bonus applies to physical damage");
+    attacker={};victim[unsigned(PetEffect::MonsterResistancePercent)]=500;
+    Check(ApplyPetSkillDamage(attacker,victim,10000,monster,warrior,true,true)==9500,"monster resistance reduces incoming damage");
+    victim={};victim[unsigned(PetEffect::HumanResistancePercent)]=250;
+    constexpr std::array classes{PetEffect::WarriorResistancePercent,PetEffect::NinjaResistancePercent,
+        PetEffect::SuraResistancePercent,PetEffect::ShamanResistancePercent};
+    for(unsigned job=0;job<classes.size();++job) {
+        auto bonuses=victim;bonuses[unsigned(classes[job])]=1000;
+        Check(ApplyPetSkillDamage(attacker,bonuses,10000,PetCombatant{true,false,false,false,static_cast<std::uint8_t>(job)},
+            warrior,false,false)==8775,"human and class resistance retain independent basis-point stages");
+    }
 }
 void PersistenceAndCatalog() {
     auto source=f::Catalog();const auto c=BuildItemCatalog(source).value();auto r=Request(*c,false);
@@ -180,7 +224,7 @@ int main(int argc,char** argv) {
             const auto c=BuildItemCatalog(f::Catalog()).value();auto r=Request(*c,false);r.state.skills[0]={true,1,2};r.state.skills[3]={true,2,1};r.state.carrierInstanceId=300;r.state.ageMs=123456789;r.state.life.remainingMs=1234;
             for(auto b:EncodeGrowthPetState(*c,care::Pet(),r.state).value())std::cout<<"0123456789abcdef"[b>>4]<<"0123456789abcdef"[b&15];std::cout<<'\n';return 0;
         }
-        AgeAndEvolution();StudyResetAndCooldown();LifeAndEnchantment();BuffTransportAndSkin();PersistenceAndCatalog();CompleteJourney();
+        AgeAndEvolution();StudyResetAndCooldown();LifeAndEnchantment();BuffTransportAndSkin();PassiveDamage();PersistenceAndCatalog();CompleteJourney();
         std::cout<<checks<<" Pet lifecycle checks passed\n";return 0;
     }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
 }

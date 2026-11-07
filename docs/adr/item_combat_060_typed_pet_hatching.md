@@ -49,3 +49,19 @@ A **Pet adatai → Képességek** mutatja a négy helyet, a megtanult képesség
 Az előnézet a könyvpéldányt, a helyet, a következő rangot és a sikeresélyt rögzíti. A megerősítéskor a szerver ismét ellenőrzi a petet, a könyvet és az életidőt. Egy tranzakcióban von le egy könyvet és menti a petet. Ismert képesség sikeres könyves fejlesztésénél ugyanaz a tranzakció menti a karakterhez és képességhez tartozó várakozási időt. Sikertelen dobásnál egy könyv fogy. A `012_pet_study_cooldown.sql` a várakozási idő tábláját telepíti. A CG250 és a GC253 v4 viszi a képességlistát, az előnézetet és az eredményt.
 
 A párosított Unity changeset a `cs:78`. A Windows GameServer build, tíz natív és MariaDB-teszt, valamint a Unity 6.3 validátorai sikeresek. A 165 ellenőrzéses helyi próba visszaolvasta az első rangot, majd a könyves fejlesztés után új belépésben a második rangot és a várakozási időt. Három tesztkönyvből egy maradt. Az SQL-utóellenőrzés 203 korábbi példányt és 12 pénztárcát egyeztetett. A sikertelen dobást az izolált MariaDB-próba fedte le.
+
+## C26h — A megtanult képességek passzív bónuszai
+
+A párosított Unity changeset a `cs:79`.
+
+A karakter a ténylegesen követő fejlődő pet megtanult képességeinek aktuális rangértékeit kapja meg. Az egész forráscsomag cserélődik, ezért az ismételt idézés és statújraszámítás nem halmozza a bónuszt. Visszahívás, lejárat vagy a követést tiltó világállapot megszünteti a forrást. Újrabelépéskor a mentett képességek és idézési szándék alapján épül vissza, a követő létrejötte után. A pet életkorából és születési tulajdonságaiból eredő külön bónuszok bekötése továbbra is külön feladat.
+
+A 18 képességhatás a maximális HP-t, a fizikai támadási bónuszt, a megfelelő PvE-, főellenfél- és metinsebzést, a szörny-/játékos-/kasztellenállásokat, a PvE kritikus esélyt, a blokkolást, a nyílkikerülést, a harci EXP-t és az aranydobási esélyt módosítja. A százalékos értékek bázispontosak; az egész HP-bónusz külön egységet használ. Az újraszámítás nem gyógyítja fel a karaktert.
+
+A GC231 v3 a megidézett pecsét azonosítóját és az aktív képességhatásokat adja át. A pet nélküli v1/v2 csomagok megmaradnak. A Unity **Harci statok** ablaka a karakter tényleges statjai mellett külön felsorolja a követő pet képességbónuszait. Új tartós adat vagy SQL-migráció nem szükséges: a már mentett képességállapotból származtatott értékek kerülnek a karakterre.
+
+A mentett karakterbuffok és a típusos leltár betöltése tetszőleges sorrendben fejeződhet be. A buffbetöltés végén a szerver új GC231-et küld, így a visszahívott pet melletti statablak sem marad a korábbi, részleges belépési értékeken.
+
+A Windows GameServer build és hat natív teszt sikeres: `pet_lifecycle`, `equipment_stats`, `point_calculation`, `combat_state`, `affect_lifecycle`, `item_persistence_mariadb`. A natív próbák mind a 18 képességhatás rangértékeinek forrásképzését, a HP ismételt újraszámítását, a sebzés- és ellenállásfeltételeket ellenőrizték. A Unity 6.3 fordítás, 390 petcsomag-, 1118 statcsomag-, 340 pecsét- és 4179 leltárellenőrzés sikeres. A statcsomag-próba a TCP-feldarabolást, hibás petforrást, ismétlődő hatást és a régi csomagra váltáskor törölt petbónuszokat is lefedte.
+
+A végső, 289 ellenőrzéses helyi Unity TLS-próba megtanulta, majd második rangra fejlesztette a tesztképességet. A maximális HP visszahívva 1424, idézve 1674 volt. Három ismételt idézés változatlanul 1674-et adott. Az aktív, majd a visszahívott újrabelépés az összes eredeti karakterstatot helyreállította a megfelelő petbónusszal. Az SQL-utóellenőrzés a 2. rangot, egy megmaradt könyvet és a várakozási időt olvasta vissza; mind a 215 korábbi példány és 16 pénztárca egyezett a mentéssel. A helyi élő próba a HP-hatást fedte le; a többi hatás külön élő harci/dobási próbája nem futott ebben a munkában.

@@ -4,6 +4,7 @@
 #include "PlayerRuntimeSystem.hpp"
 #include "../../item/ItemStore.hpp"
 #include "../../item/TypedRecovery.hpp"
+#include "../../item/TypedEquipment.hpp"
 #include "../CharacterAccessors.hpp"
 
 #include "AffectSystem.hpp"
@@ -1233,6 +1234,9 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 #endif
 	LOG_ERROR("LOAD_AFFECT_END pid={} name={} count={} final_affects={}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data(), dwCount, AffectSystem::Snapshot(e).size());
 	ecs::MountFlightSystem::Send(entity, entity);
+    // Typed items can load before saved affects. A dormant pet has no source
+    // transition to trigger another projection, so publish the final values too.
+    if(g_registry.valid(entity) && g_registry.all_of<ecs::TypedItems>(entity))SendTypedEquipment(entity);
 }
 
 bool IsGoodAffect(uint8_t bAffectType)

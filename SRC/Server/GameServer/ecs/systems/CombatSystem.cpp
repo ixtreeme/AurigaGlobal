@@ -1685,7 +1685,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 	if (test_server)
 		ecs::ChatSystem::Send(toEntity, CHAT_TYPE_INFO, "exp+minGNE+adjust(%d)", iExp);
 	// set
-	iExp=EquipmentLegacyInt(std::max<int64_t>(0,EquipmentScale(iExp,10000+TypedEquipmentBonus(toEntity,auriga::item::BonusId::ExperiencePercent))));
+	iExp=EquipmentLegacyInt(std::max<int64_t>(0,EquipmentScale(iExp,10000+TypedEquipmentBonus(toEntity,auriga::item::BonusId::ExperiencePercent)+TypedPetSkillBonus(toEntity,auriga::item::PetEffect::ExperiencePercent))));
 	AwardTypedGrowthPetMobExperience(toEntity,fromEntity,iExp);
 	ecs::PointSystem::Change(toEntity, POINT_EXP, iExp, true);
 	CombatSystem::CreateFly(fromEntity, FLY_EXP, toEntity);
@@ -1818,7 +1818,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 	}
 #endif
 
-	iExp=EquipmentLegacyInt(std::max<int64_t>(0,EquipmentScale(iExp,10000+TypedEquipmentBonus(toEntity,auriga::item::BonusId::ExperiencePercent))));
+	iExp=EquipmentLegacyInt(std::max<int64_t>(0,EquipmentScale(iExp,10000+TypedEquipmentBonus(toEntity,auriga::item::BonusId::ExperiencePercent)+TypedPetSkillBonus(toEntity,auriga::item::PetEffect::ExperiencePercent))));
 	AwardTypedGrowthPetMobExperience(toEntity,fromEntity,iExp);
 	ecs::PointSystem::Change(toEntity, POINT_EXP, iExp, true);
 	CombatSystem::CreateFly(fromEntity, FLY_EXP, toEntity);
@@ -4476,7 +4476,10 @@ void RewardGold(entt::entity e, entt::entity attacker)
 				iPercent = ((iGoldPercent * PERCENT_LVDELTA(ecs::PointSystem::GetLevel(attacker), ecs::PointSystem::GetLevel(e))) / 100);
 			//int iPercent = CALCULATE_VALUE_LVDELTA(ecs::PointSystem::GetLevel(attacker), ecs::PointSystem::GetLevel(e), iGoldPercent);
 
-			if (number(1, 100) > iPercent)
+            // Preserve fractional pet percentages through the actual chance roll.
+            const auto goldChance=std::clamp<std::int64_t>(EquipmentScale(std::int64_t(iPercent)*100,10000+
+                TypedPetSkillBonus(attacker,auriga::item::PetEffect::GoldDropPercent)),0,10000);
+			if (number(0,9999) >= goldChance)
 				return;
 
 			int iGoldMultipler = 1;
@@ -4663,6 +4666,8 @@ namespace CombatSystem {
 // was a read on the victim; that is what the entity in each call is.
 bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t damageType)
 {
+    if (HasTypedEquipment(attacker)) RefreshTypedEquipment(attacker);
+    if (HasTypedEquipment(victim)) RefreshTypedEquipment(victim);
     if (HasTypedEquipment(attacker) && !TypedEquipmentView(attacker)) return false;
 
     if(!SpyQuest::AllowCombat(attacker,victim))return false;
@@ -4829,7 +4834,8 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 				iCriticalPct += ecs::PointSystem::Get(attacker, POINT_PVM_CRITICAL_PCT);
 			}
 
-			if (iCriticalPct || TypedEquipmentBonus(attacker, auriga::item::BonusId::CritChance) || TypedEquipmentBonus(victim, auriga::item::BonusId::CritResistance))
+			const auto petCritical=ecs::PlayerRuntime::IsPC(victim) ? 0 : TypedPetSkillBonus(attacker,auriga::item::PetEffect::PveCriticalChance);
+			if (petCritical || iCriticalPct || TypedEquipmentBonus(attacker, auriga::item::BonusId::CritChance) || TypedEquipmentBonus(victim, auriga::item::BonusId::CritResistance))
 			{
 				if (iCriticalPct >= 10)
 					iCriticalPct = 5 + (iCriticalPct - 10) / 4;
@@ -4838,7 +4844,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 
 				iCriticalPct -= ecs::PointSystem::Get(victim, POINT_RESIST_CRITICAL);
 
-				if ((HasTypedEquipment(attacker) || HasTypedEquipment(victim)) ? number(0,9999) < std::clamp<int64_t>(int64_t(iCriticalPct)*100 + TypedEquipmentBonus(attacker,auriga::item::BonusId::CritChance) - TypedEquipmentBonus(victim,auriga::item::BonusId::CritResistance),0,10000) : number(1,100) <= iCriticalPct)
+				if ((HasTypedEquipment(attacker) || HasTypedEquipment(victim)) ? number(0,9999) < std::clamp<int64_t>(int64_t(iCriticalPct)*100 + petCritical + TypedEquipmentBonus(attacker,auriga::item::BonusId::CritChance) - TypedEquipmentBonus(victim,auriga::item::BonusId::CritResistance),0,10000) : number(1,100) <= iCriticalPct)
 				{
 					IsCritical = true;
 					dam *= 2;
@@ -4909,7 +4915,9 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	{
 		if (type == DAMAGE_TYPE_NORMAL)
 		{
-			if (ecs::PointSystem::Get(victim, POINT_BLOCK) && number(1, 100) <= ecs::PointSystem::Get(victim, POINT_BLOCK))
+            const auto block=std::clamp<std::int64_t>(std::int64_t(ecs::PointSystem::Get(victim,POINT_BLOCK))*100+
+                TypedPetSkillBonus(victim,auriga::item::PetEffect::BlockChance),0,10000);
+			if (block && number(0,9999)<block)
 			{
 #ifdef TEXTS_IMPROVEMENT
 				if (test_server) {
@@ -4923,7 +4931,9 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		}
 		else if (type == DAMAGE_TYPE_NORMAL_RANGE)
 		{
-			if (ecs::PointSystem::Get(victim, POINT_DODGE) && number(1, 100) <= ecs::PointSystem::Get(victim, POINT_DODGE))
+            const auto dodge=std::clamp<std::int64_t>(std::int64_t(ecs::PointSystem::Get(victim,POINT_DODGE))*100+
+                TypedPetSkillBonus(victim,auriga::item::PetEffect::DodgeArrowChance),0,10000);
+			if (dodge && number(0,9999)<dodge)
 			{
 #ifdef TEXTS_IMPROVEMENT
 				if (test_server) {
@@ -4985,11 +4995,12 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 				iCriticalPct += ecs::PointSystem::Get(attacker, POINT_PVM_CRITICAL_PCT);
 			}
 
-			if (iCriticalPct || TypedEquipmentBonus(attacker, auriga::item::BonusId::CritChance) || TypedEquipmentBonus(victim, auriga::item::BonusId::CritResistance))
+			const auto petCritical=ecs::PlayerRuntime::IsPC(victim) ? 0 : TypedPetSkillBonus(attacker,auriga::item::PetEffect::PveCriticalChance);
+			if (petCritical || iCriticalPct || TypedEquipmentBonus(attacker, auriga::item::BonusId::CritChance) || TypedEquipmentBonus(victim, auriga::item::BonusId::CritResistance))
 			{
 				iCriticalPct -= ecs::PointSystem::Get(victim, POINT_RESIST_CRITICAL);
 
-				if ((HasTypedEquipment(attacker) || HasTypedEquipment(victim)) ? number(0,9999) < std::clamp<int64_t>(int64_t(iCriticalPct)*100 + TypedEquipmentBonus(attacker,auriga::item::BonusId::CritChance) - TypedEquipmentBonus(victim,auriga::item::BonusId::CritResistance),0,10000) : number(1,100) <= iCriticalPct)
+				if ((HasTypedEquipment(attacker) || HasTypedEquipment(victim)) ? number(0,9999) < std::clamp<int64_t>(int64_t(iCriticalPct)*100 + petCritical + TypedEquipmentBonus(attacker,auriga::item::BonusId::CritChance) - TypedEquipmentBonus(victim,auriga::item::BonusId::CritResistance),0,10000) : number(1,100) <= iCriticalPct)
 				{
 					IsCritical = true;
 					dam *= 2;

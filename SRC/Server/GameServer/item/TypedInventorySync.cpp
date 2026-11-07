@@ -99,8 +99,8 @@ void TickTypedItemRefreshes()
 
 void SendTypedInventory(entt::entity character)
 {
-	RefreshTypedEquipment(character);
 	const auto companion = RefreshTypedCompanion(character);
+	RefreshTypedEquipment(character);
 	if (!g_registry.valid(character))
 		return;
 	const auto* typed = g_registry.try_get<ecs::TypedItems>(character);

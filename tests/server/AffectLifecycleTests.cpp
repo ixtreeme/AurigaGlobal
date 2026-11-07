@@ -58,6 +58,9 @@
 
 entt::registry g_registry;
 entt::dispatcher g_dispatcher;
+// This fixture tests affect state; the paired live pet test checks the actual
+// final equipment snapshot after delayed login affects have been restored.
+void SendTypedEquipment(entt::entity) {}
 namespace A = AffectSystem;
 namespace {
 int checks = 0, computes = 0, packets = 0;
@@ -890,6 +893,11 @@ entt::entity ItemSystem::FindItemByID(entt::entity,unsigned int) { UnexpectedSer
 entt::entity ItemSystem::GetWearItem(entt::entity,unsigned char) { UnexpectedService(__func__); }
 bool ItemSystem::IsValidItem(entt::entity) { UnexpectedService(__func__); }
 bool ItemSystem::LockItem(entt::entity,bool) { UnexpectedService(__func__); }
+uint32_t ecs::PlayerRuntime::GetPacketVID(entt::entity) { UnexpectedService(__func__); }
+bool ecs::PlayerRuntime::IsObserverMode(entt::entity) { UnexpectedService(__func__); }
+bool RequestTypedPolymorphClear(entt::entity) { UnexpectedService(__func__); }
+int ItemSystem::GetItemValue(entt::entity,uint32_t) { UnexpectedService(__func__); }
+uint32_t MountSystem::GetMountVnum(entt::entity) { UnexpectedService(__func__); }
 
 int main() {
     try {

@@ -53,6 +53,14 @@ std::vector<std::byte> Run()
     const auto wire=EncodeEquipmentStats(&*stats,12345,7,9,{10,11,12,13,200,80,120,70,125,220,110,2000,500});
     Check(wire.size()==285+12*std::ranges::count_if(stats->bonuses,[](auto v){return v!=0;}),"wire length includes each bonus once");
     Check(EncodeEquipmentStats(nullptr,12345,8,10,{}).size()==285,"rejected projection has no item contribution");
+    auto pet=*stats;
+    pet.petSkills.seal=321;
+    pet.petSkills.values[unsigned(PetEffect::MaximumHpFlat)]=250;
+    pet.petSkills.values[unsigned(PetEffect::PveCriticalChance)]=125;
+    const auto petWire=EncodeEquipmentStats(&pet,12345,8,9,{});
+    Check(petWire[5]==std::byte{3} && petWire.size()==wire.size()+28,"passive source appends a versioned owner-only view");
+    Check(std::to_integer<unsigned>(petWire[petWire.size()-18])==1 &&
+        std::to_integer<unsigned>(petWire[petWire.size()-9])==13,"passive view retains effect identities and separate units");
     return wire;
 }
 }

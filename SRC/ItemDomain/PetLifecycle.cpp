@@ -1,5 +1,6 @@
 #include <item/PetLifecycle.hpp>
 #include <item/ItemCatalog.hpp>
+#include <item/EquipmentStats.hpp>
 #include <algorithm>
 #include <limits>
 #include <set>
@@ -272,6 +273,47 @@ std::expected<PetBonusPlan,E> PlanPetBonuses(const ItemCatalog& c,const PetLifec
     }
     return plan;
 }
+std::expected<PetSkillBonusValues,E> CollectPetSkillBonuses(const ItemCatalog& c,const PetLifecycleRequest& r,
+    bool worldAllowsPet,bool inDungeon) {
+    const auto plan=PlanPetBonuses(c,r,worldAllowsPet,inDungeon);
+    if(!plan)return std::unexpected(plan.error());
+    PetSkillBonusValues values{};
+    for(const auto& contribution:plan->contributions)if(contribution.source==PetBonusSource::Skill) {
+        auto& value=values[static_cast<unsigned>(contribution.effect)];
+        const auto sum=AddEquipmentValue(value,contribution.value);
+        if(!sum)return std::unexpected(E::InvalidState);
+        value=*sum;
+    }
+    return values;
+}
+std::expected<std::int64_t,E> ApplyPetSkillDamage(const PetSkillBonusValues& attacker,
+    const PetSkillBonusValues& victim,std::int64_t damage,const PetCombatant& source,const PetCombatant& target,
+    bool normal,bool physical) {
+    const auto value=[](const PetSkillBonusValues& values,PetEffect effect){return values[static_cast<unsigned>(effect)];};
+    const auto scale=[&](std::int64_t factor) {
+        const auto result=ScaleEquipmentValue(damage,(std::max)(std::int64_t{0},factor));
+        if(!result)return false;
+        damage=*result;return true;
+    };
+    if(damage<0)return std::unexpected(E::InvalidState);
+    if(physical && !scale(10000+value(attacker,PetEffect::AttackBonusPercent)))return std::unexpected(E::InvalidState);
+    if(target.monster && !scale(10000+value(attacker,PetEffect::MonsterDamagePercent)))return std::unexpected(E::InvalidState);
+    if((target.monster || target.stone) && normal &&
+        !scale(10000+value(attacker,PetEffect::NormalPveDamagePercent)))return std::unexpected(E::InvalidState);
+    if(target.boss && !target.stone && !scale(10000+value(attacker,PetEffect::BossDamagePercent)))return std::unexpected(E::InvalidState);
+    if(target.stone && !scale(10000+value(attacker,PetEffect::MetinDamagePercent)))return std::unexpected(E::InvalidState);
+    if((source.monster || source.stone) &&
+        !scale(10000-value(victim,PetEffect::MonsterResistancePercent)))return std::unexpected(E::InvalidState);
+    if(source.player) {
+        if(!scale(10000-value(victim,PetEffect::HumanResistancePercent)))return std::unexpected(E::InvalidState);
+        constexpr std::array classes{PetEffect::WarriorResistancePercent,PetEffect::NinjaResistancePercent,
+            PetEffect::SuraResistancePercent,PetEffect::ShamanResistancePercent};
+        if(source.characterClass>=classes.size() ||
+            !scale(10000-value(victim,classes[source.characterClass])))return std::unexpected(E::InvalidState);
+    }
+    return damage;
+}
+
 std::expected<PetTransportPlan,E> PlanPetTransport(const ItemCatalog& c,const PetTransportRequest& r) {
     if(auto valid=Request(c,r.pet);!valid)return std::unexpected(valid.error());
     if(!Source(c,r.carrier,r.pet.context.actorId,false,r.unpack) || r.carrier.containsPet!=(r.containedSealInstanceId!=0) ||

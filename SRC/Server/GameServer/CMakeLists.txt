@@ -896,7 +896,7 @@ add_executable(AffectLifecycleTests EXCLUDE_FROM_ALL
     ecs/systems/AffectSystem.cpp
     pet/horsename_manager.cpp
 )
-target_link_libraries(AffectLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
+target_link_libraries(AffectLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core AurigaItemCatalog)
 if(WIN32)
     target_link_libraries(AffectLifecycleTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
 endif()

@@ -1,10 +1,12 @@
 #pragma once
 #include "ItemStore.hpp"
+#include <item/EquipmentStats.hpp>
 #include <cstdint>
 #include <entt/entity/entity.hpp>
 
 std::uint64_t RefreshTypedCompanion(entt::entity owner);
 std::uint64_t TypedGrowthPetElapsed(entt::entity owner,std::uint64_t seal);
+auriga::item::PetSkillSource TypedGrowthPetSkillSource(entt::entity owner);
 void TickTypedCompanions();
 void AwardTypedGrowthPetMobExperience(entt::entity owner,entt::entity defeated,int reward);
 void StopTypedGrowthPetClock(entt::entity owner);

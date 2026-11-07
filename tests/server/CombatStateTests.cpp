@@ -93,6 +93,8 @@ entt::registry g_registry;
 entt::dispatcher g_dispatcher;
 // These isolated combat actors do not own a persisted recovery schedule.
 void NotifyTypedRecoveryDeath(entt::entity) {}
+void RefreshTypedEquipment(entt::entity) {} // this harness supplies the derived stat snapshot directly
+void AwardTypedGrowthPetMobExperience(entt::entity, entt::entity, int) {} // growth progression has its own lifecycle suite
 // This isolated combat world has no active story encounters. The story rule
 // suites cover their admission; keep the external encounter boundary explicit.
 bool CaravanQuest::AllowCombat(entt::entity, entt::entity) { return true; }

@@ -3,6 +3,7 @@
 #include "../ecs/Registry.hpp"
 #include "../entity/char.h"
 #include "../ecs/systems/ItemSystem.hpp"
+#include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include <algorithm>
 
 namespace ecs
@@ -24,6 +25,8 @@ inline const auriga::item::EquipmentStats* TypedEquipmentView(entt::entity e)
 {const auto* p=g_registry.valid(e) ? g_registry.try_get<ecs::TypedEquipmentProjection>(e) : nullptr;return p && p->stats ? &*p->stats : nullptr;}
 inline std::int64_t TypedEquipmentBonus(entt::entity e,auriga::item::BonusId id)
 {const auto* p=g_registry.valid(e) ? g_registry.try_get<ecs::TypedEquipmentProjection>(e) : nullptr;return p && p->stats ? p->stats->Bonus(id) : 0;}
+inline std::int64_t TypedPetSkillBonus(entt::entity e,auriga::item::PetEffect effect)
+{const auto* stats=TypedEquipmentView(e);return stats ? stats->petSkills.Bonus(effect) : 0;}
 inline entt::entity CombatWearItem(entt::entity e,std::uint8_t slot)
 {return HasTypedEquipment(e) ? entt::null : ItemSystem::GetWearItem(e,slot);}
 inline int CombatWeaponSubtype(entt::entity e)
@@ -76,7 +79,22 @@ inline std::int64_t EquipmentDamageModifiers(entt::entity attacker,entt::entity 
     apply(10000-TypedEquipmentBonus(victim,normal ? B::NormalIncoming : B::SkillIncoming));
     apply(10000-TypedEquipmentBonus(victim,pvp ? B::PvpIncoming : B::PveIncoming));
     if(!magical){apply(10000-TypedEquipmentBonus(victim,B::BlockReduction));apply(10000-TypedEquipmentBonus(victim,B::Evasion));}
-    apply(10000+TypedEquipmentBonus(attacker,B::GlobalOutgoing));return damage;
+    apply(10000+TypedEquipmentBonus(attacker,B::GlobalOutgoing));
+    const auto* source=TypedEquipmentView(attacker);
+    if(damage>0 && ((source && source->petSkills.seal) || (target && target->petSkills.seal)))
+    {
+        const auto combatant=[](entt::entity e) {
+            const bool player=ecs::PlayerRuntime::IsPC(e);
+            return auriga::item::PetCombatant{player,ecs::PlayerRuntime::IsMonster(e),ecs::PlayerRuntime::IsStone(e),
+                !player && ecs::PlayerRuntime::GetMobRank(e)>=MOB_RANK_BOSS,
+                static_cast<std::uint8_t>(player ? ecs::PlayerRuntime::GetJob(e) : 0)};
+        };
+        const auriga::item::PetSkillBonusValues empty{};
+        const auto result=auriga::item::ApplyPetSkillDamage(source ? source->petSkills.values : empty,
+            target ? target->petSkills.values : empty,damage,combatant(attacker),combatant(victim),normal,!magical);
+        damage=result ? std::clamp<std::int64_t>(*result,0,INT_MAX) : 0;
+    }
+    return damage;
 }
 inline bool IsEquipmentDerivedPoint(std::uint8_t type)
 {

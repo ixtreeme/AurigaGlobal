@@ -1,7 +1,7 @@
 # ADR IC-034 — F4 szerverbekötés: ütemterv és 1. szelet (katalógus induláskor)
 
 2026-10-29. Fázis: F4 ([IC-012](item_combat_012_item_runtime_first.md)).
-Állapot (2026-11-06): **C1–C24, C25a–b, C25c-1/2 és a C25d kezelő implementált a külön típusos tárgyrendszerben;
+Állapot (2026-11-07): **C1–C24, C25a–b, C25c-1/2 és a C25d kezelő implementált a külön típusos tárgyrendszerben;
 Unity 6.3 és helyi szerver együtt ellenőrizve**. A normál legacy leltár és
 a meglévő karakterek átállítása a felhasználó kérésére még nem történik meg.
 Az aktív ágak a C26a munkában megkapták a TERA pecséteket és a hátasrepülést.
@@ -11,6 +11,7 @@ A C26d a fejlődő pet idézését, visszahívását és aktív életidejének m
 A C26e a katalógusban megadott petetetés, újraélesztés és tárgytapasztalat szerver- és kliensoldali útját kapcsolja be.
 A C26f a harci pet-EXP-t, a szintlépést és az evolúciós fokozatváltást kapcsolja be.
 A C26g a pet képességtanulását, rangfejlesztését és a könyves fejlesztés tartós várakozási idejét kapcsolja be.
+A C26h a követő fejlődő pet megtanult képességeinek passzív bónuszait kapcsolja a karakter számított statjaihoz és a Unity statablakához.
 A típusos felülés továbbra is nyitott.
 [IC-058](item_combat_058_tera_companion_port.md) · [IC-059](item_combat_059_typed_companion_seals.md) · [IC-060](item_combat_060_typed_pet_hatching.md)
 

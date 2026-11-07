@@ -145,6 +145,9 @@ bool IsValid(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<A
 // a resolved character.
 uint32_t GetPlayStartTime(entt::entity) { return 0; }
 bool IsPC(entt::entity e) { return IsValid(e) && g_registry.get<Actor>(e).player; }
+bool IsMonster(entt::entity e) { return IsValid(e) && !IsPC(e) && g_registry.get<Actor>(e).mob.bType==CHAR_TYPE_MONSTER; }
+bool IsStone(entt::entity e) { return IsValid(e) && !IsPC(e) && g_registry.get<Actor>(e).mob.bType==CHAR_TYPE_STONE; }
+uint8_t GetMobRank(entt::entity e) { return IsValid(e) && !IsPC(e) ? g_registry.get<Actor>(e).mob.bRank : 0; }
 uint8_t GetJob(entt::entity e) { return g_registry.get<Actor>(e).job; }
 const TMobTable* GetMobTable(entt::entity e) { return IsPC(e) ? nullptr : &g_registry.get<Actor>(e).mob; }
 LPDESC GetDesc(entt::entity e) { Check(IsValid(e), "stale descriptor lookup"); return e == connected ? DescToken() : nullptr; }
@@ -463,6 +466,16 @@ void TypedEquipmentChecks() {
     P::Change(e,POINT_ATT_SPEED,-3);Check(P::Get(e,POINT_ATT_SPEED)==113,"buff removal does not compound equipment multiplier");
     P::Change(e,POINT_ATT_GRADE_BONUS,4);Check(P::Get(e,POINT_ATT_GRADE)==113,"attack buff enters before equipment percentage");
     P::Change(e,POINT_ATT_GRADE_BONUS,-4);Check(P::Get(e,POINT_ATT_GRADE)==108,"attack buff removal restores exact source");
+    auto& pet=g_registry.get<ecs::TypedEquipmentProjection>(e).stats->petSkills;
+    pet.seal=123;
+    pet.values[unsigned(auriga::item::PetEffect::MaximumHpFlat)]=250;
+    pet.values[unsigned(auriga::item::PetEffect::MaximumHpPercent)]=1250;
+    for(unsigned i=0;i<5;++i) {
+        P::Compute(e);
+        Check(P::GetMaxHP(e)==2205,"ranked pet flat and percent HP apply once on every compute");
+    }
+    pet={};P::Compute(e);
+    Check(P::GetMaxHP(e)==1710,"removing the pet source restores pre-pet maximum HP");
     g_registry.get<ecs::TypedEquipmentProjection>(e).stats=auriga::item::EquipmentStats{};P::Compute(e);
     Check(P::Get(e,POINT_ATT_GRADE)==60 && P::Get(e,POINT_MAGIC_ATT_GRADE)==60 && P::GetMaxHP(e)==1670 && modifies==0,"unequip clears contribution without falling back to legacy gear");
 

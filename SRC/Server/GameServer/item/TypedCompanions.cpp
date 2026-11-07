@@ -380,6 +380,37 @@ std::uint64_t TypedGrowthPetElapsed(entt::entity owner,std::uint64_t seal)
     return clock == growthClocks.end() ? 0 : Elapsed(*clock->second);
 }
 
+item::PetSkillSource TypedGrowthPetSkillSource(entt::entity owner)
+{
+    item::PetSkillSource source;
+    if (!InGame(owner)) return source;
+    const auto live=PetSystem::LiveTypedSeal(owner);
+    const auto* typed=live ? g_registry.try_get<ecs::TypedItems>(owner) : nullptr;
+    const auto catalog=store::CurrentCatalog();
+    const auto* seal=typed ? FindSeal(typed->state,live) : nullptr;
+    if (!seal || !seal->growthPet || !item::RecallRequested(*seal) || !catalog ||
+        !WorldAllowsFollower(owner) || OtherFollower(owner,live))
+        return source;
+    item::PetCareContext context{{1},typed->state.fence.owner.id,typed->state.fence.sessionGeneration,1};
+    context.admittedByServer=context.ownerAlive=true;
+    auto request=GrowthRequest(context,*seal,true);
+    const auto time=item::PlanPetMaintenance(*catalog,request,TypedGrowthPetElapsed(owner,live));
+    if (!time || time->expired) return source;
+    request.state=time->pet.after;
+    const auto values=item::CollectPetSkillBonuses(*catalog,request,true,ecs::SocialSystem::GetDungeon(owner)!=entt::null);
+    if (!values)
+    {
+        LOG_ERROR("Typed pet passive projection failed owner {}",typed->state.fence.owner.id);
+        return source;
+    }
+    if (std::ranges::any_of(*values,[](auto value){return value!=0;}))
+    {
+        source.seal=live;
+        source.values=*values;
+    }
+    return source;
+}
+
 void StopTypedGrowthPetClock(entt::entity owner)
 {
     const auto* typed = g_registry.try_get<ecs::TypedItems>(owner);
