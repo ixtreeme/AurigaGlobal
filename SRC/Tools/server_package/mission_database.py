@@ -75,9 +75,22 @@ def local_grants(target, player, account=None):
     account_grant = ''
     if (account.get('host'), account.get('port') or 3306) == (target.get('host'), target.get('port') or 3306):
         account_grant = 'GRANT SELECT ON ' + identifier(account['database']) + '.`account` TO ' + user + ';\n'
+    typed_tables = ('item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance',
+                    'item_instance_attribute','item_instance_socket','item_occupied_cell','item_recovery_schedule',
+                    'item_book_learning','item_pet_study_cooldown','item_mission_watch','item_mission_event')
+    # Typed items are optional on a fresh package. Grant only existing tables;
+    # never give CREATE just to make a grant against a missing table succeed.
+    # Re-running this installer after the typed schema upgrade adds its rights.
+    typed_grants = ''
+    for table in typed_tables:
+        grant = 'GRANT SELECT,INSERT,UPDATE,DELETE ON ' + identifier(player['database']) + '.`' + table + '` TO ' + user
+        exists = 'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA=' + literal(player['database']) + ' AND TABLE_NAME=' + literal(table)
+        typed_grants += 'SET @mission_typed_grant=IF(EXISTS(' + exists + '),' + literal(grant) + ",'DO 0');\n"
+        typed_grants += 'PREPARE mission_typed_stmt FROM @mission_typed_grant; EXECUTE mission_typed_stmt; DEALLOCATE PREPARE mission_typed_stmt;\n'
+    typed_grants += 'GRANT SELECT ON `protos`.* TO ' + user + ';\n'
     return ("SET SESSION sql_mode='NO_BACKSLASH_ESCAPES';\nCREATE USER IF NOT EXISTS " + user +
             ' IDENTIFIED BY ' + literal(target['password']) + ';\nGRANT ALL ON ' +
             identifier(target['database']) + '.* TO ' + user + ';\nGRANT SELECT,UPDATE ON ' +
             identifier(player['database']) + '.`player` TO ' + user + ';\nGRANT SELECT,INSERT,UPDATE,DELETE ON ' +
             identifier(player['database']) + '.`item` TO ' + user + ';\n' + account_grant + 'GRANT SELECT,INSERT ON ' +
-            identifier(player['database']) + '.`item_award` TO ' + user + ';\n')
+            identifier(player['database']) + '.`item_award` TO ' + user + ';\n' + typed_grants)

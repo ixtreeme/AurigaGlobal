@@ -1,3 +1,8 @@
+#include <fstream>
+#include <filesystem>
+#include <iomanip>
+#include "../../SRC/Server/GameServer/mission/TypedMissionWire.hpp"
+#include "../../SRC/Server/GameServer/mission/TypedMissionItems.hpp"
 #include "SoulRuntimeFixture.hpp"
 #include "ForgeRuntimeFixture.hpp"
 #include <item/AmmoRuntime.hpp>
@@ -685,6 +690,7 @@ void FixedCompanionSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c)
     }
 }
 #include "StorageSqlCases.hpp"
+#include "TypedMissionSqlCases.hpp"
 void ForgeSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c){
     const ItemOwner owner{ItemOwnerKind::Character,880132};const auto bag=f::Inventory(owner);const ItemWallet wallet{owner,WalletCurrency::Gold,1,1000};Check(p::ProvisionOwner(admin,c,owner,std::span(&bag,1),std::span(&wallet,1)).has_value(),"forge SQL owner");unsigned serial=0;const auto op=[&](){return std::array<std::uint8_t,16>{0x32,0x74,static_cast<std::uint8_t>(++serial)};};auto state=p::LoadCurrentItemOwner(writer,c,owner).value();
     for(unsigned j=1;j<=6;++j){ItemGrant g{j<=3?item_catalog_fixture::Sword():j==4?item_catalog_fixture::Leather():forge_runtime_fixture::Aid(j==5?1:5)};g.refinementLevel=j<=3?9:0;g.count=j==4?20:j>=5?5:1;std::array ids{ItemInstanceId::Create(9000000+j).value()};auto grant=MakeGrantCommit(c,op(),state.fence,state.storages,state.items,g,ids);Check(grant && p::CommitItems(writer,c,*grant).has_value(),"forge SQL grant");state=p::LoadCurrentItemOwner(writer,c,owner).value();}
@@ -1119,12 +1125,14 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         std::array<std::uint8_t,16> op{};op[0]='C';op[1]='R';op[15]=1;
         ItemCommit grant;grant.operationId=op;grant.catalogRevision=c->Revision();grant.catalogHash=c->ContentHash();grant.kind=ItemOperationKind::Grant;grant.owners={state.fence};grant.storages={bag};grant.items={{{},material}};grant.outcomeCode=1;grant.result={1};
         Check(p::CommitItems(writer,*c,grant).has_value(),"craft materials granted");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        Execute(writer,"INSERT INTO player.item_mission_watch(character_id) VALUES(880085)");
         CraftRecipe recipe{7,"Iron sword",{f::Sword().key,9,1},25,5000,{{material.key,0,2}}};
         const std::vector<std::uint16_t> rolls{0,4999,5000};const std::vector<ItemInstanceId> ids{ItemInstanceId::Create(block.first+1).value(),ItemInstanceId::Create(block.first+2).value(),ItemInstanceId::Create(block.first+3).value()};op[15]=2;
         auto craft=MakeCraftCommit(*c,op,state.fence,state.storages,state.items,state.wallets,recipe,3,rolls,ids);
         Check(craft && p::CommitItems(writer,*c,craft->commit).has_value(),"mixed craft batch writes inputs, output and payment atomically");
         auto replay=p::CommitItems(writer,*c,craft->commit);Check(replay && replay->replay,"craft receipt replay does not reroll or pay twice");
-        auto changed=craft->commit;changed.result.back()^=1;Check(!p::CommitItems(writer,*c,changed),"same operation cannot change recorded rolls");
+        Check(Scalar(admin,"SELECT units FROM player.item_mission_event WHERE character_id=880085 AND event_kind=2")=="2","craft outbox records successful output units once");
+        auto changed=craft->commit;changed.result[24]^=1;Check(!p::CommitItems(writer,*c,changed),"same operation cannot change recorded rolls");
         state=p::LoadCurrentItemOwner(writer,*c,customer).value();
         Check(state.wallets[0].balance==925 && Find(state,material.id.Value()).count==14 && Find(state,ids[0].Value()).refinementLevel==9 && Find(state,ids[1].Value()).refinementLevel==9,"craft reload retains exact identities, level, remaining inputs and gold");
         op[15]=3;auto raced=MakeCraftCommit(*c,op,state.fence,state.storages,state.items,state.wallets,recipe,1,std::span(rolls).first(1),std::span(ids).subspan(2));Check(raced.has_value(),"second craft planned");
@@ -1134,6 +1142,7 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         op[15]=4;recipe.chance=0;auto failure=MakeCraftCommit(*c,op,state.fence,state.storages,state.items,state.wallets,recipe,1,std::span(rolls).first(1),{});
         Check(failure && p::CommitItems(writer,*c,failure->commit).has_value(),"failed craft pays and consumes together");state=p::LoadCurrentItemOwner(writer,*c,customer).value();
         Check(state.items.size()==3 && Find(state,material.id.Value()).count==12 && state.wallets[0].balance==900,"failed roll creates no output");
+        Check(Scalar(admin,"SELECT COUNT(*) FROM player.item_mission_event WHERE character_id=880085")=="1","failed, stale and replayed crafting emit no extra events");
         op[15]=5;auto stale=MakeCraftCommit(*c,op,state.fence,state.storages,state.items,state.wallets,recipe,1,std::span(rolls).first(1),{});
         Check(stale && p::ClaimOwnerSession(writer,*c,customer).has_value(),"relogin fences previous craft");Check(!p::CommitItems(writer,*c,stale->commit),"stale craft cannot consume");
     }
@@ -1586,6 +1595,7 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
     AmmoSql(admin,writer,*c);
     ForgeSql(admin,writer,*c);
     StorageSql(admin,writer,*c);
+    TypedMissionSql(admin,writer,*c,port,pw);
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);
 }
@@ -1594,6 +1604,7 @@ int main(int argc,char** argv)
 {
     try
     {
+        if(argc==3 && std::string_view(argv[1])=="--write-mission-golden"){TypedMissionGolden(argv[2]);return 0;}
         Completion();
         if(argc==2 && std::string_view(argv[1])=="--owned-sandbox")
         {

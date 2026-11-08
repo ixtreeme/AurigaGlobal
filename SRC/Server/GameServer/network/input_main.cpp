@@ -1,3 +1,4 @@
+#include "../mission/TypedMissionRuntime.hpp"
 #include "../item/TypedBooks.hpp"
 #include "../item/TypedPolymorph.hpp"
 #include "../item/TypedCompanions.hpp"
@@ -492,6 +493,7 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
         case HEADER_CG_TYPED_STORAGE:
             HandleTypedStoragePacket(character,c_pData);
             break;
+        case HEADER_CG_TYPED_MISSION: HandleTypedMissionPacket(character, c_pData); break;
         case HEADER_CG_TYPED_FORGE:
             HandleTypedForgePacket(character,c_pData);
             break;

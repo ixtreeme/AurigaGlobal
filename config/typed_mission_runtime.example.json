@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "package": "typed_missions.aurmission",
+  "missions": [
+    {"code": "demo.typed_story", "version": 1, "npc_race": 9003, "min_level": 1}
+  ]
+}

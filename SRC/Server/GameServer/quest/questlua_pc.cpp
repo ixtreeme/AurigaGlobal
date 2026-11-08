@@ -1,3 +1,5 @@
+#include "../mission/TypedMissionRuntime.hpp"
+#include "../item/ItemStore.hpp"
 #include "stdafx.h"
 #include <cmath>
 #include <Core/Logging.hpp>
@@ -4244,6 +4246,32 @@ teleport_area:
 #endif
 
 
+    ALUA(pc_typed_item_count)
+    {
+        auto e=CQuestManager::instance().GetCurrentCharacter();
+        int valid=0;const auto category=lua_tointegerx(L,1,&valid);if(!valid || category<1 || category>UINT16_MAX){lua_pushnil(L);return 1;}
+        const auto local=lua_tointegerx(L,2,&valid);if(!valid || local<1 || uint64_t(local)>UINT32_MAX){lua_pushnil(L);return 1;}
+        const auto level=lua_tointegerx(L,3,&valid);const auto key=auriga::item::ItemKey::Create(uint16_t(category),uint32_t(local));
+        const auto* state=g_registry.valid(e)?g_registry.try_get<ecs::TypedItems>(e):nullptr;
+        if(!valid || level<0 || level>255 || !key || !state || g_registry.all_of<ecs::TypedItemBusy>(e)){lua_pushnil(L);return 1;}
+        lua_pushinteger(L,auriga::item::CountMissionItems(state->state.items,state->state.fence.owner,*key,uint16_t(level)));return 1;
+    }
+    ALUA(pc_typed_mission_status)
+    {
+        const char* code=lua_tostring(L,1);lua_pushinteger(L,code?TypedMissionQuestStatus(CQuestManager::instance().GetCurrentCharacter(),code):-1);return 1;
+    }
+    ALUA(pc_typed_mission_action)
+    {
+        auto& q=CQuestManager::instance();auto* state=q.GetCurrentState();
+        const char* code=lua_tostring(L,1);const char* action=lua_tostring(L,2);
+        const unsigned command=!action?0:!std::strcmp(action,"start")?2:!std::strcmp(action,"claim")?3:!std::strcmp(action,"talk")?4:!std::strcmp(action,"abandon")?5:0;
+        if(!code || !command || !lua_isyieldable(L) || q.IsInOtherPCBlock() || !state || state->co!=L){lua_pushboolean(L,false);lua_pushliteral(L,"invalid_context");return 2;}
+        const auto entity=q.GetCurrentCharacter();const auto pid=ecs::PlayerRuntime::GetPlayerID(entity);
+        if(!TypedMissionQuestAction(entity,code,command,[pid,coroutine=L](bool ok){CQuestManager::instance().ResumeTypedItems(pid,coroutine,ok);})) {lua_pushboolean(L,false);lua_pushliteral(L,"unavailable");return 2;}
+        lua_settop(L,0);lua_pushliteral(L,"typed_items");
+        return lua_yieldk(L,1,0,[](lua_State* thread,int,lua_KContext){return lua_gettop(thread);});
+    }
+
 	void RegisterPCFunctionTable()
 	{
 		luaL_reg pc_functions[] =
@@ -4316,7 +4344,10 @@ teleport_area:
 #endif
 			{ "give_item2_select",		pc_give_or_drop_item_and_select	},
 			{ "give_gold",		pc_give_gold		},
-			{ "count_item",		pc_count_item		},
+			{ "typed_item_count", pc_typed_item_count },
+            { "typed_mission_status", pc_typed_mission_status },
+            { "typed_mission_action", pc_typed_mission_action },
+            { "count_item",		pc_count_item		},
 			{ "remove_item",		pc_remove_item		},
 			{ "countitem",		pc_count_item		},
 			{ "removeitem",		pc_remove_item		},

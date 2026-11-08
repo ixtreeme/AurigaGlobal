@@ -1,0 +1,24 @@
+-- Opt-in Lua adapter. Item amounts come only from the server-authored package.
+quest typed_mission_example begin
+    state start begin
+        when 9003.chat."Anyaggyűjtés" begin
+            local code = "demo.typed_story"
+            local status = pc.typed_mission_status(code)
+            if status == 0 then
+                local ok, result = pc.typed_mission_action(code, "start")
+                if ok then say("A küldetés elindult és a haladás mentve van.")
+                else say("A küldetés most nem indítható.") end
+            elseif status == 1 then
+                say("Teljesítsd a naplóban látható célokat.")
+            elseif status == 2 then
+                local ok, result = pc.typed_mission_action(code, "claim")
+                if ok then say("A leadás és a jutalom mentése sikeres.")
+                else say("Ellenőrizd a tárgyakat, a Yangot és a szabad helyet.") end
+            elseif status == 3 then
+                say("Ezt a küldetést már teljesítetted.")
+            else
+                say("A küldetéshaladás betöltése folyamatban van.")
+            end
+        end
+    end
+end

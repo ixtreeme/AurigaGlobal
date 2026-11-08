@@ -1,3 +1,4 @@
+#include "../../mission/TypedMissionRuntime.hpp"
 #include "../../item/TypedSoulClock.hpp"
 #include "../../core/stdafx.h"
 #include "../../story/SpyQuestSystem.hpp"
@@ -3877,6 +3878,7 @@ void Reward(entt::entity e, bool bItemDrop)
 
 		ecs::PlayerRuntime::SetQuestNPC(attacker, e);
 		quest::CQuestManager::instance().Kill(ecs::PlayerRuntime::GetPlayerID(attacker), ecs::PlayerRuntime::GetRaceNum(e));
+        TypedMissionMobKilled(attacker, ecs::PlayerRuntime::GetRaceNum(e), ecs::PlayerRuntime::GetMobRank(e) >= MOB_RANK_BOSS);
 		CHARACTER_MANAGER::instance().KillLog(ecs::PlayerRuntime::GetRaceNum(e));
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
 		COrcsDungeon::instance().OnMobKilled(attacker, e);

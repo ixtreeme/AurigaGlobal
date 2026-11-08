@@ -1,3 +1,4 @@
+#include "../mission/TypedMissionRuntime.hpp"
 #include "TypedSoulClock.hpp"
 #include "TypedCostumes.hpp"
 #include "stdafx.h"
@@ -266,7 +267,7 @@ void TickTypedLoot()
 	TickTypedShops();
 	TickTypedTrades();
 	TickTypedCrafting();
-    TickTypedItemMissions();
+    TickTypedItemMissions();TickTypedMissionRuntime();
     TickTypedContainerOpening();
     TickTypedTokenRedemption();
     TickTypedSocketMaintenance();

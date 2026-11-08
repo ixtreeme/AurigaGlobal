@@ -335,6 +335,21 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
         const auto& c=a.after.character;
         tx.push_back({"UPDATE player.player SET typed_book_revision=?,exp=?,skill_point=?,sub_skill_point=?,horse_skill_point=?,skill_level=? WHERE id=? AND typed_book_revision=?",{U::UInt(a.after.revision),U::UInt(c.experience),U::UInt(c.points[0]),U::UInt(c.points[1]),U::UInt(c.points[2]),U::Blob(Bytes(LegacyBookSkillBytes(c))),U::UInt(a.owner.id),U::UInt(a.before.revision)},1,{}});
     }
+    const auto missionEvent=[&](unsigned ordinal,ItemOwner owner,unsigned kind,ItemKey key,unsigned level,std::uint64_t units){
+        if(owner.kind!=ItemOwnerKind::Character || !units || units>UINT32_MAX)return;
+        tx.push_back({"INSERT INTO player.item_mission_event(operation_id,ordinal,character_id,event_kind,category,local_id,refinement_level,units) SELECT ?,?,?,?,?,?,?,? FROM player.item_mission_watch WHERE character_id=?",{U::Blob(Bytes(r.operationId)),U::UInt(ordinal),U::UInt(owner.id),U::UInt(kind),U::UInt(unsigned(key.Category())),U::UInt(key.LocalId()),U::UInt(level),U::UInt(units),U::UInt(owner.id)},{},{}});
+    };
+    if(r.kind==ItemOperationKind::Grant || (r.ground && !r.ground->create)){
+        unsigned ordinal=0;
+        for(const auto& ch:r.items){const auto& a=ch.after;const auto previous=ch.before && ch.before->owner==a.owner?ch.before->count:0;
+            if(!a.destroyed && a.placement && a.placement->kind==ItemStorageKind::Inventory && a.count>previous)missionEvent(ordinal++,a.owner,1,a.key,a.refinementLevel,a.count-previous);
+        }
+    }
+    if(r.kind==ItemOperationKind::Service && r.result.size()>=36 && r.result[0]=='C' && r.result[1]=='R' && r.result[2]=='F' && r.result[3]==2){
+        const auto read=[&](unsigned at,unsigned n){std::uint64_t v=0;for(unsigned j=0;j<n;j++)v|=std::uint64_t(r.result[at+j])<<(8*j);return v;};
+        const auto tail=r.result.size()-12;const auto key=ItemKey::Create(read(tail,2),read(tail+2,4));
+        if(key && r.owners.size()==1)missionEvent(0,r.owners[0].owner,2,*key,read(tail+6,2),read(12,4)*read(tail+8,4));
+    }
     std::size_t parameters=0,bytes=0;
     for(const auto& step:tx){parameters+=step.params.size();bytes+=step.query.size();for(const auto& p:step.params)bytes+=p.bytes.size();if(step.query.size()>SqlTransactionLimits::QueryBytes)return std::unexpected(E::LimitExceeded);}
     if(tx.size()>SqlTransactionLimits::Steps || parameters>SqlTransactionLimits::Parameters || bytes>SqlTransactionLimits::TotalBytes || cellBudget>512)return std::unexpected(E::LimitExceeded);

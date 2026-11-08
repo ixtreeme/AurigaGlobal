@@ -48,6 +48,7 @@ def main():
         paths.append(ROOT / "db/migrations/item_instance/018_soul_runtime.sql")
         paths.append(ROOT / "db/migrations/item_instance/019_ammo_runtime.sql")
         paths.append(ROOT / "db/migrations/item_instance/020_shared_storage.sql")
+        paths.append(ROOT / "db/migrations/item_instance/021_mission_events.sql")
         sandbox.client.query("CREATE TABLE player.player(id INT UNSIGNED PRIMARY KEY, name VARCHAR(24) NOT NULL DEFAULT '', exp INT UNSIGNED NOT NULL DEFAULT 0, skill_point SMALLINT NOT NULL DEFAULT 0, sub_skill_point SMALLINT NOT NULL DEFAULT 0, horse_skill_point SMALLINT NOT NULL DEFAULT 0, skill_level BLOB NULL) ENGINE=InnoDB")
         sandbox.client.query("CREATE TABLE player.player_deleted LIKE player.player")
         sandbox.client.query("ALTER TABLE player.player ADD account_id INT UNSIGNED NOT NULL DEFAULT 0")
@@ -62,6 +63,11 @@ def main():
                         print('PET_STORAGE_MIGRATION_DDL',sandbox.client.query('SHOW CREATE TABLE player.item_storage'),flush=True)
                         print('PET_STORAGE_MIGRATION_PLAN',sandbox.client.query('SELECT @pet_storage_ddl'),flush=True)
                     raise
+        sandbox.client.query("CREATE DATABASE mission CHARACTER SET utf8mb4 COLLATE utf8mb4_bin")
+        sandbox.client.query("USE mission")
+        for statement in statements((ROOT/'db/mission_schema.sql').read_text(encoding='utf-8')):
+            sandbox.client.query(statement)
+        sandbox.client.query("USE player")
         sandbox.client.query("CREATE TABLE protos.ic_persistence_owner(token CHAR(32) NOT NULL) ENGINE=InnoDB")
         sandbox.client.query("INSERT INTO protos.ic_persistence_owner VALUES('" + token + "')")
         sandbox.client.query("CREATE USER 'item_writer'@'localhost' IDENTIFIED BY '" + sandbox.password + "'")
@@ -79,6 +85,9 @@ def main():
         sandbox.client.query("GRANT UPDATE ON player.player TO 'item_writer'@'localhost'")
         sandbox.client.query("GRANT INSERT,UPDATE ON player.item_shared_storage_gate TO 'item_writer'@'localhost'")
         sandbox.client.query("GRANT UPDATE ON player.item_instance_id_allocator TO 'item_writer'@'localhost'")
+        sandbox.client.query("GRANT ALL ON mission.* TO 'item_writer'@'localhost'")
+        sandbox.client.query("GRANT INSERT,UPDATE,DELETE ON player.item_mission_event TO 'item_writer'@'localhost'")
+        sandbox.client.query("GRANT INSERT,DELETE ON player.item_mission_watch TO 'item_writer'@'localhost'")
         metadata = {"version": sandbox.client.query("SELECT VERSION()")[0][0],
                     "owned_datadir_verified": True, "catalog_select_only": True,
                     "catalog_drafts": sum(path.parent.name=='item_combat' for path in paths), "instance_schema": 1}

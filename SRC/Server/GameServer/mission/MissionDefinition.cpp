@@ -127,7 +127,7 @@ bool Boolean(const Json &j, const std::string &path)
 }
 RewardBundle ReadRewardBundle(const Json &j, const std::string &path)
 {
-    Fields(j, path, {"schema"}, {"items", "experience", "gold", "consume_items"});
+    Fields(j, path, {"schema"}, {"items", "experience", "gold", "consume_items", "typed_items", "typed_consume_items", "typed_requirements", "gold_cost"});
     RewardBundle bundle;
     bundle.schema = uint16_t(Number(j.at("schema"), path + "/schema", UINT16_MAX));
     for (const auto &[field, table] :
@@ -148,6 +148,20 @@ RewardBundle ReadRewardBundle(const Json &j, const std::string &path)
                 Bad(path, "duplicate reward item prototype");
         }
     }
+    for (const auto &[field, table] : std::initializer_list<std::pair<std::string_view, std::map<RewardBundle::ItemKey, uint32_t> *>>{
+            {"typed_items", &bundle.typedItems}, {"typed_consume_items", &bundle.typedConsumeItems}, {"typed_requirements", &bundle.typedRequirements}})
+    {
+        if (!j.contains(field)) continue;
+        const auto &entries = j.at(field);
+        if (!entries.is_array() || entries.size() > 16) Bad(path, "typed reward item entry limit");
+        for (const auto &item : entries)
+        {
+            Fields(item, path, {"category", "local", "level", "count"});
+            RewardBundle::ItemKey key{uint16_t(Number(item.at("category"), path, UINT16_MAX)), uint32_t(Number(item.at("local"), path, UINT32_MAX)), uint16_t(Number(item.at("level"), path, 255))};
+            if (!table->emplace(key, uint32_t(Number(item.at("count"), path, RewardLimits::ItemCount))).second) Bad(path, "duplicate typed reward key/level");
+        }
+    }
+    if (j.contains("gold_cost")) bundle.goldCost = Number(j.at("gold_cost"), path, RewardLimits::Amount);
     if (j.contains("experience"))
         bundle.experience = Number(j.at("experience"), path + "/experience", RewardLimits::Amount);
     if (j.contains("gold"))

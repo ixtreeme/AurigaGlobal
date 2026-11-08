@@ -39,6 +39,12 @@ namespace quest {
 
 			const char* action = lua_tostring(qs.co, 1);
 			if (!action) { SetError(); GotoEndState(qs); return false; }
+            if (!strcmp(action, "typed_items"))
+            {
+                qs.suspend_state = SUSPEND_STATE_TYPED_ITEMS;
+                lua_settop(qs.co, 0);
+                return true;
+            }
 			if (!strcmp(action, "select"))
 			{
 				GotoSelectState(qs);
@@ -85,6 +91,19 @@ namespace quest {
 		GotoEndState(qs);
 		return false;
 	}
+
+    void CQuestManager::ResumeTypedItems(unsigned int pid, lua_State* coroutine, bool success)
+    {
+        PC* pc = GetPC(pid);
+        if (!pc || !pc->IsRunning()) return;
+        auto* state=pc->GetRunningQuestState();
+        if (!state || state->co!=coroutine || state->suspend_state!=SUSPEND_STATE_TYPED_ITEMS) return;
+        pc->SetSendDoneFlag();
+        state->args=2;
+        lua_pushboolean(state->co,success);
+        lua_pushstring(state->co,success?"committed":"refused");
+        if (!RunState(*state)) { CloseState(*state); pc->EndRunning(); }
+    }
 
 	void CQuestManager::CloseState(QuestState& qs, bool aborting) const
 	{

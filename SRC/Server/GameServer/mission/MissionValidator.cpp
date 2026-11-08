@@ -173,7 +173,7 @@ struct DefinitionCompiler
             {
                 Need(IsIdentifier(key) && ValidRewardBundle(bundle), "rewards/" + key,
                      "invalid reward key, schema, item, amount or empty bundle");
-                rewardItems += bundle.items.size() + bundle.consumeItems.size();
+                rewardItems += bundle.items.size() + bundle.consumeItems.size() + bundle.typedItems.size() + bundle.typedConsumeItems.size() + bundle.typedRequirements.size();
                 Need(rewardItems <= RewardLimits::DefinitionItems, "rewards", "reward item memory limit");
             }
             for (const auto &[key, values] : source.choices)

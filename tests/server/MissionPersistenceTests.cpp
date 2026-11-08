@@ -93,7 +93,16 @@ Message Execute(CAsyncSQL &sql, const db::Plan &plan, bool success = true,const 
 }
 db::Resolved Resolve(CAsyncSQL &sql, const db::Plan &plan,const std::source_location location=std::source_location::current())
 {
-    Message result(sql.DirectTransactionPrepared(db::Resolve(plan)));
+    Message result;
+    // These are read-only absence barriers. MariaDB 13 may abort a locking
+    // read with ER_CHECKREAD while a competing COMMIT finishes; retry the read,
+    // never the original write or its effect.
+    for(unsigned attempt=0;attempt<12;attempt++) {
+        result.reset(sql.DirectTransactionPrepared(db::Resolve(plan)));
+        if(!result || result->transactionOutcome!=SqlTransactionOutcome::RolledBack ||
+           (result->uiSQLErrno!=1020 && result->uiSQLErrno!=1213)) break;
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    }
     auto resolved = db::DecodeResolution(*result, plan);
     if(resolved.status==db::Resolution::SqlError || resolved.status==db::Resolution::Invalid)
         std::cerr << "resolution status=" << static_cast<unsigned>(resolved.status) << " SQL errno=" << result->uiSQLErrno << '\n';
@@ -324,6 +333,17 @@ void MissingArchiveAndCorruption(CAsyncSQL &sql, const DefinitionRegistry &regis
     Query(sql, {"UPDATE mission_engine_schema SET schema_version=5 WHERE singleton=1", {}});
     Execute(sql, db::ArchivePackage(bytes));
 }
+// MariaDB 13 can abort an optimistic writer with ER_CHECKREAD (1020),
+// rather than returning the later UPDATE's zero affected-row CAS conflict.
+// Both paths have rolled back. The assertions below still require exactly one
+// committed revision/receipt/ledger and resolve the losing operation as absent.
+SqlTransactionOutcome RaceOutcome(const SQLMsg& result)
+{
+    if(result.transactionOutcome==SqlTransactionOutcome::RolledBack &&
+       (result.uiSQLErrno==1020 || result.uiSQLErrno==1213))
+        return SqlTransactionOutcome::Conflict;
+    return result.transactionOutcome;
+}
 void ConcurrentSaves(CAsyncSQL &admin, const DefinitionRegistry &registry)
 {
     auto owner = Claim(admin, 46, 0, Token(6), Token(117));
@@ -352,7 +372,7 @@ void ConcurrentSaves(CAsyncSQL &admin, const DefinitionRegistry &registry)
                     signaled = true;
                     start.wait();
                     Message result(sql.DirectTransactionPrepared(plans[index].statements));
-                    outcomes[index] = result->transactionOutcome;
+                    outcomes[index] = RaceOutcome(*result);
                 }
                 catch (...)
                 {
@@ -679,7 +699,7 @@ std::array<SqlTransactionOutcome, 2> Race(const std::array<db::Plan, 2> &plans)
                     signaled = true;
                     start.wait();
                     Message result(sql.DirectTransactionPrepared(plans[i].statements));
-                    outcomes[i] = result->transactionOutcome;
+                    outcomes[i] = RaceOutcome(*result);
                 }
                 catch (...)
                 {
@@ -735,6 +755,14 @@ void ConcurrentActions(CAsyncSQL &sql, const DefinitionRegistry &registry)
         std::array<db::Plan, 2> competing{Entitle(registry, owner, key, 1, digest, db::NewToken()),
                                           db::Save(runtime.Save(), registry, owner, 1, db::NewToken())};
         outcomes = Race(competing);
+        if(outcomes[1]!=SqlTransactionOutcome::Committed) {
+            Check(outcomes[1]==SqlTransactionOutcome::Conflict &&
+                  Resolve(sql,competing[1]).status==db::Resolution::Absent,
+                  "cancel retry requires a settled, rolled-back contender");
+            // Entitlement does not consume a checkpoint revision. A retried
+            // cancellation therefore remains valid after that writer finishes.
+            Execute(sql,competing[1]);outcomes[1]=SqlTransactionOutcome::Committed;
+        }
         auto action = Action(sql, owner, key);
         Check(outcomes[1] == SqlTransactionOutcome::Committed && action.status == db::ReadStatus::Found &&
                   action.action.state == (outcomes[0] == SqlTransactionOutcome::Committed

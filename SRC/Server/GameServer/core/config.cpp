@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../mission/TypedMissionRuntime.hpp"
 #include "MapRoutingRules.hpp"
 #include <Core/peer_auth.h>
 #include <string_view>
@@ -353,6 +354,8 @@ static void __ApplyConnectConfig(const GameConfig& cfg)
             { LOG_ERROR("TypedCraft: {}", crafting.error()); exit(1); }
             if (const auto missions = LoadTypedItemMissions(LocaleService_GetBasePath() + "/typed_item_missions.json"); !missions)
             { LOG_ERROR("TypedItemMissions: {}", missions.error()); exit(1); }
+            if (const auto missions = LoadTypedMissionRuntime(LocaleService_GetBasePath(), cfg.sql.mission); !missions)
+            { LOG_ERROR("TypedMission: {}", missions.error()); exit(1); }
             if (const auto gathering = LoadTypedGathering(LocaleService_GetBasePath() + "/typed_gathering.json"); !gathering)
             { LOG_ERROR("TypedGathering: {}", gathering.error()); exit(1); }
 			items::EnableTypedDrops(cfg.items.drops == "typed");

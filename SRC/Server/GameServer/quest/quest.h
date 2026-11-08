@@ -78,6 +78,7 @@ namespace quest
 		SUSPEND_STATE_INPUT,
 		SUSPEND_STATE_CONFIRM,
 		SUSPEND_STATE_SELECT_ITEM,
+        SUSPEND_STATE_TYPED_ITEMS,
 	};
 
 	enum EQuestConfirmType

@@ -159,6 +159,7 @@ namespace quest
 		// event occurs in one state
 		void		Select(unsigned int pc, unsigned int selection);
 		void		Resume(unsigned int pc);
+        void ResumeTypedItems(unsigned int pc, lua_State* coroutine, bool success);
 
 		int		ReadQuestCategoryFile(uint16_t q_index);
 		void		Input(unsigned int pc, const char* msg);

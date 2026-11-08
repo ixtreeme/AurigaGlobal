@@ -26,7 +26,7 @@ std::vector<std::byte> Run()
     Check(craft && craft->successes==2 && craft->commit.items.size()==3,"server rolls choose mixed outcomes in one batch");
     Check(craft->commit.wallets[0].after.balance==925 && craft->commit.items[0].after.count==4,"all attempts consume exact gold and materials");
     Check(craft->commit.items[1].after.refinementLevel==9 && craft->commit.items[1].after.id==ids[0],"fresh result identity and explicit level");
-    Check(craft->commit.result.size()==30 && ValidateItemCommit(c,craft->commit).has_value(),"audit payload includes every roll");
+    Check(craft->commit.result.size()==42 && craft->commit.result[3]==2 && ValidateItemCommit(c,craft->commit).has_value(),"versioned audit includes every roll and the typed output");
     auto poor=wallet;poor.balance=74;
     Check(MakeCraftCommit(c,op,owner,std::span(&bag,1),std::span(&material,1),std::span(&poor,1),recipe,3,rolls,ids).error()==CraftError::NoMoney,"no money leaves ingredients unchanged");
     auto small=material;small.count=5;

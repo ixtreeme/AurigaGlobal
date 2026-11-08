@@ -101,8 +101,8 @@ std::expected<CraftPlan,E> MakeCraftCommit(const ItemCatalog& c,std::array<std::
         if(std::ranges::find(out.storages,storage,&ItemStorageLayout::storage)!=out.storages.end())continue;
         const auto found=std::ranges::find(layouts,storage,&ItemStorageLayout::storage);if(found==layouts.end())return std::unexpected(E::Invalid);out.storages.push_back(*found);
     }
-    out.result={'C','R','F',1};const auto put=[&](std::uint64_t value,unsigned n){for(unsigned i=0;i<n;++i)out.result.push_back(static_cast<std::uint8_t>(value>>(8*i)));};
-    put(recipe.id,4);put(attempts,4);put(plan.successes,4);put(cost,8);for(auto roll:rolls)put(roll,2);
+    out.result={'C','R','F',2};const auto put=[&](std::uint64_t value,unsigned n){for(unsigned i=0;i<n;++i)out.result.push_back(static_cast<std::uint8_t>(value>>(8*i)));};
+    put(recipe.id,4);put(attempts,4);put(plan.successes,4);put(cost,8);for(auto roll:rolls)put(roll,2);put(unsigned(recipe.result.key.Category()),2);put(recipe.result.key.LocalId(),4);put(recipe.result.refinementLevel,2);put(recipe.result.count,4);
     if(!ValidateItemCommit(c,out))return std::unexpected(E::Invalid);return plan;
 }
 std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeCraftWorkshop(const ItemCatalog& c,const CraftWorkshop* workshop,

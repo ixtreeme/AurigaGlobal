@@ -127,6 +127,9 @@ std::vector<NativeSchema> MakeSchemas()
                            std::move(parameters),
                            false});
     }
+    for (const auto &[id, kind, name] : std::vector<std::tuple<uint32_t, RewardPayloadKind, std::string_view>>{
+        {0x5005,RewardPayloadKind::TypedItem,"payload.typed_item"}, {0x5006,RewardPayloadKind::TypedConsumeItem,"payload.typed_consume_item"}, {0x5007,RewardPayloadKind::TypedRequirement,"payload.typed_requirement"}, {0x5008,RewardPayloadKind::GoldCost,"payload.gold_cost"}})
+        schemas.push_back({id,1,NativeCategory::RewardPayload,uint8_t(kind),name,name,{}, {},false});
     return schemas;
 }
 uint32_t Type(NativeCategory category, uint8_t kind)
@@ -208,6 +211,10 @@ NativeRequirements RequiredNativeTypes(const Definition &definition)
     }
     for (const auto &[key, bundle] : definition.rewards)
     {
+        if (!bundle.typedItems.empty()) required.emplace(NativeType(RewardPayloadKind::TypedItem),1);
+        if (!bundle.typedConsumeItems.empty()) required.emplace(NativeType(RewardPayloadKind::TypedConsumeItem),1);
+        if (!bundle.typedRequirements.empty()) required.emplace(NativeType(RewardPayloadKind::TypedRequirement),1);
+        if (bundle.goldCost) required.emplace(NativeType(RewardPayloadKind::GoldCost),1);
         if (!bundle.items.empty())
             required.emplace(NativeType(RewardPayloadKind::Item), 1);
         if (bundle.experience)
@@ -228,6 +235,7 @@ std::string ExportNativeSchemas()
     output["condition_representation"] = "embedded_typed_ast";
     output["parallel_policies"] = {{"all", 0}, {"any", 1}, {"race", 2}, {"first_terminal", 3}};
     output["reward_payloads"] = {{"schema", 1},
+                                 {"typed_item_schema", 2},
                                  {"graph_schema", 2},
                                  {"atomic_bundle", true},
                                  {"delivery_implemented", false},

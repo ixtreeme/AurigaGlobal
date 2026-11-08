@@ -184,6 +184,7 @@ CPacketInfoCG::CPacketInfoCG()
     Set(HEADER_CG_TYPED_SOCKET_MAINTENANCE, sizeof(TPacketCGTypedSocketMaintenance), "TypedSocketMaintenance", true);
     Set(HEADER_CG_TYPED_SPECIAL_BONUSES, 28, "TypedSpecialBonuses", true);
     Set(HEADER_CG_TYPED_STORAGE,57,"TypedStorage",true);
+    Set(HEADER_CG_TYPED_MISSION, 216, "TypedMission", true);
     Set(HEADER_CG_TYPED_FORGE,58,"TypedForge",true);
     Set(HEADER_CG_TYPED_SOUL, 28, "TypedSpecialBonuses", true);
     Set(HEADER_CG_TYPED_ATTRIBUTES, sizeof(TPacketCGTypedAttributes), "TypedAttributes", true);

@@ -1,3 +1,4 @@
+#include "../mission/TypedMissionRuntime.hpp"
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
@@ -830,6 +831,7 @@ namespace quest
 	bool CQuestManager::Click(entt::entity pc, entt::entity chrTarget)
 	{
 		if (!ecs::PlayerRuntime::IsValid(chrTarget)) return false;
+        TypedMissionNpcInteracted(pc,ecs::PlayerRuntime::GetPacketVID(chrTarget));
 		PC * pPC = GetPC(pc);
 		const entt::entity causer = GetCurrentPCEntity();
         const uint32_t playerID = ecs::PlayerRuntime::GetPlayerID(pc);

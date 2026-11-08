@@ -235,7 +235,7 @@ ResourcePreparation PrepareResources(const PinnedReward &reward, ResourceSnapsho
 {
     try
     {
-        Need(ValidRewardBundle(reward.Payload()), "Invalid pinned resource payload");
+        Need(reward.Payload().schema == 1 && ValidRewardBundle(reward.Payload()), "Legacy resource writer requires schema 1");
         Need(rules.version == 1 && rules.maximumLevel && rules.maximumLevel <= 250 &&
                  rules.nextExperience.size() == size_t(rules.maximumLevel) + 1 && !rules.nextExperience[0] &&
                  rules.lastStatLevel <= 250 && rules.lastStatStep <= 3 && rules.statCap <= INT16_MAX &&

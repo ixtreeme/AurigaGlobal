@@ -363,6 +363,11 @@ void WriteReward(Writer &w, const RewardBundle &bundle)
 {
     Need(ValidRewardBundle(bundle), "Invalid reward payload");
     w.U16(bundle.schema);
+    if (bundle.schema == 2)
+    {
+        const auto typed = [&](const auto &table) { w.U32(uint32_t(table.size())); for (const auto &[key, count] : table) { w.U16(key.category); w.U32(key.local); w.U16(key.level); w.U32(count); } };
+        typed(bundle.typedItems); typed(bundle.typedConsumeItems); typed(bundle.typedRequirements); w.U64(bundle.goldCost); w.U64(bundle.gold); return;
+    }
     const auto items = [&](const auto &table)
     {
         w.U32(uint32_t(table.size()));
@@ -381,6 +386,11 @@ RewardBundle ReadReward(Reader &r)
 {
     RewardBundle bundle;
     bundle.schema = r.U16();
+    if (bundle.schema == 2)
+    {
+        const auto typed = [&](auto &table) { const auto count = r.Count(16); RewardBundle::ItemKey previous{}; for (size_t i=0; i<count; ++i) { RewardBundle::ItemKey key{r.U16(),r.U32(),r.U16()}; Need(key > previous, "Noncanonical typed reward key"); previous=key; table.emplace(key,r.U32()); } };
+        typed(bundle.typedItems); typed(bundle.typedConsumeItems); typed(bundle.typedRequirements); bundle.goldCost=r.U64(); bundle.gold=r.U64(); Need(ValidRewardBundle(bundle), "Invalid typed reward payload"); return bundle;
+    }
     Need(bundle.schema == 1, "Unsupported reward payload schema");
     const auto items = [&](auto &table)
     {
@@ -473,7 +483,7 @@ Definition ReadDefinition(Reader &r, uint16_t graphSchema, size_t &packageItems)
             Need(key > previous, "Noncanonical/duplicate reward key");
             previous = key;
             auto bundle = ReadReward(r);
-            const auto items = bundle.items.size() + bundle.consumeItems.size();
+            const auto items = bundle.items.size() + bundle.consumeItems.size() + bundle.typedItems.size() + bundle.typedConsumeItems.size() + bundle.typedRequirements.size();
             Need(items <= RewardLimits::DefinitionItems - definitionItems &&
                      items <= RewardLimits::PackageItems - packageItems,
                  "Decoded reward item memory limit");
@@ -596,7 +606,7 @@ struct PackageCodec
         {
             for (const auto &[key, bundle] : definition.rewards)
             {
-                rewardItems += bundle.items.size() + bundle.consumeItems.size();
+                rewardItems += bundle.items.size() + bundle.consumeItems.size() + bundle.typedItems.size() + bundle.typedConsumeItems.size() + bundle.typedRequirements.size();
                 Need(rewardItems <= RewardLimits::PackageItems, "Package reward item memory limit");
             }
             Need(ids.insert(definition.id).second, "Duplicate mission ID");
