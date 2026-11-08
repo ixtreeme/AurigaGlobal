@@ -31,6 +31,7 @@ enum class ItemCategory : std::uint16_t
     Regalia = 19,
     BonusTool = 20,
     Ammo = 21,
+    ForgeAid = 22,
 };
 
 struct ItemCategoryDescriptor
@@ -40,7 +41,7 @@ struct ItemCategoryDescriptor
     std::string_view table;
 };
 
-inline constexpr std::array<ItemCategoryDescriptor, 21> ItemCategories {{
+inline constexpr std::array<ItemCategoryDescriptor, 22> ItemCategories {{
     {ItemCategory::Weapon, "weapon", "item_weapon"},
     {ItemCategory::Armor, "armor", "item_armor"},
     {ItemCategory::Accessory, "accessory", "item_accessory"},
@@ -62,6 +63,7 @@ inline constexpr std::array<ItemCategoryDescriptor, 21> ItemCategories {{
     {ItemCategory::Regalia, "regalia", "item_regalia"},
     {ItemCategory::BonusTool, "bonus_tool", "item_bonus_tool"},
     {ItemCategory::Ammo, "ammo", "item_ammo"},
+    {ItemCategory::ForgeAid, "forge_aid", "item_forge_aid"},
 }};
 
 constexpr const ItemCategoryDescriptor* FindItemCategory(std::uint16_t id) noexcept

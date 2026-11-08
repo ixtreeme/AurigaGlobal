@@ -1,4 +1,5 @@
 #include "SoulRuntimeFixture.hpp"
+#include "ForgeRuntimeFixture.hpp"
 #include <item/AmmoRuntime.hpp>
 #include "PersistentItemFixture.hpp"
 #include "AttributeRuntimeFixture.hpp"
@@ -682,6 +683,16 @@ void FixedCompanionSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c)
         Check(Scalar(admin,"SELECT COUNT(*) FROM player.item_instance WHERE instance_id=? AND destroyed=1 AND stack_count=0 AND companion_recall_requested=0 AND companion_riding_requested=0 AND OCTET_LENGTH(companion_lifetime_blob)=22",{U::UInt(id.Value())})=="1","expired lifetime remains in the destroyed audit row");
     }
 }
+void ForgeSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c){
+    const ItemOwner owner{ItemOwnerKind::Character,880132};const auto bag=f::Inventory(owner);const ItemWallet wallet{owner,WalletCurrency::Gold,1,1000};Check(p::ProvisionOwner(admin,c,owner,std::span(&bag,1),std::span(&wallet,1)).has_value(),"forge SQL owner");unsigned serial=0;const auto op=[&](){return std::array<std::uint8_t,16>{0x32,0x74,static_cast<std::uint8_t>(++serial)};};auto state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    for(unsigned j=1;j<=6;++j){ItemGrant g{j<=3?item_catalog_fixture::Sword():j==4?item_catalog_fixture::Leather():forge_runtime_fixture::Aid(j==5?1:5)};g.refinementLevel=j<=3?9:0;g.count=j==4?20:j>=5?5:1;std::array ids{ItemInstanceId::Create(9000000+j).value()};auto grant=MakeGrantCommit(c,op(),state.fence,state.storages,state.items,g,ids);Check(grant && p::CommitItems(writer,c,*grant).has_value(),"forge SQL grant");state=p::LoadCurrentItemOwner(writer,c,owner).value();}
+    ForgeContext context;context.admitted=true;context.actor={120,0,0};
+    const auto forge=[&](unsigned target,unsigned aid,unsigned recipe){return MakeForgeCommit(c,op(),state.fence,state.storages,state.items,state.wallets[0],{ItemInstanceId::Create(9000000+target).value(),9000000+aid,{},recipe},context,0);};
+    auto success=forge(1,6,3);Check(success && success->success && p::CommitItems(writer,c,success->commit).has_value(),"Musin SQL overrides zero chance recipe");Check(p::CommitItems(writer,c,success->commit)->replay,"forge same operation writes once");state=p::LoadCurrentItemOwner(writer,c,owner).value();Check(Find(state,9000001).refinementLevel==10 && Find(state,9000006).count==4 && Find(state,9000004).count==17 && state.wallets[0].balance==900,"forge success exact costs");
+    auto fail=forge(2,5,3);Check(fail && !fail->success && p::CommitItems(writer,c,fail->commit).has_value(),"blessing downgrade SQL");state=p::LoadCurrentItemOwner(writer,c,owner).value();Check(Find(state,9000002).refinementLevel==8 && Find(state,9000005).count==4 && Find(state,9000004).count==14 && state.wallets[0].balance==800,"forge failure exact costs");
+    auto saved=state;Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"forge relog");state=p::LoadCurrentItemOwner(writer,c,owner).value();Check(state.items==saved.items && state.wallets==saved.wallets,"forge level and all debits survive relog");Check(p::CommitItems(writer,c,success->commit)->replay,"forge replay after fresh session remains idempotent");
+    auto race=forge(3,6,3);Check(race.has_value() && p::ClaimOwnerSession(writer,c,owner).has_value(),"forge session race");Check(!p::CommitItems(writer,c,race->commit),"stale session rolls all forge resources back");state=p::LoadCurrentItemOwner(writer,c,owner).value();Check(state.items==saved.items && state.wallets==saved.wallets,"stale forge changes nothing");
+}
 void AmmoSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c){
     const ItemOwner owner{ItemOwnerKind::Character,880131};std::array layouts{ItemStorageLayout{{owner,ItemStorageKind::Inventory,1},10,9,1},ItemStorageLayout{{owner,ItemStorageKind::Equipment,1},20,1,1}};const ItemWallet wallet{owner,WalletCurrency::Gold,1,0};Check(p::ProvisionOwner(admin,c,owner,layouts,std::span(&wallet,1)).has_value(),"ammo owner");unsigned serial=0;const auto op=[&](){return std::array<std::uint8_t,16>{0x31,0x74,static_cast<std::uint8_t>(++serial)};};auto state=p::LoadCurrentItemOwner(writer,c,owner).value();
     for(unsigned j=1;j<=4;++j){if(j==3)continue;ItemGrant g{ItemKey::Create(j==1?1:j==4?14:21,j==1?31001:j==4?30001:31001).value()};g.count=j==2?5:1;std::vector ids{ItemInstanceId::Create(8000000+j).value()};if(j==2)ids.push_back(ItemInstanceId::Create(8000003).value());auto grant=MakeGrantCommit(c,op(),state.fence,state.storages,state.items,g,ids);Check(grant && p::CommitItems(writer,c,*grant).has_value(),"SQL ammo grant");state=p::LoadCurrentItemOwner(writer,c,owner).value();}
@@ -709,6 +720,7 @@ void SoulSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c){
 void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
 {
     auto source=attribute_runtime_fixture::Catalog();
+    {const auto forge=forge_runtime_fixture::Catalog();for(const auto& b:forge.items)if(b.key.Category()==ItemCategory::ForgeAid)source.items.push_back(b);source.forgeAids=forge.forgeAids;}
     auto soulFixture=soul_runtime_fixture::Catalog();auto soulRef=soulFixture.refinements.back();soulRef.id=30030;source.refinements.push_back(soulRef);auto soulProfile=soulFixture.soulProfiles.back();soulProfile.id=30030;source.soulProfiles.push_back(soulProfile);
     for(auto base:soulFixture.items)if(base.key.Category()==ItemCategory::Soul){base.key=ItemKey::Create(14,30000+base.key.LocalId()).value();if(base.refinementProfile==5)base.refinementProfile=30030;source.items.push_back(base);}
     for(auto row:soulFixture.soulItems){row.key=ItemKey::Create(14,30000+row.key.LocalId()).value();if(row.profile)row.profile=30030;source.soulItems.push_back(row);}
@@ -1570,6 +1582,7 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
     FixedCompanionSql(admin,writer,*c);
     SoulSql(admin,writer,*c);
     AmmoSql(admin,writer,*c);
+    ForgeSql(admin,writer,*c);
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);
 }

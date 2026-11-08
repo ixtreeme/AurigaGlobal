@@ -21,6 +21,7 @@
 #include "ToggleEffects.hpp"
 #include "SkillBooks.hpp"
 #include "BookAids.hpp"
+#include "ForgeAids.hpp"
 #include "Containers.hpp"
 #include "CurrencyTokens.hpp"
 #include "MobDrops.hpp"
@@ -176,10 +177,10 @@ struct ItemSkillBookRow
     std::uint32_t profile = 0;
 };
 using ItemCategoryRow = std::variant<ItemWeaponRow, ItemArmorRow, ItemAccessoryRow, ItemMaterialRow, ItemConsumableRow,
-                                     ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow, ItemSocketStoneRow, ItemCostumeRow, ItemToolRow, ItemFishingRow, ItemPolymorphRow, ItemSoulRow, ItemCompanionRow, ItemPetSupplyRow, ItemRegaliaRow, ItemBonusToolRow, ItemAmmoRow>;
+                                     ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow, ItemSocketStoneRow, ItemCostumeRow, ItemToolRow, ItemFishingRow, ItemPolymorphRow, ItemSoulRow, ItemCompanionRow, ItemPetSupplyRow, ItemRegaliaRow, ItemBonusToolRow, ItemAmmoRow, ItemForgeAidRow>;
 struct ItemCatalogSource
 {
-    std::uint32_t schemaVersion = 29;
+    std::uint32_t schemaVersion = 30;
     std::uint64_t revision = 0;
     std::vector<ItemBaseRow> items;
     std::vector<ItemWeaponRow> weapons;
@@ -216,6 +217,7 @@ struct ItemCatalogSource
     std::vector<ItemRegaliaRow> regalia;
     std::vector<ItemBonusToolRow> bonusTools;
     std::vector<ItemAmmoRow> ammunition;
+    std::vector<ItemForgeAidRow> forgeAids;
     std::vector<CostumeVisualRow> costumeVisuals;
     std::vector<AttributeProfile> attributeProfiles;
     std::vector<AttributeServiceProfile> attributeServices;

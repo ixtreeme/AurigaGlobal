@@ -131,6 +131,7 @@ ItemBaseStats BaseStats(const ItemCostumeRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemRegaliaRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemBonusToolRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemAmmoRow&) { return {}; }
+ItemBaseStats BaseStats(const ItemForgeAidRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemToolRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemFishingRow&) { return {}; }
 ItemBaseStats BaseStats(const ItemPolymorphRow&) { return {}; }
@@ -142,7 +143,7 @@ auto VisualKey(const CostumeVisualRow& row) { return std::tuple{row.key,row.char
 
 std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCatalog(ItemCatalogSource source)
 {
-    if (source.schemaVersion != 29 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
+    if (source.schemaVersion != 30 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
     if (auto result = Budget(source); !result) return std::unexpected(result.error());
     for(auto& p:source.attributeProfiles){std::ranges::sort(p.groups,{},&AttributeGroup::pool);std::ranges::sort(p.candidates,[](const auto& a,const auto& b){return std::pair{a.pool,a.bonus}<std::pair{b.pool,b.bonus};});for(auto& a:p.candidates)std::ranges::sort(a.values,{},&AttributeValue::tier);}
     for(auto& p:source.attributeServices)std::ranges::sort(p.tiers,{},&AttributeTierChance::tier);
@@ -353,6 +354,10 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
     if(source.regalia.size()>ItemCatalogLimits::Items || source.bonusTools.size()>ItemCatalogLimits::Items)return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"regalia"));
     for(auto& r:source.regalia){if(!ValidRegalia(r) || !regalia.emplace(r.key,&r).second)return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"regalia",r.key));std::ranges::sort(r.rules,[](const auto& a,const auto& b){return std::tuple{a.index,a.minimumChargeBp,a.variant}<std::tuple{b.index,b.minimumChargeBp,b.variant};});}
     for(auto& r:source.bonusTools){if(!ValidBonusTool(r) || !bonusTools.emplace(r.key,&r).second)return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"bonus.tool",r.key));std::ranges::sort(r.tiers,[](const auto& a,const auto& b){return std::pair{a.draw,a.tier}<std::pair{b.draw,b.tier};});}
+    std::map<ItemKey,const ItemForgeAidRow*> forgeAids;
+    if(source.forgeAids.size()>ItemCatalogLimits::Items)return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"forge.aid"));
+    std::ranges::sort(source.forgeAids,{},&ItemForgeAidRow::key);
+    for(auto& r:source.forgeAids){std::ranges::sort(r.levels,{},&ForgeChanceLevel::level);if(!ValidForgeAid(r) || !forgeAids.emplace(r.key,&r).second)return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"forge.aid",r.key));}
     std::map<ItemKey,const ItemAmmoRow*> ammunition;
     if(source.ammunition.size()>ItemCatalogLimits::Items)return std::unexpected(Error(ItemCatalogErrorCode::LimitExceeded,"ammunition"));
     std::ranges::sort(source.ammunition,{},&ItemAmmoRow::key);
@@ -568,7 +573,8 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         const bool petSupply=category==ItemCategory::Special;
         const bool isRegalia=category==ItemCategory::Regalia,isBonusTool=category==ItemCategory::BonusTool;
         const bool isAmmo=category==ItemCategory::Ammo;
-        const bool stackable = isAmmo || isBonusTool || petSupply || material || consumable || container || containerKey || currencyToken || skillBook || questItem || socketStone || fish || polymorph;
+        const bool isForgeAid=category==ItemCategory::ForgeAid;
+        const bool stackable = isForgeAid || isAmmo || isBonusTool || petSupply || material || consumable || container || containerKey || currencyToken || skillBook || questItem || socketStone || fish || polymorph;
         if (category != ItemCategory::Weapon && category != ItemCategory::Armor && category != ItemCategory::Accessory && !costume && !tool && !soul && !companion && !isRegalia && !stackable)
             return std::unexpected(Error(ItemCatalogErrorCode::UnsupportedCategory, "item_base", row.key));
         if (!detail::ContentCode(row.contentCode) || !detail::ContentCode(row.nameKey, 128) ||
@@ -603,6 +609,7 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         if (profile->Data().kind != RefinementKind::None && profile->Data().kind != expectedKind)
             return std::unexpected(Error(ItemCatalogErrorCode::WrongRefinementKind, "refinement", row.key, row.refinementProfile));
         std::optional<ItemCategoryRow> child;
+        if(isForgeAid && forgeAids.contains(row.key)){child=*forgeAids.at(row.key);if(row.maxStack<forgeAids.at(row.key)->units)return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase,"forge.aid.stack",row.key));}
         if(isAmmo && ammunition.contains(row.key)){child=*ammunition.at(row.key);if(row.maxStack<FindProfile(source.ammoPolicies,ammunition.at(row.key)->ammoPolicy)->unitsPerHit)return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase,"ammo.stack",row.key));}
         if(isRegalia && regalia.contains(row.key)){child=*regalia.at(row.key);if(row.baseBonusProfile || (regalia.at(row.key)->kind==RegaliaKind::Rune && row.appearanceProfile))return std::unexpected(Error(ItemCatalogErrorCode::InvalidBase,"regalia.state",row.key));}
         if(isBonusTool && bonusTools.contains(row.key)){
@@ -800,6 +807,7 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
     for(const auto& r:source.regalia)if(!catalog->Find(r.key))return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow,"regalia",r.key));
     for(const auto& r:source.bonusTools)if(!catalog->Find(r.key))return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow,"bonus.tool",r.key));
     for(const auto& r:source.ammunition)if(!catalog->Find(r.key))return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow,"ammunition",r.key));
+    for(const auto& r:source.forgeAids)if(!catalog->Find(r.key))return std::unexpected(Error(ItemCatalogErrorCode::OrphanCategoryRow,"forge.aid",r.key));
     catalog->source_ = std::move(source);
     for (std::size_t i = 0; i < catalog->source_.mobDropGroups.size(); ++i)
     {

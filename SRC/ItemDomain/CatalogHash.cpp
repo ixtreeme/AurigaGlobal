@@ -68,7 +68,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     // Vectors and refinement levels are already validated and canonically sorted.
     // Revision is separate release identity; unchanged content retains its digest.
     Writer out;
-    out.Text("auriga.item_catalog.v29");
+    out.Text("auriga.item_catalog.v30");
     out.Integer(source.schemaVersion);
     out.Table(1, source.usePolicies.size());
     for (const auto& row : source.usePolicies)
@@ -396,6 +396,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     out.Table(56,source.regalia.size());for(const auto& r:source.regalia){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Integer(r.slot);out.Integer(r.grade);out.Integer(r.capacityMs);out.Integer(r.initialMs);out.Integer(static_cast<std::uint32_t>(r.rules.size()));for(const auto& v:r.rules){out.Integer(v.index);out.Integer(v.variant);out.Integer(v.minimumChargeBp);out.Integer(static_cast<std::uint32_t>(v.bonus.bonus));out.Integer(static_cast<std::uint64_t>(v.bonus.valueScaled));}}
     out.Table(57,source.bonusTools.size());for(const auto& r:source.bonusTools){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.operation));out.Integer(r.units);out.Integer(r.parameter);out.Boolean(r.payload.has_value());if(r.payload){out.Integer(static_cast<std::uint32_t>(r.payload->bonus));out.Integer(static_cast<std::uint64_t>(r.payload->valueScaled));}out.Integer(static_cast<std::uint32_t>(r.tiers.size()));for(const auto& t:r.tiers){out.Integer(t.draw);out.Integer(t.tier);out.Integer(t.chanceBp);}}
     out.Table(58,source.ammunition.size());for(const auto& r:source.ammunition){out.Key(r.key);out.Integer(r.ammoPolicy);}
+    out.Table(59,source.forgeAids.size());for(const auto& r:source.forgeAids){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Integer(r.units);out.Integer(r.targetMask);out.Integer(r.minimumLevel);out.Integer(r.maximumLevel);out.Integer(static_cast<std::uint8_t>(r.chanceMode));out.Integer(r.chanceBp);out.Integer(static_cast<std::uint8_t>(r.failure));out.Integer(r.boosterGroup);out.Integer(static_cast<std::uint32_t>(r.levels.size()));for(const auto& l:r.levels){out.Integer(l.level);out.Integer(l.chanceBp);}}
     return out.Finish();
 }
 } // namespace auriga::item::detail

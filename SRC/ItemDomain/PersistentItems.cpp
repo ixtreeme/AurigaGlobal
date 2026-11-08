@@ -2,6 +2,7 @@
 #include <item/SpecialBonusRuntime.hpp>
 #include <item/SoulRuntime.hpp>
 #include <item/AmmoRuntime.hpp>
+#include <item/ForgeRuntime.hpp>
 #include <item/SocketMaintenance.hpp>
 #include <algorithm>
 #include <limits>
@@ -580,7 +581,7 @@ bool SupportsPersistentItem(const ItemCatalog& c,const ItemCatalogEntry& e) noex
         const auto* profile=c.FindPetSupplyProfile(supply->profile);
         return profile && profile->kind>=PetSupplyKind::Study && profile->kind<=PetSupplyKind::Skin;
     }
-    if(std::holds_alternative<ItemSoulRow>(e.category) || std::holds_alternative<ItemAmmoRow>(e.category))return true;
+    if(std::holds_alternative<ItemForgeAidRow>(e.category) || std::holds_alternative<ItemSoulRow>(e.category) || std::holds_alternative<ItemAmmoRow>(e.category))return true;
     if(std::holds_alternative<ItemRegaliaRow>(e.category) || std::holds_alternative<ItemBonusToolRow>(e.category) || std::holds_alternative<ItemCostumeRow>(e.category) || std::holds_alternative<ItemToolRow>(e.category))return true;
     if(std::holds_alternative<ItemFishingRow>(e.category) || std::holds_alternative<ItemPolymorphRow>(e.category) || std::holds_alternative<ItemSkillBookRow>(e.category))return true;
     if(std::holds_alternative<ItemContainerRow>(e.category))return true;
@@ -753,6 +754,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
     if((r.items.empty() && r.wallets.empty() && !r.recovery && !r.learning) || !r.outcomeCode || r.kind<ItemOperationKind::Grant || r.kind>ItemOperationKind::Trade ||
        (r.petStudyCooldown && r.outcomeCode!=PetStudyOutcome) ||
        std::ranges::all_of(r.operationId,[](auto n){return !n;}))return std::unexpected(E::InvalidOperation);
+    if(r.outcomeCode==ForgeOutcome && !ValidForgeWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==AmmoShotOutcome && !ValidAmmoShotWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==SoulOutcome && !ValidSoulWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==SpecialBonusOutcome && !ValidSpecialBonusWrite(c,r))return std::unexpected(E::InvalidChange);

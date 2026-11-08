@@ -148,6 +148,7 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
     }
     for(const auto& r:source.petSupplies)Add(s,T::PetSupplies,r.key.Category(),r.key.LocalId(),1,r.profile);
     for(const auto& r:source.ammunition)Add(s,T::Ammunition,r.key.Category(),r.key.LocalId(),r.ammoPolicy);
+    for(const auto& r:source.forgeAids){Add(s,T::ForgeAids,r.key.Category(),r.key.LocalId(),r.kind,r.units,r.targetMask,r.minimumLevel,r.maximumLevel,r.chanceMode,r.chanceBp,r.failure,r.boosterGroup);for(const auto& l:r.levels)Add(s,T::ForgeLevels,r.key.Category(),r.key.LocalId(),l.level,l.chanceBp);}
     return s;
 }
 } // namespace catalog_snapshot_fixture

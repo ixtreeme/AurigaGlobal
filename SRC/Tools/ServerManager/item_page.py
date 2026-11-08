@@ -17,6 +17,7 @@ import item_catalog as catalog
 from skill_book_editor import SkillBookPanel
 from costume_editor import CostumePanel
 from special_bonus_editor import SpecialBonusPanel
+from forge_editor import ForgeAidPanel
 from gathering_editor import ToolPanel, FishingPanel
 from polymorph_editor import PolymorphPanel
 from soul_editor import SoulPanel
@@ -1839,7 +1840,8 @@ class ItemPage(QWidget):
         ammo_form.finish()
         self.category_forms = {21:ammo_form,1: weapon, 2: armor, 3: accessory, 5: recovery, 6: material, 7: stone_form, 8: container_form,
                                10: quest_form, 16: token_form, 18: key_form}
-        self.category_pages = {21:scroll(ammo_form),1: scroll(weapon), 2: scroll(armor), 3: scroll(accessory), 4: self.costume_panel, 5: scroll(potion), 6: scroll(material),
+        self.forge_panel=ForgeAidPanel(changed,Form)
+        self.category_pages = {22:scroll(self.forge_panel),21:scroll(ammo_form),1: scroll(weapon), 2: scroll(armor), 3: scroll(accessory), 4: self.costume_panel, 5: scroll(potion), 6: scroll(material),
                                7: scroll(stone_form), 8: scroll(container), 9: self.book_panel, 10: scroll(quest_form), 11: self.tool_panel, 12: self.fishing_panel, 13: self.poly_panel, 14: self.soul_panel, 15: scroll(self.companion_panel), 16: scroll(token_form), 17: scroll(self.pet_supply_panel), 18: scroll(key_form),19:scroll(self.regalia_panel),20:scroll(self.special_bonus_panel)}
         # Timed stat effects are another typed consumable, never a recovery subtype.
         timed_page = QWidget(); timed_layout = QVBoxLayout(timed_page)
@@ -2298,6 +2300,8 @@ class ItemPage(QWidget):
             self.consumable_kind.setCurrentIndex(selected_kind)
             self.consumable_pages.setCurrentIndex(selected_kind)
             self.recovery_controls()
+        elif category == 22:
+            self.forge_panel.load(document)
         elif category == 21:
             combo=self.ammo_policy_field.widget;combo.blockSignals(True);combo.clear()
             for row in catalog.Catalog(self.packet).tables['item_ammo_policy']:
@@ -2428,6 +2432,8 @@ class ItemPage(QWidget):
             self.tool_panel.collect(document)
         elif category == 12:
             self.fishing_panel.collect(document)
+        elif category == 22:
+            self.forge_panel.collect(document)
         elif category in (19,20):
             (self.regalia_panel if category==19 else self.special_bonus_panel).collect(document)
         elif category == 4:

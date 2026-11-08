@@ -61,16 +61,16 @@ std::expected<void, RefinementRecipeError> ValidateRefinementRecipe(const Refine
     return {};
 }
 
-std::expected<RefinementPlan, RefinementUseError> PrepareRefinement(
-    const ItemCatalog& catalog, std::uint32_t recipeId, const RefinementUseContext& context,
+std::expected<RefinementPlan, RefinementUseError> PrepareRefinementRecipe(
+    const ItemCatalog& catalog, const RefinementRecipe& effective, const RefinementUseContext& context,
     const RefinementItemSnapshot& source, std::span<const RefinementItemSnapshot> inventory, std::uint16_t recordedRoll)
 {
     if (!context.allowedByRules) return std::unexpected(RefinementUseError::Forbidden);
     if (!context.actorId || !context.walletRevision || context.walletRevision == (std::numeric_limits<std::uint64_t>::max)() ||
         context.gold > MaxGold || std::ranges::all_of(context.operationId, [](auto byte) { return byte == 0; }))
         return std::unexpected(RefinementUseError::InvalidContext);
-    const auto* recipe = catalog.FindRefinementRecipe(recipeId);
-    if (!recipe) return std::unexpected(RefinementUseError::MissingRecipe);
+    const auto* recipe=&effective;
+    if(!ValidateRefinementRecipe(effective,catalog))return std::unexpected(RefinementUseError::MissingRecipe);
     const auto maxRevision = (std::numeric_limits<std::uint64_t>::max)();
     if (!source.instanceId || !source.revision || source.revision == maxRevision || source.ownerId != context.actorId ||
         source.key != recipe->source || source.refinementLevel != recipe->sourceLevel || source.count != 1 || source.locked)
@@ -101,7 +101,7 @@ std::expected<RefinementPlan, RefinementUseError> PrepareRefinement(
     std::ranges::sort(sorted, {}, [](auto* row) { return row->instanceId; });
     for (std::size_t i = 1; i < sorted.size(); ++i)
         if (sorted[i-1]->instanceId == sorted[i]->instanceId) return std::unexpected(RefinementUseError::InvalidInventory);
-    RefinementPlan plan {context.operationId, catalog.Revision(), catalog.ContentHash(), recipeId,
+    RefinementPlan plan {context.operationId, catalog.Revision(), catalog.ContentHash(), recipe->id,
         context.actorId, source.instanceId, source.revision, context.walletRevision, context.gold, recipe->goldCost,
         source.key, source.refinementLevel, {}, {}, false, recordedRoll, {}};
     for (const auto& ingredient : recipe->ingredients)
@@ -126,5 +126,8 @@ std::expected<RefinementPlan, RefinementUseError> PrepareRefinement(
         plan.resultLevel = recipe->failure == RefinementFailure::Keep ? source.refinementLevel : *recipe->failureLevel;
     }
     return plan;
+}
+std::expected<RefinementPlan,RefinementUseError> PrepareRefinement(const ItemCatalog& c,std::uint32_t id,const RefinementUseContext& ctx,const RefinementItemSnapshot& source,std::span<const RefinementItemSnapshot> all,std::uint16_t roll){
+    if(!ctx.allowedByRules)return std::unexpected(RefinementUseError::Forbidden);const auto* r=c.FindRefinementRecipe(id);if(!r)return std::unexpected(RefinementUseError::MissingRecipe);return PrepareRefinementRecipe(c,*r,ctx,source,all,roll);
 }
 } // namespace auriga::item

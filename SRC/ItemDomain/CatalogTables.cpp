@@ -102,6 +102,8 @@ constexpr std::array<TableSpec, TableCount> Specs {{
     {Table::BonusTools,"item_bonus_tool","category_id,local_id,operation_kind,units,parameter,bonus_id,value_scaled",Items},
     {Table::SpecialBonusTiers,"special_bonus_tier","category_id,local_id,draw_no,tier,chance_bp",Items*48},
     {Table::Ammunition,"item_ammo","category_id,local_id,ammo_policy_id",Items},
+    {Table::ForgeAids,"item_forge_aid","category_id,local_id,aid_kind,units,target_mask,minimum_level,maximum_level,chance_mode,chance_bp,failure_kind,booster_group",Items},
+    {Table::ForgeLevels,"forge_aid_level","category_id,local_id,source_level,chance_bp",Items*256},
 }};
 static_assert([] { for (std::size_t i = 0; i < Specs.size(); ++i) if (static_cast<std::size_t>(Specs[i].table) != i) return false; return true; }());
 }

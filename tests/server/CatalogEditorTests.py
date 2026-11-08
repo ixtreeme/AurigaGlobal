@@ -114,6 +114,15 @@ def attribute_service(document,operation='1',pool='1'):
 
 
 class OfflineModelTests(unittest.TestCase):
+    def test_all_forge_presets_round_trip_and_clone(self):
+        packet=catalog.blank(TOOL)
+        for preset in ('blessing','metal','dragon_god','smith_book','musin','memo','black_dragon','low','medium','high'):
+            editor=catalog.Catalog(packet);d=editor.new(22);d['child'].update(editor.forge_defaults(preset)[0]);d['forge_levels']=editor.forge_defaults(preset)[1]
+            catalog.validate(packet,d,None,TOOL);key=key_of(d);packet=saved(packet,editor.apply(d),key)
+            loaded=catalog.Catalog(packet).item(key);self.assertEqual(loaded['forge_levels'],d['forge_levels']);self.assertEqual(loaded['child'],d['child'])
+            clone=catalog.Catalog(packet).duplicate(key);catalog.validate(packet,clone,None,TOOL)
+        self.assertEqual(len(rows(packet,'item_forge_aid')),10)
+
     def test_instance_attribute_profiles_services_and_copy(self):
         packet,key=create(catalog.blank(TOOL),1,attributes);self.check(packet);original=catalog.Catalog(packet).item(key)
         clone=catalog.Catalog(packet).duplicate(key);clone['attribute_values'][0]['value_scaled']='3500';other=key_of(clone)
@@ -355,7 +364,7 @@ class OfflineModelTests(unittest.TestCase):
 
     def test_blank_registry_is_a_valid_empty_catalog(self):
         self.assertEqual(self.check(self.blank), self.blank['hash'])
-        self.assertEqual(set(self.blank['sequences']), {str(i) for i in range(1, 22)})
+        self.assertEqual(set(self.blank['sequences']), {str(i) for i in range(1, 23)})
         self.assertEqual(len(self.blank['bonuses']), len(rows(self.blank, 'bonus_definition')))
 
     def test_every_editable_category_starts_with_a_valid_document(self):
@@ -1016,6 +1025,13 @@ class PageCase(unittest.TestCase):
         return packet, keys
 
 class EditorPageTests(PageCase):
+    def test_forge_table_form_round_trip(self):
+        packet,key=create(catalog.blank(TOOL),22);self.page.loaded(packet,key);panel=self.page.forge_panel
+        panel.preset.setCurrentIndex(panel.preset.findData('dragon_god'));panel.seed();self.assertEqual(panel.rows.rowCount(),256)
+        fields={f.column:f for f in panel.form.fields};fields['maximum_level'].edit.setText('30');panel.fit_levels();self.assertEqual(panel.rows.rowCount(),31)
+        panel.rows.item(9,1).setText('12.34');d=self.page.collect();self.assertEqual(d['forge_levels'][9]['chance_bp'],'1234');catalog.validate(packet,d,key,TOOL)
+        panel.preset.setCurrentIndex(panel.preset.findData('high'));panel.seed();d=self.page.collect();self.assertEqual(d['child']['booster_group'],'3');self.assertEqual(d['forge_levels'],[]);catalog.validate(packet,d,key,TOOL);self.page.dirty=False
+
     def test_ammunition_policy_form_round_trip(self):
         packet= catalog.blank(TOOL)
         def bow(d):d['child']['weapon_subtype']='3';d['ammo'].update(ammo_kind='2',units_per_hit='2')
@@ -2320,7 +2336,7 @@ class SqlCommitTests(unittest.TestCase):
             document = catalog.Catalog(packet).new(category)
             packet = self.commit(packet, document)
             created[category] = key_of(document)
-        self.assertEqual(packet['sequences'], {**{str(i): '1' for i in range(1, 22)}, **{str(c): '2' for c in catalog.CATEGORIES}})
+        self.assertEqual(packet['sequences'], {**{str(i): '1' for i in range(1, 23)}, **{str(c): '2' for c in catalog.CATEGORIES}})
         stale = packet
         document = catalog.Catalog(packet).item(created[1])
         document['base']['name_key'] = 'item.sword.renamed'

@@ -97,4 +97,7 @@ std::expected<RefinementPlan, RefinementUseError> PrepareRefinement(
     const ItemCatalog&, std::uint32_t recipeId, const RefinementUseContext&,
     const RefinementItemSnapshot& source, std::span<const RefinementItemSnapshot> inventory,
     std::uint16_t recordedRoll);
+std::expected<RefinementPlan,RefinementUseError> PrepareRefinementRecipe(
+    const ItemCatalog&,const RefinementRecipe&,const RefinementUseContext&,
+    const RefinementItemSnapshot&,std::span<const RefinementItemSnapshot>,std::uint16_t recordedRoll);
 } // namespace auriga::item

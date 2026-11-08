@@ -65,8 +65,9 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
             }
         if(keys.size()>65535 || states.size()>65535 || recipes.size()>65535) throw TooLarge{};
         const bool wide=std::ranges::any_of(keys,[&](auto key){const auto* e=c.Find(key);const auto* r=e ? std::get_if<ItemConsumableRow>(&e->category) : nullptr;const auto* p=r ? c.FindRecovery(r->recoveryProfile) : nullptr;return (e && (PetHatchAction(c,*e) || std::holds_alternative<ItemToolRow>(e->category) || std::holds_alternative<ItemFishingRow>(e->category) || std::holds_alternative<ItemPolymorphRow>(e->category) || std::holds_alternative<ItemSkillBookRow>(e->category))) || (r && (r->bookAidProfile || r->attributeServiceProfile || r->timedEffectProfile || r->toggleEffectProfile || (p && (p->Data().Delivery()==RecoveryDelivery::Reserve || p->Data().Delivery()==RecoveryDelivery::Periodic || p->Data().Delivery()==RecoveryDelivery::Automatic))));});
-        const bool special=std::ranges::any_of(keys,[](auto key){return key.Category()==ItemCategory::Soul || key.Category()==ItemCategory::Regalia || key.Category()==ItemCategory::BonusTool;});
-        Writer w; w.Put(TypedItemDetailsHeader,1); w.Put(0,4); w.Put(special ? 3 : wide ? 2 : 1,1); w.Put(c.Revision(),8);
+        const bool forge=std::ranges::any_of(keys,[](auto key){return key.Category()==ItemCategory::ForgeAid;});
+        const bool special=forge || std::ranges::any_of(keys,[](auto key){return key.Category()==ItemCategory::Soul || key.Category()==ItemCategory::Regalia || key.Category()==ItemCategory::BonusTool;});
+        Writer w; w.Put(TypedItemDetailsHeader,1); w.Put(0,4); w.Put(forge ? 4 : special ? 3 : wide ? 2 : 1,1); w.Put(c.Revision(),8);
         for(auto b:c.ContentHash()) w.Put(b,1);
         w.Put(keys.size(),2);
         for(auto key:keys)
@@ -108,6 +109,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
             if(const auto* costume=std::get_if<ItemCostumeRow>(&entry->category))slot=CostumeSlot(costume->kind);
             if(const auto* r=std::get_if<ItemRegaliaRow>(&entry->category))slot=RegaliaSlot(*r);
             if(key.Category()==ItemCategory::Regalia || key.Category()==ItemCategory::BonusTool)actions|=TypedActionSpecialBonus;
+            if(key.Category()==ItemCategory::ForgeAid)actions|=TypedActionForge;
             if(key.Category()==ItemCategory::Soul)actions|=TypedActionSoul;
             if(std::holds_alternative<ItemAmmoRow>(entry->category))slot=20;
             if(slot && slot<=20) actions|=TypedActionEquip;

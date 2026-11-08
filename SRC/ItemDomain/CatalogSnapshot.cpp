@@ -237,6 +237,8 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
         Parent(s.refinementRecipes,recipes,r).ingredients.push_back({r.Key(1),r.U16(3),r.U32(4)});
     });
     Each(source,Table::QuestItems,[&](const Reader& r){s.questItems.push_back({r.Key(),static_cast<QuestItemDispatch>(r.U8(2)),r.Text(3,96),r.U8(4),r.Bool(5)});});
+    Each(source,Table::ForgeAids,[&](const Reader& r){s.forgeAids.push_back({r.Key(),static_cast<ForgeAidKind>(r.U8(2)),r.U16(3),r.U8(4),r.U16(5),r.U16(6),static_cast<ForgeChance>(r.U8(7)),r.U16(8),static_cast<ForgeFailure>(r.U8(9)),r.U8(10),{}});});
+    Each(source,Table::ForgeLevels,[&](const Reader& r){auto i=std::ranges::find(s.forgeAids,r.Key(),&ItemForgeAidRow::key);if(i==s.forgeAids.end())r.Fail(ReadErrorCode::OrphanRow);i->levels.push_back({r.U16(2),r.U16(3)});});
     Each(source,Table::Ammunition,[&](const Reader& r){s.ammunition.push_back({r.Key(),r.U32(2)});});
     Each(source,Table::Regalia,[&](const Reader& r){s.regalia.push_back({r.Key(),static_cast<RegaliaKind>(r.U8(2)),r.U8(3),r.U8(4),r.U64(5),r.U64(6),{}});});
     Each(source,Table::RegaliaRules,[&](const Reader& r){auto i=std::ranges::find(s.regalia,r.Key(),&ItemRegaliaRow::key);if(i==s.regalia.end())r.Fail(ReadErrorCode::OrphanRow);i->rules.push_back({r.U8(2),r.U8(4),r.U16(3),{static_cast<BonusId>(r.U32(5)),r.I64(6)}});});

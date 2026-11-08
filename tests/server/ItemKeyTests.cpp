@@ -120,7 +120,7 @@ void CategoriesAndBoundaries()
             Check(!result && result.error() == ItemKeyError::ReservedBits, "reserved high bits never truncated");
         }
     }
-    Check(known.size() == 21 && known.contains(1) && known.contains(21), "v1 draft registry fixture");
+    Check(known.size() == 22 && known.contains(1) && known.contains(22), "v1 draft registry fixture");
     for (std::uint32_t category = 0; category <= std::numeric_limits<std::uint16_t>::max(); ++category)
     {
         if (known.contains(static_cast<std::uint16_t>(category))) continue;

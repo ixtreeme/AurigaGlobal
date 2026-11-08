@@ -183,6 +183,7 @@ CPacketInfoCG::CPacketInfoCG()
     Set(HEADER_CG_TYPED_TOKEN_REDEMPTION, sizeof(TPacketCGTypedTokenRedemption), "TypedTokenRedemption", true);
     Set(HEADER_CG_TYPED_SOCKET_MAINTENANCE, sizeof(TPacketCGTypedSocketMaintenance), "TypedSocketMaintenance", true);
     Set(HEADER_CG_TYPED_SPECIAL_BONUSES, 28, "TypedSpecialBonuses", true);
+    Set(HEADER_CG_TYPED_FORGE,58,"TypedForge",true);
     Set(HEADER_CG_TYPED_SOUL, 28, "TypedSpecialBonuses", true);
     Set(HEADER_CG_TYPED_ATTRIBUTES, sizeof(TPacketCGTypedAttributes), "TypedAttributes", true);
     Set(HEADER_CG_TYPED_EFFECTS,sizeof(TPacketCGTypedRecovery),"TypedEffects",true);

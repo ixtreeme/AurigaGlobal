@@ -29,7 +29,7 @@ commitok és jelentések adják.
 | 4. C29 — elkészült | Hat bónuszos stóla, hét rúna, részleges töltés, jelmezreset/ritka donor/törlés, kapcsolt addon | Tartós példányállapot, külön szerver/Unity-művelet, stat- és modell-/effektút. [Jelentés](2026-11-07_regalia_special_bonuses.md), [IC-064](../../adr/item_combat_064_regalia_special_bonuses.md). Az önálló Acce-elnyelés és a teljes APPLY-konverzió ettől külön feladat. |
 | 5. C30 — elkészült | Önálló vörös/kék lélektárgyak töltése, fejlesztése, aktiválása és elfogadott találathoz kötött egyszeri fogyása | Szerver/Unity runtime, SQL-event egyediség, valódi normál- és skilltalálat, 343+91 élő ellenőrzés, újrabelépés és szerverrestart. [Jelentés](2026-11-07_soul_runtime.md), [IC-065](../../adr/item_combat_065_soul_runtime.md). |
 | 6. C31 — elkészült | Típusos íj és lőszer, felszerelés, elfogadott normál-/képesség-/PvP-lövéshez kötött fogyás és automatikus tartalék | Közös szerver/Unity-út, lőszer/lélek együttes SQL-írás, 274 élő ellenőrzés és négy újrabelépés. [Jelentés](2026-11-08_typed_ammunition.md), [IC-066](../../adr/item_combat_066_typed_ammunition.md). |
-| 7. További fejlesztési segédek | A még hiányzó kovácssegéd-utak végigvezetése | A könyvsegéd nem általános kovácssegéd; a receptalap önmagában nem jelenti az összes segédtárgy játékbeli műveletét. |
+| 7. C32 — elkészült | Hét fejlesztőtekercs-család és három esélynövelő csoport, közös előnézettel és tartós megerősítéssel | Szerver/Unity-bekötés, típusos szerkesztő, 11 élő eset, 516 ellenőrzés és négy újrabelépés. [Jelentés](2026-11-08_typed_forge_aids.md), [IC-067](../../adr/item_combat_067_typed_forge_aids.md). |
 | 8. Fiókpénztárca és további tárolók | Fiókszintű valuta, typed bank/mall/céh/levél tárgyutak és kapcsolódó gazdasági műveletek | A modell tároló-/tulajdonostípusa önmagában nem játékbeli bekötés. A jelenlegi typed item-hálózati kezelőkben ezeknek nincs végigvezetett kliensművelete; a fiókpénztárcát az IC-034 is nyitottnak jelöli. |
 | 9. Mission és quest | Az általános Mission-események, tárgykövetelmények/jutalmak és Lua-questek teljes typed átállítása | A C12 az NPC-s tárgyleadó tranzakciót készítette el. A teljes missziórendszer ettől még külön, nagyobb munka. |
 | 10. Teljes tartalom- és karakterkonverzió | Prototípusok, példányok, receptek, droppok, boltok és minden hivatkozás egyszeri konverziója; régi tárgyút kivezetése | A konverteralap és auditok megvannak; a normál legacy leltár átállítását a felhasználó korábban későbbre kérte. Nem kapcsoljuk át e részfeladat mellékhatásaként. |
@@ -46,5 +46,5 @@ játékfunkciónak.
 
 Az első kiválasztott rész a C27a. Eredménye és pontos próbahatóköre a
 [hátasjelentésben](2026-11-07_typed_mount_riding.md) szerepel.
-A C27b, C28, C29, C30 és C31 is elkészült; a lőszer életciklusa lezárt.
-A következő nyitott munkacsomag a további fejlesztési segédek bekötése.
+A C27b, C28, C29, C30, C31 és C32 is elkészült; a további kovácssegédek is be vannak kötve.
+A következő nyitott munkacsomag a fiókpénztárca és a további tárolók játékbeli bekötése.

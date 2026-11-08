@@ -20,12 +20,12 @@ import sys
 
 import backend as api
 
-CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 4: 'Kosztüm', 5: 'Fogyasztható', 6: 'Alapanyag', 7: 'Foglalatkő', 8: 'Tároló', 9: 'Képességkönyv', 10: 'Küldetéstárgy', 11: 'Eszköz', 12: 'Hal és csali', 13: 'Átváltozás', 14: 'Lélek és lélektekercs', 15: 'Pet és mount hívó', 16: 'Pénzjegy', 17: 'Különleges petellátmány', 18: 'Kulcs',19:'Stóla és rúna',20:'Speciális bónusztárgy',21:'Lőszer'}
+CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 4: 'Kosztüm', 5: 'Fogyasztható', 6: 'Alapanyag', 7: 'Foglalatkő', 8: 'Tároló', 9: 'Képességkönyv', 10: 'Küldetéstárgy', 11: 'Eszköz', 12: 'Hal és csali', 13: 'Átváltozás', 14: 'Lélek és lélektekercs', 15: 'Pet és mount hívó', 16: 'Pénzjegy', 17: 'Különleges petellátmány', 18: 'Kulcs',19:'Stóla és rúna',20:'Speciális bónusztárgy',21:'Lőszer',22:'Kovácssegéd és fejlesztőtekercs'}
 CHILD_TABLES = {1: 'item_weapon', 2: 'item_armor', 3: 'item_accessory', 4: 'item_costume', 5: 'item_consumable', 6: 'item_material',
-                7: 'item_socket_stone', 8: 'item_container', 9: 'item_skill_book', 10: 'item_quest', 11: 'item_tool', 12: 'item_fishing', 13: 'item_polymorph', 14: 'item_soul', 15: 'item_companion', 16: 'item_currency_token', 17: 'item_special', 18: 'item_container_key',19:'item_regalia',20:'item_bonus_tool',21:'item_ammo'}
+                7: 'item_socket_stone', 8: 'item_container', 9: 'item_skill_book', 10: 'item_quest', 11: 'item_tool', 12: 'item_fishing', 13: 'item_polymorph', 14: 'item_soul', 15: 'item_companion', 16: 'item_currency_token', 17: 'item_special', 18: 'item_container_key',19:'item_regalia',20:'item_bonus_tool',21:'item_ammo',22:'item_forge_aid'}
 CODE_PREFIX = {1: 'weapon', 2: 'armor', 3: 'accessory', 4: 'costume', 5: 'consumable', 6: 'material', 8: 'container', 9: 'skill_book', 10: 'quest', 11: 'tool', 12: 'fishing', 13: 'polymorph', 14: 'soul', 15: 'companion',
-               7: 'socket_stone', 16: 'currency_token', 17: 'special', 18: 'container_key',19:'regalia',20:'bonus_tool',21:'ammo'}
-STACKABLE = (5, 6, 7, 8, 9, 10, 12, 13, 14, 16, 17, 18, 20, 21)
+               7: 'socket_stone', 16: 'currency_token', 17: 'special', 18: 'container_key',19:'regalia',20:'bonus_tool',21:'ammo',22:'forge_aid'}
+STACKABLE = (5, 6, 7, 8, 9, 10, 12, 13, 14, 16, 17, 18, 20, 21, 22)
 LOOT_FIELDS = ['entry_no', 'reward_kind', 'item_category_id', 'item_local_id', 'amount', 'weight', 'rare_attribute_chance_bp']
 REFINEMENT_KIND = {1: 2, 2: 3, 3: 4, 4: 6, 7: 5, 11: 7, 15: 9}
 EFFECT_TABLES = {1: 'instant_recovery_profile', 2: 'reserve_recovery_profile', 3: 'periodic_recovery_profile', 4: 'automatic_recovery_profile'}
@@ -138,6 +138,7 @@ class Catalog:
         result['recipes'] = self.recipes_of(key)
         result['pet_food_rules']=[{k:v for k,v in r.items() if k not in ('category_id','local_id')} for r in sorted(self.tables['pet_feed_rule'],key=lambda r:int(r['service_kind'])) if (int(r['category_id']),int(r['local_id']))==tuple(key)]
         if category==8:result['hatch']=self.linked('pet_hatch_profile',child,'hatch_profile_id')
+        if category==22:result['forge_levels']=[{k:v for k,v in r.items() if k not in ('category_id','local_id')} for r in self.tables['forge_aid_level'] if (int(r['category_id']),int(r['local_id']))==tuple(key)]
         if category==19:result['regalia_rules']=[{k:v for k,v in r.items() if k not in ('category_id','local_id')} for r in self.tables['regalia_bonus_rule'] if (int(r['category_id']),int(r['local_id']))==tuple(key)]
         if category==20:result['special_tiers']=[{k:v for k,v in r.items() if k not in ('category_id','local_id')} for r in self.tables['special_bonus_tier'] if (int(r['category_id']),int(r['local_id']))==tuple(key)]
         if category == 4:
@@ -314,6 +315,8 @@ class Catalog:
         if category==19:
             item['child'].update(regalia_kind='1',rune_slot='0',stole_grade='1',capacity_ms='0',initial_ms='0')
             item['regalia_rules']=[dict(bonus_index=str(j),variant_no=str(v),minimum_charge_bp='0',bonus_id=str(bonus),value_scaled=str((v+1)*(1000 if bonus<=4 else 1))) for j,bonus in enumerate((29,30,31,32,1,3)) for v in range(4)]
+        if category==22:
+            item['child'].update(self.forge_defaults()[0]);item['forge_levels']=[]
         if category==21:
             policies=[r for r in self.tables['item_ammo_policy'] if r['ammo_kind']=='2']
             item['child']['ammo_policy_id']=policies[0]['policy_id'] if policies else None
@@ -595,6 +598,7 @@ class Catalog:
             self.replace('item_costume_visual', {'category_id': base['category_id'], 'local_id': base['local_id']},
                          [dict(v, category_id=base['category_id'], local_id=base['local_id']) for v in document['visuals']])
         self.replace(CHILD_TABLES[category], {'category_id': key[0], 'local_id': key[1]}, [child])
+        if category==22:self.replace('forge_aid_level',{'category_id':key[0],'local_id':key[1]},[dict(r,category_id=str(key[0]),local_id=str(key[1])) for r in document['forge_levels']])
         if category==19:self.replace('regalia_bonus_rule',{'category_id':key[0],'local_id':key[1]},[dict(r,category_id=str(key[0]),local_id=str(key[1])) for r in document['regalia_rules']])
         if category==20:self.replace('special_bonus_tier',{'category_id':key[0],'local_id':key[1]},[dict(r,category_id=str(key[0]),local_id=str(key[1])) for r in document['special_tiers']])
         self.replace('pet_feed_rule',{'category_id':key[0],'local_id':key[1]},
@@ -603,6 +607,19 @@ class Catalog:
         if 'recipes' in document or base.get('retired') == '1': self.apply_recipes(document, key, exists)
         self.prune(before)
         return self.encode()
+
+    @staticmethod
+    def forge_defaults(preset='blessing'):
+        row=dict(aid_kind='1',units='1',target_mask='7',minimum_level='0',maximum_level='255',chance_mode='1',chance_bp='0',failure_kind='3',booster_group='0');levels=[]
+        if preset=='metal':row['failure_kind']='2'
+        elif preset in ('dragon_god','smith_book'):
+            row['chance_mode']='4';rates=[10000,7500,6500,5500,4500,4000,3500,2500,2000] if preset=='dragon_god' else [10000,10000,9000,8000,7000,6000,5000,3000,2000]
+            levels=[dict(source_level=str(level),chance_bp=str(rates[min(level,8)])) for level in range(256)]
+        elif preset in ('musin','memo'):row.update(chance_mode='2',chance_bp='10000',failure_kind='1');row['maximum_level']='0' if preset=='memo' else '255'
+        elif preset=='black_dragon':row.update(target_mask='8',minimum_level='4',maximum_level='4',chance_mode='2',chance_bp='8000')
+        elif preset in ('low','medium','high'):
+            group=('low','medium','high').index(preset)+1;row.update(aid_kind='2',chance_mode='3',chance_bp=str(group*500),failure_kind='0',booster_group=str(group))
+        return row,levels
 
     @staticmethod
     def attribute_defaults():

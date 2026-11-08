@@ -12,6 +12,7 @@ import backend as api
 
 
 CATEGORY_HELP = {
+    22: ('Használható tárgy','Fejlesztőtekercs vagy három csoportba sorolt kovácssegéd, közös megerősítéssel és pontos fogyással.'),
     21: ('Felszerelés','Íjhoz illő, halmozható lőszer. Elfogadott lövéskor fogy, azonos tartalék automatikusan felszerelődik.'),
     1: ('Felszerelés', 'Fizikai vagy mágikus támadást ad. Beállítható fegyvertípus, hatótáv, bónusz és fejlesztés.'),
     2: ('Felszerelés', 'Testpáncél, sisak, pajzs vagy cipő. Védekezés, ellenállások és fejlesztési szintek.'),
@@ -50,7 +51,7 @@ TYPE_SECTION = {1: 'Fegyver és támadás', 2: 'Páncél és ellenállások', 3:
     7: 'Kő és behelyezés', 8: 'Nyitás és jutalmak', 9: 'Képességtanulás',
     10: 'Küldetéskezelés', 11: 'Eszköz és fejlődés', 12: 'Hal, csali és feldolgozás',
     13: 'Átváltozási hatás', 14: 'Lélek és fejlesztés', 15: 'Pet vagy hátas',
-    16: 'Beváltás és érték', 17: 'Petellátmány hatása', 18: 'Kulcs és zárazonosító',19:'Stóla és rúna',20:'Speciális bónuszművelet',21:'Lőszer és kompatibilitás'}
+    16: 'Beváltás és érték', 17: 'Petellátmány hatása', 18: 'Kulcs és zárazonosító',19:'Stóla és rúna',20:'Speciális bónuszművelet',21:'Lőszer és kompatibilitás',22:'Kovácssegéd és sikeresség'}
 SUBTYPES = {
     1: ('weapon_subtype', [('1', 'Kard'), ('2', 'Tőr'), ('3', 'Íj'), ('4', 'Kétkezes fegyver'), ('5', 'Csengő'), ('6', 'Legyező'), ('7', 'Lovas lándzsa')]),
     2: ('equip_slot', [('2', 'Testpáncél'), ('3', 'Sisak'), ('4', 'Pajzs'), ('5', 'Cipő')]),
