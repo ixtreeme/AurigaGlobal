@@ -136,7 +136,9 @@ std::expected<void,std::string> LoadTypedShops(const std::string& file)
 bool TryOpenTypedShop(entt::entity character,entt::entity npc)
 {
     if(!g_registry.valid(character) || !g_registry.valid(npc) || !g_registry.all_of<ecs::TypedItems>(character))return false;
-    const auto race=ecs::PlayerRuntime::GetRaceNum(npc);if(!shops.contains(race))return false;
+    const auto race=ecs::PlayerRuntime::GetRaceNum(npc);
+    // A native owner must not enter a legacy shop when this NPC has no native stock.
+    if(!shops.contains(race)){Reply(character,Status::Denied);return true;}
     if(!Admitted(character,false) || !InRange(character,npc) || g_registry.all_of<ecs::TypedItemBusy>(character))
     {Reply(character,Status::Denied);return true;}
     const auto permission=ecs::resource_admission::Enter({character},auriga::resource_admission::Operation::Shop);

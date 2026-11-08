@@ -22,7 +22,7 @@ def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('action',choices=('seed','verify','restore'))
  for name in ('package','fixture'):p.add_argument('--'+name,type=Path,required=True)
  for name in ('template','log'):p.add_argument('--'+name,type=Path)
- p.add_argument('--progression',action='store_true');a=p.parse_args();assert a.fixture.resolve().is_relative_to(REPO/'build');root,manager,owned,auth=item_bench.connection(a.package.resolve());db=Client(**auth,library=str(root/'bin/libmariadb.dll'));os.environ['PATH']=str(root/'bin')+os.pathsep+os.environ['PATH']
+ p.add_argument('--progression',action='store_true');p.add_argument('--nexoria',action='store_true');a=p.parse_args();assert a.fixture.resolve().is_relative_to(REPO/'build');root,manager,owned,auth=item_bench.connection(a.package.resolve());db=Client(**auth,library=str(root/'bin/libmariadb.dll'));os.environ['PATH']=str(root/'bin')+os.pathsep+os.environ['PATH']
  try:
   if a.action=='restore':
    c=read(a.fixture);backup=Path(c['Backup'])
@@ -65,7 +65,8 @@ def main():
    assert not backend.describe(root)['running'];backup=root/'run/deployments'/datetime.now(timezone.utc).strftime('c34-fixture-%Y%m%dT%H%M%S%f');backup.mkdir();write(backup/'typed-before.json',protected(db));write(backup/'mission-before.json',other_missions(db))
    with (backup/'player-protos-mission-before.sql').open('wb') as out:
     result=subprocess.run([str(Path(owned['binary_dir'])/'mariadb-dump.exe'),'--defaults-extra-file='+str(root/'run/mariadb/admin.cnf'),'--protocol=tcp','--host=127.0.0.1','--port='+str(owned['port']),'--single-transaction','--databases','player','protos','mission'],stdout=out,stderr=subprocess.PIPE,creationflags=item_bench.NO_WINDOW,timeout=300);assert result.returncode==0 and out.tell()>0
-   token=secrets.token_hex(4);c={k:template[k] for k in ('Host','ServerName','Pin','Version','AuthPort','GamePort','PetLocal','MountLocal','PetRace','MountRace')};c.update(Token=token,Accounts=[],Mission=True,MissionProgression=a.progression,Backup=str(backup),MissionNpcRace=9003,InstalledFiles=[])
+   token=secrets.token_hex(4);c={k:template[k] for k in ('Host','ServerName','Pin','Version','AuthPort','GamePort','PetLocal','MountLocal','PetRace','MountRace')};c.update(Token=token,Accounts=[],Mission=True,MissionProgression=a.progression,Nexoria=a.nexoria,Backup=str(backup),MissionNpcRace=9003,InstalledFiles=[])
+   if a.nexoria:c['Host']=read(root/'server.json')['game_defaults']['network']['bind_ip']
    catalog_tool=root/'manager/_internal/validators/CatalogEditorTool.exe';bench=root/'manager/_internal/validators/ItemBenchTool.exe';initial=item_catalog.run_tool(dict(action='read',connection=auth),executable=catalog_tool);editor=item_catalog.Catalog(initial);published=initial
    for label in ('MissionMaterialLocal','MissionRewardLocal'):
     d=editor.new(6);local=int(d['base']['local_id']);code='mission.c34_'+token+'_'+label.lower();d['base'].update(content_code=code,name_key='item.'+code+'.name',description_key='item.'+code+'.description');tables=editor.apply(d);editor.packet['sequences']['6']=str(local+1);item_catalog.run_tool(dict(action='commit',connection=auth,tables=tables,expected_hash=published['hash']),initial['columns'],catalog_tool);published=item_catalog.run_tool(dict(action='read',connection=auth),executable=catalog_tool);c[label]=local

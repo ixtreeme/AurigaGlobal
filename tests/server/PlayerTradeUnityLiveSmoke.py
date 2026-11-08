@@ -15,6 +15,7 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / 'SRC/Tools/ServerManager'))
 sys.path.insert(0, str(REPO / 'db/tools'))
 import item_bench
+from CompanionUnityLiveSmoke import validate_local_host
 from mariadb_client import Client
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -28,7 +29,7 @@ package = args.package.resolve(); project = args.unity_project.resolve()
 fixture = args.fixture.resolve(); helper = args.bench_tool.resolve()
 config = json.loads(fixture.read_text(encoding='utf-8'))
 token = config['Token']; accounts = config['Accounts']
-assert config['Host'] == '127.0.0.1' and len(accounts) == 2
+validate_local_host(package, config['Host'], config.get('Nexoria',False));assert len(accounts) == 2
 assert len(token) == 8 and all(c in '0123456789abcdef' for c in token)
 _, _, _, auth = item_bench.connection(package)
 db = Client(**auth, library=str(package / 'bin/libmariadb.dll'))
@@ -47,6 +48,7 @@ for phase in range(2):
         marker.unlink(missing_ok=True)
 backup = package / 'run/item-trade-live' / datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S')
 backup.mkdir(parents=True)
+request.parent.mkdir(parents=True,exist_ok=True)
 request.write_text(json.dumps(dict(Mode='trade-live', ConfigPath=str(fixture))), encoding='utf-8')
 print('Requested two-client player trade live validation in open Editor', flush=True)
 done = set(); started = time.monotonic()

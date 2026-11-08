@@ -5,7 +5,7 @@
 #include <entt/entity/fwd.hpp>
 
 std::expected<void,std::string> LoadTypedShops(const std::string& file);
-// False only when the NPC has no typed listing (the legacy caller may continue).
+// Legacy callers may continue only for characters without a loaded native owner.
 bool TryOpenTypedShop(entt::entity character,entt::entity npc);
 void CloseTypedShop(entt::entity character);
 void TickTypedShops();

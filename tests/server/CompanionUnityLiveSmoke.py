@@ -3,6 +3,11 @@ from pathlib import Path
 import argparse,hashlib,json,socket,ssl,subprocess,sys,time
 
 REPO=Path(__file__).resolve().parents[2]
+
+def validate_local_host(package, host, nexoria=False):
+    local_addresses={r[4][0] for r in socket.getaddrinfo(socket.gethostname(),None,socket.AF_INET)}
+    owned_config=json.loads((package.resolve()/'server.json').read_text(encoding='utf-8'))
+    assert host=='127.0.0.1' or nexoria and host in local_addresses and host==owned_config['game_defaults']['network']['bind_ip'], 'Only the owned local endpoint is allowed'
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--mode',choices=('offline','live'),required=True)
@@ -19,8 +24,8 @@ def main():
     if args.mode=='live':
         assert args.fixture
         config=json.loads(args.fixture.read_text(encoding='utf-8-sig'))
-        assert config['Host']=='127.0.0.1' and len(config['Accounts'])==2
-        assert all(a['Login']=='codexcompanion'+config['Token']+str(i) for i,a in enumerate(config['Accounts']))
+        host=config['Host'];validate_local_host(args.package,host,config.get('Nexoria',False));assert len(config['Accounts'])==2
+        assert all(a['Login']==('codexitem' if config.get('NexoriaBasic') else 'codexcompanion')+config['Token']+str(i) for i,a in enumerate(config['Accounts']))
         sys.path.insert(0,str(REPO/'SRC/Tools/ServerManager'))
         import item_bench
         item_bench.connection(args.package.resolve())
@@ -34,7 +39,7 @@ def main():
         for port in (config['AuthPort'],config['GamePort']):
             while True:
                 try:
-                    with socket.create_connection(('127.0.0.1',int(port)),timeout=2) as raw:
+                    with socket.create_connection((host,int(port)),timeout=2) as raw:
                         with readiness.wrap_socket(raw,server_hostname=config['ServerName']) as tls:
                             assert hashlib.sha256(tls.getpeercert(binary_form=True)).hexdigest()==expected_pin,'Owned TLS endpoint certificate mismatch'
                     break
@@ -63,5 +68,7 @@ def main():
         print('COMPANION_UNITY_VALIDATION=SUCCESS mode='+args.mode,flush=True)
     finally:
         if process.poll() is None:process.terminate();process.wait(timeout=30)
+        if request.exists() and request.read_text(encoding='utf-8')==payload:
+            request.unlink()
 
 if __name__=='__main__':main()
