@@ -20,12 +20,12 @@ import sys
 
 import backend as api
 
-CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 4: 'Kosztüm', 5: 'Fogyasztható', 6: 'Alapanyag', 7: 'Foglalatkő', 8: 'Tároló', 9: 'Képességkönyv', 10: 'Küldetéstárgy', 11: 'Eszköz', 12: 'Hal és csali', 13: 'Átváltozás', 14: 'Lélek és lélektekercs', 15: 'Pet és mount hívó', 16: 'Pénzjegy', 17: 'Különleges petellátmány', 18: 'Kulcs',19:'Stóla és rúna',20:'Speciális bónusztárgy'}
+CATEGORIES = {1: 'Fegyver', 2: 'Páncél', 3: 'Ékszer', 4: 'Kosztüm', 5: 'Fogyasztható', 6: 'Alapanyag', 7: 'Foglalatkő', 8: 'Tároló', 9: 'Képességkönyv', 10: 'Küldetéstárgy', 11: 'Eszköz', 12: 'Hal és csali', 13: 'Átváltozás', 14: 'Lélek és lélektekercs', 15: 'Pet és mount hívó', 16: 'Pénzjegy', 17: 'Különleges petellátmány', 18: 'Kulcs',19:'Stóla és rúna',20:'Speciális bónusztárgy',21:'Lőszer'}
 CHILD_TABLES = {1: 'item_weapon', 2: 'item_armor', 3: 'item_accessory', 4: 'item_costume', 5: 'item_consumable', 6: 'item_material',
-                7: 'item_socket_stone', 8: 'item_container', 9: 'item_skill_book', 10: 'item_quest', 11: 'item_tool', 12: 'item_fishing', 13: 'item_polymorph', 14: 'item_soul', 15: 'item_companion', 16: 'item_currency_token', 17: 'item_special', 18: 'item_container_key',19:'item_regalia',20:'item_bonus_tool'}
+                7: 'item_socket_stone', 8: 'item_container', 9: 'item_skill_book', 10: 'item_quest', 11: 'item_tool', 12: 'item_fishing', 13: 'item_polymorph', 14: 'item_soul', 15: 'item_companion', 16: 'item_currency_token', 17: 'item_special', 18: 'item_container_key',19:'item_regalia',20:'item_bonus_tool',21:'item_ammo'}
 CODE_PREFIX = {1: 'weapon', 2: 'armor', 3: 'accessory', 4: 'costume', 5: 'consumable', 6: 'material', 8: 'container', 9: 'skill_book', 10: 'quest', 11: 'tool', 12: 'fishing', 13: 'polymorph', 14: 'soul', 15: 'companion',
-               7: 'socket_stone', 16: 'currency_token', 17: 'special', 18: 'container_key',19:'regalia',20:'bonus_tool'}
-STACKABLE = (5, 6, 7, 8, 9, 10, 12, 13, 14, 16, 17, 18, 20)
+               7: 'socket_stone', 16: 'currency_token', 17: 'special', 18: 'container_key',19:'regalia',20:'bonus_tool',21:'ammo'}
+STACKABLE = (5, 6, 7, 8, 9, 10, 12, 13, 14, 16, 17, 18, 20, 21)
 LOOT_FIELDS = ['entry_no', 'reward_kind', 'item_category_id', 'item_local_id', 'amount', 'weight', 'rare_attribute_chance_bp']
 REFINEMENT_KIND = {1: 2, 2: 3, 3: 4, 4: 6, 7: 5, 11: 7, 15: 9}
 EFFECT_TABLES = {1: 'instant_recovery_profile', 2: 'reserve_recovery_profile', 3: 'periodic_recovery_profile', 4: 'automatic_recovery_profile'}
@@ -54,7 +54,7 @@ PROFILES = {
     'item_trade_policy': ('policy_id', [('item_base', 'trade_policy_id')], []),
     'item_appearance_profile': ('profile_id', [('item_base', 'appearance_profile_id')], []),
     'item_attack_profile': ('profile_id', [('item_weapon', 'attack_profile_id')], []),
-    'item_ammo_policy': ('policy_id', [('item_weapon', 'ammo_policy_id')], []),
+    'item_ammo_policy': ('policy_id', [('item_weapon', 'ammo_policy_id'),('item_ammo','ammo_policy_id')], []),
     'item_resistance_profile': ('profile_id', [('item_armor', 'resistance_profile_id'), ('item_accessory', 'resistance_profile_id')], []),
     'bonus_profile': ('profile_id', [('item_base', 'base_bonus_profile_id'), ('refinement_level', 'extra_bonus_profile_id'), ('timed_effect_profile', 'bonus_profile_id'), ('toggle_effect_profile', 'bonus_profile_id')], ['bonus_profile_entry']),
     'refinement_profile': ('profile_id', [('item_base', 'refinement_profile_id')], ['refinement_level']),
@@ -314,6 +314,10 @@ class Catalog:
         if category==19:
             item['child'].update(regalia_kind='1',rune_slot='0',stole_grade='1',capacity_ms='0',initial_ms='0')
             item['regalia_rules']=[dict(bonus_index=str(j),variant_no=str(v),minimum_charge_bp='0',bonus_id=str(bonus),value_scaled=str((v+1)*(1000 if bonus<=4 else 1))) for j,bonus in enumerate((29,30,31,32,1,3)) for v in range(4)]
+        if category==21:
+            policies=[r for r in self.tables['item_ammo_policy'] if r['ammo_kind']=='2']
+            item['child']['ammo_policy_id']=policies[0]['policy_id'] if policies else None
+            item['ammo']=None if policies else dict(ammo_kind='2',units_per_hit='1')
         if category==20:
             item['child'].update(operation_kind='1',units='1',parameter='0',bonus_id=None,value_scaled=None);item['special_tiers']=[]
         item['pet_food_rules']=[]
@@ -542,7 +546,7 @@ class Catalog:
             # the deduplication path instead of updating the source in place.
             for field in ('use_policy_id', 'trade_policy_id', 'appearance_profile_id'): base[field] = None
             for field in ('attack_profile_id', 'ammo_policy_id', 'resistance_profile_id', 'hatch_profile_id'):
-                if field in child: child[field] = None
+                if field in child and not (category==21 and field=='ammo_policy_id'): child[field] = None
         before = self.referenced()
         base['use_policy_id'] = self.profile('item_use_policy', document['use'], base.get('use_policy_id'), idcol='policy_id')
         base['trade_policy_id'] = self.profile('item_trade_policy', document['trade'], base.get('trade_policy_id'), idcol='policy_id')
@@ -554,6 +558,8 @@ class Catalog:
         if category == 1:
             child['attack_profile_id'] = self.profile('item_attack_profile', document['attack'], child.get('attack_profile_id'))
             child['ammo_policy_id'] = self.profile('item_ammo_policy', document['ammo'], child.get('ammo_policy_id'), idcol='policy_id')
+        if category==21 and not child.get('ammo_policy_id') and document.get('ammo'):
+            child['ammo_policy_id']=self.profile('item_ammo_policy',document['ammo'],None,idcol='policy_id')
         if category in (2, 3):
             child['resistance_profile_id'] = self.profile('item_resistance_profile', document['resistance'], child.get('resistance_profile_id'))
         self.apply_attributes(document,key)

@@ -54,6 +54,8 @@ struct TypedInventoryView
     std::map<ItemInstanceId,ItemBonusToolRow> bonusToolRules;
     std::map<ItemInstanceId,ItemSoulRow> souls;
     std::map<ItemInstanceId,SoulProfile> soulRules;
+    struct AmmoRule {std::uint8_t kind;std::uint32_t policy;std::uint16_t units;bool operator==(const AmmoRule&) const=default;};
+    std::map<ItemInstanceId,AmmoRule> ammunition;
 };
 
 // The owner is the receiving character; it is not repeated on the wire.

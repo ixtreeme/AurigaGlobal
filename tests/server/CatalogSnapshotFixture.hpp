@@ -147,6 +147,7 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
         if(p.skin){const auto& r=*p.skin;Add(s,T::PetSkinRules,p.id,8,r.form,r.clock,r.durationMs);}
     }
     for(const auto& r:source.petSupplies)Add(s,T::PetSupplies,r.key.Category(),r.key.LocalId(),1,r.profile);
+    for(const auto& r:source.ammunition)Add(s,T::Ammunition,r.key.Category(),r.key.LocalId(),r.ammoPolicy);
     return s;
 }
 } // namespace catalog_snapshot_fixture

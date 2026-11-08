@@ -21,6 +21,7 @@
     {"id": 17, "code": "special", "cpp_name": "Special", "table": "item_special"},
     {"id": 18, "code": "container_key", "cpp_name": "ContainerKey", "table": "item_container_key"},
     {"id": 19, "code": "regalia", "cpp_name": "Regalia", "table": "item_regalia"},
-    {"id": 20, "code": "bonus_tool", "cpp_name": "BonusTool", "table": "item_bonus_tool"}
+    {"id": 20, "code": "bonus_tool", "cpp_name": "BonusTool", "table": "item_bonus_tool"},
+    {"id": 21, "code": "ammo", "cpp_name": "Ammo", "table": "item_ammo"}
   ]
 }

@@ -26,8 +26,8 @@ def main():
         sandbox.verify()
         sandbox.client.query("CREATE DATABASE player CHARACTER SET utf8mb4 COLLATE utf8mb4_bin")
         paths = sorted((ROOT / "db/migrations/item_combat").glob("[0-9][0-9][0-9]_*.sql"))
-        if [int(path.name[:3]) for path in paths] != list(range(35)):
-            raise RuntimeError("expected complete native catalog drafts 000..034")
+        if [int(path.name[:3]) for path in paths] != list(range(36)):
+            raise RuntimeError("expected complete native catalog drafts 000..035")
         paths.append(ROOT / "db/migrations/item_instance/001_item_persistence.sql")
         paths.append(ROOT / "db/migrations/item_instance/002_instance_id_allocator.sql")
         paths.append(ROOT / "db/migrations/item_instance/003_owned_ground.sql")
@@ -46,6 +46,7 @@ def main():
         paths.append(ROOT / "db/migrations/item_instance/016_costume_lifetime.sql")
         paths.append(ROOT / "db/migrations/item_instance/017_regalia_special_bonuses.sql")
         paths.append(ROOT / "db/migrations/item_instance/018_soul_runtime.sql")
+        paths.append(ROOT / "db/migrations/item_instance/019_ammo_runtime.sql")
         sandbox.client.query("CREATE TABLE player.player(id INT UNSIGNED PRIMARY KEY, name VARCHAR(24) NOT NULL DEFAULT '', exp INT UNSIGNED NOT NULL DEFAULT 0, skill_point SMALLINT NOT NULL DEFAULT 0, sub_skill_point SMALLINT NOT NULL DEFAULT 0, horse_skill_point SMALLINT NOT NULL DEFAULT 0, skill_level BLOB NULL) ENGINE=InnoDB")
         sandbox.client.query("CREATE TABLE player.player_deleted LIKE player.player")
         for path in paths:
@@ -66,6 +67,7 @@ def main():
                       "item_instance_attribute", "item_instance_socket", "item_occupied_cell", "item_ground_core", "item_ground_entry", "item_recovery_schedule"):
             sandbox.client.query("GRANT INSERT,UPDATE,DELETE ON player." + table + " TO 'item_writer'@'localhost'")
         sandbox.client.query("GRANT INSERT,UPDATE,DELETE ON player.item_book_learning TO 'item_writer'@'localhost'")
+        sandbox.client.query("GRANT INSERT ON player.item_ammo_shot_event TO 'item_writer'@'localhost'")
         sandbox.client.query("GRANT INSERT ON player.item_soul_strike_event TO 'item_writer'@'localhost'")
         sandbox.client.query("GRANT INSERT,UPDATE ON player.item_pet_study_cooldown TO 'item_writer'@'localhost'")
         sandbox.client.query("GRANT INSERT,DELETE ON player.item_storage TO 'item_writer'@'localhost'")

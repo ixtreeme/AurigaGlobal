@@ -68,7 +68,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     // Vectors and refinement levels are already validated and canonically sorted.
     // Revision is separate release identity; unchanged content retains its digest.
     Writer out;
-    out.Text("auriga.item_catalog.v28");
+    out.Text("auriga.item_catalog.v29");
     out.Integer(source.schemaVersion);
     out.Table(1, source.usePolicies.size());
     for (const auto& row : source.usePolicies)
@@ -395,6 +395,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     for(const auto& p:source.bookAidProfiles){out.Identity(p.id,p.code);out.Integer(static_cast<std::uint8_t>(p.kind));out.Integer(p.unitsPerUse);out.Integer(p.chargesPerUse);out.Integer(p.maximumCharges);}
     out.Table(56,source.regalia.size());for(const auto& r:source.regalia){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Integer(r.slot);out.Integer(r.grade);out.Integer(r.capacityMs);out.Integer(r.initialMs);out.Integer(static_cast<std::uint32_t>(r.rules.size()));for(const auto& v:r.rules){out.Integer(v.index);out.Integer(v.variant);out.Integer(v.minimumChargeBp);out.Integer(static_cast<std::uint32_t>(v.bonus.bonus));out.Integer(static_cast<std::uint64_t>(v.bonus.valueScaled));}}
     out.Table(57,source.bonusTools.size());for(const auto& r:source.bonusTools){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.operation));out.Integer(r.units);out.Integer(r.parameter);out.Boolean(r.payload.has_value());if(r.payload){out.Integer(static_cast<std::uint32_t>(r.payload->bonus));out.Integer(static_cast<std::uint64_t>(r.payload->valueScaled));}out.Integer(static_cast<std::uint32_t>(r.tiers.size()));for(const auto& t:r.tiers){out.Integer(t.draw);out.Integer(t.tier);out.Integer(t.chanceBp);}}
+    out.Table(58,source.ammunition.size());for(const auto& r:source.ammunition){out.Key(r.key);out.Integer(r.ammoPolicy);}
     return out.Finish();
 }
 } // namespace auriga::item::detail

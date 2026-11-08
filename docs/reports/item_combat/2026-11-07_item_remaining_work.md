@@ -28,11 +28,12 @@ commitok és jelentések adják.
 | 3. C28 — elkészült | Test-, haj- és fegyverjelmez felszerelése, modellje és tartós időzítői | A tartós runtime, szerver/Unity-felszerelés, három jelmezmodell és mind a négy óra kész; 12 élő eset és 1606 ellenőrzés, felszerelt/levett/lejárt újrabelépéssel. [Jelentés](2026-11-07_costumes.md), [IC-063](../../adr/item_combat_063_costume_runtime.md). |
 | 4. C29 — elkészült | Hat bónuszos stóla, hét rúna, részleges töltés, jelmezreset/ritka donor/törlés, kapcsolt addon | Tartós példányállapot, külön szerver/Unity-művelet, stat- és modell-/effektút. [Jelentés](2026-11-07_regalia_special_bonuses.md), [IC-064](../../adr/item_combat_064_regalia_special_bonuses.md). Az önálló Acce-elnyelés és a teljes APPLY-konverzió ettől külön feladat. |
 | 5. C30 — elkészült | Önálló vörös/kék lélektárgyak töltése, fejlesztése, aktiválása és elfogadott találathoz kötött egyszeri fogyása | Szerver/Unity runtime, SQL-event egyediség, valódi normál- és skilltalálat, 343+91 élő ellenőrzés, újrabelépés és szerverrestart. [Jelentés](2026-11-07_soul_runtime.md), [IC-065](../../adr/item_combat_065_soul_runtime.md). |
-| 6. Lőszer és további fejlesztési segédek | Typed íj/lőszer-életciklus, elfogadott lövéshez kötött fogyás; még hiányzó kovácssegéd-utak | `EquipmentStats.cpp` elutasítja a `AmmoKind::None`-tól eltérő igényű fegyver felvételét. A könyvsegéd nem általános kovácssegéd. [IC-039](../../adr/item_combat_039_equipment_stats.md). |
-| 7. Fiókpénztárca és további tárolók | Fiókszintű valuta, typed bank/mall/céh/levél tárgyutak és kapcsolódó gazdasági műveletek | A modell tároló-/tulajdonostípusa önmagában nem játékbeli bekötés. A jelenlegi typed item-hálózati kezelőkben ezeknek nincs végigvezetett kliensművelete; a fiókpénztárcát az IC-034 is nyitottnak jelöli. |
-| 8. Mission és quest | Az általános Mission-események, tárgykövetelmények/jutalmak és Lua-questek teljes typed átállítása | A C12 az NPC-s tárgyleadó tranzakciót készítette el. A teljes missziórendszer ettől még külön, nagyobb munka. |
-| 9. Teljes tartalom- és karakterkonverzió | Prototípusok, példányok, receptek, droppok, boltok és minden hivatkozás egyszeri konverziója; régi tárgyút kivezetése | A konverteralap és auditok megvannak; a normál legacy leltár átállítását a felhasználó korábban későbbre kérte. Nem kapcsoljuk át e részfeladat mellékhatásaként. |
-| 10. Kiadási ellenőrzés és grafikai integráció | Teljes világjelenet, távoli avatarok typed megjelenésének végső próbája, standalone kliens, FreeBSD, teljes gazdasági/mission regresszió és terhelés | A C28 publikálja a typed alap- és jelmezmodelleket a megfigyelőnek, az izolált próba tényleges mesheket hoz létre mindkét actoron. A teljes világjelenetes, animációs és production Addressables-próba továbbra is szükséges. |
+| 6. C31 — elkészült | Típusos íj és lőszer, felszerelés, elfogadott normál-/képesség-/PvP-lövéshez kötött fogyás és automatikus tartalék | Közös szerver/Unity-út, lőszer/lélek együttes SQL-írás, 274 élő ellenőrzés és négy újrabelépés. [Jelentés](2026-11-08_typed_ammunition.md), [IC-066](../../adr/item_combat_066_typed_ammunition.md). |
+| 7. További fejlesztési segédek | A még hiányzó kovácssegéd-utak végigvezetése | A könyvsegéd nem általános kovácssegéd; a receptalap önmagában nem jelenti az összes segédtárgy játékbeli műveletét. |
+| 8. Fiókpénztárca és további tárolók | Fiókszintű valuta, typed bank/mall/céh/levél tárgyutak és kapcsolódó gazdasági műveletek | A modell tároló-/tulajdonostípusa önmagában nem játékbeli bekötés. A jelenlegi typed item-hálózati kezelőkben ezeknek nincs végigvezetett kliensművelete; a fiókpénztárcát az IC-034 is nyitottnak jelöli. |
+| 9. Mission és quest | Az általános Mission-események, tárgykövetelmények/jutalmak és Lua-questek teljes typed átállítása | A C12 az NPC-s tárgyleadó tranzakciót készítette el. A teljes missziórendszer ettől még külön, nagyobb munka. |
+| 10. Teljes tartalom- és karakterkonverzió | Prototípusok, példányok, receptek, droppok, boltok és minden hivatkozás egyszeri konverziója; régi tárgyút kivezetése | A konverteralap és auditok megvannak; a normál legacy leltár átállítását a felhasználó korábban későbbre kérte. Nem kapcsoljuk át e részfeladat mellékhatásaként. |
+| 11. Kiadási ellenőrzés és grafikai integráció | Teljes világjelenet, távoli avatarok typed megjelenésének végső próbája, standalone kliens, FreeBSD, teljes gazdasági/mission regresszió és terhelés | A C28 publikálja a typed alap- és jelmezmodelleket a megfigyelőnek, az izolált próba tényleges mesheket hoz létre mindkét actoron. A teljes világjelenetes, animációs és production Addressables-próba továbbra is szükséges. |
 
 ## Az audit módszere
 
@@ -45,5 +46,5 @@ játékfunkciónak.
 
 Az első kiválasztott rész a C27a. Eredménye és pontos próbahatóköre a
 [hátasjelentésben](2026-11-07_typed_mount_riding.md) szerepel.
-A C27b, C28, C29 és C30 is elkészült; a következő nyitott munkacsomag
-a lőszer és az elfogadott lövéshez kötött típusos íj/lőszer-életciklus.
+A C27b, C28, C29, C30 és C31 is elkészült; a lőszer életciklusa lezárt.
+A következő nyitott munkacsomag a további fejlesztési segédek bekötése.

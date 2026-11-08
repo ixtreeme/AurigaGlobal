@@ -18,5 +18,6 @@ std::expected<SoulCommit,ItemPersistenceError> MakeSoulCommit(const ItemCatalog&
     std::span<const ItemStorageLayout>,std::span<const PersistentItem>,ItemInstanceId core,std::optional<ItemInstanceId> scroll,
     SoulAction,std::uint64_t elapsed,std::uint16_t roll,SoulContext);
 bool ValidSoulWrite(const ItemCatalog&,const ItemCommit&);
+std::span<const std::uint8_t> SoulReceipt(const ItemCommit&);
 std::uint64_t SoulElapsed(const ItemCommit&,std::uint64_t);
 }

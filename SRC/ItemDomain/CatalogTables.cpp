@@ -101,6 +101,7 @@ constexpr std::array<TableSpec, TableCount> Specs {{
     {Table::RegaliaRules,"regalia_bonus_rule","category_id,local_id,bonus_index,minimum_charge_bp,variant_no,bonus_id,value_scaled",Items*48},
     {Table::BonusTools,"item_bonus_tool","category_id,local_id,operation_kind,units,parameter,bonus_id,value_scaled",Items},
     {Table::SpecialBonusTiers,"special_bonus_tier","category_id,local_id,draw_no,tier,chance_bp",Items*48},
+    {Table::Ammunition,"item_ammo","category_id,local_id,ammo_policy_id",Items},
 }};
 static_assert([] { for (std::size_t i = 0; i < Specs.size(); ++i) if (static_cast<std::size_t>(Specs[i].table) != i) return false; return true; }());
 }

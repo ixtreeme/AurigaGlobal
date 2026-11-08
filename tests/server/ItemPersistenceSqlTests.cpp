@@ -1,4 +1,5 @@
 #include "SoulRuntimeFixture.hpp"
+#include <item/AmmoRuntime.hpp>
 #include "PersistentItemFixture.hpp"
 #include "AttributeRuntimeFixture.hpp"
 #include "EffectRuntimeFixture.hpp"
@@ -681,6 +682,17 @@ void FixedCompanionSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c)
         Check(Scalar(admin,"SELECT COUNT(*) FROM player.item_instance WHERE instance_id=? AND destroyed=1 AND stack_count=0 AND companion_recall_requested=0 AND companion_riding_requested=0 AND OCTET_LENGTH(companion_lifetime_blob)=22",{U::UInt(id.Value())})=="1","expired lifetime remains in the destroyed audit row");
     }
 }
+void AmmoSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c){
+    const ItemOwner owner{ItemOwnerKind::Character,880131};std::array layouts{ItemStorageLayout{{owner,ItemStorageKind::Inventory,1},10,9,1},ItemStorageLayout{{owner,ItemStorageKind::Equipment,1},20,1,1}};const ItemWallet wallet{owner,WalletCurrency::Gold,1,0};Check(p::ProvisionOwner(admin,c,owner,layouts,std::span(&wallet,1)).has_value(),"ammo owner");unsigned serial=0;const auto op=[&](){return std::array<std::uint8_t,16>{0x31,0x74,static_cast<std::uint8_t>(++serial)};};auto state=p::LoadCurrentItemOwner(writer,c,owner).value();
+    for(unsigned j=1;j<=4;++j){if(j==3)continue;ItemGrant g{ItemKey::Create(j==1?1:j==4?14:21,j==1?31001:j==4?30001:31001).value()};g.count=j==2?5:1;std::vector ids{ItemInstanceId::Create(8000000+j).value()};if(j==2)ids.push_back(ItemInstanceId::Create(8000003).value());auto grant=MakeGrantCommit(c,op(),state.fence,state.storages,state.items,g,ids);Check(grant && p::CommitItems(writer,c,*grant).has_value(),"SQL ammo grant");state=p::LoadCurrentItemOwner(writer,c,owner).value();}
+    for(unsigned j=1;j<=2;++j){auto equip=MakeEquipCommit(c,op(),state.fence,state.storages,state.items,ItemInstanceId::Create(8000000+j).value(),{120,1,0});Check(equip && p::CommitItems(writer,c,*equip).has_value(),"SQL bow/ammo equip");state=p::LoadCurrentItemOwner(writer,c,owner).value();}
+    const auto core=ItemInstanceId::Create(8000004).value();SoulContext context;context.actor={120,1,0};for(auto action:{SoulAction::Recharge,SoulAction::Activate}){auto plan=MakeSoulCommit(c,op(),state.fence,state.storages,state.items,core,{},action,action==SoulAction::Recharge?30000:0,0,context);Check(plan && p::CommitItems(writer,c,plan->commit).has_value(),"SQL ranged soul setup");state=p::LoadCurrentItemOwner(writer,c,owner).value();}
+    context.event=31001;context.target=431;context.targetRevision=1;context.targetIsNpc=true;context.damage=10001;auto shot=MakeAmmoShotCommit(c,op(),state.fence,state.storages,state.items,context,core);Check(shot && p::CommitItems(writer,c,shot->commit).has_value(),"ammo/soul SQL atomic accepted shot");Check(p::CommitItems(writer,c,shot->commit)->replay,"shot replay idempotent");state=p::LoadCurrentItemOwner(writer,c,owner).value();auto saved=state.items;auto duplicate=MakeAmmoShotCommit(c,op(),state.fence,state.storages,state.items,context,core);Check(duplicate && !p::CommitItems(writer,c,duplicate->commit),"duplicate shot event new operation refused");Check(p::LoadCurrentItemOwner(writer,c,owner)->items==saved,"duplicate rolls back ammo, bow and soul together");
+    Check(Scalar(admin,"SELECT COUNT(*) FROM player.item_ammo_shot_event WHERE owner_id=880131")=="1" && Scalar(admin,"SELECT COUNT(*) FROM player.item_soul_strike_event WHERE owner_id=880131")=="1","both event identities written once");
+    Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"ammo relog");state=p::LoadCurrentItemOwner(writer,c,owner).value();Check(state.items==saved && Find(state,8000002).count==2 && Find(state,8000004).soul->strikes==1,"equipped ammo and soul exact after relog");
+    for(unsigned j=0;j<2;++j){++context.event;auto next=MakeAmmoShotCommit(c,op(),state.fence,state.storages,state.items,context);Check(next && p::CommitItems(writer,c,next->commit).has_value(),"ammo stack depletion SQL");state=p::LoadCurrentItemOwner(writer,c,owner).value();}
+    Check(std::ranges::none_of(state.items,[](const auto& i){return i.id.Value()==8000002;}) && Scalar(admin,"SELECT COUNT(*) FROM player.item_instance WHERE instance_id=8000002 AND destroyed=1 AND stack_count=0")=="1" && Find(state,8000003).count==2 && Find(state,8000003).placement->anchor==19,"atomic automatic reserve SQL");saved=state.items;Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"reserve relog");state=p::LoadCurrentItemOwner(writer,c,owner).value();Check(state.items==saved,"automatic reserve survives relog");
+}
 void SoulSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c){
     const ItemOwner owner{ItemOwnerKind::Character,880130};const ItemStorageLayout bag{{owner,ItemStorageKind::Inventory,1},10,9,1};const ItemWallet wallet{owner,WalletCurrency::Gold,1,0};Check(p::ProvisionOwner(admin,c,owner,std::span(&bag,1),std::span(&wallet,1)).has_value(),"soul owner provision");unsigned serial=0;const auto op=[&](){std::array<std::uint8_t,16> b{0x30,0x73};b[2]=static_cast<std::uint8_t>(++serial);return b;};auto state=p::LoadCurrentItemOwner(writer,c,owner).value();
     for(unsigned j=1;j<=4;++j){ItemGrant g{ItemKey::Create(14,30000+(j==4 ? 1 : j)).value()};g.count=j==3 ? 4 : 1;std::array ids{ItemInstanceId::Create(7000000+j).value()};auto grant=MakeGrantCommit(c,op(),state.fence,state.storages,state.items,g,ids);Check(grant && p::CommitItems(writer,c,*grant).has_value(),"SQL soul grant");state=p::LoadCurrentItemOwner(writer,c,owner).value();}
@@ -701,6 +713,8 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
     for(auto base:soulFixture.items)if(base.key.Category()==ItemCategory::Soul){base.key=ItemKey::Create(14,30000+base.key.LocalId()).value();if(base.refinementProfile==5)base.refinementProfile=30030;source.items.push_back(base);}
     for(auto row:soulFixture.soulItems){row.key=ItemKey::Create(14,30000+row.key.LocalId()).value();if(row.profile)row.profile=30030;source.soulItems.push_back(row);}
 
+    {auto bow=source.weapons.front();auto b=*std::ranges::find(source.items,bow.key,&ItemBaseRow::key);bow.key=ItemKey::Create(1,31001).value();bow.subtype=WeaponSubtype::Bow;bow.ammoPolicy=2;b.key=bow.key;b.contentCode="bow.sql_ammo";b.nameKey=b.contentCode+".name";b.descriptionKey=b.contentCode+".description";source.items.push_back(b);source.weapons.push_back(bow);
+     auto ammo=source.items[3];ammo.key=ItemKey::Create(21,31001).value();ammo.contentCode="ammo.sql_arrows";ammo.nameKey=ammo.contentCode+".name";ammo.descriptionKey=ammo.contentCode+".description";ammo.maxStack=3;ammo.refinementProfile=1;ammo.usePolicy=1;ammo.appearanceProfile.reset();ammo.baseBonusProfile.reset();source.items.push_back(ammo);source.ammunition.push_back({ammo.key,2});}
     effect_runtime_fixture::Extend(source);book_runtime_fixture::Extend(source);book_aid_fixture::Extend(source);polymorph_runtime_fixture::Extend(source);fish_processing_fixture::Extend(source);tool_runtime_fixture::Extend(source);
     const auto petSeal=ItemKey::Create(ItemCategory::Companion,1).value();
     const auto mountSeal=ItemKey::Create(ItemCategory::Companion,2).value();
@@ -1555,6 +1569,7 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
     GrowthPetBirthSql(admin,writer,*c,hatchEgg,growthSeal,petSeal,petBook);
     FixedCompanionSql(admin,writer,*c);
     SoulSql(admin,writer,*c);
+    AmmoSql(admin,writer,*c);
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);
 }

@@ -5,6 +5,16 @@ void TickTypedSouls();
 void StopTypedSouls(entt::entity);
 void FinishTypedSouls();
 std::uint64_t TypedSoulElapsed(entt::entity,std::uint64_t);
+// Marks synchronous projectile damage, including elemental bow skills.
+struct TypedBowProjectileScope {
+    explicit TypedBowProjectileScope(entt::entity);
+    ~TypedBowProjectileScope();
+    TypedBowProjectileScope(const TypedBowProjectileScope&)=delete;
+    TypedBowProjectileScope& operator=(const TypedBowProjectileScope&)=delete;
+private: entt::entity entity=entt::null;
+};
+bool HasTypedBowAmmunition(entt::entity);
+bool CanTypedBowShoot(entt::entity,entt::entity);
 bool HasTypedSoulChannel(entt::entity,unsigned channel);
 bool TypedSoulDamageLocked(entt::entity);
 bool DeferTypedSoulDestroy(entt::entity);

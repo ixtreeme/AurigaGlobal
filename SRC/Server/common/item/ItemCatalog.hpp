@@ -41,7 +41,7 @@ enum class ItemCurrency : std::uint8_t { Gold = 1 };
 enum class EquipmentSlot : std::uint8_t
 {
     Weapon = 1, Body = 2, Head = 3, Shield = 4, Feet = 5, Wrist = 6, Neck = 7, Ear = 8,
-    CostumeBody=9, CostumeHair=10, CostumeWeapon=11,
+    CostumeBody=9, CostumeHair=10, CostumeWeapon=11, Ammo=20,
 };
 enum class AmmoKind : std::uint8_t { None = 1, ConsumeStack = 2 };
 // Plain crafting inputs. Soul-refinement catalysts/resources need their own
@@ -133,6 +133,8 @@ struct ItemAccessoryRow
     // socket grade is separate from refinement; ring/belt/unique are unported.
     std::optional<std::uint32_t> socketProfile;
 };
+// A stack equipped in slot 20; exact policy identity determines bow compatibility.
+struct ItemAmmoRow { ItemKey key; std::uint32_t ammoPolicy=0; };
 struct ItemMaterialRow
 {
     ItemKey key;
@@ -174,10 +176,10 @@ struct ItemSkillBookRow
     std::uint32_t profile = 0;
 };
 using ItemCategoryRow = std::variant<ItemWeaponRow, ItemArmorRow, ItemAccessoryRow, ItemMaterialRow, ItemConsumableRow,
-                                     ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow, ItemSocketStoneRow, ItemCostumeRow, ItemToolRow, ItemFishingRow, ItemPolymorphRow, ItemSoulRow, ItemCompanionRow, ItemPetSupplyRow, ItemRegaliaRow, ItemBonusToolRow>;
+                                     ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow, ItemSocketStoneRow, ItemCostumeRow, ItemToolRow, ItemFishingRow, ItemPolymorphRow, ItemSoulRow, ItemCompanionRow, ItemPetSupplyRow, ItemRegaliaRow, ItemBonusToolRow, ItemAmmoRow>;
 struct ItemCatalogSource
 {
-    std::uint32_t schemaVersion = 28;
+    std::uint32_t schemaVersion = 29;
     std::uint64_t revision = 0;
     std::vector<ItemBaseRow> items;
     std::vector<ItemWeaponRow> weapons;
@@ -213,6 +215,7 @@ struct ItemCatalogSource
     std::vector<ItemCostumeRow> costumes;
     std::vector<ItemRegaliaRow> regalia;
     std::vector<ItemBonusToolRow> bonusTools;
+    std::vector<ItemAmmoRow> ammunition;
     std::vector<CostumeVisualRow> costumeVisuals;
     std::vector<AttributeProfile> attributeProfiles;
     std::vector<AttributeServiceProfile> attributeServices;

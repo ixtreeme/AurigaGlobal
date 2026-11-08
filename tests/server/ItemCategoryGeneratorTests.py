@@ -23,9 +23,9 @@ class RegistryTests(unittest.TestCase):
 
     def test_reviewed_registry(self):
         rows = generator.validate_registry(self.document)
-        self.assertEqual([row["id"] for row in rows], list(range(1, 21)))
+        self.assertEqual([row["id"] for row in rows], list(range(1, 22)))
         self.assertEqual(rows[0]["cpp_name"], "Weapon")
-        self.assertEqual(rows[-1]["cpp_name"], "ContainerKey")
+        self.assertEqual(rows[-1]["cpp_name"], "Ammo")
         header = ROOT / "SRC/Server/common/item/ItemCategory.hpp"
         self.assertEqual(header.read_bytes(), generator.render(self.document))
         seed = ROOT / "db/migrations/item_combat/002_category_seed.sql"
@@ -41,8 +41,8 @@ class RegistryTests(unittest.TestCase):
         self.document["categories"] = [self.document["categories"][0], self.document["categories"][-1]]
         rendered = generator.render(self.document).decode()
         self.assertIn("Weapon = 1,", rendered)
-        self.assertIn("ContainerKey = 18,", rendered)
-        self.assertNotIn("ContainerKey = 2,", rendered)
+        self.assertIn("Ammo = 21,", rendered)
+        self.assertNotIn("Ammo = 2,", rendered)
 
     def test_reject_invalid_ids_and_duplicates(self):
         for invalid in [0, -1, 65536, True, 1.0, "1", None]:

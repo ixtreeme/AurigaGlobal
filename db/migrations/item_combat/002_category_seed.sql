@@ -22,7 +22,8 @@ INSERT INTO protos.item_category (category_id, code, prototype_table) VALUES
     (17, 'special', 'item_special'),
     (18, 'container_key', 'item_container_key'),
     (19, 'regalia', 'item_regalia'),
-    (20, 'bonus_tool', 'item_bonus_tool');
+    (20, 'bonus_tool', 'item_bonus_tool'),
+    (21, 'ammo', 'item_ammo');
 INSERT INTO protos.item_local_id_sequence (category_id, next_local_id) VALUES
     (1, 1),
     (2, 1),
@@ -43,5 +44,6 @@ INSERT INTO protos.item_local_id_sequence (category_id, next_local_id) VALUES
     (17, 1),
     (18, 1),
     (19, 1),
-    (20, 1);
+    (20, 1),
+    (21, 1);
 COMMIT;

@@ -45,7 +45,7 @@ std::vector<std::byte> Run()
     auto level=weapon;level.refinementLevel=4;
     Check(BuildEquipmentStats(c,f::Character(),std::span(&level,1))->Bonus(BonusId::CritChance)==0,"refinement profiles are current-level cumulative data, not previous-level sums");
     source.weapons[0].subtype=WeaponSubtype::Bow;source.weapons[0].ammoPolicy=2;const auto bow=BuildItemCatalog(source);
-    Check(bow.has_value() && BuildEquipmentStats(**bow,f::Character(),std::span(&weapon,1)).error()==EquipmentStatsError::UnsupportedState,"unported consumed ammunition never silently falls back to legacy");
+    Check(bow.has_value() && BuildEquipmentStats(**bow,f::Character(),std::span(&weapon,1))->weapon==WeaponSubtype::Bow,"typed bow stats are available independently of the ammunition gate");
     Check(ScaleEquipmentValue(1,5000)==1 && ScaleEquipmentValue(-1,5000)==-1,"signed half-away rounding");
     Check(ScaleEquipmentValue(1000000000000000LL,10000000)==1000000000000000000LL,"wide intermediate avoided by quotient/remainder scaling");
     Check(!ScaleEquipmentValue(INT64_MAX,20000) && !AddEquipmentValue(INT64_MAX,1),"overflow rejected");

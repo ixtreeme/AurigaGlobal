@@ -355,7 +355,7 @@ class OfflineModelTests(unittest.TestCase):
 
     def test_blank_registry_is_a_valid_empty_catalog(self):
         self.assertEqual(self.check(self.blank), self.blank['hash'])
-        self.assertEqual(set(self.blank['sequences']), {str(i) for i in range(1, 21)})
+        self.assertEqual(set(self.blank['sequences']), {str(i) for i in range(1, 22)})
         self.assertEqual(len(self.blank['bonuses']), len(rows(self.blank, 'bonus_definition')))
 
     def test_every_editable_category_starts_with_a_valid_document(self):
@@ -1016,6 +1016,18 @@ class PageCase(unittest.TestCase):
         return packet, keys
 
 class EditorPageTests(PageCase):
+    def test_ammunition_policy_form_round_trip(self):
+        packet= catalog.blank(TOOL)
+        def bow(d):d['child']['weapon_subtype']='3';d['ammo'].update(ammo_kind='2',units_per_hit='2')
+        packet,_=create(packet,1,bow)
+        packet,key=create(packet,21)
+        self.page.loaded(packet,key)
+        document=self.page.collect()
+        self.assertEqual(document['child']['ammo_policy_id'],catalog.Catalog(packet).item(key)['child']['ammo_policy_id'])
+        self.assertGreaterEqual(self.page.ammo_policy_field.widget.count(),1)
+        catalog.validate(packet,document,key,TOOL)
+        self.page.dirty=False
+
     def test_book_aid_form_and_inactive_drafts(self):
         def aid(d):
             d.update(catalog.Catalog.book_aid_defaults());d.update(recovery=None,effect=None)
@@ -2308,7 +2320,7 @@ class SqlCommitTests(unittest.TestCase):
             document = catalog.Catalog(packet).new(category)
             packet = self.commit(packet, document)
             created[category] = key_of(document)
-        self.assertEqual(packet['sequences'], {**{str(i): '1' for i in range(1, 21)}, **{str(c): '2' for c in catalog.CATEGORIES}})
+        self.assertEqual(packet['sequences'], {**{str(i): '1' for i in range(1, 22)}, **{str(c): '2' for c in catalog.CATEGORIES}})
         stale = packet
         document = catalog.Catalog(packet).item(created[1])
         document['base']['name_key'] = 'item.sword.renamed'

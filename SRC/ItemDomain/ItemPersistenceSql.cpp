@@ -1,4 +1,5 @@
 #include <item/SoulRuntime.hpp>
+#include <item/AmmoRuntime.hpp>
 #include "ItemPersistenceSql.hpp"
 #include <item/OwnedGround.hpp>
 #include <random>
@@ -41,7 +42,7 @@ SqlTransaction Guards(const ItemCatalog& c)
         {"SELECT 1 WHERE @@tx_isolation='REPEATABLE-READ' AND @@foreign_key_checks=1 AND @@check_constraint_checks=1",{},{},1},
         {"SELECT 1 FROM player.item_persistence_format WHERE singleton=1 AND schema_version=1 AND catalog_revision=? AND catalog_sha256=? LOCK IN SHARE MODE",
             {U::UInt(c.Revision()),U::Blob(Bytes(c.ContentHash()))},{},1},
-        {"SELECT 1 FROM information_schema.TABLES WHERE (TABLE_SCHEMA='player' AND TABLE_NAME IN ('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance','item_instance_attribute','item_instance_socket','item_occupied_cell','item_recovery_schedule')) OR (TABLE_SCHEMA='protos' AND TABLE_NAME IN ('item_base','bonus_definition')) HAVING COUNT(*)=12 AND SUM(ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE')=12 AND (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob','pet_supply_blob','companion_riding_requested','companion_lifetime_blob','costume_lifetime_blob','regalia_blob','bonus_tool_blob','soul_blob','soul_channel','soul_active'))=22 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_book_learning' AND ENGINE='InnoDB')=1 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_pet_study_cooldown' AND ENGINE='InnoDB')=1 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_soul_strike_event' AND ENGINE='InnoDB')=1",{},{},1},
+        {"SELECT 1 FROM information_schema.TABLES WHERE (TABLE_SCHEMA='player' AND TABLE_NAME IN ('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance','item_instance_attribute','item_instance_socket','item_occupied_cell','item_recovery_schedule')) OR (TABLE_SCHEMA='protos' AND TABLE_NAME IN ('item_base','bonus_definition')) HAVING COUNT(*)=12 AND SUM(ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE')=12 AND (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob','pet_supply_blob','companion_riding_requested','companion_lifetime_blob','costume_lifetime_blob','regalia_blob','bonus_tool_blob','soul_blob','soul_channel','soul_active'))=22 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_book_learning' AND ENGINE='InnoDB')=1 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_pet_study_cooldown' AND ENGINE='InnoDB')=1 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_soul_strike_event' AND ENGINE='InnoDB')=1 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_ammo_shot_event' AND ENGINE='InnoDB')=1",{},{},1},
     };
 }
 SqlParams ItemValues(const ItemCatalog& c,const PersistentItem& p)
@@ -149,10 +150,16 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
         {U::Blob(r.ground->core),U::UInt(r.ground->run)},{},1});
     tx.push_back({"INSERT INTO player.item_operation_receipt(operation_id,request_sha256,catalog_revision,catalog_sha256,operation_kind,outcome_code,result_payload) VALUES(?,?,?,?,?,?,?)",
         {U::Blob(Bytes(r.operationId)),U::Blob(Bytes(*digest)),U::UInt(r.catalogRevision),U::Blob(Bytes(r.catalogHash)),U::UInt(static_cast<unsigned>(r.kind)),U::UInt(r.outcomeCode),U::Blob(Bytes(r.result))},1,{}});
-    if(r.outcomeCode==SoulOutcome && r.result[4]==static_cast<unsigned>(SoulAction::Strike)){
-        const auto read=[&](unsigned at){std::uint64_t v=0;for(unsigned j=0;j<8;++j)v|=std::uint64_t{r.result[at+j]}<<(8*j);return v;};
+    const auto soul=SoulReceipt(r);
+    if(!soul.empty() && soul[4]==static_cast<unsigned>(SoulAction::Strike)){
+        const auto read=[&](unsigned at){std::uint64_t v=0;for(unsigned j=0;j<8;++j)v|=std::uint64_t{soul[at+j]}<<(8*j);return v;};
         auto values=Owner(r.owners.front().owner);Append(values,{U::UInt(read(40)),U::Blob(Bytes(r.operationId)),U::UInt(read(48)),U::UInt(read(56)),U::Int(static_cast<std::int64_t>(read(64))),U::Int(static_cast<std::int64_t>(read(72)))});
         tx.push_back({"INSERT INTO player.item_soul_strike_event(owner_kind,owner_id,event_id,operation_id,target_id,target_revision,input_damage_raw,output_damage_raw) VALUES(?,?,?,?,?,?,?,?)",std::move(values),1,{}});
+    }
+    if(r.outcomeCode==AmmoShotOutcome){
+        const auto read=[&](unsigned at,unsigned n=8){std::uint64_t v=0;for(unsigned j=0;j<n;++j)v|=std::uint64_t{r.result[at+j]}<<(j*8);return v;};
+        auto values=Owner(r.owners.front().owner);Append(values,{U::UInt(read(28)),U::Blob(Bytes(r.operationId)),U::UInt(read(4)),U::UInt(read(12)),U::UInt(read(20)),U::UInt(read(36)),U::UInt(read(44)),U::UInt(read(68,2)),U::Int(static_cast<std::int64_t>(read(52))),U::Int(static_cast<std::int64_t>(read(60)))});
+        tx.push_back({"INSERT INTO player.item_ammo_shot_event(owner_kind,owner_id,event_id,operation_id,bow_id,ammo_id,reserve_id,target_id,target_revision,units,input_damage_raw,output_damage_raw) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",std::move(values),1,{}});
     }
     auto owners=r.owners;std::ranges::sort(owners,{},&ItemOwnerFence::owner);
     for(const auto& o:owners)

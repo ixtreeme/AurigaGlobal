@@ -6032,7 +6032,7 @@ namespace CombatSystem {
 int GetArrowAndBow(entt::entity e, entt::entity* ppkBow, entt::entity* ppkArrow, int iArrowCount)
 {
     if (HasTypedEquipment(e))
-    {if(ppkBow)*ppkBow=entt::null;if(ppkArrow)*ppkArrow=entt::null;return CombatWeaponSubtype(e)==WEAPON_BOW ? iArrowCount : 0;}
+    {if(ppkBow)*ppkBow=entt::null;if(ppkArrow)*ppkArrow=entt::null;return CombatWeaponSubtype(e)==WEAPON_BOW && HasTypedBowAmmunition(e) ? iArrowCount : 0;}
 
 	const entt::entity bow = CombatWearItem(e, WEAR_WEAPON);
 	if (!ItemSystem::IsValidItem(bow))
@@ -6127,6 +6127,7 @@ public:
 		if (m_bType > 1)
 			SkillSystem::SetSkillMainTarget(me, m_bType, victim);
 
+        if(HasTypedEquipment(me) && CombatWeaponSubtype(me)==WEAPON_BOW && !CanTypedBowShoot(me,victim))return;
 		if (!battle_is_attackable(me, victim))
 			return;
 
@@ -6136,7 +6137,9 @@ public:
 				return;
 		}
 
+        if(HasTypedEquipment(me) && CombatWeaponSubtype(me)==WEAPON_BOW && m_bType>1 && !SkillSystem::CheckSkillHit(me,m_bType,victim))return;
 		entt::entity pkBow = entt::null, pkArrow = entt::null;
+        TypedBowProjectileScope projectile(me);
 
 		switch (m_bType)
 		{

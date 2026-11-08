@@ -99,7 +99,8 @@ std::expected<EquipmentStats,E> BuildEquipmentStats(const ItemCatalog& c,ItemOwn
         if(const auto* tool=std::get_if<ItemToolRow>(&d->category)){slot=1;out.tool=tool->kind;}
         if(const auto* costume=std::get_if<ItemCostumeRow>(&d->category)){slot=CostumeSlot(costume->kind);if(costume->kind==CostumeKind::Weapon && out.weapon!=costume->weapon)continue;}
         if(const auto* regalia=std::get_if<ItemRegaliaRow>(&d->category))slot=RegaliaSlot(*regalia);
-        if(!slot || slot>19 || item->placement->anchor!=slot-1)return std::unexpected(E::InvalidSlot);
+        if(std::holds_alternative<ItemAmmoRow>(d->category))slot=20;
+        if(!slot || slot>20 || item->placement->anchor!=slot-1)return std::unexpected(E::InvalidSlot);
         const AccessorySocketGrade* grade=nullptr;
         if(item->accessory && item->accessory->activeGrade)
         {
@@ -110,7 +111,7 @@ std::expected<EquipmentStats,E> BuildEquipmentStats(const ItemCatalog& c,ItemOwn
         if(const auto* weapon=std::get_if<ItemWeaponRow>(&d->category))
         {
             const auto* ammo=c.FindAmmoPolicy(weapon->ammoPolicy);const auto* attack=c.FindAttack(weapon->attackProfile);
-            if(!ammo || ammo->kind!=AmmoKind::None || !attack)return std::unexpected(E::UnsupportedState);
+            if(!ammo || !attack)return std::unexpected(E::UnsupportedState);
             out.weapon=weapon->subtype;out.reachMillimeters=attack->reachMillimeters;
         }
         const auto* appearance=d->base.appearanceProfile ? c.FindAppearance(*d->base.appearanceProfile) : nullptr;

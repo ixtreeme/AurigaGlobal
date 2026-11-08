@@ -30,7 +30,7 @@ std::uint64_t BenchSession=0;
 constexpr std::uint64_t BenchCatalogRevision=1;
 ItemStorageLayout Inventory{{BenchOwner,ItemStorageKind::Inventory,1},5,9,4};
 // Slots 1..8 (weapon, body, head, shield, feet, wrist, neck, ear) at anchors 0..7.
-ItemStorageLayout Equipment{{BenchOwner,ItemStorageKind::Equipment,1},19,1,1};
+ItemStorageLayout Equipment{{BenchOwner,ItemStorageKind::Equipment,1},20,1,1};
 
 struct Failure : std::runtime_error { using std::runtime_error::runtime_error; };
 void Require(bool condition,const std::string& reason){if(!condition)throw Failure(reason);}
@@ -82,7 +82,7 @@ bool Installed(CAsyncSQL& sql)
 {
     return Rows(sql,"SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN "
         "('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance',"
-        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule','item_pet_study_cooldown','item_soul_strike_event')").at(0).at(0)=="15" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob','companion_riding_requested','companion_lifetime_blob','costume_lifetime_blob','regalia_blob','bonus_tool_blob','soul_blob','soul_channel','soul_active')").at(0).at(0)=="21";
+        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule','item_pet_study_cooldown','item_soul_strike_event','item_ammo_shot_event')").at(0).at(0)=="16" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob','companion_riding_requested','companion_lifetime_blob','costume_lifetime_blob','regalia_blob','bonus_tool_blob','soul_blob','soul_channel','soul_active')").at(0).at(0)=="21";
 }
 std::shared_ptr<const ItemCatalog> Catalog(CAsyncSQL& sql)
 {

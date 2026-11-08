@@ -207,7 +207,7 @@ class CategorySchemaTests(unittest.TestCase):
                          "003_equipment_profiles.sql", "004_refinement_profiles.sql", "005_weapon_armor_catalog.sql",
                          "006_bonus_profiles.sql", "007_bonus_registry_seed.sql", "008_accessory_material_catalog.sql",
                          "009_accessory_socket_profiles.sql", "010_recovery_consumables.sql", "011_catalog_format.sql", "012_containers.sql",
-                         "013_currency_tokens.sql", "014_timed_consumables.sql", "015_automatic_recovery.sql", "016_toggle_effects.sql", "017_skill_books.sql", "018_refinement_recipes.sql", "019_quest_items.sql", "020_socket_stones.sql", "021_costumes.sql", "022_gathering_items.sql", "023_polymorph_items.sql", "024_soul_items.sql", "025_companion_items.sql", "026_growth_pet_progression.sql", "027_pet_care.sql", "028_pet_lifecycle.sql", "029_socket_services.sql", "030_instance_attributes.sql", "031_mob_drops.sql", "032_book_aids.sql", "033_companion_flight.sql", "034_regalia_special_bonuses.sql"):
+                         "013_currency_tokens.sql", "014_timed_consumables.sql", "015_automatic_recovery.sql", "016_toggle_effects.sql", "017_skill_books.sql", "018_refinement_recipes.sql", "019_quest_items.sql", "020_socket_stones.sql", "021_costumes.sql", "022_gathering_items.sql", "023_polymorph_items.sql", "024_soul_items.sql", "025_companion_items.sql", "026_growth_pet_progression.sql", "027_pet_care.sql", "028_pet_lifecycle.sql", "029_socket_services.sql", "030_instance_attributes.sql", "031_mob_drops.sql", "032_book_aids.sql", "033_companion_flight.sql", "034_regalia_special_bonuses.sql", "035_ammunition.sql"):
                 text = (ROOT / "db/migrations/item_combat" / name).read_text(encoding="utf-8")
                 for statement in statements(text):
                     cls.connection.query(statement)
@@ -230,7 +230,7 @@ class CategorySchemaTests(unittest.TestCase):
                 FOREIGN KEY(category_id, local_id) REFERENCES protos.ic_audit_key(category_id, local_id),
                 CHECK(instance_id > 0)) ENGINE=InnoDB""")
             initial = cls.connection.query("SELECT category_id,next_local_id FROM protos.item_local_id_sequence ORDER BY category_id")
-            if initial != [[str(i), "1"] for i in range(1, 21)]:
+            if initial != [[str(i), "1"] for i in range(1, 22)]:
                 raise RuntimeError("fresh category sequences do not start at one independently")
             cls.metadata = {
                 "version": cls.connection.query("SELECT VERSION()")[0][0],
@@ -361,7 +361,7 @@ class CategorySchemaTests(unittest.TestCase):
         reader = Client(self.sandbox.port, library=str(self.sandbox.binary_dir.parent / "lib/libmariadb.dll"),
                         user="catalog_runtime", password="isolated_fixture_only")
         try:
-            self.assertEqual(reader.query("SELECT COUNT(*) FROM protos.item_category"), [["20"]])
+            self.assertEqual(reader.query("SELECT COUNT(*) FROM protos.item_category"), [["21"]])
             self.assertEqual(reader.query("SELECT COUNT(*) FROM protos.item_base"), [["17"]])
             for sql in ["UPDATE protos.item_category SET code='edited' WHERE category_id=1",
                         "DELETE FROM protos.item_category WHERE category_id=1",
@@ -732,7 +732,7 @@ class CategorySchemaTests(unittest.TestCase):
                 self.q(sql)
 
     def test_containers_keys_and_loot(self):
-        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["28", "auriga.item_catalog.v28"]])
+        self.assertEqual(self.q("SELECT schema_version,canonical_domain FROM protos.catalog_format"), [["29", "auriga.item_catalog.v29"]])
         self.assertEqual(self.q("SELECT category_id,local_id,container_kind,loot_profile_id,lock_id FROM protos.item_container ORDER BY local_id"),
                          [["8","1","1","1","0"],["8","2","2","2","7"],["8","3","3",None,"0"]])
         self.assertEqual(self.q("SELECT category_id,local_id,lock_id FROM protos.item_container_key"), [["18","1","7"]])
@@ -744,7 +744,7 @@ class CategorySchemaTests(unittest.TestCase):
         self.assertEqual(self.q("SELECT COUNT(*) FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='protos' "
                                 "AND TABLE_NAME='item_base' AND CHECK_CLAUSE LIKE '%in (1,2,3,5,6)%'"), [["0"]])
         self.assertEqual(self.q("SELECT CHECK_CLAUSE FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='protos' "
-                        "AND TABLE_NAME='item_base' AND CONSTRAINT_NAME='ck_item_base_category'"), [["`category_id` between 1 and 20"]])
+                        "AND TABLE_NAME='item_base' AND CONSTRAINT_NAME='ck_item_base_category'"), [["`category_id` between 1 and 21"]])
 
     def test_container_sql_constraints(self):
         for sql, code in [
@@ -770,7 +770,7 @@ class CategorySchemaTests(unittest.TestCase):
             ("INSERT INTO protos.loot_entry VALUES(1,4,2,6,1,1,1,0)", "4025"),
             ("UPDATE protos.item_base SET binding_policy=3 WHERE category_id=8 AND local_id=1", "4025"),
             ("UPDATE protos.item_base SET appearance_profile_id=1 WHERE category_id=18", "4025"),
-            ("INSERT INTO protos.item_base VALUES(21,1,'special.unregistered','item.c.name','item.c.description','icons/c.png',"
+            ("INSERT INTO protos.item_base VALUES(22,1,'special.unregistered','item.c.name','item.c.description','icons/c.png',"
              "1,1,1,0,0,1,1,1,1,NULL,NULL,1,0,0,0)", "4025"),
             ("DELETE FROM protos.loot_profile WHERE profile_id=1", "1451"),
             ("DELETE FROM protos.item_base WHERE category_id=6 AND local_id=1", "1451"),

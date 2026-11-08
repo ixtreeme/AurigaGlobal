@@ -1,6 +1,7 @@
 #include <item/PersistentItems.hpp>
 #include <item/SpecialBonusRuntime.hpp>
 #include <item/SoulRuntime.hpp>
+#include <item/AmmoRuntime.hpp>
 #include <item/SocketMaintenance.hpp>
 #include <algorithm>
 #include <limits>
@@ -579,7 +580,7 @@ bool SupportsPersistentItem(const ItemCatalog& c,const ItemCatalogEntry& e) noex
         const auto* profile=c.FindPetSupplyProfile(supply->profile);
         return profile && profile->kind>=PetSupplyKind::Study && profile->kind<=PetSupplyKind::Skin;
     }
-    if(std::holds_alternative<ItemSoulRow>(e.category))return true;
+    if(std::holds_alternative<ItemSoulRow>(e.category) || std::holds_alternative<ItemAmmoRow>(e.category))return true;
     if(std::holds_alternative<ItemRegaliaRow>(e.category) || std::holds_alternative<ItemBonusToolRow>(e.category) || std::holds_alternative<ItemCostumeRow>(e.category) || std::holds_alternative<ItemToolRow>(e.category))return true;
     if(std::holds_alternative<ItemFishingRow>(e.category) || std::holds_alternative<ItemPolymorphRow>(e.category) || std::holds_alternative<ItemSkillBookRow>(e.category))return true;
     if(std::holds_alternative<ItemContainerRow>(e.category))return true;
@@ -719,6 +720,7 @@ std::expected<std::vector<std::uint32_t>,E> OccupiedItemCells(const ItemCatalog&
         const auto& category=c.Find(p.key)->category;
         if(const auto* w=std::get_if<ItemWeaponRow>(&category))slot=w->slot;
         if(std::holds_alternative<ItemToolRow>(category))slot=EquipmentSlot::Weapon;
+        if(std::holds_alternative<ItemAmmoRow>(category))slot=EquipmentSlot::Ammo;
         if(const auto* a=std::get_if<ItemArmorRow>(&category))slot=a->slot;
         if(const auto* a=std::get_if<ItemAccessoryRow>(&category))slot=a->slot;
         if(const auto* regalia=std::get_if<ItemRegaliaRow>(&category))slot=static_cast<EquipmentSlot>(RegaliaSlot(*regalia));
@@ -751,6 +753,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
     if((r.items.empty() && r.wallets.empty() && !r.recovery && !r.learning) || !r.outcomeCode || r.kind<ItemOperationKind::Grant || r.kind>ItemOperationKind::Trade ||
        (r.petStudyCooldown && r.outcomeCode!=PetStudyOutcome) ||
        std::ranges::all_of(r.operationId,[](auto n){return !n;}))return std::unexpected(E::InvalidOperation);
+    if(r.outcomeCode==AmmoShotOutcome && !ValidAmmoShotWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==SoulOutcome && !ValidSoulWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==SpecialBonusOutcome && !ValidSpecialBonusWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==CostumeOutcome && !ValidCostumeWrite(c,r))return std::unexpected(E::InvalidChange);
@@ -807,8 +810,9 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
                    p.placement->kind!=ItemStorageKind::Inventory || expected!=p)
                     return std::unexpected(E::TransferDenied);
             }
-            if(b.soul && b.soul->active && r.outcomeCode!=SoulOutcome && (p.placement!=b.placement || p.owner!=b.owner || p.destroyed))return std::unexpected(E::TransferDenied);
-            if(b.soul!=p.soul && r.outcomeCode!=SoulOutcome)return std::unexpected(E::InvalidChange);
+            if(b.key.Category()==ItemCategory::Ammo && b.placement && b.placement->kind==ItemStorageKind::Equipment && (b.count!=p.count || p.destroyed) && r.outcomeCode!=AmmoShotOutcome)return std::unexpected(E::InvalidChange);
+            if(b.soul && b.soul->active && r.outcomeCode!=SoulOutcome && r.outcomeCode!=AmmoShotOutcome && (p.placement!=b.placement || p.owner!=b.owner || p.destroyed))return std::unexpected(E::TransferDenied);
+            if(b.soul!=p.soul && r.outcomeCode!=SoulOutcome && r.outcomeCode!=AmmoShotOutcome)return std::unexpected(E::InvalidChange);
             if(b.bonusTool!=p.bonusTool && r.outcomeCode!=SpecialBonusOutcome)return std::unexpected(E::InvalidChange);
             if(b.regalia!=p.regalia && r.outcomeCode!=SpecialBonusOutcome){
                 auto expected=b.regalia;if(expected)expected->active=false;
@@ -1109,6 +1113,7 @@ const ItemStorageLayout* PlaceFirst(const ItemCatalog& c,PersistentItem& item,
 }
 std::optional<EquipmentSlot> SlotOf(const ItemCatalogEntry& entry)
 {
+    if(std::holds_alternative<ItemAmmoRow>(entry.category))return EquipmentSlot::Ammo;
     if(std::holds_alternative<ItemToolRow>(entry.category))return EquipmentSlot::Weapon;
     if(const auto* regalia=std::get_if<ItemRegaliaRow>(&entry.category))return static_cast<EquipmentSlot>(RegaliaSlot(*regalia));
     if(const auto* costume=std::get_if<ItemCostumeRow>(&entry.category))return static_cast<EquipmentSlot>(CostumeSlot(costume->kind));

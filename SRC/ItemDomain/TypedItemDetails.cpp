@@ -109,7 +109,8 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
             if(const auto* r=std::get_if<ItemRegaliaRow>(&entry->category))slot=RegaliaSlot(*r);
             if(key.Category()==ItemCategory::Regalia || key.Category()==ItemCategory::BonusTool)actions|=TypedActionSpecialBonus;
             if(key.Category()==ItemCategory::Soul)actions|=TypedActionSoul;
-            if(slot && slot<=19) actions|=TypedActionEquip;
+            if(std::holds_alternative<ItemAmmoRow>(entry->category))slot=20;
+            if(slot && slot<=20) actions|=TypedActionEquip;
             if(!growth && refinable.contains(key)) actions|=TypedActionRefine;
             if(!growth && ownedDropEnabled && trade && trade->allowDrop && trade->allowTrade) actions|=TypedActionDrop;
             if(b.retired) actions=hatch && companion ? TypedActionPetHatch : 0;

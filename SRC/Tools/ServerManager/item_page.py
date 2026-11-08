@@ -1833,9 +1833,13 @@ class ItemPage(QWidget):
         self.fishing_panel=FishingPanel(changed,Form,LootTable)
         self.pet_supply_panel=PetSupplyPanel(changed,Form)
         self.pet_supply_panel.kind.widget.currentIndexChanged.connect(lambda *_:self.pet_supply_controls())
-        self.category_forms = {1: weapon, 2: armor, 3: accessory, 5: recovery, 6: material, 7: stone_form, 8: container_form,
+        ammo_form=Form(changed)
+        self.ammo_policy_field=ammo_form.add('child','ammo_policy_id','Íjjal közös lőszerszabály','choice',choices=[])
+        ammo_form.note('Az íj és a lőszer ugyanazt a szabályt használja. A megadott darabszám csak elfogadott lövéskor fogy; azonos tartalék automatikusan felszerelődik.')
+        ammo_form.finish()
+        self.category_forms = {21:ammo_form,1: weapon, 2: armor, 3: accessory, 5: recovery, 6: material, 7: stone_form, 8: container_form,
                                10: quest_form, 16: token_form, 18: key_form}
-        self.category_pages = {1: scroll(weapon), 2: scroll(armor), 3: scroll(accessory), 4: self.costume_panel, 5: scroll(potion), 6: scroll(material),
+        self.category_pages = {21:scroll(ammo_form),1: scroll(weapon), 2: scroll(armor), 3: scroll(accessory), 4: self.costume_panel, 5: scroll(potion), 6: scroll(material),
                                7: scroll(stone_form), 8: scroll(container), 9: self.book_panel, 10: scroll(quest_form), 11: self.tool_panel, 12: self.fishing_panel, 13: self.poly_panel, 14: self.soul_panel, 15: scroll(self.companion_panel), 16: scroll(token_form), 17: scroll(self.pet_supply_panel), 18: scroll(key_form),19:scroll(self.regalia_panel),20:scroll(self.special_bonus_panel)}
         # Timed stat effects are another typed consumable, never a recovery subtype.
         timed_page = QWidget(); timed_layout = QVBoxLayout(timed_page)
@@ -2294,6 +2298,11 @@ class ItemPage(QWidget):
             self.consumable_kind.setCurrentIndex(selected_kind)
             self.consumable_pages.setCurrentIndex(selected_kind)
             self.recovery_controls()
+        elif category == 21:
+            combo=self.ammo_policy_field.widget;combo.blockSignals(True);combo.clear()
+            for row in catalog.Catalog(self.packet).tables['item_ammo_policy']:
+                if row['ammo_kind']=='2':combo.addItem(row['code']+' ('+row['units_per_hit']+' db/lövés)',row['policy_id'])
+            combo.blockSignals(False);self.category_forms[21].load(document)
         elif category == 15:
             self.companion_panel.set_forms(catalog.Catalog(self.packet).tables['companion_form']);self.companion_panel.load(document)
         elif category == 14:
