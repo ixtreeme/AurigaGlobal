@@ -47,8 +47,12 @@ def main():
         paths.append(ROOT / "db/migrations/item_instance/017_regalia_special_bonuses.sql")
         paths.append(ROOT / "db/migrations/item_instance/018_soul_runtime.sql")
         paths.append(ROOT / "db/migrations/item_instance/019_ammo_runtime.sql")
+        paths.append(ROOT / "db/migrations/item_instance/020_shared_storage.sql")
         sandbox.client.query("CREATE TABLE player.player(id INT UNSIGNED PRIMARY KEY, name VARCHAR(24) NOT NULL DEFAULT '', exp INT UNSIGNED NOT NULL DEFAULT 0, skill_point SMALLINT NOT NULL DEFAULT 0, sub_skill_point SMALLINT NOT NULL DEFAULT 0, horse_skill_point SMALLINT NOT NULL DEFAULT 0, skill_level BLOB NULL) ENGINE=InnoDB")
         sandbox.client.query("CREATE TABLE player.player_deleted LIKE player.player")
+        sandbox.client.query("ALTER TABLE player.player ADD account_id INT UNSIGNED NOT NULL DEFAULT 0")
+        sandbox.client.query("CREATE TABLE player.guild(id INT UNSIGNED PRIMARY KEY, master INT UNSIGNED NOT NULL) ENGINE=InnoDB")
+        sandbox.client.query("CREATE TABLE player.guild_member(pid INT UNSIGNED PRIMARY KEY,guild_id INT UNSIGNED NOT NULL,grade TINYINT UNSIGNED NOT NULL) ENGINE=InnoDB")
         for path in paths:
             for statement in statements(path.read_text(encoding="utf-8")):
                 try:
@@ -71,8 +75,9 @@ def main():
         sandbox.client.query("GRANT INSERT ON player.item_soul_strike_event TO 'item_writer'@'localhost'")
         sandbox.client.query("GRANT INSERT,UPDATE ON player.item_pet_study_cooldown TO 'item_writer'@'localhost'")
         sandbox.client.query("GRANT INSERT,DELETE ON player.item_storage TO 'item_writer'@'localhost'")
-        sandbox.client.query("GRANT UPDATE ON player.item_owner_fence TO 'item_writer'@'localhost'")
+        sandbox.client.query("GRANT INSERT,UPDATE ON player.item_owner_fence TO 'item_writer'@'localhost'")
         sandbox.client.query("GRANT UPDATE ON player.player TO 'item_writer'@'localhost'")
+        sandbox.client.query("GRANT INSERT,UPDATE ON player.item_shared_storage_gate TO 'item_writer'@'localhost'")
         sandbox.client.query("GRANT UPDATE ON player.item_instance_id_allocator TO 'item_writer'@'localhost'")
         metadata = {"version": sandbox.client.query("SELECT VERSION()")[0][0],
                     "owned_datadir_verified": True, "catalog_select_only": True,

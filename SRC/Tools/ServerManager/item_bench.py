@@ -26,8 +26,9 @@ RECOVERY_TABLES = ('item_recovery_schedule',)
 PET_STUDY_TABLE = 'item_pet_study_cooldown'
 SOUL_TABLE = 'item_soul_strike_event'
 AMMO_TABLE = 'item_ammo_shot_event'
-TABLES = (AMMO_TABLE, SOUL_TABLE, PET_STUDY_TABLE, *RECOVERY_TABLES, *GROUND_TABLES, ALLOCATOR, *BASE_TABLES)
-MIGRATIONS = ('001_item_persistence.sql', '002_instance_id_allocator.sql', '003_owned_ground.sql', '004_recovery_schedule.sql', '005_automatic_recovery.sql', '006_item_effects.sql', '007_book_learning.sql', '008_polymorph.sql', '009_gathering_tools.sql', '010_companion_seals.sql', '011_growth_pet_birth.sql', '012_pet_study_cooldown.sql', '013_pet_supplies.sql', '014_mount_riding.sql', '015_companion_lifetime.sql', '016_costume_lifetime.sql', '017_regalia_special_bonuses.sql', '018_soul_runtime.sql', '019_ammo_runtime.sql')
+SHARED_STORAGE_TABLE = 'item_shared_storage_gate'
+TABLES = (SHARED_STORAGE_TABLE, AMMO_TABLE, SOUL_TABLE, PET_STUDY_TABLE, *RECOVERY_TABLES, *GROUND_TABLES, ALLOCATOR, *BASE_TABLES)
+MIGRATIONS = ('001_item_persistence.sql', '002_instance_id_allocator.sql', '003_owned_ground.sql', '004_recovery_schedule.sql', '005_automatic_recovery.sql', '006_item_effects.sql', '007_book_learning.sql', '008_polymorph.sql', '009_gathering_tools.sql', '010_companion_seals.sql', '011_growth_pet_birth.sql', '012_pet_study_cooldown.sql', '013_pet_supplies.sql', '014_mount_riding.sql', '015_companion_lifetime.sql', '016_costume_lifetime.sql', '017_regalia_special_bonuses.sql', '018_soul_runtime.sql', '019_ammo_runtime.sql', '020_shared_storage.sql')
 NO_WINDOW = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
 
 
@@ -107,12 +108,9 @@ def install(root):
         elif present == set(BASE_TABLES): scripts, created = MIGRATIONS[1:], (PET_STUDY_TABLE, *RECOVERY_TABLES, *GROUND_TABLES, ALLOCATOR)
         elif present == {ALLOCATOR, *BASE_TABLES}: scripts, created = MIGRATIONS[2:], (PET_STUDY_TABLE, *RECOVERY_TABLES, *GROUND_TABLES)
         elif present == {*GROUND_TABLES, ALLOCATOR, *BASE_TABLES}: scripts, created = MIGRATIONS[3:], (PET_STUDY_TABLE, *RECOVERY_TABLES)
-        elif present == set(TABLES) - {AMMO_TABLE}: scripts, created = MIGRATIONS[4:], (AMMO_TABLE,)
-        elif present == set(TABLES) - {AMMO_TABLE, SOUL_TABLE}: scripts, created = MIGRATIONS[4:], (AMMO_TABLE, SOUL_TABLE)
-        elif present == set(TABLES) - {SOUL_TABLE}: scripts, created = MIGRATIONS[4:], (SOUL_TABLE,)
-        elif present == set(TABLES) - {PET_STUDY_TABLE}: scripts, created = MIGRATIONS[4:], (PET_STUDY_TABLE,)
-        elif present == set(TABLES): scripts, created = MIGRATIONS[4:], ()
+        elif present <= set(TABLES) and set(TABLES)-present <= {AMMO_TABLE,SOUL_TABLE,PET_STUDY_TABLE,SHARED_STORAGE_TABLE}: scripts, created = MIGRATIONS[4:], tuple(t for t in TABLES if t not in present)
         else: raise api.EditorError('Részben telepített mentési táblák vannak a player adatbázisban; kézi ellenőrzés szükséges.')
+        created = tuple(t for t in TABLES if t not in present)
         stamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S-') + secrets.token_hex(4)
         folder = root / 'run/item-bench' / stamp; folder.mkdir(parents=True)
         binaries = Path(owner['binary_dir'])

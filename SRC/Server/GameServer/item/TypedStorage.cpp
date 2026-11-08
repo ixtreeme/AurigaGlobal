@@ -1,0 +1,88 @@
+#include "stdafx.h"
+#include "TypedStorage.hpp"
+#include "TypedInventorySync.hpp"
+#include "TypedAccessoryClock.hpp"
+#include "TypedRecovery.hpp"
+#include "TypedDrops.hpp"
+#include "ItemCatalogRuntime.hpp"
+#include "ItemStore.hpp"
+#include <StoragePersistenceSql.hpp>
+#include <item/StorageRuntime.hpp>
+#include "../ecs/ResourceAdmission.hpp"
+#include "../ecs/systems/PlayerRuntimeSystem.hpp"
+#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/CombatSystem.hpp"
+#include "../ecs/systems/PointSystem.hpp"
+#include "../ecs/systems/SessionSystem.hpp"
+#include "../ecs/systems/SocialSystem.hpp"
+#include "../ecs/systems/ChatSystem.hpp"
+#include "../ecs/components/status_components.hpp"
+#include "../ecs/components/quest_components.hpp"
+#include "../quest/questpc.h"
+#include "../network/desc.h"
+#include "../entity/char_manager.h"
+#include "../guild/guild.h"
+#include "../guild/guild_manager.h"
+#include <SQL/AsyncSQL.h>
+#include <openssl/rand.h>
+#include <charconv>
+namespace {
+namespace item=auriga::item;namespace store=item::runtime;namespace sql=item::persistence;using E=item::ItemPersistenceError;
+#pragma pack(push,1)
+struct Request {std::uint8_t header=201,action=0,route=1,command=0;std::uint64_t nonce=0,subject=0;std::uint32_t units=0,cell=UINT32_MAX,npc=0;char recipient[25]{};};
+#pragma pack(pop)
+static_assert(sizeof(Request)==57);
+enum Status:std::uint8_t {Ready,Applied,Denied,Stale,Invalid,Pending,Closed,Failed};
+struct Bundle {sql::LoadedItemOwner actor,account;std::optional<sql::LoadedItemOwner> remote;item::StorageActor facts;item::StorageChoice choice;};
+struct TypedStorageSession {Request request;std::uint64_t nonce=0;std::array<std::uint8_t,16> operation{};std::optional<Bundle> loaded;std::optional<item::StoragePlan> quote;bool pending=false,attempted=false;Status status=Ready;};
+struct TypedStorageReference {std::shared_ptr<TypedStorageSession> value;};
+entt::entity Current(std::uint32_t pid,std::uint64_t token){const auto e=CHARACTER_MANAGER::instance().FindEntityByPID(pid);const auto* l=g_registry.valid(e)?g_registry.try_get<ecs::TypedItemLogin>(e):nullptr;return l && l->token==token?e:entt::null;}
+bool Admitted(entt::entity e){if(!g_registry.valid(e) || !ecs::PlayerRuntime::IsPC(e) || CombatSystem::IsDead(e) || !InventorySystem::CanHandleItems(e) || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e) || ecs::SocialSystem::HasExchange(e) || ecs::SocialSystem::GetMyShop(e)!=entt::null || ecs::SocialSystem::GetShopOwner(e)!=entt::null || !g_registry.all_of<ecs::TypedItems,ecs::TypedItemLogin>(e))return false;const auto* flags=g_registry.try_get<ecs::StatusFlags>(e);const auto* q=g_registry.try_get<ecs::QuestPCState>(e);auto* d=ecs::PlayerRuntime::GetDesc(e);if(!d || !d->IsPhase(PHASE_GAME) || !q || !q->pc || q->pc->IsRunning() || (flags && (flags->isStunned || flags->isObserverMode)))return false;
+#ifdef ENABLE_RESTRICT_GM_PERMISSIONS
+if(ecs::PlayerRuntime::GetGMLevel(e)>GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(e)<GM_IMPLEMENTOR)return false;
+#endif
+return true;}
+bool Keeper(entt::entity e,std::uint32_t vid){const auto n=CHARACTER_MANAGER::instance().FindEntity(vid);if(!g_registry.valid(n) || ecs::PlayerRuntime::IsPC(n) || ecs::PlayerRuntime::GetRaceNum(n)!=9005 || ecs::PlayerRuntime::GetMapIndex(e)!=ecs::PlayerRuntime::GetMapIndex(n))return false;const auto dx=std::abs(std::int64_t(ecs::PlayerRuntime::GetX(e))-ecs::PlayerRuntime::GetX(n)),dy=std::abs(std::int64_t(ecs::PlayerRuntime::GetY(e))-ecs::PlayerRuntime::GetY(n));return std::max(dx,dy)+std::min(dx,dy)/2<=2000;}
+item::StorageActor Facts(entt::entity e,const Request& r){item::StorageActor a;a.pid=ecs::PlayerRuntime::GetPlayerID(e);if(auto* d=ecs::PlayerRuntime::GetDesc(e))a.account=d->GetAccountTable().id;a.use={static_cast<std::uint16_t>(ecs::PointSystem::GetLevel(e)),ecs::PlayerRuntime::GetJob(e),ecs::PlayerRuntime::GetSex(e)};a.use.inCombat=TypedItemEffectFacts(e).actor.inCombat;a.admitted=Admitted(e);a.bankInRange=Keeper(e,r.npc);if(auto* g=ecs::SocialSystem::GetGuild(e)){a.guild=g->GetID();a.guildMember=g->GetMember(a.pid)!=nullptr;a.guildLeader=a.guildMember && g->GetMasterPID()==a.pid;}return a;}
+bool Same(const Request& a,const Request& b){return a.route==b.route && a.command==b.command && a.subject==b.subject && a.units==b.units && a.cell==b.cell && a.npc==b.npc && std::equal(std::begin(a.recipient),std::end(a.recipient),std::begin(b.recipient));}
+std::shared_ptr<TypedStorageSession> Session(entt::entity e){const auto* ref=g_registry.valid(e)?g_registry.try_get<TypedStorageReference>(e):nullptr;return ref?ref->value:nullptr;}
+void Reply(entt::entity e,const std::shared_ptr<TypedStorageSession>& s,Status status,const char* message=""){
+    if(!g_registry.valid(e))return;const auto c=store::CurrentCatalog();auto* d=ecs::PlayerRuntime::GetDesc(e);if(!c || !d || !d->IsPhase(PHASE_GAME))return;
+    item::StorageSnapshot view;view.actor=Facts(e,s->request);view.route=static_cast<item::StorageRoute>(s->request.route);view.status=status;view.command=s->request.command;view.nonce=s->nonce;view.subject=s->request.subject;view.units=s->quote?s->quote->units:s->request.units;view.cell=s->request.cell;view.amount=s->quote?s->quote->amount:0;view.message=message;
+    if(s->loaded && status!=Denied && status!=Failed && status!=Closed){const auto& b=*s->loaded;const auto wallet=std::ranges::find(b.account.wallets,item::WalletCurrency::DragonCoin,&item::ItemWallet::currency);if(wallet!=b.account.wallets.end()){view.coins=wallet->balance;view.walletRevision=wallet->revision;}view.recipient=b.choice.recipient;const auto route=view.route;const auto* owner=route==item::StorageRoute::Bank || route==item::StorageRoute::Mall?&b.account:route==item::StorageRoute::Guild && b.remote?&*b.remote:&b.actor;const auto kind=route==item::StorageRoute::Bank?item::ItemStorageKind::Safebox:route==item::StorageRoute::Mall?item::ItemStorageKind::Mall:route==item::StorageRoute::Guild?item::ItemStorageKind::GuildStorage:route==item::StorageRoute::Mail?item::ItemStorageKind::Mail:route==item::StorageRoute::Awards?item::ItemStorageKind::PendingAward:item::ItemStorageKind::Inventory;view.owner=owner->fence.owner;
+        for(const auto& l:owner->storages)if(l.storage.kind==kind && l.storage.id==1)view.layouts.push_back(l);for(const auto& i:owner->items)if(!i.destroyed && i.placement && i.placement->kind==kind && i.placement->storageId==1){if(route==item::StorageRoute::Wallet){const auto* row=std::get_if<item::ItemCurrencyTokenRow>(&c->Find(i.key)->category);if(!row || row->currency!=item::WalletCurrency::DragonCoin)continue;}view.items.push_back(i);}view.canDeposit=route==item::StorageRoute::Bank?view.actor.bankInRange:route==item::StorageRoute::Guild?view.actor.guildMember:route==item::StorageRoute::Mail || route==item::StorageRoute::Wallet;view.canWithdraw=route==item::StorageRoute::Bank?view.actor.bankInRange:route==item::StorageRoute::Guild?view.actor.guildLeader:true;
+    }
+    const auto wire=item::EncodeStorageSnapshot(*c,view);SendTypedInventory(e);if(wire)d->LargePacket(wire->data(),static_cast<int>(wire->size()));
+}
+std::expected<Bundle,E> Load(CAsyncSQL& db,const item::ItemCatalog& c,item::StorageActor facts,Request r,std::uint64_t session){
+    Bundle b;b.facts=facts;b.choice={static_cast<item::StorageRoute>(r.route),static_cast<item::StorageCommand>(r.command),r.subject,r.units,r.cell,0};const item::ItemOwner actor{item::ItemOwnerKind::Character,facts.pid},account{item::ItemOwnerKind::Account,facts.account};
+    if(r.route==unsigned(item::StorageRoute::Mail) && r.command==unsigned(item::StorageCommand::Send)){const auto end=std::find(std::begin(r.recipient),std::end(r.recipient),'\0');if(end==std::end(r.recipient) || end==std::begin(r.recipient))return std::unexpected(E::InvalidOwner);std::unique_ptr<SQLMsg> m(db.DirectQueryPrepared("SELECT id FROM player.player WHERE name=? LIMIT 2",{SqlParam::Text(std::string(std::begin(r.recipient),end))}));if(!m || m->uiSQLErrno || !m->Get() || m->Get()->uiNumRows!=1)return std::unexpected(E::InvalidOwner);auto row=m->Get()->FetchRow();if(!row || !row[0])return std::unexpected(E::InvalidOwner);const auto text=std::string_view(row[0]);const auto parsed=std::from_chars(text.data(),text.data()+text.size(),b.choice.recipient);if(parsed.ec!=std::errc{} || parsed.ptr!=text.data()+text.size() || b.choice.recipient==facts.pid)return std::unexpected(E::InvalidOwner);}
+    std::optional<item::ItemOwner> remote;if(r.route==unsigned(item::StorageRoute::Guild)){if(!facts.guildMember || !facts.guild)return std::unexpected(E::RequirementNotMet);remote=item::ItemOwner{item::ItemOwnerKind::Guild,facts.guild};}else if(b.choice.recipient)remote=item::ItemOwner{item::ItemOwnerKind::Character,b.choice.recipient};
+    for(const auto owner:{actor,account})if(const auto ok=sql::EnsureRuntimeStorageOwner(db,c,owner);!ok)return std::unexpected(ok.error());if(remote)if(const auto ok=sql::EnsureRuntimeStorageOwner(db,c,*remote);!ok)return std::unexpected(ok.error());
+    const item::StorageAuthorization auth{facts,b.choice};auto own=sql::LoadAuthorizedStorageOwner(db,c,actor,session,auth);if(!own)return std::unexpected(own.error());auto acct=sql::LoadAuthorizedStorageOwner(db,c,account,0,auth);if(!acct)return std::unexpected(acct.error());b.actor=std::move(*own);b.account=std::move(*acct);if(remote){auto other=sql::LoadAuthorizedStorageOwner(db,c,*remote,0,auth);if(!other)return std::unexpected(other.error());b.remote=std::move(*other);}return b;
+}
+std::expected<item::StoragePlan,E> Plan(const item::ItemCatalog& c,const TypedStorageSession& s,const Bundle& b,std::span<const item::ItemInstanceId> ids){std::vector fences{b.actor.fence,b.account.fence};auto layouts=b.actor.storages;layouts.insert(layouts.end(),b.account.storages.begin(),b.account.storages.end());auto all=b.actor.items;all.insert(all.end(),b.account.items.begin(),b.account.items.end());auto wallets=b.actor.wallets;wallets.insert(wallets.end(),b.account.wallets.begin(),b.account.wallets.end());if(b.remote){fences.push_back(b.remote->fence);layouts.insert(layouts.end(),b.remote->storages.begin(),b.remote->storages.end());all.insert(all.end(),b.remote->items.begin(),b.remote->items.end());wallets.insert(wallets.end(),b.remote->wallets.begin(),b.remote->wallets.end());}return item::MakeStorageCommit(c,s.operation,fences,layouts,all,wallets,b.facts,b.choice,ids);}
+bool Fresh(const Bundle& old,const Bundle& now,const item::ItemCommit& quote){const auto check=[&](const auto& a,const auto& b){return a.fence==b.fence || (a.fence.owner.kind==item::ItemOwnerKind::Character && OnlyTypedAccessoryClockChanges(a.fence,b.fence));};if(!check(old.actor,now.actor) || old.account.fence!=now.account.fence || old.remote.has_value()!=now.remote.has_value() || (old.remote && !check(*old.remote,*now.remote)))return false;for(const auto& ch:quote.items)if(ch.before){const auto& owner=ch.before->owner==now.actor.fence.owner?now.actor:ch.before->owner==now.account.fence.owner?now.account:*now.remote;const auto i=std::ranges::find(owner.items,ch.before->id,&item::PersistentItem::id);if(i==owner.items.end() || *i!=*ch.before)return false;}return true;}
+void Fetch(entt::entity e,const std::shared_ptr<TypedStorageSession>& s,bool confirm){
+    auto permit=ecs::resource_admission::Enter({e},auriga::resource_admission::Operation::ItemUse);if(!permit || !permit->Current()){s->status=Denied;Reply(e,s,Denied);return;}auto held=std::make_shared<auriga::resource_admission::Permit>(std::move(*permit));const auto pid=ecs::PlayerRuntime::GetPlayerID(e);const auto token=g_registry.get<ecs::TypedItemLogin>(e).token;const auto generation=g_registry.get<ecs::TypedItems>(e).state.fence.sessionGeneration;const auto facts=Facts(e,s->request);const auto request=s->request;s->pending=true;g_registry.emplace_or_replace<ecs::TypedItemBusy>(e);
+    if(!store::ItemStore::Instance().Submit([pid,token,generation,facts,request,s,confirm,held](CAsyncSQL& db,const item::ItemCatalog& c)->store::ItemStore::Completion{auto loaded=Load(db,c,facts,request,generation);return [pid,token,s,confirm,held,loaded=std::move(loaded)]()mutable{
+        const auto e=Current(pid,token);if(e==entt::null || Session(e)!=s)return;const auto release=[&](){s->pending=false;g_registry.remove<ecs::TypedItemBusy>(e);};if(!loaded || !Admitted(e) || !held->Current()){release();s->status=loaded?Denied:Failed;Reply(e,s,s->status);PumpTypedItemGrants(e);return;}const auto now=Facts(e,s->request);if(now.account!=loaded->facts.account || now.guild!=loaded->facts.guild){release();s->status=Denied;s->loaded.reset();Reply(e,s,Denied);return;}loaded->facts=now;g_registry.emplace_or_replace<ecs::TypedItems>(e,loaded->actor);
+        const auto catalog=store::CurrentCatalog();const auto ids=store::PeekInstanceIds(item::MaxItemCommitItems);
+        if(!confirm){s->loaded=std::move(*loaded);if(s->request.action==2){auto plan=Plan(*catalog,*s,*s->loaded,ids);if(plan){s->quote=std::move(*plan);s->status=Ready;}else s->status=Invalid;}else s->status=Ready;release();Reply(e,s,s->status);PumpTypedItemGrants(e);return;}
+        if(!s->loaded || !s->quote || !Fresh(*s->loaded,*loaded,s->quote->commit)){s->loaded=std::move(*loaded);release();s->status=Stale;Reply(e,s,Stale);PumpTypedItemGrants(e);return;}auto plan=Plan(*catalog,*s,*loaded,ids);s->loaded=std::move(*loaded);if(!plan || plan->amount!=s->quote->amount || plan->units!=s->quote->units){release();s->status=Stale;Reply(e,s,Stale);PumpTypedItemGrants(e);return;}
+        std::vector<store::OwnerRead> reads;for(const auto& f:plan->commit.owners)reads.push_back({f.owner,f.owner.kind==item::ItemOwnerKind::Character && f.owner.id==pid?f.sessionGeneration:0});unsigned spent=0;for(const auto& ch:plan->commit.items)if(!ch.before)spent++;s->status=Pending;
+        if(!store::RequestCommitMany(reads,std::move(plan->commit),[pid,token,s,held](store::MultiCommitOutcome result)mutable{const auto e=Current(pid,token);if(e==entt::null || Session(e)!=s)return;for(auto& state:result.states)if(state){if(state->fence.owner==s->loaded->actor.fence.owner){s->loaded->actor=*state;g_registry.emplace_or_replace<ecs::TypedItems>(e,*state);}else if(state->fence.owner==s->loaded->account.fence.owner)s->loaded->account=*state;else if(s->loaded->remote && state->fence.owner==s->loaded->remote->fence.owner)s->loaded->remote=*state;if(state->fence.owner.kind==item::ItemOwnerKind::Character && state->fence.owner.id!=pid){NotifyRemoteTypedItemOwner(*state);RefreshRemoteTypedItemOwner(static_cast<std::uint32_t>(state->fence.owner.id),state->fence.sessionGeneration,state->fence.revision);}}
+            s->pending=false;g_registry.remove<ecs::TypedItemBusy>(e);s->status=result.write?Applied:Failed;Reply(e,s,s->status);PumpTypedItemGrants(e);})) {release();s->status=Failed;Reply(e,s,Failed);PumpTypedItemGrants(e);}else store::SpendInstanceIds(spent);
+    };})){s->pending=false;g_registry.remove<ecs::TypedItemBusy>(e);s->status=Failed;Reply(e,s,Failed);}
+}
+}
+bool HandleTypedStoragePacket(entt::entity e,const char* bytes){const auto r=*reinterpret_cast<const Request*>(bytes);if(!g_registry.valid(e))return true;auto s=Session(e);if(s && s->pending){Reply(e,s,Pending);return true;}if(r.action==3 && s && s->attempted && s->nonce==r.nonce && Same(s->request,r)){Reply(e,s,s->status);return true;}if(r.route<1 || r.route>6 || r.action<1 || r.action>4 || !std::memchr(r.recipient,0,sizeof(r.recipient)))return true;
+    if(r.action==4){if(!s)s=std::make_shared<TypedStorageSession>();s->request=r;g_registry.remove<TypedStorageReference>(e);Reply(e,s,Closed);return true;}
+    if(!Admitted(e) || g_registry.all_of<ecs::TypedItemBusy>(e)){if(!s){s=std::make_shared<TypedStorageSession>();s->request=r;}Reply(e,s,Denied);return true;}
+    if(r.action==1 || r.action==2){if(r.nonce)return true;s=std::make_shared<TypedStorageSession>();s->request=r;if(r.action==2 && (!r.subject || r.command<1 || r.command>6 || RAND_bytes(reinterpret_cast<unsigned char*>(&s->nonce),8)!=1 || !s->nonce || RAND_bytes(s->operation.data(),16)!=1)){Reply(e,s,Invalid);return true;}g_registry.emplace_or_replace<TypedStorageReference>(e,s);Fetch(e,s,false);return true;}
+    if(!s || !s->quote || s->nonce!=r.nonce || !Same(s->request,r)){if(!s){s=std::make_shared<TypedStorageSession>();s->request=r;}Reply(e,s,Stale);return true;}s->attempted=true;Fetch(e,s,true);return true;
+}
+void OpenTypedAccountWallet(entt::entity e,std::uint64_t source,std::uint32_t units){Request r;r.action=1;r.route=6;r.subject=source;r.units=units;HandleTypedStoragePacket(e,reinterpret_cast<const char*>(&r));}
+bool BeginTypedStorageGuildDisband(std::uint32_t guild,std::uint32_t leader){if(!store::ItemStore::Instance().Running())return false;const auto inform=[leader](const char* text){const auto e=CHARACTER_MANAGER::instance().FindEntityByPID(leader);if(g_registry.valid(e))ecs::ChatSystem::Send(e,CHAT_TYPE_INFO,"%s",text);};
+    if(!store::ItemStore::Instance().Submit([guild,leader](CAsyncSQL& db,const item::ItemCatalog& c)->store::ItemStore::Completion{const auto closed=sql::CloseEmptyTypedGuild(db,c,guild,leader);return [guild,leader,closed](){auto* g=CGuildManager::instance().FindGuild(guild);if(!g || g->GetMasterPID()!=leader)return;if(closed)g->RequestDisbandAuthorized(leader);else{const auto e=CHARACTER_MANAGER::instance().FindEntityByPID(leader);if(g_registry.valid(e))ecs::ChatSystem::Send(e,CHAT_TYPE_INFO,"A céh megszüntetése előtt ürítsd ki a típusos céhraktárat, majd próbáld újra.");}};}))inform("A céhraktár ellenőrzése most nem indítható. Próbáld újra később.");return true;
+}

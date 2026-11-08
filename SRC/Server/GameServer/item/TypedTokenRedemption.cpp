@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "TypedTokenRedemption.hpp"
+#include "TypedStorage.hpp"
 #include "TypedInventorySync.hpp"
 #include "TypedAccessoryClock.hpp"
 #include "TypedDrops.hpp"
@@ -75,6 +76,7 @@ bool HandleTypedTokenRedemptionPacket(entt::entity e,const char* data)
         const auto* typed=g_registry.try_get<ecs::TypedItems>(e);const auto id=items::ItemInstanceId::Create(r.item);const auto item=id ? std::ranges::find(typed->state.items,*id,&items::PersistentItem::id) : typed->state.items.end();
         const auto* entry=item!=typed->state.items.end() ? c->Find(item->key) : nullptr;const auto* token=entry ? std::get_if<items::ItemCurrencyTokenRow>(&entry->category) : nullptr;
         if(!token || !items::PlainInventoryItem(*item,typed->state.fence.owner)){g_registry.remove<TypedTokenRedemptionSession>(e);Reply(e,Status::Invalid);return true;}
+        if(token->currency==items::WalletCurrency::DragonCoin){g_registry.remove<TypedTokenRedemptionSession>(e);Reply(e,Status::Closed);OpenTypedAccountWallet(e,r.item,r.units);return true;}
         TypedTokenRedemptionSession next;next.nonce=Nonce();if(!next.nonce || !Operation(next.operation)){g_registry.remove<TypedTokenRedemptionSession>(e);Reply(e,Status::Failed);return true;}
         next.fence=typed->state.fence;next.item=*item;next.quote={item->count,r.units ? r.units : item->count,0,token->currency,token->amountPerUnit,0,0,token->currency==items::WalletCurrency::Gold ? std::uint64_t(INT64_MAX) : 0};
         if(token->currency==items::WalletCurrency::Gold)for(const auto& wallet:typed->state.wallets)if(wallet.owner==next.fence.owner && wallet.currency==token->currency)next.quote.balance=wallet.balance;

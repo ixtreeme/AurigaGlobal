@@ -107,6 +107,7 @@
 #include "../item/TypedTokenRedemption.hpp"
 #include "../item/TypedSocketMaintenance.hpp"
 #include "../item/TypedAttributes.hpp"
+#include "../item/TypedStorage.hpp"
 #include "../item/TypedForge.hpp"
 #include "../item/TypedSouls.hpp"
 #include "../item/TypedSpecialBonuses.hpp"
@@ -487,6 +488,9 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
             break;
         case HEADER_CG_TYPED_RECOVERY:
             HandleTypedRecoveryPacket(character, c_pData);
+            break;
+        case HEADER_CG_TYPED_STORAGE:
+            HandleTypedStoragePacket(character,c_pData);
             break;
         case HEADER_CG_TYPED_FORGE:
             HandleTypedForgePacket(character,c_pData);

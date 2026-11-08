@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../item/TypedStorage.hpp"
 #include "../mission_pass/MissionPassEvents.hpp"
 #include <common/time_64.h>
 #include <Core/Logging.hpp>
@@ -1126,6 +1127,12 @@ void CGuild::Disband()
 }
 
 void CGuild::RequestDisband(uint32_t pid)
+{
+    if(m_data.master_pid!=pid)return;
+    if(BeginTypedStorageGuildDisband(GetID(),pid))return;
+    RequestDisbandAuthorized(pid);
+}
+void CGuild::RequestDisbandAuthorized(uint32_t pid)
 {
 	if (m_data.master_pid != pid)
 		return;

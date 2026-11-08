@@ -179,6 +179,7 @@ class CGuild
 void		Reset() { m_data.power = m_data.max_power; }
 
 		void		RequestDisband(uint32_t pid);
+        void RequestDisbandAuthorized(uint32_t pid);
 		void		Disband();
 
 		void		RequestAddMember(entt::entity character, int grade = 15);

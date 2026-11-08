@@ -16,8 +16,8 @@ std::expected<TokenRedemptionPlan,TokenRedemptionError> MakeTokenRedemptionCommi
     if(source==inventory.end() || !PlainInventoryItem(*source,fence.owner) || requested>source->count)return std::unexpected(E::Invalid);
     const auto* entry=c.Find(source->key);const auto* token=entry ? std::get_if<ItemCurrencyTokenRow>(&entry->category) : nullptr;
     if(!token)return std::unexpected(E::Invalid);
-    // DragonCoin still has a legacy account writer. Never credit a separate
-    // character balance or consume its voucher before that ownership handoff.
+    // Account vouchers use the shared account-wallet transaction (C33).
+    // This character-only gold path must never credit a second balance.
     if(token->currency!=WalletCurrency::Gold)return std::unexpected(E::Unsupported);
     const auto* use=c.FindUsePolicy(entry->base.usePolicy);
     if(entry->base.retired || !use || !(use->allowedClasses&(1u<<actor.characterClass)) || !(use->allowedSexes&(1u<<actor.sex)) || (actor.inCombat && !use->useDuringCombat))return std::unexpected(E::Denied);

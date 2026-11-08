@@ -34,7 +34,7 @@ def setUpModule():
     if [int(path.name[:3]) for path in paths] != list(range(len(paths))): raise RuntimeError('incomplete catalog migrations')
     SANDBOX.client.query("CREATE TABLE player.player(id INT UNSIGNED PRIMARY KEY, name VARCHAR(24) NOT NULL DEFAULT '', exp INT UNSIGNED NOT NULL DEFAULT 0, skill_point SMALLINT NOT NULL DEFAULT 0, sub_skill_point SMALLINT NOT NULL DEFAULT 0, horse_skill_point SMALLINT NOT NULL DEFAULT 0, skill_level BLOB NULL) ENGINE=InnoDB")
     SANDBOX.client.query("CREATE TABLE player.player_deleted LIKE player.player")
-    for path in [*paths, ROOT / 'db/migrations/item_instance/001_item_persistence.sql', ROOT / 'db/migrations/item_instance/002_instance_id_allocator.sql', ROOT / 'db/migrations/item_instance/003_owned_ground.sql', ROOT / 'db/migrations/item_instance/004_recovery_schedule.sql', ROOT / 'db/migrations/item_instance/005_automatic_recovery.sql', ROOT / 'db/migrations/item_instance/006_item_effects.sql', ROOT / 'db/migrations/item_instance/007_book_learning.sql', ROOT / 'db/migrations/item_instance/008_polymorph.sql', ROOT / 'db/migrations/item_instance/009_gathering_tools.sql', ROOT / 'db/migrations/item_instance/010_companion_seals.sql', ROOT / 'db/migrations/item_instance/011_growth_pet_birth.sql', ROOT / 'db/migrations/item_instance/012_pet_study_cooldown.sql', ROOT / 'db/migrations/item_instance/013_pet_supplies.sql', ROOT / 'db/migrations/item_instance/014_mount_riding.sql', ROOT / 'db/migrations/item_instance/015_companion_lifetime.sql', ROOT / 'db/migrations/item_instance/016_costume_lifetime.sql', ROOT / 'db/migrations/item_instance/017_regalia_special_bonuses.sql', ROOT / 'db/migrations/item_instance/018_soul_runtime.sql', ROOT / 'db/migrations/item_instance/019_ammo_runtime.sql']:
+    for path in [*paths, ROOT / 'db/migrations/item_instance/001_item_persistence.sql', ROOT / 'db/migrations/item_instance/002_instance_id_allocator.sql', ROOT / 'db/migrations/item_instance/003_owned_ground.sql', ROOT / 'db/migrations/item_instance/004_recovery_schedule.sql', ROOT / 'db/migrations/item_instance/005_automatic_recovery.sql', ROOT / 'db/migrations/item_instance/006_item_effects.sql', ROOT / 'db/migrations/item_instance/007_book_learning.sql', ROOT / 'db/migrations/item_instance/008_polymorph.sql', ROOT / 'db/migrations/item_instance/009_gathering_tools.sql', ROOT / 'db/migrations/item_instance/010_companion_seals.sql', ROOT / 'db/migrations/item_instance/011_growth_pet_birth.sql', ROOT / 'db/migrations/item_instance/012_pet_study_cooldown.sql', ROOT / 'db/migrations/item_instance/013_pet_supplies.sql', ROOT / 'db/migrations/item_instance/014_mount_riding.sql', ROOT / 'db/migrations/item_instance/015_companion_lifetime.sql', ROOT / 'db/migrations/item_instance/016_costume_lifetime.sql', ROOT / 'db/migrations/item_instance/017_regalia_special_bonuses.sql', ROOT / 'db/migrations/item_instance/018_soul_runtime.sql', ROOT / 'db/migrations/item_instance/019_ammo_runtime.sql', ROOT / 'db/migrations/item_instance/020_shared_storage.sql']:
         for statement in statements(path.read_text(encoding='utf-8-sig')): SANDBOX.client.query(statement)
 
 
@@ -70,6 +70,15 @@ def item(state, key):
 
 
 class BenchTests(unittest.TestCase):
+    def test_shared_delivery_provider(self):
+        packet=editor('read');doc=catalog.Catalog(packet).new(6);doc['base']['binding_policy']='2';key=(6,int(doc['base']['local_id']));commit(packet,doc)
+        first=use('storage_setup',owner=123456,owner_kind=2)['state'];self.assertEqual(first['owner_kind'],2);self.assertEqual(first['wallets'][0]['balance'],0)
+        self.assertEqual(use('storage_setup',owner=123456,owner_kind=2)['state'],first)
+        delivered=use('storage_grant',owner=123456,owner_kind=2,storage_kind=4,category=6,local=key[1],count=5)['state'];i=item(delivered,key)
+        self.assertEqual((i['storage_kind'],i['count'],i['bound_owner_kind'],i['bound_owner_id']),(4,5,2,123456))
+        self.assertEqual(use('storage_status',owner=123456,owner_kind=2)['state'],delivered)
+        with self.assertRaises(api.EditorError):use('storage_grant',owner=123456,owner_kind=2,storage_kind=3,category=6,local=key[1],count=1)
+
     def test_costume_clocks_equipment_and_sql_reload(self):
         packet=editor('read');keys=[]
         sword=catalog.Catalog(packet).new(1);sword_key=(1,int(sword['base']['local_id']));packet=commit(packet,sword)

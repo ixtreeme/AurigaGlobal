@@ -3,6 +3,7 @@
 // Never linked into the game runtime; never touches player.item or players.
 #include "CatalogSqlReader.hpp"
 #include "ItemPersistenceSql.hpp"
+#include "StoragePersistenceSql.hpp"
 #include <SQL/AsyncSQL.h>
 #include <Core/Logging.hpp>
 #include <nlohmann/json.hpp>
@@ -82,7 +83,7 @@ bool Installed(CAsyncSQL& sql)
 {
     return Rows(sql,"SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN "
         "('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance',"
-        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule','item_pet_study_cooldown','item_soul_strike_event','item_ammo_shot_event')").at(0).at(0)=="16" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob','companion_riding_requested','companion_lifetime_blob','costume_lifetime_blob','regalia_blob','bonus_tool_blob','soul_blob','soul_channel','soul_active')").at(0).at(0)=="21";
+        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule','item_pet_study_cooldown','item_soul_strike_event','item_ammo_shot_event','item_shared_storage_gate')").at(0).at(0)=="17" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob','companion_riding_requested','companion_lifetime_blob','costume_lifetime_blob','regalia_blob','bonus_tool_blob','soul_blob','soul_channel','soul_active')").at(0).at(0)=="21";
 }
 std::shared_ptr<const ItemCatalog> Catalog(CAsyncSQL& sql)
 {
@@ -121,7 +122,7 @@ Json State(const ItemCatalog& c,const p::LoadedItemOwner& o)
                 {"stone",st.stone?Json::array({static_cast<unsigned>(st.stone->Category()),st.stone->LocalId()}):Json(nullptr)}});
         items.push_back({{"id",std::to_string(i.id.Value())},{"category",static_cast<unsigned>(i.key.Category())},{"local",i.key.LocalId()},
             {"content_code",e?e->base.contentCode:""},{"level",i.refinementLevel},{"count",i.count},{"revision",i.revision},
-            {"destroyed",i.destroyed},{"cell",i.placement && i.placement->kind==ItemStorageKind::Inventory?Json(i.placement->anchor):Json(nullptr)},
+            {"destroyed",i.destroyed},{"storage_kind",i.placement?unsigned(i.placement->kind):0},{"storage_id",i.placement?i.placement->storageId:0},{"anchor",i.placement?i.placement->anchor:0},{"bound_owner_kind",i.boundTo?unsigned(i.boundTo->kind):0},{"bound_owner_id",i.boundTo?i.boundTo->id:0},{"cell",i.placement && i.placement->kind==ItemStorageKind::Inventory?Json(i.placement->anchor):Json(nullptr)},
             {"equipped_slot",i.placement && i.placement->kind==ItemStorageKind::Equipment?Json(i.placement->anchor+1):Json(nullptr)},{"attributes",attributes},
             {"locked_slot",i.attributes.lockedSlot?Json(*i.attributes.lockedSlot):Json(nullptr)},{"stones",stones},
             {"automatic",i.automatic ? Json{{"remaining_raw",i.automatic->remainingRaw},{"active",i.automatic->active},{"next_ms",i.automatic->nextTickInMs}} : Json(nullptr)},
@@ -159,7 +160,7 @@ Json State(const ItemCatalog& c,const p::LoadedItemOwner& o)
     }
     Json wallets=Json::array();
     for(const auto& w:o.wallets)wallets.push_back({{"currency",static_cast<int>(w.currency)},{"balance",w.balance},{"revision",w.revision}});
-    return {{"owner",BenchOwner.id},{"session",o.fence.sessionGeneration},{"revision",o.fence.revision},{"wallets",wallets},
+    return {{"owner",o.fence.owner.id},{"owner_kind",unsigned(o.fence.owner.kind)},{"session",o.fence.sessionGeneration},{"revision",o.fence.revision},{"wallets",wallets},
             {"learning",{{"revision",o.learning.revision},{"experience",o.learning.character.experience},{"chance_tokens",o.learning.chanceTokens},{"bypass_tokens",o.learning.bypassTokens}}},
             {"layout",{{"columns",Inventory.columns},{"rows",Inventory.rows},{"pages",Inventory.pages}}},{"items",items}};
 }
@@ -493,6 +494,21 @@ Json Wallet(CAsyncSQL& sql,const Json& request)
     auto r=Base(*c,o,ItemOperationKind::Grant);r.storages.clear();r.wallets.push_back({*it,after});return Commit(sql,*c,r);
 }
 Json Dispatch(CAsyncSQL& sql,const std::string& action,const Json& request);
+Json StorageProvider(CAsyncSQL& sql,const std::string& action,const Json& request)
+{
+    Require(Installed(sql),"A tárolók kiépítéséhez a legfrissebb mentési migráció kell.");const auto c=Catalog(sql);FollowCatalog(sql,*c);
+    const unsigned kind=request.value("owner_kind",1u);const auto value=request.at("owner").get<std::uint64_t>();Require(kind>=1 && kind<=3 && value>0 && value<=UINT32_MAX,"Érvénytelen tárolótulajdonos.");const ItemOwner owner{static_cast<ItemOwnerKind>(kind),value};
+    if(action!="storage_status")Require(p::EnsureRuntimeStorageOwner(sql,*c,owner).has_value(),"A tárolótulajdonos nem építhető ki.");auto state=p::LoadCurrentItemOwner(sql,*c,owner);Require(state.has_value(),"Nincs olvasható tárolótulajdonos.");
+    if(action=="storage_grant"){
+        const auto key=ItemKey::Create(static_cast<ItemCategory>(request.at("category").get<unsigned>()),request.at("local").get<std::uint32_t>());Require(key.has_value(),"Érvénytelen kézbesítési tárgy.");const auto kind=static_cast<ItemStorageKind>(request.at("storage_kind").get<unsigned>());Require(kind==ItemStorageKind::Mall || kind==ItemStorageKind::Mail || kind==ItemStorageKind::PendingAward,"Csak kézbesítési tárolóba adható tárgy.");const auto target=std::ranges::find_if(state->storages,[&](const auto& l){return l.storage.kind==kind && l.storage.id==1;});Require(target!=state->storages.end(),"Hiányzó kézbesítési tároló.");
+        const auto block=p::ReserveItemInstanceIds(sql,*c,MaxItemCommitItems);Require(block.has_value(),"Nem foglalhatók kézbesítési azonosítók.");std::vector<ItemInstanceId> ids;for(auto n=block->first;n<block->end;n++)ids.push_back(ItemInstanceId::Create(n).value());
+        const ItemOwner factory{ItemOwnerKind::Character,value};ItemStorageLayout bag{{factory,ItemStorageKind::Inventory,1},target->columns,target->rows,target->pages};const auto operation=OperationId();ItemGrant grant{*key,static_cast<std::uint16_t>(request.value("level",0u)),request.value("count",1u)};grant.createdAtUtcMs=static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+        auto planned=MakeGrantCommit(*c,operation,{factory,1,1},std::span(&bag,1),{},grant,ids);Require(planned.has_value(),"Nem hozható létre a kézbesítési tárgy.");ItemCommit commit;commit.operationId=operation;commit.catalogRevision=c->Revision();commit.catalogHash=c->ContentHash();commit.kind=ItemOperationKind::Grant;commit.owners={state->fence};commit.storages={*target};commit.outcomeCode=1;commit.result={'D','L','V',1};auto working=state->items;
+        for(const auto& ch:planned->items){auto item=ch.after;item.owner=owner;if(item.boundTo)item.boundTo=owner;bool placed=false;for(std::uint32_t at=0;at<std::uint32_t(target->columns)*target->rows*target->pages && !placed;at++){item.placement=ItemPlacement{kind,1,at};auto cells=OccupiedItemCells(*c,item,*target);if(!cells)continue;placed=true;for(const auto& before:working)if(before.placement && before.placement->kind==kind && before.placement->storageId==1){auto other=OccupiedItemCells(*c,before,*target);Require(other.has_value(),"Sérült kézbesítési helyfoglalás.");if(std::ranges::any_of(*cells,[&](auto n){return std::ranges::find(*other,n)!=other->end();})){placed=false;break;}}}Require(placed,"A kézbesítési tároló megtelt.");working.push_back(item);commit.items.push_back({{},item});}
+        Require(p::CommitItems(sql,*c,commit).has_value(),"A kézbesítés nem menthető.");state=p::LoadCurrentItemOwner(sql,*c,owner);
+    }
+    auto out=State(*c,*state);out["storages"]=Json::array();for(const auto& l:state->storages)out["storages"].push_back({{"kind",unsigned(l.storage.kind)},{"id",l.storage.id},{"columns",l.columns},{"rows",l.rows},{"pages",l.pages}});return {{"state",out}};
+}
 Json Run(const Json& request)
 {
     const auto& auth=request.at("connection");
@@ -503,6 +519,7 @@ Json Run(const Json& request)
     const auto pid=request.value("owner",std::uint64_t{TestCharacter});
     Require(pid>0 && pid<=0xffffffffull,"Érvénytelen karakterazonosító.");
     BenchOwner={ItemOwnerKind::Character,pid};Inventory.storage.owner=BenchOwner;Equipment.storage.owner=BenchOwner;
+    if(action=="storage_setup" || action=="storage_status" || action=="storage_grant")return StorageProvider(sql,action,request);
     if(action=="characters")return {{"characters",Characters(sql)}};
     if(action=="status")return Status(sql);
     if(action=="setup")return Setup(sql,request);

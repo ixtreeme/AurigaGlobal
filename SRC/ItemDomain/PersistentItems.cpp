@@ -3,6 +3,7 @@
 #include <item/SoulRuntime.hpp>
 #include <item/AmmoRuntime.hpp>
 #include <item/ForgeRuntime.hpp>
+#include <item/StorageRuntime.hpp>
 #include <item/SocketMaintenance.hpp>
 #include <algorithm>
 #include <limits>
@@ -754,6 +755,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
     if((r.items.empty() && r.wallets.empty() && !r.recovery && !r.learning) || !r.outcomeCode || r.kind<ItemOperationKind::Grant || r.kind>ItemOperationKind::Trade ||
        (r.petStudyCooldown && r.outcomeCode!=PetStudyOutcome) ||
        std::ranges::all_of(r.operationId,[](auto n){return !n;}))return std::unexpected(E::InvalidOperation);
+    if((r.outcomeCode==StorageOutcome || r.outcomeCode==AccountWalletOutcome) && !ValidStorageWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==ForgeOutcome && !ValidForgeWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==AmmoShotOutcome && !ValidAmmoShotWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==SoulOutcome && !ValidSoulWrite(c,r))return std::unexpected(E::InvalidChange);
@@ -823,7 +825,9 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
             if(b.costume!=p.costume || (b.costume && b.placement!=p.placement &&
                 ((b.placement && b.placement->kind==ItemStorageKind::Equipment) || (p.placement && p.placement->kind==ItemStorageKind::Equipment))))
                 if(r.outcomeCode!=CostumeOutcome)return std::unexpected(E::InvalidChange);
-            const bool bindingUnchanged=p.boundTo==b.boundTo;
+            const auto storageAuth=StorageWriteAuthorization(r);
+            const bool claimedAccountBinding=storageAuth && b.boundTo==ItemOwner{ItemOwnerKind::Account,storageAuth->actor.account} && p.owner==ItemOwner{ItemOwnerKind::Character,storageAuth->actor.pid} && p.boundTo==p.owner;
+            const bool bindingUnchanged=p.boundTo==b.boundTo || claimedAccountBinding;
             const bool bindOnEquip=!b.boundTo && p.boundTo==p.owner && b.owner==p.owner && b.key==p.key &&
                 c.Find(p.key)->base.binding==BindingPolicy::OnEquip && p.placement && p.placement->kind==ItemStorageKind::Equipment;
             if(b.destroyed || b.id!=p.id || b.revision==UINT64_MAX || p.revision!=b.revision+1 || (!bindingUnchanged && !bindOnEquip) || b==p)return std::unexpected(E::InvalidChange);
@@ -869,6 +873,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
            a.elapsedMs>INT64_MAX || !ValidateRecoverySchedule(c,a.before) || !ValidateRecoverySchedule(c,a.after))return std::unexpected(E::InvalidChange);
         usedOwners.insert(a.owner);
     }
+    if(const auto auth=StorageWriteAuthorization(r))usedOwners.insert({ItemOwnerKind::Character,auth->actor.pid});
     if(usedOwners!=owners || usedLayouts.size()!=layouts.size())return std::unexpected(E::InvalidFence);
     if(r.outcomeCode==PetHatchOutcome && !ValidHatchWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==GrowthPetCompanionOutcome && !ValidGrowthPetCompanionWrite(c,r))return std::unexpected(E::InvalidChange);

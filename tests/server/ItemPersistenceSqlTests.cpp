@@ -13,6 +13,7 @@
 #include <item/BookSaveFence.hpp>
 #include "CatalogSnapshotFixture.hpp"
 #include <ItemPersistenceSql.hpp>
+#include <StoragePersistenceSql.hpp>
 #include <item/OwnedGround.hpp>
 #include <item/NpcShops.hpp>
 #include <item/PlayerTrades.hpp>
@@ -136,10 +137,10 @@ void Sessions(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c)
     const ItemWallet coins{fresh,WalletCurrency::DragonCoin,1,1};bad=p::ProvisionOwner(admin,c,fresh,std::span(&bag,1),std::span(&coins,1));
     Check(!bad && bad.error()==E::InvalidWallet,"character dragon-coin wallet");
     Check(Scalar(admin,"SELECT COUNT(*) FROM player.item_owner_fence WHERE owner_id=4242")=="0","rejected provisioning wrote nothing");
-    // The writer may create internal carrier storage but only advances existing
-    // owner fences: it still cannot invent an owner or provision its balances.
-    bad=p::ProvisionOwner(writer,c,fresh,std::span(&bag,1),std::span(&gold,1));Check(!bad,"item writer cannot provision");
-    Check(Scalar(admin,"SELECT COUNT(*) FROM player.item_owner_fence WHERE owner_id=4242")=="0","failed provisioning is atomic");
+    // Authenticated runtime storage bootstrap now creates zero-balance owners.
+    const ItemOwner runtimeOwner{ItemOwnerKind::Character,4243};
+    Check(p::EnsureRuntimeStorageOwner(writer,c,runtimeOwner).has_value(),"runtime writer provisions storage defaults");
+    Check(p::LoadCurrentItemOwner(writer,c,runtimeOwner)->wallets[0].balance==0 && Scalar(admin,"SELECT COUNT(*) FROM player.item_owner_fence WHERE owner_id=4242")=="0","bootstrap never invents an initial balance for another owner");
     const ItemStorageLayout layouts[]{bag,safe};
     auto made=p::ProvisionOwner(admin,c,fresh,layouts,std::span(&gold,1));
     Check(made && *made,"owner provisioned");
@@ -683,6 +684,7 @@ void FixedCompanionSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c)
         Check(Scalar(admin,"SELECT COUNT(*) FROM player.item_instance WHERE instance_id=? AND destroyed=1 AND stack_count=0 AND companion_recall_requested=0 AND companion_riding_requested=0 AND OCTET_LENGTH(companion_lifetime_blob)=22",{U::UInt(id.Value())})=="1","expired lifetime remains in the destroyed audit row");
     }
 }
+#include "StorageSqlCases.hpp"
 void ForgeSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c){
     const ItemOwner owner{ItemOwnerKind::Character,880132};const auto bag=f::Inventory(owner);const ItemWallet wallet{owner,WalletCurrency::Gold,1,1000};Check(p::ProvisionOwner(admin,c,owner,std::span(&bag,1),std::span(&wallet,1)).has_value(),"forge SQL owner");unsigned serial=0;const auto op=[&](){return std::array<std::uint8_t,16>{0x32,0x74,static_cast<std::uint8_t>(++serial)};};auto state=p::LoadCurrentItemOwner(writer,c,owner).value();
     for(unsigned j=1;j<=6;++j){ItemGrant g{j<=3?item_catalog_fixture::Sword():j==4?item_catalog_fixture::Leather():forge_runtime_fixture::Aid(j==5?1:5)};g.refinementLevel=j<=3?9:0;g.count=j==4?20:j>=5?5:1;std::array ids{ItemInstanceId::Create(9000000+j).value()};auto grant=MakeGrantCommit(c,op(),state.fence,state.storages,state.items,g,ids);Check(grant && p::CommitItems(writer,c,*grant).has_value(),"forge SQL grant");state=p::LoadCurrentItemOwner(writer,c,owner).value();}
@@ -1583,6 +1585,7 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
     SoulSql(admin,writer,*c);
     AmmoSql(admin,writer,*c);
     ForgeSql(admin,writer,*c);
+    StorageSql(admin,writer,*c);
     Sessions(admin,writer,*c);
     Allocator(admin,writer,*c,port,pw);
 }
