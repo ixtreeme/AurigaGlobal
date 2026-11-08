@@ -297,7 +297,7 @@ int32_t GetLevel(entt::entity e)
 
 bool Set(entt::entity e, uint8_t type, int64_t value)
 {
-    if((type==POINT_EXP || type==POINT_SKILL || type==POINT_SUB_SKILL || type==POINT_HORSE_SKILL || type==POINT_LEVEL || type==POINT_LEVEL_STEP) && DeferTypedBookMutation(e,[=]{Set(e,type,value);}))return true;
+    if((type==POINT_EXP || type==POINT_SKILL || type==POINT_SUB_SKILL || type==POINT_HORSE_SKILL || type==POINT_LEVEL || type==POINT_LEVEL_STEP || type==POINT_STAT || type==POINT_ST || type==POINT_HT || type==POINT_DX || type==POINT_IQ) && DeferTypedBookMutation(e,[=]{Set(e,type,value);}))return true;
     if (type >= POINT_MAX_NUM || !IsReadableEntity(e)) return false;
     g_registry.get_or_emplace<ecs::CharacterStatsComponent>(e).points[type] = value;
     g_registry.emplace_or_replace<ecs::DirtyTag>(e);
@@ -312,7 +312,7 @@ bool Set(entt::entity e, uint8_t type, int64_t value)
 
 bool SetReal(entt::entity e, uint8_t type, int64_t value)
 {
-    if((type==POINT_EXP || type==POINT_SKILL || type==POINT_SUB_SKILL || type==POINT_HORSE_SKILL || type==POINT_LEVEL || type==POINT_LEVEL_STEP) && DeferTypedBookMutation(e,[=]{SetReal(e,type,value);}))return true;
+    if((type==POINT_EXP || type==POINT_SKILL || type==POINT_SUB_SKILL || type==POINT_HORSE_SKILL || type==POINT_LEVEL || type==POINT_LEVEL_STEP || type==POINT_STAT || type==POINT_ST || type==POINT_HT || type==POINT_DX || type==POINT_IQ) && DeferTypedBookMutation(e,[=]{SetReal(e,type,value);}))return true;
     if (type >= POINT_MAX_NUM || !IsReadableEntity(e)) return false;
     g_registry.get_or_emplace<ecs::CharacterPoints>(e).base.points[type] = value;
     g_registry.emplace_or_replace<ecs::DirtyTag>(e);
@@ -338,6 +338,7 @@ void SetInventoryExpansion(entt::entity e, int value)
 
 void SetRandomHP(entt::entity e, int value)
 {
+    if(DeferTypedBookMutation(e,[=]{SetRandomHP(e,value);}))return;
 	if (!IsReadableEntity(e))
 		return;
 	g_registry.get_or_emplace<ecs::CharacterPoints>(e).base.iRandomHP = value;
@@ -346,6 +347,7 @@ void SetRandomHP(entt::entity e, int value)
 
 void SetRandomSP(entt::entity e, int value)
 {
+    if(DeferTypedBookMutation(e,[=]{SetRandomSP(e,value);}))return;
 	if (!IsReadableEntity(e))
 		return;
 	g_registry.get_or_emplace<ecs::CharacterPoints>(e).base.iRandomSP = value;
@@ -556,7 +558,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 #endif
 )
 {
-    if((type==POINT_EXP || type==POINT_SKILL || type==POINT_SUB_SKILL || type==POINT_HORSE_SKILL || type==POINT_LEVEL || type==POINT_LEVEL_STEP) && DeferTypedBookMutation(e,[=]{Change(e,type,amount,bAmount,bBroadcast
+    if((type==POINT_EXP || type==POINT_SKILL || type==POINT_SUB_SKILL || type==POINT_HORSE_SKILL || type==POINT_LEVEL || type==POINT_LEVEL_STEP || type==POINT_STAT || type==POINT_ST || type==POINT_HT || type==POINT_DX || type==POINT_IQ) && DeferTypedBookMutation(e,[=]{Change(e,type,amount,bAmount,bBroadcast
 #ifdef __ENABLE_BLOCK_EXP__
         ,bForceExp
 #endif

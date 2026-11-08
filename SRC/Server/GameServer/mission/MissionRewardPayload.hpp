@@ -19,11 +19,11 @@ enum class RewardPayloadKind : uint8_t
     Experience = 2,
     Gold = 3,
     ConsumeItem = 4,
-    TypedItem = 5, TypedConsumeItem = 6, TypedRequirement = 7, GoldCost = 8
+    TypedItem = 5, TypedConsumeItem = 6, TypedRequirement = 7, GoldCost = 8, Levels = 9, AccountCoins = 10
 };
 // Unordered, all-or-nothing bundle. Costs require pre-existing resources; grants
 // cannot finance costs in this same bundle. No random rolls, scripts or silent
-// clamping. A typed payload is NOT an implemented gameplay effect.
+// clamping. Decoding a payload alone never authorizes a gameplay effect.
 struct RewardBundle
 {
     uint16_t schema = 1;
@@ -40,16 +40,18 @@ struct RewardBundle
     // Schema 2 is exclusively category/local/level based. Legacy prototype
     // numbers are never packed into, or inferred from, these keys.
     std::map<ItemKey, uint32_t> typedItems, typedConsumeItems, typedRequirements;
-    uint64_t goldCost = 0;
+    uint64_t goldCost = 0, accountCoins = 0;
+    uint16_t levels = 0;
     bool operator==(const RewardBundle &) const = default;
 };
 inline bool ValidRewardBundle(const RewardBundle &bundle)
 {
-    if (bundle.schema == 2)
+    if (bundle.schema == 2 || bundle.schema == 3)
     {
-        if (!bundle.items.empty() || !bundle.consumeItems.empty() || bundle.experience ||
+        if (!bundle.items.empty() || !bundle.consumeItems.empty() || (bundle.schema == 2 && (bundle.experience || bundle.levels || bundle.accountCoins)) ||
+            bundle.experience > RewardLimits::Amount || bundle.accountCoins > RewardLimits::Amount || bundle.levels > 254 ||
             bundle.gold > RewardLimits::Amount || bundle.goldCost > RewardLimits::Amount ||
-            (bundle.typedItems.empty() && bundle.typedConsumeItems.empty() && bundle.gold == bundle.goldCost))
+            (bundle.typedItems.empty() && bundle.typedConsumeItems.empty() && bundle.gold == bundle.goldCost && !bundle.experience && !bundle.levels && !bundle.accountCoins))
             return false;
         size_t total = 0;
         for (const auto *table : {&bundle.typedItems, &bundle.typedConsumeItems, &bundle.typedRequirements})
@@ -64,7 +66,7 @@ inline bool ValidRewardBundle(const RewardBundle &bundle)
         return true;
     }
     if (bundle.schema != 1 || !bundle.typedItems.empty() || !bundle.typedConsumeItems.empty() ||
-        !bundle.typedRequirements.empty() || bundle.goldCost || bundle.items.size() > RewardLimits::ItemEntries ||
+        !bundle.typedRequirements.empty() || bundle.goldCost || bundle.levels || bundle.accountCoins || bundle.items.size() > RewardLimits::ItemEntries ||
         bundle.consumeItems.size() > RewardLimits::ItemEntries - bundle.items.size() ||
         bundle.experience > RewardLimits::Amount || bundle.gold > RewardLimits::Amount ||
         (bundle.items.empty() && bundle.consumeItems.empty() && !bundle.experience && !bundle.gold))

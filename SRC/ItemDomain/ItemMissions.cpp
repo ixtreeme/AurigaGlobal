@@ -24,7 +24,7 @@ bool Code(std::string_view s){return !s.empty() && s.size()<=96 && s.find_first_
 bool Shape(const ItemMission& m)
 {
     if(!m.id || !m.version || !Code(m.code) || !Text(m.name,128) || !Text(m.description,1024,true) || m.minimumLevel>255 ||
-       m.goldCost>INT64_MAX || m.goldReward>INT64_MAX || (m.costs.empty() && m.rewards.empty() && m.goldCost==m.goldReward))return false;
+       m.goldCost>INT64_MAX || m.goldReward>INT64_MAX || (m.costs.empty() && m.rewards.empty() && m.goldCost==m.goldReward && !m.rewardExtension))return false;
     for(const auto* list:{&m.requirements,&m.costs,&m.rewards})
     {if(list->size()>MaxMissionItemEntries)return false;std::set<std::pair<ItemKey,std::uint16_t>> unique;
      for(const auto& v:*list)if(!v.count || v.count>50000 || !unique.emplace(v.key,v.level).second)return false;}
@@ -53,7 +53,7 @@ std::expected<void,E> ValidateItemMission(const ItemCatalog& c,const ItemMission
 std::expected<ItemCatalogDigest,E> ItemMissionDigest(const ItemMission& m)
 {
     if(!Shape(m))return std::unexpected(E::Invalid);Writer w;w.Text("ITEM_MISSION_CONTRACT_1");w.Text(m.code);w.Put(m.version,4);w.Put(m.minimumLevel,2);
-    w.Amounts(m.requirements);w.Amounts(m.costs);w.Amounts(m.rewards);w.Put(m.goldCost,8);w.Put(m.goldReward,8);return Hash(w);
+    w.Amounts(m.requirements);w.Amounts(m.costs);w.Amounts(m.rewards);w.Put(m.goldCost,8);w.Put(m.goldReward,8);if(m.rewardExtension)w.Text("MISSION_REWARD_EXTENSION_1");return Hash(w);
 }
 std::expected<std::array<std::uint8_t,16>,E> ItemMissionOperation(ItemMissionProof p)
 {
@@ -110,7 +110,7 @@ std::expected<ItemCommit,E> MakeItemMissionCommit(const ItemCatalog& c,const Ite
     for(const auto& change:out.items)for(const auto* i:{change.before ? &*change.before : nullptr,&change.after})if(i && i->placement)
     {const ItemStorage storage{i->owner,i->placement->kind,i->placement->storageId};if(std::ranges::find(out.storages,storage,&ItemStorageLayout::storage)!=out.storages.end())continue;
      const auto found=std::ranges::find(layouts,storage,&ItemStorageLayout::storage);if(found==layouts.end())return std::unexpected(E::Invalid);out.storages.push_back(*found);}
-    if(!ValidateItemCommit(c,out))return std::unexpected(E::Invalid);return out;
+    if(!(m.rewardExtension && out.items.empty() && out.wallets.empty()) && !ValidateItemCommit(c,out))return std::unexpected(E::Invalid);return out;
 }
 std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeItemMissionBoard(const ItemCatalog& c,const ItemMissionBoard* board,
     std::uint32_t npc,std::uint64_t session,std::uint64_t request,ItemMissionStatus status,std::uint32_t selected,std::span<const std::uint32_t> completed)

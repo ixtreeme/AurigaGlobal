@@ -1972,6 +1972,7 @@ void SetImmuneFlag(entt::entity e, uint32_t value)
 
 void SetLevel(entt::entity e, uint8_t level)
 {
+    if(DeferTypedBookMutation(e,[=]{SetLevel(e,level);}))return;
     if (auto* ecsLevel = EnsureLevelComponent(e))
         ecsLevel->value = level;
 

@@ -7,9 +7,10 @@ struct TypedMissionNodeView {std::string id,title,subject;uint8_t kind=0,state=0
 struct TypedMissionView
 {
     std::string code,title,summary;uint32_t version=0,npcRace=0;uint16_t minimumLevel=0;uint8_t state=0;uint64_t instance=0;bool repeatable=false;
+    uint64_t experience=0,accountCoins=0;uint16_t levels=0;
     std::vector<TypedMissionNodeView> nodes;std::optional<item::ItemMission> reward;
 };
 std::expected<std::vector<std::byte>,item::TypedInventoryWireError> EncodeTypedMissions(const item::ItemCatalog&,
     TypedMissionStatus,uint64_t nonce,uint64_t request,uint32_t npc,std::span<const TypedMissionView>,
-    const item::persistence::LoadedItemOwner*,std::string_view message={});
+    const item::persistence::LoadedItemOwner*,std::string_view message={},const item::BookCharacter *character=nullptr,uint64_t accountCoins=0);
 }

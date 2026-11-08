@@ -51,7 +51,7 @@ def main():
         paths.append(ROOT / "db/migrations/item_instance/021_mission_events.sql")
         sandbox.client.query("CREATE TABLE player.player(id INT UNSIGNED PRIMARY KEY, name VARCHAR(24) NOT NULL DEFAULT '', exp INT UNSIGNED NOT NULL DEFAULT 0, skill_point SMALLINT NOT NULL DEFAULT 0, sub_skill_point SMALLINT NOT NULL DEFAULT 0, horse_skill_point SMALLINT NOT NULL DEFAULT 0, skill_level BLOB NULL) ENGINE=InnoDB")
         sandbox.client.query("CREATE TABLE player.player_deleted LIKE player.player")
-        sandbox.client.query("ALTER TABLE player.player ADD account_id INT UNSIGNED NOT NULL DEFAULT 0")
+        sandbox.client.query("ALTER TABLE player.player ADD account_id INT UNSIGNED NOT NULL DEFAULT 0, ADD level TINYINT UNSIGNED NOT NULL DEFAULT 1, ADD level_step TINYINT UNSIGNED NOT NULL DEFAULT 0, ADD stat_point SMALLINT NOT NULL DEFAULT 0, ADD random_hp SMALLINT NOT NULL DEFAULT 0, ADD random_sp SMALLINT NOT NULL DEFAULT 0")
         sandbox.client.query("CREATE TABLE player.guild(id INT UNSIGNED PRIMARY KEY, master INT UNSIGNED NOT NULL) ENGINE=InnoDB")
         sandbox.client.query("CREATE TABLE player.guild_member(pid INT UNSIGNED PRIMARY KEY,guild_id INT UNSIGNED NOT NULL,grade TINYINT UNSIGNED NOT NULL) ENGINE=InnoDB")
         for path in paths:

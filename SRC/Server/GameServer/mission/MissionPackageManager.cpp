@@ -75,9 +75,9 @@ MissionPackageManager::Select(const std::shared_ptr<const MissionPackage> &packa
                     return {Status::Invalid, {{"rewards", "Symbolic reward has no typed payload"}}};
             for (const auto &[key, bundle] : graph->Source().rewards)
             {
-                if (bundle.schema == 2)
+                if (bundle.schema == 2 || bundle.schema == 3)
                 {
-                    if (!rewards_.atomicTypedItems || bundle.gold > rewards_.maxGold || bundle.goldCost > rewards_.maxGoldCost)
+                    if (bundle.experience > rewards_.maxExperience || bundle.levels > rewards_.maxLevels || bundle.accountCoins > rewards_.maxAccountCoins || !rewards_.atomicTypedItems || bundle.gold > rewards_.maxGold || bundle.goldCost > rewards_.maxGoldCost)
                         return {Status::Invalid, {{"rewards/" + key, "Unverified typed atomic binding"}}};
                     for (const auto *table : {&bundle.typedItems, &bundle.typedConsumeItems, &bundle.typedRequirements})
                         for (const auto &[item, count] : *table) {

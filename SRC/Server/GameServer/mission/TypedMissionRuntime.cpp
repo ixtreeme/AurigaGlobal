@@ -5,6 +5,11 @@
 #include "../item/ItemCatalogRuntime.hpp"
 #include "../item/TypedInventorySync.hpp"
 #include "../item/TypedDrops.hpp"
+#include "../item/TypedBooks.hpp"
+#include "../core/config.h"
+#include "../core/constants.h"
+#include "../ecs/systems/SkillSystem.hpp"
+#include <StoragePersistenceSql.hpp>
 #include "../ecs/ResourceAdmission.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/InventorySystem.hpp"
@@ -37,7 +42,8 @@ struct Request {uint8_t header=202,action=1;uint32_t npc=0;uint64_t nonce=0,requ
 static_assert(sizeof(Request)==216);
 struct Event {uint64_t durable=0; m::EventKind kind;std::string subject,choice;uint64_t amount=1;m::Timestamp time=0;};
 struct Session {
- uint32_t pid=0;uint64_t login=0,native=0,nonce=0,last=0,revision=0;uint32_t npc=0;bool loaded=false,pending=false,polling=false,visible=false,replyAfterPoll=false;
+ uint32_t pid=0,accountId=0;uint64_t login=0,native=0,nonce=0,last=0,revision=0;uint32_t npc=0;bool loaded=false,pending=false,polling=false,visible=false,replyAfterPoll=false;
+ std::function<void(bool,bool)> releaseProgress;std::optional<it::persistence::LoadedItemOwner> account;
  std::shared_ptr<auriga::resource_admission::Permit> permit;Status status=Status::Loading;Request previous{};mp::Owner owner;std::shared_ptr<m::DefinitionRegistry> registry;m::MissionRuntime::Checkpoint checkpoint;std::deque<Event> events;int64_t nextPoll=0,nextLoad=0,nextDeadline=0;
 };
 struct Reference {std::shared_ptr<Session> value;};
@@ -57,10 +63,10 @@ void Reply(const std::shared_ptr<Session>& s,Status status,std::string message={
      m::TypedMissionNodeView node;node.id=n.id;node.title=n.id;node.subject=n.objective.subject;node.kind=uint8_t(n.kind);node.state=uint8_t(p.status);node.event=uint8_t(n.objective.event);node.counter=p.counter;node.goal=n.objective.goal;node.deadline=p.deadline;
      if(presentation)for(const auto& text:presentation->objectives)if(text.node==n.id)node.title=text.title;
      if(p.status==m::NodeStatus::Active && n.kind==m::NodeKind::Objective && n.objective.event==m::EventKind::DialogueChoiceCommitted)node.choices=graph->Source().choices.at(n.objective.subject);
-     if(p.status==m::NodeStatus::Active && n.kind==m::NodeKind::Reward && !v.reward){const auto pin=m::PinReward({s->pid,code,saved->version,saved->id,n.id,n.reward},m::FingerprintDefinition(*graph),*graph);if(pin){auto reward=m::TypedItemContract(*catalog,*pin.reward);if(reward){v.reward=std::move(*reward);v.state=2;}}}v.nodes.push_back(std::move(node));
+     if(p.status==m::NodeStatus::Active && n.kind==m::NodeKind::Reward && !v.reward){const auto pin=m::PinReward({s->pid,code,saved->version,saved->id,n.id,n.reward},m::FingerprintDefinition(*graph),*graph);if(pin){auto reward=m::TypedItemContract(*catalog,*pin.reward);if(reward){v.reward=std::move(*reward);v.experience=pin.reward->Payload().experience;v.levels=pin.reward->Payload().levels;v.accountCoins=pin.reward->Payload().accountCoins;v.state=2;}}}v.nodes.push_back(std::move(node));
    }views.push_back(std::move(v));
  }
- const auto* items=g_registry.try_get<ecs::TypedItems>(e);const auto wire=m::EncodeTypedMissions(*catalog,status,s->nonce,s->last,s->npc,views,items?&items->state:nullptr,message);SendTypedInventory(e);if(auto* d=ecs::PlayerRuntime::GetDesc(e);d && d->IsPhase(PHASE_GAME) && wire)d->LargePacket(wire->data(),int(wire->size()));
+ const auto* items=g_registry.try_get<ecs::TypedItems>(e);const auto character=TypedBookCharacter(e);uint64_t coins=0;if(s->account){const auto w=std::ranges::find(s->account->wallets,it::WalletCurrency::DragonCoin,&it::ItemWallet::currency);if(w!=s->account->wallets.end())coins=w->balance;}const auto wire=m::EncodeTypedMissions(*catalog,status,s->nonce,s->last,s->npc,views,items?&items->state:nullptr,message,character?&*character:nullptr,coins);SendTypedInventory(e);if(auto* d=ecs::PlayerRuntime::GetDesc(e);d && d->IsPhase(PHASE_GAME) && wire)d->LargePacket(wire->data(),int(wire->size()));
 }
 bool Connect(CAsyncSQL& db){db.SetTimeouts(5);db.SetRetryConnectionErrors(false);return db.Setup(connection.host.c_str(),connection.user.c_str(),connection.password.c_str(),connection.database.c_str(),"utf8mb4",true,connection.port);}
 Message Query(CAsyncSQL& db,const mp::ReadCommand& q){return Message(db.DirectQueryPrepared(q.query.c_str(),q.params));}
@@ -68,29 +74,29 @@ bool Run(CAsyncSQL& db,const mp::Plan& p){if(!p)return false;Message msg(db.Dire
 struct Attempt {std::shared_ptr<Session> session;mp::Plan plan;bool resolveOnly=false,reload=false;std::function<void(bool,std::optional<it::persistence::LoadedItemOwner>)> done;};
 void QueueAttempt(const std::shared_ptr<Attempt>& a,std::chrono::milliseconds delay={}){
  store::ItemStore::Instance().Submit([a](CAsyncSQL&,const it::ItemCatalog& catalog)->store::ItemStore::Completion{
-   CAsyncSQL db;std::optional<bool> outcome;std::optional<it::persistence::LoadedItemOwner> state;
+   CAsyncSQL db;std::optional<bool> outcome;std::optional<it::persistence::LoadedItemOwner> state,account;
    if(Connect(db)){
      Message resolved(db.DirectTransactionPrepared(mp::Resolve(a->plan)));const auto resolution=resolved?mp::DecodeResolution(*resolved,a->plan).status:mp::Resolution::SqlError;
      if(resolution==mp::Resolution::Committed)outcome=true;
      else if(resolution==mp::Resolution::Absent){Message msg(db.DirectTransactionPrepared(a->plan.statements));if(msg && mp::Confirmed(*msg))outcome=true;else if(msg && msg->transactionOutcome!=SqlTransactionOutcome::CommitUnknown)outcome=false;}
      else if(resolution!=mp::Resolution::SqlError)outcome=false;
-     if(outcome && a->reload){auto loaded=it::persistence::LoadItemOwner(db,catalog,{it::ItemOwnerKind::Character,a->session->pid},a->session->native);if(loaded)state=std::move(*loaded);else if(*outcome)outcome.reset();}
+     if(outcome && a->reload){auto loaded=it::persistence::LoadItemOwner(db,catalog,{it::ItemOwnerKind::Character,a->session->pid},a->session->native);if(loaded)state=std::move(*loaded);else if(*outcome)outcome.reset();if(a->session->accountId){auto loadedAccount=it::persistence::LoadCurrentItemOwner(db,catalog,{it::ItemOwnerKind::Account,a->session->accountId});if(loadedAccount)account=std::move(*loadedAccount);else outcome.reset();}}
    }
-   return [a,outcome,state=std::move(state)]()mutable{if(Current(a->session)==entt::null)return;if(!outcome){QueueAttempt(a,std::chrono::milliseconds(250));return;}a->done(*outcome,std::move(state));};
+   return [a,outcome,state=std::move(state),account=std::move(account)]()mutable{if(!outcome){QueueAttempt(a,std::chrono::milliseconds(250));return;}if(Current(a->session)==entt::null){if(a->session->releaseProgress){auto finish=std::move(a->session->releaseProgress);finish(false,false);}return;}if(account)a->session->account=std::move(account);a->done(*outcome,std::move(state));};
  },delay);
 }
 void Persist(const std::shared_ptr<Session>& s,mp::Plan plan,m::MissionRuntime::Checkpoint after,size_t events=0,bool reload=false,std::function<void(bool)> done={},bool command=false){
  s->pending=true;auto a=std::make_shared<Attempt>();a->session=s;a->plan=std::move(plan);a->reload=reload;const auto revision=*a->plan.storageRevision;
  a->done=[s,after=std::move(after),events,revision,reload,command,done=std::move(done)](bool ok,std::optional<it::persistence::LoadedItemOwner> state)mutable{const auto e=Current(s);if(e==entt::null)return;s->pending=false;
-   if(ok){s->checkpoint=std::move(after);s->nextDeadline=0;s->revision=revision;for(size_t j=0;j<events && !s->events.empty();j++)s->events.pop_front();}if(state)g_registry.emplace_or_replace<ecs::TypedItems>(e,std::move(*state));if(reload){g_registry.remove<ecs::TypedItemBusy>(e);s->permit.reset();if(!s->visible)SendTypedInventory(e);}
+   if(ok){s->checkpoint=std::move(after);s->nextDeadline=0;s->revision=revision;for(size_t j=0;j<events && !s->events.empty();j++)s->events.pop_front();}if(state)g_registry.emplace_or_replace<ecs::TypedItems>(e,std::move(*state));if(reload){g_registry.remove<ecs::TypedItemBusy>(e);s->permit.reset();if(s->releaseProgress){auto finish=std::move(s->releaseProgress);finish(ok,true);}if(!s->visible)SendTypedInventory(e);}
    if(command)s->status=ok?Status::Applied:Status::Failed;Reply(s,command?s->status:ok?Status::Ready:Status::Failed,ok?"":"A mentés nem történt meg; a művelet újra próbálható.");if(done)done(ok);PumpTypedItemGrants(e);
  };QueueAttempt(a);
 }
 void Load(const std::shared_ptr<Session>& s){
  s->pending=true;s->status=Status::Loading;const auto fence=g_registry.get<ecs::TypedItems>(Current(s)).state.fence;
- store::ItemStore::Instance().Submit([s,fence](CAsyncSQL&,const it::ItemCatalog&)->store::ItemStore::Completion{
-   auto registry=std::make_shared<m::DefinitionRegistry>();std::vector<m::Definition> defs;for(const auto& graph:package->Graphs())defs.push_back(graph->Source());registry->Activate(defs);bool ok=false;mp::Owner owner;uint64_t revision=0;m::MissionRuntime::Checkpoint checkpoint;CAsyncSQL db;
-   if(Connect(db) && Run(db,mp::ArchivePackage(packageBytes))){auto headMessage=Query(db,mp::ReadHead(s->pid));const auto head=headMessage?mp::DecodeHead(*headMessage,s->pid):mp::HeadResult{};
+ store::ItemStore::Instance().Submit([s,fence](CAsyncSQL&,const it::ItemCatalog& catalog)->store::ItemStore::Completion{
+   auto registry=std::make_shared<m::DefinitionRegistry>();std::vector<m::Definition> defs;for(const auto& graph:package->Graphs())defs.push_back(graph->Source());registry->Activate(defs);bool ok=false;std::optional<it::persistence::LoadedItemOwner> account;mp::Owner owner;uint64_t revision=0;m::MissionRuntime::Checkpoint checkpoint;CAsyncSQL db;
+   if(Connect(db) && s->accountId && it::persistence::EnsureRuntimeStorageOwner(db,catalog,{it::ItemOwnerKind::Account,s->accountId}) && Run(db,mp::ArchivePackage(packageBytes))){auto loadedAccount=it::persistence::LoadCurrentItemOwner(db,catalog,{it::ItemOwnerKind::Account,s->accountId});if(loadedAccount)account=std::move(*loadedAccount);auto headMessage=Query(db,mp::ReadHead(s->pid));const auto head=headMessage?mp::DecodeHead(*headMessage,s->pid):mp::HeadResult{};
      if(head.status==mp::ReadStatus::Found || head.status==mp::ReadStatus::Missing){owner={s->pid,head.head.epoch+1,mp::NewToken()};auto claim=mp::Claim(s->pid,head.head.epoch,owner.token,mp::NewToken());m::FenceTypedMissionPlan(claim,fence);
        if(Run(db,claim)){auto msg=Query(db,mp::ReadSnapshot(owner));const auto loaded=msg?mp::DecodeSnapshot(*msg,owner):mp::SnapshotResult{};
          if(loaded.status==mp::ReadStatus::Found){revision=loaded.snapshot.storageRevision;ok=true;for(const auto& ref:loaded.snapshot.metadata.definitions)if(!registry->Get(ref.mission,ref.version)){auto archived=Query(db,mp::ReadDefinitionArchive(ref));const auto old=archived?mp::DecodeDefinitionArchive(*archived,ref):m::PackageLoad{};if(!old){ok=false;break;}std::vector<m::Definition> exact;for(const auto& graph:old.package->Graphs())exact.push_back(graph->Source());if(registry->Retain(exact).status!=m::Publication::Status::Published){ok=false;break;}}
@@ -100,7 +106,8 @@ void Load(const std::shared_ptr<Session>& s){
        }
      }
    }
-   return [s,ok,owner,revision,registry,checkpoint=std::move(checkpoint)]()mutable{if(Current(s)==entt::null)return;s->pending=false;s->loaded=ok;s->nextLoad=Now()+5000;if(ok){s->owner=owner;s->revision=revision;s->registry=std::move(registry);s->checkpoint=std::move(checkpoint);s->nextDeadline=0;s->status=Status::Ready;}else{s->status=Status::Failed;LOG_ERROR("TypedMission: durable load failed for pid {}",s->pid);}Reply(s,s->status);};
+   ok=ok && account.has_value();
+   return [s,ok,owner,revision,registry,account=std::move(account),checkpoint=std::move(checkpoint)]()mutable{if(Current(s)==entt::null)return;s->pending=false;s->loaded=ok;s->nextLoad=Now()+5000;if(ok){s->account=std::move(account);s->owner=owner;s->revision=revision;s->registry=std::move(registry);s->checkpoint=std::move(checkpoint);s->nextDeadline=0;s->status=Status::Ready;}else{s->status=Status::Failed;LOG_ERROR("TypedMission: durable load failed for pid {}",s->pid);}Reply(s,s->status);};
  });
 }
 void Poll(const std::shared_ptr<Session>& s){
@@ -117,9 +124,19 @@ bool Act(const std::shared_ptr<Session>& s,const std::string& code,unsigned acti
  if(action==2){const uint64_t id=s->checkpoint.instances.empty()?1:s->checkpoint.instances.rbegin()->first+1;result=runtime->Start(code,allow.version,id,now);}
  else if(action==3){auto pending=runtime->PendingActions();const auto found=std::ranges::find(pending,code,&m::ActionKey::mission);if(found==pending.end())return false;
    auto permit=ecs::resource_admission::Enter({e},auriga::resource_admission::Operation::ItemUse);if(!permit || !permit->Current())return false;s->permit=std::make_shared<auriga::resource_admission::Permit>(std::move(*permit));
+   m::MissionRewardFacts facts;facts.accountId=s->accountId;
+   const auto graph=s->registry->Get(found->mission,found->version);const auto pin=m::PinReward(*found,m::FingerprintDefinition(*graph),*graph);
+   if(pin.reward->Payload().schema==3){const auto character=TypedBookCharacter(e);if(!character){s->permit.reset();return false;}facts.character=*character;s->releaseProgress=HoldTypedBookCheckpoint(e);if(!s->releaseProgress){s->permit.reset();return false;}
+     facts.rules.maximumLevel=uint16_t(gPlayerMaxLevel);facts.rules.statLevelLimit=uint16_t(g_iStatusPointGetLevelLimit);facts.rules.skillGroup=SkillSystem::GetSkillGroup(e)!=0;
+#ifdef ENABLE_STATUS_MAX_344_POINTS
+     facts.rules.cappedStats344=true;
+#endif
+     facts.rules.nextExperience.assign(exp_table,exp_table+std::min<int>(gPlayerMaxLevel,PLAYER_MAX_LEVEL_CONST)+1);const auto& job=JobInitialPoints[ecs::PlayerRuntime::GetJob(e)];
+     for(unsigned j=ecs::PointSystem::GetLevel(e);j<unsigned(gPlayerMaxLevel);j++)facts.rules.gains.emplace_back(uint16_t(number(job.hp_per_lv_begin,job.hp_per_lv_end)),uint16_t(number(job.sp_per_lv_begin,job.sp_per_lv_end)));
+   }
    s->pending=true;g_registry.emplace_or_replace<ecs::TypedItemBusy>(e);const auto level=uint16_t(ecs::PointSystem::GetLevel(e));const auto ids=store::PeekInstanceIds(it::MaxItemCommitItems);store::SpendInstanceIds(ids.size());const auto key=*found;
-   store::ItemStore::Instance().Submit([s,key,level,ids,done=std::move(done),now](CAsyncSQL&,const it::ItemCatalog& catalog)->store::ItemStore::Completion{CAsyncSQL db;std::expected<m::TypedMissionWrite,std::string> plan=std::unexpected("Mission SQL unavailable");if(Connect(db)){auto state=it::persistence::LoadItemOwner(db,catalog,{it::ItemOwnerKind::Character,s->pid},s->native);if(state)plan=m::PrepareTypedMissionWrite(catalog,*s->registry,s->checkpoint,s->owner,s->revision,key,*state,level,ids,now);}
-     return [s,plan=std::move(plan),done=std::move(done)]()mutable{const auto e=Current(s);if(e==entt::null)return;if(!plan){s->pending=false;g_registry.remove<ecs::TypedItemBusy>(e);s->permit.reset();s->status=Status::Invalid;Reply(s,s->status,"Hiányzó tárgy, Yang vagy szabad hely. A jutalom továbbra is átvehető.");if(done)done(false);PumpTypedItemGrants(e);return;}Persist(s,std::move(plan->plan),std::move(plan->checkpoint),0,true,std::move(done),true);};
+   store::ItemStore::Instance().Submit([s,key,level,ids,facts=std::move(facts),done=std::move(done),now](CAsyncSQL&,const it::ItemCatalog& catalog)mutable->store::ItemStore::Completion{CAsyncSQL db;std::expected<m::TypedMissionWrite,std::string> plan=std::unexpected("Mission SQL unavailable");if(Connect(db)){auto state=it::persistence::LoadItemOwner(db,catalog,{it::ItemOwnerKind::Character,s->pid},s->native);if(facts.accountId){auto account=it::persistence::LoadCurrentItemOwner(db,catalog,{it::ItemOwnerKind::Account,facts.accountId});if(account)facts.account=std::move(*account);}if(state)plan=m::PrepareTypedMissionWrite(catalog,*s->registry,s->checkpoint,s->owner,s->revision,key,*state,level,ids,now,&facts);}
+     return [s,plan=std::move(plan),done=std::move(done)]()mutable{const auto e=Current(s);if(e==entt::null){if(s->releaseProgress){auto finish=std::move(s->releaseProgress);finish(false,false);}return;}if(!plan){s->pending=false;g_registry.remove<ecs::TypedItemBusy>(e);s->permit.reset();if(s->releaseProgress){auto finish=std::move(s->releaseProgress);finish(false,true);}s->status=Status::Invalid;Reply(s,s->status,"A jutalom feltételei, a szintkorlát vagy a pénztárca korlátja nem engedi az átvételt. A jutalom megmaradt.");if(done)done(false);PumpTypedItemGrants(e);return;}Persist(s,std::move(plan->plan),std::move(plan->checkpoint),0,true,std::move(done),true);};
    });return true;
  }
  else if(action==5){const auto* saved=Instance(*s,code);if(!saved)return false;result=runtime->Abandon(saved->id,now);}
@@ -137,7 +154,7 @@ std::expected<void,std::string> LoadTypedMissionRuntime(const std::string& folde
  try{const auto file=std::filesystem::path(folder)/"typed_mission_runtime.json";if(!std::filesystem::exists(file)){package.reset();return {};}
    std::ifstream stream(file);const auto config=nlohmann::json::parse(stream);if(config.size()!=3 || config.at("version")!=1 || !config.at("missions").is_array() || config.at("missions").size()>32)return std::unexpected("Invalid typed Mission runtime configuration");
    const auto name=config.at("package").get<std::string>();if(name.empty() || name!=std::filesystem::path(name).filename().string())return std::unexpected("Mission package must be a local filename");const auto path=std::filesystem::path(folder)/name;auto loaded=m::LoadPackageFile(path);if(!loaded)return std::unexpected("Invalid typed Mission package");
-   auto registry=std::make_shared<m::DefinitionRegistry>();m::RewardBindingPolicy policy;policy.atomicTypedItems=true;policy.maxGold=INT64_MAX;policy.maxGoldCost=INT64_MAX;const auto catalog=store::CurrentCatalog();if(!catalog)return std::unexpected("Typed catalog missing");
+   auto registry=std::make_shared<m::DefinitionRegistry>();m::RewardBindingPolicy policy;policy.atomicTypedItems=true;policy.maxExperience=INT64_MAX;policy.maxLevels=254;policy.maxAccountCoins=INT64_MAX;policy.maxGold=INT64_MAX;policy.maxGoldCost=INT64_MAX;const auto catalog=store::CurrentCatalog();if(!catalog)return std::unexpected("Typed catalog missing");
    for(const auto& graph:loaded.package->Graphs()){for(const auto& n:graph->Nodes())if(n.value.kind==m::NodeKind::Objective && n.value.objective.event!=m::EventKind::ItemCollected && n.value.objective.event!=m::EventKind::ItemCrafted && n.value.objective.event!=m::EventKind::MobKilled && n.value.objective.event!=m::EventKind::BossDefeated && n.value.objective.event!=m::EventKind::NpcInteracted && n.value.objective.event!=m::EventKind::DialogueChoiceCommitted)return std::unexpected("Mission event has no verified live adapter");
      for(const auto& [key,bundle]:graph->Source().rewards){const auto node=std::ranges::find_if(graph->Nodes(),[&](const auto& n){return n.value.kind==m::NodeKind::Reward && n.value.reward==key;});if(node==graph->Nodes().end())return std::unexpected("Unused Mission reward");auto pin=m::PinReward({1,graph->Source().id,graph->Source().version,1,node->value.id,key},m::FingerprintDefinition(*graph),*graph);if(!pin || !m::TypedItemContract(*catalog,*pin.reward))return std::unexpected("Mission reward needs a supported typed item contract");for(const auto* table:{&bundle.typedItems,&bundle.typedConsumeItems,&bundle.typedRequirements})for(const auto& [item,count]:*table)policy.typedItems[item]={50000,50000};}
    }
@@ -148,7 +165,7 @@ std::expected<void,std::string> LoadTypedMissionRuntime(const std::string& folde
 }
 void TickTypedMissionRuntime(){
  if(!package)return;std::vector<entt::entity> entities;for(auto e:g_registry.view<ecs::TypedItems,ecs::TypedItemLogin>())entities.push_back(e);
- for(const auto e:entities){auto s=Get(e);const auto login=g_registry.get<ecs::TypedItemLogin>(e).token;if(!s || s->login!=login){s=std::make_shared<Session>();s->pid=ecs::PlayerRuntime::GetPlayerID(e);s->login=login;s->native=g_registry.get<ecs::TypedItems>(e).state.fence.sessionGeneration;g_registry.emplace_or_replace<Reference>(e,s);}if(!s->loaded){if(!s->pending && Now()>=s->nextLoad)Load(s);continue;}if(s->pending || s->polling)continue;
+ for(const auto e:entities){auto s=Get(e);const auto login=g_registry.get<ecs::TypedItemLogin>(e).token;if(!s || s->login!=login){s=std::make_shared<Session>();s->pid=ecs::PlayerRuntime::GetPlayerID(e);if(auto* d=ecs::PlayerRuntime::GetDesc(e))s->accountId=d->GetAccountTable().id;s->login=login;s->native=g_registry.get<ecs::TypedItems>(e).state.fence.sessionGeneration;g_registry.emplace_or_replace<Reference>(e,s);}if(!s->loaded){if(!s->pending && Now()>=s->nextLoad)Load(s);continue;}if(s->pending || s->polling)continue;
    const auto now=std::max(Now(),s->checkpoint.now);
    // Rebuild the decision runtime only for an event or a due deadline. A fresh
    // durable checkpoint invalidates this cached deadline; idle ticks do no
@@ -162,7 +179,7 @@ void TickTypedMissionRuntime(){
  }
 }
 bool HandleTypedMissionPacket(entt::entity e,const char* bytes){
- const auto r=*reinterpret_cast<const Request*>(bytes);if(!g_registry.valid(e) || !std::memchr(r.mission,0,97) || !std::memchr(r.choice,0,97) || r.action<1 || r.action>7)return true;auto s=Get(e);if(!s){const auto* login=g_registry.try_get<ecs::TypedItemLogin>(e);const auto* items=g_registry.try_get<ecs::TypedItems>(e);if(!login || !items)return true;s=std::make_shared<Session>();s->pid=ecs::PlayerRuntime::GetPlayerID(e);s->login=login->token;s->native=items->state.fence.sessionGeneration;g_registry.emplace_or_replace<Reference>(e,s);if(package)Load(s);}
+ const auto r=*reinterpret_cast<const Request*>(bytes);if(!g_registry.valid(e) || !std::memchr(r.mission,0,97) || !std::memchr(r.choice,0,97) || r.action<1 || r.action>7)return true;auto s=Get(e);if(!s){const auto* login=g_registry.try_get<ecs::TypedItemLogin>(e);const auto* items=g_registry.try_get<ecs::TypedItems>(e);if(!login || !items)return true;s=std::make_shared<Session>();s->pid=ecs::PlayerRuntime::GetPlayerID(e);if(auto* d=ecs::PlayerRuntime::GetDesc(e))s->accountId=d->GetAccountTable().id;s->login=login->token;s->native=items->state.fence.sessionGeneration;g_registry.emplace_or_replace<Reference>(e,s);if(package)Load(s);}
  if(!package){s->visible=true;Reply(s,Status::Failed,"Nincs aktív Mission-csomag.");return true;}
  if(r.action==1){if(r.nonce || r.request)return true;s->visible=true;if(!s->nonce || !s->pending){const auto token=mp::NewToken();std::memcpy(&s->nonce,token.data(),8);if(!s->nonce)s->nonce=1;s->last=0;s->npc=r.npc;}s->status=s->pending?Status::Pending:s->loaded?Status::Ready:Status::Loading;Reply(s,s->status);return true;}
  if(r.nonce!=s->nonce || !s->visible){Reply(s,Status::Stale);return true;}if(r.action==6){if(!s->pending){Reply(s,Status::Closed);s->visible=false;}return true;}

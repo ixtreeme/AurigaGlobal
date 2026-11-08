@@ -1,0 +1,113 @@
+{
+  "schema": 1,
+  "package": "demo.progression",
+  "version": 1,
+  "default_locale": "hu",
+  "missions": [
+    {
+      "schema": 2,
+      "mission": "demo.typed_story",
+      "version": 1,
+      "root": "story",
+      "nodes": [
+        {
+          "id": "story",
+          "kind": "sequence",
+          "children": [
+            "collect",
+            "talk",
+            "reward"
+          ]
+        },
+        {
+          "id": "collect",
+          "kind": "objective",
+          "objective": {
+            "event": "item_collected",
+            "subject": "item.6.1.0",
+            "goal": 3
+          }
+        },
+        {
+          "id": "talk",
+          "kind": "objective",
+          "objective": {
+            "event": "npc_interacted",
+            "subject": "npc.9003",
+            "goal": 1
+          }
+        },
+        {
+          "id": "reward",
+          "kind": "reward",
+          "reward": "items"
+        }
+      ],
+      "rewards": {
+        "items": {
+          "schema": 3,
+          "typed_requirements": [
+            {
+              "category": 6,
+              "local": 1,
+              "level": 0,
+              "count": 10
+            }
+          ],
+          "typed_consume_items": [
+            {
+              "category": 6,
+              "local": 1,
+              "level": 0,
+              "count": 4
+            }
+          ],
+          "typed_items": [
+            {
+              "category": 6,
+              "local": 2,
+              "level": 0,
+              "count": 2
+            }
+          ],
+          "gold_cost": 25,
+          "gold": 100,
+          "experience": 1000,
+          "levels": 1,
+          "account_coins": 25
+        }
+      }
+    }
+  ],
+  "presentation": {
+    "locales": {
+      "hu": {
+        "story.title": "Anyaggyűjtés",
+        "story.summary": "Gyűjts három anyagot, majd jelentkezz az NPC-nél.",
+        "collect.title": "Gyűjts három anyagot",
+        "talk.title": "Beszélj a megbízóval",
+        "reward.title": "Vedd át a jutalmat"
+      }
+    },
+    "missions": {
+      "demo.typed_story": {
+        "title": "story.title",
+        "summary": "story.summary",
+        "objectives": [
+          {
+            "node": "collect",
+            "title": "collect.title"
+          },
+          {
+            "node": "talk",
+            "title": "talk.title"
+          },
+          {
+            "node": "reward",
+            "title": "reward.title"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,34 @@
+void MissionProgressionSql(CAsyncSQL& admin, CAsyncSQL& db, CAsyncSQL& writer, const ItemCatalog& catalog)
+{
+    namespace m=auriga::mission;namespace mp=m::persistence;
+    const ItemOwner owner{ItemOwnerKind::Character,880235},account{ItemOwnerKind::Account,880236};
+    Execute(admin,"INSERT INTO player.player(id,account_id,level,exp,stat_point,random_hp,random_sp) VALUES(880235,880236,5,20,4,100,50)");
+    Check(p::EnsureRuntimeStorageOwner(writer,catalog,owner).has_value() && p::EnsureRuntimeStorageOwner(writer,catalog,account).has_value(),"Mission progression owners");
+    auto state=p::LoadCurrentItemOwner(writer,catalog,owner).value();
+    m::MissionRewardFacts facts;facts.accountId=account.id;facts.account=p::LoadCurrentItemOwner(writer,catalog,account).value();facts.character.experience=20;facts.character.points={1,2,3};facts.character.progression=CharacterProgression{5,0,4,100,50};
+    facts.rules.maximumLevel=20;facts.rules.statLevelLimit=20;facts.rules.skillGroup=true;facts.rules.nextExperience=std::vector<uint32_t>(21,100);facts.rules.gains=std::vector<std::pair<uint16_t,uint16_t>>(20,{10,5});
+    m::RewardBundle reward;reward.schema=3;reward.experience=250;reward.levels=1;reward.accountCoins=75;
+    const auto expected=m::RewardProgression(facts.character,reward,facts.rules);
+    Check(expected && expected->progression==CharacterProgression{8,2,15,130,65} && expected->experience==50 && expected->points==std::array<uint16_t,3>{4,2,3},"direct levels then multi-level XP preserve growth points and remainder");
+    auto cap=facts.rules;cap.maximumLevel=7;Check(!m::RewardProgression(facts.character,reward,cap),"XP cap refuses whole reward without clamping");
+    auto tooMany=reward;tooMany.levels=16;Check(!m::RewardProgression(facts.character,tooMany,facts.rules),"direct levels cannot exceed configured cap");
+    auto overflow=facts.character;overflow.progression->randomHP=INT16_MAX;Check(!m::RewardProgression(overflow,reward,facts.rules),"HP growth overflow refuses entire reward");
+    auto old=reward;old.schema=2;Check(!m::ValidRewardBundle(old),"schema2 cannot silently omit new effects");old.schema=1;Check(!m::ValidRewardBundle(old),"schema1 cannot silently omit new effects");
+    auto encoded=EncodeBookLearning(BookLearning{1,*expected});Check(encoded && DecodeBookLearning(*encoded)->character==*expected,"portable progression checkpoint v2 roundtrip");
+    m::Definition definition;definition.id="typed.sql.progression";definition.version=1;definition.root="reward";m::Node node;node.id="reward";node.kind=m::NodeKind::Reward;node.reward="bundle";definition.nodes={node};definition.rewards["bundle"]=reward;
+    m::PackageSource source;source.manifest={"typed.sql.progression",1,"hu",m::RequiredNativeTypes(definition)};source.missions={definition};source.presentation.locales["hu"]={{"title","Progression"},{"summary","XP levels account"}};source.presentation.missions[definition.id]={"title","summary",{}};
+    const auto package=m::CompilePackage(source);Check(package && m::LoadPackage(package.bytes).package->Graphs()[0]->Source()==definition,"schema3 exact package roundtrip");
+    const auto run=[&](const mp::Plan& plan){Check(bool(plan),"progression SQL plan valid");std::unique_ptr<SQLMsg> msg(db.DirectTransactionPrepared(plan.statements));return mp::Confirmed(*msg);};
+    Check(run(mp::ArchivePackage(package.bytes)),"progression package archived");const auto token=mp::NewToken();auto claim=mp::Claim(owner.id,0,token,mp::NewToken());m::FenceTypedMissionPlan(claim,state.fence);Check(run(claim),"progression Mission claimed");mp::Owner holder{uint32_t(owner.id),1,token};
+    m::DefinitionRegistry registry;registry.Activate({definition});m::MissionRuntime runtime(registry,{uint32_t(owner.id),1},100);runtime.Start(definition.id,1,1,100);Check(run(mp::Save(runtime.Save(),registry,holder,0,mp::NewToken())),"progression pending reward durable");
+    const auto action=runtime.PendingActions().front();auto plan=m::PrepareTypedMissionWrite(catalog,registry,runtime.Save(),holder,1,action,state,5,{},101,&facts);Check(bool(plan),"XP levels and account wallet share native Mission transaction");
+    auto failed=plan->plan;failed.statements.push_back({"SELECT 1 WHERE 0",{},{},1});Check(!run(failed),"late failure rolls progression wallet and completion back");
+    Check(Scalar(admin,"SELECT exp FROM player.player WHERE id=880235")=="20" && p::LoadCurrentItemOwner(writer,catalog,account)->wallets.front().balance==0 && p::LoadCurrentItemOwner(writer,catalog,owner)->learning.revision==0,"no partial XP or account coins after rollback");
+    auto wrong=facts;wrong.accountId=880237;wrong.account->fence.owner.id=880237;for(auto& w:wrong.account->wallets)w.owner.id=880237;auto forged=m::PrepareTypedMissionWrite(catalog,registry,runtime.Save(),holder,1,action,state,5,{},101,&wrong);Check(forged && !run(forged->plan),"SQL authenticated account membership rejects another account");
+    auto full=facts;full.account->wallets.front().balance=INT64_MAX;Check(!m::PrepareTypedMissionWrite(catalog,registry,runtime.Save(),holder,1,action,state,5,{},101,&full),"account overflow refuses complete claim");
+    Check(run(plan->plan),"durable progression and shared account reward");auto saved=p::LoadCurrentItemOwner(writer,catalog,owner).value();Check(saved.learning.character==*expected && p::LoadCurrentItemOwner(writer,catalog,account)->wallets.front().balance==75,"native reload has exact XP level growth and account reward");
+    Check(Scalar(admin,"SELECT CONCAT(level,':',level_step,':',exp,':',stat_point,':',random_hp,':',random_sp) FROM player.player WHERE id=880235")=="8:2:50:15:130:65","legacy SQL row matches authoritative progression");
+    const auto stale=ProtectBookSave("UPDATE player.player SET exp = 1, skill_point = 0, sub_skill_point = 0, horse_skill_point = 0, skill_level = '', level = 5, level_step = 0, stat_point = 4, random_hp = 100, random_sp = 50, name = 'late' WHERE id=880235",0,"");Check(stale.has_value(),"late cached full save fenced");Execute(admin,*stale);Check(Scalar(admin,"SELECT CONCAT(level,':',level_step,':',exp,':',stat_point,':',random_hp,':',random_sp) FROM player.player WHERE id=880235")=="8:2:50:15:130:65","late cached save cannot roll back Mission level or growth");
+    std::unique_ptr<SQLMsg> resolved(db.DirectTransactionPrepared(mp::Resolve(plan->plan)));Check(mp::DecodeResolution(*resolved,plan->plan).status==mp::Resolution::Committed && !run(plan->plan),"reward replay settles without XP or wallet duplication");
+    Check(p::ClaimOwnerSession(writer,catalog,owner).has_value() && p::LoadCurrentItemOwner(writer,catalog,owner)->learning.character==*expected && p::LoadCurrentItemOwner(writer,catalog,account)->wallets.front().balance==75,"relogin preserves full progression and shared account balance");
+}

@@ -7,10 +7,10 @@ namespace auriga::mission
 std::expected<item::ItemMission, std::string> TypedItemContract(const item::ItemCatalog &catalog, const PinnedReward &pin)
 {
     const auto &b=pin.Payload();
-    if(b.schema!=2 || !ValidRewardBundle(b)) return std::unexpected("The Mission action needs a typed item payload");
+    if((b.schema!=2 && b.schema!=3) || !ValidRewardBundle(b)) return std::unexpected("The Mission action needs a typed item payload");
     const auto identity=ActionIdentity(pin.Action());std::string code="typed.";
     for(auto byte:identity){code+="0123456789abcdef"[byte>>4];code+="0123456789abcdef"[byte&15];}
-    item::ItemMission m; m.id=1;m.version=pin.Action().version;m.code=code;m.name="Mission";m.goldCost=b.goldCost;m.goldReward=b.gold;
+    item::ItemMission m; m.id=1;m.version=pin.Action().version;m.code=code;m.name="Mission";m.goldCost=b.goldCost;m.goldReward=b.gold;m.rewardExtension=b.schema==3;
     const auto convert=[](const auto &source,auto &target)->bool{for(const auto &[key,count]:source){const auto typed=item::ItemKey::Create(key.category,key.local);if(!typed)return false;target.push_back({*typed,key.level,count});}return true;};
     if(!convert(b.typedItems,m.rewards) || !convert(b.typedConsumeItems,m.costs) || !convert(b.typedRequirements,m.requirements) || !item::ValidateItemMission(catalog,m))return std::unexpected("Unknown or unsupported typed Mission item contract");
     return m;
@@ -24,7 +24,7 @@ void FenceTypedMissionPlan(persistence::Plan &plan,item::ItemOwnerFence fence)
 std::expected<TypedMissionWrite,std::string> PrepareTypedMissionWrite(const item::ItemCatalog &catalog,
     const DefinitionRegistry &registry,const MissionRuntime::Checkpoint &before,persistence::Owner owner,
     uint64_t revision,const ActionKey &action,const item::persistence::LoadedItemOwner &state,
-    uint16_t level,std::span<const item::ItemInstanceId> ids,Timestamp now)
+    uint16_t level,std::span<const item::ItemInstanceId> ids,Timestamp now,const MissionRewardFacts *facts)
 {
     try{
         if(before.character!=owner.character || action.character!=owner.character || state.fence.owner!=item::ItemOwner{item::ItemOwnerKind::Character,owner.character})return std::unexpected("Mission owner differs");
@@ -37,6 +37,19 @@ std::expected<TypedMissionWrite,std::string> PrepareTypedMissionWrite(const item
         const auto encoded=EncodeCheckpoint(before,registry);if(!encoded)return std::unexpected("Invalid pending checkpoint");
         auto commit=item::MakeItemMissionCommit(catalog,*contract,{state.fence.owner,ActionIdentity(action)},level,state.fence,state.storages,state.items,state.wallets,ids,now);
         if(!commit)return std::unexpected("Typed item requirements, balance or free space are insufficient");
+        const auto &payload=pin.reward->Payload();
+        if(payload.schema==3){
+            if(!facts || facts->character.experience>UINT32_MAX || state.learning.revision==UINT64_MAX)return std::unexpected("Missing authoritative reward facts");
+            auto character=RewardProgression(facts->character,payload,facts->rules);if(!character)return std::unexpected(character.error());
+            auto learning=state.learning;++learning.revision;learning.character=std::move(*character);
+            commit->learning=item::ItemLearningChange{state.fence.owner,state.learning,std::move(learning)};
+            if(payload.accountCoins){
+                if(!facts->accountId || !facts->account || facts->account->fence.owner!=item::ItemOwner{item::ItemOwnerKind::Account,facts->accountId})return std::unexpected("Missing authorized account wallet");
+                const auto &account=*facts->account;const auto w=std::ranges::find(account.wallets,item::WalletCurrency::DragonCoin,&item::ItemWallet::currency);
+                if(w==account.wallets.end() || w->owner!=account.fence.owner || w->balance>INT64_MAX || payload.accountCoins>uint64_t(INT64_MAX)-w->balance)return std::unexpected("Account wallet overflow");
+                auto after=*w;++after.revision;after.balance+=payload.accountCoins;commit->owners.push_back(account.fence);commit->wallets.push_back({*w,after});
+            }
+        }
         if(runtime.Acknowledge(action,std::max(now,before.now)).code!=ResultCode::Applied)return std::unexpected("Mission acknowledgement failed");
         auto checkpoint=runtime.Save();auto save=persistence::Save(checkpoint,registry,owner,revision,persistence::NewToken());
         auto entitlement=persistence::RecordEntitlement(owner,*pin.reward,revision,encoded.metadata.digest,persistence::NewToken());
@@ -44,6 +57,7 @@ std::expected<TypedMissionWrite,std::string> PrepareTypedMissionWrite(const item
         if(!save || !entitlement || !items)return std::unexpected("Mission/item SQL plan rejected");
         SqlTransaction all=std::move(entitlement.statements);all.insert(all.end(),items->begin(),items->end());all.insert(all.end(),save.statements.begin(),save.statements.end());save.statements=std::move(all);
         FenceTypedMissionPlan(save,state.fence);
+        if(payload.accountCoins)save.statements.insert(save.statements.begin(),{"SELECT 1 FROM player.player WHERE id=? AND account_id=? LOCK IN SHARE MODE",{SqlParam::UInt(owner.character),SqlParam::UInt(facts->accountId)},{},1});
         return TypedMissionWrite{std::move(save),std::move(*commit),std::move(checkpoint)};
     }catch(const std::exception &e){return std::unexpected(std::string(e.what()));}
 }

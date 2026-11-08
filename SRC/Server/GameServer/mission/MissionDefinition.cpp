@@ -127,7 +127,7 @@ bool Boolean(const Json &j, const std::string &path)
 }
 RewardBundle ReadRewardBundle(const Json &j, const std::string &path)
 {
-    Fields(j, path, {"schema"}, {"items", "experience", "gold", "consume_items", "typed_items", "typed_consume_items", "typed_requirements", "gold_cost"});
+    Fields(j, path, {"schema"}, {"items", "experience", "gold", "consume_items", "typed_items", "typed_consume_items", "typed_requirements", "gold_cost", "levels", "account_coins"});
     RewardBundle bundle;
     bundle.schema = uint16_t(Number(j.at("schema"), path + "/schema", UINT16_MAX));
     for (const auto &[field, table] :
@@ -161,6 +161,8 @@ RewardBundle ReadRewardBundle(const Json &j, const std::string &path)
             if (!table->emplace(key, uint32_t(Number(item.at("count"), path, RewardLimits::ItemCount))).second) Bad(path, "duplicate typed reward key/level");
         }
     }
+    if (j.contains("levels")) bundle.levels = uint16_t(Number(j.at("levels"), path, 254));
+    if (j.contains("account_coins")) bundle.accountCoins = Number(j.at("account_coins"), path, RewardLimits::Amount);
     if (j.contains("gold_cost")) bundle.goldCost = Number(j.at("gold_cost"), path, RewardLimits::Amount);
     if (j.contains("experience"))
         bundle.experience = Number(j.at("experience"), path + "/experience", RewardLimits::Amount);

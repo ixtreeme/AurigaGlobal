@@ -865,7 +865,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
            !owners.contains(w.before.owner) || !wallets.emplace(w.before.owner,w.before.currency).second)return std::unexpected(E::InvalidWallet);
         usedOwners.insert(w.before.owner);
     }
-    if(r.learning){const auto& b=*r.learning;if(!ValidItemOwner(b.owner) || b.owner.kind!=ItemOwnerKind::Character || std::ranges::none_of(r.owners,[&](const auto& f){return f.owner==b.owner;}) || !ValidBookLearning(b.before) || !ValidBookLearning(b.after) || b.before.revision==UINT64_MAX || b.after.revision!=b.before.revision+1)return std::unexpected(E::InvalidChange);}
+    if(r.learning){const auto& b=*r.learning;usedOwners.insert(b.owner);if(!ValidItemOwner(b.owner) || b.owner.kind!=ItemOwnerKind::Character || std::ranges::none_of(r.owners,[&](const auto& f){return f.owner==b.owner;}) || !ValidBookLearning(b.before) || !ValidBookLearning(b.after) || b.before.revision==UINT64_MAX || b.after.revision!=b.before.revision+1)return std::unexpected(E::InvalidChange);}
     if(r.recovery)
     {
         const auto& a=*r.recovery;

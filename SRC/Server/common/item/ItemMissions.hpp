@@ -10,6 +10,8 @@ struct ItemMission
     std::uint32_t id=0,version=0;std::string code,name,description;std::uint16_t minimumLevel=0;
     std::vector<MissionItemAmount> requirements,costs,rewards;
     std::uint64_t goldCost=0,goldReward=0;
+    // Trusted Mission adapter adds its pinned progression/wallet effect before SQL.
+    bool rewardExtension=false;
 };
 struct ItemMissionBoard { std::uint32_t npcRace=0;std::string name;std::vector<ItemMission> missions; };
 inline constexpr std::size_t MaxItemMissionBoards=256,MaxItemMissions=32,MaxMissionItemEntries=16;

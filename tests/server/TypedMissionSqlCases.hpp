@@ -1,7 +1,8 @@
+#include "MissionProgressionSqlCases.hpp"
 void TypedMissionGolden(const std::filesystem::path& path){
     namespace m=auriga::mission;const auto catalog=BuildItemCatalog(f::Catalog()).value();m::TypedMissionView view;view.code="typed.story";view.title="Mission proba";view.summary="Gyujtes es egyszeri jutalom";view.version=1;view.npcRace=9003;view.minimumLevel=1;view.state=2;view.instance=1;view.nodes={{"collect","Anyaggyujtes","item.6.1.0",0,2,1,3,3,0,{}},{"reward","Jutalom","",6,1,0,0,1,0,{}}};
-    ItemMission contract;contract.id=1;contract.version=1;contract.code="typed.story";contract.name="Mission";contract.requirements={{item_catalog_fixture::Leather(),0,10}};contract.costs={{item_catalog_fixture::Leather(),0,4}};contract.rewards={{item_catalog_fixture::Leather(),0,2}};contract.goldCost=25;contract.goldReward=75;view.reward=contract;
-    p::LoadedItemOwner owner;owner.fence={f::Character(),1,1};auto material=f::Leather(2);material.count=10;owner.items={material};auto packet=m::EncodeTypedMissions(*catalog,m::TypedMissionStatus::Ready,99,4,123,std::span(&view,1),&owner);Check(packet.has_value(),"native typed Mission projection");
+    ItemMission contract;contract.id=1;contract.version=1;contract.code="typed.story";contract.name="Mission";contract.requirements={{item_catalog_fixture::Leather(),0,10}};contract.costs={{item_catalog_fixture::Leather(),0,4}};contract.rewards={{item_catalog_fixture::Leather(),0,2}};contract.goldCost=25;contract.goldReward=75;view.reward=contract;view.experience=123456;view.levels=2;view.accountCoins=75;
+    p::LoadedItemOwner owner;owner.fence={f::Character(),1,1};auto material=f::Leather(2);material.count=10;owner.items={material};BookCharacter character;character.experience=900;character.progression=CharacterProgression{60};auto packet=m::EncodeTypedMissions(*catalog,m::TypedMissionStatus::Ready,99,4,123,std::span(&view,1),&owner,"",&character,500);Check(packet.has_value(),"native typed Mission projection");
     std::ofstream out(path);for(auto b:*packet)out<<std::hex<<std::setfill('0')<<std::setw(2)<<std::to_integer<unsigned>(b);out<<'\n';Check(out.good(),"typed Mission golden written");
 }
 void TypedMissionSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& catalog,unsigned port,const std::string& password)
@@ -49,5 +50,7 @@ void TypedMissionSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& catal
     auto transaction=p::PrepareItemWrite(catalog,*rejected).value();transaction.push_back({"SELECT 1 WHERE 0",{},{},1});std::unique_ptr<SQLMsg> rollback(writer.DirectTransactionPrepared(transaction));
     Check(rollback->transactionOutcome==SqlTransactionOutcome::RolledBack || rollback->transactionOutcome==SqlTransactionOutcome::Conflict,"late item failure rolls back outbox too");
     Check(p::LoadCurrentItemOwner(writer,catalog,owner)->items==state.items && Scalar(admin,"SELECT COUNT(*) FROM player.item_mission_event WHERE character_id=880234")=="1","failed grant emits no collection event");
+
+    MissionProgressionSql(admin,db,writer,catalog);
 
 }

@@ -363,10 +363,11 @@ void WriteReward(Writer &w, const RewardBundle &bundle)
 {
     Need(ValidRewardBundle(bundle), "Invalid reward payload");
     w.U16(bundle.schema);
-    if (bundle.schema == 2)
+    if (bundle.schema == 2 || bundle.schema == 3)
     {
         const auto typed = [&](const auto &table) { w.U32(uint32_t(table.size())); for (const auto &[key, count] : table) { w.U16(key.category); w.U32(key.local); w.U16(key.level); w.U32(count); } };
-        typed(bundle.typedItems); typed(bundle.typedConsumeItems); typed(bundle.typedRequirements); w.U64(bundle.goldCost); w.U64(bundle.gold); return;
+        typed(bundle.typedItems); typed(bundle.typedConsumeItems); typed(bundle.typedRequirements); w.U64(bundle.goldCost); w.U64(bundle.gold);
+        if (bundle.schema == 3) { w.U64(bundle.experience); w.U16(bundle.levels); w.U64(bundle.accountCoins); } return;
     }
     const auto items = [&](const auto &table)
     {
@@ -386,10 +387,10 @@ RewardBundle ReadReward(Reader &r)
 {
     RewardBundle bundle;
     bundle.schema = r.U16();
-    if (bundle.schema == 2)
+    if (bundle.schema == 2 || bundle.schema == 3)
     {
         const auto typed = [&](auto &table) { const auto count = r.Count(16); RewardBundle::ItemKey previous{}; for (size_t i=0; i<count; ++i) { RewardBundle::ItemKey key{r.U16(),r.U32(),r.U16()}; Need(key > previous, "Noncanonical typed reward key"); previous=key; table.emplace(key,r.U32()); } };
-        typed(bundle.typedItems); typed(bundle.typedConsumeItems); typed(bundle.typedRequirements); bundle.goldCost=r.U64(); bundle.gold=r.U64(); Need(ValidRewardBundle(bundle), "Invalid typed reward payload"); return bundle;
+        typed(bundle.typedItems); typed(bundle.typedConsumeItems); typed(bundle.typedRequirements); bundle.goldCost=r.U64(); bundle.gold=r.U64(); if(bundle.schema==3){bundle.experience=r.U64();bundle.levels=r.U16();bundle.accountCoins=r.U64();} Need(ValidRewardBundle(bundle), "Invalid typed reward payload"); return bundle;
     }
     Need(bundle.schema == 1, "Unsupported reward payload schema");
     const auto items = [&](auto &table)

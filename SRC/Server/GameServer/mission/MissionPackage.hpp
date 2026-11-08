@@ -105,8 +105,8 @@ PackageLoad LoadPackageFile(const std::filesystem::path &path);
 ContentDigest FingerprintDefinition(const CompiledDefinition &definition);
 ContentDigest FingerprintReward(const RewardBundle &bundle);
 
-// Trusted adapter attestations, not client permissions. No live adapter sets
-// these yet. Payload decoding alone must never enable gameplay effects.
+// Trusted adapter attestations, not client permissions. No adapter receives
+// these implicitly. Payload decoding alone must never enable gameplay effects.
 struct RewardItemBinding
 {
     uint32_t maxGrantCount = 0, maxConsumeCount = 0;
@@ -117,7 +117,8 @@ struct RewardBindingPolicy
     uint64_t maxExperience = 0, maxGold = 0;
     bool atomicBundles = false;
     std::map<RewardBundle::ItemKey, RewardItemBinding> typedItems;
-    uint64_t maxGoldCost = 0;
+    uint64_t maxGoldCost = 0, maxAccountCoins = 0;
+    uint16_t maxLevels = 0;
     bool atomicTypedItems = false;
 };
 

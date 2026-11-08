@@ -2,6 +2,7 @@
 #include "SkillBooks.hpp"
 #include <array>
 #include <span>
+#include <optional>
 namespace auriga::item
 {
 // Canonical portable snapshot of the existing 255-entry character skill table.
@@ -12,9 +13,15 @@ struct BookLevel
     std::uint64_t nextReadSeconds=0;
     bool operator==(const BookLevel&)const=default;
 };
+struct CharacterProgression
+{
+    std::uint16_t level=1, step=0, statPoints=0, randomHP=0, randomSP=0;
+    bool operator==(const CharacterProgression&) const=default;
+};
 struct BookCharacter
 {
     std::uint32_t experience=0;
+    std::optional<CharacterProgression> progression;
     std::array<std::uint16_t,3> points{};
     // Own the bounded table on the heap: ItemCommit is copied by value in many
     // existing planners, so an inline 255-entry table can exhaust their stack.

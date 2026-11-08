@@ -51,17 +51,22 @@ bool InGame(entt::entity e){const auto* d=g_registry.valid(e) ? ecs::PlayerRunti
 std::optional<item::BookCharacter> Character(entt::entity e)
 {
     const auto* skills=g_registry.try_get<ecs::SkillLevels>(e);if(!skills || !skills->loaded)return {};item::BookCharacter result;result.experience=ecs::PlayerRuntime::GetExp(e);
+    const auto stat=ecs::PointSystem::Get(e,POINT_STAT);const auto hp=ecs::PointSystem::GetRandomHP(e);const auto sp=ecs::PointSystem::GetRandomSP(e);const auto step=ecs::PointSystem::Get(e,POINT_LEVEL_STEP);
+    if(stat<0 || stat>INT16_MAX || hp<0 || hp>INT16_MAX || sp<0 || sp>INT16_MAX || step<0 || step>3)return {};
+    result.progression=item::CharacterProgression{uint16_t(ecs::PointSystem::GetLevel(e)),uint16_t(step),uint16_t(stat),uint16_t(hp),uint16_t(sp)};
     unsigned i=0;for(auto type:{POINT_SKILL,POINT_SUB_SKILL,POINT_HORSE_SKILL}){const auto p=ecs::PointSystem::Get(e,type);if(p<0 || p>INT16_MAX)return {};result.points[i++]=static_cast<std::uint16_t>(p);}
     static_assert(sizeof(TPlayerSkill)==10 && SKILL_MAX_NUM==255);
     for(unsigned n=0;n<255;++n){const auto& p=skills->levels[n];result.skills[n]={p.bMasterType,p.bLevel,p.tNextRead};}if(!item::ValidBookCharacter(result))return {};return result;
 }
-void Apply(entt::entity e,const item::BookLearning& state)
+void Apply(entt::entity e,const item::BookLearning& state,bool notify=false)
 {
+    const auto oldLevel=ecs::PointSystem::GetLevel(e);const auto oldStep=ecs::PointSystem::Get(e,POINT_LEVEL_STEP);
     g_registry.emplace_or_replace<ApplyingBook>(e);std::array<TPlayerSkill,255> skills{};
     for(unsigned n=0;n<255;++n){const auto& p=state.character.skills[n];skills[n]={p.mastery,p.level,p.nextReadSeconds};}
     SkillSystem::LoadSkillLevels(e,skills.data(),SkillSystem::GetSkillGroup(e));ecs::PlayerRuntime::SetExp(e,state.character.experience);
     unsigned i=0;for(auto type:{POINT_SKILL,POINT_SUB_SKILL,POINT_HORSE_SKILL}){ecs::PointSystem::Set(e,type,state.character.points[i]);ecs::PointSystem::SetReal(e,type,state.character.points[i++]);}
-    g_registry.emplace_or_replace<ecs::TypedBookRevision>(e,state.revision);g_registry.remove<ApplyingBook>(e);ecs::PointSystem::Compute(e);SkillSystem::SendSkillLevelPacket(e);NetworkSyncSystem::PointsPacket(e);
+    if(state.character.progression){const auto& p=*state.character.progression;if(notify && p.level>oldLevel)ecs::PointSystem::Change(e,POINT_LEVEL,p.level-oldLevel,false,true);else ecs::PlayerRuntime::SetLevel(e,uint8_t(p.level));ecs::PointSystem::SetRandomHP(e,p.randomHP);ecs::PointSystem::SetRandomSP(e,p.randomSP);ecs::PointSystem::Set(e,POINT_LEVEL_STEP,p.step);ecs::PointSystem::SetReal(e,POINT_LEVEL_STEP,p.step);ecs::PointSystem::Set(e,POINT_STAT,p.statPoints);ecs::PointSystem::SetReal(e,POINT_STAT,p.statPoints);}
+    g_registry.emplace_or_replace<ecs::TypedBookRevision>(e,state.revision);ecs::PointSystem::Compute(e);if(notify && state.character.progression && (state.character.progression->level>oldLevel || state.character.progression->step>oldStep)){ecs::PointSystem::Change(e,POINT_HP,int64_t(ecs::PointSystem::GetMaxHP(e))-ecs::PointSystem::Get(e,POINT_HP));ecs::PointSystem::Change(e,POINT_SP,int64_t(ecs::PointSystem::GetMaxSP(e))-ecs::PointSystem::Get(e,POINT_SP));ecs::PointSystem::Change(e,POINT_STAMINA,int64_t(ecs::PlayerRuntime::GetMaxStamina(e))-ecs::PlayerRuntime::GetStamina(e));}g_registry.remove<ApplyingBook>(e);SkillSystem::SendSkillLevelPacket(e);NetworkSyncSystem::PointsPacket(e);
 }
 item::SkillBookAdmission Facts(entt::entity e,const item::PersistentItem& source)
 {
@@ -117,7 +122,7 @@ std::function<void(bool,bool)> HoldTypedBookCheckpoint(entt::entity e)
         const auto entity=CHARACTER_MANAGER::instance().FindEntityByPID(work->pid);
         const auto* login=g_registry.valid(entity) ? g_registry.try_get<ecs::TypedItemLogin>(entity) : nullptr;
         if(login && login->token==work->login) {
-            if(apply)if(const auto* t=g_registry.try_get<ecs::TypedItems>(entity))Apply(entity,t->state.learning);
+            if(apply)if(const auto* t=g_registry.try_get<ecs::TypedItems>(entity))Apply(entity,t->state.learning,true);
             g_registry.remove<PendingBook>(entity);
             if(replay)for(auto& mutation:work->mutations)if(g_registry.valid(entity))mutation();
         }

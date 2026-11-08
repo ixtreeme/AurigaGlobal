@@ -124,7 +124,7 @@ void CClientManager::PutPlayerCache(TPlayerTable * pNew)
 		m_map_playerCache.insert(TPlayerTableCacheMap::value_type(pNew->id, c));
 	}
 
-    if(const auto* old=c->Get(false);old && old->typed_book_revision>pNew->typed_book_revision){pNew->typed_book_revision=old->typed_book_revision;pNew->exp=old->exp;pNew->skill_point=old->skill_point;pNew->sub_skill_point=old->sub_skill_point;pNew->horse_skill_point=old->horse_skill_point;std::copy_n(old->skills,SKILL_MAX_NUM,pNew->skills);}
+    if(const auto* old=c->Get(false);old && old->typed_book_revision>pNew->typed_book_revision){pNew->typed_book_revision=old->typed_book_revision;pNew->exp=old->exp;pNew->level=old->level;pNew->level_step=old->level_step;pNew->stat_point=old->stat_point;pNew->sRandomHP=old->sRandomHP;pNew->sRandomSP=old->sRandomSP;pNew->skill_point=old->skill_point;pNew->sub_skill_point=old->sub_skill_point;pNew->horse_skill_point=old->horse_skill_point;std::copy_n(old->skills,SKILL_MAX_NUM,pNew->skills);}
 	c->Put(pNew);
 }
 

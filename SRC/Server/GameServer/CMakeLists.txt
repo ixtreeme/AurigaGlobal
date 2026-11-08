@@ -99,8 +99,8 @@ set(_mission_persistence_sources
     mission/MissionResourcePlan.cpp
 )
 # The typed Mission coordinator and SQL integration use the same kernel/store.
-target_sources(GameServer PRIVATE mission/TypedMissionItems.cpp mission/TypedMissionWire.cpp mission/TypedMissionRuntime.cpp mission/MissionPersistence.cpp)
-target_sources(ItemPersistenceSqlTests PRIVATE ${_mission_persistence_sources} mission/MissionPersistence.cpp mission/TypedMissionItems.cpp mission/TypedMissionWire.cpp)
+target_sources(GameServer PRIVATE mission/TypedMissionItems.cpp mission/MissionProgression.cpp mission/TypedMissionWire.cpp mission/TypedMissionRuntime.cpp mission/MissionPersistence.cpp)
+target_sources(ItemPersistenceSqlTests PRIVATE ${_mission_persistence_sources} mission/MissionPersistence.cpp mission/TypedMissionItems.cpp mission/MissionProgression.cpp mission/TypedMissionWire.cpp)
 target_include_directories(ItemPersistenceSqlTests PRIVATE ${AURIGA_MISSION_JSON_INCLUDE})
 target_link_libraries(ItemPersistenceSqlTests PRIVATE Threads::Threads)
 add_executable(MissionCheckpointTests EXCLUDE_FROM_ALL
