@@ -1,0 +1,177 @@
+{
+  "feature": "C38",
+  "date": "2026-11-09",
+  "server_branch": "20261103",
+  "unity_branch": "/main/unity63-integration-20261103",
+  "unity_changeset": 99,
+  "unity_editor": "6000.3.27f1",
+  "source_paths": 199,
+  "local_only": true,
+  "native_gameplay_changed": false,
+  "artwork": {
+    "profiles": 96,
+    "provided_art": 84,
+    "all_source_hashes_match": true,
+    "reproduced_files_and_metadata": 170,
+    "guid_preserved": true
+  },
+  "validation": {
+    "native_tests": {
+      "passed": 2,
+      "failed": 0,
+      "log": "build/c38-native-tests.log"
+    },
+    "unity_packages": {
+      "passed": 34,
+      "failed": 0,
+      "log": "build/c38-offline12.log"
+    },
+    "ui_checks": 196,
+    "remaining_window_checks": 448,
+    "catalogue_windows_rendered_and_closed": 90,
+    "native_operation_gallery_windows": 21,
+    "active_project_ui_success": true,
+    "lan_live": {
+      "checks": 1210,
+      "relogins": 1,
+      "independent_views": 3,
+      "authoritative_stats": true,
+      "exact_item_and_wallet_persistence": true,
+      "log": "build/c38-basic-live3.log"
+    },
+    "windows_player": {
+      "status": "manual-ready",
+      "map": "metin2_map_main_razor93",
+      "render_performance_test": false,
+      "economy_preserved": {
+        "gold_before": 10000,
+        "gold_after": 10000,
+        "balance_unchanged": true,
+        "instances_unchanged": true,
+        "item_count": 7
+      },
+      "saved_accounts_restored": true
+    }
+  },
+  "builds": {
+    "local_only": true,
+    "started": "2026-11-09T19:29:05.544625+00:00",
+    "stages": [
+      {
+        "mode": "nexoria-offline",
+        "status": "success",
+        "finished": "2026-11-09T19:30:24.925916+00:00"
+      },
+      {
+        "mode": "nexoria-android",
+        "status": "success",
+        "finished": "2026-11-09T19:38:14.259660+00:00"
+      },
+      {
+        "mode": "nexoria-ios",
+        "status": "success",
+        "finished": "2026-11-09T19:45:46.407036+00:00"
+      },
+      {
+        "mode": "nexoria-windows",
+        "status": "success",
+        "finished": "2026-11-09T19:50:18.549887+00:00"
+      }
+    ],
+    "status": "success"
+  },
+  "windows_archive": {
+    "path": "C:\\AurigaGlobal\\LocalPlaytest\\Nexoria\\Nexoria-Windows-Local-r6.zip",
+    "bytes": 410941493,
+    "sha256": "6c24814d6601a1b99e32f68d42a5e297e4082526723f8692b6b98a8a5282c9d9",
+    "crc_verified": true,
+    "files": 278,
+    "credentials_embedded": false,
+    "logs_embedded": false
+  },
+  "platforms": {
+    "windows": {
+      "content_hash": "bd9b8f043341f1f38d188c94b6935827",
+      "http_catalogue_matches_disk": true
+    },
+    "android": {
+      "content_hash": "1d9286ac8be1abe3fc40329949876b12",
+      "http_catalogue_matches_disk": true,
+      "package": "com.razor93games.nexoria.local",
+      "shared_stl_and_cipher_both_abis": true,
+      "target_sdk": 36,
+      "bytes": 702861825,
+      "sha256": "8d51349302f67d3a4484e1f8eceaadcaf5d8a6a3efc5b6c3e5f7fe9c6415ed16",
+      "device_tested": false
+    },
+    "ios": {
+      "content_hash": "0ee2bbaf7d41e355cd17c78b713e06e2",
+      "http_catalogue_matches_disk": true,
+      "xcode_project": true,
+      "local_network_usage_description": true,
+      "local_http_allowed": true,
+      "native_cipher": true,
+      "signed": false,
+      "device_tested": false
+    }
+  },
+  "settings": [
+    {
+      "path": "ProjectSettings/ProjectSettings.asset",
+      "restored": true,
+      "sha256": "3fcdd770f2445dc869db7df0dc22270adac07abf41c64006fd0c919f48e48bd2"
+    },
+    {
+      "path": "ProjectSettings/EditorSettings.asset",
+      "restored": false,
+      "sha256": "6f8761b516f06ff2f0373b6310571cf7951f63afb86c56bfd7be832e06a9987b"
+    },
+    {
+      "path": "ProjectSettings/EditorBuildSettings.asset",
+      "restored": false,
+      "sha256": "6b74f9b0f794a8414f2b723dd7f7b9f0062a38fb8e3fff0dbb1548a2565a216c"
+    },
+    {
+      "path": "ProjectSettings/GraphicsSettings.asset",
+      "restored": false,
+      "sha256": "1f476698c0831b684192dac580f8454aa13e0b4561d1a610e33b7d60a7d92621"
+    },
+    {
+      "path": "ProjectSettings/ShaderGraphSettings.asset",
+      "restored": false,
+      "sha256": "83556175c6dccd540f2cac05e5c0f9fbb36c3c8d7a56bed2c7cf4d29e4c2ee2e"
+    },
+    {
+      "path": "ProjectSettings/AndroidResolverDependencies.xml",
+      "restored": true,
+      "sha256": "72a6c6b70b9d1a585320e8b44fee5e15cfbf0d34a38a31e7950f1be6d5558bfa"
+    },
+    {
+      "path": "Assets/AddressableAssetsData/AddressableAssetSettings.asset",
+      "restored": false,
+      "sha256": "6c1fefc07e524d2d4d4072ce57389e58c91dc55c5e1a7386d5a5b7f95d04e2bd"
+    },
+    {
+      "path": "Assets/UniversalRenderPipelineGlobalSettings.asset",
+      "restored": false,
+      "sha256": "6572c3782c15d0b52a58eea8d9905f228067fa0833fa441588be31fccd3abe46"
+    },
+    {
+      "path": "Assets/Metin2/Rendering/URP/AurigaDesktop.asset",
+      "restored": false,
+      "sha256": "6349e9edf0d7385525755730386691bd5f8565d17d635c06d0f0c9cb1953404f"
+    },
+    {
+      "path": "Assets/Metin2/Rendering/URP/AurigaMobile.asset",
+      "restored": false,
+      "sha256": "ada9f07a3367501065304d27dfb8357136b6a171d741833d89afa180becb4d06"
+    }
+  ],
+  "not_tested": [
+    "physical Android gameplay",
+    "iOS signing/linking and gameplay on a Mac/device",
+    "external-device LAN/firewall reachability",
+    "pixel-perfect parity with every PSD",
+    "new backend functionality for previously unimplemented catalogue designs"
+  ]
+}
