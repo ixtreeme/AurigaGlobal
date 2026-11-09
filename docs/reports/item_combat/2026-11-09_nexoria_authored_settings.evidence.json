@@ -1,0 +1,335 @@
+{
+  "feature": "C39",
+  "date": "2026-11-09",
+  "server_branch": "20261103",
+  "unity_branch": "/main/unity63-integration-20261103",
+  "unity_changeset": 100,
+  "unity_editor": "6000.3.27f1",
+  "source_files": {
+    "Assets/Metin2/Editor/Metin2NexoriaAuthoredSettingsValidator.cs": "69543a9d64ec9bd3b945f314273bf399c0a55c9011f40a9504f3ef3c7b045ec4",
+    "Assets/Metin2/Editor/Metin2NexoriaAuthoredSettingsValidator.cs.meta": "c56d480282fc796788e42e46472eddfd9a69cf89edf14da4fe925993d2564744",
+    "Assets/Metin2/Editor/Metin2NexoriaBatchCheck.cs": "f66e3aa5a9f6ce20008ac7bb820bdbb0c1ed81edbd8e767329a498557b80e775",
+    "Assets/Metin2/Editor/Metin2NexoriaUiValidator.cs": "d963908d1afa9c9372776d982d763db9e781e2c9357d392894031d87e2891539",
+    "Assets/Metin2/Editor/Metin2TypedShopValidationBridge.cs": "c38bd4a333ce672eb9e6c6740826671556d36de74cd27e4d5cf2f9f3b58c5338",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_close.png": "ca1e18a2edd10dda6defd8e04e5fb68dbbdcbbf25911abdb99af9d9ec63c5772",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_close.png.meta": "e49ffaa6ab91da95235ce6481e747a3a9153e6b9f9d1959bb6727c2f593d64a5",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_common.png": "a8119a4432433a2e918f844f7303ad84a21c4533d3263189f815fd9eae14c66d",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_common.png.meta": "1ea843bc5c96d864c6bfb26079089287f22ac2fa43899ae224ffec3cd0fce9de",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_dropdown.png": "0463ce5997301c30f2aa0f425344b2a0e94dcecbc4874963f8620980321b9577",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_dropdown.png.meta": "92a80a3cb8059b3fae3836b82e50110b00a2ccf8b9acc0f20ee20f73b49a26d2",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_nav_0.png": "eae0a94eb11515f03a12b7c6c1b1beca5ed0f4a175af1260df1638baf46a8559",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_nav_0.png.meta": "2e33c71901f6f76a2d75d5fab2b051ff264dd411bf5d312d1103229264006784",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_nav_0_selected.png": "57df16878e8d56846e4a824876b82a55f65987a1f06da913fefdd87a943eaa3b",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_nav_0_selected.png.meta": "9ffdee12190d718b48c75cece18e8227a21ac838414ca44851f799eeb0ab387f",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_nav_1.png": "6ccd2ded8923649b0d29b7663b6516d6f343949bdbc7f189fa990c382f9920fe",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_nav_1.png.meta": "9c48028cd588c73552ba0ae2f563601589d08d8bc8695261ae1129737176a4e6",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_nav_1_selected.png": "269a3b153493f90117065dfb35145143a8fa97552b6523d6179d3e1f25575eb8",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_nav_1_selected.png.meta": "23377b1043275678cb7662a24186e6c50e5d668b5c333dc8abf600af4267e89e",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_nav_2.png": "d2e2b9cad46a009e928da2e1f034c83bcd23f35b0af28c729b9fa3c8fe274101",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_nav_2.png.meta": "131c1ad82fca40bb0997a09a702dfa3ab8ff19c0f66b2981f2d798776fa15d95",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_nav_2_selected.png": "46d7d3eb8353fadeaf9df66dab842fb73c528aa9f82955af0eb61f700ecca723",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_nav_2_selected.png.meta": "0686ff20de91b75214da58c9114f977f6fcfeba6db3b30156d7ef727d8bbfc63",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_nav_3.png": "ee0f9c42b50521895f6ec12650747d0ca210432f09a15579c176f206e306209b",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_nav_3.png.meta": "d8b54706731aa16233db5cd8ac66f25f526cca0b3449e187797a6eb027e8f16c",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_nav_3_selected.png": "6378242f9fa147e73494d1fdf7d5ed38cb6c18ea92b683bd762c5bded468c36d",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_nav_3_selected.png.meta": "3ed5e793b8b0589b65226397345818682afa6496c520a73f5cfdc2b5fecaf88a",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_page_0.png": "c8c075f222cc37d6dfc167bf6ffb5e444158c645610bbd6e70cc4db2134b5a97",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_page_0.png.meta": "a3b9aceaf4d235bac31fc1bda5fbbcbc78dd1255cc03b557d0bd61dab49e71af",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_page_1.png": "b9e6030c6a5afc9ad6ba200f70810e4d8cf450e4607a9df874e9f3f5b34f0171",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_page_1.png.meta": "ea3eed3ee4a24a8f06527aeb7ab61de1bcde8d41048c3bfb97ac4a718d0f9a8a",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_page_2.png": "90f5a8c030c00ad8136cddc85cd05c0b8e6103ddf178a71d70ea15d585de7a1f",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_page_2.png.meta": "72a903c54abc95a0bd779ed34798770991f767f9e21f936182dcdbccef842ecb",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_page_3.png": "1c222aa77ed8e9148b346683bb3e5f79d7df2e72a0b4bd8514e19560f24bb4f6",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_page_3.png.meta": "2fb6a354ff17324e0d7819f899d663a9a4f39b8d78846341d119338c4f3a67dd",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_segment.png": "4bce9e45d0f37bd700c466b847b160b21ef6ceaec46c235bc9066811d2722ea8",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_segment.png.meta": "6aaac7877a34c59363ae08442a5794835fbb8e275f229e4079fea0c9249ef093",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_segment_selected.png": "b4804603a46671cef7c81933487295c4619e60830aaa1f51308ea782a2286ede",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_segment_selected.png.meta": "5d4b49290b65cae5559df0d81ef8c68a3176ac38ea65501ebf17f2ebfe5aea94",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_slider_fill.png": "3e455c005e6c9a6cbd2384386002daef98c44b6f08bb6fa5da962aa18ea1361c",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_slider_fill.png.meta": "5cfbe35660813e4eb715aaf8c6a0901cf0ad6ab09d030c076aac9c784c2b4e60",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_slider_knob.png": "f98e6aec40d2cb8c5e50bfc46f1eb9eb08daa43978b3b95cb951427ee9a62c44",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_slider_knob.png.meta": "fe63496f29abf966344b8bd82ecfe44d9e09b76466f9adc5845b4ac9e70e6150",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_slider_track.png": "62be1551257a7a1bcfa576e1aa36cc3151f48d0a333bd06d7d53c1b0f209d918",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_slider_track.png.meta": "37ca51736cac0e8c9a1e1f42bc41c9b58bfd51e68398c87c8989bdb4ef9c9723",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_slider_value.png": "d9df1f7951f8c5dce339c45b0429477f8db9d2cd3ed6cafb50440b9557a594e8",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_slider_value.png.meta": "a65a9ac931324d8efba0bdfd769227d65bbdbd61114f23415d09cfba21ba618e",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_toggle_off.png": "a1ff31afe0dc269d28cde056124801530aaba61a9c5467758d701646b73782ac",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_toggle_off.png.meta": "c90733ab2c5b1c142007ad69612b0af098c722ac68cde60ad364500dd53e81f1",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_toggle_on.png": "30b80a5af0f9a2f297d6ba763fc95e7d840ef147d56efa952a8ee0b9e6c59d41",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/nxs_toggle_on.png.meta": "433b52032c767d06dead3a1e5efe0213eeef10b83924ca43301990103eb17d9e",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/settings-source.json": "ba741284789a775f069e5d107a47eb0881270faed33e1bc108a4a56bda96e890",
+    "Assets/Metin2/Resources/Metin2/NexoriaUI/settings-source.json.meta": "3669a3ee2f92d87b77b20fc28685fb4fd0c1041cf3c6cfe438c9b586c6b3bc8e",
+    "Assets/Metin2/Runtime/Network/Metin2ClientBootstrap.cs": "98db0501140d2e8715dddeae6316900e487397d1ccbc50880294b06fa55be626",
+    "Assets/Metin2/Runtime/Network/Metin2ClientSettings.cs": "6ce8be5ab6622daba18544941a29ac1fdd7426bd50bbaafcbe4745256dcb2720",
+    "Assets/Metin2/Runtime/Network/Metin2NexoriaHud.cs": "aa1acef2de57a3ac2e8b11c178c3fa270f41422ae97127269189a524549f47ed",
+    "Assets/Metin2/Runtime/Network/Metin2NexoriaLegacyWindows.Settings.cs": "37ec4e47e9a578bdcbdb00cc2b1e240d380aef86841ea714386abadbd791953f",
+    "Assets/Metin2/Runtime/Network/Metin2NexoriaLegacyWindows.cs": "a78c27b7e290c1f1f8d1438f120912cf252bad32bf7e7c7d82f58f4081e89720",
+    "Assets/Metin2/Runtime/Network/Metin2NexoriaSettingsRuntime.cs": "01aba162778d0fa43867a1240f7863fe00a779e72edf55648a4ecca035abafcc",
+    "Assets/Metin2/Runtime/Network/Metin2NexoriaSettingsRuntime.cs.meta": "0535f905c58b685012cda427cbe283e07358daf398ddd8bd29e0ea3efd1bc2cc",
+    "Assets/Metin2/Runtime/Network/Metin2NexoriaSettingsWindow.cs": "40743e52d8246e65eba05ddb89d5770b2fd7449405d2370a949da7df47b16711",
+    "Assets/Metin2/Runtime/Network/Metin2NexoriaSettingsWindow.cs.meta": "226be7768b480bfb0e0d13f30d10dc4b2d538ec3b9c7d163c09865224560d20c",
+    "Assets/Metin2/Runtime/Network/Metin2NexoriaTextSize.cs": "fc0b62154d39ce55654af0f6766bc0900cc7ff635a83356dcba6c92f1fdc6901",
+    "Assets/Metin2/Runtime/Network/Metin2NexoriaTheme.cs": "b6b7f2d1281da6201b3da68070fb0bb5ed2ba643173e492b4053e63dd8e74281",
+    "Assets/Metin2/Runtime/Network/Metin2NexoriaWindowLayout.cs": "d4accfc597943d663b0d9a5a59e0f605b08a3a5867c25094b75542e3cd23d19e",
+    "Assets/Metin2/Runtime/Network/Metin2NexoriaWindowDrag.cs": "21c902f5f0d5a7a3c5ebd99f9f1da192b2a3038631b8f9aeda7fab39a977708e"
+  },
+  "local_only": true,
+  "native_gameplay_changed": false,
+  "artwork": {
+    "source_psd": "D:/Nexoria UI/Beallitasok/Nexoria_Beallitasok.psd",
+    "source_psd_sha256": "5666a615ee6a9ed087f14c770434b84103b14a0f74c09fd0ba30d30028db36ea",
+    "source_geometry": "D:/Nexoria UI/Beallitasok/scripts/nx_build_beallitasok.jsx",
+    "source_geometry_sha256": "7907ccc6c945b9a57e2cce59f8b3cdf004713e5cc042c1b7753c2b350e17d620",
+    "original_source_files_unchanged": true,
+    "native_photoshop": true,
+    "assets": 23,
+    "pages": 4,
+    "rows": 45,
+    "asset_hashes": {
+      "nxs_common": "a8119a4432433a2e918f844f7303ad84a21c4533d3263189f815fd9eae14c66d",
+      "nxs_close": "ca1e18a2edd10dda6defd8e04e5fb68dbbdcbbf25911abdb99af9d9ec63c5772",
+      "nxs_nav_0": "eae0a94eb11515f03a12b7c6c1b1beca5ed0f4a175af1260df1638baf46a8559",
+      "nxs_nav_0_selected": "57df16878e8d56846e4a824876b82a55f65987a1f06da913fefdd87a943eaa3b",
+      "nxs_page_0": "c8c075f222cc37d6dfc167bf6ffb5e444158c645610bbd6e70cc4db2134b5a97",
+      "nxs_nav_1": "6ccd2ded8923649b0d29b7663b6516d6f343949bdbc7f189fa990c382f9920fe",
+      "nxs_nav_1_selected": "269a3b153493f90117065dfb35145143a8fa97552b6523d6179d3e1f25575eb8",
+      "nxs_page_1": "b9e6030c6a5afc9ad6ba200f70810e4d8cf450e4607a9df874e9f3f5b34f0171",
+      "nxs_nav_2": "d2e2b9cad46a009e928da2e1f034c83bcd23f35b0af28c729b9fa3c8fe274101",
+      "nxs_nav_2_selected": "46d7d3eb8353fadeaf9df66dab842fb73c528aa9f82955af0eb61f700ecca723",
+      "nxs_page_2": "90f5a8c030c00ad8136cddc85cd05c0b8e6103ddf178a71d70ea15d585de7a1f",
+      "nxs_nav_3": "ee0f9c42b50521895f6ec12650747d0ca210432f09a15579c176f206e306209b",
+      "nxs_nav_3_selected": "6378242f9fa147e73494d1fdf7d5ed38cb6c18ea92b683bd762c5bded468c36d",
+      "nxs_page_3": "1c222aa77ed8e9148b346683bb3e5f79d7df2e72a0b4bd8514e19560f24bb4f6",
+      "nxs_toggle_on": "30b80a5af0f9a2f297d6ba763fc95e7d840ef147d56efa952a8ee0b9e6c59d41",
+      "nxs_toggle_off": "a1ff31afe0dc269d28cde056124801530aaba61a9c5467758d701646b73782ac",
+      "nxs_dropdown": "0463ce5997301c30f2aa0f425344b2a0e94dcecbc4874963f8620980321b9577",
+      "nxs_slider_track": "62be1551257a7a1bcfa576e1aa36cc3151f48d0a333bd06d7d53c1b0f209d918",
+      "nxs_slider_fill": "3e455c005e6c9a6cbd2384386002daef98c44b6f08bb6fa5da962aa18ea1361c",
+      "nxs_slider_value": "d9df1f7951f8c5dce339c45b0429477f8db9d2cd3ed6cafb50440b9557a594e8",
+      "nxs_slider_knob": "f98e6aec40d2cb8c5e50bfc46f1eb9eb08daa43978b3b95cb951427ee9a62c44",
+      "nxs_segment": "4bce9e45d0f37bd700c466b847b160b21ef6ceaec46c235bc9066811d2722ea8",
+      "nxs_segment_selected": "b4804603a46671cef7c81933487295c4619e60830aaa1f51308ea782a2286ede"
+    },
+    "bounds_match_png_sizes": true,
+    "unique_texture_guids": 23,
+    "manually_compared_with_supplied_preview": true
+  },
+  "validation": {
+    "native_tests": {
+      "passed": 2,
+      "failed": 0,
+      "command": "ctest --test-dir build/c26b-native -R \"^(storage_runtime|typed_inventory_wire)$\" --output-on-failure"
+    },
+    "unity_packages": {
+      "passed": 35,
+      "failed": 0,
+      "log": "build/c39-offline6.log",
+      "final_popup_template_adjustment_rechecked_in_active_editor": true
+    },
+    "authored_settings_checks": 222,
+    "source_rows": 45,
+    "real_bindings": 20,
+    "remaining_disabled_rows": 25,
+    "existing_window_checks": 448,
+    "existing_catalogue_render_count": 90,
+    "native_operation_gallery_windows": 21,
+    "final_active_ui": {
+      "Success": true,
+      "Error": ""
+    },
+    "lan_live": {
+      "checks": 1196,
+      "relogins": 1,
+      "log": "build/c39-basic-live.log",
+      "final_followup_changes_only_presentation_and_input": true
+    },
+    "manual_ui_checkpoint": {
+      "white_auxiliary_grids_visible": false,
+      "windows_manual_ready": true,
+      "pages_observed": [
+        "general",
+        "graphics",
+        "audio",
+        "game"
+      ],
+      "dropdown_selected_draft_fps": 90,
+      "music_dragged_draft_percent": 44,
+      "background_audio_toggled_in_draft": true,
+      "cancel_restored": {
+        "fps": 60,
+        "music_percent": 100,
+        "background_audio_enabled": true
+      },
+      "source_x_closed": true,
+      "escape_closed": true,
+      "applied_user_settings": false,
+      "expanded_dropdown_artwork_issue_found": true,
+      "performance_benchmark": false
+    },
+    "header_and_popup_checkpoint": {
+      "white_grids_absent": true,
+      "authored_header_dragged": true,
+      "dropdown_art_clean": true,
+      "drafts_not_applied": true,
+      "scroll_usability_needs_correction": true
+    },
+    "initial_ui_findings_resolved": [
+      "popup_background",
+      "popup_scroll_geometry",
+      "panel_world_input",
+      "authored_header_drag"
+    ],
+    "final_scroll_and_background": {
+      "white_grids_absent": true,
+      "dropdown_art_clean": true,
+      "mouse_wheel_reaches_last_option": true,
+      "last_option_selected_in_draft": 240,
+      "draft_not_applied": true,
+      "empty_panel_world_clicks_before": 0,
+      "empty_panel_world_clicks_after": 0,
+      "source_x_closed": true
+    },
+    "economy": {
+      "gold_before": 10000,
+      "gold_after": 10000,
+      "balance_unchanged": true,
+      "instances_unchanged": true,
+      "item_count": 7
+    },
+    "saved_accounts_restored": true,
+    "final_windows_managed_code_identical_to_interactively_tested_build": true,
+    "tested_windows_assembly_sha256": "ecaded50de0a269c6597b740f003d6caeb713e7ed663857f83448674eae7595e",
+    "final_windows_assembly_sha256": "ecaded50de0a269c6597b740f003d6caeb713e7ed663857f83448674eae7595e",
+    "performance_benchmark": false
+  },
+  "builds": {
+    "local_only": true,
+    "started": "2026-11-09T21:43:13.332124+00:00",
+    "stages": [
+      {
+        "mode": "nexoria-android",
+        "status": "success",
+        "finished": "2026-11-09T21:51:24.556977+00:00"
+      },
+      {
+        "mode": "nexoria-ios",
+        "status": "success",
+        "finished": "2026-11-09T21:53:42.801389+00:00"
+      },
+      {
+        "mode": "nexoria-windows",
+        "status": "success",
+        "finished": "2026-11-09T21:55:48.981201+00:00"
+      }
+    ],
+    "status": "success"
+  },
+  "windows_archive": {
+    "path": "C:\\AurigaGlobal\\LocalPlaytest\\Nexoria\\Nexoria-Windows-Local-r8.zip",
+    "bytes": 412962398,
+    "sha256": "548ff3dc3217be182452b6831e53befafda7e5a2141a88ac40c3d929d5798bb6",
+    "crc_verified": true,
+    "files": 278,
+    "credentials_embedded": false,
+    "logs_embedded": false
+  },
+  "platforms": {
+    "windows": {
+      "content_hash": "bd9b8f043341f1f38d188c94b6935827",
+      "http_catalogue_matches_disk": true
+    },
+    "android": {
+      "content_hash": "1d9286ac8be1abe3fc40329949876b12",
+      "http_catalogue_matches_disk": true,
+      "package": "com.razor93games.nexoria.local",
+      "shared_stl_and_cipher_both_abis": true,
+      "target_sdk": 36,
+      "bytes": 705819765,
+      "sha256": "f505c07171891d7b4008fddb577312a0934f655f2e06bb2dd6f8b970e10dd454",
+      "device_tested": false
+    },
+    "ios": {
+      "content_hash": "0ee2bbaf7d41e355cd17c78b713e06e2",
+      "http_catalogue_matches_disk": true,
+      "xcode_project": true,
+      "local_network_usage_description": true,
+      "local_http_allowed": true,
+      "native_cipher": true,
+      "signed": false,
+      "device_tested": false
+    }
+  },
+  "project_settings": [
+    {
+      "path": "ProjectSettings/ProjectSettings.asset",
+      "restored": true,
+      "sha256": "3fcdd770f2445dc869db7df0dc22270adac07abf41c64006fd0c919f48e48bd2"
+    },
+    {
+      "path": "ProjectSettings/EditorSettings.asset",
+      "restored": false,
+      "sha256": "6f8761b516f06ff2f0373b6310571cf7951f63afb86c56bfd7be832e06a9987b"
+    },
+    {
+      "path": "ProjectSettings/EditorBuildSettings.asset",
+      "restored": false,
+      "sha256": "6b74f9b0f794a8414f2b723dd7f7b9f0062a38fb8e3fff0dbb1548a2565a216c"
+    },
+    {
+      "path": "ProjectSettings/GraphicsSettings.asset",
+      "restored": false,
+      "sha256": "1f476698c0831b684192dac580f8454aa13e0b4561d1a610e33b7d60a7d92621"
+    },
+    {
+      "path": "ProjectSettings/ShaderGraphSettings.asset",
+      "restored": false,
+      "sha256": "83556175c6dccd540f2cac05e5c0f9fbb36c3c8d7a56bed2c7cf4d29e4c2ee2e"
+    },
+    {
+      "path": "ProjectSettings/AndroidResolverDependencies.xml",
+      "restored": false,
+      "sha256": "72a6c6b70b9d1a585320e8b44fee5e15cfbf0d34a38a31e7950f1be6d5558bfa"
+    },
+    {
+      "path": "Assets/AddressableAssetsData/AddressableAssetSettings.asset",
+      "restored": false,
+      "sha256": "6c1fefc07e524d2d4d4072ce57389e58c91dc55c5e1a7386d5a5b7f95d04e2bd"
+    },
+    {
+      "path": "Assets/UniversalRenderPipelineGlobalSettings.asset",
+      "restored": false,
+      "sha256": "6572c3782c15d0b52a58eea8d9905f228067fa0833fa441588be31fccd3abe46"
+    },
+    {
+      "path": "Assets/Metin2/Rendering/URP/AurigaDesktop.asset",
+      "restored": false,
+      "sha256": "6349e9edf0d7385525755730386691bd5f8565d17d635c06d0f0c9cb1953404f"
+    },
+    {
+      "path": "Assets/Metin2/Rendering/URP/AurigaMobile.asset",
+      "restored": false,
+      "sha256": "ada9f07a3367501065304d27dfb8357136b6a171d741833d89afa180becb4d06"
+    }
+  ],
+  "preserved_initial_pending_settings": [
+    "Assets/Metin2/Rendering/URP/AurigaDesktop.asset",
+    "Assets/Metin2/Rendering/URP/AurigaMobile.asset",
+    "Assets/UniversalRenderPipelineGlobalSettings.asset",
+    "ProjectSettings/AndroidResolverDependencies.xml",
+    "ProjectSettings/EditorBuildSettings.asset",
+    "ProjectSettings/GraphicsSettings.asset",
+    "ProjectSettings/GvhProjectSettings.xml",
+    "ProjectSettings/ProjectSettings.asset",
+    "ProjectSettings/ShaderGraphSettings.asset"
+  ],
+  "limits": [
+    "25 authored setting rows have no implemented binding and remain disabled",
+    "only supplied Hungarian raster artwork is included",
+    "camera distance uses the existing near/far presets",
+    "not every existing non-settings catalogue window matches its source PSD yet",
+    "physical Android/iOS gameplay not tested",
+    "iOS export unsigned; Mac linking/signing and physical-device tests remain",
+    "external-device LAN/firewall reachability not tested",
+    "persistence was not individually exercised for all 20 settings"
+  ]
+}
