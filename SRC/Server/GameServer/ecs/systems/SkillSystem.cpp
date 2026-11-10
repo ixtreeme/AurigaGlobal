@@ -1,4 +1,5 @@
 #include "../../core/stdafx.h"
+#include "../../benchmark/BenchmarkSession.hpp"
 #include "MovementSystem.hpp"
 #include "../../raid/EclipseRaidSystem.hpp"
 #include <Core/Logging.hpp>
@@ -2533,6 +2534,7 @@ struct FuncSplashDamage
 #endif
 
 
+		nexoria::benchmark::ScopedSkillContext benchmarkSkillContext(m_pkSk->dwVnum);
 		if (!CombatSystem::Damage(victimEntity, m_character, iDam, dt) &&
 			!CombatSystem::IsStun(victimEntity))
 		{

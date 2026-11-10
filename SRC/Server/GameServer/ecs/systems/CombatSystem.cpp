@@ -1,4 +1,5 @@
 #include "../../core/stdafx.h"
+#include "../../benchmark/BenchmarkSession.hpp"
 #include "../../story/SpyQuestSystem.hpp"
 #include "../../story/CaravanQuestSystem.hpp"
 #include "../../raid/EclipseRaidSystem.hpp"
@@ -4923,6 +4924,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 					ecs::ChatSystem::SendNew(victim, CHAT_TYPE_INFO, 95, "%s#%d", ecs::PlayerRuntime::GetName(attacker).data(), ecs::PointSystem::Get(attacker, POINT_BLOCK));
 				}
 #endif
+				nexoria::benchmark::RecordMiss(attacker, victim, damageType, "BLOCK");
 				CombatSystem::SendDamagePacket(victim, attacker, 0, DAMAGE_BLOCK);
 				return false;
 			}
@@ -4937,6 +4939,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 					ecs::ChatSystem::SendNew(victim, CHAT_TYPE_INFO, 96, "%s#%d", ecs::PlayerRuntime::GetName(attacker).data(), ecs::PointSystem::Get(attacker, POINT_DODGE));
 				}
 #endif
+				nexoria::benchmark::RecordMiss(attacker, victim, damageType, "DODGE");
 				CombatSystem::SendDamagePacket(victim, attacker, 0, DAMAGE_DODGE);
 				return false;
 			}
@@ -5890,7 +5893,11 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		if (static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)) - dam <= 0) // @fixme137
 			dam = ecs::PlayerRuntime::GetHP(victim);
 
+		const int64_t benchmarkHPBefore = static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim));
 		ecs::PointSystem::Change(victim, POINT_HP, -dam, false);
+		nexoria::benchmark::RecordDamage(attacker, victim, benchmarkHPBefore,
+			static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)),
+			damageType, IsCritical, IsPenetrate);
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
 		if (ecs::PlayerRuntime::IsStone(victim))
 			ProcessStoneSpawnStep(victim);

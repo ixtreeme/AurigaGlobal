@@ -1,0 +1,132 @@
+1	Taglio a 3 vie	1	1	1	0	HP	-(1.1*atk+(0.5*atk+1.5*str)*k)	40+100*k			12	-(1.1*atk+(0.5*atk+1.5*str)*k)		ATTACK,USE_MELEE_DAMAGE		NONE							40+100*k	0	0	MELEE	5	1	0	0
+2	Vortice della spada	1	1	1	0	HP	-(3*atk+(0.8*atk+str*5+dex*3+con)*k)	50+130*k			15	-(3*atk+(0.8*atk+str*5+dex*3+con)*k)		ATTACK,USE_MELEE_DAMAGE		NONE							50+130*k	0	0	MELEE	12	1	0	200
+3	Estasi da Combattimento	1	1	1	0	ATT_SPEED	50*k	50+140*k	7200		63+10*k	50*k		SELFONLY	JEONGWIHON	MOV_SPEED	20*k	3600					50+140*k	0	0	NORMAL	1	1	0	0
+4	Aura della spada	1	1	1	0	ATT_GRADE	(100+str+lv*3)*k	100+200*k	7200		30+10*k	(100+str+lv*3)*k		SELFONLY	GEOMGYEONG	NONE							100+200*k	0	0	NORMAL	1	1	0	0
+5	Sibilare	1	1	1	0	HP	-(2*atk+(atk+dex*3+str*7+con)*k)	60+120*k			12	-(2*atk+(atk+dex*3+str*7+con)*k)		ATTACK,USE_MELEE_DAMAGE,SPLASH,CRUSH		MOV_SPEED	150	3					60+120*k	0	0	MELEE	4	1	0	200
+6	VolontÃ  di vivere	1	1	1	0	HP	-(3*atk+(atk+1.5*str)*k)*1.07	300+150*k			60	-(3*atk+(atk+1.5*str)*k)*1.07		ATTACK,USE_MELEE_DAMAGE		NONE							300+150*k	0	0	MELEE	5	1	0	0
+16	Penetrazione	1	1	1	0	HP	-(1.8*atk+(0.6*atk+str*2+con)*k)	60+120*k			15	-(3.7*atk+(0.6*atk+str*4+con)*k)/1.5		ATTACK,USE_MELEE_DAMAGE		NONE							60+120*k	0	0	MELEE	4	1	0	100
+17	Colpire duramente	1	1	1	0	HP	-(0.6*atk+(0.6*atk+str*1+con*3)*k)	60+150*k			15	-(2.5*atk+(0.6*atk+str*4+con*3)*k)		ATTACK,USE_MELEE_DAMAGE		NONE							60+150*k	0	0	MELEE	8	1	0	200
+18	Pestone	1	1	1	0	HP	-(1*atk+(0.6*atk+2*dex+2*con+str*4)*k)	50+140*k			25	-(2*atk+(0.6*atk+2*dex+2*con+str*4)*k)/1.2		ATTACK,USE_MELEE_DAMAGE,SELFONLY,SPLASH,ATTACK_STUN		NONE	100+k*1000/6	2					50+140*k	0	0	MELEE	10	1	0	400
+19	Corpo forte	1	1	1	0	DEF_GRADE	(200+str*0.2+con*0.5)*k	80+220*k	7200		63+10*k	(200+str*0.2+con*0.5)*k		SELFONLY	CHEONGEUN	MOV_SPEED	-(1+9*k)	3600					80+220*k	0	0	NORMAL	1	1	0	0
+20	Colpo di spada	1	1	1	0	HP	-(2*atk+(atk+dex*3+str*5+con)*k)	40+120*k			20	-(2*atk+(atk+dex*3+str*5+con)*k)/1.2		ATTACK,USE_MELEE_DAMAGE,SPLASH,CRUSH		NONE							40+120*k	0	0	MELEE	10	0.5	1200	200
+21	Orb della spada	1	1	1	0	HP	-(2*atk+(2*atk+2*dex+2*con+str*4)*k)*1.1	300+180*k			60	-(2*atk+(2*atk+2*dex+2*con+str*4)*k)/1.6		ATTACK,USE_MELEE_DAMAGE		NONE							300+180*k	0	0	MELEE	10	1	0	400
+31	Leshely	2	1	1	0	HP	-(atk+(1.2*atk+number(500,700)+dex*4+str*4)*k)	40+160*k			15	-(atk+(1.2*atk+number(500,700)+dex*4+str*4)*k)/1.2		ATTACK,USE_MELEE_DAMAGE		NONE							40+160*k	0	0	MELEE	6	0.8	0	0
+32	Villám támadás	2	1	1	0	HP	-(atk+(1.6*atk+number(200,300)+dex*7+str*7)*k)	40+160*k			20	-(atk+(1.6*atk+number(200,300)+dex*7+str*7)*k)		ATTACK,USE_MELEE_DAMAGE		NONE							40+160*k	0	0	MELEE	6	0.8	800	0
+33	Vortice del pugnale	2	1	1	0	HP	-(2*atk+(0.5*atk+dex*9+str*7)*k)	50+140*k			25	-(2*atk+(0.5*atk+dex*9+str*7)*k)		ATTACK,USE_MELEE_DAMAGE,ATTACK_POISON		NONE	40*k						50+140*k	0	0	MELEE	12	0.8	0	0
+34	Álcázás	2	1	1	0	NONE		30+60*k	7200		60			SELFONLY	EUNHYUNG	NONE							30+60*k	0	0	NORMAL	1	1	0	0
+35	Nuvola velenosa	2	1	1	0	HP	-(lv*0.1+(atk+str*0.1+dex*0.1)*k)/15	40+130*k			25	-(lv*0.1+(atk+str*0.1+dex*0.1)*k)/15		ATTACK,USE_MELEE_DAMAGE,SPLASH,ATTACK_POISON		NONE	60*k	5+25*k					40+130*k	0	0	MAGIC	0	0.5	800	200
+36	Veleno insidioso	2	1	1	0	HP	-((lv*2+(atk+str*3+dex*18)*k)*1.1)	300+180*k			60	-((lv*2+(atk+str*3+dex*18)*k)*1.1)		ATTACK,USE_MELEE_DAMAGE,SPLASH,ATTACK_POISON		NONE	60*k	5+25*k					300+180*k	0	0	MELEE	6	0.5	800	0
+46	Tiro ripetuto	2	1	1	0	HP	-(atk+0.2*atk*floor(2+k*6)+(0.8*atk+dex*8*ar+iq*2)*k)	40+130*k			15	-(atk+0.2*atk*floor(2+k*6)+(0.8*atk+dex*8*ar+iq*2)*k)/1.1		ATTACK,USE_ARROW_DAMAGE		NONE							40+130*k	0	0	RANGE	1	1	2500	0
+47	Pioggia di frecce	2	1	1	0	HP	-(atk+(1.7*atk+dex*5+str)*k)	30+130*k			12	-(atk+(1.7*atk+dex*5+str)*k)		ATTACK,USE_ARROW_DAMAGE		NONE							30+130*k	0	0	RANGE	8	1	2500	0
+48	Freccia di fuoco	2	1	1	0	HP	-(1.5*atk+(2.6*atk+0.9*iq+number(100,300))*k)	50+130*k			25	-(1.5*atk+(2.6*atk+0.9*iq+number(100,300))*k)/1.25		ATTACK,SPLASH,USE_ARROW_DAMAGE		NONE	20*k						50+130*k	0	0	RANGE	12	0.6	2500	300
+49	Passo di piuma	2	1	1	0	CASTING_SPEED	100*k	60+220*k	7200		30+30*k	100*k		SELFONLY	GYEONGGONG	NONE	(lv*2 + (10*dex + number(100,300)) + str*2 + iq*2) * k*4			MOV_SPEED	200*k		30+40*k	0	0	NORMAL	1	1	0	300
+50	Freccia avvelenata	2	1	1	0	HP	-(atk+(1.4*atk+number(100,200)+dex*7+str*4+iq*4)*k)	40+160*k			25	-(atk+(1.4*atk+number(100,200)+dex*7+str*4+iq*4)*k)		ATTACK,SPLASH,USE_ARROW_DAMAGE,CRUSH,ATTACK_POISON		NONE	80*k	15+30*k					40+160*k	0	0	RANGE	12	0.5	2500	300
+51	Colpo sfavillante	2	1	1	0	HP	-((atk+(1.2*atk+number(100,200)+dex*6+str*3+iq*3)*k)*1.2)	200+200*k			60	-((atk+(0.2*atk+number(100,200)+dex*6+str*3+iq*3)*k)*1.2)/3		ATTACK,SPLASH,USE_ARROW_DAMAGE,CRUSH,ATTACK_POISON		NONE	80*k	15+30*k					200+200*k	0	0	NORMAL	5	1	0	0
+61	Schiocco di dita	3	1	1	0	HP	-(atk+2*lv+iq*2+(2*atk+str*4+iq*14)*k)	30+140*k			10	-(atk+2*lv+iq*2+(2*atk+str*4+iq*14)*k)/1.8		ATTACK,USE_MELEE_DAMAGE,PENETRATE		NONE	1+k*9						30+140*k	0	0	MELEE	4	1	0	0
+62	Vortice del drago	3	1	1	0	HP	-(1.1*atk+2*lv+iq*2+(1.5*atk+str+iq*12)*k)	50+150*k			15	-(1.1*atk+2*lv+iq*2+(1.5*atk+str+iq*12)*k)		ATTACK,USE_MELEE_DAMAGE,SELFONLY,SPLASH,IGNORE_TARGET_RATING		NONE	1+k*9						50+150*k	0	0	MELEE	12	1	0	500
+63	Lama magica	3	1	1	0	ATT_GRADE	(3*iq+2*lv)*k	20+240*k	7200	2+23*k	0	(3*iq+2*lv)*k		SELFONLY,TOGGLE	GWIGUM	HIT_HP_RECOVER	10*k	3600					20+240*k	0	0	NORMAL	1	1	0	0
+64	Paura	3	1	1	0	DODGE	1+29*k	60+120*k	7200		100	1+29*k		SELFONLY	TERROR	NONE							60+120*k	0	0	NORMAL	1	1	0	0
+65	Armatura magica	3	1	1	0	DEF_GRADE	(iq+30)*k	70+170*k	7200		33+140*k	(iq+30)*k		SELFONLY	JUMAGAP	REFLECT_MELEE	(iq/4+10)*k	3600					70+170*k	0	0	NORMAL	1	1	0	0
+66	Annullare la magia	3	1	1	0	HP	-(40+5*lv+2*iq+(10*iq+7*mwep+number(50,100))*ar*k)	30+120*k			12	-(40+5*lv+2*iq+(10*iq+7*mwep+number(50,100))*ar*k)		ATTACK,COMPUTE_MAGIC_DAMAGE,SPLASH,REMOVE_GOOD_AFFECT		NONE	10+40*k	7+23*k					30+120*k	0	0	NORMAL	5	0.6	1800	200
+76	Colpo oscuro	3	1	1	0	HP	-(40+5*lv+2*iq+(13*iq+6*mwep+number(50,100))*ar*k)	30+140*k			7	-(40+5*lv+2*iq+(13*iq+6*mwep+number(50,100))*ar*k)		ATTACK,COMPUTE_MAGIC_DAMAGE,SPLASH		NONE							30+140*k	0	0	MAGIC	5	0.6	1500	200
+77	Colpo di fiamma	3	1	1	0	HP	-(5*lv+2*iq+(10*iq+6*mwep+str*4+con*2+number(180,200))*k)	60+140*k			12	-(5*lv+2*iq+(10*iq+6*mwep+str*4+con*2+number(180,200))*k)		ATTACK,SELFONLY,COMPUTE_MAGIC_DAMAGE,SPLASH		NONE							60+140*k	0	0	MAGIC	15	0.8	0	500
+78	Spirito della fiamma	3	1	1	0	HP	-(30+2*lv+2*iq+(7*iq+6*mwep+number(200,500))*ar*k)/2.5	20+30*k	7200	5+40*k	0	-(30+2*lv+2*iq+(7*iq+6*mwep+number(200,500))*ar*k)/3		ATTACK,COMPUTE_MAGIC_DAMAGE,SPLASH,TOGGLE		NONE							20+30*k	0	0	MAGIC	1	1	800	0
+79	Protezione oscura	3	1	1	0	DEF_GRADE	(0.5*iq+15)*k	20+30*k	7200	5+10*k	63+10*k	(0.5*iq+15)*k		SELFONLY,TOGGLE	MANASHIELD	MANASHIELD	100-((iq*0.84)*k)	3600					20+30*k	0	0	MAGIC	1	0.8	0	0
+80	Colpo dello spirito	3	1	1	0	HP	-(40+2*lv+2*iq+(2*con+2*dex+13*iq+6*mwep+number(180,200))*ar*k)	40+120*k			12	-(40+2*lv+2*iq+(2*con+2*dex+13*iq+6*mwep+number(180,200))*ar*k)/1.6		ATTACK,COMPUTE_MAGIC_DAMAGE,SPLASH,ATTACK_SLOW		NONE	333+300*k	10+10*k					40+120*k	0	0	MAGIC	9	0.8	1200	400
+81	Pietra oscura	3	1	1	0	HP	-(120+6*lv+(5*con+5*dex+29*iq+9*mwep)*ar*k)	80+220*k			24	-(120+6*lv+(5*con+5*dex+29*iq+9*mwep)*ar*k)/1.3		ATTACK,COMPUTE_MAGIC_DAMAGE,SPLASH		NONE							80+220*k	0	0	MAGIC	9	0.4	1500	200
+91	Talismano volante	4	1	1	0	HP	-(70+5*lv+(18*iq+str*7+5*mwep+50)*ar*k)	30+160*k			7	-(70+5*lv+(18*iq+str*7+5*mwep+50)*ar*k)		ATTACK,COMPUTE_MAGIC_DAMAGE,SPLASH		NONE							30+160*k	0	0	MAGIC	5	0.5	1800	201
+92	Tiro del drago	4	1	1	0	HP	-(60+5*lv+(16*iq+dex*6+6*mwep+120)*ar*k)	50+160*k			8	-(60+5*lv+(16*iq+dex*6+6*mwep+120)*ar*k)		ATTACK,ATTACK_FIRE_CONT		NONE	lv+5*iq *k	iq*0.2*k					50+160*k	0	0	MAGIC	10	0.8	0	0
+93	Ruggito del drago	4	1	1	0	HP	-(70+3*lv+(20*iq+str*3+10*mwep+100)*ar*k)	50+160*k			5	-(70+3*lv+(20*iq+str*3+10*mwep+100)*ar*k)		ATTACK,SELFONLY,SPLASH,ATTACK_FIRE_CONT		NONE	lv+5*iq*k	iq*0.2*k					50+160*k	0	0	MAGIC	15	0.8	0	500
+94	Benedizione	4	1	1	0	RESIST_NORMAL	((iq*0.3+5)*(2*k+0.5)+(dex*0.3))/(k+2.3)	40+160*k	7200		10	((iq*0.3+5)*(2*k+0.5)+(dex*0.3))/(k+2.3)			HOSIN	NONE							40+160*k	0	0	NORMAL	1	1	4000	0
+95	Riflessione	4	1	1	0	REFLECT_MELEE	5+(iq*0.2+str*0.1)*k	40+160*k	7200		10	5+(iq*0.2+str*0.1)*k			BOHO	NONE							40+160*k	0	0	NORMAL	1	1	4000	0
+96	Aiuto del drago	4	1	1	0	CRITICAL	(iq*0.3+5)*(2*k)/(k+3)	40+160*k	7200		10	(iq*0.3+5)*(2*k)/(k+3)			GICHEON	NONE							40+160*k	0	0	NORMAL	1	1	4000	0
+106	Lancio di lampi	4	1	1	0	HP	-(60+5*lv+(8*iq+dex*2+8*mwep+number(iq*5,iq*15))*ar*k)	30+150*k			7	-(60+5*lv+(8*iq+dex*2+8*mwep+number(iq*5,iq*15))*ar*k)		ATTACK,SPLASH		NONE							30+150*k	0	0	MAGIC	5	0.6	1800	200
+107	Evocare i lampi	4	1	1	0	HP	-(40+4*lv+(13*iq+str*2+10*mwep+number(iq*5,iq*16))*ar*k)	50+150*k			15	-(40+4*lv+(13*iq+str*2+10*mwep+number(iq*5,iq*16))*ar*k)		ATTACK,SPLASH,ATTACK_STUN		NONE	50+1000*k/6	5					50+150*k	0	0	MAGIC	15	0.8	1500	400
+108	Artiglio di lampo	4	1	1	0	HP	-(50+5*lv+(8*iq+str*2+8*mwep+number(1,800))*ar*k)*(1-chain*0.13)	40+180*k			10	-(50+5*lv+(8*iq+str*2+8*mwep+number(1,800))*ar*k)*(1-chain*0.13)		ATTACK,SPLASH,ATTACK_SLOW		NONE							40+180*k	0	0	MAGIC	7	0.8	2500	0
+109	Curare	4	1	1	0	HP	900+30*lv+(60*iq+36*mwep+number(600,800)*6)*(k+0.15)	40+200*k			10	900+30*lv+(60*iq+36*mwep+number(600,800)*6)*(k+0.15)		SELFONLY,REMOVE_BAD_AFFECT		NONE	20+80*k	0					40+200*k	0	0	NORMAL	1	1	0	0
+110	VelocitÃ 	4	1	1	0	CASTING_SPEED	(iq*0.2)+35*k	60+120*k	7200		10	(iq*0.1)+20*k		SELFONLY	KWAESOK	NAGYFASZU_RAZOR_PVM_DMG	1+(iq*0.04 +5)*k	3600					60+120*k	0	0	NORMAL	1	1	4000	0
+111	Attacco+	4	1	1	0	ATT_GRADE	3+(iq*0.2+str*0.1+11)*k	60+120*k	7200		10	3+(iq*0.2+str*0.1+11)*k			JEUNGRYEOK	NONE	10+(iq*0.4 +10)*k						60+120*k	0	0	NORMAL	1	1	4000	0
+112	NONAME_112	0	1	40	0	NONE	20*k									NONE								0	0	NORMAL	0	1	0	0
+113	NONAME_113	0	1	40	0	NONE	20*k									NONE								0	0	NORMAL	0	1	0	0
+114	NONAME_114	0	1	40	0	NONE	20*k									NONE								0	0	NORMAL	0	1	0	0
+115	NONAME_115	0	1	40	0	NONE	20*k									NONE								0	0	NORMAL	0	1	0	0
+116	NONAME_116	0	1	40	0	NONE	20*k									NONE								0	0	NORMAL	0	1	0	0
+117	NONAME_117	0	1	40	0	NONE	20*k									NONE								0	0	NORMAL	0	1	0	0
+118	NONAME_118	0	1	40	0	NONE	20*k									NONE								0	0	NORMAL	0	1	0	0
+119	NONAME_119	0	1	40	0	NONE	20*k									NONE								0	0	NORMAL	0	1	0	0
+121	Guida	0	1	40	0	NONE								DISABLE_BY_POINT_UP		NONE								0	0	NORMAL	0	1	0	0
+122	Combo	0	1	2	0	NONE								DISABLE_BY_POINT_UP		NONE								0	0	NORMAL	0	1	0	0
+124	Scienza mineraria	0	1	40	0	NONE								DISABLE_BY_POINT_UP		NONE								0	0	NORMAL	0	1	0	0
+125	Produzione di oggetti	0	1	40	0	NONE			10+1000*k					DISABLE_BY_POINT_UP	YMIR	NONE			YMIR					0	0	NORMAL	0	1	1000	0
+126	Shinsoo	0	1	20	0	NONE								DISABLE_BY_POINT_UP		NONE								0	0	NORMAL	0	1	0	0
+127	Chunjo	0	1	20	0	NONE								DISABLE_BY_POINT_UP		NONE								0	0	NORMAL	0	1	0	0
+128	Jinno	0	1	20	0	NONE								DISABLE_BY_POINT_UP		NONE								0	0	NORMAL	0	1	0	0
+129	Trasformazione	0	1	40	0	NONE								DISABLE_BY_POINT_UP		NONE				NONE				0	0	NORMAL	0	1	0	0
+130	Cavalcare	0	1	1	0	NONE								DISABLE_BY_POINT_UP		NONE								0	0	NORMAL	0	1	0	0
+131	Chiamare il cavallo	0	1	10	0	NONE								DISABLE_BY_POINT_UP		NONE								0	0	NORMAL	0	1	0	0
+137	Combattimento a cavallo	5	1	1	50	HP	-(atk+(2*atk*k))	60+80*k			5-(4*k)			ATTACK,USE_MELEE_DAMAGE,CRUSH		NONE								0	0	MELEE	10	1	300	0
+138	Pestone di cavallo	5	1	1	52	HP	-(atk+(2*atk*k))	60+120*k			15			ATTACK,USE_MELEE_DAMAGE,SPLASH,CRUSH_LONG		MOV_SPEED	50	5						0	0	MELEE	6	1	400	100
+139	Onda potente	5	1	1	55	HP	-(atk+(2*atk*k))	60+160*k			20			ATTACK,USE_MELEE_DAMAGE,SELFONLY,SPLASH,CRUSH		NONE								0	0	MELEE	12	1	400	250
+140	Tempesta di frecce	5	1	1	50	HP	-(atk+(2*atk*k))	60+80*k			10			ATTACK,USE_ARROW_DAMAGE,CRUSH		NONE								0	0	MELEE	5	1	2500	0
+141	Passive Support 141	0	1	40	0	NONE	1333.3*k							DISABLE_BY_POINT_UP		NONE								0	0	NORMAL	0	1	0	0
+142	Passive Support 142	0	1	40	0	NONE	20*k							DISABLE_BY_POINT_UP		NONE								0	0	NORMAL	0	1	0	0
+143	Forza Divina	0	1	10	0	NONE								DISABLE_BY_POINT_UP		NONE								0	0	NORMAL	0	1	0	0
+144	Droppa Yang	0	1	10	0	NONE								DISABLE_BY_POINT_UP		NONE								0	0	NORMAL	0	1	0	0
+145	Cacciatore Mostri	0	1	10	0	NONE								DISABLE_BY_POINT_UP		NONE								0	0	NORMAL	0	1	0	0
+146	Forza Vitale	0	1	10	0	NONE								DISABLE_BY_POINT_UP		NONE								0	0	NORMAL	0	1	0	0
+151	Occhi di drago	0	1	7	0	NONE										NONE								0	0	NORMAL	0	1	0	0
+152	Sangue del Dio del Drago	0	1	7	0	MAX_HP	maxhp*0.2*k	150+150*k	300		600					NONE								0	0	NORMAL	0	1	0	0
+153	Benedizione del Dio del Drago	0	1	7	0	MAX_SP	maxsp*0.2*k	150+150*k	300		600					NONE								0	0	NORMAL	0	1	0	0
+154	Armatura benedetta	0	1	7	0	DEF_GRADE	odef*0.1*k	150+150*k	180		480					NONE								0	0	NORMAL	0	1	0	0
+155	Accelerazione	0	1	7	0	MOV_SPEED	15*k	150+150*k	180		480					ATT_SPEED	15*k	180						0	0	NORMAL	0	1	0	0
+156	Rabbia del Dio del Drago	0	1	7	0	CRITICAL	50*k	150+150*k	180		480			SELFONLY		NONE								0	0	NORMAL	0	1	0	0
+157	Aiuto della magia	0	1	7	0	CASTING_SPEED	50*k	150+150*k	180		480			SELFONLY		NONE								0	0	NORMAL	0	1	0	0
+158	PASSIVANONAME2	0	1	3	0	NONE								SELFONLY		NONE								0	0	NORMAL	0	1	0	0
+159	PASSIVANONAME3	0	1	5	0	NONE								SELFONLY		NONE								0	0	NORMAL	0	1	0	0
+160	PASSIVANONAME4	0	1	5	0	NONE	3*k	80-12*k	300					SELFONLY		NONE								0	0	NORMAL	0	1	0	0
+161	PASSIVANONAME5	0	1	2	0	NONE		50								NONE								0	0	NORMAL	0	1	0	0
+162	PASSIVANONAME6	0	1	2	0	NONE		20								NONE								0	0	NORMAL	0	1	0	0
+170	Dilania	7	1	1	0	HP	-(1.1*atk+(0.3*atk+1.5*str)*k)	40+100*k			12	-(1.1*atk+(0.3*atk+1.5*str)*k)		ATTACK,USE_MELEE_DAMAGE,SPLASH,ATTACK_BLEEDING		NONE	60*k	5+25*k					40+100*k	0	0	MELEE	5	1	300	200
+171	Respiro del lupo	7	1	1	0	HP	-(2*atk+(atk+dex*3+str*5+con)*k)	40+120*k			20	-(2*atk+(atk+dex*3+str*5+con)*k)		ATTACK,USE_MELEE_DAMAGE,SPLASH,ATTACK_STUN,CRUSH		NONE	100+k*1000/6	2					40+120*k	0	0	MELEE	10	0.5	1000	200
+172	Salto del lupo	7	1	1	0	HP	-(atk+(1.6*atk+200+dex*7+str*7)*k)	40+100*k			12	-(atk+(1.6*atk+200+dex*7+str*7)*k)		ATTACK,USE_MELEE_DAMAGE		NONE							40+100*k	0	0	MELEE	5	1	800	100
+173	Artiglio di lupo	7	1	1	0	HP	-(3*atk+(0.8*atk+str*6+dex*2+con)*k)	40+100*k			12	-(3*atk+(0.8*atk+str*6+dex*2+con)*k)		ATTACK,USE_MELEE_DAMAGE		DEF_GRADE	-30*k	5					40+100*k	0	0	MELEE	10	1	800	100
+174	Anima del lupo purpureo	7	1	1	0	ATT_GRADE	7+(5*iq+13)*k	20+240*k	50+100*k	2+23*k	2	7+(5*iq+13)*k		SELFONLY,TOGGLE	RED_POSSESSION	DEF_GRADE	-30*k	50+100*k					20+240*k	0	0	NORMAL	1	1	0	0
+175	Anima del lupo indaco	7	1	1	0	ATT_SPEED	20*k	80+220*k	200		300	20*k		PARTY	BLUE_POSSESSION	DODGE	1+10*k	200					80+220*k	0	0	NORMAL	1	1	1000	0
+221	Sword Spin Ward	6	1	1	0	NONE	24*k							ATTACK,USE_MELEE_DAMAGE	YMIR	NONE			YMIR	NONE				0	0	NORMAL	0	1	1000	300
+222	Ambush Ward	6	1	1	0	NONE	24*k							ATTACK,USE_MELEE_DAMAGE	YMIR	NONE			YMIR	NONE				0	0	NORMAL	0	1	1000	0
+223	Finger Strike Ward	6	1	1	0	NONE	24*k							ATTACK,USE_MELEE_DAMAGE,ATTACK_STUN	YMIR	NONE		3	YMIR	NONE				0	0	NORMAL	0	1	1000	300
+224	Shooting Dragon Ward	6	1	1	0	NONE	24*k								YMIR	NONE			YMIR	NONE				0	0	NORMAL	0	1	1000	0
+225	Spirit Strike Ward	6	1	1	0	NONE	24*k								YMIR	NONE			YMIR	NONE				0	0	NORMAL	0	1	1000	0
+226	Fire Arrow Ward	6	1	1	0	NONE	24*k								YMIR	NONE			YMIR	NONE				0	0	NORMAL	0	1	1000	0
+227	Dark Strike Ward	6	1	1	0	NONE	24*k								YMIR	NONE			YMIR	NONE				0	0	NORMAL	0	1	1000	0
+228	Summon Lightning Ward	6	1	1	0	NONE	24*k								YMIR	NONE			YMIR	NONE				0	0	NORMAL	0	1	1000	0
+229	Wolfs Breath Ward	6	1	1	0	NONE	24*k								YMIR	NONE			YMIR	NONE				0	0	NORMAL	0	1	1000	0
+236	Sword Spin Boost	6	1	1	0	NONE	16*k								YMIR	NONE			YMIR	NONE				0	0	NORMAL	0	1	1000	0
+237	Ambush Boost	6	1	1	0	NONE	16*k								YMIR	NONE			YMIR	NONE				0	0	NORMAL	0	1	1000	0
+238	Finger Strike Boost	6	1	1	0	NONE	16*k								YMIR	NONE			YMIR	NONE				0	0	NORMAL	0	1	1000	0
+239	Shooting Dragon Boost	6	1	1	0	NONE	16*k								YMIR	NONE			YMIR	NONE				0	0	NORMAL	0	1	1000	0
+240	Spirit Strike Boost	6	1	1	0	NONE	16*k								YMIR	NONE			YMIR	NONE				0	0	NORMAL	0	1	1000	0
+241	Fire Arrow Boost	6	1	1	0	NONE	16*k								YMIR	NONE			YMIR	NONE				0	0	NORMAL	0	1	1000	0
+242	Dark Strike Boost	6	1	1	0	NONE	16*k								YMIR	NONE			YMIR	NONE				0	0	NORMAL	0	1	1000	0
+243	Summon Lightning Boost	6	1	1	0	NONE	16*k								YMIR	NONE			YMIR	NONE				0	0	NORMAL	0	1	1000	0
+244	Wolfs Breath Boost	6	1	1	0	NONE	16*k								YMIR	NONE			YMIR	NONE				0	0	NORMAL	0	1	1000	0
+256	AbilitÃ Schiaccia200	0	1	1	0	HP	-5*k*atk				4			ATTACK,USE_MELEE_DAMAGE,SPLASH		NONE								0	0	MELEE	0	1	200	300
+257	AbilitÃ Generali350	0	1	1	0	HP	-5*k*atk				6			ATTACK,USE_MELEE_DAMAGE,SPLASH		NONE								0	0	MELEE	0	1	200	525
+258	AbilitÃ Schiaccia300	0	1	1	0	HP	-5*k*atk				8			ATTACK,USE_MELEE_DAMAGE,SPLASH		NONE								0	0	MELEE	0	1	200	450
+259	AbilitÃ Normali200	0	1	1	0	HP	-5*k*atk				10			ATTACK,USE_MELEE_DAMAGE,SPLASH		NONE								0	0	MELEE	0	1	200	300
+260	AbilitÃ Schiaccia400	0	1	1	0	HP	-5*k*atk				12			ATTACK,USE_MELEE_DAMAGE,SPLASH		NONE								0	0	MELEE	0	1	200	600
+261	AbilitÃ Veleno250	0	1	1	0	HP	-5*k*atk				10			ATTACK,USE_MELEE_DAMAGE,SPLASH,ATTACK_POISON		NONE	80							0	0	MELEE	0	1	200	375
+262	AbilitÃ Rallenta300	0	1	1	0	HP	-5*k*atk				14			ATTACK,USE_MELEE_DAMAGE,SPLASH		MOV_SPEED	-20	10						0	0	MELEE	0	1	200	450
+263	SLOW4000스킬	0	1	1	0	HP	-5*k*atk				12			ATTACK,USE_MELEE_DAMAGE,SPLASH		MOV_SPEED	-70	3		NONE				0	0	MELEE	0	1	2000	6000
+264	THUNDER스킬	0	1	1	0	HP	-maxhp*k				12			ATTACK,USE_MELEE_DAMAGE,SPLASH		NONE				NONE				0	0	MELEE	0	1	100	500
+265	HEAL4000스킬	0	1	1	0	NONE					5			PARTY		NONE				NONE				0	0	NORMAL	1	1	3000	450
+266	ATTACK_SLOW	0	1	1	0	NONE								ATTACK,USE_MELEE_DAMAGE,SPLASH		NONE				NONE				0	0	NORMAL	1	1	1000	3000
+267	ABILITY_DEFENSE_1	0	1	1	0	HP	-5*k*atk				10			ATTACK,USE_MELEE_DAMAGE,SPLASH		NONE				NONE				0	0	MELEE	1	1	100	450
+268	CRUSH_DEFENSE	0	1	1	0	HP	-5*k*atk				10			ATTACK,USE_MELEE_DAMAGE,SPLASH		NONE				NONE				0	0	MELEE	1	1	100	450
+269	STUN_DEFENSE	0	1	1	0	HP	-5*k*atk				10			ATTACK,USE_MELEE_DAMAGE,SPLASH,ATTACK_STUN		NONE	1000	3		NONE				0	0	MELEE	0	1	100	300
+270	Sphinx skill 1	0	1	1	0	HP	-2*k*atk				13			ATTACK,USE_MELEE_DAMAGE		NONE								0	0	MAGIC	7	0.9	500	300
+271	Sphinx skill 2	0	1	1	0	HP	-3*k*atk				6			ATTACK,USE_MELEE_DAMAGE,SPLASH,ATTACK_FIRE_CONT		NONE								0	0	MELEE	0	1	600	800
+272	Sphinx skill 3	0	1	1	0	HP	-3*k*atk				5			ATTACK,USE_MELEE_DAMAGE,SPLASH,ATTACK_FIRE_CONT		NONE								0	0	MELEE	0	1	700	800
+273	Meley skill 1	0	1	1	0	HP	-4*k*atk				13			ATTACK,USE_MELEE_DAMAGE,SPLASH		NONE								0	0	MAGIC	2	1	4000	500
+274	Meley skill 1	0	1	1	0	HP	-3*k*atk				13			ATTACK,USE_MELEE_DAMAGE,SPLASH		NONE								0	0	MAGIC	1	1	4000	800
+275	Meley skill 1	0	1	1	0	HP	-4*k*atk				13			ATTACK,USE_MELEE_DAMAGE,SPLASH		NONE								0	0	MAGIC	2	1	4000	500

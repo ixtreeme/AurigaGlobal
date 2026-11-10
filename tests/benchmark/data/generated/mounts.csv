@@ -1,0 +1,410 @@
+vnum,name,type,subtype,source
+1820,,,,legacy
+14590,Drago Oscuro,28,2,legacy
+14591,Drago Aquatico,28,2,legacy
+14592,Drago Infernale,28,2,legacy
+14593,Drago Mistico,28,2,legacy
+23014,Scorpion,28,2,legacy
+23015,Tikky,28,2,legacy
+23016,Lady,28,2,legacy
+48421,"""Lilith Dragon""",28,2,legacy
+49009,"""Poisoned Spirit Dragon (inf)""",28,2,legacy
+49049,"""Angelic Deer (inf)""",28,2,legacy
+52040,Sigillo Leone Selvatico,28,2,legacy
+60001,"""Drago delle Nevi (Permanente)""",28,2,legacy
+60003,"""Orso Natalizio (Permanente)""",28,2,legacy
+71124,Leone bianco,28,2,legacy
+71125,Sigillo Cinghiale Comb.,28,2,legacy
+71126,Sigillo Lupo Comb.,28,2,legacy
+71127,Sigillo Tigre d'assalto,28,2,legacy
+71128,Sigillo Leone battaglia,28,2,legacy
+71137,Alien,28,2,legacy
+71139,Sig. Tigre Reale (oro),28,2,legacy
+71140,White Fang,28,2,legacy
+71166,Sigillo Panda Corazzato,28,2,legacy
+71171,Sigillo Unicorno,28,2,legacy
+71176,Pantera nera,28,2,legacy
+71177,Sigillo leopardo,28,2,legacy
+71185,Auriga GTR,28,2,legacy
+71221,Drago Nirvana (sigillo),28,2,legacy
+71222,Drago Samsara (sigillo),28,2,legacy
+71223,Manni (sigillo),28,2,legacy
+71224,Manu,28,2,legacy
+71225,Destriero Spettrale,28,2,legacy
+71226,Destriero Nocturnos (sigillo),28,2,legacy
+71227,Chiaro di Luna (sigillo),28,2,legacy
+71228,Stella Argentata (sigillo),28,2,legacy
+71233,Destriero Spettrale,28,2,legacy
+71250,Sfinge bianca,28,2,legacy
+71251,Sfinge di pietra,28,2,legacy
+71252,Drake,28,2,legacy
+71253,Manu (Permanente),28,2,legacy
+71254,Leone bianco (Permanente),28,2,legacy
+71255,Destriero Spettrale (Permanente),28,2,legacy
+71256,Valentine Mount,28,2,legacy
+611500,Draghetto,28,2,existing
+611501,Draghetto,28,2,existing
+611502,Draghetto,28,2,existing
+611503,Draghetto,28,2,existing
+611504,Draghetto,28,2,existing
+611505,Draghetto,28,2,existing
+611506,Draghetto,28,2,existing
+611507,Draghetto,28,2,existing
+611508,Draghetto,28,2,existing
+611510,Leone bianco (Permanente),28,2,existing
+611511,Leone bianco (Permanente),28,2,existing
+611512,Leone bianco (Permanente),28,2,existing
+611513,Leone bianco (Permanente),28,2,existing
+611514,Leone bianco (Permanente),28,2,existing
+611515,Leone bianco (Permanente),28,2,existing
+611516,Leone bianco (Permanente),28,2,existing
+611517,Leone bianco (Permanente),28,2,existing
+611518,Leone bianco (Permanente),28,2,existing
+611520,Manu +1,28,2,existing
+611521,Manu +2,28,2,existing
+611522,Cyber Bike,28,2,existing
+611523,UniBoy,28,2,existing
+611524,Manu +5,28,2,existing
+611525,Gilien,28,2,existing
+611526,Manu +7,28,2,existing
+611527,Manu +8,28,2,existing
+611528,Manu +9,28,2,existing
+611530,"""Drago delle Nevi +1""",28,2,existing
+611531,"""Drago delle Nevi +2""",28,2,existing
+611532,"""Drago delle Nevi +3""",28,2,existing
+611533,"""Drago delle Nevi +4""",28,2,existing
+611534,"""Drago delle Nevi +5""",28,2,existing
+611535,"""Drago delle Nevi +6""",28,2,existing
+611536,"""Drago delle Nevi +7""",28,2,existing
+611537,"""Drago delle Nevi +8""",28,2,existing
+611538,"""Drago delle Nevi +9""",28,2,existing
+611540,"""Poisoned Spirit Dragon +1""",28,2,existing
+611541,"""Poisoned Spirit Dragon +2""",28,2,existing
+611542,"""Poisoned Spirit Dragon +3""",28,2,existing
+611543,"""Poisoned Spirit Dragon +4""",28,2,existing
+611544,"""Poisoned Spirit Dragon +5""",28,2,existing
+611545,"""Poisoned Spirit Dragon +6""",28,2,existing
+611546,"""Poisoned Spirit Dragon +7""",28,2,existing
+611547,"""Poisoned Spirit Dragon +8""",28,2,existing
+611548,"""Poisoned Spirit Dragon +9""",28,2,existing
+611549,"""Poisoned Spirit Dragon +9""",28,2,existing
+611550,"""Poisoned Spirit Dragon +9""",28,2,existing
+611551,"""Poisoned Spirit Dragon +9""",28,2,existing
+611552,"""Poisoned Spirit Dragon +9""",28,2,existing
+611553,"""Asenis Mount""",28,2,existing
+611554,"""Asenis Mount""",28,2,existing
+611555,"""Asenis Mount""",28,2,existing
+611556,"""Asenis Mount""",28,2,existing
+611557,"""Asenis Mount""",28,2,existing
+611558,"""Asenis Mount""",28,2,existing
+611559,"""Plechi Mount""",28,2,existing
+611560,"""Drayen Mount""",28,2,existing
+611561,"""Plechi Griffin""",28,2,existing
+611562,"""Plechi Bird""",28,2,existing
+611563,"""Duratus Mount""",28,2,existing
+611564,"""Fantasy Dragon""",28,2,existing
+611565,"""Nightmare Cat""",28,2,existing
+611566,"""Owl Mount""",28,2,existing
+611567,"""Sayja Zabq Mount""",28,2,existing
+611568,"""Veresthia Mount""",28,2,existing
+611569,"""Veresthia Mount""",28,2,existing
+611570,"""Armor Cat""",28,2,existing
+611571,"""Beast Mount""",28,2,existing
+611572,"""Griffin Mount""",28,2,existing
+611573,"""Crystal Mount""",28,2,existing
+611574,"""Duratus Mount""",28,2,existing
+611575,"""Rabbit Mount""",28,2,existing
+611576,"""Epic Boar""",28,2,existing
+611577,"""Antelope Mount""",28,2,existing
+611578,"""Fantasy Dragon""",28,2,existing
+611579,"""Fantasy Dragon""",28,2,existing
+611580,"""Fly Bird""",28,2,existing
+611581,"""Forest Deer""",28,2,existing
+611582,"""Frost Bird""",28,2,existing
+611583,"""H2019 Mount""",28,2,existing
+611584,"""H2019 Mount""",28,2,existing
+611585,"""H2019 Mount""",28,2,existing
+611586,"""Heaven Hound""",28,2,existing
+611587,"""Medusa Horse""",28,2,existing
+611588,"""Nature Mount""",28,2,existing
+611589,"""Oriental Horse""",28,2,existing
+611590,"""Owl Mount""",28,2,existing
+611591,"""Summer 2020 Mount""",28,2,existing
+611592,"""Swan Mount""",28,2,existing
+611593,"""Wild Mount""",28,2,existing
+611594,"""Wild Mount""",28,2,existing
+611595,"""Peacock Mount""",28,2,existing
+611596,"""Peacock Mount""",28,2,existing
+611597,"""Peacock Mount""",28,2,existing
+611598,"""Peacock Mount""",28,2,existing
+611599,"""Peacock Mount""",28,2,existing
+611600,"""Peacock Mount""",28,2,existing
+611601,"""Peacock Mount""",28,2,existing
+611602,"""Peacock Mount""",28,2,existing
+611603,"""Peacock Mount""",28,2,existing
+611604,"""Peacock Mount""",28,2,existing
+611605,"""Peacock Mount""",28,2,existing
+611606,"""Peacock Mount""",28,2,existing
+611607,"""antaras_mount""",28,2,existing
+611608,"""antelope_mount3""",28,2,existing
+611609,"""argos""",28,2,existing
+611610,"""armored_cat_01""",28,2,existing
+611611,"""armored_cat_02""",28,2,existing
+611612,"""asemis_new_mount_1""",28,2,existing
+611613,"""asemis_swiniak""",28,2,existing
+611614,"""atreya_textures""",28,2,existing
+611615,"""baltazar_harwia_horse_1""",28,2,existing
+611616,"""bears_mount""",28,2,existing
+611617,"""bialy_tygrys""",28,2,existing
+611618,"""bumble2""",28,2,existing
+611619,"""bumble3""",28,2,existing
+611620,"""ch2017_plechi_mount""",28,2,existing
+611621,Necromancer horse,28,2,existing
+611622,"""dragon_mount_fly""",28,2,existing
+611623,"""drayen_mount_0""",28,2,existing
+611624,"""drayen_mount_25""",28,2,existing
+611625,"""drayen_mount_51""",28,2,existing
+611626,"""drayen_mount_53""",28,2,existing
+611627,"""drayen_mount_57""",28,2,existing
+611628,"""easter_2020_cow""",28,2,existing
+611629,"""esgaroth_mount_new1""",28,2,existing
+611630,"""esgaroth_mount_new6""",28,2,existing
+611631,"""fire_dragon_mount""",28,2,existing
+611632,"""h2017_horse""",28,2,existing
+611633,Armored White Horse,28,2,existing
+611634,"""ice_monster""",28,2,existing
+611635,"""keyto_pet_goldendragonbeastmount""",28,2,existing
+611636,"""lions_mount""",28,2,existing
+611637,"""lord_horse_mount""",28,2,existing
+611638,"""metal_wolf""",28,2,existing
+611639,"""monowheel_phantom""",28,2,existing
+611640,"""mount_canguro""",28,2,existing
+611641,"""mount_pangea_1""",28,2,existing
+611642,"""oriental_tiger""",28,2,existing
+611643,"""ostrich_mount""",28,2,existing
+611644,"""pig_mount1""",28,2,existing
+611645,"""plechi_bgriffin_mount00""",28,2,existing
+611646,"""plechi_bird_mount00""",28,2,existing
+611647,"""plechi_cat_mount01""",28,2,existing
+611648,"""plechi_cat_mount02""",28,2,existing
+611649,"""plechi_duratus_mount""",28,2,existing
+611650,"""plechi_fantasydrag_mount1""",28,2,existing
+611651,Easter bull,28,2,existing
+611652,6 Tail,28,2,existing
+611653,"""plechi_nightmare_cat""",28,2,existing
+611654,Divine Dragon of Ryuga,28,2,existing
+611655,"""plechi_seahorse_mount1""",28,2,existing
+611656,"""santhia_mounts""",28,2,existing
+611657,"""sayia_update_1_mount_zabq""",28,2,existing
+611658,"""spidermount""",28,2,existing
+611659,"""tantus_scorpion_mount""",28,2,existing
+611660,"""tantus_scorpion_mount1""",28,2,existing
+611661,"""the_asek_studio_valentine_mount""",28,2,existing
+611662,"""veresthia_mount_1""",28,2,existing
+611663,"""veresthia_mount_2""",28,2,existing
+611664,"""veresthia_mount_3""",28,2,existing
+611665,"""veresthia_mount_4""",28,2,existing
+611666,"""white_wolf""",28,2,existing
+630000,TERA_2b3163e41fac,28,2,tera
+630001,TERA_5a1a0fec4688,28,2,tera
+630002,TERA_5eb9bf97ece4,28,2,tera
+630003,TERA_ce4a92ef6351,28,2,tera
+630004,TERA_42e98c358a11,28,2,tera
+630005,TERA_b288cdf822b0,28,2,tera
+630006,TERA_5f7714d813e2,28,2,tera
+630007,TERA_1d48ee7f71d3,28,2,tera
+630008,TERA_28933e6b9967,28,2,tera
+630009,TERA_4e7c11c56ce4,28,2,tera
+630010,TERA_0518ccf77823,28,2,tera
+630011,TERA_8b38a7696e88,28,2,tera
+630012,TERA_1e20cdd4b1e5,28,2,tera
+630013,TERA_5adef9666384,28,2,tera
+630014,TERA_8cc53c56bc54,28,2,tera
+630015,TERA_0011b5c18401,28,2,tera
+630016,TERA_c3eb594af6da,28,2,tera
+630017,TERA_2511ed654ada,28,2,tera
+630018,TERA_a53b85a84dd4,28,2,tera
+630019,TERA_7df44f572242,28,2,tera
+630020,TERA_e930c1609184,28,2,tera
+630021,TERA_ebc5062a6ca5,28,2,tera
+630022,TERA_88d6d3a4e104,28,2,tera
+630023,TERA_fe08b8969e28,28,2,tera
+630024,TERA_0982955391ea,28,2,tera
+630025,TERA_ec6b4853548a,28,2,tera
+630026,TERA_845ebaa73f1e,28,2,tera
+630027,TERA_4307acf3bb07,28,2,tera
+630028,TERA_2b133df9316c,28,2,tera
+630029,TERA_21f1310d8049,28,2,tera
+630030,TERA_81037391dca7,28,2,tera
+630031,TERA_aeea54bced19,28,2,tera
+630032,TERA_9325f3f79734,28,2,tera
+630033,TERA_55dd25fd8a0f,28,2,tera
+630034,TERA_593ac2e8fca1,28,2,tera
+630035,TERA_63d5bf0edaae,28,2,tera
+630036,TERA_1855cb94e0de,28,2,tera
+630037,TERA_2c7501e81765,28,2,tera
+630038,TERA_06f2ee354a24,28,2,tera
+630039,TERA_0a526912743f,28,2,tera
+630040,TERA_1febead92b8a,28,2,tera
+630041,TERA_d14442b59100,28,2,tera
+630042,TERA_fc92193a3e4f,28,2,tera
+630043,TERA_2df1d16147e8,28,2,tera
+630044,TERA_cf922c48828e,28,2,tera
+630045,TERA_cc4d4420298a,28,2,tera
+630046,TERA_f21bc28214a8,28,2,tera
+630047,TERA_30987223997b,28,2,tera
+630048,TERA_050d47da57d5,28,2,tera
+630049,TERA_ce484b7099a9,28,2,tera
+630050,TERA_3c59e6418663,28,2,tera
+630051,TERA_9d48caed97c0,28,2,tera
+630052,TERA_4c0770d4df09,28,2,tera
+630053,TERA_943b4df9458f,28,2,tera
+630054,TERA_32a7eda7f7bd,28,2,tera
+630055,TERA_6a8aeda42161,28,2,tera
+630056,TERA_5f0876b3aac5,28,2,tera
+630057,TERA_5ffeadae8df3,28,2,tera
+630058,TERA_1e23636719dc,28,2,tera
+630059,TERA_ec639299e02b,28,2,tera
+630060,TERA_ba5d9f9f025a,28,2,tera
+630061,TERA_dc339c12087b,28,2,tera
+630062,TERA_8001dec5d799,28,2,tera
+630063,TERA_5a7782eaa918,28,2,tera
+630064,TERA_dc9f4bd6acc3,28,2,tera
+630065,TERA_26880c67babf,28,2,tera
+630066,TERA_e7f0ddb31e7b,28,2,tera
+630067,TERA_7ed69034072a,28,2,tera
+630068,TERA_764bcf1dad93,28,2,tera
+630069,TERA_05b49ecbc77c,28,2,tera
+630070,TERA_55fa5aacbdc9,28,2,tera
+630071,TERA_a80403d0d2cf,28,2,tera
+630072,TERA_864c18c62b9a,28,2,tera
+630073,TERA_90cc43915c21,28,2,tera
+630074,TERA_25dc25af45fb,28,2,tera
+630075,TERA_21ed68013629,28,2,tera
+630076,TERA_f960ac7a9411,28,2,tera
+630077,TERA_cb0037f2cfb9,28,2,tera
+630078,TERA_c81674d68368,28,2,tera
+630079,TERA_5178f6752945,28,2,tera
+630080,TERA_fc87f9169905,28,2,tera
+630081,TERA_f3a9c95e4a90,28,2,tera
+630082,TERA_61a7f9e86cf7,28,2,tera
+630083,TERA_1080d836fd99,28,2,tera
+630084,TERA_a2c8f03d56e0,28,2,tera
+630085,TERA_f2bbddf153f3,28,2,tera
+630086,TERA_50ffb8876300,28,2,tera
+630087,TERA_04bb8877d6a0,28,2,tera
+630088,TERA_891f4803430b,28,2,tera
+630089,TERA_1050d0e85c74,28,2,tera
+630090,TERA_cab68eab1f50,28,2,tera
+630091,TERA_63064edd16df,28,2,tera
+630092,TERA_445c58de5e50,28,2,tera
+630093,TERA_422a576fb17e,28,2,tera
+630094,TERA_8fe505e1054d,28,2,tera
+630095,TERA_1c61c6e2cb45,28,2,tera
+630096,TERA_e113dd7d2af1,28,2,tera
+630097,TERA_6c647335677b,28,2,tera
+630098,TERA_ec067cac5b5e,28,2,tera
+630099,TERA_3e8892346b44,28,2,tera
+630100,TERA_545255f48722,28,2,tera
+630101,TERA_7be2e61f269a,28,2,tera
+630102,TERA_f2a24cf7b8b3,28,2,tera
+630103,TERA_adb18d4a3d72,28,2,tera
+630104,TERA_53d27f701805,28,2,tera
+630105,TERA_84e59e6ee8a0,28,2,tera
+630106,TERA_4bd5988553cd,28,2,tera
+630107,TERA_346c26b63f1a,28,2,tera
+630108,TERA_979ee7b3bc01,28,2,tera
+630109,TERA_249820ef6312,28,2,tera
+630110,TERA_576a03dc3d78,28,2,tera
+630111,TERA_80da2f521aba,28,2,tera
+630112,TERA_81ce0aa9d3bc,28,2,tera
+630113,TERA_6347ac1e720c,28,2,tera
+630114,TERA_f8f39b86be80,28,2,tera
+630115,TERA_86e0d3c1f82a,28,2,tera
+630116,TERA_27ce2ad5e50b,28,2,tera
+630117,TERA_a794eadfe1cd,28,2,tera
+630118,TERA_82a9b66db7f4,28,2,tera
+630119,TERA_def733f81cb7,28,2,tera
+630120,TERA_1077daa527b8,28,2,tera
+630121,TERA_2e8819d7bc8e,28,2,tera
+630122,TERA_56eaf6a8d5cb,28,2,tera
+630123,TERA_311cdab4f8d5,28,2,tera
+630124,TERA_ca6ffdc94472,28,2,tera
+630125,TERA_070e6264011f,28,2,tera
+630126,TERA_de1c79db28fe,28,2,tera
+630127,TERA_be0c8441ab12,28,2,tera
+630128,TERA_4a46cc72d517,28,2,tera
+630129,TERA_ea08861a9bc2,28,2,tera
+630130,TERA_c484afd985d2,28,2,tera
+630131,TERA_8254c982a72e,28,2,tera
+630132,TERA_022be955e669,28,2,tera
+630133,TERA_08261880acab,28,2,tera
+630134,TERA_a7bbcd234f7b,28,2,tera
+630135,TERA_5a6fd6d2b6ef,28,2,tera
+630136,TERA_957d89174ed5,28,2,tera
+630137,TERA_21c504b0a033,28,2,tera
+630138,TERA_5a04c32f6ed2,28,2,tera
+630139,TERA_a79713692c10,28,2,tera
+630140,TERA_214762b4d30e,28,2,tera
+630141,TERA_cc79d0740c25,28,2,tera
+630142,TERA_f9b81ad665ab,28,2,tera
+630143,TERA_5bf151ed2f25,28,2,tera
+630144,TERA_7ddd966de070,28,2,tera
+630145,TERA_e3ea187bae2e,28,2,tera
+630146,TERA_4c4c8cb983c1,28,2,tera
+630147,TERA_2eab2c99fd7e,28,2,tera
+630148,TERA_041062a70b6c,28,2,tera
+630149,TERA_191d28619d96,28,2,tera
+630150,TERA_f2f6929dd889,28,2,tera
+630151,TERA_0ad27728e50a,28,2,tera
+630152,TERA_0a4f9ead89b3,28,2,tera
+630153,TERA_bf05021a49cb,28,2,tera
+630154,TERA_8e59015cbab8,28,2,tera
+630155,TERA_91d43dbb4e5b,28,2,tera
+630156,TERA_bd9e95c76ea0,28,2,tera
+630157,TERA_831af9278c82,28,2,tera
+630158,TERA_4a11ac7177f0,28,2,tera
+630159,TERA_245789766a73,28,2,tera
+630160,TERA_ba7fdc49b0cd,28,2,tera
+630161,TERA_0c5aa7292d99,28,2,tera
+630162,TERA_ee614b4520a9,28,2,tera
+630163,TERA_ff2d50495846,28,2,tera
+630164,TERA_f017fe00335a,28,2,tera
+630165,TERA_c98a5879a5c8,28,2,tera
+630166,TERA_2237215bf5cd,28,2,tera
+630167,TERA_24a887877da1,28,2,tera
+630168,TERA_1caf181b2bbd,28,2,tera
+630169,TERA_3af79e1d20cc,28,2,tera
+630170,TERA_302a10bf8c53,28,2,tera
+630171,TERA_ab6cecd71aac,28,2,tera
+630172,TERA_d76d20f967e8,28,2,tera
+630173,TERA_24f0dab27b9f,28,2,tera
+630174,TERA_06725ea4b1fa,28,2,tera
+630175,TERA_ec9e7568d81e,28,2,tera
+630176,TERA_8ef95b3b1232,28,2,tera
+630177,TERA_fd5cecdfc580,28,2,tera
+630178,TERA_3cc32fb37de0,28,2,tera
+630179,TERA_d12aa2982336,28,2,tera
+630180,TERA_94e7947d0e9a,28,2,tera
+630181,TERA_77019a5defd5,28,2,tera
+630182,TERA_3e817bb7f5c6,28,2,tera
+630183,TERA_51346f3b3876,28,2,tera
+630184,TERA_7e9cb4dcb0f9,28,2,tera
+630185,TERA_7bec578a6ce1,28,2,tera
+630186,TERA_f269aa40ac74,28,2,tera
+630187,TERA_cc8e77f26c80,28,2,tera
+630188,TERA_976029d9814f,28,2,tera
+630189,TERA_102a9d14b125,28,2,tera
+630190,TERA_5995457e700f,28,2,tera
+630191,TERA_2953b6615dbd,28,2,tera
+630192,TERA_00b755d8ef14,28,2,tera
+630193,TERA_124a89ca073b,28,2,tera
+630194,TERA_174663556f8f,28,2,tera
+630195,TERA_d6e6b8118105,28,2,tera
+630196,TERA_80f182d0c538,28,2,tera
+630197,TERA_1e0b24f7bf11,28,2,tera
+630198,TERA_98042f760fcb,28,2,tera
+630199,TERA_6c9630845b99,28,2,tera
+630200,TERA_f8ec68e0f689,28,2,tera
+630201,TERA_486a7b518b5a,28,2,tera
+630202,TERA_555ab7feee5e,28,2,tera

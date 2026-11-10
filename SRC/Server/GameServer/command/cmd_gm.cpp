@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../benchmark/BenchmarkSession.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/InventorySystem.hpp"
 #include <Core/Logging.hpp>
@@ -4531,3 +4532,64 @@ ACMD(do_open_whispersys) {
 	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "recv_whispersys");
 }
 #endif
+
+
+// Nexoria manual benchmark: PvP equipment profiles plus real PC-versus-PC CSV telemetry.
+// Only runs on a test server; restores player profiles on /benchmark stop.
+ACMD(do_benchmark)
+{
+    if (!ecs::PlayerRuntime::IsPC(character) ||
+        ecs::PlayerRuntime::GetGMLevel(character) < GM_HIGH_WIZARD || !test_server)
+    {
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO,
+            "Benchmark is available only for HIGH_WIZARD+ on an isolated test server.");
+        return;
+    }
+
+    char action[64] = {}, arg1[64] = {}, arg2[64] = {};
+    const char* tail = one_argument(argument, action, sizeof(action));
+    tail = one_argument(tail, arg1, sizeof(arg1));
+    one_argument(tail, arg2, sizeof(arg2));
+    std::string reply;
+
+    if (strcmp(action, "list") == 0)
+    {
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO,
+            "Manual PvP benchmark: final Zodiac +9 PvP set, minimum level 158; max level from GameServer.");
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO,
+            "Usage: /benchmark start max twohand, /benchmark target <PC>, /benchmark reset, /benchmark report, /benchmark stop");
+        return;
+    }
+    if (strcmp(action, "start") == 0)
+    {
+        int tier = 0;
+        // 'max' is resolved from the currently running GameServer configuration,
+        // not a hardcoded benchmark level. Explicit levels remain supported.
+        if (strcmp(arg1, "max") == 0)
+            tier = gPlayerMaxLevel;
+        else if (!ParseGMNumber(std::string_view(arg1), tier))
+            tier = 0;
+        if (tier <= 0)
+            reply = "Usage: /benchmark start <max|158..server_max> <sword|twohand|dagger|bow|bell|fan>";
+        else
+            nexoria::benchmark::Start(character, tier, arg2, reply);
+    }
+    else if (strcmp(action, "target") == 0)
+    {
+        const entt::entity target = *arg1 ?
+            CHARACTER_MANAGER::instance().FindPCEntity(arg1) : entt::null;
+        nexoria::benchmark::AddTarget(character, target, reply);
+    }
+    else if (strcmp(action, "reset") == 0)
+        nexoria::benchmark::Reset(character, reply);
+    else if (strcmp(action, "stop") == 0)
+        nexoria::benchmark::Stop(character, reply);
+    else if (strcmp(action, "report") == 0 || strcmp(action, "status") == 0)
+        reply = nexoria::benchmark::Report(character);
+    else if (strcmp(action, "full") == 0)
+        reply = "Use /benchmark start max <weapon> to apply GM PvP profile and begin logging.";
+    else
+        reply = "Usage: /benchmark list|start|target|reset|report|stop";
+
+    ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s", reply.c_str());
+}

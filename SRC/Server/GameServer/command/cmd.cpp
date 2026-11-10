@@ -46,6 +46,7 @@ ACMD(do_daily_reward_reload);
 ACMD(do_warp);
 ACMD(do_goto);
 ACMD(do_item);
+ACMD(do_benchmark);
 ACMD(do_mob);
 ACMD(do_woodcut);
 ACMD(do_herbalism);
@@ -829,6 +830,7 @@ struct command_info cmd_info[] =
 	{ "ishop",	do_ishop,		0,		POS_DEAD,	GM_PLAYER },
 #endif
 
+	{ "benchmark", do_benchmark, 0, POS_DEAD, GM_HIGH_WIZARD },
 	{"\n", nullptr, 0, POS_DEAD, GM_IMPLEMENTOR}
 };
 
