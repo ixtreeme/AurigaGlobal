@@ -376,9 +376,9 @@ void CInputMain::BraveRequestPetName(entt::entity character, const char* c_pData
 	{
 		SqlParam::UInt(petItemId),
 		SqlParam::Text(p->petname),
-		SqlParam::Int(hp[number(0, 2)]),
-		SqlParam::Int(mostri[number(0, 2)]),
-		SqlParam::Int(medi[number(0, 2)]),
+		SqlParam::Real(hp[number(0, 2)] / 10.0),
+		SqlParam::Real(mostri[number(0, 2)] / 10.0),
+		SqlParam::Real(medi[number(0, 2)] / 10.0),
 		SqlParam::Int(tmpskill[0]),
 		SqlParam::Int(0),
 		SqlParam::Int(tmpskill[1]),

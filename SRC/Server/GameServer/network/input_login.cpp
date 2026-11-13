@@ -916,7 +916,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	//	ch->LoadStayActiveBattlePass();
 	//#endif
 #ifdef __ENABLE_BLOCK_EXP__
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "manage_exp_status %d", ecs::QuestSystem::GetFlag(ch, "exp.stat"));
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "manage_exp_status %lld", static_cast<long long>(ecs::QuestSystem::GetFlag(ch, "exp.stat")));
 #endif
 
 #ifdef ENABLE_MULTI_LANGUAGE
@@ -928,10 +928,10 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #ifdef ENABLE_RUNE_SYSTEM
 	ecs::PlayerRuntime::SetPart(ch, PART_RUNE, ecs::PlayerRuntime::GetRuneEffect(ch));
 	NetworkSyncSystem::UpdatePacket(ch);
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "rune_affect %d", ecs::QuestSystem::GetFlag(ch, "rune.hide_effect"));
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "rune_affect %lld", static_cast<long long>(ecs::QuestSystem::GetFlag(ch, "rune.hide_effect")));
 #endif
 #ifdef ENABLE_PVP_ADVANCED
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "equipview %d", ecs::QuestSystem::GetFlag(ch, BLOCK_EQUIPMENT_));
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "equipview %lld", static_cast<long long>(ecs::QuestSystem::GetFlag(ch, BLOCK_EQUIPMENT_)));
 #endif
 #ifdef BLOCK_RIDING_INSIDE_WAR
 	if (ecs::SocialSystem::GetWarMap(ch)) {

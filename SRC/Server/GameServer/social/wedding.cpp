@@ -145,7 +145,7 @@ namespace marriage
 		FNotice(uint8_t type, uint32_t idx, const char * format) : m_type(type), m_idx(idx), m_format(format) {}
 
 		void operator() (entt::entity character) {
-			ecs::ChatSystem::SendNew(character, m_type, m_idx, m_format);
+			ecs::ChatSystem::SendNew(character, m_type, m_idx, "%s", m_format);
 		}
 	};
 
@@ -261,7 +261,7 @@ namespace marriage
 		const std::vector<entt::entity> members(state->members.begin(), state->members.end());
 		for (const entt::entity member : members)
 		{
-			ecs::ChatSystem::Send(member, type, msg);
+			ecs::ChatSystem::Send(member, type, "%s", msg);
 		}
 	}
 
@@ -334,7 +334,7 @@ namespace marriage
 		if (state->isSnow)
 			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "xmas_snow 1");
 		if (state->isMusic)
-			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, BuildCommandPlayMusic(szCommand, sizeof(szCommand), 1, state->musicFileName.c_str()));
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "%s", BuildCommandPlayMusic(szCommand, sizeof(szCommand), 1, state->musicFileName.c_str()));
 	}
 
 	void SetMemberMap(entt::entity character, entt::entity map)

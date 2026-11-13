@@ -446,7 +446,7 @@ uint8_t bCount
 		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 226,
 		"%lld"
 
-		, GOLD_MAX);
+		, static_cast<long long>(GOLD_MAX));
 #endif
 		return;
 	}

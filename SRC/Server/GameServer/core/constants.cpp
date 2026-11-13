@@ -79,7 +79,7 @@ const uint32_t Pet_Table[11][2] =
 	{55711, 34095}
 };
 
-const uint32_t Pet_Skill_Table[12][23] =
+const double Pet_Skill_Table[12][23] =
 {
 	{1, 78, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
 	{2, 80, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
@@ -1288,7 +1288,7 @@ std::span<const GuildAttr> GetGuildAttributesByLevel(uint8_t level)
     const int bonusLevel = std::min<int>(level, kGuildBonusMaxLevel);
     static thread_local auto scaled = kGuildMaxAttributes;
     for (size_t i = 0; i < scaled.size(); ++i)
-        scaled[i].value = kGuildMaxAttributes[i].value * bonusLevel / kGuildBonusMaxLevel;
+        scaled[i].value = static_cast<int64_t>(kGuildMaxAttributes[i].value * bonusLevel) / kGuildBonusMaxLevel;
     return scaled;
 }
 

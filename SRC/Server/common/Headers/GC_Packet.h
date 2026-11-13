@@ -1242,4 +1242,38 @@ typedef struct SPacketGCItemShop
 
 
 
+typedef struct SItemBonusCatalogEntry
+{
+    uint32_t vnum;
+    uint32_t range;
+    uint8_t rarity;
+    TItemApply applies[5];
+    TItemApply extra[2];
+} TItemBonusCatalogEntry;
+typedef struct SPacketGCItemBonusCatalog
+{
+    uint8_t header;
+    uint32_t size;
+    uint16_t count;
+    uint8_t clear;
+} TPacketGCItemBonusCatalog;
+static_assert(sizeof(TItemBonusCatalogEntry) == 72);
+static_assert(sizeof(TPacketGCItemBonusCatalog) == 8);
+
+typedef struct SPacketGCBonusPoints
+{
+    uint8_t header;
+    int64_t raw[255];
+    uint8_t enabled[255];
+} TPacketGCBonusPoints;
+typedef struct SPacketGCBonusPoint
+{
+    uint8_t header;
+    uint8_t type;
+    int64_t raw;
+    uint8_t enabled;
+} TPacketGCBonusPoint;
+static_assert(sizeof(TPacketGCBonusPoints) == 2296);
+static_assert(sizeof(TPacketGCBonusPoint) == 11);
+
 #pragma pack()

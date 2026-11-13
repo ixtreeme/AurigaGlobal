@@ -386,7 +386,7 @@ void OpenMyShop(entt::entity e, const char* c_pszSign, TShopItemTable* pTable, u
         ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 226,
             "%lld"
 
-            , GOLD_MAX);
+            , static_cast<long long>(GOLD_MAX));
 #endif
         return;
     }

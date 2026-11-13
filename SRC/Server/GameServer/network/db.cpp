@@ -1,3 +1,4 @@
+#include <cmath>
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
@@ -248,7 +249,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 						if (valueIndex >= static_cast<int>(columnCount))
 							break;
 						str_to_number(entry.aAttr[j].bType, row[typeIndex]);
-						str_to_number(entry.aAttr[j].sValue, row[valueIndex]);
+						entry.aAttr[j].sValue = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, row[valueIndex]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
 					}
 
 					items.push_back(entry);

@@ -400,7 +400,7 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		bool			GetVnum(const char * c_pszName, uint32_t & r_dwVnum);
 		bool			GetVnumByOriginalName(const char * c_pszName, uint32_t & r_dwVnum);
 
-		bool			GetDropPct(entt::entity victim, entt::entity killer, OUT int& iDeltaPercent, OUT int& iRandRange);
+		bool			GetDropPct(entt::entity victim, entt::entity killer, OUT double& iDeltaPercent, OUT int& iRandRange);
 		bool			CreateDropItem(entt::entity victim, entt::entity killer, std::vector<entt::entity>& vec_item);
 #ifdef __SEND_TARGET_INFO__
 		bool			CreateDropItemVector(entt::entity victim, entt::entity killer, std::vector<TargetInfoItem>& items);
@@ -422,6 +422,7 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		const CSpecialAttrGroup* GetSpecialAttrGroup(uint32_t dwVnum);
 
 		const std::vector<TItemTable> & GetTable() { return m_vec_prototype; }
+        uint64_t BonusCatalogRevision() const;
 
 		// CHECK_UNIQUE_GROUP
 		int			GetSpecialGroupFromItem(uint32_t dwVnum) const { const auto it = m_ItemToSpecialGroup.find(dwVnum); return (it == m_ItemToSpecialGroup.end()) ? 0 : it->second; }

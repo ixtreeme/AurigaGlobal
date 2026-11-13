@@ -188,7 +188,7 @@ bool DragonSoulTable::ReadBasicApplys()
 				LOG_ERROR("In Group BasicApplys, No {} row.", j);
 			}
 			EApplyTypes at;
-			int av;
+			double av = 0;
 
 			std::string stTypeName;
 			if (!pRow->GetValue("apply_type", stTypeName))
@@ -242,7 +242,7 @@ bool DragonSoulTable::ReadAdditionalApplys()
 			pChild->GetRow(j, &pRow);
 
 			EApplyTypes at;
-			int av;
+			double av = 0;
 			float prob;
 			std::string stTypeName;
 			if (!pRow->GetValue("apply_type", stTypeName))

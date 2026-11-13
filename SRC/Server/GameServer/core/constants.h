@@ -146,7 +146,7 @@ extern const uint32_t*		exp_table;
 extern uint32_t		exppet_table_common[121];
 extern uint32_t*		exppet_table;
 extern const uint32_t		Pet_SKill_TablePerc[4][20];
-extern const uint32_t		Pet_Skill_Table[12][23];
+extern const double		Pet_Skill_Table[12][23];
 extern const uint32_t		Pet_Table[11][2];
 #endif
 extern const uint32_t		guild_exp_table[GUILD_MAX_LEVEL + 1];
@@ -209,7 +209,7 @@ extern const SStoneDropInfo aStoneDrop[STONE_INFO_MAX_NUM];
 
 #ifdef ENABLE_GUILD_ATTRIBUTE
 
-	struct GuildAttr { uint8_t apply; int32_t value; };
+	struct GuildAttr { uint8_t apply; double value; };
 	std::span<const GuildAttr> GetGuildAttributesByLevel(uint8_t level);
 
 #endif

@@ -69,7 +69,7 @@ int GetPoisonDamageRate(entt::entity character)
     int iRate = ecs::PlayerRuntime::IsPC(character)
         ? 50
         : poison_damage_rate[ecs::PlayerRuntime::GetMobRank(character)];
-    iRate = MAX(0, iRate - ecs::PointSystem::Get(character, POINT_POISON_REDUCE));
+    iRate = MAX(0, iRate - ecs::PointSystem::GetPrecise(character, POINT_POISON_REDUCE));
     return iRate;
 }
 
@@ -716,7 +716,7 @@ CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply)
     return nullptr;
 }
 
-CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply, int32_t value)
+CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply, double value)
 {
     if (e == entt::null || !g_registry.valid(e))
         return nullptr;
@@ -735,7 +735,7 @@ CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply, int32_t value)
 // Whether an affect type is one a player wants to keep. It reads nothing
 // but the type, and was a CHARACTER method only because its callers were.
 // Parking the skill affects while they are cleared, so they can be put back.
-void SaveAffectSkills(entt::entity e, uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue, uint32_t dwFlag, int32_t lDuration, int32_t lSPCost)
+void SaveAffectSkills(entt::entity e, uint32_t dwType, uint8_t bApplyOn, double lApplyValue, uint32_t dwFlag, int32_t lDuration, int32_t lSPCost)
 {
     if (auto* state = AffectState(e))
         state->skillAffects.push_back({dwType, bApplyOn, lApplyValue, dwFlag,
@@ -793,29 +793,29 @@ void CheckBiologistReward(entt::entity e) {
 	int stat = ecs::PlayerRuntime::GetQuestFlag(e, "biologist.stat");
 	if (stat > 0) {
 		for (int i = 0; i < stat; i++) {
-			if (AffectSystem::FindAffect(e, biologistMissionInfo[i][14])) {
+			if (AffectSystem::FindAffect(e, static_cast<int>(biologistMissionInfo[i][14]))) {
 				continue;
 			}
 
-			if (biologistMissionInfo[i][11] == 0) {
+			if (static_cast<int>(biologistMissionInfo[i][11]) == 0) {
 				int j = 0;
 				for (int w = 0; w < 4; w++) {
 					j += 2;
 					uint8_t bApplyOn = biologistMissionInfo[i][j + 1];
-					int32_t lApplyValue = biologistMissionInfo[i][j + 2];
+					double lApplyValue = biologistMissionInfo[i][j + 2];
 					if (bApplyOn == APPLY_NONE || lApplyValue == 0) {
 						continue;
 					} else {
 						bApplyOn = aApplyInfo[bApplyOn].bPointType;
-						AffectSystem::AddAffect(e, biologistMissionInfo[i][14], bApplyOn, lApplyValue, 0, 315360000, 0, false);
+						AffectSystem::AddAffect(e, static_cast<int>(biologistMissionInfo[i][14]), bApplyOn, lApplyValue, 0, 315360000, 0, false);
 					}
 				}
 			} else {
-				uint8_t bApplyOn = biologistMissionInfo[i][7];
-				int32_t lApplyValue = biologistMissionInfo[i][8];
+				uint8_t bApplyOn = static_cast<int>(biologistMissionInfo[i][7]);
+				double lApplyValue = biologistMissionInfo[i][8];
 				if (bApplyOn != APPLY_NONE || lApplyValue != 0) {
 					bApplyOn = aApplyInfo[bApplyOn].bPointType;
-					AffectSystem::AddAffect(e, biologistMissionInfo[i][14], bApplyOn, lApplyValue, 0, 315360000, 0, false);
+					AffectSystem::AddAffect(e, static_cast<int>(biologistMissionInfo[i][14]), bApplyOn, lApplyValue, 0, 315360000, 0, false);
 				}
 			}
 		}
@@ -840,42 +840,42 @@ bool UpdateAffect(entt::entity e)
 	}
 #endif
 
-	if (ecs::PointSystem::Get(e, POINT_HP_RECOVERY) > 0)
+	if (ecs::PointSystem::GetPrecise(e, POINT_HP_RECOVERY) > 0)
 	{
 		if (ecs::PointSystem::GetMaxHP(e) <= ecs::PlayerRuntime::GetHP(e))
 		{
-			ecs::PointSystem::Change(e, POINT_HP_RECOVERY, -ecs::PointSystem::Get(e, POINT_HP_RECOVERY));
+			ecs::PointSystem::Change(e, POINT_HP_RECOVERY, -ecs::PointSystem::GetPrecise(e, POINT_HP_RECOVERY));
 		}
 		else
 		{
-			const int64_t iVal = std::min<int64_t>(ecs::PointSystem::Get(e, POINT_HP_RECOVERY), static_cast<int64_t>(ecs::PointSystem::GetMaxHP(e)) * 7 / 100);
+			double iVal = std::min<int64_t>(ecs::PointSystem::GetPrecise(e, POINT_HP_RECOVERY), static_cast<int64_t>(ecs::PointSystem::GetMaxHP(e)) * 7 / 100);
 
 			ecs::PointSystem::Change(e, POINT_HP, iVal);
 			ecs::PointSystem::Change(e, POINT_HP_RECOVERY, -iVal);
 		}
 	}
 
-	if (ecs::PointSystem::Get(e, POINT_SP_RECOVERY) > 0)
+	if (ecs::PointSystem::GetPrecise(e, POINT_SP_RECOVERY) > 0)
 	{
 		if (ecs::PointSystem::GetMaxSP(e) <= ecs::PlayerRuntime::GetSP(e))
-			ecs::PointSystem::Change(e, POINT_SP_RECOVERY, -ecs::PointSystem::Get(e, POINT_SP_RECOVERY));
+			ecs::PointSystem::Change(e, POINT_SP_RECOVERY, -ecs::PointSystem::GetPrecise(e, POINT_SP_RECOVERY));
 		else
 		{
-			const int64_t iVal = std::min<int64_t>(ecs::PointSystem::Get(e, POINT_SP_RECOVERY), static_cast<int64_t>(ecs::PointSystem::GetMaxSP(e)) * 7 / 100);
+			double iVal = std::min<int64_t>(ecs::PointSystem::GetPrecise(e, POINT_SP_RECOVERY), static_cast<int64_t>(ecs::PointSystem::GetMaxSP(e)) * 7 / 100);
 
 			ecs::PointSystem::Change(e, POINT_SP, iVal);
 			ecs::PointSystem::Change(e, POINT_SP_RECOVERY, -iVal);
 		}
 	}
 
-	if (ecs::PointSystem::Get(e, POINT_HP_RECOVER_CONTINUE) > 0)
+	if (ecs::PointSystem::GetPrecise(e, POINT_HP_RECOVER_CONTINUE) > 0)
 	{
-		ecs::PointSystem::Change(e, POINT_HP, ecs::PointSystem::Get(e, POINT_HP_RECOVER_CONTINUE));
+		ecs::PointSystem::Change(e, POINT_HP, ecs::PointSystem::GetPrecise(e, POINT_HP_RECOVER_CONTINUE));
 	}
 
-	if (ecs::PointSystem::Get(e, POINT_SP_RECOVER_CONTINUE) > 0)
+	if (ecs::PointSystem::GetPrecise(e, POINT_SP_RECOVER_CONTINUE) > 0)
 	{
-		ecs::PointSystem::Change(e, POINT_SP, ecs::PointSystem::Get(e, POINT_SP_RECOVER_CONTINUE));
+		ecs::PointSystem::Change(e, POINT_SP, ecs::PointSystem::GetPrecise(e, POINT_SP_RECOVER_CONTINUE));
 	}
 
 	ItemSystem::AutoRecoveryItemProcess(e, AFFECT_AUTO_HP_RECOVERY);
@@ -901,8 +901,8 @@ bool UpdateAffect(entt::entity e)
     const auto entity = e;
     const bool empty = AffectSystem::ProcessAffect(entity);
     if (!AffectState(entity)) return false;
-    if (empty && ecs::PointSystem::Get(entity, POINT_HP_RECOVERY) == 0 &&
-        ecs::PointSystem::Get(entity, POINT_SP_RECOVERY) == 0 &&
+    if (empty && ecs::PointSystem::GetPrecise(entity, POINT_HP_RECOVERY) == 0 &&
+        ecs::PointSystem::GetPrecise(entity, POINT_SP_RECOVERY) == 0 &&
         ecs::PointSystem::Get(entity, POINT_STAMINA) == ecs::PlayerRuntime::GetMaxStamina(entity)) {
         AffectSystem::StopAffectEvent(entity);
         return false;
@@ -1057,8 +1057,8 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 
 	TAffectFlag afOld = AffectSystem::GetFlags(e);
 
-	int64_t lMovSpd = ecs::PointSystem::Get(e, POINT_MOV_SPEED);
-	int64_t lAttSpd = ecs::PointSystem::Get(e, POINT_ATT_SPEED);
+	double lMovSpd = ecs::PointSystem::GetPrecise(e, POINT_MOV_SPEED);
+	double lAttSpd = ecs::PointSystem::GetPrecise(e, POINT_ATT_SPEED);
 	const entt::entity character = e;
 
 	for (uint32_t i = 0; i < dwCount; ++i, ++pElements)
@@ -1174,7 +1174,7 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 #endif
 #endif
 
-	if (afOld != AffectSystem::GetFlags(e) || lMovSpd != ecs::PointSystem::Get(e, POINT_MOV_SPEED) || lAttSpd != ecs::PointSystem::Get(e, POINT_ATT_SPEED))
+	if (afOld != AffectSystem::GetFlags(e) || lMovSpd != ecs::PointSystem::GetPrecise(e, POINT_MOV_SPEED) || lAttSpd != ecs::PointSystem::GetPrecise(e, POINT_ATT_SPEED))
 	{
 
 	NetworkSyncSystem::UpdatePacket(e);
@@ -1309,11 +1309,11 @@ void StopAffectEvent(entt::entity e)
     }
 }
 
-bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, int32_t applyValue,
+bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, double applyValue,
                uint32_t flag, int32_t duration, int32_t spCost, bool overwrite,
                bool isCube)
 {
-    if (!AffectState(e) || applyOn >= POINT_MAX_NUM)
+    if (!AffectState(e) || applyOn >= POINT_MAX_NUM || !std::isfinite(applyValue) || std::abs(applyValue) >= 10000000000.0)
         return false;
     if (duration == 0)
         duration = 1;
@@ -1592,8 +1592,8 @@ bool ProcessAffect(entt::entity e)
     if (!current()) return empty();
 
     const auto oldFlags = GetFlags(e);
-    const auto oldMoveSpeed = ecs::PointSystem::Get(e, POINT_MOV_SPEED);
-    const auto oldAttackSpeed = ecs::PointSystem::Get(e, POINT_ATT_SPEED);
+    const auto oldMoveSpeed = ecs::PointSystem::GetPrecise(e, POINT_MOV_SPEED);
+    const auto oldAttackSpeed = ecs::PointSystem::GetPrecise(e, POINT_ATT_SPEED);
     struct Entry { AffectId affect; CAffect value; };
     std::vector<Entry> batch;
     std::unordered_set<AffectId> seen;
@@ -1642,8 +1642,8 @@ bool ProcessAffect(entt::entity e)
         if (!current()) return empty();
     }
     if (changed) {
-        if (oldFlags != GetFlags(e) || oldMoveSpeed != ecs::PointSystem::Get(e, POINT_MOV_SPEED) ||
-            oldAttackSpeed != ecs::PointSystem::Get(e, POINT_ATT_SPEED)) {
+        if (oldFlags != GetFlags(e) || oldMoveSpeed != ecs::PointSystem::GetPrecise(e, POINT_MOV_SPEED) ||
+            oldAttackSpeed != ecs::PointSystem::GetPrecise(e, POINT_ATT_SPEED)) {
             NetworkSyncSystem::UpdatePacket(e);
             if (!current()) return empty();
         }

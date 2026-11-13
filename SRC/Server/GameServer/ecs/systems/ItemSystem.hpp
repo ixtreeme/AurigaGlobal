@@ -75,7 +75,7 @@ bool IsNewMountItem(entt::entity item);
 #ifdef ENABLE_RUNE_SYSTEM
 bool IsRuneItem(entt::entity item);
 int32_t GetRuneAttributeType(entt::entity item, int index);
-int32_t GetRuneAttributeValue(entt::entity item, int index, int32_t remainingTime);
+double GetRuneAttributeValue(entt::entity item, int index, int32_t remainingTime);
 // Creation-only initialization: writes existing components before publication.
 bool InitializeRuneItem(entt::entity item);
 // Runtime operations require live rune components; toggles require the wear
@@ -205,7 +205,7 @@ uint32_t GetItemSocket(entt::entity item, int index);
 bool HasItemSocket(entt::entity item, int index);
 TPlayerItemAttribute GetItemAttribute(entt::entity item, int index);
 int GetItemAttributeType(entt::entity item, int index);
-int GetItemAttributeValue(entt::entity item, int index);
+double GetItemAttributeValue(entt::entity item, int index);
 // Bulk component writes used when restoring persisted item data.
 void SetItemSockets(entt::entity item, const int32_t* sockets);
 void SetItemAttributes(entt::entity item, const TPlayerItemAttribute* attributes);
@@ -217,14 +217,14 @@ void SetItemLockedAttr(entt::entity item, short index);
 #endif
 bool SetItemSocket(entt::entity item, int index, uint32_t value, bool log = true);
 bool SetItemSocketEcs(entt::entity item, int index, uint32_t value);
-bool SetItemAttribute(entt::entity item, int index, int type, int value);
+bool SetItemAttribute(entt::entity item, int index, int type, double value);
 bool ClearItemAttribute(entt::entity item, int index);
-bool SetItemForceAttributeEcs(entt::entity item, int index, uint8_t type, int16_t value);
+bool SetItemForceAttributeEcs(entt::entity item, int index, uint8_t type, double value);
 int GetItemAttributeCount(entt::entity item);
 int GetItemRareAttributeCount(entt::entity item);
 int GetItemAttributeSetIndex(entt::entity item);
 bool HasItemAttribute(entt::entity item, uint8_t type);
-bool AddItemAttribute(entt::entity item, uint8_t type, int16_t value);
+bool AddItemAttribute(entt::entity item, uint8_t type, double value);
 bool RemoveItemAttributeType(entt::entity item, uint8_t type);
 bool ClearNormalItemAttributes(entt::entity item);
 bool ApplyItemAddon(entt::entity item, int addonType);
@@ -299,7 +299,7 @@ bool CopyAllAttrToEcs(entt::entity source, entt::entity target);
 bool AttrLogEcs(entt::entity item);
 bool SetItemExchanging(entt::entity item, bool flag);
 uint8_t GetItemApplyType(entt::entity item, uint32_t idx);
-int32_t GetItemApplyValue(entt::entity item, uint32_t idx);
+double GetItemApplyValue(entt::entity item, uint32_t idx);
 int GetItemSocketCount(entt::entity item);
 bool IsItemExchanging(entt::entity item);
 bool IsItemLocked(entt::entity item);

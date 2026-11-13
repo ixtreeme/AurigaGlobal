@@ -3188,7 +3188,7 @@ void ecs::PlayerRuntime::SendGreetMessage(entt::entity e)
 
     for (auto it = v.begin(); it != v.end(); ++it)
     {
-        ecs::ChatSystem::Send(e, CHAT_TYPE_NOTICE, it->c_str());
+        ecs::ChatSystem::Send(e, CHAT_TYPE_NOTICE, "%s", it->c_str());
     }
 }
 
@@ -3465,7 +3465,7 @@ void ecs::PlayerRuntime::DestroyPvP(entt::entity e)
 
             char szBuf[CHAT_MAX_LEN + 1];
             snprintf(szBuf, sizeof(szBuf), "BINARY_Duel_Delete");
-            ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, szBuf);
+            ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "%s", szBuf);
 
             for (size_t i = 0; i < _countof(szTableStaticPvP); i++)
             {
@@ -3815,7 +3815,7 @@ EVENTFUNC(drop_event)
     time_t diff = info->time - get_global_time();
     if (diff > 0) {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 43, "%d", diff);
+        ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 43, "%lld", static_cast<long long>(diff));
 #endif
     }
     else {

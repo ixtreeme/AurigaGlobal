@@ -687,7 +687,7 @@ namespace ShopSystem
 
 					if (ItemSystem::GetItemVnum(itemEntity) >= 80003 && ItemSystem::GetItemVnum(itemEntity) <= 80007)
 					{
-						snprintf(buf, sizeof(buf), "%s FROM: %u TO: %u PRICE: %lld", ItemSystem::GetItemName(itemEntity), ecs::PlayerRuntime::GetPlayerID(ch), ecs::PlayerRuntime::GetPlayerID(shop.owner), dwPrice);
+						snprintf(buf, sizeof(buf), "%s FROM: %u TO: %u PRICE: %lld", ItemSystem::GetItemName(itemEntity), ecs::PlayerRuntime::GetPlayerID(ch), ecs::PlayerRuntime::GetPlayerID(shop.owner), static_cast<long long>(dwPrice));
 						LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(ch), ItemSystem::GetItemID(itemEntity), SHOP_BUY, buf);
 						LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(shop.owner), ItemSystem::GetItemID(itemEntity), SHOP_SELL, buf);
 					}

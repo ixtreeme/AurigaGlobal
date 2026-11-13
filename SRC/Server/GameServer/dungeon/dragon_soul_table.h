@@ -3,9 +3,9 @@
 
 struct SApply
 {
-	SApply (EApplyTypes at, int av, float p = 0.f) : apply_type(at), apply_value(av), prob(p) {}
+	SApply (EApplyTypes at, double av, float p = 0.f) : apply_type(at), apply_value(av), prob(p) {}
 	EApplyTypes apply_type;
-	int apply_value;
+	double apply_value;
 	float prob;
 };
 

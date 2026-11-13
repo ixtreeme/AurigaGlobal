@@ -3139,7 +3139,7 @@ teleport_area:
 	{
 		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
 		const entt::entity killee = ecs::PlayerRuntime::GetQuestNPC(character);
-		int iDeltaPercent = -1;
+		double iDeltaPercent = -1;
 		int iRandRange = -1;
 		if (!ITEM_MANAGER::instance().GetDropPct(
 			killee, character, iDeltaPercent, iRandRange))
@@ -4141,12 +4141,12 @@ teleport_area:
 			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologistch_clear");
 			int type = APPLY_NONE, last = 0;
 			for (int i = 0; i < 16; i++) {
-				if (biologistMissionInfo[i][11] == 1) {
+				if (static_cast<int>(biologistMissionInfo[i][11]) == 1) {
 					if (ecs::QuestSystem::GetFlag(character, "biologist.stat") > i) {
 						for (int j = 0; j < 4; j++) {
 							type = biologistMissionInfo[i][3 + (j * 2)];
 							if (type != APPLY_NONE) {
-								CAffect * pkAff = AffectSystem::FindAffect(character, biologistMissionInfo[i][14], aApplyInfo[type].bPointType);
+								CAffect * pkAff = AffectSystem::FindAffect(character, static_cast<int>(biologistMissionInfo[i][14]), aApplyInfo[type].bPointType);
 								if (pkAff) {
 									continue;
 								}
@@ -4155,7 +4155,7 @@ teleport_area:
 									last = 1;
 								}
 
-								ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologistch_append %d#%d#%d#%d", i, type, biologistMissionInfo[i][4 + (j * 2)], j);
+								ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologistch_append %d#%d#%.3f#%d", i, type, biologistMissionInfo[i][4 + (j * 2)], j);
 							}
 						}
 					}

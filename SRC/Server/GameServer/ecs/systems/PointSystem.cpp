@@ -297,7 +297,9 @@ int32_t GetLevel(entt::entity e)
 bool Set(entt::entity e, uint8_t type, int64_t value)
 {
     if (type >= POINT_MAX_NUM || !IsReadableEntity(e)) return false;
-    g_registry.get_or_emplace<ecs::CharacterStatsComponent>(e).points[type] = value;
+    auto& state = g_registry.get_or_emplace<ecs::CharacterStatsComponent>(e);
+    state.points[type] = value;
+    if (!state.precisionWrite || state.precisionActiveType != type) state.bonusFractionRaw[type] = 0;
     g_registry.emplace_or_replace<ecs::DirtyTag>(e);
     // Motion selection and timing are native, including entity-only characters.
     if (type == POINT_MOV_SPEED) {
@@ -440,7 +442,7 @@ bool ResetStat(entt::entity e, int statIndex)
 
 	char detail[128];
 	snprintf(detail, sizeof(detail), "reset %s(%lld)->1 stat_point(%lld)->(%lld)",
-		names[statIndex], oldValue, oldStat, GetReal(e, POINT_STAT));
+		names[statIndex], static_cast<long long>(oldValue), static_cast<long long>(oldStat), static_cast<long long>(GetReal(e, POINT_STAT)));
 	LogManager::instance().CharLog(e, 0, "RESET_ONE_STATUS", detail);
 	return true;
 }
@@ -554,6 +556,15 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 )
 {
 	if (!IsReadableEntity(e) || type >= POINT_MAX_NUM) return;
+    if (IsPrecisionPoint(type)) {
+        const auto* stats = g_registry.try_get<ecs::CharacterStatsComponent>(e);
+        if (stats && stats->precisionEntryType == type) {
+            g_registry.get<ecs::CharacterStatsComponent>(e).precisionEntryType = -1;
+        } else if (stats) {
+            ChangePrecise(e, type, static_cast<double>(amount), bAmount, bBroadcast);
+            return;
+        }
+    }
 	int64_t val = 0;
 
 
@@ -851,11 +862,11 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		Set(e, type, ReadInstantArray(e, type) + amount);
 
 		const int64_t base = GetReal(e, POINT_MAX_HP);              // 20-30k
-		const int64_t flat = ReadInstantArray(e, POINT_MAX_HP);
-		const int64_t party = Get(e, POINT_PARTY_TANKER_BONUS);
-		const int64_t pct = Get(e, POINT_MAX_HP_PCT);              // +20
+		const double flat = ReadInstantArray(e, POINT_MAX_HP) + g_registry.get<CharacterStatsComponent>(e).bonusFractionRaw[POINT_MAX_HP] / 1000000000.0;
+		const double party = GetPrecise(e, POINT_PARTY_TANKER_BONUS);
+		const double pct = GetPrecise(e, POINT_MAX_HP_PCT);              // +20
 
-		const int64_t totalNoPct = base + flat + party;                // pl 350k
+		const double totalNoPct = base + flat + party;                // pl 350k
 		int64_t newMax = totalNoPct + (totalNoPct * pct) / 100;        // 350k + 20% = 420k
 
 		if (newMax < 1)
@@ -872,9 +883,9 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 
 		//ecs::PlayerRuntime::SetMaxSP(e, GetMaxSP(e) + amount);
 		int64_t sp = GetReal(e, POINT_MAX_SP);
-		int64_t add_sp = std::min((int64_t)800, sp * Get(e, POINT_MAX_SP_PCT) / 100);
-		add_sp += ReadInstantArray(e, POINT_MAX_SP);
-		add_sp += Get(e, POINT_PARTY_SKILL_MASTER_BONUS);
+		double add_sp = std::min(800.0, sp * GetPrecise(e, POINT_MAX_SP_PCT) / 100);
+		add_sp += ReadInstantArray(e, POINT_MAX_SP) + g_registry.get<CharacterStatsComponent>(e).bonusFractionRaw[POINT_MAX_SP] / 1000000000.0;
+		add_sp += GetPrecise(e, POINT_PARTY_SKILL_MASTER_BONUS);
 
 		ecs::PlayerRuntime::SetMaxSP(e, sp + add_sp);
 
@@ -984,7 +995,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		Set(e, type, Get(e, type) + amount);
 		val = Get(e, type);
 
-		Change(e, POINT_CLIENT_DEF_GRADE, amount);
+		ChangePrecise(e, POINT_CLIENT_DEF_GRADE, GetPrecise(e, type) - g_registry.get<CharacterStatsComponent>(e).bonusPreviousValue);
 		break;
 
 	case POINT_CLIENT_DEF_GRADE:
@@ -1248,25 +1259,25 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 
 	case POINT_ATT_GRADE_BONUS:
 		Set(e, type, Get(e, type) + amount);
-		Change(e, POINT_ATT_GRADE, amount);
+		ChangePrecise(e, POINT_ATT_GRADE, GetPrecise(e, type) - g_registry.get<CharacterStatsComponent>(e).bonusPreviousValue);
 		val = Get(e, type);
 		break;
 
 	case POINT_DEF_GRADE_BONUS:
 		Set(e, type, Get(e, type) + amount);
-		Change(e, POINT_DEF_GRADE, amount);
+		ChangePrecise(e, POINT_DEF_GRADE, GetPrecise(e, type) - g_registry.get<CharacterStatsComponent>(e).bonusPreviousValue);
 		val = Get(e, type);
 		break;
 
 	case POINT_MAGIC_ATT_GRADE_BONUS:
 		Set(e, type, Get(e, type) + amount);
-		Change(e, POINT_MAGIC_ATT_GRADE, amount);
+		ChangePrecise(e, POINT_MAGIC_ATT_GRADE, GetPrecise(e, type) - g_registry.get<CharacterStatsComponent>(e).bonusPreviousValue);
 		val = Get(e, type);
 		break;
 
 	case POINT_MAGIC_DEF_GRADE_BONUS:
 		Set(e, type, Get(e, type) + amount);
-		Change(e, POINT_MAGIC_DEF_GRADE, amount);
+		ChangePrecise(e, POINT_MAGIC_DEF_GRADE, GetPrecise(e, type) - g_registry.get<CharacterStatsComponent>(e).bonusPreviousValue);
 		val = Get(e, type);
 		break;
 
@@ -1291,10 +1302,10 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_ENERGY:
 	case POINT_COSTUME_ATTR_BONUS:
 	{
-		int old_val = Get(e, type);
-		Set(e, type, old_val + amount);
+		double old_val = g_registry.get<CharacterStatsComponent>(e).bonusPreviousValue;
+		Set(e, type, Get(e, type) + amount);
 		val = Get(e, type);
-		ecs::PlayerRuntime::BuffOnAttr_ValueChange(e, type, old_val, val);
+		ecs::PlayerRuntime::BuffOnAttr_ValueChange(e, type, old_val, GetPrecise(e, type));
 	}
 	break;
 
@@ -1342,7 +1353,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	}
 }
 
-int GetPolymorphPoint(entt::entity e, uint8_t type)
+double GetPolymorphPoint(entt::entity e, uint8_t type)
 {
 	if (AffectSystem::IsPolymorphed(e) && !AffectSystem::IsPolyMaintainStat(e))
 	{
@@ -1356,22 +1367,22 @@ int GetPolymorphPoint(entt::entity e, uint8_t type)
 			{
 			case POINT_ST:
 				if ((ecs::PlayerRuntime::GetJob(e) == JOB_SHAMAN) || ((ecs::PlayerRuntime::GetJob(e) == JOB_SURA) && (SkillSystem::GetSkillGroup(e) == 2)))
-					return pMob->m_table.bStr * iPower / 100 + Get(e, POINT_IQ);
-				return pMob->m_table.bStr * iPower / 100 + Get(e, POINT_ST);
+					return pMob->m_table.bStr * iPower / 100 + GetPrecise(e, POINT_IQ);
+				return pMob->m_table.bStr * iPower / 100 + GetPrecise(e, POINT_ST);
 
 			case POINT_HT:
-				return pMob->m_table.bCon * iPower / 100 + Get(e, POINT_HT);
+				return pMob->m_table.bCon * iPower / 100 + GetPrecise(e, POINT_HT);
 
 			case POINT_IQ:
-				return pMob->m_table.bInt * iPower / 100 + Get(e, POINT_IQ);
+				return pMob->m_table.bInt * iPower / 100 + GetPrecise(e, POINT_IQ);
 
 			case POINT_DX:
-				return pMob->m_table.bDex * iPower / 100 + Get(e, POINT_DX);
+				return pMob->m_table.bDex * iPower / 100 + GetPrecise(e, POINT_DX);
 			}
 		}
 	}
 
-	return Get(e, type);
+	return GetPrecise(e, type);
 }
 
 void ComputeBattlePoints(entt::entity e)
@@ -1381,8 +1392,8 @@ void ComputeBattlePoints(entt::entity e)
 	{
 		uint32_t dwMobVnum = AffectSystem::GetPolymorphVnum(e);
 		const CMob* pMob = CMobManager::instance().Get(dwMobVnum);
-		int iAtt = 0;
-		int iDef = 0;
+		double iAtt = 0;
+		double iDef = 0;
 
 		if (pMob)
 		{
@@ -1393,44 +1404,44 @@ void ComputeBattlePoints(entt::entity e)
 
 		Set(e, POINT_ATT_GRADE, iAtt);
 		Set(e, POINT_DEF_GRADE, iDef);
-		Set(e, POINT_MAGIC_ATT_GRADE, Get(e, POINT_ATT_GRADE));
-		Set(e, POINT_MAGIC_DEF_GRADE, Get(e, POINT_DEF_GRADE));
+		Set(e, POINT_MAGIC_ATT_GRADE, GetPrecise(e, POINT_ATT_GRADE));
+		Set(e, POINT_MAGIC_DEF_GRADE, GetPrecise(e, POINT_DEF_GRADE));
 	}
 	else if (ecs::PlayerRuntime::IsPC(e))
 	{
 		Set(e, POINT_ATT_GRADE, 0);
 		Set(e, POINT_DEF_GRADE, 0);
 		Set(e, POINT_CLIENT_DEF_GRADE, 0);
-		Set(e, POINT_MAGIC_ATT_GRADE, Get(e, POINT_ATT_GRADE));
-		Set(e, POINT_MAGIC_DEF_GRADE, Get(e, POINT_DEF_GRADE));
+		Set(e, POINT_MAGIC_ATT_GRADE, GetPrecise(e, POINT_ATT_GRADE));
+		Set(e, POINT_MAGIC_DEF_GRADE, GetPrecise(e, POINT_DEF_GRADE));
 
 		//
 		//
-		int iAtk = GetLevel(e) * 2;
-		int iStatAtk = 0;
+		double iAtk = GetLevel(e) * 2;
+		double iStatAtk = 0;
 
 		switch (ecs::PlayerRuntime::GetJob(e))
 		{
 		case JOB_WARRIOR:
 		case JOB_SURA:
-			iStatAtk = (2 * Get(e, POINT_ST));
+			iStatAtk = (2 * GetPrecise(e, POINT_ST));
 			break;
 
 		case JOB_ASSASSIN:
-			iStatAtk = (4 * Get(e, POINT_ST) + 2 * Get(e, POINT_DX)) / 3;
+			iStatAtk = (4 * GetPrecise(e, POINT_ST) + 2 * GetPrecise(e, POINT_DX)) / 3;
 			break;
 
 		case JOB_SHAMAN:
-			iStatAtk = (4 * Get(e, POINT_ST) + 2 * Get(e, POINT_IQ)) / 3;
+			iStatAtk = (4 * GetPrecise(e, POINT_ST) + 2 * GetPrecise(e, POINT_IQ)) / 3;
 			break;
 		default:
 			LOG_ERROR("invalid job {}", ecs::PlayerRuntime::GetJob(e));
-			iStatAtk = (2 * Get(e, POINT_ST));
+			iStatAtk = (2 * GetPrecise(e, POINT_ST));
 			break;
 		}
 
-		if (MountSystem::GetMountVnum(e) && iStatAtk < 2 * Get(e, POINT_ST))
-			iStatAtk = (2 * Get(e, POINT_ST));
+		if (MountSystem::GetMountVnum(e) && iStatAtk < 2 * GetPrecise(e, POINT_ST))
+			iStatAtk = (2 * GetPrecise(e, POINT_ST));
 
 		iAtk += iStatAtk;
 
@@ -1449,14 +1460,14 @@ void ComputeBattlePoints(entt::entity e)
 		//
 		// ATK Setting
 		//
-		iAtk += Get(e, POINT_ATT_GRADE_BONUS);
+		iAtk += GetPrecise(e, POINT_ATT_GRADE_BONUS);
 
 		Change(e, POINT_ATT_GRADE, iAtk);
 
 		// DEF = LEV + CON + ARMOR
-		int iShowDef = GetLevel(e) + Get(e, POINT_HT);
-		int iDef = GetLevel(e) + (int)(Get(e, POINT_HT) / 1.25); // For Other
-		int iArmor = 0;
+		double iShowDef = GetLevel(e) + GetPrecise(e, POINT_HT);
+		double iDef = GetLevel(e) + (int)(GetPrecise(e, POINT_HT) / 1.25); // For Other
+		double iArmor = 0;
 
 		for (int i = 0; i < WEAR_MAX_NUM; ++i)
 		{
@@ -1488,42 +1499,42 @@ void ComputeBattlePoints(entt::entity e)
 			}
 		}
 
-		iArmor += Get(e, POINT_DEF_GRADE_BONUS);
-		iArmor += Get(e, POINT_PARTY_DEFENDER_BONUS);
+		iArmor += GetPrecise(e, POINT_DEF_GRADE_BONUS);
+		iArmor += GetPrecise(e, POINT_PARTY_DEFENDER_BONUS);
 
-		int iServerDef = iDef + iArmor;
-		int iClientDef = iShowDef + iArmor;
+		double iServerDef = iDef + iArmor;
+		double iClientDef = iShowDef + iArmor;
 
-		if (Get(e, POINT_MALL_DEFBONUS) > 0)
+		if (GetPrecise(e, POINT_MALL_DEFBONUS) > 0)
 		{
-			const int iPct = Get(e, POINT_MALL_DEFBONUS);
+			double iPct = GetPrecise(e, POINT_MALL_DEFBONUS);
 			iServerDef += (iServerDef * iPct) / 100;
 			iClientDef += (iClientDef * iPct) / 100;
 		}
 
-		Change(e, POINT_DEF_GRADE, iServerDef - Get(e, POINT_DEF_GRADE));
-		Change(e, POINT_CLIENT_DEF_GRADE, iClientDef - Get(e, POINT_CLIENT_DEF_GRADE));
+		Change(e, POINT_DEF_GRADE, iServerDef - GetPrecise(e, POINT_DEF_GRADE));
+		Change(e, POINT_CLIENT_DEF_GRADE, iClientDef - GetPrecise(e, POINT_CLIENT_DEF_GRADE));
 
-		Change(e, POINT_MAGIC_ATT_GRADE, GetLevel(e) * 2 + Get(e, POINT_IQ) * 2 + Get(e, POINT_MAGIC_ATT_GRADE_BONUS));
-		Change(e, POINT_MAGIC_DEF_GRADE, GetLevel(e) + (Get(e, POINT_IQ) * 3 + Get(e, POINT_HT)) / 3 + iArmor / 2 + Get(e, POINT_MAGIC_DEF_GRADE_BONUS));
+		Change(e, POINT_MAGIC_ATT_GRADE, GetLevel(e) * 2 + GetPrecise(e, POINT_IQ) * 2 + GetPrecise(e, POINT_MAGIC_ATT_GRADE_BONUS));
+		Change(e, POINT_MAGIC_DEF_GRADE, GetLevel(e) + (GetPrecise(e, POINT_IQ) * 3 + GetPrecise(e, POINT_HT)) / 3 + iArmor / 2 + GetPrecise(e, POINT_MAGIC_DEF_GRADE_BONUS));
 	}
 	else
 	{
 		// 2lev + str * 2
-		int iAtt = GetLevel(e) * 2 + Get(e, POINT_ST) * 2;
+		double iAtt = GetLevel(e) * 2 + GetPrecise(e, POINT_ST) * 2;
 		// lev + con
 		const TMobTable* pTable = ecs::PlayerRuntime::GetMobTable(e);
-		int iDef = GetLevel(e) + Get(e, POINT_HT) + (pTable ? pTable->wDef : 0);
+		double iDef = GetLevel(e) + GetPrecise(e, POINT_HT) + (pTable ? pTable->wDef : 0);
 
 		Set(e, POINT_ATT_GRADE, iAtt);
 		Set(e, POINT_DEF_GRADE, iDef);
-		Set(e, POINT_MAGIC_ATT_GRADE, Get(e, POINT_ATT_GRADE));
-		Set(e, POINT_MAGIC_DEF_GRADE, Get(e, POINT_DEF_GRADE));
+		Set(e, POINT_MAGIC_ATT_GRADE, GetPrecise(e, POINT_ATT_GRADE));
+		Set(e, POINT_MAGIC_DEF_GRADE, GetPrecise(e, POINT_DEF_GRADE));
 	}
 }
 
 
-void ApplyPoint(entt::entity e, uint8_t bApplyType, int iVal)
+void ApplyPoint(entt::entity e, uint8_t bApplyType, double iVal)
 {
 	if (!IsReadableEntity(e)) return;
 	// The skill damage bonus map is a component; the legacy m_SkillDamageBonus
@@ -1552,8 +1563,8 @@ void ApplyPoint(entt::entity e, uint8_t bApplyType, int iVal)
 		// ^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^
 		// vnum     ^ add       change
 		uint8_t bSkillVnum = (uint8_t)(((uint32_t)iVal) >> 24);
-		int iAdd = iVal & 0x00800000;
-		int iChange = iVal & 0x007fffff;
+		int iAdd = static_cast<int>(iVal) & 0x00800000;
+		int iChange = static_cast<int>(iVal) & 0x007fffff;
 
 		LOG_TRACE("APPLY_SKILL skill {} add? {} change {}", static_cast<int>(bSkillVnum), iAdd ? 1 : 0, iChange);
 
@@ -1744,7 +1755,7 @@ void ApplyPoint(entt::entity e, uint8_t bApplyType, int iVal)
 	case APPLY_ATTBONUS_IRR_VENTAGLIO:
 	case APPLY_ATTBONUS_IRR_CAMPANA:
 	{
-		int v = iVal / 5; // 5 -> 1, 10 -> 2, ...
+		double v = iVal / 5.0; // 5 -> 1, 10 -> 2, ...
 		Change(e, aApplyInfo[bApplyType].bPointType, v);
 		break;
 	}
@@ -1753,7 +1764,7 @@ void ApplyPoint(entt::entity e, uint8_t bApplyType, int iVal)
 
 // Lifted whole off CHARACTER: it already read the instant array through
 // the entity, so only the receiver had to change.
-int GetLimitPoint(entt::entity e, uint8_t type)
+double GetLimitPoint(entt::entity e, uint8_t type)
 {
 	if (type >= POINT_MAX_NUM)
 	{
@@ -1761,7 +1772,7 @@ int GetLimitPoint(entt::entity e, uint8_t type)
 		return 0;
 	}
 
-	int64_t val = ecs::PointSystem::ReadInstantArray(e, type);
+	double val = GetPrecise(e, type);
 	int max_val = INT_MAX;
 	int limit = INT_MAX;
 	int min_limit = -INT_MAX;

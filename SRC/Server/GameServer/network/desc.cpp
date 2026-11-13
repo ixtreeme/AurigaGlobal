@@ -352,8 +352,14 @@ void DESC::Packet(const void * c_pvData, int iSize)
 
 void DESC::LargePacket(const void * c_pvData, int iSize)
 {
-	buffer_adjust_size(m_lpOutputBuffer, iSize);
-	LOG_INFO("LargePacket Size {}", iSize);
+	// Keep room for the normal login packets queued after a large burst.
+    if (iSize <= 0 || iSize > INT_MAX - DEFAULT_PACKET_BUFFER_SIZE) {
+        LOG_ERROR("Invalid large packet size {}", iSize);
+        m_iPhase = PHASE_CLOSE;
+        return;
+    }
+    buffer_adjust_size(m_lpOutputBuffer, iSize + DEFAULT_PACKET_BUFFER_SIZE);
+    LOG_INFO("LargePacket Size {}", iSize);
 
 	Packet(c_pvData, iSize);
 }

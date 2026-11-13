@@ -39,16 +39,16 @@ inline void AttackAffect(entt::entity attacker,
 		uint32_t immune_flag,
 		uint32_t affect_idx,
 		uint8_t affect_point,
-	int32_t affect_amount,
+	double affect_amount,
 		uint32_t affect_flag,
 		int time,
 		const char* name)
 {
     if (!ecs::Invariants::HasAnyTypeTag(g_registry, attacker) || !ecs::Invariants::HasAnyTypeTag(g_registry, victim))
         return;
-	if (ecs::PointSystem::Get(attacker, att_point) && !AffectSystem::IsAffectFlag(victim, affect_flag))
+	if (ecs::PointSystem::GetPrecise(attacker, att_point) && !AffectSystem::IsAffectFlag(victim, affect_flag))
 	{
-		if (number(1, 100) <= ecs::PointSystem::Get(attacker, att_point) && !AffectSystem::IsImmune(victim, immune_flag))
+		if ((number(1, 100000000) / 1000000.0) <= ecs::PointSystem::GetPrecise(attacker, att_point) && !AffectSystem::IsImmune(victim, immune_flag))
 		{
 			AffectSystem::AddAffect(victim, affect_idx, affect_point, affect_amount, affect_flag, time, 0, true);
 
@@ -56,12 +56,12 @@ inline void AttackAffect(entt::entity attacker,
                 return;
 			if (test_server)
 			{
-				ecs::ChatSystem::Send(victim, CHAT_TYPE_PARTY, "%s %s(%lld%%) SUCCESS", ecs::PlayerRuntime::GetName(attacker).data(), name, ecs::PointSystem::Get(attacker, att_point));
+				ecs::ChatSystem::Send(victim, CHAT_TYPE_PARTY, "%s %s(%.3f%%) SUCCESS", ecs::PlayerRuntime::GetName(attacker).data(), name, ecs::PointSystem::GetPrecise(attacker, att_point));
 			}
 		}
 		else if (test_server)
 		{
-			ecs::ChatSystem::Send(victim, CHAT_TYPE_PARTY, "%s %s(%lld%%) FAIL", ecs::PlayerRuntime::GetName(attacker).data(), name, ecs::PointSystem::Get(attacker, att_point));
+			ecs::ChatSystem::Send(victim, CHAT_TYPE_PARTY, "%s %s(%.3f%%) FAIL", ecs::PlayerRuntime::GetName(attacker).data(), name, ecs::PointSystem::GetPrecise(attacker, att_point));
 		}
 	}
 }
@@ -71,7 +71,7 @@ inline void SkillAttackAffect(entt::entity victim,
 		uint32_t immune_flag,
 		uint32_t affect_idx,
 		uint8_t affect_point,
-	int32_t affect_amount,
+	double affect_amount,
 		uint32_t affect_flag,
 		int time,
 		const char* name)

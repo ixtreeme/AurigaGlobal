@@ -103,13 +103,13 @@ EVENTFUNC(check_time_market_event)
 	if (GayaSystem::GetState(e, "system_gaya.gaya_time_world_4") - init_gayaTime() <= 0)
 	{
 		GayaSystem::SetState(e, "system_gaya.gaya_time_world_4", init_gayaTime() + (60 * 60 * 5));
-		ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "GayaMarketTime %d", GayaSystem::GetState(e, "system_gaya.gaya_time_world_4") - init_gayaTime());
+		ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "GayaMarketTime %lld", static_cast<long long>(GayaSystem::GetState(e, "system_gaya.gaya_time_world_4") - init_gayaTime()));
 		GayaSystem::RefreshItemsMarket(e);
 		GayaSystem::InfoMarket(e);
 	}
 	else
 	{
-		ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "GayaMarketTime %d", GayaSystem::GetState(e, "system_gaya.gaya_time_world_4") - init_gayaTime());
+		ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "GayaMarketTime %lld", static_cast<long long>(GayaSystem::GetState(e, "system_gaya.gaya_time_world_4") - init_gayaTime()));
 	}
 
 	return PASSES_PER_SEC(2);

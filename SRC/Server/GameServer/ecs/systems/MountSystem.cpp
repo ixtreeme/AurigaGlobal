@@ -1289,7 +1289,7 @@ void MountSystem::ComputeMountInventoryBonuses(entt::entity owner)
 		{
 			const auto attribute = ItemSystem::GetItemAttribute(item, i);
 			const uint8_t bType = attribute.bType;
-			const int16_t sVal = attribute.sValue;
+			const double sVal = attribute.sValue;
 
 			if (bType == APPLY_NONE || sVal == 0)
 				continue;

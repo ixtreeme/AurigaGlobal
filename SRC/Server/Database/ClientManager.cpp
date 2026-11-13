@@ -1033,8 +1033,8 @@ void CClientManager::RESULT_SAFEBOX_LOAD(CPeer * pkPeer, SQLMsg * msg)
 
 						for (size_t i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 						{
-							iLen += snprintf(szColumns + iLen, sizeof(szColumns) - iLen, ", attrtype%llu, attrvalue%llu", i, i);
-							iValueLen += snprintf(szValues + iValueLen, sizeof(szValues) - iValueLen, ", %d, %d", pItemAward->aAttr[i].bType, pItemAward->aAttr[i].sValue);
+							iLen += snprintf(szColumns + iLen, sizeof(szColumns) - iLen, ", attrtype%zu, attrvalue%zu", i, i);
+							iValueLen += snprintf(szValues + iValueLen, sizeof(szValues) - iValueLen, ", %d, %.3f", pItemAward->aAttr[i].bType, pItemAward->aAttr[i].sValue);
 						}
 						// END_OF_AUTO_QUERY
 						
@@ -1609,7 +1609,7 @@ void CClientManager::QUERY_ITEM_SAVE(CPeer * pkPeer, const char * c_pData)
 #ifdef ATTR_LOCK
 			"%d, "
 #endif
-			"%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d)",
+			"%d, %d, %d, %d, %.3f, %d, %.3f, %d, %.3f, %d, %.3f, %d, %.3f, %d, %.3f, %d, %.3f, %d, %.3f)",
 			GetTablePostfix(),
 			p->id,
 			p->owner,
@@ -4419,7 +4419,7 @@ bool CClientManager::InitializeItemShop()
 					str_to_number(ishopData.aAttr[i].bType, row[col]);
 				++col;
 				if (col < columnCount && row[col])
-					str_to_number(ishopData.aAttr[i].sValue, row[col]);
+					ishopData.aAttr[i].sValue = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, row[col]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
 				++col;
 			}
 
@@ -4832,7 +4832,7 @@ void CClientManager::RecvItemShop(CPeer* pkPeer, uint32_t dwHandle, const char* 
 									for (size_t i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 									{
 										columnLen += snprintf(szColumns + columnLen, sizeof(szColumns) - columnLen, ", attrtype%u, attrvalue%u", static_cast<unsigned>(i), static_cast<unsigned>(i));
-										valueLen += snprintf(szValues + valueLen, sizeof(szValues) - valueLen, ", %d, %d", aAttr[i].bType, aAttr[i].sValue);
+										valueLen += snprintf(szValues + valueLen, sizeof(szValues) - valueLen, ", %d, %.3f", aAttr[i].bType, aAttr[i].sValue);
 									}*/
 
 

@@ -1,3 +1,4 @@
+#include <cmath>
 #include "stdafx.h"
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 #include "Main.h"
@@ -116,7 +117,7 @@ bool CClientManager::InitializeOfflineshopTable()
 				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; i++)
 				{
 					str_to_number(item.item.aAttr[i].bType,		row[col++]);
-					str_to_number(item.item.aAttr[i].sValue,	row[col++]);
+					item.item.aAttr[i].sValue = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, row[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
 				}
 
 				uint8_t bIsSold=0;
@@ -228,7 +229,7 @@ bool CClientManager::InitializeOfflineshopTable()
 				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; i++)
 				{
 					str_to_number(info.item.aAttr[i].bType,		row[col++]);
-					str_to_number(info.item.aAttr[i].sValue,	row[col++]);
+					info.item.aAttr[i].sValue = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, row[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
 				}
 
 #ifdef __ENABLE_CHANGELOOK_SYSTEM__

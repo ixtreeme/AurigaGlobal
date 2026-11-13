@@ -258,7 +258,7 @@ bool MatchAttributes(const TPlayerItemAttribute* pAttributesFilter,const TPlayer
 		bool bFound=false;
 
 		uint8_t type	= pAttributesFilter[i].bType;
-		int  val	= pAttributesFilter[i].sValue;
+		double val = pAttributesFilter[i].sValue;
 
 
 		for (int i = 0; i < ITEM_ATTRIBUTE_NORM_NUM; i++)

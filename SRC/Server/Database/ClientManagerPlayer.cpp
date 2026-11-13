@@ -1,3 +1,4 @@
+#include <cmath>
 
 #include "stdafx.h"
 #include "player_create.h"
@@ -72,7 +73,7 @@ bool CreateItemTableFromRes(MYSQL_RES * res, std::vector<TPlayerItem> * pVec, ui
 		for (int j = 0; j < ITEM_ATTRIBUTE_MAX_NUM; j++)
 		{
 			str_to_number(item.aAttr[j].bType, row[cur++]);
-			str_to_number(item.aAttr[j].sValue, row[cur++]);
+			item.aAttr[j].sValue = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, row[cur++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
 		}
 
 		item.owner		= dwPID;
@@ -753,7 +754,7 @@ void CClientManager::RESULT_AFFECT_LOAD(CPeer * peer, MYSQL_RES * pRes, uint32_t
 
 		str_to_number(r.dwType, row[1]);
 		str_to_number(r.bApplyOn, row[2]);
-		str_to_number(r.lApplyValue, row[3]);
+		r.lApplyValue = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, row[3]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
 		str_to_number(r.dwFlag, row[4]);
 		str_to_number(r.lDuration, row[5]);
 		str_to_number(r.lSPCost, row[6]);
@@ -1343,8 +1344,8 @@ void CClientManager::QUERY_ADD_AFFECT(CPeer * peer, TPacketGDAddAffect * p)
 	/*
 	   snprintf(queryStr, sizeof(queryStr),
 	   "INSERT INTO affect%s (dwPID, bType, bApplyOn, lApplyValue, dwFlag, lDuration, lSPCost) "
-	   "VALUES(%u, %u, %u, %d, %u, %d, %d) "
-	   "ON DUPLICATE KEY UPDATE lApplyValue=%d, dwFlag=%u, lDuration=%d, lSPCost=%d",
+	   "VALUES(%u, %u, %u, %.9f, %u, %d, %d) "
+	   "ON DUPLICATE KEY UPDATE lApplyValue=%.9f, dwFlag=%u, lDuration=%d, lSPCost=%d",
 	   GetTablePostfix(),
 	   p->dwPID,
 	   p->elem.dwType,
@@ -1360,7 +1361,7 @@ void CClientManager::QUERY_ADD_AFFECT(CPeer * peer, TPacketGDAddAffect * p)
 	   */
 	snprintf(queryStr, sizeof(queryStr),
 			"REPLACE INTO affect%s (dwPID, bType, bApplyOn, lApplyValue, dwFlag, lDuration, lSPCost) "
-			"VALUES(%u, %u, %u, %d, %u, %d, %d)",
+			"VALUES(%u, %u, %u, %.9f, %u, %d, %d)",
 			GetTablePostfix(),
 			p->dwPID,
 			p->elem.dwType,

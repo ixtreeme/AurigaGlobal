@@ -246,10 +246,14 @@ void UnregisterItem(entt::entity switchbot, uint16_t wCell)
 void SetAttributes(entt::entity switchbot, uint8_t slot, const std::vector<TSwitchbotAttributeAlternativeTable>& vec_alternatives)
 {
 	auto* state = State(switchbot);
-	if (!state || !ValidPosition(slot))
+	if (!state || !ValidPosition(slot) || vec_alternatives.size() != SWITCHBOT_ALTERNATIVE_COUNT)
 	{
 		return;
 	}
+
+    for (const auto& alternative : vec_alternatives)
+        for (const auto& attr : alternative.attributes)
+            if (!std::isfinite(attr.sValue) || std::abs(attr.sValue) >= 10000000000.0 || attr.bType >= MAX_APPLY_NUM) return;
 
 	for (uint8_t alternative = 0; alternative < SWITCHBOT_ALTERNATIVE_COUNT; ++alternative)
 	{
@@ -443,9 +447,9 @@ std::string MakeFullItemLink(entt::entity item, entt::entity killer)
 	for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 	{
 		uint8_t type = ItemSystem::GetItemAttributeType(item, i);
-		short   val = ItemSystem::GetItemAttributeValue(item, i);
+		double val = ItemSystem::GetItemAttributeValue(item, i);
 		if (type && val)
-			len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
+			len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%.3f", type, val);
 	}
 
 	// killer nyelve (fallback: EN)

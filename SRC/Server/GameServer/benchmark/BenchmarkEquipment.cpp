@@ -152,11 +152,11 @@ void SetLegalMaximumAttributes(entt::entity item, bool defender, int resistance,
             if (first == 0 && ItemSystem::GetItemType(item) == ITEM_COSTUME)
                 valueIndex += ITEM_ATTRIBUTE_MAX_LEVEL;
 #endif
-            if (valueIndex < 0 || static_cast<size_t>(valueIndex) >= std::size(row.lValues))
+            if (valueIndex < 0 || static_cast<size_t>(valueIndex) >= (sizeof(row.lValues) / sizeof(row.lValues[0])))
                 continue;
-            const int value = row.lValues[valueIndex];
+            const double value = row.lValues[valueIndex];
             if (value <= 0 || value > INT16_MAX) continue;
-            attrs[position++] = {static_cast<uint8_t>(type), static_cast<int16_t>(value)};
+            attrs[position++] = {static_cast<uint8_t>(type), static_cast<double>(value)};
             used.insert(type);
         }
     };
@@ -1034,13 +1034,13 @@ bool Apply(entt::entity character, int tier, std::string_view defenseWeapon,
                 receipt << "mode=" << (defender ? "DEFENDER" : "ATTACKER")
                         << " tier=" << tier << " vs=" << defenseWeapon << '\n'
                         << "PID=" << pid << " level=" << ecs::PointSystem::GetLevel(character)
-                        << " ST=" << ecs::PointSystem::Get(character, POINT_ST)
-                        << " HT=" << ecs::PointSystem::Get(character, POINT_HT)
-                        << " DX=" << ecs::PointSystem::Get(character, POINT_DX)
-                        << " IQ=" << ecs::PointSystem::Get(character, POINT_IQ)
+                        << " ST=" << ecs::PointSystem::GetPrecise(character, POINT_ST)
+                        << " HT=" << ecs::PointSystem::GetPrecise(character, POINT_HT)
+                        << " DX=" << ecs::PointSystem::GetPrecise(character, POINT_DX)
+                        << " IQ=" << ecs::PointSystem::GetPrecise(character, POINT_IQ)
                         << " HP=" << ecs::PointSystem::GetMaxHP(character)
-                        << " TWOHAND_RESIST=" << ecs::PointSystem::Get(character, POINT_RESIST_TWOHAND)
-                        << " HUMAN_ATTACK=" << ecs::PointSystem::Get(character, POINT_ATTBONUS_HUMAN)
+                        << " TWOHAND_RESIST=" << ecs::PointSystem::GetPrecise(character, POINT_RESIST_TWOHAND)
+                        << " HUMAN_ATTACK=" << ecs::PointSystem::GetPrecise(character, POINT_ATTBONUS_HUMAN)
                         << " ALIGNMENT_RAW=" << CombatSystem::GetRealAlignment(character)
                         << " ALIGNMENT_DISPLAY=" << CombatSystem::GetRealAlignment(character) / 10
                         << " ALIGNMENT_GRADE=" << int(CombatSystem::GetAlignmentGrade(character))

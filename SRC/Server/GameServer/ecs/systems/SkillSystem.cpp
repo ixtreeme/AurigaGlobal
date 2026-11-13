@@ -807,7 +807,7 @@ bool CopyBuffSkillColor(entt::entity caster, entt::entity target, uint32_t skill
 int ComputeCooltime(entt::entity e, int time)
 {
     return e != entt::null && g_registry.valid(e)
-        ? CalculateDuration(ecs::PointSystem::Get(e, POINT_CASTING_SPEED), time)
+        ? CalculateDuration(ecs::PointSystem::GetPrecise(e, POINT_CASTING_SPEED), time)
         : time;
 }
 
@@ -2068,12 +2068,12 @@ struct FuncSplashDamage
 		//m_pkSk->kPointPoly2.SetVar("k", 1.0 * m_bUseSkillPower * m_pkSk->bMaxLevel / 100);
 		m_pkSk->SetPointVar("k", 1.0 * m_bUseSkillPower * m_pkSk->bMaxLevel / 100);
 		m_pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(m_character));
-		m_pkSk->SetPointVar("iq", ecs::PointSystem::Get(m_character, POINT_IQ));
-		m_pkSk->SetPointVar("str", ecs::PointSystem::Get(m_character, POINT_ST));
-		m_pkSk->SetPointVar("dex", ecs::PointSystem::Get(m_character, POINT_DX));
-		m_pkSk->SetPointVar("con", ecs::PointSystem::Get(m_character, POINT_HT));
-		m_pkSk->SetPointVar("def", ecs::PointSystem::Get(m_character, POINT_DEF_GRADE));
-		m_pkSk->SetPointVar("odef", ecs::PointSystem::Get(m_character, POINT_DEF_GRADE) - ecs::PointSystem::Get(m_character, POINT_DEF_GRADE_BONUS));
+		m_pkSk->SetPointVar("iq", ecs::PointSystem::GetPrecise(m_character, POINT_IQ));
+		m_pkSk->SetPointVar("str", ecs::PointSystem::GetPrecise(m_character, POINT_ST));
+		m_pkSk->SetPointVar("dex", ecs::PointSystem::GetPrecise(m_character, POINT_DX));
+		m_pkSk->SetPointVar("con", ecs::PointSystem::GetPrecise(m_character, POINT_HT));
+		m_pkSk->SetPointVar("def", ecs::PointSystem::GetPrecise(m_character, POINT_DEF_GRADE));
+		m_pkSk->SetPointVar("odef", ecs::PointSystem::GetPrecise(m_character, POINT_DEF_GRADE) - ecs::PointSystem::GetPrecise(m_character, POINT_DEF_GRADE_BONUS));
 		m_pkSk->SetPointVar("horse_level", MountSystem::GetHorseLevel(m_character));
 
 		//int iPenetratePct = (int)(1 + k*4);
@@ -2083,7 +2083,7 @@ struct FuncSplashDamage
 		{
 			int iPenetratePct = (int) m_pkSk->kPointPoly2.Eval();
 
-			if (number(1, 100) <= iPenetratePct)
+			if ((number(1, 100000000) / 1000000.0) <= iPenetratePct)
 				bIgnoreDefense = true;
 		}
 
@@ -2233,12 +2233,12 @@ struct FuncSplashDamage
 						{
 							case WEAPON_SWORD:
 							{
-								int32_t lValue = ecs::PointSystem::Get(victimEntity, POINT_RESIST_SWORD);
+								double lValue = ecs::PointSystem::GetPrecise(victimEntity, POINT_RESIST_SWORD);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-								lValue -= ecs::PointSystem::Get(m_character, POINT_ATTBONUS_IRR_SPADA);
+								lValue -= ecs::PointSystem::GetPrecise(m_character, POINT_ATTBONUS_IRR_SPADA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-								lValue -= ecs::PointSystem::Get(m_character, POINT_IRR_WEAPON_DEFENSE);
+								lValue -= ecs::PointSystem::GetPrecise(m_character, POINT_IRR_WEAPON_DEFENSE);
 #endif
 								lValue = lValue < 0 ? 0 :  lValue;
 								iDam = iDam * (100 - lValue) / 100;
@@ -2246,12 +2246,12 @@ struct FuncSplashDamage
 							}
 							case WEAPON_TWO_HANDED:
 							{
-								int32_t lValue = ecs::PointSystem::Get(victimEntity, POINT_RESIST_TWOHAND);
+								double lValue = ecs::PointSystem::GetPrecise(victimEntity, POINT_RESIST_TWOHAND);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-								lValue -= ecs::PointSystem::Get(m_character, POINT_ATTBONUS_IRR_SPADONE);
+								lValue -= ecs::PointSystem::GetPrecise(m_character, POINT_ATTBONUS_IRR_SPADONE);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-								lValue -= ecs::PointSystem::Get(m_character, POINT_IRR_WEAPON_DEFENSE);
+								lValue -= ecs::PointSystem::GetPrecise(m_character, POINT_IRR_WEAPON_DEFENSE);
 #endif
 								lValue = lValue < 0 ? 0 :  lValue;
 								iDam = iDam * (100 - lValue) / 100;
@@ -2259,12 +2259,12 @@ struct FuncSplashDamage
 							}
 							case WEAPON_DAGGER:
 							{
-								int32_t lValue = ecs::PointSystem::Get(victimEntity, POINT_RESIST_DAGGER);
+								double lValue = ecs::PointSystem::GetPrecise(victimEntity, POINT_RESIST_DAGGER);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-								lValue -= ecs::PointSystem::Get(m_character, POINT_ATTBONUS_IRR_PUGNALE);
+								lValue -= ecs::PointSystem::GetPrecise(m_character, POINT_ATTBONUS_IRR_PUGNALE);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-								lValue -= ecs::PointSystem::Get(m_character, POINT_IRR_WEAPON_DEFENSE);
+								lValue -= ecs::PointSystem::GetPrecise(m_character, POINT_IRR_WEAPON_DEFENSE);
 #endif
 								lValue = lValue < 0 ? 0 :  lValue;
 								iDam = iDam * (100 - lValue) / 100;
@@ -2272,12 +2272,12 @@ struct FuncSplashDamage
 							}
 							case WEAPON_BELL:
 							{
-								int32_t lValue = ecs::PointSystem::Get(victimEntity, POINT_RESIST_BELL);
+								double lValue = ecs::PointSystem::GetPrecise(victimEntity, POINT_RESIST_BELL);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-								lValue -= ecs::PointSystem::Get(m_character, POINT_ATTBONUS_IRR_CAMPANA);
+								lValue -= ecs::PointSystem::GetPrecise(m_character, POINT_ATTBONUS_IRR_CAMPANA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-								lValue -= ecs::PointSystem::Get(m_character, POINT_IRR_WEAPON_DEFENSE);
+								lValue -= ecs::PointSystem::GetPrecise(m_character, POINT_IRR_WEAPON_DEFENSE);
 #endif
 								lValue = lValue < 0 ? 0 :  lValue;
 								iDam = iDam * (100 - lValue) / 100;
@@ -2285,12 +2285,12 @@ struct FuncSplashDamage
 							}
 							case WEAPON_FAN:
 							{
-								int32_t lValue = ecs::PointSystem::Get(victimEntity, POINT_RESIST_FAN);
+								double lValue = ecs::PointSystem::GetPrecise(victimEntity, POINT_RESIST_FAN);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-								lValue -= ecs::PointSystem::Get(m_character, POINT_ATTBONUS_IRR_VENTAGLIO);
+								lValue -= ecs::PointSystem::GetPrecise(m_character, POINT_ATTBONUS_IRR_VENTAGLIO);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-								lValue -= ecs::PointSystem::Get(m_character, POINT_IRR_WEAPON_DEFENSE);
+								lValue -= ecs::PointSystem::GetPrecise(m_character, POINT_IRR_WEAPON_DEFENSE);
 #endif
 								lValue = lValue < 0 ? 0 :  lValue;
 								iDam = iDam * (100 - lValue) / 100;
@@ -2298,12 +2298,12 @@ struct FuncSplashDamage
 							}
 							case WEAPON_BOW:
 							{
-								int32_t lValue = ecs::PointSystem::Get(victimEntity, POINT_RESIST_BOW);
+								double lValue = ecs::PointSystem::GetPrecise(victimEntity, POINT_RESIST_BOW);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-								lValue -= ecs::PointSystem::Get(m_character, POINT_ATTBONUS_IRR_FRECCIA);
+								lValue -= ecs::PointSystem::GetPrecise(m_character, POINT_ATTBONUS_IRR_FRECCIA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-								lValue -= ecs::PointSystem::Get(m_character, POINT_IRR_WEAPON_DEFENSE);
+								lValue -= ecs::PointSystem::GetPrecise(m_character, POINT_IRR_WEAPON_DEFENSE);
 #endif
 								lValue = lValue < 0 ? 0 :  lValue;
 								iDam = iDam * (100 - lValue) / 100;
@@ -2315,19 +2315,19 @@ struct FuncSplashDamage
 					}
 
 					if (!bIgnoreDefense) {
-						iDam -= ecs::PointSystem::Get(victimEntity, POINT_DEF_GRADE);
+						iDam -= ecs::PointSystem::GetPrecise(victimEntity, POINT_DEF_GRADE);
 					}
 
 					break;
 				}
 			case SKILL_ATTR_TYPE_RANGE: {
 				dt = DAMAGE_TYPE_RANGE;
-				int32_t lValue = ecs::PointSystem::Get(victimEntity, POINT_RESIST_BOW);
+				double lValue = ecs::PointSystem::GetPrecise(victimEntity, POINT_RESIST_BOW);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-				lValue -= ecs::PointSystem::Get(m_character, POINT_ATTBONUS_IRR_FRECCIA);
+				lValue -= ecs::PointSystem::GetPrecise(m_character, POINT_ATTBONUS_IRR_FRECCIA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-				lValue -= ecs::PointSystem::Get(m_character, POINT_IRR_WEAPON_DEFENSE);
+				lValue -= ecs::PointSystem::GetPrecise(m_character, POINT_IRR_WEAPON_DEFENSE);
 #endif
 				lValue = lValue < 0 ? 0 : lValue;
 				iDam = iDam * (100 - lValue) / 100;
@@ -2337,14 +2337,14 @@ struct FuncSplashDamage
 			case SKILL_ATTR_TYPE_MAGIC:
 				dt = DAMAGE_TYPE_MAGIC;
 				iDam = CalcAttBonus(chr, chrVictim, iDam);
-				//iDam -= ecs::PointSystem::Get(victimEntity, POINT_MAGIC_DEF_GRADE);
+				//iDam -= ecs::PointSystem::GetPrecise(victimEntity, POINT_MAGIC_DEF_GRADE);
 //#ifdef ENABLE_MAGIC_REDUCTION_SYSTEM
 //				{
-//					const int resist_magic = MINMAX(0, ecs::PointSystem::Get(victimEntity, POINT_RESIST_MAGIC), 100);
-//					const int resist_magic_reduction = MINMAX(0, (ecs::PlayerRuntime::GetJob(m_pkChr->GetEntityHandle())==JOB_SURA) ? ecs::PointSystem::Get(m_character, POINT_RESIST_MAGIC_REDUCTION)/2 : ecs::PointSystem::Get(m_character, POINT_RESIST_MAGIC_REDUCTION), 50);
+//					double resist_magic = MINMAX(0, ecs::PointSystem::GetPrecise(victimEntity, POINT_RESIST_MAGIC), 100);
+//					double resist_magic_reduction = MINMAX(0, (ecs::PlayerRuntime::GetJob(m_pkChr->GetEntityHandle())==JOB_SURA) ? ecs::PointSystem::GetPrecise(m_character, POINT_RESIST_MAGIC_REDUCTION)/2 : ecs::PointSystem::GetPrecise(m_character, POINT_RESIST_MAGIC_REDUCTION), 50);
 //					const int total_res_magic = MINMAX(0, resist_magic - resist_magic_reduction, 100);
 //					iDam = iDam * (100 - total_res_magic) / 100;
-				iDam = iDam * (100 - (int)(ecs::PointSystem::Get(victimEntity, POINT_RESIST_MAGIC) / 2)) / 100;
+				iDam = iDam * (100 - (int)(ecs::PointSystem::GetPrecise(victimEntity, POINT_RESIST_MAGIC) / 2)) / 100;
 //#endif
 				break;
 
@@ -2360,17 +2360,17 @@ struct FuncSplashDamage
 		{
 			if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_WIND))
 			{
-				iDam = iDam * (100 - ecs::PointSystem::Get(victimEntity, POINT_RESIST_WIND)) / 100;
+				iDam = iDam * (100 - ecs::PointSystem::GetPrecise(victimEntity, POINT_RESIST_WIND)) / 100;
 			}
 
 			if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_ELEC))
 			{
-				iDam = iDam * (100 - ecs::PointSystem::Get(victimEntity, POINT_RESIST_ELEC)) / 100;
+				iDam = iDam * (100 - ecs::PointSystem::GetPrecise(victimEntity, POINT_RESIST_ELEC)) / 100;
 			}
 
 			if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_FIRE))
 			{
-				iDam = iDam * (100 - ecs::PointSystem::Get(victimEntity, POINT_RESIST_FIRE)) / 100;
+				iDam = iDam * (100 - ecs::PointSystem::GetPrecise(victimEntity, POINT_RESIST_FIRE)) / 100;
 			}
 		}
 
@@ -2551,7 +2551,7 @@ struct FuncSplashDamage
 				{
 					int iAmount2 = (int) m_pkSk->kPointPoly2.Eval();
 					int iDur2 = (int) m_pkSk->kDurationPoly2.Eval();
-					iDur2 += ecs::PointSystem::Get(m_character, POINT_PARTY_BUFFER_BONUS);
+					iDur2 += ecs::PointSystem::GetPrecise(m_character, POINT_PARTY_BUFFER_BONUS);
 
 					if (number(1, 100) <= iAmount2)
 					{
@@ -2565,7 +2565,7 @@ struct FuncSplashDamage
 				int iPct = (int) m_pkSk->kPointPoly2.Eval();
 				int iDur = (int) m_pkSk->kDurationPoly2.Eval();
 
-				iDur += ecs::PointSystem::Get(m_character, POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::GetPrecise(m_character, POINT_PARTY_BUFFER_BONUS);
 
 				if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_STUN))
 				{
@@ -2578,10 +2578,10 @@ struct FuncSplashDamage
 				else if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_FIRE_CONT))
 				{
 					m_pkSk->SetDurationVar("k", 1.0 * m_bUseSkillPower * m_pkSk->bMaxLevel / 100);
-					m_pkSk->SetDurationVar("iq", ecs::PointSystem::Get(m_character, POINT_IQ));
+					m_pkSk->SetDurationVar("iq", ecs::PointSystem::GetPrecise(m_character, POINT_IQ));
 
 					iDur = (int)m_pkSk->kDurationPoly2.Eval();
-					int bonus = ecs::PointSystem::Get(m_character, POINT_PARTY_BUFFER_BONUS);
+					double bonus = ecs::PointSystem::GetPrecise(m_character, POINT_PARTY_BUFFER_BONUS);
 
 					if (bonus != 0)
 					{
@@ -2893,16 +2893,16 @@ int SkillSystem::ComputeSkillAtPosition(entt::entity e, uint32_t dwVnum, const P
 	}
 
 	pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(e));
-	pkSk->SetPointVar("iq", ecs::PointSystem::Get(e, POINT_IQ));
-	pkSk->SetPointVar("str", ecs::PointSystem::Get(e, POINT_ST));
-	pkSk->SetPointVar("dex", ecs::PointSystem::Get(e, POINT_DX));
-	pkSk->SetPointVar("con", ecs::PointSystem::Get(e, POINT_HT));
+	pkSk->SetPointVar("iq", ecs::PointSystem::GetPrecise(e, POINT_IQ));
+	pkSk->SetPointVar("str", ecs::PointSystem::GetPrecise(e, POINT_ST));
+	pkSk->SetPointVar("dex", ecs::PointSystem::GetPrecise(e, POINT_DX));
+	pkSk->SetPointVar("con", ecs::PointSystem::GetPrecise(e, POINT_HT));
 	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(character));
 	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(character));
 	pkSk->SetPointVar("chain", 0);
 	pkSk->SetPointVar("ar", CalcAttackRating(character, character));
-	pkSk->SetPointVar("def", ecs::PointSystem::Get(e, POINT_DEF_GRADE));
-	pkSk->SetPointVar("odef", ecs::PointSystem::Get(e, POINT_DEF_GRADE) - ecs::PointSystem::Get(e, POINT_DEF_GRADE_BONUS));
+	pkSk->SetPointVar("def", ecs::PointSystem::GetPrecise(e, POINT_DEF_GRADE));
+	pkSk->SetPointVar("odef", ecs::PointSystem::GetPrecise(e, POINT_DEF_GRADE) - ecs::PointSystem::GetPrecise(e, POINT_DEF_GRADE_BONUS));
 	pkSk->SetPointVar("horse_level", MountSystem::GetHorseLevel(e));
 
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
@@ -2979,7 +2979,7 @@ int SkillSystem::ComputeSkillAtPosition(entt::entity e, uint32_t dwVnum, const P
 
 			if (iDur > 0)
 			{
-				iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::GetPrecise(e, POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 					AffectSystem::AddAffect(e, pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true);
@@ -3003,7 +3003,7 @@ int SkillSystem::ComputeSkillAtPosition(entt::entity e, uint32_t dwVnum, const P
 
 			if (iDur > 0)
 			{
-				iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::GetPrecise(e, POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 					AffectSystem::AddAffect(e, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded);
@@ -3030,7 +3030,7 @@ int SkillSystem::ComputeSkillAtPosition(entt::entity e, uint32_t dwVnum, const P
 
 			if (iDur > 0)
 			{
-				iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::GetPrecise(e, POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 					AffectSystem::AddAffect(e, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, 0 /*pkSk->dwAffectFlag3*/, iDur, 0, !bAdded);
@@ -3059,7 +3059,7 @@ int SkillSystem::ComputeSkillAtPosition(entt::entity e, uint32_t dwVnum, const P
 
 		if (iDur > 0)
 		{
-			iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
+			iDur += ecs::PointSystem::GetPrecise(e, POINT_PARTY_BUFFER_BONUS);
 			pkSk->kDurationSPCostPoly.SetVar("k", k/*bSkillLevel*/);
 
 			AffectSystem::AddAffect(e, pkSk->dwVnum,
@@ -3083,7 +3083,7 @@ int SkillSystem::ComputeSkillAtPosition(entt::entity e, uint32_t dwVnum, const P
 
 			if (iDur > 0)
 			{
-				iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::GetPrecise(e, POINT_PARTY_BUFFER_BONUS);
 				AffectSystem::AddAffect(e, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded);
 				bAdded = true;
 			}
@@ -3100,7 +3100,7 @@ int SkillSystem::ComputeSkillAtPosition(entt::entity e, uint32_t dwVnum, const P
 
 			if (iDur > 0)
 			{
-				iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::GetPrecise(e, POINT_PARTY_BUFFER_BONUS);
 				AffectSystem::AddAffect(e, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, 0 /*pkSk->dwAffectFlag3*/, iDur, 0, !bAdded);
 			}
 			else
@@ -3196,16 +3196,16 @@ int SkillSystem::ComputeGyeongGongSkill(entt::entity e, uint32_t dwVnum, entt::e
 	}
 
 	pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(e));
-	pkSk->SetPointVar("iq", ecs::PointSystem::Get(e, POINT_IQ));
-	pkSk->SetPointVar("str", ecs::PointSystem::Get(e, POINT_ST));
-	pkSk->SetPointVar("dex", ecs::PointSystem::Get(e, POINT_DX));
-	pkSk->SetPointVar("con", ecs::PointSystem::Get(e, POINT_HT));
+	pkSk->SetPointVar("iq", ecs::PointSystem::GetPrecise(e, POINT_IQ));
+	pkSk->SetPointVar("str", ecs::PointSystem::GetPrecise(e, POINT_ST));
+	pkSk->SetPointVar("dex", ecs::PointSystem::GetPrecise(e, POINT_DX));
+	pkSk->SetPointVar("con", ecs::PointSystem::GetPrecise(e, POINT_HT));
 	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(victimEntity));
 	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(victimEntity));
 	pkSk->SetPointVar("chain", 0);
 	pkSk->SetPointVar("ar", CalcAttackRating(character, victim));
-	pkSk->SetPointVar("def", ecs::PointSystem::Get(e, POINT_DEF_GRADE));
-	pkSk->SetPointVar("odef", ecs::PointSystem::Get(e, POINT_DEF_GRADE) - ecs::PointSystem::Get(e, POINT_DEF_GRADE_BONUS));
+	pkSk->SetPointVar("def", ecs::PointSystem::GetPrecise(e, POINT_DEF_GRADE));
+	pkSk->SetPointVar("odef", ecs::PointSystem::GetPrecise(e, POINT_DEF_GRADE) - ecs::PointSystem::GetPrecise(e, POINT_DEF_GRADE_BONUS));
 	pkSk->SetPointVar("horse_level", MountSystem::GetHorseLevel(e));
 
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
@@ -3357,16 +3357,16 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 	}
 
 	pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(e));
-	pkSk->SetPointVar("iq", ecs::PointSystem::Get(e, POINT_IQ));
-	pkSk->SetPointVar("str", ecs::PointSystem::Get(e, POINT_ST));
-	pkSk->SetPointVar("dex", ecs::PointSystem::Get(e, POINT_DX));
-	pkSk->SetPointVar("con", ecs::PointSystem::Get(e, POINT_HT));
+	pkSk->SetPointVar("iq", ecs::PointSystem::GetPrecise(e, POINT_IQ));
+	pkSk->SetPointVar("str", ecs::PointSystem::GetPrecise(e, POINT_ST));
+	pkSk->SetPointVar("dex", ecs::PointSystem::GetPrecise(e, POINT_DX));
+	pkSk->SetPointVar("con", ecs::PointSystem::GetPrecise(e, POINT_HT));
 	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(victimEntity));
 	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(victimEntity));
 	pkSk->SetPointVar("chain", 0);
 	pkSk->SetPointVar("ar", CalcAttackRating(character, victim));
-	pkSk->SetPointVar("def", ecs::PointSystem::Get(e, POINT_DEF_GRADE));
-	pkSk->SetPointVar("odef", ecs::PointSystem::Get(e, POINT_DEF_GRADE) - ecs::PointSystem::Get(e, POINT_DEF_GRADE_BONUS));
+	pkSk->SetPointVar("def", ecs::PointSystem::GetPrecise(e, POINT_DEF_GRADE));
+	pkSk->SetPointVar("odef", ecs::PointSystem::GetPrecise(e, POINT_DEF_GRADE) - ecs::PointSystem::GetPrecise(e, POINT_DEF_GRADE_BONUS));
 	pkSk->SetPointVar("horse_level", MountSystem::GetHorseLevel(e));
 
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
@@ -3446,7 +3446,7 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 
 			if (iDur > 0)
 			{
-				iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::GetPrecise(e, POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 					AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true);
@@ -3469,7 +3469,7 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 
 			if (iDur > 0)
 			{
-				iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::GetPrecise(e, POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 					AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded);
@@ -3499,7 +3499,7 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 
 			if (iDur > 0)
 			{
-				iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::GetPrecise(e, POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 					AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded);
@@ -3531,7 +3531,7 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 			pkSk->kDurationSPCostPoly.SetVar("k", k/*bSkillLevel*/);
 
 			int iDur = (int32_t) pkSk->kDurationPoly.Eval();
-			iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
+			iDur += ecs::PointSystem::GetPrecise(e, POINT_PARTY_BUFFER_BONUS);
 
 			if (victimEntity == character)
 				AffectSystem::AddAffect(e, dwVnum,
@@ -3550,7 +3550,7 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 
 		if (iDur > 0)
 		{
-			iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
+			iDur += ecs::PointSystem::GetPrecise(e, POINT_PARTY_BUFFER_BONUS);
 			pkSk->kDurationSPCostPoly.SetVar("k", k/*bSkillLevel*/);
 
 			if (pkSk->bPointOn2 != POINT_NONE)
@@ -3564,7 +3564,7 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 					if (test_server)
 						LOG_INFO("SKILL_AFFECT: {} {} Dur:{} To:{} Amount:{}", ecs::PlayerRuntime::GetName(e), pkSk->szName, iDur2, pkSk->bPointOn2, iAmount2);
 
-					iDur2 += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
+					iDur2 += ecs::PointSystem::GetPrecise(e, POINT_PARTY_BUFFER_BONUS);
 					AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur2, 0, false);
 				}
 				else
@@ -3618,7 +3618,7 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 
 				if (iDur2 > 0)
 				{
-					iDur2 += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
+					iDur2 += ecs::PointSystem::GetPrecise(e, POINT_PARTY_BUFFER_BONUS);
 
 					if (pkSk->IsChargeSkill())
 						AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, AFF_TANHWAN_DASH, iDur2, 0, false);
@@ -3644,7 +3644,7 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 
 			if (iDur > 0)
 			{
-				iDur += ecs::PointSystem::Get(e, POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::GetPrecise(e, POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 					AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded);

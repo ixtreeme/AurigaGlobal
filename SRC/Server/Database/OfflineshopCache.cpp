@@ -1,3 +1,4 @@
+#include <cmath>
 #include "stdafx.h"
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
@@ -702,7 +703,7 @@ namespace offlineshop
 				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; i++)
 				{
 					str_to_number(item.aAttr[i].bType , row[col++]);
-					str_to_number(item.aAttr[i].sValue, row[col++]);
+					item.aAttr[i].sValue = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, row[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
 				}
 				
 #ifdef __ENABLE_CHANGELOOK_SYSTEM__
@@ -1291,7 +1292,7 @@ namespace offlineshop
 			" %d, "
 #endif
 			" %u, %u ",
-			dwOwner, rItem.price.illYang,
+			dwOwner, static_cast<long long>(rItem.price.illYang),
 #ifdef __ENABLE_CHEQUE_SYSTEM__
 			rItem.price.iCheque,
 #endif
@@ -1306,7 +1307,7 @@ namespace offlineshop
 
 		for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; i++)
 			len += snprintf(szQuery + len, sizeof(szQuery) - len,
-				", %d , %d ", rItem.item.aAttr[i].bType, rItem.item.aAttr[i].sValue);
+				", %d , %.3f ", rItem.item.aAttr[i].bType, rItem.item.aAttr[i].sValue);
 
 #ifdef __ENABLE_CHANGELOOK_SYSTEM__
 		len += snprintf(szQuery + len, sizeof(szQuery) - len, " , %u ", rItem.item.dwTransmutation );
@@ -1333,7 +1334,7 @@ namespace offlineshop
 			", `price_cheque` = %d "
 #endif
 			" WHERE `item_id` = %u;",
-			rItemPrice.illYang,
+			static_cast<long long>(rItemPrice.illYang),
 #ifdef __ENABLE_CHEQUE_SYSTEM__
 			rItemPrice.iCheque,
 #endif
@@ -1449,7 +1450,7 @@ namespace offlineshop
 
 		for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; i++)
 			len += snprintf(szQuery + len, sizeof(szQuery) - len,
-				", %d , %d ", item.aAttr[i].bType, item.aAttr[i].sValue);
+				", %d , %.3f ", item.aAttr[i].bType, item.aAttr[i].sValue);
 
 #ifdef __ENABLE_CHANGELOOK_SYSTEM__
 		len += snprintf(szQuery + len, sizeof(szQuery) - len,
@@ -1477,7 +1478,7 @@ namespace offlineshop
 			", `cheque` = %d "
 #endif
 			" WHERE `owner_id` = %u ;", 
-			val.illYang,
+			static_cast<long long>(val.illYang),
 #ifdef __ENABLE_CHEQUE_SYSTEM__
 			val.iCheque,
 #endif
@@ -1494,7 +1495,7 @@ namespace offlineshop
 #ifdef __ENABLE_CHEQUE_SYSTEM__
 			", `cheque` = `cheque`+%d "
 #endif
-			" WHERE `owner_id` = %u ;", val.illYang,
+			" WHERE `owner_id` = %u ;", static_cast<long long>(val.illYang),
 #ifdef __ENABLE_CHEQUE_SYSTEM__
 			val.iCheque,
 #endif
@@ -1659,7 +1660,7 @@ namespace offlineshop
 			", expiration "
 
 			") VALUES( %u, %u, '%s', %u, %u ,%lld ",
-			auction.dwOwnerID, auction.dwDuration, szEscapeName, auction.item.dwVnum, auction.item.dwCount, auction.init_price.illYang
+			auction.dwOwnerID, auction.dwDuration, szEscapeName, auction.item.dwVnum, auction.item.dwCount, static_cast<long long>(auction.init_price.illYang)
 
 		);
 
@@ -1670,7 +1671,7 @@ namespace offlineshop
 
 		for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; i++)
 			len += snprintf(szQuery + len, sizeof(szQuery) - len,
-				",%u , %d ", auction.item.aAttr[i].bType, auction.item.aAttr[i].sValue);
+				",%u , %.3f ", auction.item.aAttr[i].bType, auction.item.aAttr[i].sValue);
 		
 #ifdef __ENABLE_CHANGELOOK_SYSTEM__
 		len += snprintf(szQuery + len, sizeof(szQuery)-len, " , %u ",auction.item.dwTransmutation);

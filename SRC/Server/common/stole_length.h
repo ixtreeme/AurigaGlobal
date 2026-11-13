@@ -11,7 +11,7 @@ enum stoleInfoList {
 	STOLA_COMBINE_GRADE_3 = 40,
 };
 
-const int32_t stoleInfoTable[6][17] =
+const double stoleInfoTable[6][17] =
 {
 	{
 		APPLY_ATTBONUS_MONSTER,		// attr1: type

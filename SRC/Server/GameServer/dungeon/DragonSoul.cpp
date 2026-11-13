@@ -227,11 +227,11 @@ bool DSManager::PrepareAttributes(entt::entity item, ecs::ItemAttributes& result
 	auto convert = [weight](const SApply& apply, TPlayerItemAttribute& attribute) {
 		if (apply.apply_type <= APPLY_NONE || apply.apply_type >= MAX_APPLY_NUM || apply.apply_type > UINT8_MAX)
 			return false;
-		// Preserve the original rounding rule, but never narrow NaN/overflow.
-		const float value = std::ceil(static_cast<float>(apply.apply_value) * weight - 0.01f);
+		// Keep fractional bonuses and validate before storing.
+		const double value = apply.apply_value * static_cast<double>(weight);
 		if (!std::isfinite(value) || value < INT16_MIN || value > INT16_MAX)
 			return false;
-		attribute = {static_cast<uint8_t>(apply.apply_type), static_cast<int16_t>(value)};
+		attribute = {static_cast<uint8_t>(apply.apply_type), value};
 		return true;
 	};
 	ecs::ItemAttributes prepared = refresh ? *current : ecs::ItemAttributes{};

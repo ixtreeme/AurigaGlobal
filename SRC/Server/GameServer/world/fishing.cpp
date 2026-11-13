@@ -259,7 +259,7 @@ int DetermineFish(entt::entity ch) {
 		return 0;
 
 	// ADD_PREMIUM
-	if (ecs::PlayerRuntime::GetPremiumRemainSeconds(ch, PREMIUM_FISH_MIND) > 0 || ItemSystem::IsEquipUniqueGroup(ch, UNIQUE_GROUP_FISH_MIND) || ecs::PointSystem::Get(ch, POINT_FISHING_RARE) > 0)
+	if (ecs::PlayerRuntime::GetPremiumRemainSeconds(ch, PREMIUM_FISH_MIND) > 0 || ItemSystem::IsEquipUniqueGroup(ch, UNIQUE_GROUP_FISH_MIND) || ecs::PointSystem::GetPrecise(ch, POINT_FISHING_RARE) > 0)
 	{
 		if (quest::CQuestManager::instance().GetEventFlag("manwoo") != 0)
 			prob_idx = 3;
@@ -629,7 +629,7 @@ void Simulation(int level, int count, int prob_idx, entt::entity ch)
 	}
 
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 98, "%d#%d", fished.size(), total_count);
+	ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 98, "%zu#%d", fished.size(), total_count);
 #endif
 }
 

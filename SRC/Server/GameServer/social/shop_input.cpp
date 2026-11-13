@@ -332,7 +332,7 @@ int CInputMain::MyShop(entt::entity character, const char * c_pData, size_t uiBy
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 226,
 		"%lld"
 
-		, GOLD_MAX);
+		, static_cast<long long>(GOLD_MAX));
 #endif
 		return (iExtraLen);
 	}

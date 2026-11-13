@@ -33,7 +33,7 @@ int32_t GetRuneAttributeType(entt::entity item, int index)
     return aApplyRuneInfo[(GetItemSubType(item) - RUNE_SLOT1) * RUNE_ATTR_EACH + index][0];
 }
 
-int32_t GetRuneAttributeValue(entt::entity item, int index, int32_t remainingTime)
+double GetRuneAttributeValue(entt::entity item, int index, int32_t remainingTime)
 {
     if (!IsRuneItem(item) || index < 0 || index >= RUNE_ATTR_EACH) return 0;
     const int onePercent = GetItemValue(item, 0) / 100;
@@ -58,9 +58,10 @@ bool InitializeRuneItem(entt::entity item)
     const int32_t time = g_registry.get<ecs::ItemSockets>(item).sockets[0];
     for (int index = 0; index < RUNE_ATTR_EACH; ++index)
     {
-        const auto type = GetRuneAttributeType(item, index), value = GetRuneAttributeValue(item, index, time);
+        const auto type = GetRuneAttributeType(item, index);
+        const double value = GetRuneAttributeValue(item, index, time);
         if (type > 0 && type <= UINT8_MAX && value > 0 && value <= INT16_MAX)
-            g_registry.get<ecs::ItemAttributes>(item).attrs[index] = {static_cast<uint8_t>(type), static_cast<int16_t>(value)};
+            g_registry.get<ecs::ItemAttributes>(item).attrs[index] = {static_cast<uint8_t>(type), value};
     }
     return true;
 }
@@ -293,7 +294,7 @@ bool ChangeRuneAttributesImpl(const RuneContext& context, int32_t time)
     for (int index = 0; index < RUNE_ATTR_EACH; ++index) {
         const auto value = GetRuneAttributeValue(item, index, time);
         if (value < 0 || value > INT16_MAX) return false;
-        next[index].sValue = static_cast<int16_t>(value);
+        next[index].sValue = value;
         changed |= next[index].sValue != old[index].sValue;
     }
     if (!changed) return true;
@@ -509,10 +510,10 @@ void Commit(entt::entity item, const Attributes& attrs, const char* action)
             LogAttribute(item, i, attrs[i], action);
 }
 
-bool AddExplicit(entt::entity item, Attributes& attrs, uint8_t type, int16_t value)
+bool AddExplicit(entt::entity item, Attributes& attrs, uint8_t type, double value)
 {
     const int slot = rules::FindEmpty(attrs, 0, ITEM_ATTRIBUTE_NORM_NUM, LockedSlot(item));
-    if (slot < 0 || type == 0 || value == 0 || HasNormal(item, attrs, type))
+    if (slot < 0 || type == 0 || !std::isfinite(value) || std::abs(value) >= 10000000000.0 || value == 0 || HasNormal(item, attrs, type))
         return false;
     attrs[slot] = {type, value};
     return true;
@@ -540,10 +541,10 @@ bool RollNormal(entt::entity item, Attributes& attrs, const int* probabilities)
     if (GetItemType(item) == ITEM_COSTUME)
         valueIndex += ITEM_ATTRIBUTE_MAX_LEVEL;
 #endif
-    if (valueIndex < 0 || static_cast<size_t>(valueIndex) >= std::size(row.lValues))
+    if (valueIndex < 0 || static_cast<size_t>(valueIndex) >= (sizeof(row.lValues) / sizeof(row.lValues[0])))
         return false;
     return AddExplicit(item, attrs, static_cast<uint8_t>(selected->first),
-        static_cast<int16_t>(row.lValues[valueIndex]));
+        row.lValues[valueIndex]);
 }
 
 bool RollRare(entt::entity item, Attributes& attrs)
@@ -561,7 +562,7 @@ bool RollRare(entt::entity item, Attributes& attrs)
         return false;
     const auto& row = selected->second;
     const int level = std::min(5, static_cast<int>(row.bMaxLevelBySet[set]));
-    attrs[slot] = {static_cast<uint8_t>(row.dwApplyIndex), static_cast<int16_t>(row.lValues[level - 1])};
+    attrs[slot] = {static_cast<uint8_t>(row.dwApplyIndex), row.lValues[level - 1]};
     return true;
 }
 
@@ -586,7 +587,7 @@ bool RollRare8(entt::entity item, Attributes& attrs)
     const int level = std::min(5, static_cast<int>(row.bMaxLevelBySet[set]));
     if (level <= 0)
         return false;
-    attrs[slot] = {static_cast<uint8_t>(row.dwApplyIndex), static_cast<int16_t>(row.lValues[level - 1])};
+    attrs[slot] = {static_cast<uint8_t>(row.dwApplyIndex), row.lValues[level - 1]};
     return true;
 }
 
@@ -685,7 +686,7 @@ bool HasItemAttribute(entt::entity item, uint8_t type)
     return component && HasNormal(item, component->attrs, type, false);
 }
 
-bool AddItemAttribute(entt::entity item, uint8_t type, int16_t value)
+bool AddItemAttribute(entt::entity item, uint8_t type, double value)
 {
     const auto* component = AttributesOf(item);
     if (!component)
@@ -697,10 +698,10 @@ bool AddItemAttribute(entt::entity item, uint8_t type, int16_t value)
     return true;
 }
 
-bool SetItemForceAttributeEcs(entt::entity item, int index, uint8_t type, int16_t value)
+bool SetItemForceAttributeEcs(entt::entity item, int index, uint8_t type, double value)
 {
     const auto* component = AttributesOf(item);
-    if (!component || index < 0 || index >= ITEM_ATTRIBUTE_MAX_NUM)
+    if (!component || index < 0 || index >= ITEM_ATTRIBUTE_MAX_NUM || !std::isfinite(value) || std::abs(value) >= 10000000000.0)
         return false;
     auto attrs = component->attrs;
     attrs[index] = {type, value};
@@ -1329,11 +1330,11 @@ bool EnchantStoleWithItemCost(entt::entity character, entt::entity item, entt::e
     auto attrs = AttributesOf(item)->attrs;
     for (int i = 0; i < MAX_ATTR; ++i) {
         const int type = stoleInfoTable[i][0];
-        const int value = stoleInfoTable[i][number(lastVariant - MAX_VAR_ATTR + 1, lastVariant)];
+        const double value = stoleInfoTable[i][number(lastVariant - MAX_VAR_ATTR + 1, lastVariant)];
         if (type <= 0 || type >= MAX_APPLY_NUM || type > UINT8_MAX ||
             value < INT16_MIN || value > INT16_MAX)
             return false;
-        attrs[i] = {static_cast<uint8_t>(type), static_cast<int16_t>(value)};
+        attrs[i] = {static_cast<uint8_t>(type), value};
     }
     if (!ConsumeItemEcs(material))
         return false;
@@ -1470,7 +1471,7 @@ CostumeAttributeResult UseCostumeAttributeItem(entt::entity character,
                 return Result::InvalidMaterial;
             if (rules::Has(attrs, ITEM_ATTRIBUTE_RARE_START, ITEM_ATTRIBUTE_RARE_END, type))
                 return Result::DuplicateAttribute;
-            attrs[slot] = {static_cast<uint8_t>(type), static_cast<int16_t>(value)};
+            attrs[slot] = {static_cast<uint8_t>(type), static_cast<double>(value)};
             break;
         }
 

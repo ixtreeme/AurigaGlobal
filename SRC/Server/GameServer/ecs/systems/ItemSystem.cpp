@@ -1964,7 +1964,7 @@ int GetItemAttributeType(entt::entity item, int index)
     return 0;
 }
 
-int GetItemAttributeValue(entt::entity item, int index)
+double GetItemAttributeValue(entt::entity item, int index)
 {
     if (index < 0 || index >= ITEM_ATTRIBUTE_MAX_NUM)
         return 0;
@@ -2004,7 +2004,7 @@ bool SetItemSocketEcs(entt::entity item, int index, uint32_t value)
     return SetItemSocket(item, index, value);
 }
 
-bool SetItemAttribute(entt::entity item, int index, int type, int value)
+bool SetItemAttribute(entt::entity item, int index, int type, double value)
 {
     if (item == entt::null || !g_registry.valid(item) ||
         index < 0 || index >= ITEM_ATTRIBUTE_MAX_NUM)
@@ -2012,7 +2012,7 @@ bool SetItemAttribute(entt::entity item, int index, int type, int value)
 
     auto& attrs = g_registry.get_or_emplace<ecs::ItemAttributes>(item);
     attrs.attrs[index].bType = static_cast<uint8_t>(type);
-    attrs.attrs[index].sValue = static_cast<short>(value);
+    attrs.attrs[index].sValue = value;
 
     SaveItem(item);
 
@@ -2500,7 +2500,7 @@ uint8_t GetItemApplyType(entt::entity item, uint32_t idx)
     return proto ? proto->aApplies[idx].bType : 0;
 }
 
-int32_t GetItemApplyValue(entt::entity item, uint32_t idx)
+double GetItemApplyValue(entt::entity item, uint32_t idx)
 {
     const TItemTable* proto = GetItemProto(item);
     return proto ? proto->aApplies[idx].lValue : 0;

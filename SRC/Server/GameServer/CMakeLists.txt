@@ -90,6 +90,10 @@ add_executable(ItemAttributeTests EXCLUDE_FROM_ALL
     item/attr_transfer.cpp
 )
 target_link_libraries(ItemAttributeTests PRIVATE SERVER EnTT::EnTT)
+if(NOT MSVC)
+    target_compile_options(ItemAttributeTests PRIVATE -ffunction-sections -fdata-sections)
+    target_link_options(ItemAttributeTests PRIVATE -Wl,--gc-sections)
+endif()
 add_test(NAME item_attributes COMMAND ItemAttributeTests)
 
 # The switchbot job lifecycle: player-id index, warp freeze, timer, P2P
@@ -557,6 +561,7 @@ add_test(NAME entity_network_dispatch COMMAND EntityNetworkDispatchTests)
 
 add_executable(PointCalculationTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/PointCalculationTests.cpp
+    ecs/systems/BonusPrecisionSystem.cpp
     ecs/systems/PointSystem.cpp
     ecs/systems/StatSystem.cpp
 )
@@ -790,3 +795,18 @@ add_executable(ICCLichKingRuntimeTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/test
 add_test(NAME icc_lich_king_runtime COMMAND ICCLichKingRuntimeTests)
 add_dependencies(ServerTests ICCLichKingTests ICCLichKingRuntimeTests)
 set_tests_properties(icc_lich_king_domain icc_lich_king_runtime PROPERTIES LABELS server TIMEOUT 60)
+
+# Exact decimal primitive; no dependency on the game runtime or database.
+add_executable(BonusValueTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/BonusValueTests.cpp)
+add_test(NAME bonus_value_precision COMMAND BonusValueTests)
+set_tests_properties(bonus_value_precision PROPERTIES LABELS server TIMEOUT 60)
+add_dependencies(ServerTests BonusValueTests)
+
+add_executable(BonusPrecisionIntegrationTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/BonusPrecisionIntegrationTests.cpp
+    ecs/systems/BonusPrecisionSystem.cpp)
+target_link_libraries(BonusPrecisionIntegrationTests PRIVATE SERVER EnTT::EnTT)
+add_test(NAME bonus_precision_integration COMMAND BonusPrecisionIntegrationTests)
+set_tests_properties(bonus_precision_integration PROPERTIES LABELS server TIMEOUT 60)
+add_dependencies(ServerTests BonusPrecisionIntegrationTests)

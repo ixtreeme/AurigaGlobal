@@ -1104,144 +1104,144 @@ ACMD(do_state)
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "LEV %d", (ecs::PointSystem::GetLevel(tch)));
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "HP %llu/%llu", static_cast<unsigned long long>(ecs::PlayerRuntime::GetHP(tch)), static_cast<unsigned long long>(ecs::PointSystem::GetMaxHP(tch)));
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "SP %lld/%llu", static_cast<long long>(ecs::PointSystem::Get(tch, POINT_SP)), static_cast<unsigned long long>(ecs::PointSystem::GetMaxSP(tch)));
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "ATT %d MAGIC_ATT %d SPD %d CRIT %d%% PENE %d%% ATT_BONUS %d%%",
-			ecs::PointSystem::Get(tch, POINT_ATT_GRADE),
-			ecs::PointSystem::Get(tch, POINT_MAGIC_ATT_GRADE),
-			ecs::PointSystem::Get(tch, POINT_ATT_SPEED),
-			ecs::PointSystem::Get(tch, POINT_CRITICAL_PCT),
-			ecs::PointSystem::Get(tch, POINT_PENETRATE_PCT),
-			ecs::PointSystem::Get(tch, POINT_ATT_BONUS));
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "DEF %d MAGIC_DEF %d BLOCK %d%% DODGE %d%% DEF_BONUS %d%%",
-			ecs::PointSystem::Get(tch, POINT_DEF_GRADE),
-			ecs::PointSystem::Get(tch, POINT_MAGIC_DEF_GRADE),
-			ecs::PointSystem::Get(tch, POINT_BLOCK),
-			ecs::PointSystem::Get(tch, POINT_DODGE),
-			ecs::PointSystem::Get(tch, POINT_DEF_BONUS));
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "ATT %.3f MAGIC_ATT %.3f SPD %.3f CRIT %.3f%% PENE %.3f%% ATT_BONUS %.3f%%",
+			ecs::PointSystem::GetPrecise(tch, POINT_ATT_GRADE),
+			ecs::PointSystem::GetPrecise(tch, POINT_MAGIC_ATT_GRADE),
+			ecs::PointSystem::GetPrecise(tch, POINT_ATT_SPEED),
+			ecs::PointSystem::GetPrecise(tch, POINT_CRITICAL_PCT),
+			ecs::PointSystem::GetPrecise(tch, POINT_PENETRATE_PCT),
+			ecs::PointSystem::GetPrecise(tch, POINT_ATT_BONUS));
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "DEF %.3f MAGIC_DEF %.3f BLOCK %.3f%% DODGE %.3f%% DEF_BONUS %.3f%%",
+			ecs::PointSystem::GetPrecise(tch, POINT_DEF_GRADE),
+			ecs::PointSystem::GetPrecise(tch, POINT_MAGIC_DEF_GRADE),
+			ecs::PointSystem::GetPrecise(tch, POINT_BLOCK),
+			ecs::PointSystem::GetPrecise(tch, POINT_DODGE),
+			ecs::PointSystem::GetPrecise(tch, POINT_DEF_BONUS));
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "RESISTANCES:");
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   WARR:%3d%% ASAS:%3d%% SURA:%3d%% SHAM:%3d%%"
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   WARR:%.3f%% ASAS:%.3f%% SURA:%.3f%% SHAM:%.3f%%"
 			,
-			ecs::PointSystem::Get(tch, POINT_RESIST_WARRIOR),
-			ecs::PointSystem::Get(tch, POINT_RESIST_ASSASSIN),
-			ecs::PointSystem::Get(tch, POINT_RESIST_SURA),
-			ecs::PointSystem::Get(tch, POINT_RESIST_SHAMAN)
+			ecs::PointSystem::GetPrecise(tch, POINT_RESIST_WARRIOR),
+			ecs::PointSystem::GetPrecise(tch, POINT_RESIST_ASSASSIN),
+			ecs::PointSystem::GetPrecise(tch, POINT_RESIST_SURA),
+			ecs::PointSystem::GetPrecise(tch, POINT_RESIST_SHAMAN)
 	);
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   SWORD:%3d%% THSWORD:%3d%% DAGGER:%3d%% BELL:%3d%% FAN:%3d%% BOW:%3d%%"
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   SWORD:%.3f%% THSWORD:%.3f%% DAGGER:%.3f%% BELL:%.3f%% FAN:%.3f%% BOW:%.3f%%"
 			,
-			ecs::PointSystem::Get(tch, POINT_RESIST_SWORD),
-			ecs::PointSystem::Get(tch, POINT_RESIST_TWOHAND),
-			ecs::PointSystem::Get(tch, POINT_RESIST_DAGGER),
-			ecs::PointSystem::Get(tch, POINT_RESIST_BELL),
-			ecs::PointSystem::Get(tch, POINT_RESIST_FAN),
-			ecs::PointSystem::Get(tch, POINT_RESIST_BOW)
+			ecs::PointSystem::GetPrecise(tch, POINT_RESIST_SWORD),
+			ecs::PointSystem::GetPrecise(tch, POINT_RESIST_TWOHAND),
+			ecs::PointSystem::GetPrecise(tch, POINT_RESIST_DAGGER),
+			ecs::PointSystem::GetPrecise(tch, POINT_RESIST_BELL),
+			ecs::PointSystem::GetPrecise(tch, POINT_RESIST_FAN),
+			ecs::PointSystem::GetPrecise(tch, POINT_RESIST_BOW)
 	);
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   FIRE:%3d%% ELEC:%3d%% MAGIC:%3d%% WIND:%3d%% CRIT:%3d%% PENE:%3d%%",
-			ecs::PointSystem::Get(tch, POINT_RESIST_FIRE),
-			ecs::PointSystem::Get(tch, POINT_RESIST_ELEC),
-			ecs::PointSystem::Get(tch, POINT_RESIST_MAGIC),
-			ecs::PointSystem::Get(tch, POINT_RESIST_WIND),
-			ecs::PointSystem::Get(tch, POINT_RESIST_CRITICAL),
-			ecs::PointSystem::Get(tch, POINT_RESIST_PENETRATE));
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   ICE:%3d%% EARTH:%3d%% DARK:%3d%%",
-			ecs::PointSystem::Get(tch, POINT_RESIST_ICE),
-			ecs::PointSystem::Get(tch, POINT_RESIST_EARTH),
-			ecs::PointSystem::Get(tch, POINT_RESIST_DARK));
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   FIRE:%.3f%% ELEC:%.3f%% MAGIC:%.3f%% WIND:%.3f%% CRIT:%.3f%% PENE:%.3f%%",
+			ecs::PointSystem::GetPrecise(tch, POINT_RESIST_FIRE),
+			ecs::PointSystem::GetPrecise(tch, POINT_RESIST_ELEC),
+			ecs::PointSystem::GetPrecise(tch, POINT_RESIST_MAGIC),
+			ecs::PointSystem::GetPrecise(tch, POINT_RESIST_WIND),
+			ecs::PointSystem::GetPrecise(tch, POINT_RESIST_CRITICAL),
+			ecs::PointSystem::GetPrecise(tch, POINT_RESIST_PENETRATE));
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   ICE:%.3f%% EARTH:%.3f%% DARK:%.3f%%",
+			ecs::PointSystem::GetPrecise(tch, POINT_RESIST_ICE),
+			ecs::PointSystem::GetPrecise(tch, POINT_RESIST_EARTH),
+			ecs::PointSystem::GetPrecise(tch, POINT_RESIST_DARK));
 
 
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "IRR_SPA:%3d%% IRR_SPAD:%3d%% IRR_PUG:%3d%% IRR_FRE:%3d%% IRR_VEN:%3d%% IRR_CAMP:%3d%%"
-									"RES_MEZ:%3d%% DEF_TAL:%3d%% FORT_DES:%3d%% FORT_INS:%3d%% FORT_ZOD:%3d%% ",
-			ecs::PointSystem::Get(tch, POINT_ATTBONUS_IRR_SPADA),
-			ecs::PointSystem::Get(tch, POINT_ATTBONUS_IRR_SPADONE),
-			ecs::PointSystem::Get(tch, POINT_ATTBONUS_IRR_PUGNALE),
-			ecs::PointSystem::Get(tch, POINT_ATTBONUS_IRR_FRECCIA),
-			ecs::PointSystem::Get(tch, POINT_ATTBONUS_IRR_VENTAGLIO),
-			ecs::PointSystem::Get(tch, POINT_ATTBONUS_IRR_CAMPANA),
-			ecs::PointSystem::Get(tch, POINT_RESIST_MEZZIUOMINI),
-			ecs::PointSystem::Get(tch, POINT_DEF_TALISMAN),
-			ecs::PointSystem::Get(tch, POINT_ATTBONUS_FORT_ZODIAC));
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "IRR_SPA:%.3f%% IRR_SPAD:%.3f%% IRR_PUG:%.3f%% IRR_FRE:%.3f%% IRR_VEN:%.3f%% IRR_CAMP:%.3f%% "
+									"RES_MEZ:%.3f%% DEF_TAL:%.3f%% FORT_ZOD:%.3f%% ",
+			ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_IRR_SPADA),
+			ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_IRR_SPADONE),
+			ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_IRR_PUGNALE),
+			ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_IRR_FRECCIA),
+			ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_IRR_VENTAGLIO),
+			ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_IRR_CAMPANA),
+			ecs::PointSystem::GetPrecise(tch, POINT_RESIST_MEZZIUOMINI),
+			ecs::PointSystem::GetPrecise(tch, POINT_DEF_TALISMAN),
+			ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_FORT_ZODIAC));
 #endif
 
 
 #ifdef ENABLE_MAGIC_REDUCTION_SYSTEM
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   MAGICREDUCT:%3d%%", ecs::PointSystem::Get(tch, POINT_RESIST_MAGIC_REDUCTION));
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   MAGICREDUCT:%.3f%%", ecs::PointSystem::GetPrecise(tch, POINT_RESIST_MAGIC_REDUCTION));
 #endif
 
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "MALL:");
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   ATT:%3d%% DEF:%3d%% EXP:%3d%% ITEMx%d GOLDx%d",
-			ecs::PointSystem::Get(tch, POINT_MALL_ATTBONUS),
-			ecs::PointSystem::Get(tch, POINT_MALL_DEFBONUS),
-			ecs::PointSystem::Get(tch, POINT_MALL_EXPBONUS),
-			ecs::PointSystem::Get(tch, POINT_MALL_ITEMBONUS) / 10,
-			ecs::PointSystem::Get(tch, POINT_MALL_GOLDBONUS) / 10);
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   ATT:%.3f%% DEF:%.3f%% EXP:%.3f%% ITEMx%.3f GOLDx%.3f",
+			ecs::PointSystem::GetPrecise(tch, POINT_MALL_ATTBONUS),
+			ecs::PointSystem::GetPrecise(tch, POINT_MALL_DEFBONUS),
+			ecs::PointSystem::GetPrecise(tch, POINT_MALL_EXPBONUS),
+			ecs::PointSystem::GetPrecise(tch, POINT_MALL_ITEMBONUS) / 10,
+			ecs::PointSystem::GetPrecise(tch, POINT_MALL_GOLDBONUS) / 10);
 
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "BONUS:");
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   SKILL:%3d%% NORMAL:%3d%% SKILL_DEF:%3d%% NORMAL_DEF:%3d%%",
-			ecs::PointSystem::Get(tch, POINT_SKILL_DAMAGE_BONUS),
-			ecs::PointSystem::Get(tch, POINT_NORMAL_HIT_DAMAGE_BONUS),
-			ecs::PointSystem::Get(tch, POINT_SKILL_DEFEND_BONUS),
-			ecs::PointSystem::Get(tch, POINT_NORMAL_HIT_DEFEND_BONUS));
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   SKILL:%.3f%% NORMAL:%.3f%% SKILL_DEF:%.3f%% NORMAL_DEF:%.3f%%",
+			ecs::PointSystem::GetPrecise(tch, POINT_SKILL_DAMAGE_BONUS),
+			ecs::PointSystem::GetPrecise(tch, POINT_NORMAL_HIT_DAMAGE_BONUS),
+			ecs::PointSystem::GetPrecise(tch, POINT_SKILL_DEFEND_BONUS),
+			ecs::PointSystem::GetPrecise(tch, POINT_NORMAL_HIT_DEFEND_BONUS));
 
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   HUMAN:%3d%% ANIMAL:%3d%% ORC:%3d%% MILGYO:%3d%% UNDEAD:%3d%%",
-			ecs::PointSystem::Get(tch, POINT_ATTBONUS_HUMAN),
-			ecs::PointSystem::Get(tch, POINT_ATTBONUS_ANIMAL),
-			ecs::PointSystem::Get(tch, POINT_ATTBONUS_ORC),
-			ecs::PointSystem::Get(tch, POINT_ATTBONUS_MILGYO),
-			ecs::PointSystem::Get(tch, POINT_ATTBONUS_UNDEAD));
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   HUMAN:%.3f%% ANIMAL:%.3f%% ORC:%.3f%% MILGYO:%.3f%% UNDEAD:%.3f%%",
+			ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_HUMAN),
+			ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_ANIMAL),
+			ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_ORC),
+			ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_MILGYO),
+			ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_UNDEAD));
 
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   DEVIL:%3d%% INSECT:%3d%% FIRE:%3d%% ICE:%3d%% DESERT:%3d%%",
-			ecs::PointSystem::Get(tch, POINT_ATTBONUS_DEVIL),
-			ecs::PointSystem::Get(tch, POINT_ATTBONUS_INSECT),
-			ecs::PointSystem::Get(tch, POINT_ATTBONUS_FIRE),
-			ecs::PointSystem::Get(tch, POINT_ATTBONUS_ICE),
-			ecs::PointSystem::Get(tch, POINT_ATTBONUS_DESERT));
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   DEVIL:%.3f%% INSECT:%.3f%% FIRE:%.3f%% ICE:%.3f%% DESERT:%.3f%%",
+			ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_DEVIL),
+			ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_INSECT),
+			ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_FIRE),
+			ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_ICE),
+			ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_DESERT));
 
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   TREE:%3d%% MONSTER:%3d%%"
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   TREE:%.3f%% MONSTER:%.3f%%"
 #ifdef ENABLE_STRONG_METIN
-			"METIN:%3d%%"
+			"METIN:%.3f%%"
 #endif
 
 #ifdef ENABLE_STRONG_BOSS
-			"BOSS:%3d%%"
+			"BOSS:%.3f%%"
 #endif
 
 #ifdef ENABLE_MEDI_PVM
-			"Medi_Pvm:%3d%%"
+			"Medi_Pvm:%.3f%%"
 #endif
 
 
 #ifdef ENABLE_RESIST_MONSTER
-			"MONSTER_RES:%3d%%"
+			"MONSTER_RES:%.3f%%"
 #endif
 			,
-			ecs::PointSystem::Get(tch, POINT_ATTBONUS_TREE),
-			ecs::PointSystem::Get(tch, POINT_ATTBONUS_MONSTER)
+			ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_TREE),
+			ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_MONSTER)
 #ifdef ENABLE_STRONG_METIN
-			,ecs::PointSystem::Get(tch, POINT_ATTBONUS_METIN)
+			,ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_METIN)
 #endif
 
 #ifdef ENABLE_STRONG_BOSS
-			,ecs::PointSystem::Get(tch, POINT_ATTBONUS_BOSS)
+			,ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_BOSS)
 #endif
 #ifdef ENABLE_MEDI_PVM
-			,ecs::PointSystem::Get(tch, POINT_ATTBONUS_MEDI_PVM)
+			,ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_MEDI_PVM)
 #endif
 #ifdef ENABLE_RESIST_MONSTER
-			,ecs::PointSystem::Get(tch, POINT_RESIST_MONSTER)
+			,ecs::PointSystem::GetPrecise(tch, POINT_RESIST_MONSTER)
 #endif
 			);
 
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   WARR:%3d%% ASAS:%3d%% SURA:%3d%% SHAM:%3d%%"
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   WARR:%.3f%% ASAS:%.3f%% SURA:%.3f%% SHAM:%.3f%%"
 			,
-			ecs::PointSystem::Get(tch, POINT_ATTBONUS_WARRIOR),
-			ecs::PointSystem::Get(tch, POINT_ATTBONUS_ASSASSIN),
-			ecs::PointSystem::Get(tch, POINT_ATTBONUS_SURA),
-			ecs::PointSystem::Get(tch, POINT_ATTBONUS_SHAMAN)
+			ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_WARRIOR),
+			ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_ASSASSIN),
+			ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_SURA),
+			ecs::PointSystem::GetPrecise(tch, POINT_ATTBONUS_SHAMAN)
 	);
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "IMMUNE:");
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   STUN:%d SLOW:%d FALL:%d",
-		ecs::PointSystem::Get(tch, POINT_IMMUNE_STUN),
-		ecs::PointSystem::Get(tch, POINT_IMMUNE_SLOW),
-		ecs::PointSystem::Get(tch, POINT_IMMUNE_FALL));
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   STUN:%.3f SLOW:%.3f FALL:%.3f",
+		ecs::PointSystem::GetPrecise(tch, POINT_IMMUNE_STUN),
+		ecs::PointSystem::GetPrecise(tch, POINT_IMMUNE_SLOW),
+		ecs::PointSystem::GetPrecise(tch, POINT_IMMUNE_FALL));
 
 	for (int i = 0; i < MAX_PRIV_NUM; ++i) {
 		if (CPrivManager::instance().GetPriv(tch, i))
@@ -1773,7 +1773,7 @@ ACMD(do_set)
 	{
 		int64_t	amount = 0;
 		str_to_number(amount, arg3);
-		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s's %s set to [%lld]", ecs::PlayerRuntime::GetName(tch).data(), set_fields[i].cmd, amount);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s's %s set to [%lld]", ecs::PlayerRuntime::GetName(tch).data(), set_fields[i].cmd, static_cast<long long>(amount));
 
 	}
 }
@@ -3393,7 +3393,7 @@ ACMD(do_affect_remove)
 				continue;
 			const CAffect* pkAff = &slot.value;
 
-			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%4d %5d %5d %8d %u",
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%4d %5d %.3f %8d %u",
 					pkAff->dwType, pkAff->bApplyOn, pkAff->lApplyValue, pkAff->lDuration, pkAff->dwFlag);
 		}
 		return;
@@ -3635,30 +3635,30 @@ ACMD(do_stat_plus_amount)
 	switch (subcmd)
 	{
 		case POINT_HT :
-			if (nPoint + ecs::PointSystem::Get(character, POINT_HT) > 90)
+			if (nPoint + ecs::PointSystem::GetPrecise(character, POINT_HT) > 90)
 			{
-				nPoint = 90 - ecs::PointSystem::Get(character, POINT_HT);
+				nPoint = 90 - ecs::PointSystem::GetPrecise(character, POINT_HT);
 			}
 			break;
 
 		case POINT_IQ : //
-			if (nPoint + ecs::PointSystem::Get(character, POINT_IQ) > 90)
+			if (nPoint + ecs::PointSystem::GetPrecise(character, POINT_IQ) > 90)
 			{
-				nPoint = 90 - ecs::PointSystem::Get(character, POINT_IQ);
+				nPoint = 90 - ecs::PointSystem::GetPrecise(character, POINT_IQ);
 			}
 			break;
 
 		case POINT_ST :
-			if (nPoint + ecs::PointSystem::Get(character, POINT_ST) > 90)
+			if (nPoint + ecs::PointSystem::GetPrecise(character, POINT_ST) > 90)
 			{
-				nPoint = 90 - ecs::PointSystem::Get(character, POINT_ST);
+				nPoint = 90 - ecs::PointSystem::GetPrecise(character, POINT_ST);
 			}
 			break;
 
 		case POINT_DX :
-			if (nPoint + ecs::PointSystem::Get(character, POINT_DX) > 90)
+			if (nPoint + ecs::PointSystem::GetPrecise(character, POINT_DX) > 90)
 			{
-				nPoint = 90 - ecs::PointSystem::Get(character, POINT_DX);
+				nPoint = 90 - ecs::PointSystem::GetPrecise(character, POINT_DX);
 			}
 			break;
 

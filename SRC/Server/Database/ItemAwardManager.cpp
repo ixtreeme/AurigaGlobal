@@ -108,7 +108,7 @@ void ItemAwardManager::Load(SQLMsg * pMsg)
 		for (size_t j = 0; j < ITEM_ATTRIBUTE_MAX_NUM; j++)
 		{
 			str_to_number(kData->aAttr[j].bType, row[col++]);
-			str_to_number(kData->aAttr[j].sValue, row[col++]);
+			kData->aAttr[j].sValue = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, row[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
 		}
 #endif
 		str_to_number(kData->bMall, row[col++]);
@@ -327,7 +327,7 @@ void ItemAwardManager::CheckItemAddonType(TItemAward & rkItemAward, const TItemT
 	for (size_t i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 	{
 		const uint8_t bType = rkItemAward.aAttr[i].bType;
-		const int16_t sValue = rkItemAward.aAttr[i].sValue;
+		const double sValue = rkItemAward.aAttr[i].sValue;
 
 		if ((bType == APPLY_SKILL_DAMAGE_BONUS || bType == APPLY_NORMAL_HIT_DAMAGE_BONUS) && sValue)
 		{

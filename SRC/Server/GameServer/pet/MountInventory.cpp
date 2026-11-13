@@ -188,7 +188,7 @@ void SaveItem(const Inventory& inventory, uint32_t pos, entt::entity itemEntity)
 
     for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
         len += static_cast<size_t>(snprintf(query + len, sizeof(query) - len,
-            ", %d, %d", attrs[i].bType, attrs[i].sValue));
+            ", %d, %.3f", attrs[i].bType, attrs[i].sValue));
 
     snprintf(query + len, sizeof(query) - len, ")");
 

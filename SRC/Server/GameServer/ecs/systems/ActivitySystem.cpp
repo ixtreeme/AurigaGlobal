@@ -203,7 +203,7 @@ void StartFishing(entt::entity fisher, uint32_t)
     info->pid = ecs::PlayerRuntime::GetPlayerID(fisher);
     info->vnum = fishingnew::GetFishCatchedVnum(
         100,
-        15 + ecs::PointSystem::Get(fisher, POINT_FISHING_RARE) + ItemSystem::GetItemSocket(rod, 2),
+        15 + ecs::PointSystem::GetPrecise(fisher, POINT_FISHING_RARE) + ItemSystem::GetItemSocket(rod, 2),
         second);
     info->chance = 100;
     info->sec = 1;
@@ -454,7 +454,7 @@ void CatchDecision(entt::entity fisher, uint32_t itemVnum)
             break;
     }
 
-    if (ecs::PointSystem::Get(fisher, POINT_FISHING_RARE) > 0 && chance == 5)
+    if (ecs::PointSystem::GetPrecise(fisher, POINT_FISHING_RARE) > 0 && chance == 5)
         chance += 20;
 
     const uint32_t rodVnum = ItemSystem::GetItemVnum(rod);

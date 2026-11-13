@@ -395,7 +395,7 @@ typedef struct SPacketDGCreateSuccess
 typedef struct TPlayerItemAttribute
 {
 	uint8_t	bType;
-	short	sValue;
+	double	sValue;
 } TPlayerItemAttribute;
 
 typedef struct SPlayerItem
@@ -685,7 +685,7 @@ typedef struct SItemLimit
 typedef struct SItemApply
 {
 	uint8_t	bType;
-	int32_t	lValue;
+	double	lValue;
 } TItemApply;
 
 typedef struct SItemTable : public SEntityTable
@@ -744,9 +744,9 @@ struct TItemAttrTable
 	uint32_t	dwApplyIndex;
 	uint32_t	dwProb;
 #ifdef ENABLE_ATTR_COSTUMES
-	int32_t	lValues[ITEM_ATTRIBUTE_MAX_LEVEL + COSTUME_ATTRIBUTE_MAX_LEVEL];
+	double	lValues[ITEM_ATTRIBUTE_MAX_LEVEL + COSTUME_ATTRIBUTE_MAX_LEVEL];
 #else
-	int32_t	lValues[ITEM_ATTRIBUTE_MAX_LEVEL];
+	double	lValues[ITEM_ATTRIBUTE_MAX_LEVEL];
 #endif
 	uint8_t	bMaxLevelBySet[ATTRIBUTE_SET_MAX_NUM];
 };
@@ -937,7 +937,7 @@ typedef struct TPacketAffectElement
 {
 	uint32_t	dwType;
 	uint8_t	bApplyOn;
-	int32_t	lApplyValue;
+	double	lApplyValue;
 	uint32_t	dwFlag;
 	int32_t	lDuration;
 	int32_t	lSPCost;
@@ -1960,7 +1960,7 @@ struct TSwitchbottAttributeTable
 {
 	uint8_t attribute_set;
 	int apply_num;
-	int32_t max_value;
+	double max_value;
 };
 #endif
 

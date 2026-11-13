@@ -497,7 +497,7 @@ bool SetInvincible(entt::entity e, bool value)
 void IncreaseMobRigHP(entt::entity e, int32_t amount)
 {
     ecs::PointSystem::Change(e, POINT_HP_REGEN,
-        ecs::PointSystem::Get(e, POINT_HP_REGEN) + amount, true);
+        ecs::PointSystem::GetPrecise(e, POINT_HP_REGEN) + amount, true);
 }
 
 void CreateFly(entt::entity attacker, uint8_t flyType, entt::entity victim)
@@ -713,9 +713,9 @@ uint16_t GetMobAttackRange(entt::entity e)
 #ifdef __DEFENSE_WAVE__
         const auto race = ecs::PlayerRuntime::GetRaceNum(e);
         if (race == 3960 || race == 3961 || race == 3962)
-            range += ecs::PointSystem::Get(e, POINT_BOW_DISTANCE) + 4000;
+            range += ecs::PointSystem::GetPrecise(e, POINT_BOW_DISTANCE) + 4000;
 #else
-        range += ecs::PointSystem::Get(e, POINT_BOW_DISTANCE);
+        range += ecs::PointSystem::GetPrecise(e, POINT_BOW_DISTANCE);
 #endif
     }
 #ifdef __DEFENSE_WAVE__
@@ -1147,7 +1147,7 @@ static void AfterLeaderboardSkillMobUpdate(entt::entity attacker, entt::entity v
 	}
 
 	if (g_registry.valid(attacker) && g_registry.valid(victim))
-		ecs::ChatSystem::Send(attacker, CHAT_TYPE_INFO, "Skill damage recorded: %d vs %s", dam, ecs::PlayerRuntime::GetName(victim));
+		ecs::ChatSystem::Send(attacker, CHAT_TYPE_INFO, "Skill damage recorded: %d vs %s", dam, ecs::PlayerRuntime::GetName(victim).data());
 }
 
 bool IsDeathBlow(entt::entity e)
@@ -1532,8 +1532,8 @@ void Stun(entt::entity e)
 
 	LOG_INFO("{}: Stun {}", ecs::PlayerRuntime::GetName(e).data(), static_cast<uint32_t>(e));
 
-	ecs::PointSystem::Change(e, POINT_HP_RECOVERY, -ecs::PointSystem::Get(e, POINT_HP_RECOVERY));
-	ecs::PointSystem::Change(e, POINT_SP_RECOVERY, -ecs::PointSystem::Get(e, POINT_SP_RECOVERY));
+	ecs::PointSystem::Change(e, POINT_HP_RECOVERY, -ecs::PointSystem::GetPrecise(e, POINT_HP_RECOVERY));
+	ecs::PointSystem::Change(e, POINT_SP_RECOVERY, -ecs::PointSystem::GetPrecise(e, POINT_SP_RECOVERY));
 
 	ecs::SocialSystem::CloseMyShop(e);
 
@@ -1596,7 +1596,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 #ifdef NEW_POINT_EXP_DOUBLE_BONUS_RAZOR93
 
 
-	int expDoubleBonus = ecs::PointSystem::Get(toEntity, POINT_EXP_DOUBLE_BONUS);
+	double expDoubleBonus = ecs::PointSystem::GetPrecise(toEntity, POINT_EXP_DOUBLE_BONUS);
 
 	if (expDoubleBonus > 0)
 	{
@@ -1613,8 +1613,8 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 	}
 
 #else
-	if (ecs::PointSystem::Get(toEntity, POINT_EXP_DOUBLE_BONUS))
-		if (number(1, 100) <= ecs::PointSystem::Get(toEntity, POINT_EXP_DOUBLE_BONUS))
+	if (ecs::PointSystem::GetPrecise(toEntity, POINT_EXP_DOUBLE_BONUS))
+		if ((number(1, 100000000) / 1000000.0) <= ecs::PointSystem::GetPrecise(toEntity, POINT_EXP_DOUBLE_BONUS))
 			rateFactor += 30;
 #endif
 	if (ItemSystem::IsEquipUniqueItem(toEntity, UNIQUE_ITEM_DOUBLE_EXP))
@@ -1649,8 +1649,8 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 	if (ItemSystem::IsEquipUniqueGroup(toEntity, UNIQUE_GROUP_RING_OF_EXP))
 		rateFactor += 50;
 	rateFactor += ecs::SocialSystem::GetMarriageBonus(toEntity, UNIQUE_ITEM_MARRIAGE_EXP_BONUS);
-	rateFactor += ecs::PointSystem::Get(toEntity, POINT_RAMADAN_CANDY_BONUS_EXP);
-	rateFactor += ecs::PointSystem::Get(toEntity, POINT_MALL_EXPBONUS);
+	rateFactor += ecs::PointSystem::GetPrecise(toEntity, POINT_RAMADAN_CANDY_BONUS_EXP);
+	rateFactor += ecs::PointSystem::GetPrecise(toEntity, POINT_MALL_EXPBONUS);
 	// useless (never used except for china intoxication) = always 100
 	rateFactor = rateFactor * static_cast<rate_t>(CHARACTER_MANAGER::instance().GetMobExpRate(toEntity)) / 100.0L;
 	// apply calculated rate bonus
@@ -1733,8 +1733,8 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 		if (ecs::PlayerRuntime::GetMapIndex(toEntity) >= 660000 && ecs::PlayerRuntime::GetMapIndex(toEntity) < 670000)
 			iExp += iExp * 20 / 100; // 1.2 (20%)
 
-		if (ecs::PointSystem::Get(toEntity, POINT_EXP_DOUBLE_BONUS))
-			if (number(1, 100) <= ecs::PointSystem::Get(toEntity, POINT_EXP_DOUBLE_BONUS))
+		if (ecs::PointSystem::GetPrecise(toEntity, POINT_EXP_DOUBLE_BONUS))
+			if ((number(1, 100000000) / 1000000.0) <= ecs::PointSystem::GetPrecise(toEntity, POINT_EXP_DOUBLE_BONUS))
 				iExp += iExp * 30 / 100; // 1.3 (30%)
 
 		if (ItemSystem::IsEquipUniqueItem(toEntity, UNIQUE_ITEM_DOUBLE_EXP))
@@ -1780,12 +1780,12 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 		iExp += iExp * ecs::SocialSystem::GetMarriageBonus(toEntity, UNIQUE_ITEM_MARRIAGE_EXP_BONUS) / 100;
 	}
 
-	iExp += (iExp * ecs::PointSystem::Get(toEntity, POINT_RAMADAN_CANDY_BONUS_EXP) / 100);
-	iExp += (iExp * ecs::PointSystem::Get(toEntity, POINT_MALL_EXPBONUS) / 100);
+	iExp += (iExp * ecs::PointSystem::GetPrecise(toEntity, POINT_RAMADAN_CANDY_BONUS_EXP) / 100);
+	iExp += (iExp * ecs::PointSystem::GetPrecise(toEntity, POINT_MALL_EXPBONUS) / 100);
 
 	if (test_server)
 	{
-		LOG_INFO("Bonus Exp : Ramadan Candy: {} MallExp: {}", ecs::PointSystem::Get(toEntity, POINT_RAMADAN_CANDY_BONUS_EXP), ecs::PointSystem::Get(toEntity, POINT_MALL_EXPBONUS));
+		LOG_INFO("Bonus Exp : Ramadan Candy: {} MallExp: {}", ecs::PointSystem::GetPrecise(toEntity, POINT_RAMADAN_CANDY_BONUS_EXP), ecs::PointSystem::GetPrecise(toEntity, POINT_MALL_EXPBONUS));
 	}
 
 	iExp = iExp * CHARACTER_MANAGER::instance().GetMobExpRate(toEntity) / 100;
@@ -2310,10 +2310,10 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 				snprintf(pkCh_Buf, sizeof(pkCh_Buf), "BINARY_Duel_Delete");
 				snprintf(pkKiller_Buf, sizeof(pkKiller_Buf), "BINARY_Duel_Delete");
 
-				ecs::ChatSystem::Send(victim, CHAT_TYPE_COMMAND, pkCh_Buf);
+				ecs::ChatSystem::Send(victim, CHAT_TYPE_COMMAND, "%s", pkCh_Buf);
 				ecs::PlayerRuntime::SetQuestFlag(victim, szTableStaticPvP[i], 0);
 
-				ecs::ChatSystem::Send(killer, CHAT_TYPE_COMMAND, pkKiller_Buf);
+				ecs::ChatSystem::Send(killer, CHAT_TYPE_COMMAND, "%s", pkKiller_Buf);
 				ecs::QuestSystem::SetFlag(killer, szTableStaticPvP[i], 0);
 			}
 		}
@@ -2425,7 +2425,7 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 
 			if (ecs::PlayerRuntime::GetEmpire(victim) != ecs::PlayerRuntime::GetEmpire(killer))
 			{
-				int64_t iEP = std::min(ecs::PointSystem::Get(victim, POINT_EMPIRE_POINT), ecs::PointSystem::Get(killer, POINT_EMPIRE_POINT));
+				double iEP = std::min<double>(ecs::PointSystem::GetPrecise(victim, POINT_EMPIRE_POINT), ecs::PointSystem::GetPrecise(killer, POINT_EMPIRE_POINT));
 
 				ecs::PointSystem::Change(victim, POINT_EMPIRE_POINT, -(iEP / 10));
 				ecs::PointSystem::Change(killer, POINT_EMPIRE_POINT, iEP / 5);
@@ -2885,7 +2885,7 @@ void DistributeSP(entt::entity e, entt::entity killer, int iMethod)
         }
     }
     const auto bonus = std::trunc(static_cast<long double>(base) *
-        ecs::PointSystem::Get(killer, POINT_SP_REGEN) / 100.0L);
+        ecs::PointSystem::GetPrecise(killer, POINT_SP_REGEN) / 100.0L);
     const int32_t amount = static_cast<int32_t>(std::clamp(static_cast<long double>(base) + bonus,
         static_cast<long double>(INT32_MIN), static_cast<long double>(INT32_MAX)));
     if (iMethod == 1) {
@@ -3467,9 +3467,9 @@ static std::string MakeItemLink(entt::entity item, entt::entity killer, entt::en
 	// bonuszok
 	for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i) {
 		uint8_t type = ItemSystem::GetItemAttributeType(item, i);
-		short   val = ItemSystem::GetItemAttributeValue(item, i);
+		double val = ItemSystem::GetItemAttributeValue(item, i);
 		if (type && val)
-			len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
+			len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%.3f", type, val);
 	}
 
 
@@ -3760,16 +3760,16 @@ void Reward(entt::entity e, bool bItemDrop)
 
 		if (!number(0, 9))
 		{
-			if (ecs::PointSystem::Get(attacker, POINT_KILL_HP_RECOVERY))
+			if (ecs::PointSystem::GetPrecise(attacker, POINT_KILL_HP_RECOVERY))
 			{
-				int64_t iHP = static_cast<int64_t>(ecs::PointSystem::GetMaxHP(attacker)) * ecs::PointSystem::Get(attacker, POINT_KILL_HP_RECOVERY) / 100;
+				double iHP = static_cast<int64_t>(ecs::PointSystem::GetMaxHP(attacker)) * ecs::PointSystem::GetPrecise(attacker, POINT_KILL_HP_RECOVERY) / 100;
 				ecs::PointSystem::Change(attacker, POINT_HP, iHP);
 				CombatSystem::CreateFly(e, FLY_HP_SMALL, attacker);
 			}
 
-			if (ecs::PointSystem::Get(attacker, POINT_KILL_SP_RECOVER))
+			if (ecs::PointSystem::GetPrecise(attacker, POINT_KILL_SP_RECOVER))
 			{
-				int64_t iSP = static_cast<int64_t>(ecs::PointSystem::GetMaxSP(attacker)) * ecs::PointSystem::Get(attacker, POINT_KILL_SP_RECOVER) / 100;
+				double iSP = static_cast<int64_t>(ecs::PointSystem::GetMaxSP(attacker)) * ecs::PointSystem::GetPrecise(attacker, POINT_KILL_SP_RECOVER) / 100;
 				ecs::PointSystem::Change(attacker, POINT_SP, iSP);
 				CombatSystem::CreateFly(e, FLY_SP_SMALL, attacker);
 			}
@@ -4421,8 +4421,8 @@ void RewardGold(entt::entity e, entt::entity attacker)
 					return;
 				}
 
-				if (ecs::PointSystem::Get(attacker, POINT_MALL_GOLDBONUS)) {
-					gold += (gold * ecs::PointSystem::Get(attacker, POINT_MALL_GOLDBONUS) / 100);
+				if (ecs::PointSystem::GetPrecise(attacker, POINT_MALL_GOLDBONUS)) {
+					gold += (gold * ecs::PointSystem::GetPrecise(attacker, POINT_MALL_GOLDBONUS) / 100);
 				}
 
 				ecs::PointSystem::Change(attacker, POINT_GOLD, gold, true);
@@ -4500,8 +4500,8 @@ void RewardGold(entt::entity e, entt::entity attacker)
 				iGoldMultipler *= 5;
 
 			//
-			if (ecs::PointSystem::Get(attacker, POINT_GOLD_DOUBLE_BONUS))
-				if (number(1, 100) <= ecs::PointSystem::Get(attacker, POINT_GOLD_DOUBLE_BONUS))
+			if (ecs::PointSystem::GetPrecise(attacker, POINT_GOLD_DOUBLE_BONUS))
+				if ((number(1, 100000000) / 1000000.0) <= ecs::PointSystem::GetPrecise(attacker, POINT_GOLD_DOUBLE_BONUS))
 					iGoldMultipler *= 2;
 
 			//
@@ -4738,7 +4738,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 
 	if (DAMAGE_TYPE_MAGIC == type)
 	{
-		dam = (int)((float)dam * (100 + (ecs::PointSystem::Get(attacker, POINT_MAGIC_ATT_BONUS_PER) + ecs::PointSystem::Get(attacker, POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100.f + 0.5f);
+		dam = (int)((float)dam * (100 + (ecs::PointSystem::GetPrecise(attacker, POINT_MAGIC_ATT_BONUS_PER) + ecs::PointSystem::GetPrecise(attacker, POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100.f + 0.5f);
 	}
 
 	if (type != DAMAGE_TYPE_NORMAL && type != DAMAGE_TYPE_NORMAL_RANGE)
@@ -4829,11 +4829,11 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	{
 		if (attackerIsCharacter)
 		{
-			int iCriticalPct = ecs::PointSystem::Get(attacker, POINT_CRITICAL_PCT);
+			double iCriticalPct = ecs::PointSystem::GetPrecise(attacker, POINT_CRITICAL_PCT);
 
 			if (!ecs::PlayerRuntime::IsPC(victim)) {
 				iCriticalPct += ecs::SocialSystem::GetMarriageBonus(attacker, UNIQUE_ITEM_MARRIAGE_CRITICAL_BONUS);
-				iCriticalPct += ecs::PointSystem::Get(attacker, POINT_PVM_CRITICAL_PCT);
+				iCriticalPct += ecs::PointSystem::GetPrecise(attacker, POINT_PVM_CRITICAL_PCT);
 			}
 
 			if (iCriticalPct)
@@ -4843,9 +4843,9 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 				else
 					iCriticalPct /= 2;
 
-				iCriticalPct -= ecs::PointSystem::Get(victim, POINT_RESIST_CRITICAL);
+				iCriticalPct -= ecs::PointSystem::GetPrecise(victim, POINT_RESIST_CRITICAL);
 
-				if (number(1, 100) <= iCriticalPct)
+				if ((number(1, 100000000) / 1000000.0) <= iCriticalPct)
 				{
 					IsCritical = true;
 					dam *= 2;
@@ -4859,7 +4859,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			}
 
 			//
-			int iPenetratePct = ecs::PointSystem::Get(attacker, POINT_PENETRATE_PCT);
+			double iPenetratePct = ecs::PointSystem::GetPrecise(attacker, POINT_PENETRATE_PCT);
 
 			if (!ecs::PlayerRuntime::IsPC(victim))
 				iPenetratePct += ecs::SocialSystem::GetMarriageBonus(attacker, UNIQUE_ITEM_MARRIAGE_PENETRATE_BONUS);
@@ -4887,17 +4887,17 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 					iPenetratePct /= 2;
 				}
 
-				iPenetratePct -= ecs::PointSystem::Get(victim, POINT_RESIST_PENETRATE);
+				iPenetratePct -= ecs::PointSystem::GetPrecise(victim, POINT_RESIST_PENETRATE);
 
-				if (number(1, 100) <= iPenetratePct)
+				if ((number(1, 100000000) / 1000000.0) <= iPenetratePct)
 				{
 					IsPenetrate = true;
 #ifdef TEXTS_IMPROVEMENT
 					if (test_server) {
-						ecs::ChatSystem::SendNew(victim, CHAT_TYPE_INFO, 257, "%d", ecs::PointSystem::Get(victim, POINT_DEF_GRADE) * (100 + ecs::PointSystem::Get(victim, POINT_DEF_BONUS)) / 100);
+						ecs::ChatSystem::SendNew(victim, CHAT_TYPE_INFO, 257, "%.3f", ecs::PointSystem::GetPrecise(victim, POINT_DEF_GRADE) * (100 + ecs::PointSystem::GetPrecise(victim, POINT_DEF_BONUS)) / 100);
 					}
 #endif
-					dam += ecs::PointSystem::Get(victim, POINT_DEF_GRADE) * (100 + ecs::PointSystem::Get(victim, POINT_DEF_BONUS)) / 100;
+					dam += ecs::PointSystem::GetPrecise(victim, POINT_DEF_GRADE) * (100 + ecs::PointSystem::GetPrecise(victim, POINT_DEF_BONUS)) / 100;
 
 					if (AffectSystem::IsAffectFlag(victim, AFF_MANASHIELD))
 					{
@@ -4916,12 +4916,12 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	{
 		if (type == DAMAGE_TYPE_NORMAL)
 		{
-			if (ecs::PointSystem::Get(victim, POINT_BLOCK) && number(1, 100) <= ecs::PointSystem::Get(victim, POINT_BLOCK))
+			if (ecs::PointSystem::GetPrecise(victim, POINT_BLOCK) && (number(1, 100000000) / 1000000.0) <= ecs::PointSystem::GetPrecise(victim, POINT_BLOCK))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				if (test_server) {
-					ecs::ChatSystem::SendNew(attacker, CHAT_TYPE_INFO, 95, "%s#%d", ecs::PlayerRuntime::GetName(victim), ecs::PointSystem::Get(victim, POINT_BLOCK));
-					ecs::ChatSystem::SendNew(victim, CHAT_TYPE_INFO, 95, "%s#%d", ecs::PlayerRuntime::GetName(attacker).data(), ecs::PointSystem::Get(attacker, POINT_BLOCK));
+					ecs::ChatSystem::SendNew(attacker, CHAT_TYPE_INFO, 95, "%s#%.3f", ecs::PlayerRuntime::GetName(victim).data(), ecs::PointSystem::GetPrecise(victim, POINT_BLOCK));
+					ecs::ChatSystem::SendNew(victim, CHAT_TYPE_INFO, 95, "%s#%.3f", ecs::PlayerRuntime::GetName(attacker).data(), ecs::PointSystem::GetPrecise(attacker, POINT_BLOCK));
 				}
 #endif
 				nexoria::benchmark::RecordMiss(attacker, victim, damageType, "BLOCK");
@@ -4931,12 +4931,12 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		}
 		else if (type == DAMAGE_TYPE_NORMAL_RANGE)
 		{
-			if (ecs::PointSystem::Get(victim, POINT_DODGE) && number(1, 100) <= ecs::PointSystem::Get(victim, POINT_DODGE))
+			if (ecs::PointSystem::GetPrecise(victim, POINT_DODGE) && (number(1, 100000000) / 1000000.0) <= ecs::PointSystem::GetPrecise(victim, POINT_DODGE))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				if (test_server) {
-					ecs::ChatSystem::SendNew(attacker, CHAT_TYPE_INFO, 96, "%s#%d", ecs::PlayerRuntime::GetName(victim), ecs::PointSystem::Get(victim, POINT_DODGE));
-					ecs::ChatSystem::SendNew(victim, CHAT_TYPE_INFO, 96, "%s#%d", ecs::PlayerRuntime::GetName(attacker).data(), ecs::PointSystem::Get(attacker, POINT_DODGE));
+					ecs::ChatSystem::SendNew(attacker, CHAT_TYPE_INFO, 96, "%s#%.3f", ecs::PlayerRuntime::GetName(victim).data(), ecs::PointSystem::GetPrecise(victim, POINT_DODGE));
+					ecs::ChatSystem::SendNew(victim, CHAT_TYPE_INFO, 96, "%s#%.3f", ecs::PlayerRuntime::GetName(attacker).data(), ecs::PointSystem::GetPrecise(attacker, POINT_DODGE));
 				}
 #endif
 				nexoria::benchmark::RecordMiss(attacker, victim, damageType, "DODGE");
@@ -4954,10 +4954,10 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			dam = (int)(dam * (95 - SkillSystem::GetSkillPower(victim, SKILL_TERROR) / 5) / 100);
 
 		//if (AffectSystem::IsAffectFlag(victim, AFF_HOSIN))
-		//	dam = dam * (100 - ecs::PointSystem::Get(victim, POINT_RESIST_NORMAL_DAMAGE)) / 100;
+		//	dam = dam * (100 - ecs::PointSystem::GetPrecise(victim, POINT_RESIST_NORMAL_DAMAGE)) / 100;
 		if (AffectSystem::IsAffectFlag(victim, AFF_HOSIN))
 		{
-			int32_t resist = ecs::PointSystem::Get(victim, POINT_RESIST_NORMAL_DAMAGE);
+			double resist = ecs::PointSystem::GetPrecise(victim, POINT_RESIST_NORMAL_DAMAGE);
 
 			// clamp 0..100
 			if (resist < 0) resist = 0;
@@ -4976,9 +4976,9 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		{
 			if (type == DAMAGE_TYPE_NORMAL)
 			{
-				if (ecs::PointSystem::Get(victim, POINT_REFLECT_MELEE))
+				if (ecs::PointSystem::GetPrecise(victim, POINT_REFLECT_MELEE))
 				{
-					int reflectDamage = dam * ecs::PointSystem::Get(victim, POINT_REFLECT_MELEE) / 100;
+					double reflectDamage = dam * ecs::PointSystem::GetPrecise(victim, POINT_REFLECT_MELEE) / 100;
 
 					if (AffectSystem::IsImmune(attacker, IMMUNE_REFLECT))
 						reflectDamage = int(reflectDamage / 3.0f + 0.5f);
@@ -4987,18 +4987,18 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 				}
 			}
 
-			int iCriticalPct = ecs::PointSystem::Get(attacker, POINT_CRITICAL_PCT);
+			double iCriticalPct = ecs::PointSystem::GetPrecise(attacker, POINT_CRITICAL_PCT);
 
 			if (!ecs::PlayerRuntime::IsPC(victim)) {
 				iCriticalPct += ecs::SocialSystem::GetMarriageBonus(attacker, UNIQUE_ITEM_MARRIAGE_CRITICAL_BONUS);
-				iCriticalPct += ecs::PointSystem::Get(attacker, POINT_PVM_CRITICAL_PCT);
+				iCriticalPct += ecs::PointSystem::GetPrecise(attacker, POINT_PVM_CRITICAL_PCT);
 			}
 
 			if (iCriticalPct)
 			{
-				iCriticalPct -= ecs::PointSystem::Get(victim, POINT_RESIST_CRITICAL);
+				iCriticalPct -= ecs::PointSystem::GetPrecise(victim, POINT_RESIST_CRITICAL);
 
-				if (number(1, 100) <= iCriticalPct)
+				if ((number(1, 100000000) / 1000000.0) <= iCriticalPct)
 				{
 					IsCritical = true;
 					dam *= 2;
@@ -5007,7 +5007,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			}
 
 			//
-			int iPenetratePct = ecs::PointSystem::Get(attacker, POINT_PENETRATE_PCT);
+			double iPenetratePct = ecs::PointSystem::GetPrecise(attacker, POINT_PENETRATE_PCT);
 
 			if (!ecs::PlayerRuntime::IsPC(victim))
 				iPenetratePct += ecs::SocialSystem::GetMarriageBonus(attacker, UNIQUE_ITEM_MARRIAGE_PENETRATE_BONUS);
@@ -5027,12 +5027,12 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			if (iPenetratePct)
 			{
 
-				iPenetratePct -= ecs::PointSystem::Get(victim, POINT_RESIST_PENETRATE);
+				iPenetratePct -= ecs::PointSystem::GetPrecise(victim, POINT_RESIST_PENETRATE);
 
-				if (number(1, 100) <= iPenetratePct)
+				if ((number(1, 100000000) / 1000000.0) <= iPenetratePct)
 				{
 					IsPenetrate = true;
-					dam += ecs::PointSystem::Get(victim, POINT_DEF_GRADE) * (100 + ecs::PointSystem::Get(victim, POINT_DEF_BONUS)) / 100;
+					dam += ecs::PointSystem::GetPrecise(victim, POINT_DEF_GRADE) * (100 + ecs::PointSystem::GetPrecise(victim, POINT_DEF_BONUS)) / 100;
 #ifdef ENABLE_EFFECT_PENETRATE
 					NetworkSyncSystem::BroadcastEffect(g_registry, victim, SE_PENETRATE);
 #endif
@@ -5040,9 +5040,9 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			}
 
 #ifdef ENABLE_BUG_FIXES
-			if (int64_t iStealHP_ptr = ecs::PointSystem::Get(attacker, POINT_STEAL_HP)) {
+			if (int64_t iStealHP_ptr = ecs::PointSystem::GetPrecise(attacker, POINT_STEAL_HP)) {
 				if (number(1, 100) <= iStealHP_ptr) {
-					int64_t iHP = std::min<int64_t>((int64_t)dam, std::max<int64_t>((int64_t)0, static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)))) * ecs::PointSystem::Get(attacker, POINT_STEAL_HP) / 100;
+					double iHP = std::min<int64_t>((int64_t)dam, std::max<int64_t>((int64_t)0, static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)))) * ecs::PointSystem::GetPrecise(attacker, POINT_STEAL_HP) / 100;
 
 
 					if ((ecs::PointSystem::Get(attacker, POINT_HP) > 0) && (ecs::PointSystem::Get(attacker, POINT_HP) + iHP < ecs::PointSystem::GetMaxHP(attacker)) && (ecs::PlayerRuntime::GetHP(victim) > 0) && (iHP > 0)) {
@@ -5076,10 +5076,10 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 				}
 			}
 
-			if (int64_t iStealSP_ptr = ecs::PointSystem::Get(attacker, POINT_STEAL_SP)) {
+			if (int64_t iStealSP_ptr = ecs::PointSystem::GetPrecise(attacker, POINT_STEAL_SP)) {
 				if (ecs::PlayerRuntime::IsPC(victim) && ecs::PlayerRuntime::IsPC(attacker)) {
 					if (number(1, 100) <= iStealSP_ptr) {
-						int64_t iSP = std::min<int64_t>((int64_t)dam, std::max<int64_t>((int64_t)0, static_cast<int64_t>(ecs::PlayerRuntime::GetSP(victim)))) * ecs::PointSystem::Get(attacker, POINT_STEAL_SP) / 100;
+						double iSP = std::min<int64_t>((int64_t)dam, std::max<int64_t>((int64_t)0, static_cast<int64_t>(ecs::PlayerRuntime::GetSP(victim)))) * ecs::PointSystem::GetPrecise(attacker, POINT_STEAL_SP) / 100;
 
 
 						if ((ecs::PointSystem::Get(attacker, POINT_SP) > 0) && (ecs::PointSystem::Get(attacker, POINT_SP) + iSP < ecs::PointSystem::GetMaxSP(attacker)) && (ecs::PlayerRuntime::GetSP(victim) > 0) && (iSP > 0))
@@ -5092,13 +5092,13 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 				}
 			}
 #else
-			if (ecs::PointSystem::Get(attacker, POINT_STEAL_HP))
+			if (ecs::PointSystem::GetPrecise(attacker, POINT_STEAL_HP))
 			{
 				int pct = 1;
 
 				if (number(1, 10) <= pct)
 				{
-					int iHP = MIN(dam, MAX(0, iCurHP)) * ecs::PointSystem::Get(attacker, POINT_STEAL_HP) / 100;
+					double iHP = MIN(dam, MAX(0, iCurHP)) * ecs::PointSystem::GetPrecise(attacker, POINT_STEAL_HP) / 100;
 
 					if (iHP > 0 && ecs::PlayerRuntime::GetHP(victim) >= iHP)
 					{
@@ -5131,7 +5131,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 				}
 			}
 
-			if (ecs::PointSystem::Get(attacker, POINT_STEAL_SP))
+			if (ecs::PointSystem::GetPrecise(attacker, POINT_STEAL_SP))
 			{
 				int pct = 1;
 
@@ -5144,7 +5144,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 					else
 						iCur = iCurHP;
 
-					int iSP = MIN(dam, MAX(0, iCur)) * ecs::PointSystem::Get(attacker, POINT_STEAL_SP) / 100;
+					double iSP = MIN(dam, MAX(0, iCur)) * ecs::PointSystem::GetPrecise(attacker, POINT_STEAL_SP) / 100;
 
 					if (iSP > 0 && iCur >= iSP)
 					{
@@ -5158,9 +5158,9 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			}
 #endif
 
-			if (ecs::PointSystem::Get(attacker, POINT_STEAL_GOLD))
+			if (ecs::PointSystem::GetPrecise(attacker, POINT_STEAL_GOLD))
 			{
-				if (number(1, 100) <= ecs::PointSystem::Get(attacker, POINT_STEAL_GOLD))
+				if ((number(1, 100000000) / 1000000.0) <= ecs::PointSystem::GetPrecise(attacker, POINT_STEAL_GOLD))
 				{
 					int iAmount = number(1, ecs::PointSystem::GetLevel(victim));
 					ecs::PointSystem::Change(attacker, POINT_GOLD, iAmount);
@@ -5169,10 +5169,10 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			}
 
 #ifdef ENABLE_BUG_FIXES
-			int iAbsoHP_ptr = ecs::PointSystem::Get(attacker, POINT_HIT_HP_RECOVERY);
+			double iAbsoHP_ptr = ecs::PointSystem::GetPrecise(attacker, POINT_HIT_HP_RECOVERY);
 			if (iAbsoHP_ptr > 0) {
 				if (number(1, 100) <= iAbsoHP_ptr) {
-					int64_t iHPAbso = std::min<int64_t>(static_cast<int64_t>(dam), static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim))) * ecs::PointSystem::Get(attacker, POINT_HIT_HP_RECOVERY) / 100;
+					double iHPAbso = std::min<int64_t>(static_cast<int64_t>(dam), static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim))) * ecs::PointSystem::GetPrecise(attacker, POINT_HIT_HP_RECOVERY) / 100;
 					if ((ecs::PointSystem::Get(attacker, POINT_HP) > 0) && (ecs::PointSystem::Get(attacker, POINT_HP) + iHPAbso < ecs::PointSystem::GetMaxHP(attacker)) && (ecs::PlayerRuntime::GetHP(victim) > 0) && (iHPAbso > 0)) {
 						CombatSystem::CreateFly(victim, FLY_HP_SMALL, attacker);
 						ecs::PointSystem::Change(attacker, POINT_HP, iHPAbso);
@@ -5180,10 +5180,10 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 				}
 			}
 
-			int64_t iAbsoSP_ptr = ecs::PointSystem::Get(attacker, POINT_HIT_SP_RECOVERY);
+			double iAbsoSP_ptr = ecs::PointSystem::GetPrecise(attacker, POINT_HIT_SP_RECOVERY);
 			if (iAbsoSP_ptr > 0) {
 				if (number(1, 100) <= iAbsoSP_ptr) {
-					int64_t iSPAbso = std::min<int64_t>(static_cast<int64_t>(dam), static_cast<int64_t>(ecs::PlayerRuntime::GetSP(victim))) * ecs::PointSystem::Get(attacker, POINT_HIT_SP_RECOVERY) / 100;
+					double iSPAbso = std::min<int64_t>(static_cast<int64_t>(dam), static_cast<int64_t>(ecs::PlayerRuntime::GetSP(victim))) * ecs::PointSystem::GetPrecise(attacker, POINT_HIT_SP_RECOVERY) / 100;
 					if ((ecs::PointSystem::Get(attacker, POINT_SP) > 0) && (ecs::PointSystem::Get(attacker, POINT_SP) + iSPAbso < ecs::PointSystem::GetMaxSP(attacker)) && (ecs::PlayerRuntime::GetSP(victim) > 0) && (iSPAbso > 0)) {
 						CombatSystem::CreateFly(victim, FLY_SP_SMALL, attacker);
 						ecs::PointSystem::Change(attacker, POINT_SP, iSPAbso);
@@ -5191,9 +5191,9 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 				}
 			}
 #else
-			if (ecs::PointSystem::Get(attacker, POINT_HIT_HP_RECOVERY) && number(0, 4) > 0)
+			if (ecs::PointSystem::GetPrecise(attacker, POINT_HIT_HP_RECOVERY) && number(0, 4) > 0)
 			{
-				int i = ((iCurHP >= 0) ? MIN(dam, iCurHP) : dam) * ecs::PointSystem::Get(attacker, POINT_HIT_HP_RECOVERY) / 100; //@fixme107
+				double i = ((iCurHP >= 0) ? MIN(dam, iCurHP) : dam) * ecs::PointSystem::GetPrecise(attacker, POINT_HIT_HP_RECOVERY) / 100; //@fixme107
 
 				if (i)
 				{
@@ -5202,9 +5202,9 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 				}
 			}
 
-			if (ecs::PointSystem::Get(attacker, POINT_HIT_SP_RECOVERY) && number(0, 4) > 0)
+			if (ecs::PointSystem::GetPrecise(attacker, POINT_HIT_SP_RECOVERY) && number(0, 4) > 0)
 			{
-				int i = ((iCurHP >= 0) ? MIN(dam, iCurHP) : dam) * ecs::PointSystem::Get(attacker, POINT_HIT_SP_RECOVERY) / 100; //@fixme107
+				double i = ((iCurHP >= 0) ? MIN(dam, iCurHP) : dam) * ecs::PointSystem::GetPrecise(attacker, POINT_HIT_SP_RECOVERY) / 100; //@fixme107
 
 				if (i)
 				{
@@ -5214,9 +5214,9 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			}
 #endif
 
-			if (ecs::PointSystem::Get(attacker, POINT_MANA_BURN_PCT))
+			if (ecs::PointSystem::GetPrecise(attacker, POINT_MANA_BURN_PCT))
 			{
-				if (number(1, 100) <= ecs::PointSystem::Get(attacker, POINT_MANA_BURN_PCT))
+				if ((number(1, 100000000) / 1000000.0) <= ecs::PointSystem::GetPrecise(attacker, POINT_MANA_BURN_PCT))
 					ecs::PointSystem::Change(victim, POINT_SP, -50);
 			}
 		}
@@ -5230,15 +5230,15 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	case DAMAGE_TYPE_NORMAL_RANGE:
 	{
 		if (attackerIsCharacter) {
-			if (ecs::PointSystem::Get(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS))
-				dam = dam * (100 + ecs::PointSystem::Get(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
+			if (ecs::PointSystem::GetPrecise(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS))
+				dam = dam * (100 + ecs::PointSystem::GetPrecise(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
 #ifdef ENABLE_MEDI_PVM
 			if (!ecs::PlayerRuntime::IsPC(victim))
-				dam = dam * (100 + ecs::PointSystem::Get(attacker, POINT_ATTBONUS_MEDI_PVM)) / 100;
+				dam = dam * (100 + ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_MEDI_PVM)) / 100;
 #endif
 		}
 
-		dam = dam * (100 - std::min((int64_t)99, ecs::PointSystem::Get(victim, POINT_NORMAL_HIT_DEFEND_BONUS))) / 100;
+		dam = dam * (100 - std::min<double>(99.0, ecs::PointSystem::GetPrecise(victim, POINT_NORMAL_HIT_DEFEND_BONUS))) / 100;
 	}
 	break;
 	case DAMAGE_TYPE_MELEE:
@@ -5249,12 +5249,12 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	case DAMAGE_TYPE_MAGIC:
 	{
 		if (attackerIsCharacter) {
-			const int64_t skillBonus = ecs::PointSystem::Get(attacker, POINT_SKILL_DAMAGE_BONUS);
+			double skillBonus = ecs::PointSystem::GetPrecise(attacker, POINT_SKILL_DAMAGE_BONUS);
 			if (skillBonus)
 				dam = dam * (100 + skillBonus) / 100;
 		}
 
-		int64_t def = ecs::PointSystem::Get(victim, POINT_SKILL_DEFEND_BONUS);
+		double def = ecs::PointSystem::GetPrecise(victim, POINT_SKILL_DEFEND_BONUS);
 		def = std::clamp<int64_t>(def, 0, 100);
 
 		if (attackerIsCharacter && ecs::PlayerRuntime::IsPC(attacker) && ecs::PlayerRuntime::IsPC(victim))
@@ -5270,7 +5270,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			{
 				int64_t minSkillDam = normalRef * 10;
 
-				//const int64_t skillBonus = std::max<int64_t>(0, ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_SKILL_DAMAGE_BONUS));
+				//double skillBonus = std::max<int64_t>(0, ecs::PointSystem::GetPrecise((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_SKILL_DAMAGE_BONUS));
 				//minSkillDam = minSkillDam * (100 + skillBonus) / 100;
 
 				if (dam < minSkillDam)
@@ -5286,7 +5286,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	if (AffectSystem::IsAffectFlag(victim, AFF_MANASHIELD))
 	{
 		int iDamageSPPart = dam / 3;
-		int iDamageToSP = iDamageSPPart * ecs::PointSystem::Get(victim, POINT_MANASHIELD) / 100;
+		double iDamageToSP = iDamageSPPart * ecs::PointSystem::GetPrecise(victim, POINT_MANASHIELD) / 100;
 		const int64_t iSP = static_cast<int64_t>(ecs::PlayerRuntime::GetSP(victim));
 
 		// SP
@@ -5298,13 +5298,13 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		else
 		{
 			ecs::PointSystem::Change(victim, POINT_SP, -static_cast<int64_t>(ecs::PlayerRuntime::GetSP(victim)));
-			dam -= iSP * 100 / std::max(ecs::PointSystem::Get(victim, POINT_MANASHIELD), (int64_t)1);
+			dam -= iSP * 100 / std::max<double>(ecs::PointSystem::GetPrecise(victim, POINT_MANASHIELD), (int64_t)1);
 		}
 	}
 
 	//
 	//
-	//	int64_t dec_dam = std::min((int64_t)200, dam * ecs::PointSystem::Get(victim, POINT_MALL_DEFBONUS) / 100);//razor93
+	//	double dec_dam = std::min<double>((int64_t)200, dam * ecs::PointSystem::GetPrecise(victim, POINT_MALL_DEFBONUS) / 100);//razor93
 	//	dam -= dec_dam;
 	//}
 
@@ -5312,9 +5312,9 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	{
 		//
 		//
-		if (ecs::PointSystem::Get(attacker, POINT_MALL_ATTBONUS) > 0)
+		if (ecs::PointSystem::GetPrecise(attacker, POINT_MALL_ATTBONUS) > 0)
 		{
-			int64_t add_dam = std::min((int64_t)300, dam * ecs::PointSystem::GetLimitPoint(attacker, POINT_MALL_ATTBONUS) / 100);
+			int64_t add_dam = std::min<double>(300.0, dam * ecs::PointSystem::GetLimitPoint(attacker, POINT_MALL_ATTBONUS) / 100);
 			dam += add_dam;
 		}
 
@@ -5778,25 +5778,25 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		if (test_server)
 		{
 			int iTmpPercent = 0; // @fixme136
-			if (ecs::PointSystem::GetMaxHP(victim) >= 0)
+			if (ecs::PointSystem::GetMaxHP(victim) > 0)
 				iTmpPercent = (ecs::PlayerRuntime::GetHP(victim) * 100) / ecs::PointSystem::GetMaxHP(victim);
 
 			if (attackerIsCharacter)
 			{
-				ecs::ChatSystem::Send(attacker, CHAT_TYPE_INFO, "-> %s, DAM %d HP %d(%d%%) %s%s",
+				ecs::ChatSystem::Send(attacker, CHAT_TYPE_INFO, "-> %s, DAM %lld HP %llu(%d%%) %s%s%s",
 					std::string(ecs::PlayerRuntime::GetName(victim)).c_str(),
-					dam,
-					ecs::PlayerRuntime::GetHP(victim),
+					static_cast<long long>(dam),
+					static_cast<unsigned long long>(ecs::PlayerRuntime::GetHP(victim)),
 					iTmpPercent,
 					IsCritical ? "crit " : "",
 					IsPenetrate ? "pene " : "",
 					IsDeathBlow ? "deathblow " : "");
 			}
 
-			ecs::ChatSystem::Send(victim, CHAT_TYPE_PARTY, "<- %s, DAM %d HP %d(%d%%) %s%s",
+			ecs::ChatSystem::Send(victim, CHAT_TYPE_PARTY, "<- %s, DAM %lld HP %llu(%d%%) %s%s%s",
 				attackerIsCharacter ? std::string(ecs::PlayerRuntime::GetName(attacker)).c_str() : "",
-				dam,
-				ecs::PlayerRuntime::GetHP(victim),
+				static_cast<long long>(dam),
+				static_cast<unsigned long long>(ecs::PlayerRuntime::GetHP(victim)),
 				iTmpPercent,
 				IsCritical ? "crit " : "",
 				IsPenetrate ? "pene " : "",
@@ -6202,12 +6202,12 @@ public:
 			NormalAttackAffect(me, victim);
 
 			//   (nyl vdelem)
-			int32_t lValue = ecs::PointSystem::Get(victim, POINT_RESIST_BOW);
+			double lValue = ecs::PointSystem::GetPrecise(victim, POINT_RESIST_BOW);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-			lValue -= ecs::PointSystem::Get(me, POINT_ATTBONUS_IRR_FRECCIA);
+			lValue -= ecs::PointSystem::GetPrecise(me, POINT_ATTBONUS_IRR_FRECCIA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			lValue -= ecs::PointSystem::Get(me, POINT_IRR_WEAPON_DEFENSE);
+			lValue -= ecs::PointSystem::GetPrecise(me, POINT_IRR_WEAPON_DEFENSE);
 #endif
 
 			if (lValue < 0)   lValue = 0;
@@ -6247,7 +6247,7 @@ public:
 			//
 //						iDam = iDam * (100 - total_res_magic) / 100;
 //#else
-			iDam = iDam * (100 - (int)(ecs::PointSystem::Get(victim, POINT_RESIST_MAGIC) / 2)) / 100;
+			iDam = iDam * (100 - (int)(ecs::PointSystem::GetPrecise(victim, POINT_RESIST_MAGIC) / 2)) / 100;
 			//#endif
 
 									//LOG_INFO(0, "%s arrow %s dam %d", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data(), iDam);
@@ -6824,12 +6824,12 @@ static int64_t CalcReferenceBowHitDamage(entt::entity attacker, entt::entity vic
 	if (dam <= 0)
 		return 0;
 
-	int32_t lValue = ecs::PointSystem::Get(victim, POINT_RESIST_BOW);
+	double lValue = ecs::PointSystem::GetPrecise(victim, POINT_RESIST_BOW);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-	lValue -= ecs::PointSystem::Get(attacker, POINT_ATTBONUS_IRR_FRECCIA);
+	lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_IRR_FRECCIA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-	lValue -= ecs::PointSystem::Get(attacker, POINT_IRR_WEAPON_DEFENSE);
+	lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_IRR_WEAPON_DEFENSE);
 #endif
 
 	if (lValue < 0)
@@ -6844,15 +6844,15 @@ static int64_t CalcReferenceBowHitDamage(entt::entity attacker, entt::entity vic
 		dam += CombatSystem::GetSoulItemDamage(attacker, victim, dam, RED_SOUL);
 #endif
 
-	if (ecs::PointSystem::Get(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS))
-		dam = dam * (100 + ecs::PointSystem::Get(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
+	if (ecs::PointSystem::GetPrecise(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS))
+		dam = dam * (100 + ecs::PointSystem::GetPrecise(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
 
 #ifdef ENABLE_MEDI_PVM
 	if (ecs::PlayerRuntime::IsNPC(victim))
-		dam = dam * (100 + ecs::PointSystem::Get(attacker, POINT_ATTBONUS_MEDI_PVM)) / 100;
+		dam = dam * (100 + ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_MEDI_PVM)) / 100;
 #endif
 
-	dam = dam * (100 - std::min((int64_t)99, ecs::PointSystem::Get(victim, POINT_NORMAL_HIT_DEFEND_BONUS))) / 100;
+	dam = dam * (100 - std::min<double>(99.0, ecs::PointSystem::GetPrecise(victim, POINT_NORMAL_HIT_DEFEND_BONUS))) / 100;
 
 	return std::max<int64_t>(0, dam);
 }
@@ -6877,7 +6877,7 @@ static int64_t CalcReferenceBasicHitDamage(entt::entity attacker, entt::entity v
 	if (dam <= 0)
 		return 0;
 
-	const int64_t skillBonus = std::max<int64_t>(0, ecs::PointSystem::Get(attacker, POINT_SKILL_DAMAGE_BONUS));
+	double skillBonus = std::max<int64_t>(0, ecs::PointSystem::GetPrecise(attacker, POINT_SKILL_DAMAGE_BONUS));
 	if (skillBonus)
 		dam = dam * (100 + skillBonus) / 100;
 
@@ -6902,62 +6902,62 @@ static int64_t CalcReferenceNormalHitDamage(entt::entity attacker, entt::entity 
 		switch (ItemSystem::GetItemSubType(weapon))
 		{
 		case WEAPON_SWORD:
-			lValue = ecs::PointSystem::Get(victim, POINT_RESIST_SWORD);
+			lValue = ecs::PointSystem::GetPrecise(victim, POINT_RESIST_SWORD);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-			lValue -= ecs::PointSystem::Get(attacker, POINT_ATTBONUS_IRR_SPADA);
+			lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_IRR_SPADA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			lValue -= ecs::PointSystem::Get(attacker, POINT_IRR_WEAPON_DEFENSE);
+			lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_IRR_WEAPON_DEFENSE);
 #endif
 			break;
 
 		case WEAPON_TWO_HANDED:
-			lValue = ecs::PointSystem::Get(victim, POINT_RESIST_TWOHAND);
+			lValue = ecs::PointSystem::GetPrecise(victim, POINT_RESIST_TWOHAND);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-			lValue -= ecs::PointSystem::Get(attacker, POINT_ATTBONUS_IRR_SPADONE);
+			lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_IRR_SPADONE);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			lValue -= ecs::PointSystem::Get(attacker, POINT_IRR_WEAPON_DEFENSE);
+			lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_IRR_WEAPON_DEFENSE);
 #endif
 			break;
 
 		case WEAPON_DAGGER:
-			lValue = ecs::PointSystem::Get(victim, POINT_RESIST_DAGGER);
+			lValue = ecs::PointSystem::GetPrecise(victim, POINT_RESIST_DAGGER);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-			lValue -= ecs::PointSystem::Get(attacker, POINT_ATTBONUS_IRR_PUGNALE);
+			lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_IRR_PUGNALE);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			lValue -= ecs::PointSystem::Get(attacker, POINT_IRR_WEAPON_DEFENSE);
+			lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_IRR_WEAPON_DEFENSE);
 #endif
 			break;
 
 		case WEAPON_BELL:
-			lValue = ecs::PointSystem::Get(victim, POINT_RESIST_BELL);
+			lValue = ecs::PointSystem::GetPrecise(victim, POINT_RESIST_BELL);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-			lValue -= ecs::PointSystem::Get(attacker, POINT_ATTBONUS_IRR_CAMPANA);
+			lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_IRR_CAMPANA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			lValue -= ecs::PointSystem::Get(attacker, POINT_IRR_WEAPON_DEFENSE);
+			lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_IRR_WEAPON_DEFENSE);
 #endif
 			break;
 
 		case WEAPON_FAN:
-			lValue = ecs::PointSystem::Get(victim, POINT_RESIST_FAN);
+			lValue = ecs::PointSystem::GetPrecise(victim, POINT_RESIST_FAN);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-			lValue -= ecs::PointSystem::Get(attacker, POINT_ATTBONUS_IRR_VENTAGLIO);
+			lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_IRR_VENTAGLIO);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			lValue -= ecs::PointSystem::Get(attacker, POINT_IRR_WEAPON_DEFENSE);
+			lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_IRR_WEAPON_DEFENSE);
 #endif
 			break;
 
 		case WEAPON_BOW:
-			lValue = ecs::PointSystem::Get(victim, POINT_RESIST_BOW);
+			lValue = ecs::PointSystem::GetPrecise(victim, POINT_RESIST_BOW);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-			lValue -= ecs::PointSystem::Get(attacker, POINT_ATTBONUS_IRR_FRECCIA);
+			lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_IRR_FRECCIA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			lValue -= ecs::PointSystem::Get(attacker, POINT_IRR_WEAPON_DEFENSE);
+			lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_IRR_WEAPON_DEFENSE);
 #endif
 			break;
 
@@ -6981,15 +6981,15 @@ static int64_t CalcReferenceNormalHitDamage(entt::entity attacker, entt::entity 
 		dam += CombatSystem::GetSoulItemDamage(attacker, victim, dam, RED_SOUL);
 #endif
 
-	if (ecs::PointSystem::Get(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS))
-		dam = dam * (100 + ecs::PointSystem::Get(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
+	if (ecs::PointSystem::GetPrecise(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS))
+		dam = dam * (100 + ecs::PointSystem::GetPrecise(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
 
 #ifdef ENABLE_MEDI_PVM
 	if (ecs::PlayerRuntime::IsNPC(victim))
-		dam = dam * (100 + ecs::PointSystem::Get(attacker, POINT_ATTBONUS_MEDI_PVM)) / 100;
+		dam = dam * (100 + ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_MEDI_PVM)) / 100;
 #endif
 
-	dam = dam * (100 - std::min((int64_t)99, ecs::PointSystem::Get(victim, POINT_NORMAL_HIT_DEFEND_BONUS))) / 100;
+	dam = dam * (100 - std::min<double>(99.0, ecs::PointSystem::GetPrecise(victim, POINT_NORMAL_HIT_DEFEND_BONUS))) / 100;
 
 	return std::max<int64_t>(0, dam);
 }

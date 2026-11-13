@@ -1,3 +1,5 @@
+#include <type_traits>
+#include <cmath>
 // vim:ts=4 sw=4
 #include <map>
 #include "stdafx.h"
@@ -701,11 +703,11 @@ bool CClientManager::InitializeItemAttrTable()
 		strlcpy(t.szApply, data[col++], sizeof(t.szApply));
 		str_to_number(t.dwApplyIndex, data[col++]);
 		str_to_number(t.dwProb, data[col++]);
-		str_to_number(t.lValues[0], data[col++]);
-		str_to_number(t.lValues[1], data[col++]);
-		str_to_number(t.lValues[2], data[col++]);
-		str_to_number(t.lValues[3], data[col++]);
-		str_to_number(t.lValues[4], data[col++]);
+		t.lValues[0] = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, data[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
+		t.lValues[1] = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, data[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
+		t.lValues[2] = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, data[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
+		t.lValues[3] = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, data[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
+		t.lValues[4] = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, data[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
 		str_to_number(t.bMaxLevelBySet[ATTRIBUTE_SET_WEAPON], data[col++]);
 		str_to_number(t.bMaxLevelBySet[ATTRIBUTE_SET_BODY], data[col++]);
 		str_to_number(t.bMaxLevelBySet[ATTRIBUTE_SET_WRIST], data[col++]);
@@ -724,11 +726,11 @@ bool CClientManager::InitializeItemAttrTable()
 #ifdef ENABLE_STOLE_COSTUME
 		str_to_number(t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_STOLE], data[col++]);
 #endif
-		str_to_number(t.lValues[5], data[col++]);
-		str_to_number(t.lValues[6], data[col++]);
-		str_to_number(t.lValues[7], data[col++]);
-		str_to_number(t.lValues[8], data[col++]);
-		str_to_number(t.lValues[9], data[col++]);
+		t.lValues[5] = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, data[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
+		t.lValues[6] = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, data[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
+		t.lValues[7] = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, data[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
+		t.lValues[8] = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, data[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
+		t.lValues[9] = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, data[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
 #ifdef ENABLE_STOLE_COSTUME
 		LOG_INFO("ITEM_ATTR_COSTUMES: {:<20} {:4} {{ {:3} {:3} {:3} {:3} {:3} }} {{ {} {} {} {} }}", t.szApply, t.dwProb, t.lValues[5], t.lValues[6], t.lValues[7], t.lValues[8], t.lValues[9], t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_BODY], t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_HAIR], t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_WEAPON], t.bMaxLevelBySet[ATTRIBUTE_SET_COSTUME_STOLE]);
 #else
@@ -807,11 +809,11 @@ bool CClientManager::InitializeItemRareTable()
 		strlcpy(t.szApply, data[col++], sizeof(t.szApply));
 		str_to_number(t.dwApplyIndex, data[col++]);
 		str_to_number(t.dwProb, data[col++]);
-		str_to_number(t.lValues[0], data[col++]);
-		str_to_number(t.lValues[1], data[col++]);
-		str_to_number(t.lValues[2], data[col++]);
-		str_to_number(t.lValues[3], data[col++]);
-		str_to_number(t.lValues[4], data[col++]);
+		t.lValues[0] = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, data[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
+		t.lValues[1] = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, data[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
+		t.lValues[2] = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, data[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
+		t.lValues[3] = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, data[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
+		t.lValues[4] = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, data[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
 		str_to_number(t.bMaxLevelBySet[ATTRIBUTE_SET_WEAPON], data[col++]);
 		str_to_number(t.bMaxLevelBySet[ATTRIBUTE_SET_BODY], data[col++]);
 		str_to_number(t.bMaxLevelBySet[ATTRIBUTE_SET_WRIST], data[col++]);
@@ -902,11 +904,11 @@ bool CClientManager::InitializeItemRare8Table()
 		strlcpy(t.szApply, data[col++], sizeof(t.szApply));
 		str_to_number(t.dwApplyIndex, data[col++]);
 		str_to_number(t.dwProb, data[col++]);
-		str_to_number(t.lValues[0], data[col++]);
-		str_to_number(t.lValues[1], data[col++]);
-		str_to_number(t.lValues[2], data[col++]);
-		str_to_number(t.lValues[3], data[col++]);
-		str_to_number(t.lValues[4], data[col++]);
+		t.lValues[0] = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, data[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
+		t.lValues[1] = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, data[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
+		t.lValues[2] = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, data[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
+		t.lValues[3] = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, data[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
+		t.lValues[4] = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, data[col++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
 		str_to_number(t.bMaxLevelBySet[ATTRIBUTE_SET_WEAPON], data[col++]);
 		str_to_number(t.bMaxLevelBySet[ATTRIBUTE_SET_BODY], data[col++]);
 		str_to_number(t.bMaxLevelBySet[ATTRIBUTE_SET_WRIST], data[col++]);
@@ -1190,9 +1192,9 @@ bool CClientManager::InitializeItemExtraProtoTable()
 		str_to_number(t.dwVnum, data[c++]);
 		str_to_number(t.iRarity, data[c++]);
 		str_to_number(t.ExtraBonus[0].bType, data[c++]);
-		str_to_number(t.ExtraBonus[0].lValue, data[c++]);
+		t.ExtraBonus[0].lValue = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, data[c++]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
 		str_to_number(t.ExtraBonus[1].bType, data[c++]);
-		str_to_number(t.ExtraBonus[1].lValue, data[c]);
+		t.ExtraBonus[1].lValue = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, data[c]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
 		m_vec_itemExtraProto.push_back(t);
 	}
 
@@ -1252,7 +1254,7 @@ bool CClientManager::MirrorMobTableIntoDB()
 			")",
 			t.bType, t.bRank, t.bBattleType, t.bLevel, t.bSize, t.dwAIFlag, t.dwRaceFlag, t.dwImmuneFlag,
 			t.bOnClickType, t.bEmpire, t.dwDropItemVnum, t.dwResurrectionVnum, t.szFolder,
-			t.bStr, t.bDex, t.bCon, t.bInt, t.dwDamageRange[0], t.dwDamageRange[1], t.dwMaxHP, t.bRegenCycle, t.bRegenPercent, t.dwExp,
+			t.bStr, t.bDex, t.bCon, t.bInt, t.dwDamageRange[0], t.dwDamageRange[1], static_cast<unsigned long long>(t.dwMaxHP), t.bRegenCycle, t.bRegenPercent, t.dwExp,
 
 			t.dwGoldMin, t.dwGoldMax, t.wDef, t.sAttackSpeed, t.sMovingSpeed, t.bAggresiveHPPct, t.wAggressiveSight, t.wAttackRange, t.dwPolymorphItemVnum,
 			t.cEnchants[0], t.cEnchants[1], t.cEnchants[2], t.cEnchants[3], t.cEnchants[4], t.cEnchants[5],
@@ -1296,7 +1298,7 @@ bool CClientManager::MirrorMobTableIntoDB()
 
 				"%u, \"%s\", %u, %u, %u, %u, %u, %u, %u, %u, "
 				"%u, %u, %u, %u, '%s', "
-				"%u, %u, %u, %u, %u, %u, %u, %u, %u, %u, "
+				"%u, %u, %u, %u, %u, %u, %llu, %u, %u, %u, "
 				"%u, %u, %d, %d, %d, %u, %d, %d, %u, "
 
 				"%d, %d, %d, %d, %d, %d, "
@@ -1312,7 +1314,7 @@ bool CClientManager::MirrorMobTableIntoDB()
 				t.dwVnum, t.szName,
 				t.bType, t.bRank, t.bBattleType, t.bLevel, t.bSize, t.dwAIFlag, t.dwRaceFlag, t.dwImmuneFlag,
 				t.bOnClickType, t.bEmpire, t.dwDropItemVnum, t.dwResurrectionVnum, t.szFolder,
-				t.bStr, t.bDex, t.bCon, t.bInt, t.dwDamageRange[0], t.dwDamageRange[1], t.dwMaxHP, t.bRegenCycle, t.bRegenPercent, t.dwExp,
+				t.bStr, t.bDex, t.bCon, t.bInt, t.dwDamageRange[0], t.dwDamageRange[1], static_cast<unsigned long long>(t.dwMaxHP), t.bRegenCycle, t.bRegenPercent, t.dwExp,
 
 				t.dwGoldMin, t.dwGoldMax, t.wDef, t.sAttackSpeed, t.sMovingSpeed, t.bAggresiveHPPct, t.wAggressiveSight, t.wAttackRange, t.dwPolymorphItemVnum,
 				t.cEnchants[0], t.cEnchants[1], t.cEnchants[2], t.cEnchants[3], t.cEnchants[4], t.cEnchants[5],
@@ -1348,7 +1350,7 @@ bool CClientManager::MirrorMobTableIntoDB()
 
 				"%u, \"%s\", \"%s\", %u, %u, %u, %u, %u, %u, %u, %u, "
 				"%u, %u, %u, %u, '%s', "
-				"%u, %u, %u, %u, %u, %u, %u, %u, %u, %u, "
+				"%u, %u, %u, %u, %u, %u, %llu, %u, %u, %u, "
 				"%u, %u, %d, %d, %d, %u, %d, %d, %u, "
 
 				"%d, %d, %d, %d, %d, %d, "
@@ -1370,7 +1372,7 @@ bool CClientManager::MirrorMobTableIntoDB()
 #endif
 				t.bType, t.bRank, t.bBattleType, t.bLevel, t.bSize, t.dwAIFlag, t.dwRaceFlag, t.dwImmuneFlag,
 				t.bOnClickType, t.bEmpire, t.dwDropItemVnum, t.dwResurrectionVnum, t.szFolder,
-				t.bStr, t.bDex, t.bCon, t.bInt, t.dwDamageRange[0], t.dwDamageRange[1], t.dwMaxHP, t.bRegenCycle, t.bRegenPercent, t.dwExp,
+				t.bStr, t.bDex, t.bCon, t.bInt, t.dwDamageRange[0], t.dwDamageRange[1], static_cast<unsigned long long>(t.dwMaxHP), t.bRegenCycle, t.bRegenPercent, t.dwExp,
 
 				t.dwGoldMin, t.dwGoldMax, t.wDef, t.sAttackSpeed, t.sMovingSpeed, t.bAggresiveHPPct, t.wAggressiveSight, t.wAttackRange, t.dwPolymorphItemVnum,
 				t.cEnchants[0], t.cEnchants[1], t.cEnchants[2], t.cEnchants[3], t.cEnchants[4], t.cEnchants[5],
@@ -1418,9 +1420,9 @@ bool CClientManager::MirrorItemTableIntoDB()
 				"%u, %u, %u, %u, " //15
 				"%u, %d, %u, %u, %d, " //20
 				"%u, %d, %u, %d, " //24
-				"%u, %d, %u, %d, %u, %d, " //30
+				"%u, %.3f, %u, %.3f, %u, %.3f, " //30
 #ifdef ENABLE_APPLYTYPE5_RAZOR93
-				"%u, %d, %u, %d, "
+				"%u, %.3f, %u, %.3f, "
 #endif
 				"%d, %d, %d, %d, %d, %d )", //36
 				GetTablePostfix(), g_stLocaleNameColumn.c_str(), //2
@@ -1430,7 +1432,7 @@ bool CClientManager::MirrorItemTableIntoDB()
 #else
 				t.szLocaleName,
 #endif
-				t.dwGold, t.dwShopBuyPrice, t.bWeight, t.bSize, //11
+				static_cast<long long>(t.dwGold), static_cast<long long>(t.dwShopBuyPrice), t.bWeight, t.bSize, //11
 				t.dwFlags, t.dwWearFlags, t.dwAntiFlags, t.dwImmuneFlag, //15
 				t.dwRefinedVnum, t.wRefineSet, t.bAlterToMagicItemPct, t.bGainSocketPct, t.sAddonType, //20
 				t.aLimits[0].bType, t.aLimits[0].lValue, t.aLimits[1].bType, t.aLimits[1].lValue, //24
@@ -1465,14 +1467,14 @@ bool CClientManager::MirrorItemTableIntoDB()
 				"%d, %d, %d, %d, "
 				"%d, %d, %d, %d, %d, "
 				"%d, %d, %d, %d, "
-				"%d, %d, %d, %d, %d, %d, "
+				"%d, %.3f, %d, %.3f, %d, %.3f, "
 #ifdef ENABLE_APPLYTYPE5_RAZOR93
-				"%d, %d, %d, %d, "
+				"%d, %.3f, %d, %.3f, "
 #endif
 				"%d, %d, %d, %d, %d, %d )",
 				GetTablePostfix(),
 				t.dwVnum, t.bType, t.bSubType, t.szName,
-				t.dwGold, t.dwShopBuyPrice, t.bWeight, t.bSize,
+				static_cast<long long>(t.dwGold), static_cast<long long>(t.dwShopBuyPrice), t.bWeight, t.bSize,
 				t.dwFlags, t.dwWearFlags, t.dwAntiFlags, t.dwImmuneFlag,
 				t.dwRefinedVnum, t.wRefineSet, t.bAlterToMagicItemPct, t.bGainSocketPct, t.sAddonType,
 				t.aLimits[0].bType, t.aLimits[0].lValue, t.aLimits[1].bType, t.aLimits[1].lValue,
@@ -1488,7 +1490,7 @@ bool CClientManager::MirrorItemTableIntoDB()
 }
 
 #ifdef ENABLE_PROTO_FROM_DB
-#define VERIFY_IFIELD(x,y) if (data[x]!=NULL && data[x][0]!='\0') str_to_number(y, data[x]);
+#define VERIFY_IFIELD(x,y) do { if (data[x]!=NULL && data[x][0]!='\0') { std::remove_cv_t<std::remove_reference_t<decltype(y)>> parsedField {}; str_to_number(parsedField, data[x]); y = parsedField; } } while (0);
 #define VERIFY_SFIELD(x,y) if (data[x]!=NULL && data[x][0]!='\0') strlcpy(y, data[x], sizeof(y));
 
 #define ENABLE_AUTODETECT_VNUMRANGE

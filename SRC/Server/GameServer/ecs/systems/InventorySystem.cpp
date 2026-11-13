@@ -135,7 +135,7 @@ bool CanEquipNow(entt::entity owner, entt::entity itemEntity)
 			}
 			break;
 		case LIMIT_STR:
-			if (ecs::PointSystem::Get(owner, POINT_ST) < limit) {
+			if (ecs::PointSystem::GetPrecise(owner, POINT_ST) < limit) {
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 269, "%d", limit);
 #endif
@@ -143,7 +143,7 @@ bool CanEquipNow(entt::entity owner, entt::entity itemEntity)
 			}
 			break;
 		case LIMIT_INT:
-			if (ecs::PointSystem::Get(owner, POINT_IQ) < limit) {
+			if (ecs::PointSystem::GetPrecise(owner, POINT_IQ) < limit) {
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 468, "%d", limit);
 #endif
@@ -151,7 +151,7 @@ bool CanEquipNow(entt::entity owner, entt::entity itemEntity)
 			}
 			break;
 		case LIMIT_DEX:
-			if (ecs::PointSystem::Get(owner, POINT_DX) < limit) {
+			if (ecs::PointSystem::GetPrecise(owner, POINT_DX) < limit) {
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 352, "%d", limit);
 #endif
@@ -160,7 +160,7 @@ bool CanEquipNow(entt::entity owner, entt::entity itemEntity)
 			break;
 
 		case LIMIT_CON:
-			if (ecs::PointSystem::Get(owner, POINT_HT) < limit) {
+			if (ecs::PointSystem::GetPrecise(owner, POINT_HT) < limit) {
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 481, "%d", limit);
 #endif
@@ -2656,7 +2656,7 @@ void ModifyPoints(entt::entity itemEntity, bool bAdd)
 							continue;
 
 						if (aApplie.bType == APPLY_SKILL)
-							ecs::PointSystem::ApplyPoint(ownerEntity, aApplie.bType, bAdd ? aApplie.lValue : aApplie.lValue ^ 0x00800000);
+							ecs::PointSystem::ApplyPoint(ownerEntity, aApplie.bType, bAdd ? aApplie.lValue : static_cast<int>(aApplie.lValue) ^ 0x00800000);
 						else
 							ecs::PointSystem::ApplyPoint(ownerEntity, aApplie.bType, bAdd ? aApplie.lValue : -aApplie.lValue);
 					}
@@ -2755,7 +2755,7 @@ void ModifyPoints(entt::entity itemEntity, bool bAdd)
 			continue;
 #endif
 
-		int32_t value = proto->aApplies[i].lValue;
+		double value = proto->aApplies[i].lValue;
 #ifdef ENABLE_ACCE_SYSTEM
 		if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_ACCE))
 		{
@@ -2771,10 +2771,9 @@ void ModifyPoints(entt::entity itemEntity, bool bAdd)
 
 				double dValue = value * ItemSystem::GetItemSocket(itemEntity, ACCE_ABSORPTION_SOCKET);
 				dValue = dValue / 100;
-				dValue = dValue + .5;
-				value = (int32_t)dValue;
-				if ((pkItemAbsorbed->aApplies[i].lValue > 0) && (value <= 0))
-					value += 1;
+
+				value = dValue;
+
 			}
 			else
 				continue;
@@ -2782,7 +2781,7 @@ void ModifyPoints(entt::entity itemEntity, bool bAdd)
 #endif
 		if (proto->aApplies[i].bType == APPLY_SKILL)
 		{
-			ecs::PointSystem::ApplyPoint(ownerEntity, proto->aApplies[i].bType, bAdd ? value : value ^ 0x00800000);
+			ecs::PointSystem::ApplyPoint(ownerEntity, proto->aApplies[i].bType, bAdd ? value : static_cast<int>(value) ^ 0x00800000);
 		}
 		else
 		{
@@ -2821,15 +2820,14 @@ void ModifyPoints(entt::entity itemEntity, bool bAdd)
 			if (ItemSystem::GetItemAttributeType(itemEntity, i))
 			{
 				const TPlayerItemAttribute& ia = ItemSystem::GetItemAttribute(itemEntity, i);
-				int32_t sValue = ia.sValue;
+				double sValue = ia.sValue;
 #ifdef ENABLE_ACCE_SYSTEM
 				if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_ACCE)) {
 					double dValue = sValue * ItemSystem::GetItemSocket(itemEntity, ACCE_ABSORPTION_SOCKET);
 					dValue = dValue / 100;
-					dValue = dValue + .5;
-					sValue = (int32_t)dValue;
-					if ((ia.sValue > 0) && (sValue <= 0))
-						sValue += 1;
+
+					sValue = dValue;
+
 				}
 #endif
 
@@ -2840,7 +2838,7 @@ void ModifyPoints(entt::entity itemEntity, bool bAdd)
 #endif
 
 				if (ia.bType == APPLY_SKILL)
-					ecs::PointSystem::ApplyPoint(ownerEntity, ia.bType, bAdd ? sValue : sValue ^ 0x00800000);
+					ecs::PointSystem::ApplyPoint(ownerEntity, ia.bType, bAdd ? sValue : static_cast<int>(sValue) ^ 0x00800000);
 				else
 					ecs::PointSystem::ApplyPoint(ownerEntity, ia.bType, bAdd ? sValue : -sValue);
 			}

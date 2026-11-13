@@ -153,7 +153,7 @@ struct NewPetActorState {
     std::array<FeedSelection, 9> feedItems {};
     std::array<int, 4> skill {};
     std::array<int, 4> skillSlot { -1, -1, -1, -1 };
-    std::array<std::array<int, 2>, 3> bonusPet {{{ 69, 0 }, { 63, 0 }, { 119, 0 }}};
+    std::array<std::array<double, 2>, 3> bonusPet {{{ 69, 0 }, { 63, 0 }, { 119, 0 }}};
     uint32_t exp { 0 };
     uint32_t lastActionTime { 0 };
     uint32_t summonItemVID { 0 };

@@ -293,7 +293,7 @@ void CGuild::NotifyGuildMaster(uint8_t type, uint32_t idx, const char * format, 
 		vsnprintf(chatbuf, sizeof(chatbuf), format, args);
 		va_end(args);
 
-		ecs::ChatSystem::SendNew(ch, type, idx, chatbuf);
+		ecs::ChatSystem::SendNew(ch, type, idx, "%s", chatbuf);
 	}
 }
 #endif

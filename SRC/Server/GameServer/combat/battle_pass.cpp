@@ -680,7 +680,7 @@ void CBattlePass::BattlePassRewardMission(entt::entity charEntity, uint32_t bMis
 	if(itInfo == m_map_battle_pass_mission_info.end())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(charEntity, CHAT_TYPE_INFO, 778, "%d", battlePassName.c_str());
+		ecs::ChatSystem::SendNew(charEntity, CHAT_TYPE_INFO, 778, "%s", battlePassName.c_str());
 #endif
 		return;
 	}
@@ -791,7 +791,7 @@ void CBattlePass::BattlePassReward(entt::entity charEntity)
 	if(itReward == m_map_battle_pass_reward.end())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(charEntity, CHAT_TYPE_INFO, 778, "%d", battlePassName.c_str());
+		ecs::ChatSystem::SendNew(charEntity, CHAT_TYPE_INFO, 778, "%s", battlePassName.c_str());
 #endif
 		return;
 	}

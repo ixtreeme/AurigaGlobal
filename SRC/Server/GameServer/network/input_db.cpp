@@ -622,7 +622,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 
 		snprintf(buf, sizeof(buf), "%s %lld %d %d %u",
 
-				inet_ntoa(ecs::PlayerRuntime::GetDesc(chEntity)->GetAddr().sin_addr), ecs::PointSystem::GetGold(chEntity), g_bChannel, ecs::PlayerRuntime::GetMapIndex(chEntity), CombatSystem::GetAlignment(chEntity));
+				inet_ntoa(ecs::PlayerRuntime::GetDesc(chEntity)->GetAddr().sin_addr), static_cast<long long>(ecs::PointSystem::GetGold(chEntity)), g_bChannel, ecs::PlayerRuntime::GetMapIndex(chEntity), CombatSystem::GetAlignment(chEntity));
 		LogManager::instance().CharLog(chEntity, 0, "LOGIN", buf);
 
 	}
@@ -651,7 +651,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	NetworkSyncSystem::PointsPacket(chEntity);
 	SkillSystem::SendSkillLevelPacket(chEntity);
 
-	LOG_INFO("InputDB: player_load {} {}x{}x{} LEVEL {} MOV_SPEED {} JOB {} ATG {} DFG {} GMLv {}", pTab->name, ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity), ecs::PlayerRuntime::GetZ(chEntity), (ecs::PointSystem::GetLevel(chEntity)), ecs::PointSystem::Get(chEntity, POINT_MOV_SPEED), ecs::PlayerRuntime::GetJob(chEntity), ecs::PointSystem::Get(chEntity, POINT_ATT_GRADE), ecs::PointSystem::Get(chEntity, POINT_DEF_GRADE), ecs::PlayerRuntime::GetGMLevel(chEntity));
+	LOG_INFO("InputDB: player_load {} {}x{}x{} LEVEL {} MOV_SPEED {} JOB {} ATG {} DFG {} GMLv {}", pTab->name, ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity), ecs::PlayerRuntime::GetZ(chEntity), (ecs::PointSystem::GetLevel(chEntity)), ecs::PointSystem::GetPrecise(chEntity, POINT_MOV_SPEED), ecs::PlayerRuntime::GetJob(chEntity), ecs::PointSystem::GetPrecise(chEntity, POINT_ATT_GRADE), ecs::PointSystem::GetPrecise(chEntity, POINT_DEF_GRADE), ecs::PlayerRuntime::GetGMLevel(chEntity));
 
 	ecs::SessionSystem::QuerySafeboxSize(chEntity);
 	MountSystem::QueryMountInventory(chEntity);

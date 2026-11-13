@@ -96,8 +96,8 @@ uint64_t CreatePlayerSaveQuery(char * pszQuery, uint64_t querySize, TPlayerTable
 		pkTab->lExitX,
 		pkTab->lExitY,
 		pkTab->lExitMapIndex,
-		pkTab->hp,
-		pkTab->sp,
+		static_cast<unsigned long long>(pkTab->hp),
+		static_cast<unsigned long long>(pkTab->sp),
 		pkTab->stamina,
 		pkTab->sRandomHP,
 		pkTab->sRandomSP,
@@ -108,7 +108,7 @@ uint64_t CreatePlayerSaveQuery(char * pszQuery, uint64_t querySize, TPlayerTable
 		pkTab->ht,
 		pkTab->dx,
 		pkTab->iq,
-		pkTab->gold,
+		static_cast<long long>(pkTab->gold),
 #ifdef ENABLE_GAYA_SYSTEM
 		pkTab->gaya,
 #endif

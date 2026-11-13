@@ -43,6 +43,7 @@
 #include <stdexcept>
 
 entt::registry g_registry;
+namespace EclipseRaid { int64_t FilterHealing(entt::entity, int64_t amount) { return amount; } }
 entt::dispatcher g_dispatcher;
 TJobInitialPoints JobInitialPoints[JOB_MAX_NUM] {};
 THorseStat c_aHorseStat[HORSE_MAX_LEVEL + 1] {};
@@ -50,7 +51,7 @@ const uint32_t* exp_table = nullptr;
 constexpr TApplyInfo TestApplyInfo(unsigned type) {
     return {static_cast<uint8_t>(type == APPLY_MAX_HP ? POINT_MAX_HP :
         type == APPLY_MAX_SP ? POINT_MAX_SP : type == APPLY_MAX_HP_PCT ? POINT_MAX_HP_PCT :
-        type == APPLY_MAX_SP_PCT ? POINT_MAX_SP_PCT : POINT_NONE)};
+        type == APPLY_MAX_SP_PCT ? POINT_MAX_SP_PCT : type == APPLY_ATT_GRADE_BONUS ? POINT_ATT_GRADE_BONUS : POINT_NONE)};
 }
 static_assert(APPLY_MAX_HP_PCT < 80 && APPLY_MAX_SP_PCT < 80);
 #define POINT_TEST_APPLY_BLOCK(n) TestApplyInfo(n), TestApplyInfo(n+1), TestApplyInfo(n+2), TestApplyInfo(n+3), \
@@ -68,7 +69,7 @@ namespace {
 int checks = 0, modifies = 0, packets = 0, supportLevel = 0, activeDeck = -1;
 int64_t mountHP = 0;
 entt::entity connected = entt::null;
-LPDESC DescToken() { static int token; return reinterpret_cast<LPDESC>(&token); }
+LPDESC DescToken() { alignas(DESC) static unsigned char token[sizeof(DESC)] {}; return reinterpret_cast<LPDESC>(token); }
 std::vector<TPacketGCPointChange> pointPackets;
 int pointBroadcasts = 0;
 std::function<void(entt::entity)> onItem, onAffect, onPacket, onMovement;
@@ -166,7 +167,7 @@ uint16_t GetOriginalPart(entt::entity, uint8_t) { return 0; }
 void SetImmuneFlag(entt::entity e, uint32_t value) { g_registry.get<Actor>(e).immune = value; }
 uint32_t GetImmuneFlag(entt::entity e) { return g_registry.get<Actor>(e).immune; }
 void BuffOnAttr_ClearAll(entt::entity) {}
-void BuffOnAttr_ValueChange(entt::entity, uint8_t, uint8_t, uint8_t) {}
+void BuffOnAttr_ValueChange(entt::entity, uint8_t, double, double) {}
 
 }
 namespace ItemSystem {
@@ -278,7 +279,18 @@ void ecs::MovementSystem::SetNowWalking(entt::entity e, bool walking) {
     g_registry.get<ecs::MovementState>(e).isNowWalking = walking;
 }
 void DESC::Packet(const void* data, int size) {
-    Check(this == DescToken() && size == sizeof(TPacketGCPointChange), "unexpected point packet transport");
+    Check(this == DescToken(), "unexpected point descriptor");
+    if (size == sizeof(TPacketGCBonusPoint)) {
+        const auto& precise=*static_cast<const TPacketGCBonusPoint*>(data);
+        Check(precise.header==HEADER_GC_BONUS_POINT && precise.raw==P::GetPreciseRaw(connected,precise.type), "precision publication before commit");
+        return;
+    }
+    if (size == sizeof(TPacketGCBonusPoints)) {
+        const auto& snapshot=*static_cast<const TPacketGCBonusPoints*>(data);
+        Check(!snapshot.enabled[POINT_MAX_HP] && !snapshot.enabled[POINT_MAX_SP], "integral vital maxima must use full-range legacy values");
+        return;
+    }
+    Check(size == sizeof(TPacketGCPointChange), "unexpected point packet transport");
     TPacketGCPointChange packet {};
     std::memcpy(&packet, data, sizeof(packet));
     Check(packet.header == HEADER_GC_CHARACTER_POINT_CHANGE && packet.dwVID == 2 &&
@@ -368,7 +380,7 @@ void RepeatedCalculation() {
     P::Set(e, POINT_STEAL_HP, 99); // Removed equipment must not leave this behind.
     for (int i = 0; i < 100; ++i) {
         P::Compute(e);
-        Check(P::GetMaxHP(e) == 2364, "recompute changed HP or stacked item/alignment");
+        Check(P::GetMaxHP(e) == 1884, "recompute changed HP or stacked item/alignment");
         Check(P::Get(e, POINT_HP) == 500 && P::Get(e, POINT_SP) == 80, "recompute healed/damaged character");
         Check(P::Get(e, POINT_STAT) == 17 && P::Get(e, POINT_SKILL) == 9 && P::GetInventoryExpansion(e) == 12, "persistent points reset");
         Check(P::Get(e, POINT_STEAL_HP) == 0 && g_registry.get<ecs::SkillDamageBonus>(e).bySkill.at(42) == 3, "stale/stacked bonus");
@@ -376,7 +388,7 @@ void RepeatedCalculation() {
         Check(P::Get(e, POINT_ATT_GRADE) == 60, "entity-only player took NPC battle formula");
     }
     equipment.clear(); g_registry.destroy(item); P::Compute(e);
-    Check(P::GetMaxHP(e) == 1670 && g_registry.get<ecs::SkillDamageBonus>(e).bySkill.empty() &&
+    Check(P::GetMaxHP(e) == 1270 && g_registry.get<ecs::SkillDamageBonus>(e).bySkill.empty() &&
         ecs::PlayerRuntime::GetImmuneFlag(e) == 0, "removed item retained bonuses");
 }
 void SkillPointSpendChecks() {
@@ -403,17 +415,17 @@ void SourceChecks() {
     }
     Reset(); e = ActorEntity(); const auto rune = Wear(e);
     g_registry.get<Gear>(rune).rune = true; g_registry.get<Gear>(rune).active = false;
-    P::Compute(e); Check(modifies == 0 && P::GetMaxHP(e) == 1670, "inactive rune applied");
+    P::Compute(e); Check(modifies == 0 && P::GetMaxHP(e) == 1270, "inactive rune applied");
     g_registry.get<Gear>(rune).active = true;
     equipment[{e, WEAR_HEAD}] = rune; // Corrupt duplicate slot: never count twice.
-    P::Compute(e); Check(modifies == 1 && P::GetMaxHP(e) == 2364, "rune duplicated");
+    P::Compute(e); Check(modifies == 1 && P::GetMaxHP(e) == 1884, "rune duplicated");
     g_registry.get<ecs::ItemOwner>(rune).owner = ActorEntity();
-    P::Compute(e); Check(modifies == 1 && P::GetMaxHP(e) == 1670, "foreign equipment applied");
+    P::Compute(e); Check(modifies == 1 && P::GetMaxHP(e) == 1270, "foreign equipment applied");
 
     Reset(); e = ActorEntity(); activeDeck = 0; Wear(e, WEAR_MAX_NUM);
-    P::Compute(e); Check(modifies == 1 && P::GetMaxHP(e) == 2364, "active dragon soul missing");
+    P::Compute(e); Check(modifies == 1 && P::GetMaxHP(e) == 1884, "active dragon soul missing");
     activeDeck = DRAGON_SOUL_DECK_MAX_NUM;
-    P::Compute(e); Check(modifies == 1 && P::GetMaxHP(e) == 1670, "invalid dragon soul deck applied");
+    P::Compute(e); Check(modifies == 1 && P::GetMaxHP(e) == 1270, "invalid dragon soul deck applied");
 
     Reset(); e = ActorEntity(); const auto belt = Wear(e); equipment.clear(); mountHP = 100;
     g_registry.get<ecs::ItemIdentity>(belt).vnum = 18000;
@@ -423,19 +435,19 @@ void SourceChecks() {
     inventory[{e, BELT_INVENTORY_SLOT_START}] = belt;
     inventory[{e, BELT_INVENTORY_SLOT_START + 1}] = belt;
     for (int i = 0; i < 10; ++i) {
-        P::Compute(e); Check(P::GetMaxHP(e) == 2167 && modifies == 0, "belt/mount totals grew or duplicated");
+        P::Compute(e); Check(P::GetMaxHP(e) == 1727 && modifies == 0, "belt/mount totals grew or duplicated");
     }
     g_registry.get<ecs::ItemIdentity>(belt).vnum = 18160;
-    P::Compute(e); Check(P::GetMaxHP(e) == 1770, "out-of-whitelist belt applied");
+    P::Compute(e); Check(P::GetMaxHP(e) == 1370, "out-of-whitelist belt applied");
 
     Reset(); e = ActorEntity(); supportLevel = 255;
-    P::Compute(e); Check(P::GetMaxHP(e) == 4670 && P::Get(e, POINT_MALL_ATTBONUS) == 10, "support skill upper bound");
+    P::Compute(e); Check(P::GetMaxHP(e) == 4270 && P::Get(e, POINT_MALL_ATTBONUS) == 10, "support skill upper bound");
     supportLevel = -1; P::Compute(e);
-    Check(P::GetMaxHP(e) == 1670 && P::Get(e, POINT_MALL_ATTBONUS) == 0, "support skill lower bound");
+    Check(P::GetMaxHP(e) == 1270 && P::Get(e, POINT_MALL_ATTBONUS) == 0, "support skill lower bound");
     g_registry.get<ecs::CombatStats>(e).realAlignment = 50000000;
-    P::Compute(e); Check(P::GetMaxHP(e) == 61170 && P::Get(e, POINT_ATTBONUS_MONSTER) == 85, "top alignment tier");
+    P::Compute(e); Check(P::GetMaxHP(e) == 6170 && P::Get(e, POINT_ATTBONUS_MONSTER) == 21, "top alignment tier");
     g_registry.get<ecs::CombatStats>(e).realAlignment = 50000;
-    P::Compute(e); Check(P::GetMaxHP(e) == 2170 && P::Get(e, POINT_ATTBONUS_MONSTER) == 3, "alignment downgrade stacked");
+    P::Compute(e); Check(P::GetMaxHP(e) == 1370 && P::Get(e, POINT_ATTBONUS_MONSTER) == 2, "alignment downgrade stacked");
 
     Reset(); e = ActorEntity(); g_registry.get<Actor>(e).job = JOB_MAX_NUM;
     P::Compute(e); Check(packets == 0 && P::GetMaxHP(e) == 1000, "invalid job mutated points");
@@ -485,14 +497,14 @@ void CallbackChecks() {
         };
         if (stage == 0) onItem = nested; if (stage == 1) onAffect = nested; if (stage == 2) onPacket = nested;
         P::Compute(e);
-        Check(modifies == 1 && packets == 1 && P::GetMaxHP(e) == 2364 &&
+        Check(modifies == 1 && packets == 1 && P::GetMaxHP(e) == 1884 &&
             !g_registry.get<ecs::CharacterStatsComponent>(e).recomputing, "reentrant calculation stacked/kept guard");
     }
     Reset(); const auto e = ActorEntity(); Wear(e);
     onItem = [](entt::entity) { throw std::runtime_error("injected calculation failure"); };
     bool caught = false; try { P::Compute(e); } catch (const std::runtime_error&) { caught = true; }
     Check(caught && !g_registry.get<ecs::CharacterStatsComponent>(e).recomputing, "exception stranded guard");
-    onItem = {}; P::Compute(e); Check(P::GetMaxHP(e) == 2364, "retry stacked partial calculation");
+    onItem = {}; P::Compute(e); Check(P::GetMaxHP(e) == 1884, "retry stacked partial calculation");
     Reset(); const auto old = ActorEntity(); Wear(old); entt::entity replacement = entt::null;
     onItem = [&](entt::entity current) { g_registry.destroy(current); replacement = ActorEntity(); };
     P::Compute(old);
@@ -502,6 +514,23 @@ void CallbackChecks() {
 int main() {
     try {
         CSkillManager skills; CHARACTER_MANAGER characters; DSManager dragonSouls;
+        {
+            Reset();const auto e=ActorEntity();
+            P::ChangePrecise(e,POINT_ATTBONUS_MONSTER,1.113);
+            Check(P::GetPreciseRaw(e,POINT_ATTBONUS_MONSTER)==1113000000LL,"production Change exact bonus");
+            P::ChangePrecise(e,POINT_ATTBONUS_MONSTER,-1.113);
+            Check(P::GetPreciseRaw(e,POINT_ATTBONUS_MONSTER)==0,"production Change exact removal");
+            const auto before=P::GetPreciseRaw(e,POINT_ATT_GRADE);
+            P::ApplyPoint(e,APPLY_ATT_GRADE_BONUS,1.113);
+            Check(P::GetPreciseRaw(e,POINT_ATT_GRADE_BONUS)==1113000000LL && P::GetPreciseRaw(e,POINT_ATT_GRADE)==before+1113000000LL,"fractional attack propagation");
+            P::ChangePrecise(e,POINT_ENERGY,1.113);P::ChangePrecise(e,POINT_ENERGY,1.113);
+            Check(P::GetPreciseRaw(e,POINT_ENERGY)==2226000000LL,"fractional energy accumulation");
+            P::ChangePrecise(e,POINT_ENERGY,-2.226);Check(P::GetPreciseRaw(e,POINT_ENERGY)==0,"fractional energy removal");
+            constexpr uint64_t huge=uint64_t{1}<<40;
+            g_registry.get<ecs::Health>(e).max=huge;g_registry.get<ecs::Mana>(e).max=huge;
+            Check(P::GetPrecise(e,POINT_MAX_HP)==static_cast<double>(huge) && P::GetPrecise(e,POINT_MAX_SP)==static_cast<double>(huge), "full-range vital maxima were quantized to bonus scale");
+            connected=e;P::SendPrecisionPoints(e);connected=entt::null;
+        }
         NativeVitalSourceChecks(); PointPublicationChecks(); FormulaChecks(); RepeatedCalculation(); SkillPointSpendChecks(); SourceChecks(); WalkingPreferenceChecks(); MovementTimingRouteChecks(); CallbackChecks();
         std::cout << "Point calculation checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

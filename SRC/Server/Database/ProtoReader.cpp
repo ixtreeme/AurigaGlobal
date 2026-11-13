@@ -1,3 +1,4 @@
+#include <cmath>
 #include "stdafx.h"
 
 #include <math.h>
@@ -817,7 +818,13 @@ bool Set_Proto_Item_Table(TItemTable *itemTable, cCsvTable &csvTable,std::map<in
 {
 	int col = 0;
 
-	int dataArray[33];
+	#ifdef ENABLE_APPLYTYPE5_RAZOR93
+    constexpr int applyCount = 5;
+#else
+    constexpr int applyCount = 3;
+#endif
+    constexpr int valuesStart = 18 + applyCount * 2;
+    int dataArray[valuesStart + ITEM_VALUES_MAX_NUM + 3] {};
 	for (unsigned int i=0; i<sizeof(dataArray)/sizeof(dataArray[0]);i++) {
 		int validCheck = 0;
 		if (i==2) {
@@ -844,7 +851,7 @@ bool Set_Proto_Item_Table(TItemTable *itemTable, cCsvTable &csvTable,std::map<in
 		} else if (i==16) {
 			dataArray[i] = get_Item_LimitType_Value(csvTable.AsStringByIndex(col));
 			validCheck = dataArray[i];
-		} else if (i==18) {
+		} else if (i >= 18 && i < valuesStart && (i - 18) % 2 == 0) {
 			dataArray[i] = get_Item_ApplyType_Value(csvTable.AsStringByIndex(col));
 			validCheck = dataArray[i];
 		} else if (i==20) {
@@ -950,13 +957,13 @@ bool Set_Proto_Item_Table(TItemTable *itemTable, cCsvTable &csvTable,std::map<in
 	for (i = 0; i < 5; ++i) // apply0-4
 	{
 		itemTable->aApplies[i].bType = dataArray[18 + i * 2];
-		itemTable->aApplies[i].lValue = dataArray[19 + i * 2];
+		itemTable->aApplies[i].lValue = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, csvTable.AsStringByIndex(19 + i * 2)); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
 	}
 #else
 	for (i = 0; i < 3; ++i) // apply0-2
 	{
 		itemTable->aApplies[i].bType = dataArray[18 + i * 2];
-		itemTable->aApplies[i].lValue = dataArray[19 + i * 2];
+		itemTable->aApplies[i].lValue = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, csvTable.AsStringByIndex(19 + i * 2)); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
 	}
 #endif
 
@@ -971,8 +978,8 @@ bool Set_Proto_Item_Table(TItemTable *itemTable, cCsvTable &csvTable,std::map<in
 
 
 	//column for 'Specular'
-	itemTable->bGainSocketPct = dataArray[31];
-	itemTable->sAddonType = dataArray[32];
+	itemTable->bGainSocketPct = dataArray[valuesStart + ITEM_VALUES_MAX_NUM + 1];
+	itemTable->sAddonType = dataArray[valuesStart + ITEM_VALUES_MAX_NUM + 2];
 
 	//test
 	str_to_number(itemTable->bWeight, "0");

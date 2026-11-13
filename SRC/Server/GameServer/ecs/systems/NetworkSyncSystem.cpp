@@ -240,13 +240,17 @@ void MainCharacterPacket(entt::entity e)
     ecs::NetworkService::Send(e, &packet, sizeof(packet));
 }
 
+void SendItemBonusCatalog(entt::entity e);
+
 void PointsPacket(entt::entity e)
 {
+    SendItemBonusCatalog(e);
     TPacketGCPoints packet {};
     if (!BuildPointsPacket(g_registry, e, packet))
         return;
 
     ecs::NetworkService::Send(e, &packet, sizeof(packet));
+    ecs::PointSystem::SendPrecisionPoints(e);
 }
 
 } // namespace NetworkSyncSystem
@@ -711,7 +715,7 @@ bool NetworkSyncSystem::BuildPartyUpdatePacket(entt::registry& reg, entt::entity
     packet.header = HEADER_GC_PARTY_UPDATE;
     packet.pid = playerID;
 
-    const int64_t maxHP = ecs::PointSystem::Get(member, POINT_MAX_HP);
+    double maxHP = ecs::PointSystem::GetPrecise(member, POINT_MAX_HP);
     if (maxHP <= 0)
         packet.percent_hp = 0;
     else
@@ -726,12 +730,12 @@ bool NetworkSyncSystem::BuildPartyUpdatePacket(entt::registry& reg, entt::entity
         const auto* leaderPos = reg.try_get<ecs::Position>(leaderEntity);
         if (memberPos && leaderPos && DISTANCE_APPROX(memberPos->x - leaderPos->x, memberPos->y - leaderPos->y) < PARTY_DEFAULT_RANGE) {
             packet.affects[0] = PartySystem::GetPartyBonusExpPercent(party);
-            packet.affects[1] = ecs::PointSystem::Get(member, POINT_PARTY_ATTACKER_BONUS);
-            packet.affects[2] = ecs::PointSystem::Get(member, POINT_PARTY_TANKER_BONUS);
-            packet.affects[3] = ecs::PointSystem::Get(member, POINT_PARTY_BUFFER_BONUS);
-            packet.affects[4] = ecs::PointSystem::Get(member, POINT_PARTY_SKILL_MASTER_BONUS);
-            packet.affects[5] = ecs::PointSystem::Get(member, POINT_PARTY_HASTE_BONUS);
-            packet.affects[6] = ecs::PointSystem::Get(member, POINT_PARTY_DEFENDER_BONUS);
+            packet.affects[1] = ecs::PointSystem::GetPrecise(member, POINT_PARTY_ATTACKER_BONUS);
+            packet.affects[2] = ecs::PointSystem::GetPrecise(member, POINT_PARTY_TANKER_BONUS);
+            packet.affects[3] = ecs::PointSystem::GetPrecise(member, POINT_PARTY_BUFFER_BONUS);
+            packet.affects[4] = ecs::PointSystem::GetPrecise(member, POINT_PARTY_SKILL_MASTER_BONUS);
+            packet.affects[5] = ecs::PointSystem::GetPrecise(member, POINT_PARTY_HASTE_BONUS);
+            packet.affects[6] = ecs::PointSystem::GetPrecise(member, POINT_PARTY_DEFENDER_BONUS);
         }
     }
 

@@ -53,8 +53,8 @@ bool IsImmune(entt::entity e, uint32_t immuneFlag);
 void ApplyMobAttribute(entt::entity target, const TMobTable* table);
 
 CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply = APPLY_NONE);
-CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply, int32_t value);
-void SaveAffectSkills(entt::entity e, uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue,
+CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply, double value);
+void SaveAffectSkills(entt::entity e, uint32_t dwType, uint8_t bApplyOn, double lApplyValue,
                       uint32_t dwFlag, int32_t lDuration, int32_t lSPCost);
 void LoadAffectSkills(entt::entity e);
 void SaveAffect(entt::entity e);
@@ -67,7 +67,7 @@ void AutoRecallProcess(entt::entity e);
 void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement* pElements);
 bool IsGoodAffect(uint8_t bAffectType);
 bool IsAffectFlag(entt::entity e, uint32_t flag);
-bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, int32_t applyValue,
+bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, double applyValue,
                uint32_t flag, int32_t duration, int32_t spCost, bool overwrite,
                bool isCube = false);
 bool RemoveAffect(entt::entity e, uint32_t type);

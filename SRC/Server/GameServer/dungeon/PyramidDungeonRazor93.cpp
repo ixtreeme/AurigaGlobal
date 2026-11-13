@@ -479,7 +479,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
         const int32_t cdUntil = ecs::QuestSystem::GetFlag(character, kQfCooldown);
         if (cdUntil > now)
         {
-            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Pyramid Dungeon is on cooldown (%d seconds).", cdUntil - now);
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Pyramid Dungeon is on cooldown (%lld seconds).", static_cast<long long>(cdUntil - now));
             return true;
         }
     }

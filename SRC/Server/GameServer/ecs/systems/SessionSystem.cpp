@@ -554,7 +554,7 @@ void CreatePlayerProto(entt::entity e, TPlayerTable& tab)
     strlcpy(tab.ip, ecs::PlayerRuntime::GetDesc(e) ? ecs::PlayerRuntime::GetDesc(e)->GetHostName() : "", sizeof(tab.ip));
 
     tab.id = ecs::PlayerRuntime::GetPlayerID(e);
-    tab.voice = ecs::PointSystem::Get(e, POINT_VOICE);
+    tab.voice = ecs::PointSystem::GetPrecise(e, POINT_VOICE);
     tab.level = ecs::PointSystem::GetLevel(e);
     tab.level_step = ecs::PointSystem::Get(e, POINT_LEVEL_STEP);
     tab.exp = ecs::PlayerRuntime::GetExp(e);

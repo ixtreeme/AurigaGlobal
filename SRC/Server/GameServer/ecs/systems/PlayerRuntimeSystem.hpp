@@ -53,7 +53,7 @@ void BuffOnAttr_AddBuffsFromItem(entt::entity e, entt::entity item);
 void BuffOnAttr_RemoveBuffsFromItem(entt::entity e, entt::entity item);
 void BuffOnAttr_ClearAll(entt::entity e);
 void BuffOnAttr_Destroy(entt::entity e);
-void BuffOnAttr_ValueChange(entt::entity e, uint8_t bType, uint8_t bOldValue, uint8_t bNewValue);
+void BuffOnAttr_ValueChange(entt::entity e, uint8_t bType, double bOldValue, double bNewValue);
 #ifdef __HIGHLIGHT_SYSTEM__
 void SetItem(entt::entity e, TItemPos Cell, entt::entity item, bool isHighLight = false);
 #else

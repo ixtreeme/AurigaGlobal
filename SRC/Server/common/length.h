@@ -1155,7 +1155,7 @@ enum biologAffect {
 	AFFECT_BIOLOGIST_16 = 666
 };
 
-static const int32_t biologistMissionInfo[16][15] =
+static const double biologistMissionInfo[16][15] =
 {
 	// missioneID: 0
 	{

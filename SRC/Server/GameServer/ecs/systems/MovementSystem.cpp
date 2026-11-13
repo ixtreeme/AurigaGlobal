@@ -193,7 +193,7 @@ namespace
     int MovementDurationFactor(entt::entity e)
     {
         // GetLimitPoint(POINT_MOV_SPEED) used the same instant-point authority.
-        const auto speed = std::clamp<int64_t>(ecs::PointSystem::Get(e, POINT_MOV_SPEED), 0, 350);
+        const auto speed = std::clamp<int64_t>(ecs::PointSystem::GetPrecise(e, POINT_MOV_SPEED), 0, 350);
         return speed <= 100 ? int(200 - speed) : int(10000 / speed);
     }
 
@@ -1970,7 +1970,7 @@ int32_t RecoveryAmount(entt::entity e, int percent)
     // Preserve integer truncation for normal bonuses without overflowing on
     // corrupt/extreme point values. EvRecovery's payload is int32_t.
     const auto bonus = std::trunc(static_cast<long double>(base) *
-        ecs::PointSystem::Get(e, POINT_HP_REGEN) / 100.0L);
+        ecs::PointSystem::GetPrecise(e, POINT_HP_REGEN) / 100.0L);
     return static_cast<int32_t>(std::clamp(static_cast<long double>(base) + bonus,
         static_cast<long double>(INT32_MIN), static_cast<long double>(INT32_MAX)));
 }

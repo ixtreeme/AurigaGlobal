@@ -770,7 +770,7 @@ void CGuildManager::MoneyChange(uint32_t dwGuild, int64_t dwGold)
 	CClientManager::instance().ForwardPacket(HEADER_DG_GUILD_MONEY_CHANGE, &p, sizeof(p));
 
 	char buf[1024];
-	snprintf(buf, sizeof(buf), "UPDATE guild%s SET gold=%lld WHERE id = %u", GetTablePostfix(), dwGold, dwGuild);
+	snprintf(buf, sizeof(buf), "UPDATE guild%s SET gold=%lld WHERE id = %u", GetTablePostfix(), static_cast<long long>(dwGold), dwGuild);
 	CDBManager::instance().AsyncQuery(buf);
 }
 

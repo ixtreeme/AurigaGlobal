@@ -540,11 +540,11 @@ namespace DungeonSystem
 #ifdef TEXTS_IMPROVEMENT
 						if (m_big == true)
 						{
-							ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_BIG_NOTICE, m_idx, m_psz);
+							ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_BIG_NOTICE, m_idx, "%s", m_psz);
 						}
 						else
 						{
-							ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_NOTICE, m_idx, m_psz);
+							ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_NOTICE, m_idx, "%s", m_psz);
 						}
 #else
 						ecs::ChatSystem::Send(chEntity, CHAT_TYPE_NOTICE, "%s", m_psz);
@@ -1106,7 +1106,7 @@ namespace DungeonSystem
 
 				if (ecs::PlayerRuntime::IsPC(chEntity))
 				{
-					ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "BINARY_Update_Mast_HP %d", m_value);
+					ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "BINARY_Update_Mast_HP %lld", static_cast<long long>(m_value));
 				}
 			}
 		}

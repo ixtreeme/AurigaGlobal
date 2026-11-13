@@ -1352,7 +1352,7 @@ ACMD(do_stat_minus)
 			return;
 
 		ecs::PointSystem::SetReal(character, POINT_ST, ecs::PointSystem::GetReal(character, POINT_ST) - 1);
-		ecs::PointSystem::Set(character, POINT_ST, ecs::PointSystem::Get(character, POINT_ST) - 1);
+		ecs::PointSystem::Set(character, POINT_ST, ecs::PointSystem::GetPrecise(character, POINT_ST) - 1);
 		ecs::PointSystem::Compute(character);
 		ecs::PointSystem::Change(character, POINT_ST, 0);
 	}
@@ -1362,7 +1362,7 @@ ACMD(do_stat_minus)
 			return;
 
 		ecs::PointSystem::SetReal(character, POINT_DX, ecs::PointSystem::GetReal(character, POINT_DX) - 1);
-		ecs::PointSystem::Set(character, POINT_DX, ecs::PointSystem::Get(character, POINT_DX) - 1);
+		ecs::PointSystem::Set(character, POINT_DX, ecs::PointSystem::GetPrecise(character, POINT_DX) - 1);
 		ecs::PointSystem::Compute(character);
 		ecs::PointSystem::Change(character, POINT_DX, 0);
 	}
@@ -1372,7 +1372,7 @@ ACMD(do_stat_minus)
 			return;
 
 		ecs::PointSystem::SetReal(character, POINT_HT, ecs::PointSystem::GetReal(character, POINT_HT) - 1);
-		ecs::PointSystem::Set(character, POINT_HT, ecs::PointSystem::Get(character, POINT_HT) - 1);
+		ecs::PointSystem::Set(character, POINT_HT, ecs::PointSystem::GetPrecise(character, POINT_HT) - 1);
 		ecs::PointSystem::Compute(character);
 		ecs::PointSystem::Change(character, POINT_HT, 0);
 		ecs::PointSystem::Change(character, POINT_MAX_HP, 0);
@@ -1383,7 +1383,7 @@ ACMD(do_stat_minus)
 			return;
 
 		ecs::PointSystem::SetReal(character, POINT_IQ, ecs::PointSystem::GetReal(character, POINT_IQ) - 1);
-		ecs::PointSystem::Set(character, POINT_IQ, ecs::PointSystem::Get(character, POINT_IQ) - 1);
+		ecs::PointSystem::Set(character, POINT_IQ, ecs::PointSystem::GetPrecise(character, POINT_IQ) - 1);
 		ecs::PointSystem::Compute(character);
 		ecs::PointSystem::Change(character, POINT_IQ, 0);
 		ecs::PointSystem::Change(character, POINT_MAX_SP, 0);
@@ -1687,13 +1687,13 @@ ACMD(do_pvp_advanced)
 
 	if (g)
 	{
-		ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "BINARY_Duel_GetInfo %d %s %s %d %d %d %lld %lld", m_Vid, m_Name, g->GetName(), m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "BINARY_Duel_GetInfo %d %s %s %d %d %d %lld %lld", m_Vid, m_Name, g->GetName(), m_Level, m_Race, m_PlayTime, static_cast<long long>(m_MaxHP), static_cast<long long>(m_MaxSP));
 
 		if (statusEq < 1)
 			NetworkSyncSystem::SendEquipmentToViewer(g_registry, victim, character);
 	}
 	else {
-		ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "BINARY_Duel_GetInfo %d %s %s %d %d %d %d %d", m_Vid, m_Name, m_GuildName, m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "BINARY_Duel_GetInfo %d %s %s %d %d %d %lld %lld", m_Vid, m_Name, m_GuildName, m_Level, m_Race, m_PlayTime, static_cast<long long>(m_MaxHP), static_cast<long long>(m_MaxSP));
 
 		if (statusEq < 1)
 			NetworkSyncSystem::SendEquipmentToViewer(g_registry, victim, character);
@@ -3074,9 +3074,8 @@ void open_in_game_mall(entt::entity character)
 
 	// snprintf(buf, sizeof(buf), "mall https://www.%s/shop?pid=%u&lang=%s&sid=%d&sas=%s",
 			// g_strWebMallURL.c_str(), (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), language, g_server_id, sas);
-	snprintf(buf, sizeof(buf), "mall https://bwmt2-global.eu/shop/",
-			ecs::PlayerRuntime::GetPlayerID(character), language, sas);
-	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, buf);
+	snprintf(buf, sizeof(buf), "mall https://bwmt2-global.eu/shop/");
+	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "%s", buf);
 }
 
 ACMD(do_in_game_mall)

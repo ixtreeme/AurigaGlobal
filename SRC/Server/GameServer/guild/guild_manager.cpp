@@ -900,10 +900,10 @@ void CGuildManager::ShowGuildWarList(entt::entity ch)
 
 		if (A && B)
 		{
-			ecs::ChatSystem::Send(ch, CHAT_TYPE_NOTICE, "%s[%d] vs %s[%d] time %u sec.",
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_NOTICE, "%s[%d] vs %s[%d] time %lld sec.",
 					A->GetName(), A->GetID(),
 					B->GetName(), B->GetID(),
-					get_global_time() - A->GetWarStartTime(B->GetID()));
+					static_cast<long long>(get_global_time() - A->GetWarStartTime(B->GetID())));
 		}
 	}
 }

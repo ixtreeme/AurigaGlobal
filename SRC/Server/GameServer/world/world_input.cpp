@@ -146,7 +146,7 @@ void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* p
 	if(ecs::PointSystem::GetGold(character) < rConf.price)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 773, "%d", rConf.price);
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 773, "%lld", static_cast<long long>(rConf.price));
 #endif
 		return;
 	}
