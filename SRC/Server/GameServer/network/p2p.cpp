@@ -63,7 +63,7 @@ void P2P_MANAGER::FlushOutput()
 	while (it != m_set_pkPeers.end())
 	{
 		LPDESC pkDesc = *it++;
-		pkDesc->FlushOutput();
+        if (pkDesc->IsPhase(PHASE_P2P)) pkDesc->FlushOutput();
 	}
 }
 
@@ -85,12 +85,12 @@ void P2P_MANAGER::RegisterConnector(LPDESC d)
 {
 	LOG_INFO("P2P Connector opened (host {})", d->GetHostName());
 	m_set_pkPeers.insert(d);
-	OnConnectorReady(d);
+    // The connector announces itself only after its authenticated phase switch.
 }
 
 void P2P_MANAGER::OnConnectorReady(LPDESC d)
 {
-	if (m_set_pkPeers.find(d) == m_set_pkPeers.end())
+	if (m_set_pkPeers.find(d) == m_set_pkPeers.end() || !d->IsPhase(PHASE_P2P))
 		return;
 
 	// The connector may still be connecting (or awaiting link auth); the
@@ -138,7 +138,9 @@ void P2P_MANAGER::Send(const void * c_pvData, int iSize, LPDESC except)
 	{
 		LPDESC pkDesc = *it++;
 
-		if (except == pkDesc)
+		// Connecting/authenticating sockets must never queue application packets
+        // ahead of the MAC response (including collection invalidations).
+        if (except == pkDesc || !pkDesc->IsPhase(PHASE_P2P))
 			continue;
 
 		pkDesc->Packet(c_pvData, iSize);

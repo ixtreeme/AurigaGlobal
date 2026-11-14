@@ -192,4 +192,7 @@ typedef struct SPacketGGAuthResult
 	uint8_t	bResult;
 } TPacketGGAuthResult;
 
+struct TPacketGGCollectionChanged { uint8_t header;uint32_t account;uint8_t window; };
+static_assert(sizeof(TPacketGGCollectionChanged)==6);
+
 #pragma pack()

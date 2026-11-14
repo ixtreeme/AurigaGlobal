@@ -68,6 +68,7 @@ void DESC_P2P::OnInput()
 	if (m_bAwaitingAuth)
 	{
 		HandleAuthInput();
+        if (!m_bAwaitingAuth && !IsPhase(PHASE_CLOSE)) DESC::OnInput();
 		return;
 	}
 

@@ -1,3 +1,4 @@
+#include "../../pet/AccountCollectionSystem.hpp"
 #include "../../core/stdafx.h"
 #include "../../story/CaravanQuestSystem.hpp"
 #include "ViewSystem.hpp"
@@ -482,6 +483,7 @@ void MountSystem::SendMountInventory(entt::entity owner)
 
     if (auto* desc = ecs::PlayerRuntime::GetDesc(owner))
         desc->Packet(buf.read_peek(), buf.size());
+    AccountCollectionSystem::Send(owner,MOUNT_INVENTORY);
 }
 
 void MountSystem::UpdateMountCountOverheadToViewers(entt::entity owner)
@@ -1251,61 +1253,5 @@ void UpdatePetSkin(entt::entity e)
 
 void MountSystem::ComputeMountInventoryBonuses(entt::entity owner)
 {
-	std::map<uint8_t, int64_t> mount_bonus_map;
-	if (GetMountInventory(owner) == entt::null)
-		return;
-
-	const auto& valid_items = CMountInventoryHelper::GetAllowedItems();
-	const int total = GetMountInventoryWidth(owner) * GetMountInventorySize(owner);
-
-	for (int pos = 0; pos < total; ++pos)
-	{
-		const entt::entity item = GetMountInventoryItem(owner, pos);
-		if (!ItemSystem::IsValidItem(item) || ItemSystem::GetItemOwner(item) != owner)
-			continue;
-
-		const uint32_t vnum = ItemSystem::GetItemVnum(item);
-		if (!valid_items.contains(vnum))
-			continue;
-
-		const TItemTable* proto = ItemSystem::GetItemProto(item);
-		if (!proto)
-			continue;
-
-		for (const auto& apply : proto->aApplies)
-		{
-			if (apply.bType == APPLY_NONE || apply.lValue == 0)
-				continue;
-
-			if (apply.bType >= MAX_APPLY_NUM)
-				continue;
-
-			const uint8_t pointType = aApplyInfo[apply.bType].bPointType;
-			if (pointType != POINT_NONE)
-				mount_bonus_map[pointType] += apply.lValue;
-		}
-
-		for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-		{
-			const auto attribute = ItemSystem::GetItemAttribute(item, i);
-			const uint8_t bType = attribute.bType;
-			const double sVal = attribute.sValue;
-
-			if (bType == APPLY_NONE || sVal == 0)
-				continue;
-
-			if (bType >= MAX_APPLY_NUM)
-				continue;
-
-			const uint8_t pointType = aApplyInfo[bType].bPointType;
-			if (pointType != POINT_NONE)
-				mount_bonus_map[pointType] += sVal;
-		}
-	}
-
-	for (const auto& it : mount_bonus_map)
-	{
-		if (!g_registry.valid(owner)) return;
-		ecs::PointSystem::Change(owner, it.first, it.second);
-	}
+    AccountCollectionSystem::Compute(owner,MOUNT_INVENTORY);
 }

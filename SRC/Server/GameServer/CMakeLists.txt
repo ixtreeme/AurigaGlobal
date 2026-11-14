@@ -817,3 +817,8 @@ set_tests_properties(bonus_precision_integration PROPERTIES LABELS server TIMEOU
 add_dependencies(ServerTests BonusPrecisionIntegrationTests)
 
 add_dependencies(ServerTests PetInventoryRulesTests)
+
+add_executable(PetInventoryBonusTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/PetInventoryBonusTests.cpp)
+add_test(NAME account_collection_bonuses COMMAND PetInventoryBonusTests)
+set_tests_properties(account_collection_bonuses PROPERTIES LABELS server TIMEOUT 60)
+add_dependencies(ServerTests PetInventoryBonusTests)

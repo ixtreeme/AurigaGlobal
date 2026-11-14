@@ -224,7 +224,16 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 				ecs::PlayerRuntime::GetAccountID(ch) == request->accountId)
 			{
 				SQLResult* res = pMsg->Get();
-				const auto columnCount = mysql_num_fields(res->pSQLResult);
+                if (pMsg->uiSQLErrno || !res || !res->pSQLResult)
+                {
+                    const auto* pending=g_registry.try_get<ecs::MountInventoryLoadState>(ch);
+                    if (pending && pending->requestId==request->requestId)
+                        g_registry.remove<ecs::MountInventoryLoadState>(ch);
+                    sys_err("MOUNT_INVENTORY_LOAD: database query failed for account %u", request->accountId);
+                    delete request;
+                    break;
+                }
+                const auto columnCount = mysql_num_fields(res->pSQLResult);
 				std::vector<TMountInventoryItemTable> items;
 				items.reserve(res->uiNumRows);
 
@@ -274,8 +283,11 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 				ecs::PlayerRuntime::GetAccountID(ch) == request->accountId)
 			{
 				SQLResult* res = pMsg->Get();
-				if (!res || !res->pSQLResult)
+                if (pMsg->uiSQLErrno || !res || !res->pSQLResult)
                 {
+                    const auto* pending=g_registry.try_get<ecs::PetInventoryLoadState>(ch);
+                    if (pending && pending->requestId==request->requestId)
+                        g_registry.remove<ecs::PetInventoryLoadState>(ch);
                     sys_err("PET_INVENTORY_LOAD: database query failed for account %u", request->accountId);
                     delete request;
                     break;

@@ -1,3 +1,4 @@
+#include "AccountCollectionSystem.hpp"
 #include "stdafx.h"
 #include "MountInventory.h"
 #include "char_interface.hpp"
@@ -153,10 +154,10 @@ uint32_t AccountId(const Inventory& inventory)
     return inventory.accountId;
 }
 
-void SaveItem(const Inventory& inventory, uint32_t pos, entt::entity itemEntity)
+bool SaveItem(const Inventory& inventory, uint32_t pos, entt::entity itemEntity)
 {
     if (!ItemSystem::IsValidItem(itemEntity) || AccountId(inventory) == 0)
-        return;
+        return false;
 
     // The attribute column list is built from ITEM_ATTRIBUTE_MAX_NUM. The old
     // hardcoded attrtype0..5 dropped the last slot (6, and now 7) on save.
@@ -192,23 +193,15 @@ void SaveItem(const Inventory& inventory, uint32_t pos, entt::entity itemEntity)
 
     snprintf(query + len, sizeof(query) - len, ")");
 
-    DBManager::instance().Query("%s", query);
+    return AccountCollectionSystem::Persist(query,AccountId(inventory),MOUNT_INVENTORY);
 }
 
-void DeleteItem(const Inventory& inventory, uint32_t pos, uint32_t id)
+bool DeleteItem(const Inventory& inventory,uint32_t pos,uint32_t id)
 {
-    if (AccountId(inventory) == 0)
-        return;
-
-    DBManager::instance().Query(
-        "DELETE FROM account_mount_inventory WHERE account_id=%u AND slot=%u",
-        AccountId(inventory), pos);
-
-    if (id != 0)
-    {
-        DBManager::instance().Query(
-            "DELETE FROM account_mount_inventory WHERE id=%u", id);
-    }
+    if (!AccountId(inventory) || !id) return false;
+    char query[256];snprintf(query,sizeof(query),
+        "DELETE FROM account_mount_inventory WHERE account_id=%u AND slot=%u AND id=%u",AccountId(inventory),pos,id);
+    return AccountCollectionSystem::Persist(query,AccountId(inventory),MOUNT_INVENTORY);
 }
 
 bool AddToInventory(Inventory& inventory, entt::entity owner, uint32_t pos,
@@ -238,8 +231,13 @@ bool AddToInventory(Inventory& inventory, entt::entity owner, uint32_t pos,
     inventory.items[pos] = itemEntity;
 
     const bool expireStateChanged = StartMountExpireIfNeeded(itemEntity);
-    if (!skipSave || expireStateChanged)
-        SaveItem(inventory, pos, itemEntity);
+    if ((!skipSave || expireStateChanged) && !SaveItem(inventory, pos, itemEntity))
+    {
+        ItemSystem::RemoveItemEcs(itemEntity);
+        Get(inventory,pos,ItemSystem::GetItemSize(itemEntity));
+        inventory.items[pos]=entt::null;
+        return false;
+    }
     return true;
 }
 
@@ -257,8 +255,7 @@ bool RestoreToInventory(Inventory& inventory, entt::entity owner, uint32_t pos,
 
     Put(inventory, pos, ItemSystem::GetItemSize(itemEntity));
     inventory.items[pos] = itemEntity;
-    SaveItem(inventory, pos, itemEntity);
-    return true;
+    return SaveItem(inventory, pos, itemEntity);
 }
 
 bool Detach(Inventory& inventory, uint32_t pos, entt::entity expectedItem,
@@ -272,10 +269,9 @@ bool Detach(Inventory& inventory, uint32_t pos, entt::entity expectedItem,
         (expectedItem != entt::null && item != expectedItem))
         return false;
 
+    if (!skipDbDelete && !DeleteItem(inventory,pos,ItemSystem::GetItemID(item))) return false;
     Get(inventory, pos, ItemSystem::GetItemSize(item));
     inventory.items[pos] = entt::null;
-    if (!skipDbDelete)
-        DeleteItem(inventory, pos, ItemSystem::GetItemID(item));
     return true;
 }
 
@@ -518,8 +514,13 @@ bool MoveMountInventoryItem(entt::entity rider, uint32_t from, uint32_t to)
     }
     inventory->items[from] = entt::null;
     inventory->items[to] = item;
-    SaveItem(*inventory, to, item);
-    DeleteItem(*inventory, from, 0);
+    // The unique item ID makes REPLACE an atomic move between bank cells.
+    if (!SaveItem(*inventory,to,item)) {
+        inventory->items[to]=entt::null;inventory->items[from]=item;
+        Get(*inventory,to,size);Put(*inventory,from,size);
+        ItemSystem::SetItemCell(item,rider,from);
+        return false;
+    }
     return true;
 }
 

@@ -1294,4 +1294,12 @@ typedef struct SPacketGCBonusPoint
 static_assert(sizeof(TPacketGCBonusPoints) == 2296);
 static_assert(sizeof(TPacketGCBonusPoint) == 11);
 
+struct TPacketGCCollectionBonuses {
+    uint8_t header;uint16_t size;uint8_t window;uint8_t loaded;
+    uint16_t itemCount;uint16_t tiers;uint8_t threshold;uint16_t bonusCount;
+};
+struct TCollectionBonusData { uint8_t apply;double items;double perTier; };
+static_assert(sizeof(TPacketGCCollectionBonuses)==12);
+static_assert(sizeof(TCollectionBonusData)==17);
+
 #pragma pack()

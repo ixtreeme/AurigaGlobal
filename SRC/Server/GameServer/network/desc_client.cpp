@@ -276,20 +276,13 @@ void CLIENT_DESC::SetPhase(int iPhase)
 			break;
 
 		case PHASE_P2P:
-			LOG_INFO("PHASE_P2P");
-
-			if (m_lpInputBuffer)
-				buffer_reset(m_lpInputBuffer);
-
-			if (m_lpOutputBuffer)
-				buffer_reset(m_lpOutputBuffer);
-
-			m_pInputProcessor = &m_inputP2P;
-
-			// The early RegisterConnector Boot was dropped while the socket
-			// was still connecting; send the initial peer state now.
-			P2P_MANAGER::instance().OnConnectorReady(this);
-			break;
+            LOG_INFO("PHASE_P2P");
+            // Auth result and the peer's initial state may arrive together.
+            // Retain buffered tail data, and publish readiness before Boot/Setup.
+            m_pInputProcessor = &m_inputP2P;
+            m_iPhase = iPhase;
+            P2P_MANAGER::instance().OnConnectorReady(this);
+            break;
 
 		case PHASE_CLOSE:
 			m_pInputProcessor = nullptr;
@@ -556,6 +549,7 @@ void CLIENT_DESC::OnInput()
 	if (m_bAwaitingAuth)
 	{
 		HandleAuthInput();
+        if (!m_bAwaitingAuth && !IsPhase(PHASE_CLOSE)) DESC::OnInput();
 		return;
 	}
 

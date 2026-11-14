@@ -1,3 +1,4 @@
+#include "../pet/AccountCollectionSystem.hpp"
 #include "stdafx.h"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
@@ -529,7 +530,13 @@ int CInputP2P::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 			IamAwake(d, c_pData);
 			break;
 
-		case HEADER_GG_PING:
+		case HEADER_GG_COLLECTION_CHANGED:
+            {
+                const auto* packet=reinterpret_cast<const TPacketGGCollectionChanged*>(c_pData);
+                AccountCollectionSystem::Invalidate(packet->account,packet->window);
+            }
+            break;
+        case HEADER_GG_PING:
 			{
 				TPacketGGPong p;
 				p.bHeader = HEADER_GG_PONG;

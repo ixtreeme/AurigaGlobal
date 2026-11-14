@@ -270,6 +270,7 @@ CPacketInfoCG::~CPacketInfoCG()
 ////////////////////////////////////////////////////////////////////////////////
 CPacketInfoGG::CPacketInfoGG()
 {
+	Set(HEADER_GG_COLLECTION_CHANGED, sizeof(TPacketGGCollectionChanged), "CollectionChanged", false);
 	Set(HEADER_GG_SETUP,		sizeof(TPacketGGSetup),		"Setup", false);
 	Set(HEADER_GG_LOGIN,		sizeof(TPacketGGLogin),		"Login", false);
 	Set(HEADER_GG_LOGOUT,		sizeof(TPacketGGLogout),	"Logout", false);
