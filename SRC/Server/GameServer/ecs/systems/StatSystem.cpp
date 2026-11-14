@@ -1,3 +1,4 @@
+#include "PetInventorySystem.hpp"
 #include "../../core/stdafx.h"
 #include "StatSystem.hpp"
 #include "PointSystem.hpp"
@@ -146,6 +147,7 @@ void Compute(entt::entity e)
     }) ecs::PlayerRuntime::SetPart(e, part, ecs::PlayerRuntime::GetOriginalPart(e, part));
 
     MountSystem::ComputeMountInventoryBonuses(e);
+    PetInventorySystem::ComputePetInventoryBonuses(e);
     if (!HasPointState(e)) return;
     int64_t maxHP = mobHP, maxSP = 0, maxStamina = 0;
     if (player) {

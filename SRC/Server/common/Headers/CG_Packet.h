@@ -409,6 +409,27 @@ typedef struct command_mount_inventory_item_move
 	uint16_t	wDestPos;
 } TPacketCGMountInventoryItemMove;
 
+typedef struct command_pet_inventory_checkin
+{
+	uint8_t bHeader;
+	TItemPos	ItemPos;
+	uint16_t	wPetPos;
+} TPacketCGPetInventoryCheckin;
+
+typedef struct command_pet_inventory_checkout
+{
+	uint8_t bHeader;
+	uint16_t	wPetPos;
+	TItemPos	ItemPos;
+} TPacketCGPetInventoryCheckout;
+
+typedef struct command_pet_inventory_item_move
+{
+	uint8_t bHeader;
+	uint16_t	wPetPos;
+	uint16_t	wDestPos;
+} TPacketCGPetInventoryItemMove;
+
 typedef struct command_party_parameter
 {
 	uint8_t	bHeader;

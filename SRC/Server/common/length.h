@@ -687,6 +687,7 @@ enum EWindows
 	NEW_OFFSHOP,
 	SHOP_SAFEBOX,
 #endif
+    PET_INVENTORY = 14,
 };
 
 enum EMobSizes
@@ -979,7 +980,9 @@ typedef struct SItemPos
 		case MALL:
 			return false;
 
-		case MOUNT_INVENTORY:
+		case PET_INVENTORY:
+        return cell < PET_INVENTORY_MAX_NUM;
+        case MOUNT_INVENTORY:
 			return cell < (MOUNT_INVENTORY_MAX_NUM);
 #ifdef ENABLE_EXTRA_INVENTORY
 		case EXTRA_INVENTORY:

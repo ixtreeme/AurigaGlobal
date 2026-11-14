@@ -1,3 +1,4 @@
+#include "../ecs/systems/PetInventorySystem.hpp"
 #include "stdafx.h"
 #include <common/character_creation.h>
 #include <Core/packet_string.h>
@@ -655,6 +656,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 
 	ecs::SessionSystem::QuerySafeboxSize(chEntity);
 	MountSystem::QueryMountInventory(chEntity);
+    PetInventorySystem::QueryPetInventory(chEntity);
 }
 
 void CInputDB::Boot(const char* data)
@@ -2516,4 +2518,4 @@ void CInputDB::EventManager(const char* c_pData)
 }
 #endif
 
-
+

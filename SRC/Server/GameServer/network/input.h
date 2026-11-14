@@ -159,8 +159,11 @@ class CInputMain : public CInputProcessor
 		void		SafeboxItemMove(entt::entity character, const char * data);
 
 		void            MountInventoryCheckin(entt::entity character, const char* c_pData);
+		void            PetInventoryCheckin(entt::entity character, const char* c_pData);
 		void            MountInventoryCheckout(entt::entity character, const char* c_pData);
+		void            PetInventoryCheckout(entt::entity character, const char* c_pData);
 		static void            MountInventoryItemMove(entt::entity character, const char* data);
+		static void            PetInventoryItemMove(entt::entity character, const char* data);
 
 		int			Messenger(entt::entity character, const char* c_pData, uint64_t uiBytes);
 

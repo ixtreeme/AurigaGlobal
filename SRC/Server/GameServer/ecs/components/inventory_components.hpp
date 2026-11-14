@@ -10,6 +10,7 @@
 #include "../../item/cuberenewal.h"
 #include "../../item/attr_transfer.h"
 #include "../../pet/MountInventory.h"
+#include "../../pet/PetInventory.h"
 #include "../../world/event.h"
 #include "item_components.hpp"
 
@@ -140,6 +141,22 @@ struct MountInventoryComponent {
     std::array<uint8_t, SlotCount> occupied {};
 
     MountInventoryComponent() { items.fill(entt::null); }
+};
+
+struct PetInventoryComponent {
+    static constexpr uint8_t Width = PET_INVENTORY_WIDTH;
+    static constexpr uint8_t MaxHeight = PET_INVENTORY_MAX_HEIGHT;
+    static constexpr uint16_t SlotCount = Width * MaxHeight;
+
+    entt::entity owner { entt::null };
+    uint32_t accountId { 0 };
+    uint8_t height { MaxHeight };
+    bool loaded { false };
+    bool destroying { false };
+    std::array<entt::entity, SlotCount> items;
+    std::array<uint8_t, SlotCount> occupied {};
+
+    PetInventoryComponent() { items.fill(entt::null); }
 };
 
 // Authoritative state for one open safebox or mall window. The storage is a

@@ -753,6 +753,24 @@ typedef struct packet_mount_inventory_item
 	TPlayerItemAttribute aAttr[ITEM_ATTRIBUTE_MAX_NUM];
 } TMountInventoryItemData;
 
+typedef struct packet_pet_inventory
+{
+	uint8_t bHeader;
+	uint16_t size;
+	uint8_t bWidth;
+	uint8_t bHeight;
+	uint16_t wCount;
+} TPacketGCPetInventory;
+
+typedef struct packet_pet_inventory_item
+{
+	uint16_t wSlot;
+	uint32_t dwVnum;
+	uint32_t dwCount;
+	uint32_t alSockets[ITEM_SOCKET_MAX_NUM];
+	TPlayerItemAttribute aAttr[ITEM_ATTRIBUTE_MAX_NUM];
+} TPetInventoryItemData;
+
 typedef struct packet_guild
 {
 	uint8_t header;

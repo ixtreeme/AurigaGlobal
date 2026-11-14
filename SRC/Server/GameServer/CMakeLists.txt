@@ -10,6 +10,11 @@ find_package(EnTT CONFIG REQUIRED)
 auriga_add_server_executable(GameServer LIBS LUA)
 target_link_libraries(GameServer PRIVATE EnTT::EnTT)
 
+add_executable(PetInventoryRulesTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/PetInventoryRulesTests.cpp)
+target_link_libraries(PetInventoryRulesTests PRIVATE SERVER EnTT::EnTT)
+add_test(NAME pet_inventory_rules COMMAND PetInventoryRulesTests)
+
 add_executable(WoodcuttingRulesTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/WoodcuttingRulesTests.cpp)
 add_test(NAME woodcutting_rules COMMAND WoodcuttingRulesTests)
@@ -810,3 +815,5 @@ target_link_libraries(BonusPrecisionIntegrationTests PRIVATE SERVER EnTT::EnTT)
 add_test(NAME bonus_precision_integration COMMAND BonusPrecisionIntegrationTests)
 set_tests_properties(bonus_precision_integration PROPERTIES LABELS server TIMEOUT 60)
 add_dependencies(ServerTests BonusPrecisionIntegrationTests)
+
+add_dependencies(ServerTests PetInventoryRulesTests)

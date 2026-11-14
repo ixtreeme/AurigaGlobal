@@ -91,7 +91,11 @@ bool CItemIDRangeManager::BuildRange(uint32_t dwMin, uint32_t dwMax, TItemIDRang
 	SQLMsg* pMsg = nullptr;
 	MYSQL_ROW row;
 
-	snprintf(szQuery, sizeof(szQuery), "SELECT MAX(id) FROM item%s WHERE id >= %u and id <= %u", GetTablePostfix(), dwMin, dwMax);
+	snprintf(szQuery, sizeof(szQuery), "SELECT MAX(max_id) FROM ("
+        "SELECT MAX(id) AS max_id FROM item%s WHERE id >= %u AND id <= %u "
+        "UNION ALL SELECT MAX(id) FROM account_mount_inventory WHERE id >= %u AND id <= %u "
+        "UNION ALL SELECT MAX(id) FROM account_pet_inventory WHERE id >= %u AND id <= %u"
+        ") AS stored_items", GetTablePostfix(), dwMin, dwMax, dwMin, dwMax, dwMin, dwMax);
 
 	pMsg = CDBManager::instance().DirectQuery(szQuery);
 
@@ -120,8 +124,12 @@ bool CItemIDRangeManager::BuildRange(uint32_t dwMin, uint32_t dwMax, TItemIDRang
 		range.dwMax = dwMax;
 		range.dwUsableItemIDMin = dwItemMaxID;
 
-		snprintf(szQuery, sizeof(szQuery), "SELECT COUNT(*) FROM item%s WHERE id >= %u AND id <= %u",
-				GetTablePostfix(), range.dwUsableItemIDMin, range.dwMax);
+		snprintf(szQuery, sizeof(szQuery), "SELECT SUM(item_count) FROM ("
+                "SELECT COUNT(*) AS item_count FROM item%s WHERE id >= %u AND id <= %u "
+                "UNION ALL SELECT COUNT(*) FROM account_mount_inventory WHERE id >= %u AND id <= %u "
+                "UNION ALL SELECT COUNT(*) FROM account_pet_inventory WHERE id >= %u AND id <= %u"
+                ") AS stored_items", GetTablePostfix(), range.dwUsableItemIDMin, range.dwMax,
+                range.dwUsableItemIDMin, range.dwMax, range.dwUsableItemIDMin, range.dwMax);
 
 		pMsg = CDBManager::instance().DirectQuery(szQuery);
 

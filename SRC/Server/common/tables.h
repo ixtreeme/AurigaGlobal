@@ -856,6 +856,16 @@ typedef struct SMountInventoryItemTable
 	TPlayerItemAttribute	aAttr[ITEM_ATTRIBUTE_MAX_NUM];
 } TMountInventoryItemTable;
 
+typedef struct SPetInventoryItemTable
+{
+	uint32_t	id;
+	uint16_t	slot;
+	uint32_t	vnum;
+	uint32_t	count;
+	int32_t alSockets[ITEM_SOCKET_MAX_NUM];
+	TPlayerItemAttribute	aAttr[ITEM_ATTRIBUTE_MAX_NUM];
+} TPetInventoryItemTable;
+
 
 typedef struct SPacketGDSetup
 {

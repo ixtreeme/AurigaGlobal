@@ -1,3 +1,4 @@
+#include "../ecs/systems/PetInventorySystem.hpp"
 #include "stdafx.h"
 #include "../ecs/CharacterAccessors.hpp"
 #include "../ecs/systems/InventorySystem.hpp"
@@ -712,6 +713,7 @@ void ITEM_MANAGER::RemoveItem(entt::entity itemEntity, const char* reason)
 				return storage != entt::null ? SafeboxSystem::GetItem(storage, cell) : entt::null;
 			}
 			if (window == MOUNT_INVENTORY) return MountSystem::GetMountInventoryItem(owner, cell);
+            if(window==PET_INVENTORY)return PetInventorySystem::GetPetInventoryItem(owner,cell);
 			return ItemSystem::GetItem(owner, position);
 		};
 		// Never clear a foreign occupant (or its quickslot) from a stale location.
@@ -770,6 +772,14 @@ void ITEM_MANAGER::RemoveItem(entt::entity itemEntity, const char* reason)
 #ifdef ENABLE_FAKE_SHOP_HEADER
 			if (g_registry.valid(owner)) MountSystem::UpdateMountCountOverheadToViewers(owner);
 #endif
+			if (!detached()) return;
+		}
+if (window == PET_INVENTORY)
+		{
+			if (g_registry.valid(owner)) PetInventorySystem::SendPetInventory(owner);
+			if (g_registry.valid(owner)) ecs::PointSystem::Compute(owner);
+			if (g_registry.valid(owner)) NetworkSyncSystem::PointsPacket(owner);
+
 			if (!detached()) return;
 		}
 	}
@@ -838,7 +848,7 @@ void ITEM_MANAGER::DestroyItemNow(entt::entity itemEntity)
 		// Equipment locations store absolute inventory cells; GetItem's
 		// EQUIPMENT input takes a relative wear slot, so query INVENTORY here.
 		const TItemPos position(window == EQUIPMENT ? INVENTORY : window, cell);
-		if (window == SAFEBOX || window == MALL || window == MOUNT_INVENTORY ||
+		if (window == SAFEBOX || window == MALL || window == MOUNT_INVENTORY || window == PET_INVENTORY ||
 			ItemSystem::GetItem(owner, position) == itemEntity)
 			InventorySystem::RemoveFromCharacter(itemEntity);
 		else

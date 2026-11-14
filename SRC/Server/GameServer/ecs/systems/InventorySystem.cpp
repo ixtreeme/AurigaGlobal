@@ -1,3 +1,4 @@
+#include "PetInventorySystem.hpp"
 #include "../../core/stdafx.h"
 #include "PlayerRuntimeSystem.hpp"
 #include "PointSystem.hpp"
@@ -2117,6 +2118,8 @@ entt::entity RemoveFromCharacter(entt::entity item)
     // Close flows. Mount's item-based removal is idempotent when invoked here.
     if (oldPosition.window_type == MOUNT_INVENTORY && g_registry.valid(owner))
         MountSystem::RemoveMountInventoryItemByEntity(owner, item);
+    if (oldPosition.window_type == PET_INVENTORY && g_registry.valid(owner))
+        PetInventorySystem::RemovePetInventoryItemByEntity(owner,item);
 #ifdef ENABLE_SWITCHBOT
     for (const auto cell : switchSlots)
         if (g_registry.valid(owner))

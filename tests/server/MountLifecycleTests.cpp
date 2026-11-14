@@ -45,7 +45,7 @@ entt::registry g_registry;
 entt::dispatcher g_dispatcher;
 int passes_per_sec = 25;
 const TApplyInfo aApplyInfo[MAX_APPLY_NUM] = {};
-const uint32_t Pet_Skill_Table[12][23] = {};
+const double Pet_Skill_Table[12][23] = {};
 uint32_t testPetExp[121] {};
 uint32_t* exppet_table = testPetExp;
 
@@ -306,7 +306,7 @@ entt::entity GetInventoryItem(entt::entity owner, uint16_t cell) {
     return entt::null;
 }
 entt::entity GetItem(entt::entity owner, TItemPos cell) { return GetInventoryItem(owner, cell.cell); }
-bool SetItemForceAttributeEcs(entt::entity e, int index, uint8_t, int16_t value) {
+bool SetItemForceAttributeEcs(entt::entity e, int index, uint8_t, double value) {
     Check(IsValidItem(e) && index >= 0 && index < ITEM_ATTRIBUTE_MAX_NUM, "invalid pet attribute write");
     g_registry.get<ItemState>(e).attributes[index] = value;
     return true;
@@ -360,7 +360,7 @@ void SyncWalkingWrite(entt::entity e, bool) { State(e); }
 void SetNowWalking(entt::entity e, bool walking) { State(e).walking = walking; }
 }
 CAffect* AffectSystem::FindAffect(entt::entity e, uint32_t, uint8_t) { return bonusOwners.contains(e) ? &bonus : nullptr; }
-bool AffectSystem::AddAffect(entt::entity e, uint32_t type, uint8_t, int32_t value, uint32_t,
+bool AffectSystem::AddAffect(entt::entity e, uint32_t type, uint8_t, double value, uint32_t,
     int32_t duration, int32_t, bool, bool)
 {
     State(e); ++affects; lastDuration = duration;
@@ -387,7 +387,7 @@ void ecs::PointSystem::Compute(entt::entity e) {
     if (onCompute) onCompute();
     PetSystem::RefreshBuff(e);
 }
-void ecs::PointSystem::ApplyPoint(entt::entity e, uint8_t, int value) {
+void ecs::PointSystem::ApplyPoint(entt::entity e, uint8_t, double value) {
     State(e).petBonus += value;
     ++clearCalls;
     lastClearValue = value;
@@ -417,7 +417,7 @@ entt::entity PetItem(entt::entity owner, int value = 10)
 {
     const auto item = Item(owner);
     auto& material = g_registry.get<ItemState>(item);
-    material.proto.aApplies[0] = { APPLY_MOV_SPEED, value };
+    material.proto.aApplies[0] = { APPLY_MOV_SPEED, static_cast<double>(value) };
     material.attributeBonus = 7;
     return item;
 }

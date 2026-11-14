@@ -1,3 +1,4 @@
+#include "PetInventorySystem.hpp"
 #include "../../core/stdafx.h"
 #include "../../story/SpyQuestSystem.hpp"
 #include "../../story/CaravanQuestSystem.hpp"
@@ -3122,6 +3123,7 @@ void DestroyCharacterStatePre(entt::entity character)
 
 
     MountSystem::DestroyMountInventory(character);
+    PetInventorySystem::DestroyPetInventory(character);
 
 }
 

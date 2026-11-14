@@ -1,3 +1,4 @@
+#include "../ecs/systems/PetInventorySystem.hpp"
 #include <cmath>
 #include "stdafx.h"
 #include <Core/Logging.hpp>
@@ -256,6 +257,62 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 				}
 
 				MountSystem::LoadMountInventory(ch, request->accountId,
+					request->requestId, items);
+			}
+			if (request)
+				delete request;
+		}
+		break;
+
+
+		case QID_PET_INVENTORY_LOAD:
+		{
+			auto* request = static_cast<PetInventoryLoadRequest*>(qi->pvData);
+			const entt::entity ch = request ? request->character : entt::null;
+			const entt::entity current = CHARACTER_MANAGER::instance().FindEntityByPID(qi->dwIdent);
+			if (request && ch == current && ecs::IsCharacter(ch) &&
+				ecs::PlayerRuntime::GetAccountID(ch) == request->accountId)
+			{
+				SQLResult* res = pMsg->Get();
+				if (!res || !res->pSQLResult)
+                {
+                    sys_err("PET_INVENTORY_LOAD: database query failed for account %u", request->accountId);
+                    delete request;
+                    break;
+                }
+                const auto columnCount = mysql_num_fields(res->pSQLResult);
+				std::vector<TPetInventoryItemTable> items;
+				items.reserve(res->uiNumRows);
+
+				for (uint64_t i = 0; i < res->uiNumRows; ++i)
+				{
+					MYSQL_ROW row = res->FetchRow();
+					if (!row)
+						continue;
+
+					TPetInventoryItemTable entry{};
+					str_to_number(entry.id, row[0]);
+					str_to_number(entry.slot, row[1]);
+					str_to_number(entry.vnum, row[2]);
+					str_to_number(entry.count, row[3]);
+					str_to_number(entry.alSockets[0], row[4]);
+					str_to_number(entry.alSockets[1], row[5]);
+					str_to_number(entry.alSockets[2], row[6]);
+
+					for (int j = 0; j < ITEM_ATTRIBUTE_MAX_NUM; ++j)
+					{
+						int typeIndex = 7 + j * 2;
+						int valueIndex = typeIndex + 1;
+						if (valueIndex >= static_cast<int>(columnCount))
+							break;
+						str_to_number(entry.aAttr[j].bType, row[typeIndex]);
+						entry.aAttr[j].sValue = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, row[valueIndex]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
+					}
+
+					items.push_back(entry);
+				}
+
+				PetInventorySystem::LoadPetInventory(ch, request->accountId,
 					request->requestId, items);
 			}
 			if (request)

@@ -968,6 +968,18 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 			MountInventoryItemMove(character, c_pData);
 			break;
 
+		case HEADER_CG_PET_INVENTORY_CHECKIN:
+			PetInventoryCheckin(character, c_pData);
+			break;
+
+		case HEADER_CG_PET_INVENTORY_CHECKOUT:
+			PetInventoryCheckout(character, c_pData);
+			break;
+
+		case HEADER_CG_PET_INVENTORY_ITEM_MOVE:
+			PetInventoryItemMove(character, c_pData);
+			break;
+
 		case HEADER_CG_PARTY_INVITE:
 			PartyInvite(character, c_pData);
 			break;
@@ -1244,4 +1256,4 @@ void CInputMain::RequestLanguage(entt::entity character, const char* targetName)
 }
 #endif
 
-
+
