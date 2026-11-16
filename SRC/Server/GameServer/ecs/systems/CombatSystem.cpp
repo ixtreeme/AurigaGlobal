@@ -1,3 +1,4 @@
+#include "../../warrior/WarriorMobility.hpp"
 #include "../../warrior/WarriorSkillSystem.hpp"
 #include "../../core/stdafx.h"
 #include "../../benchmark/BenchmarkSession.hpp"
@@ -2726,6 +2727,7 @@ namespace CombatSystem {
 // without ever checking it, which is what this step exists to stop.
 bool Attack(entt::entity attacker, entt::entity victim, uint8_t attackType)
 {
+    if(WarriorMobility::Active(attacker))return false;
     if (attacker == entt::null || !g_registry.valid(attacker))
         return false;
     // Pruning shears are gathering tools, even though the equipment protocol

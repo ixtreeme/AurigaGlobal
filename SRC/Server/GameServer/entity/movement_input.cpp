@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "../story/SpyQuestSystem.hpp"
+#include "../warrior/WarriorMobility.hpp"
 #include "../story/CaravanQuestSystem.hpp"
 #include <Core/Logging.hpp>
 #include "input.h"
@@ -94,6 +95,9 @@ void CInputMain::Move(entt::entity character, const char * data)
 		return;
 
 	struct command_move * pinfo = (struct command_move *) data;
+    if(pinfo->bFunc==WarriorMobility::Move||pinfo->bFunc==WarriorMobility::Capability||pinfo->bFunc==WarriorMobility::Cancel){WarriorMobility::Request(character,pinfo->bArg,pinfo->bRot,pinfo->bFunc,pinfo->lX,pinfo->lY,pinfo->dwTime);return;}
+    if(WarriorMobility::Active(character))return;
+    WarriorMobility::ForgetCompleted(character);
 	if (!ecs::MovementSystem::CanMove(character))
 		return;
 

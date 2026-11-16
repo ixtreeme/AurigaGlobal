@@ -1,3 +1,4 @@
+#include "../../warrior/WarriorMobility.hpp"
 #include "../../core/stdafx.h"
 #include "../../benchmark/BenchmarkSession.hpp"
 #include "MovementSystem.hpp"
@@ -3784,6 +3785,7 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 
 bool SkillSystem::UseSkill(entt::entity e, uint32_t dwVnum, entt::entity victim, bool bUseGrandMaster)
 {
+    if(WarriorMobility::Active(e))return false;
     if (EclipseRaid::MovementLocked(e)) return false;
 	if (!ecs::IsCharacter(e))
 		return false;

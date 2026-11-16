@@ -1,3 +1,4 @@
+#include "../../warrior/WarriorMobility.hpp"
 #include "../../core/stdafx.h"
 
 #include "EntityNetworkDispatch.hpp"
@@ -213,6 +214,7 @@ void SendCharacterInsert(entt::registry& reg, entt::entity source, entt::entity 
 
     ecs::NetworkService::Send(viewer, &packet, sizeof(packet));
     NetworkSyncSystem::SendCharAdditionalInfo(reg, source, viewer);
+    WarriorMobility::Snapshot(source,viewer);
     WoodcuttingSystem::SendSnapshot(source, viewer);
     HerbalismSystem::SendSnapshot(source, viewer);
     ecs::MountFlightSystem::Send(source,viewer);
