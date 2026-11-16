@@ -65,7 +65,7 @@ bool UpdateAffect(entt::entity e);
 void AutoRecallProcess(entt::entity e);
 #endif
 void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement* pElements);
-bool IsGoodAffect(uint8_t bAffectType);
+bool IsGoodAffect(uint32_t bAffectType);
 bool IsAffectFlag(entt::entity e, uint32_t flag);
 bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, double applyValue,
                uint32_t flag, int32_t duration, int32_t spCost, bool overwrite,

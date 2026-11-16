@@ -1,3 +1,4 @@
+#include "../../warrior/WarriorSkillSystem.hpp"
 #include "../../core/stdafx.h"
 #include "../../benchmark/BenchmarkSession.hpp"
 #include "../../story/SpyQuestSystem.hpp"
@@ -4685,6 +4686,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
     if (victim == entt::null || !g_registry.valid(victim))
         return false;
 
+    dam=WarriorExpansion::ReduceIncoming(victim,attacker,dam,damageType);
     const EDamageType type = static_cast<EDamageType>(damageType);
 
     if (!ecs::Invariants::HasAnyTypeTag(g_registry, victim))

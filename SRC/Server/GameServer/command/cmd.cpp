@@ -17,6 +17,7 @@
 #include "log.h"
 #include "desc.h"
 
+ACMD(do_warrior_skill);
 ACMD(do_user_horse_ride);
 ACMD(do_spyquest);
 ACMD(do_caravan);
@@ -510,6 +511,7 @@ struct command_info cmd_info[] =
 	{ "quit",		do_cmd,			SCMD_QUIT,		POS_DEAD,	GM_PLAYER	},
 	{ "logou",		do_inputall,		0,			POS_DEAD,	GM_PLAYER	},
 	{ "logout",		do_cmd,			SCMD_LOGOUT,		POS_DEAD,	GM_PLAYER	},
+	{ "warrior_skill", do_warrior_skill, 0, POS_DEAD, GM_PLAYER },
 	{ "skillup",	do_skillup,		0,			POS_DEAD,	GM_PLAYER	},
 	{ "gskillup",	do_guildskillup,	0,			POS_DEAD,	GM_PLAYER	},
 

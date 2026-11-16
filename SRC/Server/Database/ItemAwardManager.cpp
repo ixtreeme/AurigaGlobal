@@ -2,6 +2,7 @@
 #include "QID.h"
 #include "DBManager.h"
 #include "ItemAwardManager.h"
+#include <common/WarriorSkillIds.hpp>
 
 #ifdef ENABLE_EXTEND_ITEM_AWARD
 #include <float.h>
@@ -386,6 +387,8 @@ void ItemAwardManager::CheckItemSkillBook(TItemAward & rkItemAward, const std::v
 				continue;
 
 			const uint32_t dwSkillVnum = pkSkillTable->dwVnum;
+            // The optional manuals do not change legacy random-book distribution.
+            if (WarriorExpansion::IsSkill(dwSkillVnum)) continue;
 			const uint8_t bSkillType = pkSkillTable->bType;
 
 			const bool bIsPCSkill = (JOB_WARRIOR + 1 <= bSkillType && bSkillType <= JOB_SHAMAN + 1) || bSkillType == 7;

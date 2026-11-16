@@ -535,3 +535,6 @@ int main() {
         std::cout << "Point calculation checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }
+
+// Collection loading is outside this point-calculation fixture.
+namespace PetInventorySystem { void ComputePetInventoryBonuses(entt::entity) {} }

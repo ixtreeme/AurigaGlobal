@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../warrior/WarriorSkillSystem.hpp"
 #include <cmath>
 #include <Core/Logging.hpp>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
@@ -139,6 +140,22 @@ namespace quest
 		lua_pushboolean(L, AffectSystem::FindAffect(chEntity, AFFECT_SKILL_NO_BOOK_DELAY) ? 1 : 0);
 		return 1;
 	}
+
+    ALUA(pc_get_warrior_expansion_skills)
+    {
+        lua_newtable(L);
+#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+        const auto player = CQuestManager::instance().GetCurrentPCEntity();
+        int index = 1;
+        for (uint32_t id = WarriorExpansion::FirstSkill; id <= WarriorExpansion::LastSkill; ++id)
+            if (WarriorExpansion::IsChosen(player, id) && SkillSystem::GetSkillLevel(player, id) > 0)
+            {
+                lua_pushinteger(L, id);
+                lua_rawseti(L, -2, index++);
+            }
+#endif
+        return 1;
+    }
 
 	ALUA(pc_learn_grand_master_skill)
 	{
@@ -4403,7 +4420,8 @@ teleport_area:
 			{ "unmount",		pc_unmount		},
 			{ "warp_to_guild_war_observer_position", pc_warp_to_guild_war_observer_position	},
 			{ "give_item_from_special_item_group", pc_give_item_from_special_item_group	},
-			{ "learn_grand_master_skill", pc_learn_grand_master_skill	},
+			{ "get_warrior_expansion_skills", pc_get_warrior_expansion_skills },
+            { "learn_grand_master_skill", pc_learn_grand_master_skill	},
 			{ "is_skill_book_no_delay",	pc_is_skill_book_no_delay},
 			{ "remove_skill_book_no_delay",	pc_remove_skill_book_no_delay},
 

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../warrior/WarriorSkillSystem.hpp"
 #include <Core/Logging.hpp>
 #include "input.h"
 #include "../ecs/Registry.hpp"
@@ -50,6 +51,8 @@ void CInputMain::Attack(entt::entity character, const uint8_t header, const char
 
 	const struct type_identifier* const type = reinterpret_cast<const struct type_identifier*>(data);
 
+	// Expanded hits are scheduled by the server; CG_ATTACK/SHOOT cannot duplicate them.
+	if (WarriorExpansion::IsSkill(type->type) || WarriorExpansion::IsCasting(character)) return;
 	if (type->type > 0)
 	{
 		if (false == SkillSystem::CanUseSkill(character, type->type))

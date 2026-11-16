@@ -392,7 +392,7 @@ std::vector<AffectSlot> AffectSystem::Snapshot(entt::entity) {
     UnexpectedService(__func__);
 }
 bool AffectSystem::IsAffectFlag(entt::entity e,unsigned int) { AssertActor(e); return false; }
-bool AffectSystem::AddAffect(entt::entity e,unsigned int,unsigned char,int,unsigned int,int,int,bool,bool) { AssertActor(e); ++affectCalls; const auto callback=onAffect; if(callback) callback(e); return true; }
+bool AffectSystem::AddAffect(entt::entity e,unsigned int,unsigned char,double,unsigned int,int,int,bool,bool) { AssertActor(e); ++affectCalls; const auto callback=onAffect; if(callback) callback(e); return true; }
 bool AffectSystem::RemoveAffect(entt::entity,unsigned int) { UnexpectedService(__func__); }
 bool AffectSystem::IsPolymorphed(entt::entity e) { AssertActor(e); return false; }
 int64_t ecs::PointSystem::Get(entt::entity e,unsigned char p) { AssertActor(e); return g_registry.get<BattleFixture>(e).points[p]; }
@@ -428,7 +428,7 @@ void AttrTransfer_close(entt::entity) { UnexpectedService(__func__); }
 unsigned char ecs::PlayerRuntime::GetGMLevel(entt::entity) { UnexpectedService(__func__); }
 unsigned int ecs::PlayerRuntime::GetNextExp(entt::entity) { UnexpectedService(__func__); }
 bool ecs::PointSystem::Set(entt::entity,unsigned char,int64_t) { UnexpectedService(__func__); }
-int ecs::PointSystem::GetLimitPoint(entt::entity, unsigned char) { UnexpectedService(__func__); }
+double ecs::PointSystem::GetLimitPoint(entt::entity, unsigned char) { UnexpectedService(__func__); }
 bool ecs::SocialSystem::HasReviverInParty(entt::entity) { UnexpectedService(__func__); }
 bool ItemSystem::UnEquipSpecialRideUniqueItem(entt::entity) { UnexpectedService(__func__); }
 bool MountSystem::IsHorseRiding(entt::entity) { UnexpectedService(__func__); }
@@ -557,9 +557,9 @@ bool ItemSystem::DestroyItemEntityEcs(entt::entity,char const *) { UnexpectedSer
 unsigned int ItemSystem::GetItemSocket(entt::entity,int) { UnexpectedService(__func__); }
 TPlayerItemAttribute ItemSystem::GetItemAttribute(entt::entity,int) { UnexpectedService(__func__); }
 int ItemSystem::GetItemAttributeType(entt::entity,int) { UnexpectedService(__func__); }
-int ItemSystem::GetItemAttributeValue(entt::entity,int) { UnexpectedService(__func__); }
+double ItemSystem::GetItemAttributeValue(entt::entity,int) { UnexpectedService(__func__); }
 bool ItemSystem::SetItemSocket(entt::entity,int,unsigned int,bool) { UnexpectedService(__func__); }
-bool ItemSystem::SetItemAttribute(entt::entity,int,int,int) { UnexpectedService(__func__); }
+bool ItemSystem::SetItemAttribute(entt::entity,int,int,double) { UnexpectedService(__func__); }
 bool ItemSystem::PlaceItemEcs(entt::entity,entt::entity,unsigned char,unsigned short) { UnexpectedService(__func__); }
 bool ItemSystem::RemoveItemEcs(entt::entity) { UnexpectedService(__func__); }
 int ItemSystem::GetEmptyInventoryPositionEcs(entt::entity,entt::entity) { UnexpectedService(__func__); }
@@ -646,7 +646,7 @@ void CEasterDungeon::OnMobKilled(entt::entity,entt::entity) { UnexpectedService(
 void Map1MassSpawnEvent_OnMobDead(unsigned int) { UnexpectedService(__func__); }
 
 
-int ecs::PointSystem::GetPolymorphPoint(entt::entity e, uint8_t p) { return static_cast<int>(Get(e,p)); }
+double ecs::PointSystem::GetPolymorphPoint(entt::entity e, uint8_t p) { return static_cast<int>(Get(e,p)); }
 int ItemSystem::GetItemValue(entt::entity e, uint32_t p) { Check(IsValidItem(e), "invalid item value read"); return g_registry.get<WeaponFixture>(e).values.at(p); }
 bool AffectSystem::IsPolyMaintainStat(entt::entity e) { AssertActor(e); return false; }
 uint32_t AffectSystem::GetPolymorphVnum(entt::entity) { UnexpectedService(__func__); }
@@ -1295,3 +1295,21 @@ int main() {
         std::cout << "Combat state checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }
+
+// Optional story/raid ownership and telemetry are outside the combat-state fixture.
+// An ordinary arena has no scripted combat restriction or damage filter.
+namespace CaravanQuest {
+bool AllowCombat(entt::entity,entt::entity){return true;}
+void OnDeath(entt::entity,entt::entity){}
+}
+namespace EclipseRaid {
+bool AllowCombat(entt::entity,entt::entity){return true;}
+int64_t FilterDamage(entt::entity,entt::entity,int64_t amount){return amount;}
+void OnDeath(entt::entity,entt::entity){}
+}
+namespace nexoria::benchmark {
+void RecordMiss(entt::entity,entt::entity,uint8_t,std::string_view) noexcept {}
+void RecordDamage(entt::entity,entt::entity,int64_t,int64_t,uint8_t,bool,bool) noexcept {}
+}
+double ecs::PointSystem::GetPrecise(entt::entity e,uint8_t type){return static_cast<double>(Get(e,type));}
+void ecs::PointSystem::ChangePrecise(entt::entity e,uint8_t type,double amount,bool delta,bool broadcast){Change(e,type,static_cast<int64_t>(amount),delta,broadcast);}

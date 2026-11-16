@@ -4,6 +4,7 @@
 #include "../CharacterAccessors.hpp"
 
 #include "AffectSystem.hpp"
+#include "../../warrior/WarriorSkillSystem.hpp"
 #include "QuestSystem.hpp"
 #include "NetworkSyncSystem.hpp"
 #include "MovementSystem.hpp"
@@ -297,6 +298,10 @@ void PublishAffectRemoval(entt::entity e, const CAffect& value)
     };
     if (!current() || !ecs::PlayerRuntime::IsPC(e))
         return;
+#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+    if (WarriorExpansion::IsBuffAffect(value.dwType))
+        ecs::ChatSystem::Broadcast(e, CHAT_TYPE_COMMAND, "wex_buff %u %u 0", ecs::PlayerRuntime::GetPacketVID(e), WarriorExpansion::SkillFromAffect(value.dwType));
+#endif
     if (db_clientdesc) {
         TPacketGDRemoveAffect packet{};
         packet.dwPID = ecs::PlayerRuntime::GetPlayerID(e);
@@ -673,7 +678,7 @@ void ComputeAffect(entt::entity e, CAffect affect, bool add)
     }
 
     SetFlag(e, affect.dwFlag, add);
-    const int64_t value = affect.lApplyValue;
+    const double value = affect.lApplyValue;
     ecs::PointSystem::Change(e, affect.bApplyOn, add ? value : -value);
     if (!AffectState(e))
         return;
@@ -1063,6 +1068,7 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 
 	for (uint32_t i = 0; i < dwCount; ++i, ++pElements)
 	{
+        if (WarriorExpansion::IsBuffAffect(pElements->dwType) && !WarriorExpansion::AllowBuff(e,WarriorExpansion::SkillFromAffect(pElements->dwType))) continue;
 		////if (pElements->dwType == SKILL_MUYEONG)
 		////	continue;
 		if (AFFECT_AUTO_HP_RECOVERY == pElements->dwType || AFFECT_AUTO_SP_RECOVERY == pElements->dwType)
@@ -1226,8 +1232,9 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 	LOG_ERROR("LOAD_AFFECT_END pid={} name={} count={} final_affects={}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data(), dwCount, AffectSystem::Snapshot(e).size());
 }
 
-bool IsGoodAffect(uint8_t bAffectType)
+bool IsGoodAffect(uint32_t bAffectType)
 {
+    if (WarriorExpansion::IsBuffAffect(bAffectType)) return true;
 	switch (bAffectType)
 	{
 		case (AFFECT_MOV_SPEED):
@@ -1313,6 +1320,7 @@ bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, double applyValue
                uint32_t flag, int32_t duration, int32_t spCost, bool overwrite,
                bool isCube)
 {
+    if (WarriorExpansion::IsBuffAffect(type) && !WarriorExpansion::AllowBuff(e,WarriorExpansion::SkillFromAffect(type))) return false;
     if (!AffectState(e) || applyOn >= POINT_MAX_NUM || !std::isfinite(applyValue) || std::abs(applyValue) >= 10000000000.0)
         return false;
     if (duration == 0)
@@ -1397,6 +1405,10 @@ bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, double applyValue
             CAffect packetValue = value;
             SendAffectAddPacket(desc, &packetValue);
         }
+#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+    if (publishable() && WarriorExpansion::IsBuffAffect(type))
+        ecs::ChatSystem::Broadcast(e, CHAT_TYPE_COMMAND, "wex_buff %u %u %d", ecs::PlayerRuntime::GetPacketVID(e), WarriorExpansion::SkillFromAffect(type), duration);
+#endif
     return owned();
 }
 
@@ -1475,6 +1487,7 @@ void RemoveBadAffects(entt::entity e)
 
 void RemoveGoodAffects(entt::entity e)
 {
+    for (uint32_t id=180;id<=183;++id) AffectSystem::RemoveAffect(e,id);
     constexpr uint32_t types[] = {
         AFFECT_MOV_SPEED, AFFECT_ATT_SPEED, AFFECT_STR, AFFECT_DEX,
         AFFECT_INT, AFFECT_CON, AFFECT_CHINA_FIREWORK, SKILL_JEONGWI,

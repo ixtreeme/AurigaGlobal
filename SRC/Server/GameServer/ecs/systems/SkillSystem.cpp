@@ -9,6 +9,7 @@
 #include <sstream>
 
 #include "SkillSystem.hpp"
+#include "../../warrior/WarriorSkillSystem.hpp"
 #include "PointSystem.hpp"
 #include "CombatSystem.hpp"
 #include "SocialSystem.hpp"
@@ -90,6 +91,28 @@ void MarkDirty(entt::entity e)
         g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
 
+#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+bool ExpansionUsesBow(entt::entity caster)
+{
+    auto weapon=ItemSystem::GetWearItem(caster,WEAR_WEAPON);
+    return ItemSystem::IsValidItem(weapon)&&ItemSystem::GetItemSubType(weapon)==WEAPON_BOW;
+}
+double ExpansionStat(entt::entity caster)
+{
+    auto job=ecs::PlayerRuntime::GetJob(caster);
+    return ecs::PointSystem::GetPrecise(caster,job==1?POINT_DX:job>=2?POINT_IQ:POINT_ST);
+}
+int ExpansionAttack(entt::entity caster,entt::entity victim,bool ignoreRating=false)
+{
+    if(ecs::PlayerRuntime::GetJob(caster)==3) return CalcMagicDamage(caster,victim);
+    if(ExpansionUsesBow(caster)) {
+        entt::entity bow=entt::null,arrow=entt::null;
+        return CombatSystem::GetArrowAndBow(caster,&bow,&arrow,1)==1?CalcArrowDamage(caster,victim,bow,arrow,true):0;
+    }
+    return CalcMeleeDamage(caster,victim,true,ignoreRating);
+}
+#endif
+
 bool ShouldCheckSkillBookExp(entt::entity character)
 {
     return character != entt::null && g_registry.valid(character) &&
@@ -153,6 +176,9 @@ void SetSkillNextReadTime(entt::entity e, uint32_t skillId, time_t when)
         return;
 
     levels->levels[skillId].tNextRead = when;
+#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+    if (WarriorExpansion::IsSkill(skillId)) WarriorExpansion::PersistReadTime(e,skillId,when);
+#endif
     MarkDirty(e);
 }
 
@@ -161,6 +187,7 @@ void SetSkillNextReadTime(entt::entity e, uint32_t skillId, time_t when)
 // cost comes back.
 bool SkillLevelDown(entt::entity e, uint32_t dwVnum)
 {
+    if (WarriorExpansion::IsSkill(dwVnum)) return false;
 	if (g_bSkillDisable)
 		return false;
 
@@ -335,6 +362,9 @@ void SetSkillGroup(entt::entity e, uint8_t skillGroup)
     packet.skill_group = skillGroup;
     if (auto* desc = ecs::PlayerRuntime::GetDesc(e))
         desc->Packet(&packet, sizeof(packet));
+#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+    WarriorExpansion::OnGroupChanged(e);
+#endif
 }
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
 bool CanIncreaseSkill(entt::entity e, uint32_t dwVnum, bool book)
@@ -434,6 +464,13 @@ void SetSkillLevel(entt::entity e, uint32_t skillId, uint8_t level)
         return;
 #endif
 
+    if (WarriorExpansion::IsSkill(skillId)) {
+#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+        if (!WarriorExpansion::CommitLevel(e,skillId,level)) return;
+#else
+        return;
+#endif
+    }
     levels->levels[skillId].bLevel = MIN(40, level);
 
 #ifdef ENABLE_NEW_SECONDARY_SKILLS
@@ -459,6 +496,13 @@ void SetSkillLevel(entt::entity e, uint32_t skillId, uint8_t level)
 
 bool IsLearnableSkill(entt::entity e, uint32_t dwSkillVnum)
 {
+    if (WarriorExpansion::IsSkill(dwSkillVnum)) {
+#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+        return WarriorExpansion::IsChosen(e,dwSkillVnum) && GetSkillLevel(e,dwSkillVnum)<40;
+#else
+        return false;
+#endif
+    }
 	const CSkillProto * pkSkill = CSkillManager::instance().Get(dwSkillVnum);
 
 	if (!pkSkill)
@@ -562,6 +606,9 @@ bool CanUseSkill(entt::entity e, uint32_t skillId)
     if (e == entt::null || !g_registry.valid(e) || skillId == 0)
         return false;
 
+    #ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+    if (WarriorExpansion::IsSkill(skillId)) return WarriorExpansion::IsChosen(e,skillId);
+#endif
     const uint8_t skillGroup = GetSkillGroup(e);
     if (skillGroup > 0) {
         unsigned job = JOB_WARRIOR;
@@ -997,6 +1044,9 @@ void ResetSkill(entt::entity e)
 		return;
 
 	std::vector<std::pair<uint32_t, TPlayerSkill>> preserved;
+    // Expansion training uses its own point budget and is not reset/refunded by legacy scrolls.
+    for (uint32_t id=WarriorExpansion::FirstSkill;id<=WarriorExpansion::LastSkill;++id)
+        preserved.emplace_back(id,levels->levels[id]);
 	for (const uint32_t skillId : s_adwSubSkillVnums)
 	{
 		if (skillId < SKILL_MAX_NUM)
@@ -1059,6 +1109,7 @@ void ClearSubSkill(entt::entity e)
 
 bool ResetOneSkill(entt::entity e, uint32_t skillId)
 {
+    if (WarriorExpansion::IsSkill(skillId)) return false;
 	auto* levels = TryGetSkillLevels(e);
 	if (!levels || !levels->loaded || skillId >= SKILL_MAX_NUM)
 		return false;
@@ -1246,6 +1297,10 @@ bool SkillSystem::LearnSkillByBook(entt::entity e, uint32_t dwSkillVnum, uint8_t
 			return false;
 		}
 	}
+
+#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+    if (WarriorExpansion::IsSkill(dwSkillVnum)) return WarriorExpansion::ReadBook(e,dwSkillVnum,need_exp);
+#endif
 
 #ifdef ENABLE_NEW_SECONDARY_SKILLS
 	if ((get_global_time() < SkillSystem::GetSkillNextReadTime(e, dwSkillVnum)) && ((dwSkillVnum == NEW_SUPPORT_SKILL_ATTACK) || (dwSkillVnum == NEW_SUPPORT_SKILL_YANG) || (dwSkillVnum == NEW_SUPPORT_SKILL_MONSTERS) || (dwSkillVnum == NEW_SUPPORT_SKILL_HP))) {
@@ -1683,6 +1738,12 @@ uint32_t SkillSystem::GetAffectedEunhyung(entt::entity e)
 
 void SkillSystem::SkillLevelUp(entt::entity e, uint32_t dwVnum, uint8_t bMethod)
 {
+    if (WarriorExpansion::IsSkill(dwVnum)) {
+#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+        WarriorExpansion::LevelUp(e,dwVnum,bMethod);
+#endif
+        return;
+    }
 	if (!SkillSystem::HasSkillLevels(e))
 		return;
 
@@ -2052,7 +2113,7 @@ struct FuncSplashDamage
 
 		if (ecs::PlayerRuntime::IsPC(m_character))
 			if (!(m_pkSk->dwVnum >= GUILD_SKILL_START && m_pkSk->dwVnum <= GUILD_SKILL_END))
-				if (!m_bDisableCooltime && !SkillSystem::ConsumeSkillHit(m_character, m_pkSk->dwVnum) && m_pkSk->dwVnum != SKILL_MUYEONG)
+				if (!m_bDisableCooltime && !WarriorExpansion::IsServerHit(m_character,m_pkSk->dwVnum) && !SkillSystem::ConsumeSkillHit(m_character, m_pkSk->dwVnum) && m_pkSk->dwVnum != SKILL_MUYEONG)
 				{
 					if(test_server)
 						LOG_INFO("check guild skill {}", ecs::PlayerRuntime::GetName(m_character).data());
@@ -2070,6 +2131,9 @@ struct FuncSplashDamage
 		m_pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(m_character));
 		m_pkSk->SetPointVar("iq", ecs::PointSystem::GetPrecise(m_character, POINT_IQ));
 		m_pkSk->SetPointVar("str", ecs::PointSystem::GetPrecise(m_character, POINT_ST));
+#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+    if(WarriorExpansion::IsSkill(m_pkSk->dwVnum)) m_pkSk->SetPointVar("str",ExpansionStat(m_character));
+#endif
 		m_pkSk->SetPointVar("dex", ecs::PointSystem::GetPrecise(m_character, POINT_DX));
 		m_pkSk->SetPointVar("con", ecs::PointSystem::GetPrecise(m_character, POINT_HT));
 		m_pkSk->SetPointVar("def", ecs::PointSystem::GetPrecise(m_character, POINT_DEF_GRADE));
@@ -2099,7 +2163,12 @@ struct FuncSplashDamage
 
 		m_pkSk->SetPointVar("ar", CalcAttackRating(chr, chrVictim, bIgnoreTargetRating));
 
-		if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_USE_MELEE_DAMAGE))
+		#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+        if(WarriorExpansion::IsSkill(m_pkSk->dwVnum))
+            m_pkSk->SetPointVar("atk",ExpansionAttack(chr,chrVictim,bIgnoreTargetRating));
+        else
+#endif
+        if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_USE_MELEE_DAMAGE))
 			m_pkSk->SetPointVar("atk", CalcMeleeDamage(chr, chrVictim, true, bIgnoreTargetRating));
 		else if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_USE_ARROW_DAMAGE))
 		{
@@ -2219,7 +2288,14 @@ struct FuncSplashDamage
 
 		EDamageType dt = DAMAGE_TYPE_NONE;
 
-		switch (m_pkSk->bSkillAttrType)
+		auto skillAttr=m_pkSk->bSkillAttrType;
+#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+        if(WarriorExpansion::IsSkill(m_pkSk->dwVnum)) {
+            if(ecs::PlayerRuntime::GetJob(m_character)==3) skillAttr=SKILL_ATTR_TYPE_MAGIC;
+            else if(ExpansionUsesBow(m_character)) skillAttr=SKILL_ATTR_TYPE_RANGE;
+        }
+#endif
+        switch (skillAttr)
 		{
 			case SKILL_ATTR_TYPE_NORMAL:
 				break;
@@ -2534,7 +2610,9 @@ struct FuncSplashDamage
 #endif
 
 
-		nexoria::benchmark::ScopedSkillContext benchmarkSkillContext(m_pkSk->dwVnum);
+		iDam = WarriorExpansion::ScaleHit(m_character,m_pkSk->dwVnum,iDam);
+        if (iDam<=0) return;
+        nexoria::benchmark::ScopedSkillContext benchmarkSkillContext(m_pkSk->dwVnum);
 		if (!CombatSystem::Damage(victimEntity, m_character, iDam, dt) &&
 			!CombatSystem::IsStun(victimEntity))
 		{
@@ -2866,7 +2944,11 @@ int SkillSystem::ComputeSkillAtPosition(entt::entity e, uint32_t dwVnum, const P
 	pkSk->SetPointVar("k", k);
 	pkSk->kSplashAroundDamageAdjustPoly.SetVar("k", k);
 
-	if (IS_SET(pkSk->dwFlag, SKILL_FLAG_USE_MELEE_DAMAGE))
+	#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+    if(WarriorExpansion::IsSkill(pkSk->dwVnum)) { pkSk->SetPointVar("atk",ExpansionAttack(character,character)); }
+    else
+#endif
+    if (IS_SET(pkSk->dwFlag, SKILL_FLAG_USE_MELEE_DAMAGE))
 	{
 		pkSk->SetPointVar("atk", CalcMeleeDamage(character, character, true, false));
 	}
@@ -2895,6 +2977,9 @@ int SkillSystem::ComputeSkillAtPosition(entt::entity e, uint32_t dwVnum, const P
 	pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(e));
 	pkSk->SetPointVar("iq", ecs::PointSystem::GetPrecise(e, POINT_IQ));
 	pkSk->SetPointVar("str", ecs::PointSystem::GetPrecise(e, POINT_ST));
+#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+    if(WarriorExpansion::IsSkill(pkSk->dwVnum)) pkSk->SetPointVar("str",ExpansionStat(e));
+#endif
 	pkSk->SetPointVar("dex", ecs::PointSystem::GetPrecise(e, POINT_DX));
 	pkSk->SetPointVar("con", ecs::PointSystem::GetPrecise(e, POINT_HT));
 	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(character));
@@ -3198,6 +3283,9 @@ int SkillSystem::ComputeGyeongGongSkill(entt::entity e, uint32_t dwVnum, entt::e
 	pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(e));
 	pkSk->SetPointVar("iq", ecs::PointSystem::GetPrecise(e, POINT_IQ));
 	pkSk->SetPointVar("str", ecs::PointSystem::GetPrecise(e, POINT_ST));
+#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+    if(WarriorExpansion::IsSkill(pkSk->dwVnum)) pkSk->SetPointVar("str",ExpansionStat(e));
+#endif
 	pkSk->SetPointVar("dex", ecs::PointSystem::GetPrecise(e, POINT_DX));
 	pkSk->SetPointVar("con", ecs::PointSystem::GetPrecise(e, POINT_HT));
 	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(victimEntity));
@@ -3290,7 +3378,7 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 		return BATTLE_NONE;
 	}
 
-	if (pkSk->dwTargetRange && DISTANCE_SQRT(ecs::PlayerRuntime::GetX(e) - ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(e) - ecs::PlayerRuntime::GetY(victimEntity)) >= pkSk->dwTargetRange + 50)
+	if (!((dwVnum==195||dwVnum==196)&&WarriorExpansion::IsServerHit(e,dwVnum)) && pkSk->dwTargetRange && DISTANCE_SQRT(ecs::PlayerRuntime::GetX(e) - ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(e) - ecs::PlayerRuntime::GetY(victimEntity)) >= pkSk->dwTargetRange + 50)
 	{
 		if (test_server)
 			LOG_INFO("ComputeSkill: Victim too far, skill {} : {} to {} (distance {} limit {})", dwVnum, ecs::PlayerRuntime::GetName(e), ecs::PlayerRuntime::GetName(victimEntity).data(), (int32_t)DISTANCE_SQRT(ecs::PlayerRuntime::GetX(e) - ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(e) - ecs::PlayerRuntime::GetY(victimEntity)), pkSk->dwTargetRange);
@@ -3330,7 +3418,12 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 			pkSk->SetPointVar("atk", CalcMeleeDamage(character, victim, true, false));
 		}
 	}
-	else if (IS_SET(pkSk->dwFlag, SKILL_FLAG_USE_MELEE_DAMAGE))
+	else
+#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+    if(WarriorExpansion::IsSkill(pkSk->dwVnum)) { pkSk->SetPointVar("atk",ExpansionAttack(character,victim)); }
+    else
+#endif
+    if (IS_SET(pkSk->dwFlag, SKILL_FLAG_USE_MELEE_DAMAGE))
 	{
 		pkSk->SetPointVar("atk", CalcMeleeDamage(character, victim, true, false));
 	}
@@ -3359,6 +3452,9 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 	pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(e));
 	pkSk->SetPointVar("iq", ecs::PointSystem::GetPrecise(e, POINT_IQ));
 	pkSk->SetPointVar("str", ecs::PointSystem::GetPrecise(e, POINT_ST));
+#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+    if(WarriorExpansion::IsSkill(pkSk->dwVnum)) pkSk->SetPointVar("str",ExpansionStat(e));
+#endif
 	pkSk->SetPointVar("dex", ecs::PointSystem::GetPrecise(e, POINT_DX));
 	pkSk->SetPointVar("con", ecs::PointSystem::GetPrecise(e, POINT_HT));
 	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(victimEntity));
@@ -3693,6 +3789,14 @@ bool SkillSystem::UseSkill(entt::entity e, uint32_t dwVnum, entt::entity victim,
 		return false;
 
 	const auto character = e;
+    if (!WarriorExpansion::IsSkill(dwVnum) && WarriorExpansion::IsCasting(e)) return false;
+    if (WarriorExpansion::IsSkill(dwVnum)) {
+#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+        if (!WarriorExpansion::ValidateCast(e,dwVnum,victim)) return false;
+#else
+        return false;
+#endif
+    }
 	entt::entity victimEntity = victim;
 #ifdef ENABLE_BUG_FIXES
 	if ((dwVnum == SKILL_GEOMKYUNG || dwVnum == SKILL_GWIGEOM) &&
@@ -3958,6 +4062,13 @@ bool SkillSystem::UseSkill(entt::entity e, uint32_t dwVnum, entt::entity victim,
 #endif
 	}
 
+#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+    if (WarriorExpansion::IsSkill(dwVnum)) {
+        WarriorExpansion::AcceptedCast(e,dwVnum,victimEntity);
+        SkillSystem::SetLastSkillTime(character,get_dword_time());
+        return true;
+    }
+#endif
 	EclipseRaid::OnSkill(e, dwVnum);
 
 	if (dwVnum == SKILL_CHAIN)
@@ -3995,7 +4106,13 @@ bool SkillSystem::UseSkill(entt::entity e, uint32_t dwVnum, entt::entity victim,
 		}
 	}//------------------------------------------------------------------2024-12-30------------------------------------------------------------------------------
 	if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SELFONLY))
-		SkillSystem::ComputeSkill(e, dwVnum, character);
+    {
+#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+        // Expanded buffs activate on the authoritative release event, like their visual motion.
+        if (!WarriorExpansion::IsBuff(dwVnum))
+#endif
+            SkillSystem::ComputeSkill(e, dwVnum, character);
+    }
 	else if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_ATTACK))
 		SkillSystem::ComputeSkill(e, dwVnum, victimEntity);
 	else if (dwVnum == SKILL_BYEURAK)

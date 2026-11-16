@@ -10,6 +10,15 @@ find_package(EnTT CONFIG REQUIRED)
 auriga_add_server_executable(GameServer LIBS LUA)
 target_link_libraries(GameServer PRIVATE EnTT::EnTT)
 
+# Optional expansion: no packet/blob layout changes when toggled.
+option(ENABLE_WARRIOR_SKILL_EXPANSION "Enable Warrior Skill Expansion V1" ON)
+if(ENABLE_WARRIOR_SKILL_EXPANSION)
+    target_compile_definitions(GameServer PRIVATE ENABLE_WARRIOR_SKILL_EXPANSION=1)
+endif()
+add_executable(WarriorSkillRulesTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/WarriorSkillRulesTests.cpp)
+add_test(NAME warrior_skill_expansion_rules COMMAND WarriorSkillRulesTests)
+
+
 add_executable(PetInventoryRulesTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/PetInventoryRulesTests.cpp)
 target_link_libraries(PetInventoryRulesTests PRIVATE SERVER EnTT::EnTT)
@@ -822,3 +831,24 @@ add_executable(PetInventoryBonusTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests
 add_test(NAME account_collection_bonuses COMMAND PetInventoryBonusTests)
 set_tests_properties(account_collection_bonuses PROPERTIES LABELS server TIMEOUT 60)
 add_dependencies(ServerTests PetInventoryBonusTests)
+
+add_dependencies(ServerTests WarriorSkillRulesTests)
+
+# Compiles the real feature source without the enable definition.
+add_executable(WarriorSkillMacroOffTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/WarriorSkillMacroOffTests.cpp
+    warrior/WarriorSkillSystem.cpp)
+target_link_libraries(WarriorSkillMacroOffTests PRIVATE SERVER EnTT::EnTT)
+add_test(NAME warrior_skill_expansion_macro_off COMMAND WarriorSkillMacroOffTests)
+add_dependencies(ServerTests WarriorSkillMacroOffTests)
+
+# Compile every modified runtime path with the feature macro absent.
+add_library(WarriorSkillMacroOffCompile OBJECT EXCLUDE_FROM_ALL
+    warrior/WarriorSkillSystem.cpp
+    combat/combat_input.cpp
+    command/cmd.cpp
+    ecs/systems/AffectSystem.cpp
+    ecs/systems/SkillSystem.cpp
+    quest/questlua_pc.cpp)
+target_link_libraries(WarriorSkillMacroOffCompile PRIVATE SERVER EnTT::EnTT LUA S_Core)
+add_dependencies(ServerTests WarriorSkillMacroOffCompile)
