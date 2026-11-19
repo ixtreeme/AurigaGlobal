@@ -5,17 +5,20 @@
 #include <set>
 
 namespace CollectionBonuses {
+inline constexpr std::uint8_t MountWindow = 5;
+inline constexpr std::uint8_t PetWindow = 14;
+
 struct Bonus {
     double items = 0;
     double perTier = 0;
     double Total(unsigned tiers) const { return items + perTier * tiers; }
 };
 struct Totals {
-    explicit Totals(uint8_t storageWindow) : window(storageWindow), threshold(storageWindow == 5 ? 10 : 5) {
-        if (window == 5) {
+    explicit Totals(uint8_t storageWindow) : window(storageWindow), threshold(storageWindow == MountWindow ? 10 : 5) {
+        if (window == MountWindow) {
             bonuses[1].perTier = 500;
             for (uint8_t type : {116,117,119,63}) bonuses[type].perTier = 2;
-        } else if (window == 14) {
+        } else if (window == PetWindow) {
             for (uint8_t type : {103,74,73}) bonuses[type].perTier = .2;
         }
     }

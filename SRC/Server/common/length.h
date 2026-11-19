@@ -945,10 +945,6 @@ typedef struct SItemPos
 		case MALL:
 			return false;
 
-		case PET_INVENTORY:
-        return cell < PET_INVENTORY_MAX_NUM;
-        case MOUNT_INVENTORY:
-			return cell < (MOUNT_INVENTORY_MAX_NUM);
 #ifdef ENABLE_EXTRA_INVENTORY
 		case EXTRA_INVENTORY:
 			return cell < (EXTRA_INVENTORY_MAX_NUM);

@@ -1,9 +1,12 @@
 #include "stdafx.h"
 #include "AccountCollectionSystem.hpp"
 #include "CollectionBonusRules.hpp"
-#include "../item/EquipmentPointBindings.hpp"
+#include "../item/ItemBackendState.hpp"
+#include "../item/ItemCatalogRuntime.hpp"
+#include "../item/ItemStore.hpp"
 #include "../item/TypedEquipment.hpp"
 #include "../ecs/Registry.hpp"
+#include "../ecs/components/identity_components.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../entity/char_manager.h"
 #include "../network/desc.h"
@@ -11,6 +14,7 @@
 #include "../core/packet.h"
 #include "../core/constants.h"
 #include <Core/buffer.h>
+#include <StoragePersistenceSql.hpp>
 
 namespace AccountCollectionSystem
 {
@@ -96,8 +100,8 @@ void Apply(entt::entity owner, const sql::LoadedItemOwner& account)
     auto* desc = ecs::PlayerRuntime::GetDesc(owner);
     if (!catalog || !desc || !desc->IsPhase(PHASE_GAME) || (previous && previous->revision >= account.fence.revision))
         return;
-    const auto mounts = Collect(*catalog, account, item::StorageRoute::MountCollection, MOUNT_INVENTORY);
-    const auto pets = Collect(*catalog, account, item::StorageRoute::PetCollection, PET_INVENTORY);
+    const auto mounts = Collect(*catalog, account, item::StorageRoute::MountCollection, CollectionBonuses::MountWindow);
+    const auto pets = Collect(*catalog, account, item::StorageRoute::PetCollection, CollectionBonuses::PetWindow);
     Projection projection;
     projection.revision = account.fence.revision;
     for (const auto* totals : {&mounts, &pets})

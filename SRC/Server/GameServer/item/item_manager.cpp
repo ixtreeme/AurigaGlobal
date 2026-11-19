@@ -608,7 +608,7 @@ void ITEM_MANAGER::DestroyItemNow(entt::entity itemEntity)
 		// Equipment locations store absolute inventory cells; GetItem's
 		// EQUIPMENT input takes a relative wear slot, so query INVENTORY here.
 		const TItemPos position(window == EQUIPMENT ? INVENTORY : window, cell);
-		if (window == SAFEBOX || window == MALL || window == MOUNT_INVENTORY || window == PET_INVENTORY ||
+		if (window == SAFEBOX || window == MALL || window == MOUNT_INVENTORY ||
 			ItemSystem::GetItem(owner, position) == itemEntity)
 			InventorySystem::RemoveFromCharacter(itemEntity);
 		else

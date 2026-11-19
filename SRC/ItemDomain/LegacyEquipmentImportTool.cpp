@@ -1,15 +1,18 @@
-// Explicit OFFLINE importer. Not linked to the game, and no runtime legacy map.
+// Administrative import utility. Not linked to the game or a runtime legacy map.
 #include "CatalogSqlReader.hpp"
 #include "ItemPersistenceSql.hpp"
+#include "StoragePersistenceSql.hpp"
 #include <SQL/AsyncSQL.h>
 #include <nlohmann/json.hpp>
 #include <openssl/evp.h>
 #include <algorithm>
 #include <charconv>
 #include <iostream>
+#include <iterator>
 #include <limits>
 #include <set>
 #include <stdexcept>
+#include <tuple>
 #ifdef min
 #undef min
 #endif
@@ -93,7 +96,140 @@ void CompactInserts(SqlTransaction& tx){
     tx=std::move(merged);std::size_t parameters=0,bytes=0;for(const auto& step:tx){parameters+=step.params.size();bytes+=step.query.size();for(const auto& p:step.params)bytes+=p.bytes.size();Require(step.query.size()<=SqlTransactionLimits::QueryBytes,"Import query budget");}
     if(tx.size()>SqlTransactionLimits::Steps || parameters>SqlTransactionLimits::Parameters || bytes>SqlTransactionLimits::TotalBytes)throw std::runtime_error("Owner exceeds atomic import budget: steps="+std::to_string(tx.size())+", params="+std::to_string(parameters));
 }
+Json ImportCollections(CAsyncSQL& db, const ItemCatalog& catalog, const Json& request)
+{
+    Require(request.at("owned_package")==true,"Owned local collection source required");
+    const auto checkpoint=Unhex<32>(request.at("source_checkpoint_sha256").get<std::string>());
+    const auto& rows=request.at("collections");
+    Require(rows.is_array() && rows.size()<=MaxItemCommitItems,"Collection import batch size");
+    struct Row {
+        unsigned store;
+        std::uint64_t sourceId;
+        ItemKey key;
+        std::uint32_t cell;
+        std::string source;
+        std::array<std::uint8_t,32> digest;
+    };
+    std::map<ItemOwner,std::vector<Row>> owners;
+    std::set<std::pair<unsigned,std::uint64_t>> seen;
+    std::set<std::tuple<std::uint64_t,unsigned,std::uint32_t>> positions;
+    std::size_t replayed=0;
+    for (const auto& entry : rows)
+    {
+        const auto store=Number<unsigned>(entry.at("source_store"));
+        const auto& old=entry.at("source");
+        const auto id=Number<std::uint64_t>(old.at("id"));
+        const auto account=Number<std::uint64_t>(old.at("account_id"));
+        const auto cell=Number<std::uint32_t>(old.at("slot"));
+        Require((store==1 || store==2) && id && account && cell<192 &&
+                seen.emplace(store,id).second && positions.emplace(account,store,cell).second,
+                "Invalid or duplicate legacy collection identity");
+        Require(Number<unsigned>(old.at("count"))==1,"Collection seal count must be one");
+        for (unsigned n=0;n<3;++n)
+            Require(Number<std::int64_t>(old.at("socket"+std::to_string(n)))==0,"Collection socket state needs an explicit conversion");
+        for (unsigned n=0;n<8;++n)
+            Require(Number<unsigned>(old.at("attrtype"+std::to_string(n)))==0 &&
+                    Number<std::int64_t>(old.at("attrvalue"+std::to_string(n)))==0,
+                    "Collection attributes need an explicit conversion");
+
+        const auto key=Key(entry);
+        const auto* definition=catalog.Find(key);
+        const auto* companion=definition ? std::get_if<ItemCompanionRow>(&definition->category) : nullptr;
+        const auto expected=store==1 ? CompanionKind::Mount : CompanionKind::Pet;
+        Require(companion && !definition->base.retired && companion->kind==expected &&
+                companion->clock==CompanionClock::Permanent,"Reviewed permanent collection definition required");
+        const auto source=old.dump();
+        const auto digest=Hash(entry.dump());
+        Message current(db.DirectQueryPrepared(
+            "SELECT account_id,source_row_sha256 FROM player.item_legacy_collection_import "
+            "WHERE source_store=? AND legacy_instance_id=?",{U::UInt(store),U::UInt(id)}));
+        Require(current && !current->uiSQLErrno && current->Get(),"Collection receipt lookup failed");
+        if (current->Get()->uiNumRows)
+        {
+            const auto found=current->Get()->FetchRow();
+            const auto lengths=current->Get()->FetchLengths();
+            Require(found && found[0] && found[1] && lengths && std::stoull(found[0])==account &&
+                    std::string(found[1],lengths[1])==Bytes(digest),"Existing collection receipt differs");
+            ++replayed;
+            continue;
+        }
+        owners[{ItemOwnerKind::Account,account}].push_back({store,id,key,cell,source,digest});
+    }
+    if (owners.empty())
+        return {{"imported",0},{"replayed",replayed}};
+
+    // Validate all owners before provisioning. Creating a zero native wallet
+    // must not mask another account's legacy Dragon Coin balance.
+    for (const auto& [owner,items] : owners)
+    {
+        Message account(db.DirectQueryPrepared(
+            "SELECT 1 FROM account.account a WHERE a.id=? AND "
+            "(a.coins=0 OR EXISTS(SELECT 1 FROM player.item_wallet w "
+            "WHERE w.owner_kind=2 AND w.owner_id=a.id AND w.currency=2))",{U::UInt(owner.id)}));
+        Require(account && !account->uiSQLErrno && account->Get() && account->Get()->uiNumRows==1,
+                "Collection owner missing or has a legacy coin balance");
+    }
+    const auto count=rows.size()-replayed;
+    const auto identities=p::ReserveItemInstanceIds(db,catalog,static_cast<std::uint32_t>(count));
+    Require(identities.has_value(),"Cannot reserve collection identities");
+    auto next=identities->first;
+    SqlTransaction transaction;
+    for (const auto& [owner,items] : owners)
+    {
+        Require(p::EnsureRuntimeStorageOwner(db,catalog,owner).has_value(),"Cannot provision native collection owner");
+        const auto loaded=p::LoadCurrentItemOwner(db,catalog,owner);
+        Require(loaded.has_value(),"Cannot read native collection owner");
+        ItemCommit commit;
+        auto operationSource="legacy-collection-v1:"+Hex(checkpoint)+":"+std::to_string(owner.id);
+        for (const auto& row : items)
+            operationSource+=":"+Hex(row.digest);
+        const auto operation=Hash(operationSource);
+        std::copy_n(operation.begin(),commit.operationId.size(),commit.operationId.begin());
+        commit.catalogRevision=catalog.Revision();
+        commit.catalogHash=catalog.ContentHash();
+        commit.kind=ItemOperationKind::Grant;
+        commit.owners.push_back(loaded->fence);
+        commit.outcomeCode=1;
+        commit.result={static_cast<std::uint8_t>(ItemOperationKind::Grant)};
+        SqlTransaction receipts;
+        for (const auto& row : items)
+        {
+            PersistentItem seal{ItemInstanceId::Create(next++).value(),row.key,owner};
+            seal.count=1;
+            const auto route=row.store==1 ? StorageRoute::MountCollection : StorageRoute::PetCollection;
+            const ItemStorage storage{owner,ItemStorageKind::Safebox,AccountStorageId(route)};
+            const auto layout=std::ranges::find(loaded->storages,storage,&ItemStorageLayout::storage);
+            Require(layout!=loaded->storages.end(),"Native collection layout missing");
+            seal.placement=ItemPlacement{storage.kind,storage.id,row.cell};
+            seal.companion=CompanionState{};
+            if (catalog.Find(seal.key)->base.binding==BindingPolicy::OnAcquire)
+                seal.boundTo=owner;
+            Require(CanStoreInCollection(catalog,seal,route) && OccupiedItemCells(catalog,seal,*layout).has_value(),
+                    "Invalid typed collection seal or footprint");
+            commit.items.push_back({{},std::move(seal)});
+            if (std::ranges::find(commit.storages,*layout)==commit.storages.end())
+                commit.storages.push_back(*layout);
+            receipts.push_back({
+                "INSERT INTO player.item_legacy_collection_import VALUES(?,?,?,?,?,?,?)",
+                {U::UInt(row.store),U::UInt(row.sourceId),U::UInt(owner.id),U::UInt(next-1),
+                 U::Blob(Bytes(checkpoint)),U::Blob(Bytes(row.digest)),U::Blob(row.source)},1,{}});
+        }
+        auto write=p::PrepareItemWrite(catalog,commit);
+        Require(write.has_value(),"Native collection transaction rejected");
+        transaction.insert(transaction.end(),std::make_move_iterator(write->begin()),std::make_move_iterator(write->end()));
+        transaction.insert(transaction.end(),std::make_move_iterator(receipts.begin()),std::make_move_iterator(receipts.end()));
+    }
+    CompactInserts(transaction);
+    Message result(db.DirectTransactionPrepared(std::move(transaction)));
+    Require(result && result->bTransaction && !result->uiSQLErrno &&
+            result->transactionOutcome==SqlTransactionOutcome::Committed,
+            "Collection import not committed; rerun the same archive to reconcile");
+    return {{"imported",count},{"replayed",replayed}};
+}
+
 Json Run(CAsyncSQL& db,const ItemCatalog& c,Json request){
+    if(request.at("action")=="import_collections")
+        return ImportCollections(db,c,request);
     Require(request.at("offline_owned_package")==true,"Owned offline scope required");
     if(request.at("action")=="follow_catalog"){
         auto query=[&](const char* sql,SqlParams parameters=SqlParams{}){

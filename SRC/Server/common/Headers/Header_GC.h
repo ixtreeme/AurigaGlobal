@@ -220,6 +220,9 @@ enum HEADER_GC
 #endif
 
 	HEADER_GC_MOUNT_INVENTORY = 224,
+    HEADER_GC_BONUS_POINTS = 181,
+    HEADER_GC_BONUS_POINT = 182,
+    HEADER_GC_ITEM_BONUS_CATALOG = 183,
     HEADER_GC_COLLECTION_BONUSES = 185,
     // Paired mount-flight extension; 225 belongs to typed inventory.
     HEADER_GC_MOUNT_FLIGHT = 221,

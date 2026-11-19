@@ -2,6 +2,7 @@
 
 #include "../item/ItemStore.hpp"
 #include <item/StorageRuntime.hpp>
+#include <entt/entity/entity.hpp>
 
 namespace AccountCollectionSystem
 {

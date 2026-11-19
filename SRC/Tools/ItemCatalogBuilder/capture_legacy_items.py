@@ -33,7 +33,7 @@ INPUT_TABLES = (
     'player.quest_item_proto', 'player.daily_reward_items',
     'player.guild_renewal_kisado_item', 'player.myshop_pricelist',
     'mission.mission_engine_item_awards',
-    'player.account_mount_inventory', 'player.guild_renewal_storage',
+    'player.account_mount_inventory', 'player.account_pet_inventory', 'player.guild_renewal_storage',
     'player.ishop_data', 'player.new_petsystem', 'player.object_proto',
     'player.quest', 'player.affect',
     # Existing native identities must be reserved by the cutover, too. The
