@@ -1,3 +1,4 @@
+#include "AccountCollectionSystem.hpp"
 #include "stdafx.h"
 #include "MountInventory.h"
 #include "char_interface.hpp"
@@ -184,8 +185,13 @@ bool AddToInventory(Inventory& inventory, entt::entity owner, uint32_t pos,
     inventory.items[pos] = itemEntity;
 
     const bool expireStateChanged = StartMountExpireIfNeeded(itemEntity);
-    if (!skipSave || expireStateChanged)
-        SaveItem(inventory, pos, itemEntity);
+    if ((!skipSave || expireStateChanged) && !SaveItem(inventory, pos, itemEntity))
+    {
+        ItemSystem::RemoveItemEcs(itemEntity);
+        Get(inventory,pos,ItemSystem::GetItemSize(itemEntity));
+        inventory.items[pos]=entt::null;
+        return false;
+    }
     return true;
 }
 
@@ -203,8 +209,7 @@ bool RestoreToInventory(Inventory& inventory, entt::entity owner, uint32_t pos,
 
     Put(inventory, pos, ItemSystem::GetItemSize(itemEntity));
     inventory.items[pos] = itemEntity;
-    SaveItem(inventory, pos, itemEntity);
-    return true;
+    return SaveItem(inventory, pos, itemEntity);
 }
 
 bool Detach(Inventory& inventory, uint32_t pos, entt::entity expectedItem,
@@ -218,10 +223,9 @@ bool Detach(Inventory& inventory, uint32_t pos, entt::entity expectedItem,
         (expectedItem != entt::null && item != expectedItem))
         return false;
 
+    if (!skipDbDelete && !DeleteItem(inventory,pos,ItemSystem::GetItemID(item))) return false;
     Get(inventory, pos, ItemSystem::GetItemSize(item));
     inventory.items[pos] = entt::null;
-    if (!skipDbDelete)
-        DeleteItem(inventory, pos, ItemSystem::GetItemID(item));
     return true;
 }
 
@@ -464,8 +468,13 @@ bool MoveMountInventoryItem(entt::entity rider, uint32_t from, uint32_t to)
     }
     inventory->items[from] = entt::null;
     inventory->items[to] = item;
-    SaveItem(*inventory, to, item);
-    DeleteItem(*inventory, from, 0);
+    // The unique item ID makes REPLACE an atomic move between bank cells.
+    if (!SaveItem(*inventory,to,item)) {
+        inventory->items[to]=entt::null;inventory->items[from]=item;
+        Get(*inventory,to,size);Put(*inventory,from,size);
+        ItemSystem::SetItemCell(item,rider,from);
+        return false;
+    }
     return true;
 }
 

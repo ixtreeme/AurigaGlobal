@@ -159,6 +159,9 @@ def capture(package, output):
                 if result.returncode:
                     raise RuntimeError('Logical backup failed; inspect the private dump.error.log')
                 tables = list(INPUT_TABLES)
+                if any(schema == 'player' and table == 'account_pet_inventory' and kind == 'BASE TABLE'
+                       for schema, table, _, _, kind in all_tables):
+                    tables.append('player.account_pet_inventory')
                 tables.extend(schema + '.' + table for schema, table, _, _, kind in all_tables
                               if schema == 'protos' and kind == 'BASE TABLE')
                 for qualified in sorted(tables):

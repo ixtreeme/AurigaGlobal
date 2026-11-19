@@ -366,7 +366,7 @@ def analyze(tables, source_hash, owner_keys=None):
     owners=validate_owners(owner_keys)
     protos = tables.get('player.item_proto', [])
     instances = tables.get('player.item', [])
-    instance_count = len(instances)+sum(len(tables.get(name,[])) for name in ('player.account_mount_inventory','player.guild_renewal_storage'))
+    instance_count = len(instances)+sum(len(tables.get(name,[])) for name in ('player.account_mount_inventory','player.account_pet_inventory','player.guild_renewal_storage'))
     if not protos or len(protos) > MAX_PROTOTYPES or instance_count > MAX_INSTANCES:
         raise MigrationError('Missing/oversized source data')
     by_id = {}
@@ -519,6 +519,7 @@ def analyze(tables, source_hash, owner_keys=None):
                      for row in sorted(instances,key=lambda r:r['id'])]
     next_instance_id = max(max((row['id'] for row in instances),default=0), max(native_ids,default=0))+1
     for table, owner_field, window in (('player.account_mount_inventory','account_id','ACCOUNT_MOUNT'),
+                                        ('player.account_pet_inventory','account_id','ACCOUNT_PET'),
                                         ('player.guild_renewal_storage','guild_id','GUILD_STORAGE')):
         auxiliary = sorted(tables.get(table,[]),key=lambda row:(row[owner_field],row['slot'],row.get('id',0)))
         seen_locations = set()
@@ -544,7 +545,7 @@ def analyze(tables, source_hash, owner_keys=None):
         if not quantity: issue('zero_instance_count', instance_id=instance_id)
         location = (table, owner, window)
         quantities_before[location] += quantity
-        owner_kind='guild' if window=='GUILD_STORAGE' else 'account' if window in ('ACCOUNT_MOUNT','MALL','SAFEBOX') else \
+        owner_kind='guild' if window=='GUILD_STORAGE' else 'account' if window in ('ACCOUNT_MOUNT','ACCOUNT_PET','MALL','SAFEBOX') else \
             'player' if window in ('INVENTORY','EQUIPMENT','EXTRA_INVENTORY','MOUNT_INVENTORY','BELT_INVENTORY','SWITCHBOT') else None
         if owner_kind is None:issue('unknown_instance_owner_kind',instance_id=instance_id,source_store=table,window=window)
         owner_valid=None if owners is None or owner_kind is None else owner in owners[owner_kind]
@@ -557,6 +558,9 @@ def analyze(tables, source_hash, owner_keys=None):
                                  owner_kind=owner_kind,owner_valid=owner_valid,
                                  status='owner_quarantine' if owner_valid is False else reference['status'] if reference else 'orphan', source_row_hash=value_hash(row),
                                  state_conversion_complete=False))
+        collection_id = {'ACCOUNT_MOUNT': 2, 'ACCOUNT_PET': 3}.get(window)
+        if collection_id is not None:
+            instance_map[-1]['target_storage'] = dict(kind='SAFEBOX', id=collection_id, anchor=position)
         quantities_after[location] += quantity
     if quantities_before != quantities_after: raise MigrationError('Item quantity was lost during mapping')
     summary = dict(source_prototypes=len(protos), proposed_prototypes=len(groups),

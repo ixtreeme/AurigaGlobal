@@ -22,7 +22,7 @@ struct TestItem {
     int16_t locked { -1 };
     std::vector<TPlayerItemAttribute> attributes;
 };
-std::map<uint8_t, int> totals;
+std::map<uint8_t, double> totals;
 std::function<void(entt::entity)> afterApply;
 void Check(bool ok, const char* reason) {
     ++checks;
@@ -36,7 +36,7 @@ entt::entity Owner() {
     g_registry.emplace<Equipment>(owner);
     return owner;
 }
-entt::entity Wear(entt::entity owner, uint8_t slot, uint8_t type, int16_t value) {
+entt::entity Wear(entt::entity owner, uint8_t slot, uint8_t type, double value) {
     auto item = g_registry.create();
     auto& data = g_registry.emplace<TestItem>(item);
     data.owner = owner;
@@ -48,7 +48,7 @@ entt::entity Wear(entt::entity owner, uint8_t slot, uint8_t type, int16_t value)
     g_registry.get<Equipment>(owner).slots[slot] = item;
     return item;
 }
-void Energy(entt::entity owner, uint8_t previous, uint8_t value) {
+void Energy(entt::entity owner, double previous, double value) {
     ecs::PlayerRuntime::BuffOnAttr_ValueChange(owner, POINT_ENERGY, previous, value);
 }
 void AggregationAndEquipmentChanges() {
@@ -56,38 +56,39 @@ void AggregationAndEquipmentChanges() {
     Wear(owner, WEAR_BODY, APPLY_MAX_HP, 7);
     Wear(owner, WEAR_HEAD, APPLY_MAX_HP, 7);
     Energy(owner, 0, 10);
-    Check(totals[APPLY_MAX_HP] == 1, "energy must round the combined equipment total");
+    Check(std::abs(totals[APPLY_MAX_HP] - 1.4) < 1e-9, "energy must preserve the fractional combined equipment total");
     auto extra = Wear(owner, WEAR_WEAPON, APPLY_MAX_HP, 6);
     ecs::PlayerRuntime::BuffOnAttr_AddBuffsFromItem(owner, extra);
-    Check(totals[APPLY_MAX_HP] == 2, "adding equipment must apply rounded aggregate delta");
+    Check(std::abs(totals[APPLY_MAX_HP] - 2) < 1e-9, "adding equipment must apply exact aggregate delta");
     ecs::PlayerRuntime::BuffOnAttr_RemoveBuffsFromItem(owner, extra);
     g_registry.get<Equipment>(owner).slots.erase(WEAR_WEAPON);
-    Check(totals[APPLY_MAX_HP] == 1, "removing equipment must undo rounded aggregate delta");
+    Check(std::abs(totals[APPLY_MAX_HP] - 1.4) < 1e-9, "removing equipment must undo exact aggregate delta");
     Energy(owner, 10, 0);
-    Check(totals[APPLY_MAX_HP] == 0, "turning energy off must remove its applied bonus");
+    Check(std::abs(totals[APPLY_MAX_HP] - 0) < 1e-9, "turning energy off must remove its applied bonus");
     Energy(owner, 0, 0);
-    Check(totals[APPLY_MAX_HP] == 0, "turning inactive energy off must be idempotent");
+    Check(std::abs(totals[APPLY_MAX_HP] - 0) < 1e-9, "turning inactive energy off must be idempotent");
 }
 void ValueChangeAndPointRecomputation() {
     auto owner = Owner();
     Wear(owner, WEAR_BODY, APPLY_MAX_HP, 100);
     Energy(owner, 0, 10);
     Energy(owner, 10, 20);
-    Check(totals[APPLY_MAX_HP] == 0,
-        "nonzero percentage change must subtract old bonus without adding the new one");
+    Check(std::abs(totals[APPLY_MAX_HP] - 20) < 1e-9,
+        "nonzero percentage change must replace the old contribution");
     Check(g_registry.get<ecs::BuffOnAttrs>(owner).pools.at(POINT_ENERGY).value == 20,
         "percentage change must retain the new pool percentage");
     ecs::PlayerRuntime::BuffOnAttr_ClearAll(owner);
-    Check(totals[APPLY_MAX_HP] == 0, "recompute clearing after percentage change must not subtract");
+    Check(std::abs(totals[APPLY_MAX_HP] - 20) < 1e-9, "recompute clearing after percentage change must not subtract");
+    totals.clear();
     Energy(owner, 0, 20);
-    Check(totals[APPLY_MAX_HP] == 20, "reactivating must aggregate the current equipment");
+    Check(std::abs(totals[APPLY_MAX_HP] - 20) < 1e-9, "reactivating must aggregate the current equipment");
     ecs::PlayerRuntime::BuffOnAttr_ClearAll(owner);
-    Check(totals[APPLY_MAX_HP] == 20, "ClearAll is part of point recomputation and must not subtract");
+    Check(std::abs(totals[APPLY_MAX_HP] - 20) < 1e-9, "ClearAll is part of point recomputation and must not subtract");
     totals.clear(); // ComputePoints replaces base point totals before reactivating buffs.
     Energy(owner, 0, 20);
-    Check(totals[APPLY_MAX_HP] == 20, "recompute must apply each bonus exactly once");
+    Check(std::abs(totals[APPLY_MAX_HP] - 20) < 1e-9, "recompute must apply each bonus exactly once");
     ecs::PlayerRuntime::BuffOnAttr_Destroy(owner);
-    Check(totals[APPLY_MAX_HP] == 20, "Destroy must release state without changing points");
+    Check(std::abs(totals[APPLY_MAX_HP] - 20) < 1e-9, "Destroy must release state without changing points");
     ecs::PlayerRuntime::BuffOnAttr_Destroy(owner);
     auto* remaining = g_registry.try_get<ecs::BuffOnAttrs>(owner);
     Check(!remaining || remaining->pools.empty(), "Destroy must leave no owned pools");
@@ -97,13 +98,13 @@ void CostumeAndSlotIsolation() {
     Wear(owner, WEAR_BODY, APPLY_MAX_HP, 100);
     Wear(owner, WEAR_COSTUME_BODY, APPLY_MAX_HP, 80);
     Energy(owner, 0, 10);
-    Check(totals[APPLY_MAX_HP] == 10, "energy must not count costume equipment");
+    Check(std::abs(totals[APPLY_MAX_HP] - 10) < 1e-9, "energy must not count costume equipment");
     ecs::PlayerRuntime::BuffOnAttr_ValueChange(owner, POINT_COSTUME_ATTR_BONUS, 0, 25);
-    Check(totals[APPLY_MAX_HP] == 30, "costume buff must use its own slot set");
+    Check(std::abs(totals[APPLY_MAX_HP] - 30) < 1e-9, "costume buff must use its own slot set");
     Energy(owner, 10, 0);
-    Check(totals[APPLY_MAX_HP] == 20, "turning off energy must preserve costume bonus");
+    Check(std::abs(totals[APPLY_MAX_HP] - 20) < 1e-9, "turning off energy must preserve costume bonus");
     ecs::PlayerRuntime::BuffOnAttr_ValueChange(owner, POINT_COSTUME_ATTR_BONUS, 25, 0);
-    Check(totals[APPLY_MAX_HP] == 0, "costume off must remove only its bonus");
+    Check(std::abs(totals[APPLY_MAX_HP] - 0) < 1e-9, "costume off must remove only its bonus");
 }
 void InvalidEntitiesAndUnsupportedType() {
     auto owner = Owner();
@@ -113,7 +114,7 @@ void InvalidEntitiesAndUnsupportedType() {
     ecs::PlayerRuntime::BuffOnAttr_AddBuffsFromItem(owner, item);
     ecs::PlayerRuntime::BuffOnAttr_RemoveBuffsFromItem(owner, item);
     ecs::PlayerRuntime::BuffOnAttr_AddBuffsFromItem(owner, entt::null);
-    Check(totals[APPLY_MAX_HP] == 10, "stale and null items must not alter buff state");
+    Check(std::abs(totals[APPLY_MAX_HP] - 10) < 1e-9, "stale and null items must not alter buff state");
     auto count = g_registry.get<ecs::BuffOnAttrs>(owner).pools.size();
     ecs::PlayerRuntime::BuffOnAttr_ValueChange(owner, POINT_LEVEL, 0, 20);
     ecs::PlayerRuntime::BuffOnAttr_ValueChange(owner, POINT_LEVEL, 20, 30);
@@ -125,7 +126,7 @@ void InvalidEntitiesAndUnsupportedType() {
     ecs::PlayerRuntime::BuffOnAttr_ClearAll(owner);
     ecs::PlayerRuntime::BuffOnAttr_Destroy(owner);
     ecs::PlayerRuntime::BuffOnAttr_RemoveBuffsFromItem(owner, item);
-    Check(totals[APPLY_MAX_HP] == 10, "stale owners must not apply or remove points");
+    Check(std::abs(totals[APPLY_MAX_HP] - 10) < 1e-9, "stale owners must not apply or remove points");
 }
 void CallbackRemoval() {
     auto owner = Owner();
@@ -161,7 +162,7 @@ void NestedOffDuringActivation() {
     Energy(owner, 0, 10);
     afterApply = {};
     Check(nested, "activation must reach the controlled point callback");
-    Check(totals[APPLY_MAX_HP] == 0 && totals[APPLY_MAX_SP] == 0,
+    Check(std::abs(totals[APPLY_MAX_HP] - 0) < 1e-9 && std::abs(totals[APPLY_MAX_SP] - 0) < 1e-9,
         "nested Off must cancel pending bonuses and remove the already applied delta");
     Check(g_registry.get<ecs::BuffOnAttrs>(owner).pending.empty(),
         "nested buff operation must fully drain pending point deltas");
@@ -172,7 +173,7 @@ void LockedAttribute() {
     auto item = Wear(owner, WEAR_BODY, APPLY_MAX_HP, 100);
     g_registry.get<TestItem>(item).locked = 0;
     Energy(owner, 0, 10);
-    Check(totals[APPLY_MAX_HP] == 0, "locked equipment attribute must be excluded on activation");
+    Check(std::abs(totals[APPLY_MAX_HP] - 0) < 1e-9, "locked equipment attribute must be excluded on activation");
 }
 #endif
 }
@@ -199,7 +200,7 @@ entt::entity GetItemOwnerEntity(entt::entity item) { return g_registry.get<TestI
 const char* GetItemName(entt::entity) { return "buff-test-item"; }
 uint32_t GetItemVnum(entt::entity) { return 1000; }
 }
-void ecs::PointSystem::ApplyPoint(entt::entity owner, uint8_t type, int amount) {
+void ecs::PointSystem::ApplyPoint(entt::entity owner, uint8_t type, double amount) {
     Check(g_registry.valid(owner), "point application must not receive a stale owner");
     totals[type] += amount;
     if (afterApply) afterApply(owner);
@@ -213,6 +214,15 @@ std::shared_ptr<spdlog::logger> logging::GetErrorLogger() { return logging::GetL
 
 int main() {
     try {
+        {
+            const auto owner=Owner();Wear(owner, WEAR_BODY, APPLY_ATTBONUS_MONSTER, 1.113);
+            Energy(owner, 0, 1.113);
+            Check(std::abs(totals[APPLY_ATTBONUS_MONSTER] - .01238769) < 1e-12, "fractional percentage product");
+            Energy(owner, 1.113, 2.224);
+            Check(std::abs(totals[APPLY_ATTBONUS_MONSTER] - .02475312) < 1e-12, "fractional buff replacement");
+            Energy(owner, 2.224, 0);
+            Check(std::abs(totals[APPLY_ATTBONUS_MONSTER]) < 1e-12, "fractional buff removal");
+        }
         AggregationAndEquipmentChanges();
         ValueChangeAndPointRecomputation();
         CostumeAndSlotIsolation();

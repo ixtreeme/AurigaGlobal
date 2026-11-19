@@ -712,7 +712,7 @@ void ecs::PlayerRuntime::SetPart(entt::entity e, uint8_t, uint16_t) { Actor(e); 
 uint16_t ecs::PlayerRuntime::GetOriginalPart(entt::entity e, uint8_t) { Actor(e); return 0; }
 uint16_t ecs::PlayerRuntime::GetRuneEffect(entt::entity) { Unexpected(); }
 void ecs::PointSystem::ComputeBattlePoints(entt::entity) { Service("battle-points"); }
-void ecs::PointSystem::ApplyPoint(entt::entity, uint8_t, int) { Unexpected(); }
+void ecs::PointSystem::ApplyPoint(entt::entity, uint8_t, double) { Unexpected(); }
 SECTREE::SECTREE() {}
 SECTREE::~SECTREE() {}
 SECTREE_MANAGER::SECTREE_MANAGER() {}
@@ -727,6 +727,7 @@ void MountSystem::UpdatePetSkin(entt::entity) { Unexpected(); }
 void MountSystem::MountSummon(entt::entity, entt::entity) { Unexpected(); }
 entt::entity MountSystem::GetMountInventory(entt::entity) { Unexpected(); }
 bool MountSystem::RemoveMountInventoryItemByEntity(entt::entity, entt::entity, bool) { Unexpected(); }
+bool PetInventorySystem::RemovePetInventoryItemByEntity(entt::entity, entt::entity, bool) { Unexpected(); }
 void MountSystem::MountCostume(entt::entity, entt::entity) { Unexpected(); }
 bool ItemSystem::IsExtraItem(entt::entity e) { return Meta(e).extra; }
 bool ItemSystem::IsRideItem(entt::entity e) { Meta(e); return false; }
@@ -1275,6 +1276,7 @@ int ecs::PlayerRuntime::GetDuelOption(entt::entity e, const char*) { return Acto
 uint8_t ecs::PlayerRuntime::GetJob(entt::entity e) { return Actor(e).job; }
 uint8_t ecs::PlayerRuntime::GetSex(entt::entity e) { return Actor(e).sex; }
 int64_t ecs::PointSystem::Get(entt::entity e, uint8_t type) { return Actor(e).points[type]; }
+double ecs::PointSystem::GetPrecise(entt::entity e, uint8_t type) { return static_cast<double>(Get(e,type)); }
 int32_t ecs::PointSystem::GetLevel(entt::entity e) { return Actor(e).level; }
 uint64_t ecs::PointSystem::GetMaxHP(entt::entity e) { return Actor(e).maxHP; }
 uint64_t ecs::PointSystem::GetMaxSP(entt::entity e) { return Actor(e).maxSP; }

@@ -3,7 +3,7 @@
 #include <algorithm>
 namespace auriga::item {
 std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeStorageSnapshot(const ItemCatalog& c,const StorageSnapshot& s){
-    using E=TypedInventoryWireError;if(s.status>7 || unsigned(s.route)<1 || unsigned(s.route)>6 || s.command>6 || s.message.size()>512 || s.items.size()>65535)return std::unexpected(E::BadValue);
+    using E=TypedInventoryWireError;if(s.status>7 || unsigned(s.route)<1 || s.route>StorageRoute::PetCollection || s.command>6 || s.message.size()>512 || s.items.size()>65535)return std::unexpected(E::BadValue);
     std::vector<std::byte> b;const auto put=[&](std::uint64_t v,unsigned n){for(unsigned j=0;j<n;j++)b.push_back(std::byte(v>>(8*j)));};
     put(201,1);put(0,4);put(1,1);put(s.status,1);put(unsigned(s.route),1);put(s.command,1);put(s.nonce,8);put(s.subject,8);put(s.units,4);put(s.cell,4);put(s.recipient,4);put(s.amount,8);put(s.coins,8);put(s.walletRevision,8);put(unsigned(s.owner.kind),1);put(s.owner.id,8);put(s.canDeposit,1);put(s.canWithdraw,1);
     std::vector<ItemGrant> denominations;for(const auto& [key,e]:c.Entries())if(const auto* r=std::get_if<ItemCurrencyTokenRow>(&e.category);r && r->currency==WalletCurrency::DragonCoin && !e.base.retired)denominations.push_back(ItemGrant{key,0,1});if(denominations.size()>65535)return std::unexpected(E::TooLarge);

@@ -16,7 +16,7 @@ const PersistentItem* Find(std::span<const PersistentItem> all,std::uint64_t id)
 bool AccessoryClock(const ItemChange& ch){if(!ch.before || !ch.before->accessory || !ch.after.accessory || !ch.before->placement || ch.before->placement->kind!=ItemStorageKind::Equipment)return false;const auto& b=*ch.before->accessory;const auto& a=*ch.after.accessory;if(b.permanent || a.permanent || !b.activeGrade || a.activeGrade>b.activeGrade || a.unlockedCapacity!=b.unlockedCapacity || (a.activeGrade==b.activeGrade && a.remainingMs>=b.remainingMs))return false;auto copy=*ch.before;copy.revision=ch.after.revision;copy.accessory=a;return copy==ch.after;}
 std::expected<StoragePlan,E> Build(const ItemCatalog& c,std::array<std::uint8_t,16> op,std::span<const ItemOwnerFence> fences,std::span<const ItemStorageLayout> layouts,std::span<const PersistentItem> all,std::span<const ItemWallet> wallets,Decision d,std::span<const ItemInstanceId> ids){
     const auto& a=d.actor;const auto& q=d.choice;const ItemOwner actor{ItemOwnerKind::Character,a.pid},account{ItemOwnerKind::Account,a.account};
-    if(!a.pid || !a.account || !a.admitted || a.use.characterClass>3 || a.use.sex>1 || unsigned(q.route)<1 || unsigned(q.route)>6 || unsigned(q.command)<1 || unsigned(q.command)>6 || !q.subject || q.units>10000)return std::unexpected(E::RequirementNotMet);
+    if(!a.pid || !a.account || !a.admitted || a.use.characterClass>3 || a.use.sex>1 || unsigned(q.route)<1 || q.route>StorageRoute::PetCollection || unsigned(q.command)<1 || unsigned(q.command)>6 || !q.subject || q.units>10000)return std::unexpected(E::RequirementNotMet);
     ItemCommit out;out.operationId=op;out.catalogRevision=c.Revision();out.catalogHash=c.ContentHash();out.kind=ItemOperationKind::Service;out.outcomeCode=q.route==StorageRoute::Wallet?AccountWalletOutcome:StorageOutcome;
     const auto owner=[&](ItemOwner value)->bool{if(std::ranges::find(out.owners,value,&ItemOwnerFence::owner)!=out.owners.end())return true;const auto f=std::ranges::find(fences,value,&ItemOwnerFence::owner);if(f==fences.end())return false;out.owners.push_back(*f);return true;};if(!owner(actor))return std::unexpected(E::InvalidFence);
     if(q.route==StorageRoute::Wallet){
@@ -29,21 +29,31 @@ std::expected<StoragePlan,E> Build(const ItemCatalog& c,std::array<std::uint8_t,
         out.wallets.push_back({*w,after});
     }else{
         ItemOwner from=actor,to=actor;ItemStorageKind sourceKind=ItemStorageKind::Inventory,destination=ItemStorageKind::Inventory;
-        if(q.route==StorageRoute::Bank){if(!a.bankInRange)return std::unexpected(E::RequirementNotMet);if(q.command==StorageCommand::Deposit){to=account;destination=ItemStorageKind::Safebox;}else if(q.command==StorageCommand::Withdraw){from=account;sourceKind=ItemStorageKind::Safebox;}else if(q.command==StorageCommand::Rearrange){from=to=account;sourceKind=destination=ItemStorageKind::Safebox;}else return std::unexpected(E::InvalidChange);}
+        const bool collection=IsCollectionRoute(q.route);
+        if(q.route==StorageRoute::Bank || collection){
+            if(!collection && !a.bankInRange)return std::unexpected(E::RequirementNotMet);if(q.command==StorageCommand::Deposit){to=account;destination=ItemStorageKind::Safebox;}else if(q.command==StorageCommand::Withdraw){from=account;sourceKind=ItemStorageKind::Safebox;}else if(q.command==StorageCommand::Rearrange){from=to=account;sourceKind=destination=ItemStorageKind::Safebox;}else return std::unexpected(E::InvalidChange);}
         else if(q.route==StorageRoute::Mall){if(q.command!=StorageCommand::Withdraw)return std::unexpected(E::InvalidChange);from=account;sourceKind=ItemStorageKind::Mall;}
         else if(q.route==StorageRoute::Guild){if(!a.guild || !a.guildMember)return std::unexpected(E::RequirementNotMet);const ItemOwner guild{ItemOwnerKind::Guild,a.guild};if(q.command==StorageCommand::Deposit){to=guild;destination=ItemStorageKind::GuildStorage;}else if(a.guildLeader && q.command==StorageCommand::Withdraw){from=guild;sourceKind=ItemStorageKind::GuildStorage;}else if(a.guildLeader && q.command==StorageCommand::Rearrange){from=to=guild;sourceKind=destination=ItemStorageKind::GuildStorage;}else return std::unexpected(E::RequirementNotMet);}
         else if(q.route==StorageRoute::Mail){if(q.command==StorageCommand::Send && q.recipient && q.recipient!=a.pid){to={ItemOwnerKind::Character,q.recipient};destination=ItemStorageKind::Mail;}else if(q.command==StorageCommand::Withdraw){sourceKind=ItemStorageKind::Mail;}else return std::unexpected(E::InvalidChange);}
         else if(q.route==StorageRoute::Awards){if(q.command!=StorageCommand::Withdraw)return std::unexpected(E::InvalidChange);sourceKind=ItemStorageKind::PendingAward;}
-        if(!owner(from) || !owner(to))return std::unexpected(E::InvalidFence);const auto* item=Find(all,q.subject);if(!item || item->owner!=from || !ValidatePersistentItem(c,*item) || !Portable(*item) || item->placement->kind!=sourceKind)return std::unexpected(E::InvalidItem);
+        const auto sourceId=sourceKind==ItemStorageKind::Safebox ? AccountStorageId(q.route) : 1;
+        const auto destinationId=destination==ItemStorageKind::Safebox ? AccountStorageId(q.route) : 1;
+        if (!owner(from) || !owner(to))
+            return std::unexpected(E::InvalidFence);
+        const auto* item=Find(all,q.subject);
+        if (!item || item->owner!=from || !ValidatePersistentItem(c,*item) || !Portable(*item) ||
+            item->placement->kind!=sourceKind || item->placement->storageId!=sourceId ||
+            (collection && !CanStoreInCollection(c,*item,q.route)))
+            return std::unexpected(E::InvalidItem);
         const auto* entry=c.Find(item->key);const auto* trade=c.FindTradePolicy(entry->base.tradePolicy);const bool unrelated=q.route==StorageRoute::Guild || (q.route==StorageRoute::Mail && q.command==StorageCommand::Send);if(unrelated && (item->boundTo || !trade || !trade->allowTrade))return std::unexpected(E::TransferDenied);
         if(item->boundTo && item->boundTo!=actor && item->boundTo!=account)return std::unexpected(E::TransferDenied);
         const auto count=q.units?q.units:item->count;if(!count || count>item->count || q.command==StorageCommand::Rearrange && count!=item->count)return std::unexpected(E::InvalidChange);d.units=count;
         auto moved=*item;moved.owner=to;moved.count=count;if(item->boundTo==account && to==actor)moved.boundTo=actor;
         if(count<item->count){auto plain=*item;plain.owner=actor;plain.boundTo=item->boundTo?std::optional{actor}:std::nullopt;plain.placement->kind=ItemStorageKind::Inventory;if(!PlainInventoryItem(plain,actor) || ids.empty() || Find(all,ids[0].Value()))return std::unexpected(E::InvalidItem);d.split=ids[0].Value();moved.id=ids[0];moved.revision=1;auto remain=*item;remain.count-=count;++remain.revision;out.items.push_back({*item,remain});}
         else ++moved.revision;
-        const auto target=std::ranges::find_if(layouts,[&](const auto& l){return l.storage.owner==to && l.storage.kind==destination && l.storage.id==1;});if(target==layouts.end())return std::unexpected(E::InvalidStorage);
-        std::set<std::uint32_t> occupied;for(const auto& i:all)if(!i.destroyed && i.placement && i.owner==to && i.placement->kind==destination && i.placement->storageId==1 && !(count==item->count && i.id==item->id)){auto cells=OccupiedItemCells(c,i,*target);if(!cells)return std::unexpected(cells.error());occupied.insert(cells->begin(),cells->end());}
-        const auto place=[&](std::uint32_t at){moved.placement=ItemPlacement{destination,1,at};auto cells=OccupiedItemCells(c,moved,*target);return cells && std::ranges::none_of(*cells,[&](auto at){return occupied.contains(at);});};
+        const auto target=std::ranges::find_if(layouts,[&](const auto& l){return l.storage.owner==to && l.storage.kind==destination && l.storage.id==destinationId;});if(target==layouts.end())return std::unexpected(E::InvalidStorage);
+        std::set<std::uint32_t> occupied;for(const auto& i:all)if(!i.destroyed && i.placement && i.owner==to && i.placement->kind==destination && i.placement->storageId==destinationId && !(count==item->count && i.id==item->id)){auto cells=OccupiedItemCells(c,i,*target);if(!cells)return std::unexpected(cells.error());occupied.insert(cells->begin(),cells->end());}
+        const auto place=[&](std::uint32_t at){moved.placement=ItemPlacement{destination,destinationId,at};auto cells=OccupiedItemCells(c,moved,*target);return cells && std::ranges::none_of(*cells,[&](auto at){return occupied.contains(at);});};
         bool placed=false;if(q.cell!=UINT32_MAX)placed=place(q.cell);else for(std::uint32_t at=0;at<std::uint32_t(target->columns)*target->rows*target->pages && !placed;at++)placed=place(at);if(!placed)return std::unexpected(E::InvalidPlacement);d.choice.cell=moved.placement->anchor;
         if(count==item->count){auto unchanged=moved;unchanged.revision=item->revision;if(unchanged==*item)return std::unexpected(E::InvalidChange);out.items.push_back({*item,moved});}else out.items.push_back({{},moved});
     }
@@ -51,6 +61,19 @@ std::expected<StoragePlan,E> Build(const ItemCatalog& c,std::array<std::uint8_t,
     out.result=Encode(d);return StoragePlan{std::move(out),d.amount,d.units};
 }
 }
+bool CanStoreInCollection(const ItemCatalog& catalog, const PersistentItem& item, StorageRoute route)
+{
+    if (!IsCollectionRoute(route) || !Portable(item))
+        return false;
+    const auto* entry=catalog.Find(item.key);
+    const auto* companion=entry ? std::get_if<ItemCompanionRow>(&entry->category) : nullptr;
+    if (!companion || companion->clock!=CompanionClock::Permanent || entry->base.retired)
+        return false;
+    return route==StorageRoute::MountCollection
+        ? companion->kind==CompanionKind::Mount
+        : companion->kind==CompanionKind::Pet;
+}
+
 std::optional<StorageAuthorization> StorageWriteAuthorization(const ItemCommit& r){const auto d=Read(r.result);if(!d || (r.outcomeCode!=StorageOutcome && r.outcomeCode!=AccountWalletOutcome))return {};return StorageAuthorization{d->actor,d->choice};}
 std::expected<StoragePlan,ItemPersistenceError> MakeStorageCommit(const ItemCatalog& c,std::array<std::uint8_t,16> op,std::span<const ItemOwnerFence> fences,std::span<const ItemStorageLayout> layouts,std::span<const PersistentItem> all,std::span<const ItemWallet> wallets,StorageActor actor,StorageChoice choice,std::span<const ItemInstanceId> ids){auto plan=Build(c,op,fences,layouts,all,wallets,{actor,choice},ids);if(!plan)return plan;if(const auto valid=ValidateItemCommit(c,plan->commit);!valid)return std::unexpected(valid.error());return plan;}
 bool ValidStorageWrite(const ItemCatalog& c,const ItemCommit& r){const auto d=Read(r.result);if(!d || r.kind!=ItemOperationKind::Service || r.ground || r.learning || r.petStudyCooldown || (d->choice.route==StorageRoute::Wallet)!=(r.outcomeCode==AccountWalletOutcome))return false;

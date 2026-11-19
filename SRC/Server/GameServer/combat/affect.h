@@ -8,7 +8,7 @@ typedef struct SAffectSkills
 {
 		uint32_t	dwType;
 		uint8_t	bApplyOn;
-		int32_t	lApplyValue;
+		double	lApplyValue;
 		uint32_t	dwFlag;
 		int32_t	lDuration;
 		int32_t	lSPCost;
@@ -21,7 +21,7 @@ class CAffect
 	public:
 		uint32_t	dwType;
 		uint8_t    bApplyOn;
-		int32_t    lApplyValue;
+		double    lApplyValue;
 		uint32_t   dwFlag;
 		int32_t	lDuration;
 		int32_t	lSPCost;

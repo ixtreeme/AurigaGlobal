@@ -1,4 +1,6 @@
 #include <Core/buffer.h>
+#include <cassert>
+#include "../../SRC/Server/GameServer/core/protocol.h"
 #include <Core/Logging.hpp>
 #include <cstdint>
 #include <cstring>
@@ -136,6 +138,37 @@ void WriteReusesTheConsumedPrefix()
     buffer_delete(buffer);
 }
 
+// A catalog is queued synchronously before the first socket write can drain.
+// It must retain normal-packet headroom after EVERY chunk, including the last.
+void LoginCatalogBurstRetainsNormalPacketHeadroom()
+{
+    LPBUFFER plain = buffer_new(DEFAULT_PACKET_BUFFER_SIZE);
+    std::vector<char> packet(8 + 256 * 72, 'x');
+    bool reproduced = false;
+    for (int i = 0; i < 128; ++i) {
+        if (!packet_encode(plain, packet.data(), static_cast<int>(packet.size()))) {
+            reproduced = true; break;
+        }
+    }
+    Check(reproduced, "ordinary bounded encoding must reproduce the old login disconnect");
+    buffer_delete(plain);
+
+    LPBUFFER output = buffer_new(DEFAULT_PACKET_BUFFER_SIZE);
+    Stream stream;
+    for (int i = 0; i < 128; ++i) {
+        for (char& byte : packet) byte = ByteAt(stream.written++);
+        buffer_adjust_size(output, static_cast<int>(packet.size()) + DEFAULT_PACKET_BUFFER_SIZE);
+        Check(packet_encode(output, packet.data(), static_cast<int>(packet.size())), "catalog chunk refused during synchronous login burst");
+        Check(buffer_has_space(output) >= DEFAULT_PACKET_BUFFER_SIZE, "large send lost normal login packet headroom");
+    }
+    std::vector<char> tail(DEFAULT_PACKET_BUFFER_SIZE);
+    for (char& byte : tail) byte = ByteAt(stream.written++);
+    Check(packet_encode(output, tail.data(), static_cast<int>(tail.size())), "ordinary login packets refused after catalog");
+    Consume(output, stream, static_cast<size_t>(stream.written));
+    Check(buffer_size(output) == 0, "catalog/login burst bytes were lost or left behind");
+    buffer_delete(output);
+}
+
 void TempBufferRoundTrip()
 {
     TEMP_BUFFER temp(16);
@@ -168,6 +201,7 @@ int main()
         GrowthKeepsOnlyTheUnreadBytes();
         WriteReusesTheConsumedPrefix();
         TempBufferRoundTrip();
+        LoginCatalogBurstRetainsNormalPacketHeadroom();
     } catch (const std::exception& error) {
         std::cerr << "FAILED: " << error.what() << "\n";
         return 1;

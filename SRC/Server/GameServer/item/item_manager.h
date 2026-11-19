@@ -431,6 +431,7 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		const CSpecialAttrGroup* GetSpecialAttrGroup(uint32_t dwVnum);
 
 		const std::vector<TItemTable> & GetTable() { return m_vec_prototype; }
+        uint64_t BonusCatalogRevision() const;
 
 		// CHECK_UNIQUE_GROUP
 		int			GetSpecialGroupFromItem(uint32_t dwVnum) const { const auto it = m_ItemToSpecialGroup.find(dwVnum); return (it == m_ItemToSpecialGroup.end()) ? 0 : it->second; }

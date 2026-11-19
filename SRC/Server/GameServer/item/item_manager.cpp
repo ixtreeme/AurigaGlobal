@@ -120,8 +120,12 @@ void ITEM_MANAGER::GracefulShutdown()
 		else ++it;
 }
 
+namespace { uint64_t g_bonusCatalogRevision = 1; }
+uint64_t ITEM_MANAGER::BonusCatalogRevision() const { return g_bonusCatalogRevision; }
+
 bool ITEM_MANAGER::Initialize(TItemTable* table, int size)
 {
+    ++g_bonusCatalogRevision;
 	if (size < 0 || (size && !table)) return false;
 	std::vector<TItemTable> incoming;
 	if (size) incoming.assign(table, table + size);
@@ -211,6 +215,7 @@ bool ITEM_MANAGER::Initialize(TItemTable* table, int size)
 #ifdef ENABLE_ITEM_EXTRA_PROTO
 bool ITEM_MANAGER::InitializeExtraProto(TItemExtraProto* table, uint32_t count)
 {
+    ++g_bonusCatalogRevision;
 	if (m_map_ExtraProto.empty() == false)
 		LOG_INFO("RELOADING ITEM EXTRA PROTO.");
 
@@ -603,7 +608,7 @@ void ITEM_MANAGER::DestroyItemNow(entt::entity itemEntity)
 		// Equipment locations store absolute inventory cells; GetItem's
 		// EQUIPMENT input takes a relative wear slot, so query INVENTORY here.
 		const TItemPos position(window == EQUIPMENT ? INVENTORY : window, cell);
-		if (window == SAFEBOX || window == MALL || window == MOUNT_INVENTORY ||
+		if (window == SAFEBOX || window == MALL || window == MOUNT_INVENTORY || window == PET_INVENTORY ||
 			ItemSystem::GetItem(owner, position) == itemEntity)
 			InventorySystem::RemoveFromCharacter(itemEntity);
 		else
@@ -860,7 +865,7 @@ public:
 extern std::vector<CItemDropInfo> g_vec_pkCommonDropItem[MOB_RANK_MAX_NUM];
 
 // 20050503.ipkn.
-int GetDropPerKillPct(int iMinimum, int iDefault, int iDeltaPercent, const char* c_pszFlag)
+double GetDropPerKillPct(int iMinimum, int iDefault, double iDeltaPercent, const char* c_pszFlag)
 {
 	int iVal = 0;
 
@@ -883,7 +888,7 @@ int GetDropPerKillPct(int iMinimum, int iDefault, int iDeltaPercent, const char*
 }
 
 bool ITEM_MANAGER::GetDropPct(entt::entity victim, entt::entity killer,
-	OUT int& iDeltaPercent, OUT int& iRandRange)
+	OUT double& iDeltaPercent, OUT int& iRandRange)
 {
 	if (victim == entt::null || killer == entt::null ||
 		!g_registry.valid(victim) || !g_registry.valid(killer))
@@ -912,15 +917,15 @@ bool ITEM_MANAGER::GetDropPct(entt::entity victim, entt::entity killer,
 	LOG_INFO("CreateDropItem for level: {} rank: {} pct: {}", killerLevel, rank, iDeltaPercent);
 	iDeltaPercent = iDeltaPercent * CHARACTER_MANAGER::instance().GetMobItemRate(killer) / 100;
 
-	const int itemDropBonus = ecs::PointSystem::Get(killer, POINT_ITEM_DROP_BONUS);
+	double itemDropBonus = ecs::PointSystem::GetPrecise(killer, POINT_ITEM_DROP_BONUS);
 	if (itemDropBonus > 0)
 	{
-		const int added = std::min((itemDropBonus / 10) * 5, 50);
+		const double added = std::min((itemDropBonus / 10) * 5, 50.0);
 		iDeltaPercent += added;
 	}
 
 #ifdef ENABLE_NEW_COMMON_BONUSES
-	if (ecs::PointSystem::Get(killer, APPLY_DOUBLE_DROP_ITEM) > 0)
+	if (ecs::PointSystem::GetPrecise(killer, POINT_DOUBLE_DROP_ITEM) > 0)
 		iDeltaPercent *= 2;
 #endif
 
@@ -1020,7 +1025,7 @@ bool ITEM_MANAGER::CreateDropItemVector(entt::entity chr, entt::entity killer, s
 		const bool hasDoubleDrop = ecs::PlayerRuntime::GetPremiumRemainSeconds(killer, PREMIUM_ITEM) > 0 ||
 			ItemSystem::IsEquipUniqueGroup(killer, UNIQUE_GROUP_DOUBLE_ITEM)
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			|| ecs::PointSystem::Get(killer, APPLY_DOUBLE_DROP_ITEM) > 0
+			|| ecs::PointSystem::GetPrecise(killer, POINT_DOUBLE_DROP_ITEM) > 0
 #endif
 			;
 		if (hasDoubleDrop)
@@ -1078,7 +1083,7 @@ bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::ve
 		if (iLevel < c_rInfo.m_iLevelStart || iLevel > c_rInfo.m_iLevelEnd)
 			continue;
 
-		int iPercent = (c_rInfo.m_iPercent * iDeltaPercent) / 100;
+		double iPercent = (c_rInfo.m_iPercent * iDeltaPercent) / 100;
 		//		3, "CreateDropItem %d ~ %d %d(%d)", c_rInfo.m_iLevelStart, c_rInfo.m_iLevelEnd, c_rInfo.m_dwVnum, iPercent, c_rInfo.m_iPercent);
 		LOG_ERROR("CreateDropItem {} ~ {} {}({})", c_rInfo.m_iLevelStart, c_rInfo.m_iLevelEnd, c_rInfo.m_dwVnum, iPercent, c_rInfo.m_iPercent);
 
@@ -1124,7 +1129,7 @@ bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::ve
 			for (uint32_t i = 0; i < v.size(); ++i)
 			{
 
-				int iPercent = (v[i].dwPct * iDeltaPercent) / 100;
+				double iPercent = (v[i].dwPct * iDeltaPercent) / 100;
 
 				if (iPercent >= number(1, iRandRange))
 				{
@@ -1161,7 +1166,7 @@ bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::ve
 			// MOB_DROP_ITEM_BUG_FIX
 			if (pGroup && !pGroup->IsEmpty())
 			{
-				int iPercent = 40000 * iDeltaPercent / pGroup->GetKillPerDrop();
+				double iPercent = 40000 * iDeltaPercent / pGroup->GetKillPerDrop();
 				if (iPercent >= number(1, iRandRange))
 				{
 
@@ -1201,7 +1206,7 @@ bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::ve
 	{
 		if (tableDrops && !ecs::PlayerRuntime::IsStone(chr) && ((ecs::PlayerRuntime::GetPremiumRemainSeconds(killer, PREMIUM_ITEM) > 0) || (ItemSystem::IsEquipUniqueGroup(killer, UNIQUE_GROUP_DOUBLE_ITEM))
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			|| (ecs::PointSystem::Get(killer, APPLY_DOUBLE_DROP_ITEM) > 0)
+			|| (ecs::PointSystem::GetPrecise(killer, POINT_DOUBLE_DROP_ITEM) > 0)
 #endif
 			))
 		{
@@ -1213,7 +1218,7 @@ bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::ve
 
 				for (uint32_t i = 0; i < v.size(); ++i)
 				{
-					int iPercent = (v[i].dwPct * iDeltaPercent) / 100;
+					double iPercent = (v[i].dwPct * iDeltaPercent) / 100;
 
 					if (iPercent >= number(1, iRandRange))
 					{
@@ -1232,7 +1237,7 @@ bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::ve
 
 		if (it != m_map_dwEtcItemDropProb.end())
 		{
-			int iPercent = (it->second * iDeltaPercent) / 100;
+			double iPercent = (it->second * iDeltaPercent) / 100;
 
 			if (iPercent >= number(1, iRandRange))
 			{
@@ -1246,7 +1251,7 @@ bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::ve
 	{
 		if (CombatSystem::GetDropMetinStoneVnum(chr))
 		{
-			int iPercent = (CombatSystem::GetDropMetinStonePct(chr) * iDeltaPercent) * 400;
+			double iPercent = (CombatSystem::GetDropMetinStonePct(chr) * iDeltaPercent) * 400;
 			if (iPercent >= number(1, iRandRange))
 			{
 				item = CreateItem(CombatSystem::GetDropMetinStoneVnum(chr), 1, 0, true);

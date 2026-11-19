@@ -9,7 +9,7 @@ enum
 	RUNE_ATTR_EACH = 2,
 };
 
-static const int32_t aApplyRuneInfo[RUNE_ATTR_EACH * RUNE_SUBTYPES][8] =
+static const double aApplyRuneInfo[RUNE_ATTR_EACH * RUNE_SUBTYPES][8] =
 {
 	// bns1 subtype1
 	{

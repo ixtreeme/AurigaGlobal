@@ -593,8 +593,8 @@ std::set<uint32_t> allowedVnums = {
 void ecs::SocialSystem::SendMyShopPriceListCmd(entt::entity e, uint32_t dwItemVnum, int64_t dwItemPrice)
 {
 	char szLine[256];
-	snprintf(szLine, sizeof(szLine), "MyShopPriceList %u %lld", dwItemVnum, dwItemPrice);
-	ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, szLine);
+	snprintf(szLine, sizeof(szLine), "MyShopPriceList %u %lld", dwItemVnum, static_cast<long long>(dwItemPrice));
+	ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "%s", szLine);
 	LOG_INFO("{}", szLine);
 }
 
@@ -2085,10 +2085,10 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 				{
 					uint8_t type = GetItemAttributeType(pkNewItem, i);
-					short val = GetItemAttributeValue(pkNewItem, i);
+					double val = GetItemAttributeValue(pkNewItem, i);
 
 					if (type != 0 && val != 0)
-						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
+						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%.3f", type, val);
 				}
 
 				// debug log:
@@ -2126,10 +2126,10 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 				{
 					uint8_t type = GetItemAttributeType(pkNewItem, i);
-					short val = GetItemAttributeValue(pkNewItem, i);
+					double val = GetItemAttributeValue(pkNewItem, i);
 
 					if (type != 0 && val != 0)
-						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
+						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%.3f", type, val);
 				}
 
 				char szChat[2048];
@@ -2137,7 +2137,7 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 					"|cff00ff00[%s]|r Successfully upgraded:|cffffd700|H%s|h[%s]|h|r",
 					ecs::PlayerRuntime::GetName(e).data(), itemlink, GetItemName(pkNewItem));
 
-				ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, szChat);
+				ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "%s", szChat);
 			}
 #endif ENABLE_UPGRADE_NOTICE_BY_RAZOR93
 		}
@@ -2433,10 +2433,10 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 				{
 					uint8_t type = GetItemAttributeType(pkNewItem, i);
-					short val = GetItemAttributeValue(pkNewItem, i);
+					double val = GetItemAttributeValue(pkNewItem, i);
 
 					if (type != 0 && val != 0)
-						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
+						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%.3f", type, val);
 				}
 
 				// debug log:
@@ -2474,10 +2474,10 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 				{
 					uint8_t type = GetItemAttributeType(pkNewItem, i);
-					short val = GetItemAttributeValue(pkNewItem, i);
+					double val = GetItemAttributeValue(pkNewItem, i);
 
 					if (type != 0 && val != 0)
-						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
+						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%.3f", type, val);
 				}
 
 				char szChat[2048];
@@ -2485,7 +2485,7 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 					"|cff00ff00[%s]|r Successfully upgraded:|cffffd700|H%s|h[%s]|h|r",
 					ecs::PlayerRuntime::GetName(e).data(), itemlink, GetItemName(pkNewItem));
 
-				ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, szChat);
+				ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "%s", szChat);
 			}
 #endif ENABLE_UPGRADE_NOTICE_BY_RAZOR93
 		}
@@ -4365,7 +4365,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				{
 					if (ecs::PlayerRuntime::GetHP(e) < ecs::PointSystem::GetMaxHP(e))
 					{
-						ecs::PointSystem::Change(e, POINT_HP, GetItemValue(item, 0) * (100 + ecs::PointSystem::Get(e, POINT_POTION_BONUS)) / 100);
+						ecs::PointSystem::Change(e, POINT_HP, GetItemValue(item, 0) * (100 + ecs::PointSystem::GetPrecise(e, POINT_POTION_BONUS)) / 100);
 						NetworkSyncSystem::BroadcastEffect(g_registry, e, SE_HPUP_RED);
 						used = true;
 					}
@@ -4375,7 +4375,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				{
 					if (ecs::PlayerRuntime::GetSP(e) < ecs::PointSystem::GetMaxSP(e))
 					{
-						ecs::PointSystem::Change(e, POINT_SP, GetItemValue(item, 1) * (100 + ecs::PointSystem::Get(e, POINT_POTION_BONUS)) / 100);
+						ecs::PointSystem::Change(e, POINT_SP, GetItemValue(item, 1) * (100 + ecs::PointSystem::GetPrecise(e, POINT_POTION_BONUS)) / 100);
 						NetworkSyncSystem::BroadcastEffect(g_registry, e, SE_SPUP_BLUE);
 						used = true;
 					}
@@ -4550,7 +4550,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 
 			uint8_t bApplyOn = GetItemApplyType(item, 0);
-			int32_t lApplyValue = GetItemApplyValue(item, 0);
+			double lApplyValue = GetItemApplyValue(item, 0);
 
 			pAffect = AffectSystem::FindAffect(e, dwType);
 			if (pAffect) {
@@ -6553,7 +6553,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			{
 				if (ecs::PlayerRuntime::GetHP(e) < ecs::PointSystem::GetMaxHP(e))
 				{
-					ecs::PointSystem::Change(e, POINT_HP, GetItemValue(item, 0) * (100 + ecs::PointSystem::Get(e, POINT_POTION_BONUS)) / 100);
+					ecs::PointSystem::Change(e, POINT_HP, GetItemValue(item, 0) * (100 + ecs::PointSystem::GetPrecise(e, POINT_POTION_BONUS)) / 100);
 					NetworkSyncSystem::BroadcastEffect(g_registry, e, SE_HPUP_RED);
 					used = true;
 				}
@@ -6563,7 +6563,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			{
 				if (ecs::PlayerRuntime::GetSP(e) < ecs::PointSystem::GetMaxSP(e))
 				{
-					ecs::PointSystem::Change(e, POINT_SP, GetItemValue(item, 1) * (100 + ecs::PointSystem::Get(e, POINT_POTION_BONUS)) / 100);
+					ecs::PointSystem::Change(e, POINT_SP, GetItemValue(item, 1) * (100 + ecs::PointSystem::GetPrecise(e, POINT_POTION_BONUS)) / 100);
 					NetworkSyncSystem::BroadcastEffect(g_registry, e, SE_SPUP_BLUE);
 					used = true;
 				}
@@ -6630,24 +6630,24 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 
 			if (GetItemValue(item, 1) != 0)
 			{
-				if (ecs::PointSystem::Get(e, POINT_SP_RECOVERY) + ecs::PlayerRuntime::GetSP(e) >= ecs::PointSystem::GetMaxSP(e))
+				if (ecs::PointSystem::GetPrecise(e, POINT_SP_RECOVERY) + ecs::PlayerRuntime::GetSP(e) >= ecs::PointSystem::GetMaxSP(e))
 				{
 					return false;
 				}
 
-				ecs::PointSystem::Change(e, POINT_SP_RECOVERY, GetItemValue(item, 1) * std::min((int64_t)200, (100 + ecs::PointSystem::Get(e, POINT_POTION_BONUS))) / 100);
+				ecs::PointSystem::Change(e, POINT_SP_RECOVERY, GetItemValue(item, 1) * std::min<double>((int64_t)200, (100 + ecs::PointSystem::GetPrecise(e, POINT_POTION_BONUS))) / 100);
 				AffectSystem::StartAffectEvent(e);
 				NetworkSyncSystem::BroadcastEffect(g_registry, e, SE_SPUP_BLUE);
 			}
 
 			if (GetItemValue(item, 0) != 0)
 			{
-				if (ecs::PointSystem::Get(e, POINT_HP_RECOVERY) + ecs::PlayerRuntime::GetHP(e) >= ecs::PointSystem::GetMaxHP(e))
+				if (ecs::PointSystem::GetPrecise(e, POINT_HP_RECOVERY) + ecs::PlayerRuntime::GetHP(e) >= ecs::PointSystem::GetMaxHP(e))
 				{
 					return false;
 				}
 
-				ecs::PointSystem::Change(e, POINT_HP_RECOVERY, GetItemValue(item, 0) * std::min((int64_t)200, (100 + ecs::PointSystem::Get(e, POINT_POTION_BONUS))) / 100);
+				ecs::PointSystem::Change(e, POINT_HP_RECOVERY, GetItemValue(item, 0) * std::min<double>((int64_t)200, (100 + ecs::PointSystem::GetPrecise(e, POINT_POTION_BONUS))) / 100);
 				AffectSystem::StartAffectEvent(e);
 				NetworkSyncSystem::BroadcastEffect(g_registry, e, SE_HPUP_RED);
 			}
@@ -7046,7 +7046,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			if ((idx < 0) || (idx > 2))
 				return false;
 
-			int iValue = GetItemAttributeValue(item2, idx);
+			double iValue = GetItemAttributeValue(item2, idx);
 			if ((idx == 0) && (iValue >= 150)) {
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 63, "");
@@ -8737,7 +8737,7 @@ void AutoRecoveryItemProcess(entt::entity e, int type)
 				if (AFFECT_AUTO_HP_RECOVERY == type)
 #endif
 				{
-					amount = ecs::PointSystem::GetMaxHP(e) - (ecs::PlayerRuntime::GetHP(e) + ecs::PointSystem::Get(e, POINT_HP_RECOVERY));
+					amount = ecs::PointSystem::GetMaxHP(e) - (ecs::PlayerRuntime::GetHP(e) + ecs::PointSystem::GetPrecise(e, POINT_HP_RECOVERY));
 				}
 #ifdef ENABLE_NEW_USE_POTION
 				else if ((type == AFFECT_AUTO_SP_RECOVERY) || (type == AFFECT_AUTO_SP_RECOVERY2))
@@ -8745,7 +8745,7 @@ void AutoRecoveryItemProcess(entt::entity e, int type)
 				else if (AFFECT_AUTO_SP_RECOVERY == type)
 #endif
 				{
-					amount = ecs::PointSystem::GetMaxSP(e) - (ecs::PlayerRuntime::GetSP(e) + ecs::PointSystem::Get(e, POINT_SP_RECOVERY));
+					amount = ecs::PointSystem::GetMaxSP(e) - (ecs::PlayerRuntime::GetSP(e) + ecs::PointSystem::GetPrecise(e, POINT_SP_RECOVERY));
 				}
 
 				if (amount > 0)

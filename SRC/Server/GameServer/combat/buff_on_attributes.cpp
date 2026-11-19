@@ -77,8 +77,8 @@ void ChangeItem(entt::entity owner, entt::entity item, int sign)
         for (const auto& attr : attributes) {
             auto it = pool.attributes.find(attr.bType);
             if (sign < 0 && it == pool.attributes.end()) break;
-            const int oldSum = it == pool.attributes.end() ? 0 : it->second;
-            const int newSum = oldSum + sign * attr.sValue;
+            const double oldSum = it == pool.attributes.end() ? 0 : it->second;
+            const double newSum = oldSum + sign * attr.sValue;
             state->pending[attr.bType] += newSum * pool.value / 100 - oldSum * pool.value / 100;
             pool.attributes[attr.bType] = newSum;
         }
@@ -98,7 +98,7 @@ void BuffOnAttr_ClearAll(entt::entity owner)
 }
 void BuffOnAttr_Destroy(entt::entity owner) { BuffOnAttr_ClearAll(owner); }
 
-void BuffOnAttr_ValueChange(entt::entity owner, uint8_t type, uint8_t oldValue, uint8_t newValue)
+void BuffOnAttr_ValueChange(entt::entity owner, uint8_t type, double oldValue, double newValue)
 {
     const auto slots = Slots(type);
     if (!Live(owner) || slots.empty()) return;
@@ -117,9 +117,9 @@ void BuffOnAttr_ValueChange(entt::entity owner, uint8_t type, uint8_t oldValue, 
     auto* pool = state && state->pools.count(type) ? &state->pools.at(type) : nullptr;
     if (pool && pool->value) {
         if (!oldValue) return;
-        // Preserve the existing subtract-only percentage-change path.
+        // Replace the previous contribution with the new percentage.
         for (const auto& [attr, sum] : pool->attributes)
-            state->pending[attr] -= sum * pool->value / 100;
+            state->pending[attr] += sum * (newValue - pool->value) / 100;
         pool->value = newValue;
         Drain(owner);
         return;

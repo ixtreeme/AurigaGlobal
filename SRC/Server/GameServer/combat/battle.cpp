@@ -300,7 +300,7 @@ int CalcMagicDamage(entt::entity attacker, entt::entity victim)
 		iDam = CalcMeleeDamage(attacker, victim, false, false);
 	}
 
-	iDam += ecs::PointSystem::Get(attacker, POINT_PARTY_ATTACKER_BONUS);
+	iDam += ecs::PointSystem::GetPrecise(attacker, POINT_PARTY_ATTACKER_BONUS);
 
 	return CalcMagicDamageWithValue(iDam, attacker, victim);
 }
@@ -313,10 +313,10 @@ float CalcAttackRating(entt::entity attacker, entt::entity victim, bool bIgnoreT
 	int iERSrc;
 
 	{
-		int attacker_dx = ecs::PointSystem::GetPolymorphPoint(attacker, POINT_DX);
+		double attacker_dx = ecs::PointSystem::GetPolymorphPoint(attacker, POINT_DX);
 		int attacker_lv = ecs::PointSystem::GetLevel(attacker);
 
-		int victim_dx = ecs::PointSystem::GetPolymorphPoint(victim, POINT_DX);
+		double victim_dx = ecs::PointSystem::GetPolymorphPoint(victim, POINT_DX);
 		int victim_lv = ecs::PointSystem::GetLevel(attacker);
 
 		iARSrc = MIN(90, (attacker_dx * 4	+ attacker_lv * 2) / 6);
@@ -360,64 +360,64 @@ int CalcAttBonus(entt::entity attacker, entt::entity victim, int input)
 	{
 #ifdef ENABLE_RUNE_DUNGEON
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_RUNE))
-			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_RUNE_MONSTERS)) / 100));
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_RUNE_MONSTERS)) / 100));
 #endif
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ANIMAL))
-			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_ANIMAL)) / 100));
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_ANIMAL)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_UNDEAD))
-			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_UNDEAD)) / 100));
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_UNDEAD)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_DEVIL))
-			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_DEVIL)) / 100));
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_DEVIL)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_HUMAN))
-			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_HUMAN)) / 100));
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_HUMAN)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ORC))
-			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_ORC)) / 100));
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_ORC)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_MILGYO))
-			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_MILGYO)) / 100));
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_MILGYO)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_INSECT))
-			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_INSECT)) / 100));
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_INSECT)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_FIRE))
-			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_FIRE)) / 100));
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_FIRE)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ICE))
-			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_ICE)) / 100));
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_ICE)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_DESERT))
-			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_DESERT)) / 100));
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_DESERT)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_TREE))
-			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_TREE)) / 100));
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_TREE)) / 100));
 #ifdef ELEMENT_NEW_BONUSES
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ATT_ELEC))
-			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_ELEC)) / 100));
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_ELEC)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ATT_FIRE))
-			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_FIRE)) / 100));
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_FIRE)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ATT_ICE))
-			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_ICE)) / 100));
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_ICE)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ATT_WIND))
-			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_WIND)) / 100));
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_WIND)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ATT_EARTH))
-			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_EARTH)) / 100));
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_EARTH)) / 100));
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ATT_DARK))
-			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_DARK)) / 100));
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_DARK)) / 100));
 #endif
 		if (HasCharacterType(victim, CHAR_TYPE_STONE)) {
-			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_METIN)) / 100));
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_METIN)) / 100));
 		}
 		else {
 			if (ecs::PlayerRuntime::GetMobRank(victim) >= MOB_RANK_BOSS)
-				iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_BOSS)) / 100));
+				iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_BOSS)) / 100));
 		}
 
 #ifdef ENABLE_NO_ATTBONUS_MONSTER_FOR_STONES
 		if (!HasCharacterType(victim, CHAR_TYPE_STONE)) {
-			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_MONSTER)) / 100));
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_MONSTER)) / 100));
 		}
 #else
 #ifdef ENABLE_MAP1_SKILL_MOB__disable
 		if (!(ecs::PlayerRuntime::IsMonster(victim) && ecs::PlayerRuntime::GetRaceNum(victim) == 136 && CombatSystem::IsSkillHit(attacker)))
 		{
-			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_MONSTER)) / 100));
+			iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_MONSTER)) / 100));
 		}
 #else
-		iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_MONSTER)) / 100));
+		iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_MONSTER)) / 100));
 #endif
 
 #endif
@@ -426,8 +426,8 @@ int CalcAttBonus(entt::entity attacker, entt::entity victim, int input)
 	{
 #ifdef ENABLE_NEW_BONUS_TALISMAN
 		{
-			const int A = ecs::PointSystem::Get(attacker, POINT_ATTBONUS_HUMAN);            // tamado bonusz (%)
-			const int R = ecs::PointSystem::Get(victim, POINT_RESIST_MEZZIUOMINI);          // vedekezo resist (%)
+			double A = ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_HUMAN);            // tamado bonusz (%)
+			double R = ecs::PointSystem::GetPrecise(victim, POINT_RESIST_MEZZIUOMINI);          // vedekezo resist (%)
 
 			// 100 -> 20, 200 -> 40
 			int effR = (R + 2) / 10;
@@ -443,25 +443,25 @@ int CalcAttBonus(entt::entity attacker, entt::entity victim, int input)
 		}
 #else
 
-	iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_HUMAN)) / 100));
+	iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_HUMAN)) / 100));
 #endif
 
 		switch (ecs::PlayerRuntime::GetJob(victim))
 		{
 			case JOB_WARRIOR:
-				iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_WARRIOR)) / 100));
+				iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_WARRIOR)) / 100));
 				break;
 
 			case JOB_ASSASSIN:
-				iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_ASSASSIN)) / 100));
+				iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_ASSASSIN)) / 100));
 				break;
 
 			case JOB_SURA:
-				iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_SURA)) / 100));
+				iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_SURA)) / 100));
 				break;
 
 			case JOB_SHAMAN:
-				iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_SHAMAN)) / 100));
+				iAtk = bound(static_cast<long double>(iAtk) + ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_SHAMAN)) / 100));
 				break;
 		}
 	}
@@ -469,24 +469,24 @@ int CalcAttBonus(entt::entity attacker, entt::entity victim, int input)
 	if (ecs::PlayerRuntime::IsPC(attacker) == true)
 	{
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-		iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(victim, POINT_DEF_TALISMAN)) / 100));
+		iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(victim, POINT_DEF_TALISMAN)) / 100));
 #endif
 		switch (ecs::PlayerRuntime::GetJob(attacker))
 		{
 			case JOB_WARRIOR:
-				iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(victim, POINT_RESIST_WARRIOR)) / 100));
+				iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(victim, POINT_RESIST_WARRIOR)) / 100));
 				break;
 
 			case JOB_ASSASSIN:
-				iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(victim, POINT_RESIST_ASSASSIN)) / 100));
+				iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(victim, POINT_RESIST_ASSASSIN)) / 100));
 				break;
 
 			case JOB_SURA:
-				iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(victim, POINT_RESIST_SURA)) / 100));
+				iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(victim, POINT_RESIST_SURA)) / 100));
 				break;
 
 			case JOB_SHAMAN:
-				iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * ecs::PointSystem::Get(victim, POINT_RESIST_SHAMAN)) / 100));
+				iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * ecs::PointSystem::GetPrecise(victim, POINT_RESIST_SHAMAN)) / 100));
 				break;
 		}
 	}
@@ -498,23 +498,23 @@ int CalcAttBonus(entt::entity attacker, entt::entity victim, int input)
 	if (!ecs::PlayerRuntime::IsPC(attacker) && ecs::PlayerRuntime::IsPC(victim))
 	{
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-		iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::Get(victim, POINT_DEF_TALISMAN))		/ 10000));
+		iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::GetPrecise(victim, POINT_DEF_TALISMAN))		/ 10000));
 #endif
 		if (ecs::PlayerRuntime::IsRaceFlag(attacker, RACE_FLAG_ATT_ELEC))
-			iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_ELEC))		/ 10000));
+			iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::GetPrecise(victim, POINT_RESIST_ELEC))		/ 10000));
 		if (ecs::PlayerRuntime::IsRaceFlag(attacker, RACE_FLAG_ATT_FIRE))
-			iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_FIRE))		/ 10000));
+			iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::GetPrecise(victim, POINT_RESIST_FIRE))		/ 10000));
 		if (ecs::PlayerRuntime::IsRaceFlag(attacker, RACE_FLAG_ATT_ICE))
-			iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_ICE))		/ 10000));
+			iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::GetPrecise(victim, POINT_RESIST_ICE))		/ 10000));
 		if (ecs::PlayerRuntime::IsRaceFlag(attacker, RACE_FLAG_ATT_WIND))
-			iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_WIND))		/ 10000));
+			iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::GetPrecise(victim, POINT_RESIST_WIND))		/ 10000));
 		if (ecs::PlayerRuntime::IsRaceFlag(attacker, RACE_FLAG_ATT_EARTH))
-			iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_EARTH))	/ 10000));
+			iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::GetPrecise(victim, POINT_RESIST_EARTH))	/ 10000));
 		if (ecs::PlayerRuntime::IsRaceFlag(attacker, RACE_FLAG_ATT_DARK))
-			iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_DARK))		/ 10000));//difesa
+			iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::GetPrecise(victim, POINT_RESIST_DARK))		/ 10000));//difesa
 #endif
 #ifdef ENABLE_RESIST_MONSTER
-		iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_MONSTER))		/ 10000));//resistenza mostri
+		iAtk = bound(static_cast<long double>(iAtk) - ((static_cast<long double>(iAtk) * 30 * ecs::PointSystem::GetPrecise(victim, POINT_RESIST_MONSTER))		/ 10000));//resistenza mostri
 #endif
 	}
 
@@ -627,7 +627,7 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 	int64_t iAtk = 0;
 
 	// level must be ignored when multiply by fAR, so subtract it before calculation.
-	iAtk = ecs::PointSystem::Get(attacker, POINT_ATT_GRADE) + iDam - (ecs::PointSystem::GetLevel(attacker) * 2);
+	iAtk = ecs::PointSystem::GetPrecise(attacker, POINT_ATT_GRADE) + iDam - (ecs::PointSystem::GetLevel(attacker) * 2);
 	iAtk = static_cast<int64_t>(static_cast<float>(iAtk) * fAR);
 	iAtk += ecs::PointSystem::GetLevel(attacker) * 2; // and add again
 
@@ -640,8 +640,8 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 		///////////////////////////////////////////////
 	}
 
-	iAtk += ecs::PointSystem::Get(attacker, POINT_PARTY_ATTACKER_BONUS); // party attacker role bonus
-	iAtk = (int64_t) (iAtk * (100 + (ecs::PointSystem::Get(attacker, POINT_ATT_BONUS) + ecs::PointSystem::Get(attacker, POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100);
+	iAtk += ecs::PointSystem::GetPrecise(attacker, POINT_PARTY_ATTACKER_BONUS); // party attacker role bonus
+	iAtk = (int64_t) (iAtk * (100 + (ecs::PointSystem::GetPrecise(attacker, POINT_ATT_BONUS) + ecs::PointSystem::GetPrecise(attacker, POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100);
 
 	iAtk = CalcAttBonus(attacker, victim, EquipmentLegacyInt(iAtk));
 
@@ -649,7 +649,7 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 
 	if (!bIgnoreDefense)
 	{
-		iDef = EquipmentLegacyInt(EquipmentEffectiveDefense(attacker, ecs::PointSystem::Get(victim, POINT_DEF_GRADE) * (100 + ecs::PointSystem::Get(victim, POINT_DEF_BONUS)) / 100));
+		iDef = EquipmentLegacyInt(EquipmentEffectiveDefense(attacker, ecs::PointSystem::GetPrecise(victim, POINT_DEF_GRADE) * (100 + ecs::PointSystem::GetPrecise(victim, POINT_DEF_BONUS)) / 100));
 
 		if (!ecs::PlayerRuntime::IsPC(attacker))
 			iDef += ecs::SocialSystem::GetMarriageBonus(victim, UNIQUE_ITEM_MARRIAGE_DEFENSE_BONUS);
@@ -663,8 +663,8 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 	if (test_server)
 	{
 		int DEBUG_iLV = ecs::PointSystem::GetLevel(attacker)*2;
-		int DEBUG_iST = int((ecs::PointSystem::Get(attacker, POINT_ATT_GRADE) - DEBUG_iLV) * fAR);
-		int DEBUG_iPT = ecs::PointSystem::Get(attacker, POINT_PARTY_ATTACKER_BONUS);
+		double DEBUG_iST = int((ecs::PointSystem::GetPrecise(attacker, POINT_ATT_GRADE) - DEBUG_iLV) * fAR);
+		double DEBUG_iPT = ecs::PointSystem::GetPrecise(attacker, POINT_PARTY_ATTACKER_BONUS);
 		int DEBUG_iWP = 0;
 		int DEBUG_iPureAtk = 0;
 		int DEBUG_iPureDam = 0;
@@ -687,7 +687,7 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 		char szPT[32] = "";
 
 		if (DEBUG_iPT != 0)
-			snprintf(szPT, sizeof(szPT), ", PT=%d", DEBUG_iPT);
+			snprintf(szPT, sizeof(szPT), ", PT=%.3f", DEBUG_iPT);
 
 		char szUnknownAtk[32] = "";
 
@@ -702,7 +702,7 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 		char szMeleeAttack[128];
 
 		snprintf(szMeleeAttack, sizeof(szMeleeAttack),
-				"%s(%d)-%s(%d)=%d%s, ATK=LV(%d)+ST(%d)+WP(%d)%s%s%s, AR=%.3g%s",
+				"%s(%d)-%s(%d)=%d%s, ATK=LV(%d)+ST(%.3f)+WP(%d)%s%s%s, AR=%.3g%s",
 				ecs::PlayerRuntime::GetName(attacker).data(),
 				EquipmentLegacyInt(iAtk),
 				ecs::PlayerRuntime::GetName(victim).data(),
@@ -739,8 +739,8 @@ int CalcArrowDamage(entt::entity attacker, entt::entity victim, entt::entity bow
 
 	// Y??g ????
 	int iDist = (int) (DISTANCE_SQRT(ecs::PlayerRuntime::GetX(attacker) - ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(attacker) - ecs::PlayerRuntime::GetY(victim)));
-	//int iGap = (iDist / 100) - 5 - ItemSystem::GetItemValue((pkBow ? pkBow->GetEntityHandle() : entt::null), 5) - ecs::PointSystem::Get(attacker, POINT_BOW_DISTANCE);
-	int iGap = (iDist / 100) - 5 - ecs::PointSystem::Get(attacker, POINT_BOW_DISTANCE);
+	//double iGap = (iDist / 100) - 5 - ItemSystem::GetItemValue((pkBow ? pkBow->GetEntityHandle() : entt::null), 5) - ecs::PointSystem::GetPrecise(attacker, POINT_BOW_DISTANCE);
+	double iGap = (iDist / 100) - 5 - ecs::PointSystem::GetPrecise(attacker, POINT_BOW_DISTANCE);
 	int iPercent = 100 - (iGap * 5);
 
 	if (iPercent <= 0)
@@ -755,22 +755,22 @@ int CalcArrowDamage(entt::entity attacker, entt::entity victim, entt::entity bow
 	int64_t iAtk;
 
 	// level must be ignored when multiply by fAR, so subtract it before calculation.
-	iAtk = ecs::PointSystem::Get(attacker, POINT_ATT_GRADE) + iDam - (ecs::PointSystem::GetLevel(attacker) * 2);
+	iAtk = ecs::PointSystem::GetPrecise(attacker, POINT_ATT_GRADE) + iDam - (ecs::PointSystem::GetLevel(attacker) * 2);
 	iAtk = static_cast<int64_t>(static_cast<float>(iAtk) * fAR);
 	iAtk += ecs::PointSystem::GetLevel(attacker) * 2; // and add again
 
 	// Refine Grade
 	if (!typed) iAtk += ItemSystem::GetItemValue(bow, 5) * 2;
 
-	iAtk += ecs::PointSystem::Get(attacker, POINT_PARTY_ATTACKER_BONUS);
-	iAtk = (int64_t) (iAtk * (100 + (ecs::PointSystem::Get(attacker, POINT_ATT_BONUS) + ecs::PointSystem::Get(attacker, POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100);
+	iAtk += ecs::PointSystem::GetPrecise(attacker, POINT_PARTY_ATTACKER_BONUS);
+	iAtk = (int64_t) (iAtk * (100 + (ecs::PointSystem::GetPrecise(attacker, POINT_ATT_BONUS) + ecs::PointSystem::GetPrecise(attacker, POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100);
 
 	iAtk = CalcAttBonus(attacker, victim, EquipmentLegacyInt(iAtk));
 
 	int iDef = 0;
 
 	if (!bIgnoreDefense)
-		iDef = EquipmentLegacyInt(EquipmentEffectiveDefense(attacker, ecs::PointSystem::Get(victim, POINT_DEF_GRADE) * (100 + ecs::PointSystem::Get(attacker, POINT_DEF_BONUS)) / 100));
+		iDef = EquipmentLegacyInt(EquipmentEffectiveDefense(attacker, ecs::PointSystem::GetPrecise(victim, POINT_DEF_GRADE) * (100 + ecs::PointSystem::GetPrecise(attacker, POINT_DEF_BONUS)) / 100));
 
 	if (!ecs::PlayerRuntime::IsPC(attacker))
 		iAtk = static_cast<int64_t>(std::clamp<double>(iAtk * static_cast<double>(CombatSystem::GetMobDamageMultiplier(attacker)), 0, INT_MAX));
@@ -783,7 +783,7 @@ int CalcArrowDamage(entt::entity attacker, entt::entity victim, entt::entity bow
 
 	if (test_server)
 	{
-		ecs::ChatSystem::Send(attacker, CHAT_TYPE_INFO, "ARROW %s -> %s, DAM %d DIST %d GAP %d %% %d",
+		ecs::ChatSystem::Send(attacker, CHAT_TYPE_INFO, "ARROW %s -> %s, DAM %d DIST %d GAP %.3f %% %d",
 				ecs::PlayerRuntime::GetName(attacker).data(),
 				ecs::PlayerRuntime::GetName(victim).data(),
 				iPureDam,
@@ -799,9 +799,9 @@ void NormalAttackAffect(entt::entity attacker, entt::entity victim)
 {
     if (!IsBattlePair(attacker, victim))
         return;
-	if (ecs::PointSystem::Get(attacker, POINT_POISON_PCT) && !AffectSystem::IsAffectFlag(victim, AFF_POISON))
+	if (ecs::PointSystem::GetPrecise(attacker, POINT_POISON_PCT) && !AffectSystem::IsAffectFlag(victim, AFF_POISON))
 	{
-		if (number(1, 100) <= ecs::PointSystem::Get(attacker, POINT_POISON_PCT))
+		if ((number(1, 100000000) / 1000000.0) <= ecs::PointSystem::GetPrecise(attacker, POINT_POISON_PCT))
 			AffectSystem::ApplyPoison(victim, attacker);
 	}
     if (!IsBattlePair(attacker, victim))
@@ -854,12 +854,12 @@ int battle_hit(entt::entity attacker, entt::entity victim, int & iRetDam)
 		{
 			case WEAPON_SWORD:
 			{
-				int32_t lValue = ecs::PointSystem::Get(victim, POINT_RESIST_SWORD);
+				double lValue = ecs::PointSystem::GetPrecise(victim, POINT_RESIST_SWORD);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-				lValue -= ecs::PointSystem::Get(attacker, POINT_ATTBONUS_IRR_SPADA);
+				lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_IRR_SPADA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-				lValue -= ecs::PointSystem::Get(attacker, POINT_IRR_WEAPON_DEFENSE);
+				lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_IRR_WEAPON_DEFENSE);
 #endif
 				lValue = lValue < 0 ? 0 :  lValue;
 				iDam = iDam * (100 - lValue) / 100;
@@ -867,12 +867,12 @@ int battle_hit(entt::entity attacker, entt::entity victim, int & iRetDam)
 			}
 			case WEAPON_TWO_HANDED:
 			{
-				int32_t lValue = ecs::PointSystem::Get(victim, POINT_RESIST_TWOHAND);
+				double lValue = ecs::PointSystem::GetPrecise(victim, POINT_RESIST_TWOHAND);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-				lValue -= ecs::PointSystem::Get(attacker, POINT_ATTBONUS_IRR_SPADONE);
+				lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_IRR_SPADONE);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-				lValue -= ecs::PointSystem::Get(attacker, POINT_IRR_WEAPON_DEFENSE);
+				lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_IRR_WEAPON_DEFENSE);
 #endif
 				lValue = lValue < 0 ? 0 :  lValue;
 				iDam = iDam * (100 - lValue) / 100;
@@ -880,13 +880,13 @@ int battle_hit(entt::entity attacker, entt::entity victim, int & iRetDam)
 			}
 			case WEAPON_DAGGER:
 			{
-				int32_t lValue = ecs::PointSystem::Get(victim, POINT_RESIST_DAGGER);
+				double lValue = ecs::PointSystem::GetPrecise(victim, POINT_RESIST_DAGGER);
 
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-				lValue -= ecs::PointSystem::Get(attacker, POINT_ATTBONUS_IRR_PUGNALE);
+				lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_IRR_PUGNALE);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-				lValue -= ecs::PointSystem::Get(attacker, POINT_IRR_WEAPON_DEFENSE);
+				lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_IRR_WEAPON_DEFENSE);
 #endif
 
 
@@ -904,12 +904,12 @@ int battle_hit(entt::entity attacker, entt::entity victim, int & iRetDam)
 
 			case WEAPON_BELL:
 			{
-				int32_t lValue = ecs::PointSystem::Get(victim, POINT_RESIST_BELL);
+				double lValue = ecs::PointSystem::GetPrecise(victim, POINT_RESIST_BELL);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-				lValue -= ecs::PointSystem::Get(attacker, POINT_ATTBONUS_IRR_CAMPANA);
+				lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_IRR_CAMPANA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-				lValue -= ecs::PointSystem::Get(attacker, POINT_IRR_WEAPON_DEFENSE);
+				lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_IRR_WEAPON_DEFENSE);
 #endif
 
 				lValue = lValue < 0 ? 0 :  lValue;
@@ -918,12 +918,12 @@ int battle_hit(entt::entity attacker, entt::entity victim, int & iRetDam)
 			}
 			case WEAPON_FAN:
 			{
-				int32_t lValue = ecs::PointSystem::Get(victim, POINT_RESIST_FAN);
+				double lValue = ecs::PointSystem::GetPrecise(victim, POINT_RESIST_FAN);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-				lValue -= ecs::PointSystem::Get(attacker, POINT_ATTBONUS_IRR_VENTAGLIO);
+				lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_IRR_VENTAGLIO);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-				lValue -= ecs::PointSystem::Get(attacker, POINT_IRR_WEAPON_DEFENSE);
+				lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_IRR_WEAPON_DEFENSE);
 #endif
 				lValue = lValue < 0 ? 0 :  lValue;
 				iDam = iDam * (100 - lValue) / 100;
@@ -932,12 +932,12 @@ int battle_hit(entt::entity attacker, entt::entity victim, int & iRetDam)
 
 			case WEAPON_BOW:
 			{
-				int32_t lValue = ecs::PointSystem::Get(victim, POINT_RESIST_BOW);
+				double lValue = ecs::PointSystem::GetPrecise(victim, POINT_RESIST_BOW);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-				lValue -= ecs::PointSystem::Get(attacker, POINT_ATTBONUS_IRR_FRECCIA);
+				lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_ATTBONUS_IRR_FRECCIA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-				lValue -= ecs::PointSystem::Get(attacker, POINT_IRR_WEAPON_DEFENSE);
+				lValue -= ecs::PointSystem::GetPrecise(attacker, POINT_IRR_WEAPON_DEFENSE);
 #endif
 				lValue = lValue < 0 ? 0 :  lValue;
 				iDam = iDam * (100 - lValue) / 100;
@@ -977,7 +977,7 @@ int32_t GET_ATTACK_SPEED(entt::entity character)
 {
     if (!IsBattleCharacter(character))
         return 1000;
-    const int64_t denominator = 100 + ecs::PointSystem::Get(character, POINT_ATT_SPEED) +
+    const int64_t denominator = 100 + ecs::PointSystem::GetPrecise(character, POINT_ATT_SPEED) +
         (MountSystem::IsRiding(character) ? 50 : 0);
     if (denominator <= 0)
         return 1000;

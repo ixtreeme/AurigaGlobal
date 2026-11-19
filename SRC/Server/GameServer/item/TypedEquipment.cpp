@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../pet/AccountCollectionSystem.hpp"
 #include "TypedEquipment.hpp"
 #include "TypedPolymorph.hpp"
 #include "TypedAccessoryClock.hpp"
@@ -27,9 +28,10 @@ void RefreshTypedEquipment(entt::entity e)
     auto* old=g_registry.try_get<ecs::TypedEquipmentProjection>(e);
     const auto petBonuses=TypedGrowthPetPassiveSource(e);
     const auto companion=TypedFixedCompanionBonuses(e);
+    const auto collectionRevision=AccountCollectionSystem::Revision(e);
     const auto elapsed=TypedAccessoryElapsed(e);
     const bool mayExpire=std::ranges::any_of(items->state.items,[elapsed](const auto& i){return !i.destroyed && i.placement && i.placement->kind==auriga::item::ItemStorageKind::Equipment && i.accessory && i.accessory->activeGrade && !i.accessory->permanent && elapsed>=i.accessory->remainingMs;});
-    if(old && old->fence==items->state.fence && old->applied && old->stats && old->stats->petBonuses==petBonuses && old->stats->fixedCompanion==companion &&
+    if(old && old->fence==items->state.fence && old->collectionRevision==collectionRevision && old->applied && old->stats && old->stats->petBonuses==petBonuses && old->stats->fixedCompanion==companion &&
         !mayExpire && std::ranges::none_of(items->state.items,[](const auto& i){return i.costume.has_value() || i.regalia.has_value();}) && items->state.recovery.effects.empty() && std::ranges::none_of(items->state.items,[](const auto& i){return i.toggle && i.toggle->active;}))return;
     auto effective=items->state.items;ProjectTypedCostumes(e,effective);
     const auto time=auriga::item::ProjectAccessoryTime(*catalog,effective,elapsed);
@@ -37,11 +39,16 @@ void RefreshTypedEquipment(entt::entity e)
     auto schedule=auriga::item::AdvanceRecoverySchedule(*catalog,items->state.recovery,TypedRecoveryElapsed(e));if(schedule)auriga::item::NormalizeTimedItems(*catalog,*schedule,TypedItemEffectNow(),&facts);
     auto bonuses=schedule ? auriga::item::CollectItemEffectBonuses(*catalog,*schedule,effective) : std::expected<std::vector<auriga::item::BonusEntry>,auriga::item::ItemPersistenceError>{std::unexpected(auriga::item::ItemPersistenceError::InvalidStoredData)};
     if(bonuses){bonuses->insert(bonuses->end(),companion.bonuses.begin(),companion.bonuses.end());const auto characterPet=auriga::item::CharacterPetBonuses(petBonuses.bonuses);bonuses->insert(bonuses->end(),characterPet.begin(),characterPet.end());}
+    if(bonuses)
+    {
+        const auto collection=AccountCollectionSystem::Bonuses(e);
+        bonuses->insert(bonuses->end(), collection.begin(), collection.end());
+    }
     const auto built=time && toggles && bonuses ? auriga::item::BuildEquipmentStats(*catalog,items->state.fence.owner,effective,*bonuses) : std::expected<auriga::item::EquipmentStats,auriga::item::EquipmentStatsError>{std::unexpected(auriga::item::EquipmentStatsError::InvalidItem)};
     auto stats=built ? std::optional{*built} : std::optional<auriga::item::EquipmentStats>{};
     if(stats){stats->petBonuses=petBonuses;stats->fixedCompanion=companion;}
     const bool changed=!old || old->stats!=stats;const bool recompute=changed || !old->applied;
-    ecs::TypedEquipmentProjection next;next.fence=items->state.fence;next.stats=stats;next.revision=old ? old->revision+(changed ? 1 : 0) : 1;
+    ecs::TypedEquipmentProjection next;next.fence=items->state.fence;next.stats=stats;next.collectionRevision=collectionRevision;next.revision=old ? old->revision+(changed ? 1 : 0) : 1;
     next.applied=g_registry.all_of<ecs::CharacterStatsComponent,ecs::CharacterPoints,ecs::Health,ecs::Mana,ecs::Stamina>(e);
     g_registry.emplace_or_replace<ecs::TypedEquipmentProjection>(e,std::move(next));
     if(!built)LOG_ERROR("TypedEquipment: pid {} rejected equipment projection (error {})",ecs::PlayerRuntime::GetPlayerID(e),static_cast<unsigned>(built.error()));

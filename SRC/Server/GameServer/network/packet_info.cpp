@@ -176,7 +176,9 @@ CPacketInfoCG::CPacketInfoCG()
 	Set(HEADER_CG_SAFEBOX_ITEM_MOVE, sizeof(TPacketCGItemMove), "SafeboxItemMove", true);
 
 	Set(HEADER_CG_MOUNT_INVENTORY_CHECKOUT, sizeof(TPacketCGMountInventoryCheckout), "MountInventoryCheckout", true);
+
 	Set(HEADER_CG_MOUNT_INVENTORY_CHECKIN, sizeof(TPacketCGMountInventoryCheckin), "MountInventoryCheckin", true);
+
 	Set(HEADER_CG_MOUNT_INVENTORY_ITEM_MOVE, sizeof(TPacketCGMountInventoryItemMove), "MountInventoryItemMove", true);
 	Set(HEADER_CG_TYPED_ITEM_MOVE, sizeof(TPacketCGTypedItemMove), "TypedItemMove", true);
 	Set(HEADER_CG_TYPED_ITEM_USE, sizeof(TPacketCGTypedItemUse), "TypedItemUse", true);
@@ -292,6 +294,7 @@ CPacketInfoCG::~CPacketInfoCG()
 ////////////////////////////////////////////////////////////////////////////////
 CPacketInfoGG::CPacketInfoGG()
 {
+	Set(HEADER_GG_COLLECTION_CHANGED, sizeof(TPacketGGCollectionChanged), "CollectionChanged", false);
 	Set(HEADER_GG_SETUP,		sizeof(TPacketGGSetup),		"Setup", false);
 	Set(HEADER_GG_LOGIN,		sizeof(TPacketGGLogin),		"Login", false);
 	Set(HEADER_GG_LOGOUT,		sizeof(TPacketGGLogout),	"Logout", false);

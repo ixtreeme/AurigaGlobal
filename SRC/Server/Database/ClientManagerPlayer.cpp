@@ -1,3 +1,4 @@
+#include <cmath>
 
 #include "stdafx.h"
 #include "player_create.h"
@@ -570,7 +571,7 @@ void CClientManager::RESULT_AFFECT_LOAD(CPeer *peer, MYSQL_RES *pRes, const Clie
 
 		str_to_number(r.dwType, row[1]);
 		str_to_number(r.bApplyOn, row[2]);
-		str_to_number(r.lApplyValue, row[3]);
+		r.lApplyValue = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, row[3]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
 		str_to_number(r.dwFlag, row[4]);
 		str_to_number(r.lDuration, row[5]);
 		str_to_number(r.lSPCost, row[6]);
@@ -971,8 +972,8 @@ void CClientManager::QUERY_ADD_AFFECT(CPeer * peer, TPacketGDAddAffect * p)
 	/*
 	   snprintf(queryStr, sizeof(queryStr),
 	   "INSERT INTO affect%s (dwPID, bType, bApplyOn, lApplyValue, dwFlag, lDuration, lSPCost) "
-	   "VALUES(%u, %u, %u, %d, %u, %d, %d) "
-	   "ON DUPLICATE KEY UPDATE lApplyValue=%d, dwFlag=%u, lDuration=%d, lSPCost=%d",
+	   "VALUES(%u, %u, %u, %.9f, %u, %d, %d) "
+	   "ON DUPLICATE KEY UPDATE lApplyValue=%.9f, dwFlag=%u, lDuration=%d, lSPCost=%d",
 	   GetTablePostfix(),
 	   p->dwPID,
 	   p->elem.dwType,
@@ -988,7 +989,7 @@ void CClientManager::QUERY_ADD_AFFECT(CPeer * peer, TPacketGDAddAffect * p)
 	   */
 	snprintf(queryStr, sizeof(queryStr),
 			"REPLACE INTO affect%s (dwPID, bType, bApplyOn, lApplyValue, dwFlag, lDuration, lSPCost) "
-			"VALUES(%u, %u, %u, %d, %u, %d, %d)",
+			"VALUES(%u, %u, %u, %.9f, %u, %d, %d)",
 			GetTablePostfix(),
 			p->dwPID,
 			p->elem.dwType,

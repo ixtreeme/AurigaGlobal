@@ -37,6 +37,16 @@ add_executable(AtlasTeleportRulesTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/test
 add_test(NAME atlas_teleport_rules COMMAND AtlasTeleportRulesTests)
 target_sources(GameServer PRIVATE item/TypedItemMissions.cpp mission/ItemDelivery.cpp item/TypedContainerOpening.cpp item/TypedTokenRedemption.cpp item/TypedMoney.cpp item/TypedSocketMaintenance.cpp item/TypedAccessoryClock.cpp item/TypedAttributes.cpp item/TypedPetSkins.cpp item/TypedCompanionClocks.cpp item/TypedCostumes.cpp item/TypedSpecialBonuses.cpp item/TypedSouls.cpp item/TypedSoulClock.cpp item/TypedForge.cpp item/TypedStorage.cpp)
 
+# Optional expansion: no packet/blob layout changes when toggled.
+option(ENABLE_WARRIOR_SKILL_EXPANSION "Enable Warrior Skill Expansion V1" ON)
+if(ENABLE_WARRIOR_SKILL_EXPANSION)
+    target_compile_definitions(GameServer PRIVATE ENABLE_WARRIOR_SKILL_EXPANSION=1)
+endif()
+add_executable(WarriorSkillRulesTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/WarriorSkillRulesTests.cpp)
+add_test(NAME warrior_skill_expansion_rules COMMAND WarriorSkillRulesTests)
+
+
+
 add_executable(WoodcuttingRulesTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/WoodcuttingRulesTests.cpp)
 add_test(NAME woodcutting_rules COMMAND WoodcuttingRulesTests)
@@ -277,6 +287,10 @@ add_executable(ItemAttributeTests EXCLUDE_FROM_ALL
     item/attr_transfer.cpp
 )
 target_link_libraries(ItemAttributeTests PRIVATE SERVER EnTT::EnTT)
+if(NOT MSVC)
+    target_compile_options(ItemAttributeTests PRIVATE -ffunction-sections -fdata-sections)
+    target_link_options(ItemAttributeTests PRIVATE -Wl,--gc-sections)
+endif()
 add_test(NAME item_attributes COMMAND ItemAttributeTests)
 
 # The switchbot job lifecycle: player-id index, warp freeze, timer, P2P
@@ -894,6 +908,7 @@ add_test(NAME entity_network_dispatch COMMAND EntityNetworkDispatchTests)
 
 add_executable(PointCalculationTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/PointCalculationTests.cpp
+    ecs/systems/BonusPrecisionSystem.cpp
     ecs/systems/PointSystem.cpp
     ecs/systems/StatSystem.cpp
 )
@@ -1132,3 +1147,106 @@ if(TEST async_sql_mariadb_isolated)
     set_tests_properties(mission_persistence_mariadb PROPERTIES TIMEOUT 180 LABELS "server;integration")
     set_tests_properties(item_award_delivery_mariadb PROPERTIES TIMEOUT 180 LABELS "server;integration")
 endif()
+
+add_executable(ICCDeathwhisperTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/ICCDeathwhisperTests.cpp)
+add_test(NAME icc_deathwhisper_domain COMMAND ICCDeathwhisperTests)
+add_executable(ICCDeathwhisperRuntimeTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/ICCDeathwhisperRuntimeTests.cpp)
+add_test(NAME icc_deathwhisper_runtime COMMAND ICCDeathwhisperRuntimeTests)
+
+add_executable(ICCGunshipTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/ICCGunshipTests.cpp)
+add_test(NAME icc_gunship_domain COMMAND ICCGunshipTests)
+add_executable(ICCGunshipRuntimeTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/ICCGunshipRuntimeTests.cpp)
+add_test(NAME icc_gunship_runtime COMMAND ICCGunshipRuntimeTests)
+add_dependencies(ServerTests ICCDeathwhisperTests ICCDeathwhisperRuntimeTests ICCGunshipTests ICCGunshipRuntimeTests)
+set_tests_properties(icc_deathwhisper_domain icc_deathwhisper_runtime icc_gunship_domain icc_gunship_runtime PROPERTIES LABELS server TIMEOUT 60)
+
+add_executable(ICCSaurfangTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/ICCSaurfangTests.cpp)
+add_test(NAME icc_saurfang_domain COMMAND ICCSaurfangTests)
+add_executable(ICCSaurfangRuntimeTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/ICCSaurfangRuntimeTests.cpp)
+add_test(NAME icc_saurfang_runtime COMMAND ICCSaurfangRuntimeTests)
+add_dependencies(ServerTests ICCSaurfangTests ICCSaurfangRuntimeTests)
+set_tests_properties(icc_saurfang_domain icc_saurfang_runtime PROPERTIES LABELS server TIMEOUT 60)
+
+add_executable(ICCPutricideTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/ICCPutricideTests.cpp)
+add_test(NAME icc_putricide_domain COMMAND ICCPutricideTests)
+add_executable(ICCPutricideRuntimeTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/ICCPutricideRuntimeTests.cpp)
+add_test(NAME icc_putricide_runtime COMMAND ICCPutricideRuntimeTests)
+add_dependencies(ServerTests ICCPutricideTests ICCPutricideRuntimeTests)
+set_tests_properties(icc_putricide_domain icc_putricide_runtime PROPERTIES LABELS server TIMEOUT 60)
+
+add_executable(ICCBloodCouncilTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/ICCBloodCouncilTests.cpp)
+add_test(NAME icc_blood_council_domain COMMAND ICCBloodCouncilTests)
+add_executable(ICCBloodCouncilRuntimeTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/ICCBloodCouncilRuntimeTests.cpp)
+add_test(NAME icc_blood_council_runtime COMMAND ICCBloodCouncilRuntimeTests)
+add_dependencies(ServerTests ICCBloodCouncilTests ICCBloodCouncilRuntimeTests)
+set_tests_properties(icc_blood_council_domain icc_blood_council_runtime PROPERTIES LABELS server TIMEOUT 60)
+
+add_executable(ICCBloodQueenTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/ICCBloodQueenTests.cpp)
+add_test(NAME icc_blood_queen_domain COMMAND ICCBloodQueenTests)
+add_executable(ICCBloodQueenRuntimeTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/ICCBloodQueenRuntimeTests.cpp)
+add_test(NAME icc_blood_queen_runtime COMMAND ICCBloodQueenRuntimeTests)
+add_dependencies(ServerTests ICCBloodQueenTests ICCBloodQueenRuntimeTests)
+set_tests_properties(icc_blood_queen_domain icc_blood_queen_runtime PROPERTIES LABELS server TIMEOUT 60)
+
+add_executable(ICCValithriaTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/ICCValithriaTests.cpp)
+add_test(NAME icc_valithria_domain COMMAND ICCValithriaTests)
+add_executable(ICCValithriaRuntimeTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/ICCValithriaRuntimeTests.cpp)
+add_test(NAME icc_valithria_runtime COMMAND ICCValithriaRuntimeTests)
+add_dependencies(ServerTests ICCValithriaTests ICCValithriaRuntimeTests)
+set_tests_properties(icc_valithria_domain icc_valithria_runtime PROPERTIES LABELS server TIMEOUT 60)
+
+add_executable(ICCSindragosaTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/ICCSindragosaTests.cpp)
+add_test(NAME icc_sindragosa_domain COMMAND ICCSindragosaTests)
+add_executable(ICCSindragosaRuntimeTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/ICCSindragosaRuntimeTests.cpp)
+add_test(NAME icc_sindragosa_runtime COMMAND ICCSindragosaRuntimeTests)
+add_dependencies(ServerTests ICCSindragosaTests ICCSindragosaRuntimeTests)
+set_tests_properties(icc_sindragosa_domain icc_sindragosa_runtime PROPERTIES LABELS server TIMEOUT 60)
+
+add_executable(ICCLichKingTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/ICCLichKingTests.cpp)
+add_test(NAME icc_lich_king_domain COMMAND ICCLichKingTests)
+add_executable(ICCLichKingRuntimeTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/ICCLichKingRuntimeTests.cpp)
+add_test(NAME icc_lich_king_runtime COMMAND ICCLichKingRuntimeTests)
+add_dependencies(ServerTests ICCLichKingTests ICCLichKingRuntimeTests)
+set_tests_properties(icc_lich_king_domain icc_lich_king_runtime PROPERTIES LABELS server TIMEOUT 60)
+
+# Exact decimal primitive; no dependency on the game runtime or database.
+add_executable(BonusValueTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/BonusValueTests.cpp)
+add_test(NAME bonus_value_precision COMMAND BonusValueTests)
+set_tests_properties(bonus_value_precision PROPERTIES LABELS server TIMEOUT 60)
+add_dependencies(ServerTests BonusValueTests)
+
+add_executable(BonusPrecisionIntegrationTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/BonusPrecisionIntegrationTests.cpp
+    ecs/systems/BonusPrecisionSystem.cpp)
+target_link_libraries(BonusPrecisionIntegrationTests PRIVATE SERVER EnTT::EnTT)
+add_test(NAME bonus_precision_integration COMMAND BonusPrecisionIntegrationTests)
+set_tests_properties(bonus_precision_integration PROPERTIES LABELS server TIMEOUT 60)
+add_dependencies(ServerTests BonusPrecisionIntegrationTests)
+
+
+add_executable(PetInventoryBonusTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/PetInventoryBonusTests.cpp)
+add_test(NAME account_collection_bonuses COMMAND PetInventoryBonusTests)
+set_tests_properties(account_collection_bonuses PROPERTIES LABELS server TIMEOUT 60)
+add_dependencies(ServerTests PetInventoryBonusTests)
+
+add_dependencies(ServerTests WarriorSkillRulesTests)
+
+# Compiles the real feature source without the enable definition.
+add_executable(WarriorSkillMacroOffTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/WarriorSkillMacroOffTests.cpp
+    warrior/WarriorSkillSystem.cpp)
+target_link_libraries(WarriorSkillMacroOffTests PRIVATE SERVER EnTT::EnTT)
+add_test(NAME warrior_skill_expansion_macro_off COMMAND WarriorSkillMacroOffTests)
+add_dependencies(ServerTests WarriorSkillMacroOffTests)
+
+# Compile every modified runtime path with the feature macro absent.
+add_library(WarriorSkillMacroOffCompile OBJECT EXCLUDE_FROM_ALL
+    warrior/WarriorSkillSystem.cpp
+    combat/combat_input.cpp
+    command/cmd.cpp
+    ecs/systems/AffectSystem.cpp
+    ecs/systems/SkillSystem.cpp
+    quest/questlua_pc.cpp)
+target_link_libraries(WarriorSkillMacroOffCompile PRIVATE SERVER EnTT::EnTT LUA S_Core)
+add_dependencies(ServerTests WarriorSkillMacroOffCompile)

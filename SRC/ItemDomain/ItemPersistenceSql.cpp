@@ -789,9 +789,12 @@ std::expected<void,E> EnsureRuntimeStorageOwner(CAsyncSQL& db,const ItemCatalog&
 {
     if(!ValidItemOwner(owner))return std::unexpected(E::InvalidOwner);
     std::vector<ItemStorageLayout> layouts;std::vector<ItemWallet> wallets;
-    const auto add=[&](ItemStorageKind kind,unsigned columns=5,unsigned rows=9,unsigned pages=3){layouts.push_back({{owner,kind,1},static_cast<std::uint16_t>(columns),static_cast<std::uint16_t>(rows),static_cast<std::uint16_t>(pages)});};
+    const auto add=[&](ItemStorageKind kind,unsigned columns=5,unsigned rows=9,unsigned pages=3,std::uint64_t id=1){layouts.push_back({{owner,kind,id},static_cast<std::uint16_t>(columns),static_cast<std::uint16_t>(rows),static_cast<std::uint16_t>(pages)});};
     if(owner.kind==ItemOwnerKind::Character){add(ItemStorageKind::Inventory,5,9,8);add(ItemStorageKind::SpecialInventory,SpecialInventoryColumns,SpecialInventoryRows,SpecialInventoryPagesPerType*SpecialInventoryTypes);add(ItemStorageKind::Equipment,EquipmentSlotCount,1,1);add(ItemStorageKind::Mail);add(ItemStorageKind::PendingAward);wallets.push_back({owner,WalletCurrency::Gold,1,0});wallets.push_back({owner,WalletCurrency::Gaya,1,0});}
-    else if(owner.kind==ItemOwnerKind::Account){add(ItemStorageKind::Safebox,9,5,3);add(ItemStorageKind::Mall,9,5,3);wallets.push_back({owner,WalletCurrency::DragonCoin,1,0});}
+    else if(owner.kind==ItemOwnerKind::Account){add(ItemStorageKind::Safebox,9,5,3);add(ItemStorageKind::Mall,9,5,3);
+        add(ItemStorageKind::Safebox,12,16,1,MountCollectionStorageId);
+        add(ItemStorageKind::Safebox,12,16,1,PetCollectionStorageId);
+        wallets.push_back({owner,WalletCurrency::DragonCoin,1,0});}
     else add(ItemStorageKind::GuildStorage,10,9,3);
     const auto provisioned=ProvisionOwner(db,c,owner,layouts,wallets);if(!provisioned){auto existing=LoadCurrentItemOwner(db,c,owner);if(!existing)return std::unexpected(provisioned.error());}
     auto tx=Guards(c);tx.push_back({"SELECT state_revision FROM player.item_owner_fence WHERE owner_kind=? AND owner_id=? FOR UPDATE",Owner(owner),{},1});

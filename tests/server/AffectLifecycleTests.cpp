@@ -97,7 +97,7 @@ entt::entity Actor() {
     return e;
 }
 CAffect Value(uint32_t type = AFFECT_STR, int32_t value = 10, uint8_t point = POINT_ST) {
-    return {type, point, value, AFF_SLOW, 60, 0};
+    return {type, point, static_cast<double>(value), AFF_SLOW, 60, 0};
 }
 // The stored value behind an id the caller expects to be live.
 CAffect& Live(entt::entity e, A::AffectId affect) {
@@ -496,7 +496,7 @@ void PublicationChecks() {
 }
 A::AffectId InstallTimed(entt::entity e, uint32_t type, int32_t duration,
     uint8_t point = POINT_NONE, int32_t value = 0, int32_t cost = 0, uint32_t flag = 0) {
-    const auto affect = A::Attach(e, {type, point, value, flag, duration, cost});
+    const auto affect = A::Attach(e, {type, point, static_cast<double>(value), flag, duration, cost});
     Check(affect != 0, "timed affect fixture attached");
     A::ComputeAffect(e, Live(e, affect), true);
     return affect;
@@ -768,7 +768,7 @@ void ecs::ChatSystem::Send(entt::entity,unsigned char,char const *,...) { Unexpe
 void ecs::ChatSystem::SendNew(entt::entity,unsigned char,unsigned int,char const *,...) { ++chats; }
 int ecs::PointSystem::GetLevel(entt::entity) { UnexpectedService(__func__); }
 void ecs::PointSystem::CheckMaximumPoints(entt::entity) { UnexpectedService(__func__); }
-void ecs::PointSystem::ApplyPoint(entt::entity,unsigned char,int) { UnexpectedService(__func__); }
+void ecs::PointSystem::ApplyPoint(entt::entity,unsigned char,double) { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetPart(entt::entity e, unsigned char part, unsigned short value) {
     Check(part == PART_HAIR && value == 0, "expiry only resets hair appearance");
     ++hairResets;
@@ -913,3 +913,13 @@ int main() {
 
 // This fixture has no active typed mount backend.
 std::optional<bool> TypedMountFlightPermission(entt::entity){return std::nullopt;}
+// Precision-aware entry points retain the integral data used by this lifecycle fixture.
+double ecs::PointSystem::GetPrecise(entt::entity e,uint8_t type){return static_cast<double>(Get(e,type));}
+void ecs::PointSystem::ChangePrecise(entt::entity e,uint8_t type,double amount,bool delta,bool broadcast){Change(e,type,static_cast<int64_t>(amount),delta,broadcast);}
+namespace WarriorExpansion { bool AllowBuff(entt::entity,uint32_t){return false;} }
+namespace EclipseRaid { void Dispel(entt::entity){} }
+// Key functions emit RTTI for singleton service doubles used by the production TU.
+CHARACTER_MANAGER::~CHARACTER_MANAGER() = default;
+quest::CQuestManager::~CQuestManager() = default;
+
+quest::NPC::~NPC() = default;

@@ -1,0 +1,19 @@
+{
+  "serverDeployed": true,
+  "mounts": 203,
+  "pets": 69,
+  "newItemRows": 272,
+  "newMobRows": 272,
+  "newMobMotionRows": 272,
+  "existingRowsUnchanged": true,
+  "sourceBranch": "ECS_+_BGFX",
+  "productionRaceAcquisitions": 272,
+  "petPacketSpawns": 69,
+  "particleMeshesChecked": 690,
+  "productionPlayCases": 9,
+  "approvedScaleSha256": "d8bddd71233fde9886c38ae14c639c709bcc40016e54c4bb710d631374ed50c1",
+  "standaloneWindowsContentBuildCompleted": false,
+  "standaloneWindowsPlayerPublished": false,
+  "clientTesting": "Main Unity Editor, supported Asset Database play mode, Metin2Client scene",
+  "originalEngineVisualEquivalenceCertified": false
+}

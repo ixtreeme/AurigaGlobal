@@ -4,6 +4,7 @@
 #include "../item/TypedQuestItems.hpp"
 #include "typed_money_continuation.h"
 #include "stdafx.h"
+#include "../warrior/WarriorSkillSystem.hpp"
 #include <cmath>
 #include <Core/Logging.hpp>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
@@ -141,6 +142,22 @@ namespace quest
 		lua_pushboolean(L, AffectSystem::FindAffect(chEntity, AFFECT_SKILL_NO_BOOK_DELAY) ? 1 : 0);
 		return 1;
 	}
+
+    ALUA(pc_get_warrior_expansion_skills)
+    {
+        lua_newtable(L);
+#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+        const auto player = CQuestManager::instance().GetCurrentPCEntity();
+        int index = 1;
+        for (uint32_t id = WarriorExpansion::FirstSkill; id <= WarriorExpansion::LastSkill; ++id)
+            if (WarriorExpansion::IsChosen(player, id) && SkillSystem::GetSkillLevel(player, id) > 0)
+            {
+                lua_pushinteger(L, id);
+                lua_rawseti(L, -2, index++);
+            }
+#endif
+        return 1;
+    }
 
 	ALUA(pc_learn_grand_master_skill)
 	{
@@ -3063,7 +3080,7 @@ teleport_area:
 	{
 		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
 		const entt::entity killee = ecs::PlayerRuntime::GetQuestNPC(character);
-		int iDeltaPercent = -1;
+		double iDeltaPercent = -1;
 		int iRandRange = -1;
 		if (!ITEM_MANAGER::instance().GetDropPct(
 			killee, character, iDeltaPercent, iRandRange))
@@ -4036,12 +4053,12 @@ teleport_area:
 			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologistch_clear");
 			int type = APPLY_NONE, last = 0;
 			for (int i = 0; i < 16; i++) {
-				if (biologistMissionInfo[i][11] == 1) {
+				if (static_cast<int>(biologistMissionInfo[i][11]) == 1) {
 					if (ecs::QuestSystem::GetFlag(character, "biologist.stat") > i) {
 						for (int j = 0; j < 4; j++) {
 							type = biologistMissionInfo[i][3 + (j * 2)];
 							if (type != APPLY_NONE) {
-								CAffect * pkAff = AffectSystem::FindAffect(character, biologistMissionInfo[i][14], aApplyInfo[type].bPointType);
+								CAffect * pkAff = AffectSystem::FindAffect(character, static_cast<int>(biologistMissionInfo[i][14]), aApplyInfo[type].bPointType);
 								if (pkAff) {
 									continue;
 								}
@@ -4050,7 +4067,7 @@ teleport_area:
 									last = 1;
 								}
 
-								ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologistch_append %d#%d#%d#%d", i, type, biologistMissionInfo[i][4 + (j * 2)], j);
+								ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologistch_append %d#%d#%.3f#%d", i, type, biologistMissionInfo[i][4 + (j * 2)], j);
 							}
 						}
 					}
@@ -4438,7 +4455,8 @@ teleport_area:
 			{ "unmount",		pc_unmount		},
 			{ "warp_to_guild_war_observer_position", pc_warp_to_guild_war_observer_position	},
 			{ "give_item_from_special_item_group", pc_give_item_from_special_item_group	},
-			{ "learn_grand_master_skill", pc_learn_grand_master_skill	},
+			{ "get_warrior_expansion_skills", pc_get_warrior_expansion_skills },
+            { "learn_grand_master_skill", pc_learn_grand_master_skill	},
 			{ "is_skill_book_no_delay",	pc_is_skill_book_no_delay},
 			{ "remove_skill_book_no_delay",	pc_remove_skill_book_no_delay},
 

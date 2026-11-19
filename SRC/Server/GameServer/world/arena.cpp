@@ -156,8 +156,8 @@ void CArenaMap::SendArenaMapListTo(entt::entity character, uint32_t mapIdx)
 	for (auto iter = m_listArena.begin(); iter != m_listArena.end(); ++iter)
 	{
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "ArenaMapInfo Map: %d stA(%d, %d) stB(%d, %d)", mapIdx,
-				(CArena*)(*iter)->GetStartPointA().x, (CArena*)(*iter)->GetStartPointA().y,
-				(CArena*)(*iter)->GetStartPointB().x, (CArena*)(*iter)->GetStartPointB().y);
+				(*iter)->GetStartPointA().x, (*iter)->GetStartPointA().y,
+				(*iter)->GetStartPointB().x, (*iter)->GetStartPointB().y);
 	}
 }
 
@@ -1044,7 +1044,7 @@ void CArena::SendChatPacketToObserver(uint8_t type, uint32_t idx, const char * f
 	for (auto iter = m_mapObserver.begin(); iter != m_mapObserver.end(); ++iter) {
 		const entt::entity observer = iter->second;
 		if (ecs::PlayerRuntime::GetDesc(observer))
-			ecs::ChatSystem::SendNew(observer, type, idx, chatbuf);
+			ecs::ChatSystem::SendNew(observer, type, idx, "%s", chatbuf);
 	}
 }
 #endif

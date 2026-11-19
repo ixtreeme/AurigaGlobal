@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../pet/AccountCollectionSystem.hpp"
 #include "character_selection.h"
 #include <common/character_creation.h>
 #include "../item/item_manager.h"
@@ -644,6 +645,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	// This replays only to this client, not to unrelated nearby players.
 	ecs::ViewSystem::ViewReencode(ch);
 	SendTypedInventory(ch); // the typed load may have finished during loading
+	AccountCollectionSystem::Request(ch);
 	SECTREE_MANAGER::instance().SendNPCPosition(ch);
 #ifdef ENABLE_ATLAS_BOSS
 	SECTREE_MANAGER::instance().SendBossPosition(ch);
@@ -908,7 +910,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 
 	//#endif
 #ifdef __ENABLE_BLOCK_EXP__
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "manage_exp_status %d", ecs::QuestSystem::GetFlag(ch, "exp.stat"));
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "manage_exp_status %lld", static_cast<long long>(ecs::QuestSystem::GetFlag(ch, "exp.stat")));
 #endif
 
 #ifdef ENABLE_MULTI_LANGUAGE
@@ -920,10 +922,10 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #ifdef ENABLE_RUNE_SYSTEM
 	ecs::PlayerRuntime::SetPart(ch, PART_RUNE, ecs::PlayerRuntime::GetRuneEffect(ch));
 	NetworkSyncSystem::UpdatePacket(ch);
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "rune_affect %d", ecs::QuestSystem::GetFlag(ch, "rune.hide_effect"));
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "rune_affect %lld", static_cast<long long>(ecs::QuestSystem::GetFlag(ch, "rune.hide_effect")));
 #endif
 #ifdef ENABLE_PVP_ADVANCED
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "equipview %d", ecs::QuestSystem::GetFlag(ch, BLOCK_EQUIPMENT_));
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "equipview %lld", static_cast<long long>(ecs::QuestSystem::GetFlag(ch, BLOCK_EQUIPMENT_)));
 #endif
 #ifdef BLOCK_RIDING_INSIDE_WAR
 	if (ecs::SocialSystem::GetWarMap(ch)) {

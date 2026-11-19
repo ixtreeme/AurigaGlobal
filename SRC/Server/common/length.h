@@ -945,7 +945,9 @@ typedef struct SItemPos
 		case MALL:
 			return false;
 
-		case MOUNT_INVENTORY:
+		case PET_INVENTORY:
+        return cell < PET_INVENTORY_MAX_NUM;
+        case MOUNT_INVENTORY:
 			return cell < (MOUNT_INVENTORY_MAX_NUM);
 #ifdef ENABLE_EXTRA_INVENTORY
 		case EXTRA_INVENTORY:
@@ -1063,7 +1065,7 @@ enum biologAffect {
 	AFFECT_BIOLOGIST_16 = 666
 };
 
-static const int32_t biologistMissionInfo[16][15] =
+static const double biologistMissionInfo[16][15] =
 {
 	// missioneID: 0
 	{
@@ -1071,7 +1073,7 @@ static const int32_t biologistMissionInfo[16][15] =
 		10,							// il contaggio dei item richiesti per completare la missione.
 		900,
 		APPLY_MAX_HP,				// il primo bonus ricompensa.
-		1500,						// il primo valore del bonus ricompensa.
+		500,						// il primo valore del bonus ricompensa.
 		APPLY_NONE,					// il secondo bonus ricompensa.
 		0,							// il secondo valore del bonus ricompensa.
 		APPLY_NONE,					// il terzo bonus ricompensa.
@@ -1089,7 +1091,7 @@ static const int32_t biologistMissionInfo[16][15] =
 		15,							// il contaggio dei item richiesti per completare la missione.
 		900,
 		APPLY_DEF_GRADE_BONUS,		// il primo bonus ricompensa.
-		70,							// il primo valore del bonus ricompensa.
+		10,							// il primo valore del bonus ricompensa.
 		APPLY_NONE,					// il secondo bonus ricompensa.
 		0,							// il secondo valore del bonus ricompensa.
 		APPLY_NONE,					// il terzo bonus ricompensa.
@@ -1107,7 +1109,7 @@ static const int32_t biologistMissionInfo[16][15] =
 		15,							// il contaggio dei item richiesti per completare la missione.
 		900,						// il tempo d'attessa per consegnare l'item (in secondi).
 		APPLY_ATT_GRADE_BONUS,		// il primo bonus ricompensa.
-		50,							// il primo valore del bonus ricompensa.
+		2,							// il primo valore del bonus ricompensa.
 		APPLY_NONE,					// il secondo bonus ricompensa.
 		0,							// il secondo valore del bonus ricompensa.
 		APPLY_NONE,					// il terzo bonus ricompensa.
@@ -1129,7 +1131,7 @@ static const int32_t biologistMissionInfo[16][15] =
 #else
 		APPLY_MAX_HP,				// il primo bonus ricompensa.
 #endif
-		8,							// il primo valore del bonus ricompensa.
+		2,							// il primo valore del bonus ricompensa.
 		APPLY_NONE,					// il secondo bonus ricompensa.
 		0,							// il secondo valore del bonus ricompensa.
 		APPLY_NONE,					// il terzo bonus ricompensa.
@@ -1147,7 +1149,7 @@ static const int32_t biologistMissionInfo[16][15] =
 		20,							// il contaggio dei item richiesti per completare la missione.
 		1800,						// il tempo d'attessa per consegnare l'item (in secondi).
 		APPLY_ATTBONUS_MONSTER,		// il primo bonus ricompensa.
-		10,							// il primo valore del bonus ricompensa.
+		5,							// il primo valore del bonus ricompensa.
 		APPLY_NONE,					// il secondo bonus ricompensa.
 		0,							// il secondo valore del bonus ricompensa.
 		APPLY_NONE,					// il terzo bonus ricompensa.
@@ -1169,7 +1171,7 @@ static const int32_t biologistMissionInfo[16][15] =
 #else
 		APPLY_MAX_HP,				// il primo bonus ricompensa.
 #endif
-		10,							// il primo valore del bonus ricompensa.
+		5,							// il primo valore del bonus ricompensa.
 		APPLY_NONE,					// il secondo bonus ricompensa.
 		0,							// il secondo valore del bonus ricompensa.
 		APPLY_NONE,					// il terzo bonus ricompensa.
@@ -1191,7 +1193,7 @@ static const int32_t biologistMissionInfo[16][15] =
 #else
 		APPLY_MAX_HP,				// il primo bonus ricompensa.
 #endif
-		10,							// il primo valore del bonus ricompensa.
+		5,							// il primo valore del bonus ricompensa.
 		APPLY_NONE,					// il secondo bonus ricompensa.
 		0,							// il secondo valore del bonus ricompensa.
 		APPLY_NONE,					// il terzo bonus ricompensa.
@@ -1213,7 +1215,7 @@ static const int32_t biologistMissionInfo[16][15] =
 #else
 		APPLY_MAX_HP,				// il primo bonus ricompensa.
 #endif
-		10,							// il primo valore del bonus ricompensa.
+		5,							// il primo valore del bonus ricompensa.
 		APPLY_NONE,					// il secondo bonus ricompensa.
 		0,							// il secondo valore del bonus ricompensa.
 		APPLY_NONE,					// il terzo bonus ricompensa.
@@ -1231,13 +1233,13 @@ static const int32_t biologistMissionInfo[16][15] =
 		30,							// il contaggio dei item richiesti per completare la missione.
 		7200,						// il tempo d'attessa per consegnare l'item (in secondi).
 		APPLY_ATTBONUS_WARRIOR,		// il primo bonus ricompensa.
-		10,							// il primo valore del bonus ricompensa.
+		3,							// il primo valore del bonus ricompensa.
 		APPLY_ATTBONUS_ASSASSIN,	// il secondo bonus ricompensa.
-		10,							// il secondo valore del bonus ricompensa.
+		3,							// il secondo valore del bonus ricompensa.
 		APPLY_ATTBONUS_SURA,		// il terzo bonus ricompensa.
-		10,							// il terzo valore del bonus ricompensa.
+		3,							// il terzo valore del bonus ricompensa.
 		APPLY_ATTBONUS_SHAMAN,		// il quarto bonus ricompensa.
-		10,							// il quarto valore del bonus ricompensa.
+		3,							// il quarto valore del bonus ricompensa.
 		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus (piu avra la posibilita di cambiarlo tramite: 164401).
 		95,							// il livello minimo per fare la missione.
 		50,							// % di successo per la consegna.
@@ -1249,13 +1251,13 @@ static const int32_t biologistMissionInfo[16][15] =
 		35,							// il contaggio dei item richiesti per completare la missione.
 		7200,						// il tempo d'attessa per consegnare l'item (in secondi).
 		APPLY_RESIST_WARRIOR,		// il primo bonus ricompensa.
-		10,							// il primo valore del bonus ricompensa.
+		3,							// il primo valore del bonus ricompensa.
 		APPLY_RESIST_ASSASSIN,		// il secondo bonus ricompensa.
-		10,							// il secondo valore del bonus ricompensa.
+		3,							// il secondo valore del bonus ricompensa.
 		APPLY_RESIST_SURA,			// il terzo bonus ricompensa.
-		10,							// il terzo valore del bonus ricompensa.
+		3,							// il terzo valore del bonus ricompensa.
 		APPLY_RESIST_SHAMAN,		// il quarto bonus ricompensa.
-		10,							// il quarto valore del bonus ricompensa.
+		3,							// il quarto valore del bonus ricompensa.
 		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus (piu avra la posibilita di cambiarlo tramite: 164401).
 		100,						// il livello minimo per fare la missione.
 		50,							// % di successo per la consegna.
@@ -1267,11 +1269,11 @@ static const int32_t biologistMissionInfo[16][15] =
 		35,							// il contaggio dei item richiesti per completare la missione.
 		10800,						// il tempo d'attessa per consegnare l'item (in secondi).
 		APPLY_MAX_HP,				// il primo bonus ricompensa.
-		1200,						// il primo valore del bonus ricompensa.
+		500,						// il primo valore del bonus ricompensa.
 		APPLY_DEF_GRADE_BONUS,		// il secondo bonus ricompensa.
-		100,						// il secondo valore del bonus ricompensa.
+		20,						// il secondo valore del bonus ricompensa.
 		APPLY_ATT_GRADE_BONUS,		// il terzo bonus ricompensa.
-		60,							// il terzo valore del bonus ricompensa.
+		20,							// il terzo valore del bonus ricompensa.
 		APPLY_NONE,					// il quarto bonus ricompensa.
 		0,							// il quarto valore del bonus ricompensa.
 		1,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus (piu avra la posibilita di cambiarlo tramite: 164401).
@@ -1285,11 +1287,11 @@ static const int32_t biologistMissionInfo[16][15] =
 		35,							// il contaggio dei item richiesti per completare la missione.
 		10800,						// il tempo d'attessa per consegnare l'item (in secondi).
 		APPLY_MAX_HP,				// il primo bonus ricompensa.
-		1500,						// il primo valore del bonus ricompensa.
+		500,						// il primo valore del bonus ricompensa.
 		APPLY_DEF_GRADE_BONUS,		// il secondo bonus ricompensa.
-		140,						// il secondo valore del bonus ricompensa.
+		20,						// il secondo valore del bonus ricompensa.
 		APPLY_ATT_GRADE_BONUS,		// il terzo bonus ricompensa.
-		80,							// il terzo valore del bonus ricompensa.
+		20,							// il terzo valore del bonus ricompensa.
 		APPLY_NONE,					// il quarto bonus ricompensa.
 		0,							// il quarto valore del bonus ricompensa.
 		1,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus (piu avra la posibilita di cambiarlo tramite: 164401).
@@ -1303,9 +1305,9 @@ static const int32_t biologistMissionInfo[16][15] =
 		40,							// il contaggio dei item richiesti per completare la missione.
 		14400,						// il tempo d'attessa per consegnare l'item (in secondi).
 		APPLY_ATTBONUS_HUMAN,		// il primo bonus ricompensa.
-		10,							// il primo valore del bonus ricompensa.
+		3,							// il primo valore del bonus ricompensa.
 		APPLY_PVM_CRITICAL_PCT,		// il secondo bonus ricompensa.
-		10,							// il secondo valore del bonus ricompensa.
+		3,							// il secondo valore del bonus ricompensa.
 		APPLY_NONE,					// il terzo bonus ricompensa.
 		0,							// il terzo valore del bonus ricompensa.
 		APPLY_NONE,					// il quarto bonus ricompensa.
@@ -1321,13 +1323,13 @@ static const int32_t biologistMissionInfo[16][15] =
 		45,							// il contaggio dei item richiesti per completare la missione.
 		18000,						// il tempo d'attessa per consegnare l'item (in secondi).
 		APPLY_ATTBONUS_MONSTER,		// il primo bonus ricompensa.
-		10,							// il primo valore del bonus ricompensa.
+		5,							// il primo valore del bonus ricompensa.
 #ifdef ENABLE_NEW_BONUS_TALISMAN
 		APPLY_RESIST_MEZZIUOMINI,	// il secondo bonus ricompensa.
 #else
 		APPLY_MAX_HP,				// il secondo bonus ricompensa.
 #endif
-		10,							// il secondo valore del bonus ricompensa.
+		3,							// il secondo valore del bonus ricompensa.
 		APPLY_NONE,					// il terzo bonus ricompensa.
 		0,							// il terzo valore del bonus ricompensa.
 		APPLY_NONE,					// il quarto bonus ricompensa.
@@ -1343,11 +1345,11 @@ static const int32_t biologistMissionInfo[16][15] =
 			50,							// required count
 			21600,						// wait time (6 ora)
 			APPLY_ATTBONUS_METIN,		// 1. bonus
-			10,
+			5,
 			APPLY_ATTBONUS_BOSS,		// 2. bonus
-			10,
+			5,
 			APPLY_ATTBONUS_MONSTER,		// 3. bonus
-			10,
+			5,
 			APPLY_NONE,					// 4. bonus
 			0,
 			0,							// 0 = minden bonuszt megkap
@@ -1361,11 +1363,11 @@ static const int32_t biologistMissionInfo[16][15] =
 		55,							// required count
 		25200,						// wait time (7 ora)
 		APPLY_ATTBONUS_HUMAN,		// 1. bonus
-		5,
+		3,
 		APPLY_MAX_HP,				// 2. bonus
-		30000,
+		1000,
 		APPLY_SKILL_DEFEND_BONUS,	// 3. bonus
-		5,
+		3,
 		APPLY_NONE,					// 4. bonus
 		0,
 		0,							// 0 = minden bonuszt megkap

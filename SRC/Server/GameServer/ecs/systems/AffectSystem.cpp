@@ -10,6 +10,7 @@
 #include "../CharacterAccessors.hpp"
 
 #include "AffectSystem.hpp"
+#include "../../warrior/WarriorSkillSystem.hpp"
 #include "QuestSystem.hpp"
 #include "NetworkSyncSystem.hpp"
 #include "MovementSystem.hpp"
@@ -74,7 +75,7 @@ int GetPoisonDamageRate(entt::entity character)
     int iRate = ecs::PlayerRuntime::IsPC(character)
         ? 50
         : poison_damage_rate[ecs::PlayerRuntime::GetMobRank(character)];
-    iRate = MAX(0, iRate - ecs::PointSystem::Get(character, POINT_POISON_REDUCE));
+    iRate = MAX(0, iRate - ecs::PointSystem::GetPrecise(character, POINT_POISON_REDUCE));
     return iRate;
 }
 
@@ -303,6 +304,10 @@ void PublishAffectRemoval(entt::entity e, const CAffect& value)
     };
     if (!current() || !ecs::PlayerRuntime::IsPC(e))
         return;
+#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+    if (WarriorExpansion::IsBuffAffect(value.dwType))
+        ecs::ChatSystem::Broadcast(e, CHAT_TYPE_COMMAND, "wex_buff %u %u 0", ecs::PlayerRuntime::GetPacketVID(e), WarriorExpansion::SkillFromAffect(value.dwType));
+#endif
     if (db_clientdesc) {
         TPacketGDRemoveAffect packet{};
         packet.dwPID = ecs::PlayerRuntime::GetPlayerID(e);
@@ -682,7 +687,7 @@ void ComputeAffect(entt::entity e, CAffect affect, bool add)
     }
 
     SetFlag(e, affect.dwFlag, add);
-    const int64_t value = affect.lApplyValue;
+    const double value = affect.lApplyValue;
     ecs::PointSystem::Change(e, affect.bApplyOn, add ? value : -value);
     if (!AffectState(e))
         return;
@@ -725,7 +730,7 @@ CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply)
     return nullptr;
 }
 
-CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply, int32_t value)
+CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply, double value)
 {
     if (e == entt::null || !g_registry.valid(e))
         return nullptr;
@@ -744,7 +749,7 @@ CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply, int32_t value)
 // Whether an affect type is one a player wants to keep. It reads nothing
 // but the type, and was a CHARACTER method only because its callers were.
 // Parking the skill affects while they are cleared, so they can be put back.
-void SaveAffectSkills(entt::entity e, uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue, uint32_t dwFlag, int32_t lDuration, int32_t lSPCost)
+void SaveAffectSkills(entt::entity e, uint32_t dwType, uint8_t bApplyOn, double lApplyValue, uint32_t dwFlag, int32_t lDuration, int32_t lSPCost)
 {
     if (auto* state = AffectState(e))
         state->skillAffects.push_back({dwType, bApplyOn, lApplyValue, dwFlag,
@@ -802,29 +807,29 @@ void CheckBiologistReward(entt::entity e) {
 	int stat = ecs::PlayerRuntime::GetQuestFlag(e, "biologist.stat");
 	if (stat > 0) {
 		for (int i = 0; i < stat; i++) {
-			if (AffectSystem::FindAffect(e, biologistMissionInfo[i][14])) {
+			if (AffectSystem::FindAffect(e, static_cast<int>(biologistMissionInfo[i][14]))) {
 				continue;
 			}
 
-			if (biologistMissionInfo[i][11] == 0) {
+			if (static_cast<int>(biologistMissionInfo[i][11]) == 0) {
 				int j = 0;
 				for (int w = 0; w < 4; w++) {
 					j += 2;
 					uint8_t bApplyOn = biologistMissionInfo[i][j + 1];
-					int32_t lApplyValue = biologistMissionInfo[i][j + 2];
+					double lApplyValue = biologistMissionInfo[i][j + 2];
 					if (bApplyOn == APPLY_NONE || lApplyValue == 0) {
 						continue;
 					} else {
 						bApplyOn = aApplyInfo[bApplyOn].bPointType;
-						AffectSystem::AddAffect(e, biologistMissionInfo[i][14], bApplyOn, lApplyValue, 0, 315360000, 0, false);
+						AffectSystem::AddAffect(e, static_cast<int>(biologistMissionInfo[i][14]), bApplyOn, lApplyValue, 0, 315360000, 0, false);
 					}
 				}
 			} else {
-				uint8_t bApplyOn = biologistMissionInfo[i][7];
-				int32_t lApplyValue = biologistMissionInfo[i][8];
+				uint8_t bApplyOn = static_cast<int>(biologistMissionInfo[i][7]);
+				double lApplyValue = biologistMissionInfo[i][8];
 				if (bApplyOn != APPLY_NONE || lApplyValue != 0) {
 					bApplyOn = aApplyInfo[bApplyOn].bPointType;
-					AffectSystem::AddAffect(e, biologistMissionInfo[i][14], bApplyOn, lApplyValue, 0, 315360000, 0, false);
+					AffectSystem::AddAffect(e, static_cast<int>(biologistMissionInfo[i][14]), bApplyOn, lApplyValue, 0, 315360000, 0, false);
 				}
 			}
 		}
@@ -849,42 +854,42 @@ bool UpdateAffect(entt::entity e)
 	}
 #endif
 
-	if (ecs::PointSystem::Get(e, POINT_HP_RECOVERY) > 0)
+	if (ecs::PointSystem::GetPrecise(e, POINT_HP_RECOVERY) > 0)
 	{
 		if (ecs::PointSystem::GetMaxHP(e) <= ecs::PlayerRuntime::GetHP(e))
 		{
-			ecs::PointSystem::Change(e, POINT_HP_RECOVERY, -ecs::PointSystem::Get(e, POINT_HP_RECOVERY));
+			ecs::PointSystem::Change(e, POINT_HP_RECOVERY, -ecs::PointSystem::GetPrecise(e, POINT_HP_RECOVERY));
 		}
 		else
 		{
-			const int64_t iVal = std::min<int64_t>(ecs::PointSystem::Get(e, POINT_HP_RECOVERY), static_cast<int64_t>(ecs::PointSystem::GetMaxHP(e)) * 7 / 100);
+			double iVal = std::min<int64_t>(ecs::PointSystem::GetPrecise(e, POINT_HP_RECOVERY), static_cast<int64_t>(ecs::PointSystem::GetMaxHP(e)) * 7 / 100);
 
 			ecs::PointSystem::Change(e, POINT_HP, iVal);
 			ecs::PointSystem::Change(e, POINT_HP_RECOVERY, -iVal);
 		}
 	}
 
-	if (ecs::PointSystem::Get(e, POINT_SP_RECOVERY) > 0)
+	if (ecs::PointSystem::GetPrecise(e, POINT_SP_RECOVERY) > 0)
 	{
 		if (ecs::PointSystem::GetMaxSP(e) <= ecs::PlayerRuntime::GetSP(e))
-			ecs::PointSystem::Change(e, POINT_SP_RECOVERY, -ecs::PointSystem::Get(e, POINT_SP_RECOVERY));
+			ecs::PointSystem::Change(e, POINT_SP_RECOVERY, -ecs::PointSystem::GetPrecise(e, POINT_SP_RECOVERY));
 		else
 		{
-			const int64_t iVal = std::min<int64_t>(ecs::PointSystem::Get(e, POINT_SP_RECOVERY), static_cast<int64_t>(ecs::PointSystem::GetMaxSP(e)) * 7 / 100);
+			double iVal = std::min<int64_t>(ecs::PointSystem::GetPrecise(e, POINT_SP_RECOVERY), static_cast<int64_t>(ecs::PointSystem::GetMaxSP(e)) * 7 / 100);
 
 			ecs::PointSystem::Change(e, POINT_SP, iVal);
 			ecs::PointSystem::Change(e, POINT_SP_RECOVERY, -iVal);
 		}
 	}
 
-	if (ecs::PointSystem::Get(e, POINT_HP_RECOVER_CONTINUE) > 0)
+	if (ecs::PointSystem::GetPrecise(e, POINT_HP_RECOVER_CONTINUE) > 0)
 	{
-		ecs::PointSystem::Change(e, POINT_HP, ecs::PointSystem::Get(e, POINT_HP_RECOVER_CONTINUE));
+		ecs::PointSystem::Change(e, POINT_HP, ecs::PointSystem::GetPrecise(e, POINT_HP_RECOVER_CONTINUE));
 	}
 
-	if (ecs::PointSystem::Get(e, POINT_SP_RECOVER_CONTINUE) > 0)
+	if (ecs::PointSystem::GetPrecise(e, POINT_SP_RECOVER_CONTINUE) > 0)
 	{
-		ecs::PointSystem::Change(e, POINT_SP, ecs::PointSystem::Get(e, POINT_SP_RECOVER_CONTINUE));
+		ecs::PointSystem::Change(e, POINT_SP, ecs::PointSystem::GetPrecise(e, POINT_SP_RECOVER_CONTINUE));
 	}
 
 	ItemSystem::AutoRecoveryItemProcess(e, AFFECT_AUTO_HP_RECOVERY);
@@ -910,8 +915,8 @@ bool UpdateAffect(entt::entity e)
     const auto entity = e;
     const bool empty = AffectSystem::ProcessAffect(entity);
     if (!AffectState(entity)) return false;
-    if (empty && ecs::PointSystem::Get(entity, POINT_HP_RECOVERY) == 0 &&
-        ecs::PointSystem::Get(entity, POINT_SP_RECOVERY) == 0 &&
+    if (empty && ecs::PointSystem::GetPrecise(entity, POINT_HP_RECOVERY) == 0 &&
+        ecs::PointSystem::GetPrecise(entity, POINT_SP_RECOVERY) == 0 &&
         ecs::PointSystem::Get(entity, POINT_STAMINA) == ecs::PlayerRuntime::GetMaxStamina(entity)) {
         AffectSystem::StopAffectEvent(entity);
         return false;
@@ -1066,8 +1071,8 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 
 	TAffectFlag afOld = AffectSystem::GetFlags(e);
 
-	int64_t lMovSpd = ecs::PointSystem::Get(e, POINT_MOV_SPEED);
-	int64_t lAttSpd = ecs::PointSystem::Get(e, POINT_ATT_SPEED);
+	double lMovSpd = ecs::PointSystem::GetPrecise(e, POINT_MOV_SPEED);
+	double lAttSpd = ecs::PointSystem::GetPrecise(e, POINT_ATT_SPEED);
 	const entt::entity character = e;
 
 	for (uint32_t i = 0; i < dwCount; ++i, ++pElements)
@@ -1075,6 +1080,7 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 		if(pElements->dwType==AFFECT_POLYMORPH && g_registry.all_of<ecs::TypedItems>(e))continue;
 		if (auriga::retired_content::Affect(pElements->dwType))
 			continue;
+        if (WarriorExpansion::IsBuffAffect(pElements->dwType) && !WarriorExpansion::AllowBuff(e,WarriorExpansion::SkillFromAffect(pElements->dwType))) continue;
 		////if (pElements->dwType == SKILL_MUYEONG)
 		////	continue;
 		if (AFFECT_AUTO_HP_RECOVERY == pElements->dwType || AFFECT_AUTO_SP_RECOVERY == pElements->dwType)
@@ -1186,7 +1192,7 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 #endif
 #endif
 
-	if (afOld != AffectSystem::GetFlags(e) || lMovSpd != ecs::PointSystem::Get(e, POINT_MOV_SPEED) || lAttSpd != ecs::PointSystem::Get(e, POINT_ATT_SPEED))
+	if (afOld != AffectSystem::GetFlags(e) || lMovSpd != ecs::PointSystem::GetPrecise(e, POINT_MOV_SPEED) || lAttSpd != ecs::PointSystem::GetPrecise(e, POINT_ATT_SPEED))
 	{
 
 	NetworkSyncSystem::UpdatePacket(e);
@@ -1246,8 +1252,9 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
     ResumeTypedCompanionSummon(entity);
 }
 
-bool IsGoodAffect(uint8_t bAffectType)
+bool IsGoodAffect(uint32_t bAffectType)
 {
+    if (WarriorExpansion::IsBuffAffect(bAffectType)) return true;
 	switch (bAffectType)
 	{
 		case (AFFECT_MOV_SPEED):
@@ -1329,10 +1336,11 @@ void StopAffectEvent(entt::entity e)
     }
 }
 
-bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, int32_t applyValue,
+bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, double applyValue,
                uint32_t flag, int32_t duration, int32_t spCost, bool overwrite,
                bool isCube)
 {
+    if (WarriorExpansion::IsBuffAffect(type) && !WarriorExpansion::AllowBuff(e,WarriorExpansion::SkillFromAffect(type))) return false;
     if(type==AFFECT_POLYMORPH && g_registry.all_of<ecs::TypedItems>(e))return false;
     if (!AffectState(e) || applyOn >= POINT_MAX_NUM || auriga::retired_content::Affect(type))
         return false;
@@ -1418,6 +1426,10 @@ bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, int32_t applyValu
             CAffect packetValue = value;
             SendAffectAddPacket(desc, &packetValue);
         }
+#ifdef ENABLE_WARRIOR_SKILL_EXPANSION
+    if (publishable() && WarriorExpansion::IsBuffAffect(type))
+        ecs::ChatSystem::Broadcast(e, CHAT_TYPE_COMMAND, "wex_buff %u %u %d", ecs::PlayerRuntime::GetPacketVID(e), WarriorExpansion::SkillFromAffect(type), duration);
+#endif
     return owned();
 }
 
@@ -1497,6 +1509,7 @@ void RemoveBadAffects(entt::entity e)
 
 void RemoveGoodAffects(entt::entity e)
 {
+    for (uint32_t id=180;id<=183;++id) AffectSystem::RemoveAffect(e,id);
     constexpr uint32_t types[] = {
         AFFECT_MOV_SPEED, AFFECT_ATT_SPEED, AFFECT_STR, AFFECT_DEX,
         AFFECT_INT, AFFECT_CON, AFFECT_CHINA_FIREWORK, SKILL_JEONGWI,
@@ -1583,8 +1596,8 @@ bool ProcessAffect(entt::entity e)
     if (!current()) return empty();
 
     const auto oldFlags = GetFlags(e);
-    const auto oldMoveSpeed = ecs::PointSystem::Get(e, POINT_MOV_SPEED);
-    const auto oldAttackSpeed = ecs::PointSystem::Get(e, POINT_ATT_SPEED);
+    const auto oldMoveSpeed = ecs::PointSystem::GetPrecise(e, POINT_MOV_SPEED);
+    const auto oldAttackSpeed = ecs::PointSystem::GetPrecise(e, POINT_ATT_SPEED);
     struct Entry { AffectId affect; CAffect value; };
     std::vector<Entry> batch;
     std::unordered_set<AffectId> seen;
@@ -1633,8 +1646,8 @@ bool ProcessAffect(entt::entity e)
         if (!current()) return empty();
     }
     if (changed) {
-        if (oldFlags != GetFlags(e) || oldMoveSpeed != ecs::PointSystem::Get(e, POINT_MOV_SPEED) ||
-            oldAttackSpeed != ecs::PointSystem::Get(e, POINT_ATT_SPEED)) {
+        if (oldFlags != GetFlags(e) || oldMoveSpeed != ecs::PointSystem::GetPrecise(e, POINT_MOV_SPEED) ||
+            oldAttackSpeed != ecs::PointSystem::GetPrecise(e, POINT_ATT_SPEED)) {
             NetworkSyncSystem::UpdatePacket(e);
             if (!current()) return empty();
         }

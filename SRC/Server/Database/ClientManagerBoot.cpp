@@ -1,3 +1,5 @@
+#include <type_traits>
+#include <cmath>
 // vim:ts=4 sw=4
 #include <map>
 #include "stdafx.h"
@@ -538,7 +540,7 @@ bool CClientManager::MirrorMobTableIntoDB()
 			")",
 			t.bType, t.bRank, t.bBattleType, t.bLevel, t.bSize, t.dwAIFlag, t.dwRaceFlag, t.dwImmuneFlag,
 			t.bOnClickType, t.bEmpire, t.dwDropItemVnum, t.dwResurrectionVnum, t.szFolder,
-			t.bStr, t.bDex, t.bCon, t.bInt, t.dwDamageRange[0], t.dwDamageRange[1], t.dwMaxHP, t.bRegenCycle, t.bRegenPercent, t.dwExp,
+			t.bStr, t.bDex, t.bCon, t.bInt, t.dwDamageRange[0], t.dwDamageRange[1], static_cast<unsigned long long>(t.dwMaxHP), t.bRegenCycle, t.bRegenPercent, t.dwExp,
 
 			t.dwGoldMin, t.dwGoldMax, t.wDef, t.sAttackSpeed, t.sMovingSpeed, t.bAggresiveHPPct, t.wAggressiveSight, t.wAttackRange, t.dwPolymorphItemVnum,
 			t.cEnchants[0], t.cEnchants[1], t.cEnchants[2], t.cEnchants[3], t.cEnchants[4], t.cEnchants[5],
@@ -582,7 +584,7 @@ bool CClientManager::MirrorMobTableIntoDB()
 
 				"%u, \"%s\", %u, %u, %u, %u, %u, %u, %u, %u, "
 				"%u, %u, %u, %u, '%s', "
-				"%u, %u, %u, %u, %u, %u, %u, %u, %u, %u, "
+				"%u, %u, %u, %u, %u, %u, %llu, %u, %u, %u, "
 				"%u, %u, %d, %d, %d, %u, %d, %d, %u, "
 
 				"%d, %d, %d, %d, %d, %d, "
@@ -598,7 +600,7 @@ bool CClientManager::MirrorMobTableIntoDB()
 				t.dwVnum, t.szName,
 				t.bType, t.bRank, t.bBattleType, t.bLevel, t.bSize, t.dwAIFlag, t.dwRaceFlag, t.dwImmuneFlag,
 				t.bOnClickType, t.bEmpire, t.dwDropItemVnum, t.dwResurrectionVnum, t.szFolder,
-				t.bStr, t.bDex, t.bCon, t.bInt, t.dwDamageRange[0], t.dwDamageRange[1], t.dwMaxHP, t.bRegenCycle, t.bRegenPercent, t.dwExp,
+				t.bStr, t.bDex, t.bCon, t.bInt, t.dwDamageRange[0], t.dwDamageRange[1], static_cast<unsigned long long>(t.dwMaxHP), t.bRegenCycle, t.bRegenPercent, t.dwExp,
 
 				t.dwGoldMin, t.dwGoldMax, t.wDef, t.sAttackSpeed, t.sMovingSpeed, t.bAggresiveHPPct, t.wAggressiveSight, t.wAttackRange, t.dwPolymorphItemVnum,
 				t.cEnchants[0], t.cEnchants[1], t.cEnchants[2], t.cEnchants[3], t.cEnchants[4], t.cEnchants[5],
@@ -634,7 +636,7 @@ bool CClientManager::MirrorMobTableIntoDB()
 
 				"%u, \"%s\", \"%s\", %u, %u, %u, %u, %u, %u, %u, %u, "
 				"%u, %u, %u, %u, '%s', "
-				"%u, %u, %u, %u, %u, %u, %u, %u, %u, %u, "
+				"%u, %u, %u, %u, %u, %u, %llu, %u, %u, %u, "
 				"%u, %u, %d, %d, %d, %u, %d, %d, %u, "
 
 				"%d, %d, %d, %d, %d, %d, "
@@ -656,7 +658,7 @@ bool CClientManager::MirrorMobTableIntoDB()
 #endif
 				t.bType, t.bRank, t.bBattleType, t.bLevel, t.bSize, t.dwAIFlag, t.dwRaceFlag, t.dwImmuneFlag,
 				t.bOnClickType, t.bEmpire, t.dwDropItemVnum, t.dwResurrectionVnum, t.szFolder,
-				t.bStr, t.bDex, t.bCon, t.bInt, t.dwDamageRange[0], t.dwDamageRange[1], t.dwMaxHP, t.bRegenCycle, t.bRegenPercent, t.dwExp,
+				t.bStr, t.bDex, t.bCon, t.bInt, t.dwDamageRange[0], t.dwDamageRange[1], static_cast<unsigned long long>(t.dwMaxHP), t.bRegenCycle, t.bRegenPercent, t.dwExp,
 
 				t.dwGoldMin, t.dwGoldMax, t.wDef, t.sAttackSpeed, t.sMovingSpeed, t.bAggresiveHPPct, t.wAggressiveSight, t.wAttackRange, t.dwPolymorphItemVnum,
 				t.cEnchants[0], t.cEnchants[1], t.cEnchants[2], t.cEnchants[3], t.cEnchants[4], t.cEnchants[5],
@@ -677,7 +679,7 @@ bool CClientManager::MirrorMobTableIntoDB()
 }
 
 #ifdef ENABLE_PROTO_FROM_DB
-#define VERIFY_IFIELD(x,y) if (data[x]!=NULL && data[x][0]!='\0') str_to_number(y, data[x]);
+#define VERIFY_IFIELD(x,y) do { if (data[x]!=NULL && data[x][0]!='\0') { std::remove_cv_t<std::remove_reference_t<decltype(y)>> parsedField {}; str_to_number(parsedField, data[x]); y = parsedField; } } while (0);
 #define VERIFY_SFIELD(x,y) if (data[x]!=NULL && data[x][0]!='\0') strlcpy(y, data[x], sizeof(y));
 
 #define ENABLE_AUTODETECT_VNUMRANGE

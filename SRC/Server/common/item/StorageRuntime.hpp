@@ -3,7 +3,21 @@
 #include "TypedInventoryWire.hpp"
 namespace auriga::item {
 inline constexpr std::uint16_t StorageOutcome=0x3301,AccountWalletOutcome=0x3302;
-enum class StorageRoute:std::uint8_t {Bank=1,Mall=2,Guild=3,Mail=4,Awards=5,Wallet=6};
+enum class StorageRoute:std::uint8_t {Bank=1,Mall=2,Guild=3,Mail=4,Awards=5,Wallet=6,MountCollection=7,PetCollection=8};
+inline constexpr std::uint64_t MountCollectionStorageId=2, PetCollectionStorageId=3;
+constexpr bool IsCollectionRoute(StorageRoute route) noexcept
+{
+    return route==StorageRoute::MountCollection || route==StorageRoute::PetCollection;
+}
+constexpr std::uint64_t AccountStorageId(StorageRoute route) noexcept
+{
+    switch (route)
+    {
+    case StorageRoute::MountCollection:return MountCollectionStorageId;
+    case StorageRoute::PetCollection:return PetCollectionStorageId;
+    default:return 1;
+    }
+}
 enum class StorageCommand:std::uint8_t {Deposit=1,Withdraw=2,Rearrange=3,Send=4,Redeem=5,Mint=6};
 struct StorageActor {
     std::uint32_t pid=0,account=0,guild=0;
@@ -15,6 +29,7 @@ struct StorageChoice {
     std::uint64_t subject=0;std::uint32_t units=0,cell=UINT32_MAX,recipient=0;
     bool operator==(const StorageChoice&)const=default;
 };
+bool CanStoreInCollection(const ItemCatalog&, const PersistentItem&, StorageRoute);
 struct StoragePlan {ItemCommit commit;std::uint64_t amount=0;std::uint32_t units=0;};
 // Every shared-owner write includes the authenticated character's session fence.
 // Shared account/guild generations are not claimed by individual character logins.

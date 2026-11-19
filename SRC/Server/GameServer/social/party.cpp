@@ -1378,12 +1378,12 @@ namespace PartySystem
 
 		if (!bAdd)
 		{
-			ecs::PointSystem::Change(character, POINT_PARTY_ATTACKER_BONUS, -ecs::PointSystem::Get(character, POINT_PARTY_ATTACKER_BONUS));
-			ecs::PointSystem::Change(character, POINT_PARTY_TANKER_BONUS, -ecs::PointSystem::Get(character, POINT_PARTY_TANKER_BONUS));
-			ecs::PointSystem::Change(character, POINT_PARTY_BUFFER_BONUS, -ecs::PointSystem::Get(character, POINT_PARTY_BUFFER_BONUS));
-			ecs::PointSystem::Change(character, POINT_PARTY_SKILL_MASTER_BONUS, -ecs::PointSystem::Get(character, POINT_PARTY_SKILL_MASTER_BONUS));
-			ecs::PointSystem::Change(character, POINT_PARTY_DEFENDER_BONUS, -ecs::PointSystem::Get(character, POINT_PARTY_DEFENDER_BONUS));
-			ecs::PointSystem::Change(character, POINT_PARTY_HASTE_BONUS, -ecs::PointSystem::Get(character, POINT_PARTY_HASTE_BONUS));
+			ecs::PointSystem::Change(character, POINT_PARTY_ATTACKER_BONUS, -ecs::PointSystem::GetPrecise(character, POINT_PARTY_ATTACKER_BONUS));
+			ecs::PointSystem::Change(character, POINT_PARTY_TANKER_BONUS, -ecs::PointSystem::GetPrecise(character, POINT_PARTY_TANKER_BONUS));
+			ecs::PointSystem::Change(character, POINT_PARTY_BUFFER_BONUS, -ecs::PointSystem::GetPrecise(character, POINT_PARTY_BUFFER_BONUS));
+			ecs::PointSystem::Change(character, POINT_PARTY_SKILL_MASTER_BONUS, -ecs::PointSystem::GetPrecise(character, POINT_PARTY_SKILL_MASTER_BONUS));
+			ecs::PointSystem::Change(character, POINT_PARTY_DEFENDER_BONUS, -ecs::PointSystem::GetPrecise(character, POINT_PARTY_DEFENDER_BONUS));
+			ecs::PointSystem::Change(character, POINT_PARTY_HASTE_BONUS, -ecs::PointSystem::GetPrecise(character, POINT_PARTY_HASTE_BONUS));
 			ecs::PointSystem::ComputeBattlePoints(character);
 			return;
 		}
@@ -1402,9 +1402,9 @@ namespace PartySystem
 					//int iBonus = (int) (10 + 90 * k);
 					int iBonus = (int) (10 + 60 * k);
 
-					if (ecs::PointSystem::Get(character, POINT_PARTY_ATTACKER_BONUS) != iBonus)
+					if (ecs::PointSystem::GetPrecise(character, POINT_PARTY_ATTACKER_BONUS) != iBonus)
 					{
-						ecs::PointSystem::Change(character, POINT_PARTY_ATTACKER_BONUS, iBonus - ecs::PointSystem::Get(character, POINT_PARTY_ATTACKER_BONUS));
+						ecs::PointSystem::Change(character, POINT_PARTY_ATTACKER_BONUS, iBonus - ecs::PointSystem::GetPrecise(character, POINT_PARTY_ATTACKER_BONUS));
 						ecs::PointSystem::Compute(character);
 					}
 				}
@@ -1414,9 +1414,9 @@ namespace PartySystem
 				{
 					int iBonus = (int) (50 + 1450 * k);
 
-					if (ecs::PointSystem::Get(character, POINT_PARTY_TANKER_BONUS) != iBonus)
+					if (ecs::PointSystem::GetPrecise(character, POINT_PARTY_TANKER_BONUS) != iBonus)
 					{
-						ecs::PointSystem::Change(character, POINT_PARTY_TANKER_BONUS, iBonus - ecs::PointSystem::Get(character, POINT_PARTY_TANKER_BONUS));
+						ecs::PointSystem::Change(character, POINT_PARTY_TANKER_BONUS, iBonus - ecs::PointSystem::GetPrecise(character, POINT_PARTY_TANKER_BONUS));
 						ecs::PointSystem::Compute(character);
 					}
 				}
@@ -1426,9 +1426,9 @@ namespace PartySystem
 				{
 					int iBonus = (int) (5 + 45 * k);
 
-					if (ecs::PointSystem::Get(character, POINT_PARTY_BUFFER_BONUS) != iBonus)
+					if (ecs::PointSystem::GetPrecise(character, POINT_PARTY_BUFFER_BONUS) != iBonus)
 					{
-						ecs::PointSystem::Change(character, POINT_PARTY_BUFFER_BONUS, iBonus - ecs::PointSystem::Get(character, POINT_PARTY_BUFFER_BONUS));
+						ecs::PointSystem::Change(character, POINT_PARTY_BUFFER_BONUS, iBonus - ecs::PointSystem::GetPrecise(character, POINT_PARTY_BUFFER_BONUS));
 					}
 				}
 				break;
@@ -1437,9 +1437,9 @@ namespace PartySystem
 				{
 					int iBonus = (int) (25 + 600 * k);
 
-					if (ecs::PointSystem::Get(character, POINT_PARTY_SKILL_MASTER_BONUS) != iBonus)
+					if (ecs::PointSystem::GetPrecise(character, POINT_PARTY_SKILL_MASTER_BONUS) != iBonus)
 					{
-						ecs::PointSystem::Change(character, POINT_PARTY_SKILL_MASTER_BONUS, iBonus - ecs::PointSystem::Get(character, POINT_PARTY_SKILL_MASTER_BONUS));
+						ecs::PointSystem::Change(character, POINT_PARTY_SKILL_MASTER_BONUS, iBonus - ecs::PointSystem::GetPrecise(character, POINT_PARTY_SKILL_MASTER_BONUS));
 						ecs::PointSystem::Compute(character);
 					}
 				}
@@ -1447,9 +1447,9 @@ namespace PartySystem
 			case PARTY_ROLE_HASTE:
 				{
 					int iBonus = (int) (1+5*k);
-					if (ecs::PointSystem::Get(character, POINT_PARTY_HASTE_BONUS) != iBonus)
+					if (ecs::PointSystem::GetPrecise(character, POINT_PARTY_HASTE_BONUS) != iBonus)
 					{
-						ecs::PointSystem::Change(character, POINT_PARTY_HASTE_BONUS, iBonus - ecs::PointSystem::Get(character, POINT_PARTY_HASTE_BONUS));
+						ecs::PointSystem::Change(character, POINT_PARTY_HASTE_BONUS, iBonus - ecs::PointSystem::GetPrecise(character, POINT_PARTY_HASTE_BONUS));
 						ecs::PointSystem::Compute(character);
 					}
 				}
@@ -1457,9 +1457,9 @@ namespace PartySystem
 			case PARTY_ROLE_DEFENDER:
 				{
 					int iBonus = (int) (5+30*k);
-					if (ecs::PointSystem::Get(character, POINT_PARTY_DEFENDER_BONUS) != iBonus)
+					if (ecs::PointSystem::GetPrecise(character, POINT_PARTY_DEFENDER_BONUS) != iBonus)
 					{
-						ecs::PointSystem::Change(character, POINT_PARTY_DEFENDER_BONUS, iBonus - ecs::PointSystem::Get(character, POINT_PARTY_DEFENDER_BONUS));
+						ecs::PointSystem::Change(character, POINT_PARTY_DEFENDER_BONUS, iBonus - ecs::PointSystem::GetPrecise(character, POINT_PARTY_DEFENDER_BONUS));
 						ecs::PointSystem::Compute(character);
 					}
 				}
@@ -1908,8 +1908,8 @@ namespace PartySystem
 		}
 
 #ifdef ENABLE_NEW_USE_POTION
-		if (leaderEntity != entt::null && ecs::PointSystem::Get(leaderEntity, POINT_PARTY_DROPEXP) > 0) {
-			iBonusPartyExpFromItem += ecs::PointSystem::Get(leaderEntity, POINT_PARTY_DROPEXP);
+		if (leaderEntity != entt::null && ecs::PointSystem::GetPrecise(leaderEntity, POINT_PARTY_DROPEXP) > 0) {
+			iBonusPartyExpFromItem += ecs::PointSystem::GetPrecise(leaderEntity, POINT_PARTY_DROPEXP);
 		}
 #endif
 

@@ -48,15 +48,15 @@ void ApplyAlignmentPoints(entt::entity e)
     static constexpr uint8_t types[] {POINT_MAX_HP, POINT_ATTBONUS_MONSTER, POINT_ATTBONUS_HUMAN,
         POINT_ATTBONUS_METIN, POINT_ATTBONUS_BOSS, POINT_ATTBONUS_MEDI_PVM,
         POINT_NORMAL_HIT_DAMAGE_BONUS, POINT_SKILL_DAMAGE_BONUS};
-    static constexpr int bonuses[][21] {
-        {500,1000,1500,2000,2500,4000,6000,8000,10000,12000,14000,16000,18000,20000,25000,30000,35000,40000,45000,50000,60000},
-        {1,3,5,7,9,12,15,18,21,25,25,30,35,40,50,55,60,65,70,75,85},
-        {1,3,5,7,9,12,15,18,21,25,25,30,35,40,50,55,60,65,70,75,85},
-        {0,0,0,0,0,0,0,0,5,10,15,20,25,30,35,40,45,50,55,60,70},
-        {0,0,0,0,0,0,0,0,0,5,10,15,20,25,30,35,40,45,50,55,65},
-        {0,0,0,0,0,5,5,5,5,5,10,10,15,20,25,30,35,40,45,50,60},
-        {0,0,0,0,0,0,0,0,0,0,0,0,0,5,10,15,20,25,30,35,45},
-        {0,0,0,0,0,0,0,0,0,0,0,0,0,5,10,15,20,25,30,35,45}
+    static constexpr double bonuses[][21] {
+        {100,200,300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1500,2000,2500,3000,3500,4000,5000},
+        {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21},
+        {1,1,1,1,1,2,2,2,2,2,3,3,3,3,3,4,4,4,4,4,5},
+        {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21},
+        {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21},
+        {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21},
+        {1,1,1,1,1,2,2,2,2,2,3,3,3,3,3,4,4,4,4,4,5},
+        {1,1,1,1,1,2,2,2,2,2,3,3,3,3,3,4,4,4,4,4,5},
     };
     for (size_t i = 0; i < std::size(types) && HasPointState(e); ++i)
         if (bonuses[i][grade]) Change(e, types[i], bonuses[i][grade]);
@@ -64,7 +64,7 @@ void ApplyAlignmentPoints(entt::entity e)
 
 void ApplyBeltPoints(entt::entity e)
 {
-    std::array<int64_t, POINT_MAX_NUM> bonuses {};
+    std::array<double, POINT_MAX_NUM> bonuses {};
     std::unordered_set<entt::entity> seen;
     for (int cell = BELT_INVENTORY_SLOT_START; cell < BELT_INVENTORY_SLOT_END; ++cell) {
         const auto item = ItemSystem::GetInventoryItem(e, cell);
@@ -112,12 +112,14 @@ void Compute(entt::entity e)
         POINT_PARTY_SKILL_MASTER_BONUS, POINT_PARTY_HASTE_BONUS,
         POINT_PARTY_DEFENDER_BONUS, POINT_HP_RECOVERY, POINT_SP_RECOVERY
     };
-    std::array<int64_t, std::size(preservedTypes)> preserved {};
-    for (size_t i = 0; i < preserved.size(); ++i) preserved[i] = Get(e, preservedTypes[i]);
+    std::array<double, std::size(preservedTypes)> preserved {};
+    for (size_t i = 0; i < preserved.size(); ++i) preserved[i] = GetPrecise(e, preservedTypes[i]);
     // Clear the authority. This also resets flat HP/SP modifiers and the
     // actual skill-damage component.
     std::fill(std::begin(g_registry.get<CharacterStatsComponent>(e).points),
         std::end(g_registry.get<CharacterStatsComponent>(e).points), 0);
+    std::fill(std::begin(g_registry.get<CharacterStatsComponent>(e).bonusFractionRaw),
+        std::end(g_registry.get<CharacterStatsComponent>(e).bonusFractionRaw), 0);
     g_registry.get_or_emplace<SkillDamageBonus>(e).bySkill.clear();
     ecs::PlayerRuntime::BuffOnAttr_ClearAll(e);
     if (!HasPointState(e)) return;

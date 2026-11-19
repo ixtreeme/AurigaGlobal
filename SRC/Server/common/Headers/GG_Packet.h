@@ -192,6 +192,13 @@ typedef struct SPacketGGAuthResult
 	uint8_t	bResult;
 } TPacketGGAuthResult;
 
+struct TPacketGGCollectionChanged
+{
+    std::uint8_t header;
+    std::uint32_t account;
+};
+static_assert(sizeof(TPacketGGCollectionChanged)==5);
+
 typedef struct SPacketGGTypedItemRefresh
 {
 	uint8_t bHeader;

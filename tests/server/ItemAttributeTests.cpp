@@ -174,7 +174,7 @@ uint8_t ItemSystem::GetItemSize(entt::entity item) {
 }
 entt::entity ItemSystem::GetItemOwnerEntity(entt::entity) { UnexpectedSwitchbotService(); }
 int ItemSystem::GetItemAttributeType(entt::entity, int) { UnexpectedSwitchbotService(); }
-int ItemSystem::GetItemAttributeValue(entt::entity, int) { UnexpectedSwitchbotService(); }
+double ItemSystem::GetItemAttributeValue(entt::entity, int) { UnexpectedSwitchbotService(); }
 
 // Unused services must never be entered by these headless tests.
 int MIN(int a, int b) { return std::min(a, b); }
@@ -268,7 +268,7 @@ bool InventorySystem::SplitItemWithCommit(entt::entity owner, entt::entity sourc
     --g_registry.get<ecs::ItemCount>(source).count;
     g_registry.get<ecs::ItemOwner>(output).owner = owner;
     g_registry.get<ecs::ItemLocation>(output) = {destination.window_type, destination.cell};
-    inventory[{owner, destination.window_type, destination.cell}] = output;
+    inventory[{owner, destination.window_type, static_cast<uint16_t>(destination.cell)}] = output;
     committed = true;
     if (onPlace) onPlace(output);
     return true;
@@ -387,7 +387,7 @@ CAffect* FindAffect(entt::entity owner, uint32_t type, uint8_t)
     const auto found = runeAffects.find({owner, type});
     return found == runeAffects.end() ? nullptr : &found->second;
 }
-bool AddAffect(entt::entity owner, uint32_t type, uint8_t apply, int32_t value,
+bool AddAffect(entt::entity owner, uint32_t type, uint8_t apply, double value,
     uint32_t flag, int32_t duration, int32_t cost, bool overwrite, bool)
 {
     Check(runeTest && ecs::PlayerRuntime::IsPC(owner), "rune affect add used a stale owner");
@@ -446,7 +446,8 @@ entt::entity GetItemOwner(entt::entity item)
 }
 entt::entity GetItem(entt::entity owner, TItemPos pos)
 {
-    const auto found = inventory.find({owner, pos.window_type, pos.cell});
+    const uint16_t cell = pos.cell;
+    const auto found = inventory.find({owner, pos.window_type, cell});
     return found != inventory.end() ? found->second : entt::entity{entt::null};
 }
 entt::entity GetInventoryItem(entt::entity owner, uint16_t cell) { return GetItem(owner, TItemPos(INVENTORY, cell)); }
@@ -566,7 +567,7 @@ struct Fixture {
             row.dwApplyIndex = i;
             row.dwProb = 1;
             std::fill(std::begin(row.bMaxLevelBySet), std::end(row.bMaxLevelBySet), 5);
-            for (size_t level = 0; level < std::size(row.lValues); ++level)
+            for (size_t level = 0; level < (sizeof(row.lValues) / sizeof(row.lValues[0])); ++level)
                 row.lValues[level] = static_cast<int32_t>(10 + level);
             (rare ? g_map_itemRare : g_map_itemAttr).emplace(i, row);
         }
@@ -620,7 +621,7 @@ struct AttributeItemFixture : PaidFixture {
         materialProto.bSubType = operation;
         g_registry.emplace<ecs::ItemProtoRef>(material).proto = &materialProto;
         for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-            Attrs()[i] = {static_cast<uint8_t>(20 + i), static_cast<int16_t>(200 + i)};
+            Attrs()[i] = {static_cast<uint8_t>(20 + i), static_cast<double>(200 + i)};
         Watch();
     }
     void Unchanged()
@@ -706,7 +707,7 @@ void LockedSlotAndRarePreservation()
     Fixture f;
     f.Rows(10);
     for (int i = 0; i < 5; ++i)
-        f.Attrs()[i] = {static_cast<uint8_t>(i + 1), static_cast<int16_t>(100 + i)};
+        f.Attrs()[i] = {static_cast<uint8_t>(i + 1), static_cast<double>(100 + i)};
     f.Attrs()[5] = {40, 70};
     f.Attrs()[6] = {41, 80};
     g_registry.emplace<ecs::ItemLockedAttribute>(f.item, ecs::ItemLockedAttribute{2});
@@ -829,6 +830,8 @@ void ProtoAndCostumeRules()
     Check(saves == 0 && updates == 0, "invalid force write caused side effects");
     Check(ItemSystem::SetItemForceAttributeEcs(f.item, 6, 2, -30), "signed force attribute failed");
     Check(f.Attrs()[6].sValue == -30 && saves == 1 && updates == 1, "force write did not update client and save");
+    Check(ItemSystem::SetItemForceAttributeEcs(f.item, 6, 2, 1.113) && f.Attrs()[6].sValue == 1.113 && saves == 2 && updates == 2, "fractional attribute was not committed and published");
+    Check(!ItemSystem::SetItemForceAttributeEcs(f.item, 6, 2, std::numeric_limits<double>::quiet_NaN()) && saves == 2 && updates == 2, "non-finite attribute caused side effects");
 }
 
 void HitDamageScrollTransactions()
@@ -1443,7 +1446,7 @@ struct TransferFixture : PaidFixture {
         g_registry.emplace<ecs::ItemProtoRef>(donor).proto = &donorProto;
         auto& attributes = g_registry.emplace<ecs::ItemAttributes>(donor).attrs;
         for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-            attributes[i] = {static_cast<uint8_t>(i + 1), static_cast<int16_t>(10 + i)};
+            attributes[i] = {static_cast<uint8_t>(i + 1), static_cast<double>(10 + i)};
         npc = g_registry.create();
         g_registry.emplace<TransferActor>(npc);
         g_registry.emplace<TransferActor>(owner).npc = npc;
@@ -1457,7 +1460,7 @@ struct TransferFixture : PaidFixture {
         AttrTransfer_command(owner, "add 1 5");
         Check(Window().items == std::array{material, item, donor}, "transfer selection failed");
     }
-    auto& Window() { return g_registry.get<ecs::AttrTransferWindowComponent>(owner); }
+    ecs::AttrTransferWindowComponent& Window() { return g_registry.get<ecs::AttrTransferWindowComponent>(owner); }
     void Unchanged()
     {
         Check(EqualAttributes(Attrs(), beforePayment) && saves == 0 && updates == 0 && transferLogs == 0,

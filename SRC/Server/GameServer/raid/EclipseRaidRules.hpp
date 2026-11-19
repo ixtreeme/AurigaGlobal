@@ -21,6 +21,10 @@ inline bool Cleared(uint16_t mask,int encounter){return encounter>=1&&encounter<
 inline uint16_t Clear(uint16_t mask,int encounter){return encounter>=1&&encounter<=12?uint16_t(mask|(1u<<(encounter-1))):mask;}
 struct Arena {Vec center;float radius;};
 inline constexpr std::array<Arena,12> Arenas={{{{512,315},32},{{512,430},32},{{512,550},39},{{512,665},31},{{287,705},33},{{287,855},33},{{122,780},40},{{737,745},38},{{902,875},43},{{407,930},36},{{612,985},41},{{512,1110},43}}};
+// Physical room bounds from the approved RaidLayout. Combat radii describe
+// ability placement; they must not evict players sent to the walls/corners.
+inline constexpr std::array<Vec,12> RoomHalfExtents={{{42,42},{46,41},{62,48},{44,40},{44,44},{45,44},{50,54},{52,47},{54,56},{46,47},{58,50},{56,56}}};
+inline bool InCombatRoom(int encounter,Vec position){if(encounter<1||encounter>12)return false;auto centre=Arenas[encounter-1].center,half=RoomHalfExtents[encounter-1];return std::abs(position.x-centre.x)<=half.x+2&&std::abs(position.y-centre.y)<=half.y+2;}
 enum class State:uint8_t {Waiting,Combat,Intermission,Complete,Retiring};
 enum class Shape:uint8_t {Circle,Cone,Line,Ring};
 enum class Mechanic:uint8_t {Strike,Flame,Spike,Storm,Barrier,Cultist,Control,Siege,Mark,Gas,Spore,Infection,Slime,Experiment,Mutation,Invocation,Kinetic,Bite,Pact,Portal,Heal,IceTomb,FrostBomb,Defile,Valkyrie,Quake,Soul};

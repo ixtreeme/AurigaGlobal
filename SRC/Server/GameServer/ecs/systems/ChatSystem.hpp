@@ -12,12 +12,21 @@ namespace ecs {
 
 class ChatSystem {
 public:
+#if defined(__GNUC__) || defined(__clang__)
+    __attribute__((format(printf, 3, 4)))
+#endif
     static void Send(entt::entity e, uint8_t type, const char* format, ...);
     static void SendV(entt::entity e, uint8_t type, const char* format, va_list args);
 
+#if defined(__GNUC__) || defined(__clang__)
+    __attribute__((format(printf, 4, 5)))
+#endif
     static void SendNew(entt::entity e, uint8_t type, uint32_t idx, const char* format, ...);
     static void SendNewV(entt::entity e, uint8_t type, uint32_t idx, const char* format, va_list args);
 
+#if defined(__GNUC__) || defined(__clang__)
+    __attribute__((format(printf, 3, 4)))
+#endif
     static void Broadcast(entt::entity source, uint8_t type, const char* format, ...);
     static void BroadcastV(entt::entity source, uint8_t type, const char* format, va_list args);
 

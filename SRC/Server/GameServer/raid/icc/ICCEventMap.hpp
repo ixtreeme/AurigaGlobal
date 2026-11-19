@@ -21,7 +21,9 @@ public:
  void Schedule(uint32_t id,uint32_t low,uint32_t high,uint8_t group=0){if(events.size()<64)events.push_back({id,clock+Uniform(low,high),serial++,group});}
  void DelayGroupToMax(uint8_t group,uint32_t delay){for(auto& e:events)if(e.group==group&&int32_t(e.at-(clock+delay))<0)e.at=clock+delay;}
  void DelayAll(uint32_t delay){for(auto& e:events)e.at+=delay;}
+ void DelayGroup(uint8_t group,uint32_t delay){for(auto& e:events)if(e.group==group)e.at+=delay;}
  void Cancel(uint32_t id){events.erase(std::remove_if(events.begin(),events.end(),[=](auto& event){return event.id==id;}),events.end());}
+ void CancelGroup(uint8_t group){events.erase(std::remove_if(events.begin(),events.end(),[=](auto& event){return event.group==group;}),events.end());}
  void Reschedule(uint32_t id,uint32_t low,uint32_t high){Cancel(id);Schedule(id,low,high);}
  uint32_t Execute(){auto chosen=events.end();for(auto i=events.begin();i!=events.end();++i){if(int32_t(clock-i->at)<0)continue;if(chosen==events.end()||int32_t(i->at-chosen->at)<0||(i->at==chosen->at&&i->order<chosen->order))chosen=i;}if(chosen==events.end())return 0;auto id=chosen->id;events.erase(chosen);return id;}
  size_t Pending()const{return events.size();}

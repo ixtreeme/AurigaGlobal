@@ -1,0 +1,9 @@
+{
+  "running": 5,
+  "channels": [
+    1,
+    99
+  ],
+  "backup": "/Auriga/Server/run/deployments/8c745cd105689c6e8421191d/backup",
+  "flyingMounts": 84
+}

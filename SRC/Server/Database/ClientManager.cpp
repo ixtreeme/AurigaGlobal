@@ -3393,7 +3393,7 @@ bool CClientManager::InitializeItemShop()
 					str_to_number(ishopData.aAttr[i].bType, row[col]);
 				++col;
 				if (col < columnCount && row[col])
-					str_to_number(ishopData.aAttr[i].sValue, row[col]);
+					ishopData.aAttr[i].sValue = [&]() { double parsedBonus = 0; str_to_number(parsedBonus, row[col]); return std::isfinite(parsedBonus) ? parsedBonus : 0.0; }();
 				++col;
 			}
 
@@ -3838,7 +3838,7 @@ void CClientManager::RecvItemShop(CPeer* pkPeer, uint32_t dwHandle, const char* 
 									for (size_t i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 									{
 										columnLen += snprintf(szColumns + columnLen, sizeof(szColumns) - columnLen, ", attrtype%u, attrvalue%u", static_cast<unsigned>(i), static_cast<unsigned>(i));
-										valueLen += snprintf(szValues + valueLen, sizeof(szValues) - valueLen, ", %d, %d", aAttr[i].bType, aAttr[i].sValue);
+										valueLen += snprintf(szValues + valueLen, sizeof(szValues) - valueLen, ", %d, %.3f", aAttr[i].bType, aAttr[i].sValue);
 									}*/
 
 

@@ -107,7 +107,7 @@ EVENTFUNC(pvp_check_disconnect)
 
 		char buf[CHAT_MAX_LEN + 1];
 		snprintf(buf, sizeof(buf), "BINARY_Duel_Delete");
-		ecs::ChatSystem::Send(characterB, CHAT_TYPE_COMMAND, buf);
+		ecs::ChatSystem::Send(characterB, CHAT_TYPE_COMMAND, "%s", buf);
 
 		for (unsigned int i = 0; i < _countof(szTableStaticPvP); i++) {
 			ecs::QuestSystem::SetFlag(characterB, szTableStaticPvP[i], 0);
@@ -137,7 +137,7 @@ EVENTFUNC(pvp_check_disconnect)
 
 		char buf[CHAT_MAX_LEN + 1];
 		snprintf(buf, sizeof(buf), "BINARY_Duel_Delete");
-		ecs::ChatSystem::Send(characterA, CHAT_TYPE_COMMAND, buf);
+		ecs::ChatSystem::Send(characterA, CHAT_TYPE_COMMAND, "%s", buf);
 
 		for (unsigned int i = 0; i < _countof(szTableStaticPvP); i++) {
 			ecs::QuestSystem::SetFlag(characterA, szTableStaticPvP[i], 0);
@@ -559,7 +559,7 @@ void RemoveStateFull(entt::entity character)
 			char buf[CHAT_MAX_LEN + 1];
 			snprintf(buf, sizeof(buf), "BINARY_Duel_Delete");
 
-			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, buf);
+			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "%s", buf);
 			ecs::QuestSystem::SetFlag(character, szTableStaticPvP[i], 0);
 		}
 	}

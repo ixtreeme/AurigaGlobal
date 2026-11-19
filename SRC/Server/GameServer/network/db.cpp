@@ -1,3 +1,4 @@
+#include <cmath>
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"

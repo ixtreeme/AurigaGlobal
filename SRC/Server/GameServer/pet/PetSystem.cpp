@@ -115,7 +115,7 @@ void ClearBuff(entt::entity owner, PetRecord& actor)
     for (const auto& apply : applies)
         if (apply.bType != APPLY_NONE)
             ecs::PointSystem::ApplyPoint(owner, apply.bType,
-                apply.bType == APPLY_SKILL ? apply.lValue ^ 0x00800000 : -apply.lValue);
+                apply.bType == APPLY_SKILL ? static_cast<int>(apply.lValue) ^ 0x00800000 : -apply.lValue);
 }
 
 bool CanGiveBuff(entt::entity owner, const PetRecord& actor)

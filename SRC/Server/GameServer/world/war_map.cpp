@@ -354,8 +354,8 @@ struct FSendUserCount
 
 	void operator() (entt::entity chEntity)
 	{
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, buf1);
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, buf2);
+		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "%s", buf1);
+		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "%s", buf2);
 	}
 };
 
@@ -629,7 +629,7 @@ namespace
 		FNotice(uint8_t type, uint32_t idx, const char * format) : m_type(type), m_idx(idx), m_format(format) {}
 
 		void operator() (entt::entity character) {
-			ecs::ChatSystem::SendNew(character, m_type, m_idx, m_format);
+			ecs::ChatSystem::SendNew(character, m_type, m_idx, "%s", m_format);
 		}
 	};
 #endif

@@ -753,6 +753,24 @@ typedef struct packet_mount_inventory_item
 	TPlayerItemAttribute aAttr[ITEM_ATTRIBUTE_MAX_NUM];
 } TMountInventoryItemData;
 
+typedef struct packet_pet_inventory
+{
+	uint8_t bHeader;
+	uint16_t size;
+	uint8_t bWidth;
+	uint8_t bHeight;
+	uint16_t wCount;
+} TPacketGCPetInventory;
+
+typedef struct packet_pet_inventory_item
+{
+	uint16_t wSlot;
+	uint32_t dwVnum;
+	uint32_t dwCount;
+	uint32_t alSockets[ITEM_SOCKET_MAX_NUM];
+	TPlayerItemAttribute aAttr[ITEM_ATTRIBUTE_MAX_NUM];
+} TPetInventoryItemData;
+
 typedef struct packet_guild
 {
 	uint8_t header;
@@ -1121,5 +1139,47 @@ typedef struct SPacketGCItemShop
 
 
 
+
+typedef struct SItemBonusCatalogEntry
+{
+    uint32_t vnum;
+    uint32_t range;
+    uint8_t rarity;
+    TItemApply applies[5];
+    TItemApply extra[2];
+} TItemBonusCatalogEntry;
+typedef struct SPacketGCItemBonusCatalog
+{
+    uint8_t header;
+    uint32_t size;
+    uint16_t count;
+    uint8_t clear;
+} TPacketGCItemBonusCatalog;
+static_assert(sizeof(TItemBonusCatalogEntry) == 72);
+static_assert(sizeof(TPacketGCItemBonusCatalog) == 8);
+
+typedef struct SPacketGCBonusPoints
+{
+    uint8_t header;
+    int64_t raw[255];
+    uint8_t enabled[255];
+} TPacketGCBonusPoints;
+typedef struct SPacketGCBonusPoint
+{
+    uint8_t header;
+    uint8_t type;
+    int64_t raw;
+    uint8_t enabled;
+} TPacketGCBonusPoint;
+static_assert(sizeof(TPacketGCBonusPoints) == 2296);
+static_assert(sizeof(TPacketGCBonusPoint) == 11);
+
+struct TPacketGCCollectionBonuses {
+    uint8_t header;uint16_t size;uint8_t window;uint8_t loaded;
+    uint16_t itemCount;uint16_t tiers;uint8_t threshold;uint16_t bonusCount;
+};
+struct TCollectionBonusData { uint8_t apply;double items;double perTier; };
+static_assert(sizeof(TPacketGCCollectionBonuses)==12);
+static_assert(sizeof(TCollectionBonusData)==17);
 
 #pragma pack()

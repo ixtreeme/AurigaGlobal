@@ -15,6 +15,7 @@ struct TypedEquipmentProjection
     auriga::item::ItemOwnerFence fence;
     std::optional<auriga::item::EquipmentStats> stats;
     std::uint64_t revision=0;
+    std::uint64_t collectionRevision=0;
     bool applied=false;
 };
 }

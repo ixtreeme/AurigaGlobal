@@ -200,12 +200,12 @@ void GiveBuff(entt::entity owner, NewPetRecord& actor)
         idx = 4;
     }
 
-    int val[3][5] = {{POINT_MAX_HP, 500, 1200, 2100, 3000}, {POINT_RESIST_MONSTER, 2, 4, 7, 10}, {POINT_RESIST_MEZZIUOMINI, 2, 4, 7, 10}};
+    double val[3][5] = {{POINT_MAX_HP, 500, 1200, 2100, 3000}, {POINT_RESIST_MONSTER, 2, 4, 7, 10}, {POINT_RESIST_MEZZIUOMINI, 2, 4, 7, 10}};
 
     for (int i = 0; i < 3; ++i) {
-        AffectSystem::AddAffect(owner, AFFECT_NEW_PET, val[i][0], val[i][idx], 0, 60 * 60 * 24 * 365, 0, false);
+        AffectSystem::AddAffect(owner, AFFECT_NEW_PET, static_cast<uint8_t>(val[i][0]), val[i][idx], 0, 60 * 60 * 24 * 365, 0, false);
         if (actor.bonusPet[i][1] > 0) {
-            AffectSystem::AddAffect(owner, AFFECT_NEW_PET, aApplyInfo[actor.bonusPet[i][0]].bPointType, float(actor.bonusPet[i][1]/10), 0, 60 * 60 * 24 * 365, 0, false);
+            AffectSystem::AddAffect(owner, AFFECT_NEW_PET, aApplyInfo[static_cast<int>(actor.bonusPet[i][0])].bPointType, actor.bonusPet[i][1], 0, 60 * 60 * 24 * 365, 0, false);
         }
     }
 
@@ -213,15 +213,15 @@ void GiveBuff(entt::entity owner, NewPetRecord& actor)
         idx = actor.skillSlot[i];
         if (idx > 0 && idx <= std::size(Pet_Skill_Table) && actor.skill[i] > 0
             && 1 + actor.skill[i] < std::size(Pet_Skill_Table[0]) && Pet_Skill_Table[idx-1][1] < MAX_APPLY_NUM) {
-            AffectSystem::AddAffect(owner, AFFECT_NEW_PET, aApplyInfo[Pet_Skill_Table[idx-1][1]].bPointType, Pet_Skill_Table[idx-1][1+actor.skill[i]], 0, 60 * 60 * 24 * 365, 0, false);
+            AffectSystem::AddAffect(owner, AFFECT_NEW_PET, aApplyInfo[static_cast<int>(Pet_Skill_Table[idx-1][1])].bPointType, Pet_Skill_Table[idx-1][1+actor.skill[i]], 0, 60 * 60 * 24 * 365, 0, false);
         }
     }
 #else
     //Inizializzo i bonus del NewPetSystem //hp sp e def
     // 559 Affect NewPet
-    int cbonus[3] = { ecs::PointSystem::GetMaxHP(owner),  ecs::PointSystem::Get(owner, POINT_DEF_GRADE), ecs::PointSystem::GetMaxSP(owner) };
+    double cbonus[3] = { static_cast<double>(ecs::PointSystem::GetMaxHP(owner)), ecs::PointSystem::GetPrecise(owner, POINT_DEF_GRADE), static_cast<double>(ecs::PointSystem::GetMaxSP(owner)) };
     for (int i = 0; i < 3; ++i) {
-        AffectSystem::AddAffect(owner, AFFECT_NEW_PET, aApplyInfo[actor.bonusPet[i][0]].bPointType, float((cbonus[i]*actor.bonusPet[i][1]/10)/1000), 0,  60 * 60 * 24 * 365, 0, false);
+        AffectSystem::AddAffect(owner, AFFECT_NEW_PET, aApplyInfo[static_cast<int>(actor.bonusPet[i][0])].bPointType, ((cbonus[i] * actor.bonusPet[i][1]) / 1000.0), 0,  60 * 60 * 24 * 365, 0, false);
     }
 
     //Inizializzo le skill del pet inattive  No 10-17-18 No 0 no -1
@@ -255,7 +255,7 @@ void GiveBuff(entt::entity owner, NewPetRecord& actor)
             case 16: //forte contro mostri 63
             case 17: //forte contro metin 116
             case 18: //forte contro boss 117
-                AffectSystem::AddAffect(owner, AFFECT_NEW_PET, aApplyInfo[Pet_Skill_Table[actor.skillSlot[s] - 1][0]].bPointType, float(Pet_Skill_Table[actor.skillSlot[s] - 1][2 + actor.skill[s]]/10), 0, 60 * 60 * 24 * 365, 0, false);
+                AffectSystem::AddAffect(owner, AFFECT_NEW_PET, aApplyInfo[static_cast<int>(Pet_Skill_Table[actor.skillSlot[s] - 1][0])].bPointType, (Pet_Skill_Table[actor.skillSlot[s] - 1][2 + actor.skill[s]] / 10.0), 0, 60 * 60 * 24 * 365, 0, false);
                 break;
             default:
                 return;
@@ -291,7 +291,7 @@ void TeardownActor(entt::entity owner, NewPetRecord& actor, bool keepRecord)
     if (OwnedItem(owner, item))
     {
         std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery(
-            "UPDATE new_petsystem SET level=%u,evolution=%d,exp=%u,expi=%u,bonus0=%d,bonus1=%d,bonus2=%d,"
+            "UPDATE new_petsystem SET level=%u,evolution=%d,exp=%u,expi=%u,bonus0=%.3f,bonus1=%.3f,bonus2=%.3f,"
             "skill0=%d,skill0lv=%d,skill1=%d,skill1lv=%d,skill2=%d,skill2lv=%d,skill3=%d,skill3lv=%d,"
             "duration=%u,tduration=%u WHERE id=%u",
             actor.level, actor.evolution, actor.exp, actor.expItem, actor.bonusPet[0][1], actor.bonusPet[1][1], actor.bonusPet[2][1],
@@ -300,7 +300,7 @@ void TeardownActor(entt::entity owner, NewPetRecord& actor, bool keepRecord)
         if (!msg || msg->uiSQLErrno)
             LOG_ERROR("NewPet: failed to save item {}", ItemSystem::GetItemID(item));
         for (int b = 0; b < 3; ++b)
-            ItemSystem::SetItemForceAttributeEcs(item, b, 1, actor.bonusPet[b][1]);
+            ItemSystem::SetItemForceAttributeEcs(item, b, 1, actor.bonusPet[b][1] * 10.0);
 #ifdef ENABLE_NEW_PET_EDITS
         ItemSystem::SetItemForceAttributeEcs(item, 3, 1, actor.level);
         ItemSystem::SetItemSocket(item, 1, actor.duration);
@@ -363,22 +363,22 @@ void IncreasePetBonus(entt::entity owner, NewPetRecord& actor)
     if (!NewPetSystem::HasValidSummon(owner, actor)) return;
     int tmplevel = actor.level;
     if (tmplevel % 5 == 0) {
-        actor.bonusPet[0][1] += float(number(1, 6));
+        actor.bonusPet[0][1] += number(1, 6) / 10.0;
 
     }
     if (tmplevel % 7 == 0) {
-        actor.bonusPet[1][1] += float(number(1, 6));
+        actor.bonusPet[1][1] += number(1, 6) / 10.0;
     }
     if (tmplevel % 4 == 0) {
-        actor.bonusPet[2][1] += float(number(1, 6));
+        actor.bonusPet[2][1] += number(1, 6) / 10.0;
     }
     for (auto& bonus : actor.bonusPet)
-        bonus[1] = std::clamp(bonus[1], 0, static_cast<int>(std::numeric_limits<int16_t>::max()));
-    ecs::ChatSystem::Send(owner, CHAT_TYPE_COMMAND, "PetBonus %d %d %d", actor.bonusPet[0][1], actor.bonusPet[1][1], actor.bonusPet[2][1]);
+        bonus[1] = std::clamp(bonus[1], 0.0, 3276.7);
+    ecs::ChatSystem::Send(owner, CHAT_TYPE_COMMAND, "PetBonus %.9f %.9f %.9f", actor.bonusPet[0][1], actor.bonusPet[1][1], actor.bonusPet[2][1]);
     const entt::entity pSummonItem = actor.summonItem;
     if (OwnedItem(owner, pSummonItem)){
         for (int b = 0; b < 3; b++){
-            ItemSystem::SetItemForceAttributeEcs(pSummonItem, b, 1, actor.bonusPet[b][1]);
+            ItemSystem::SetItemForceAttributeEcs(pSummonItem, b, 1, actor.bonusPet[b][1] * 10.0);
         }
 
     }
@@ -1195,11 +1195,19 @@ ecs::NewPetActorState* Summon(entt::entity owner, uint32_t vnum, entt::entity it
     if (!row || !row[0])
         return nullptr;
     std::array<int64_t, 20> values {};
+    std::array<double, 3> bonusValues {};
     for (unsigned i = 1; i < fields; ++i)
     {
         int64_t minimum = 0, maximum = INT_MAX;
         if (i == 1) { minimum = 1; maximum = 120; }
-        if (i >= 4 && i <= 6) maximum = std::numeric_limits<int16_t>::max();
+        if (i >= 4 && i <= 6) {
+            char* end = nullptr;
+            if (!row[i] || !*row[i]) return nullptr;
+            const double bonus = std::strtod(row[i], &end);
+            if (!end || *end || !std::isfinite(bonus) || bonus < 0 || bonus > 3276.7) return nullptr;
+            bonusValues[i - 4] = bonus;
+            continue;
+        }
         if (i == 7 || i == 9 || i == 11 || i == 13) { minimum = -1; maximum = std::size(Pet_Skill_Table); }
         if (i == 8 || i == 10 || i == 12 || i == 14)
 #ifdef ENABLE_NEW_PET_EDITS
@@ -1243,7 +1251,7 @@ ecs::NewPetActorState* Summon(entt::entity owner, uint32_t vnum, entt::entity it
     actor->expItem = static_cast<int>(std::min<int64_t>(values[3], actor->expFromItem));
     ecs::PlayerRuntime::SetExp(actor->character, actor->exp);
     for (int i = 0; i < 3; ++i)
-        actor->bonusPet[i][1] = static_cast<int>(values[4 + i]);
+        actor->bonusPet[i][1] = bonusValues[i];
     for (int i = 0; i < 4; ++i)
     {
         actor->skillSlot[i] = static_cast<int>(values[7 + i * 2]);
@@ -1278,7 +1286,7 @@ ecs::NewPetActorState* Summon(entt::entity owner, uint32_t vnum, entt::entity it
     ItemSystem::LockItem(item);
     ItemSystem::SetItemSocket(item, 0, 1);
     for (int i = 0; i < 3; ++i)
-        ItemSystem::SetItemForceAttributeEcs(item, i, 1, actor->bonusPet[i][1]);
+        ItemSystem::SetItemForceAttributeEcs(item, i, 1, actor->bonusPet[i][1] * 10.0);
 #ifdef ENABLE_NEW_PET_EDITS
     ItemSystem::SetItemForceAttributeEcs(item, 3, 1, actor->level);
     ItemSystem::SetItemSocket(item, 1, actor->duration);
@@ -1302,7 +1310,7 @@ ecs::NewPetActorState* Summon(entt::entity owner, uint32_t vnum, entt::entity it
     ecs::ChatSystem::Send(owner, CHAT_TYPE_COMMAND, "PetEvolution %d", actor->evolution);
     ecs::ChatSystem::Send(owner, CHAT_TYPE_COMMAND, "PetName %s", actor->name.c_str());
     ecs::ChatSystem::Send(owner, CHAT_TYPE_COMMAND, "PetLevel %u", actor->level);
-    ecs::ChatSystem::Send(owner, CHAT_TYPE_COMMAND, "PetBonus %d %d %d", actor->bonusPet[0][1], actor->bonusPet[1][1], actor->bonusPet[2][1]);
+    ecs::ChatSystem::Send(owner, CHAT_TYPE_COMMAND, "PetBonus %.9f %.9f %.9f", actor->bonusPet[0][1], actor->bonusPet[1][1], actor->bonusPet[2][1]);
 #ifdef ENABLE_NEW_PET_EDITS
     ecs::ChatSystem::Send(owner, CHAT_TYPE_COMMAND, "PetAge %u", actor->minAgeStart);
 #endif

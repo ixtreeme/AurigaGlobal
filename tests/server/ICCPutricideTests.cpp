@@ -1,0 +1,9 @@
+#include "../../SRC/Server/GameServer/raid/icc/Putricide.hpp"
+#include <iostream>
+#include <stdexcept>
+using namespace EclipseRaid::ICC;
+void Require(bool b,const char* s){if(!b)throw std::runtime_error(s);}
+struct World:PutricidePort{Difficulty mode=Difficulty::Normal10;unsigned transitions=0,resumes=0,slime=0,gas=0;std::vector<uint32_t> spells;Difficulty Mode()const override{return mode;}void Ability(uint32_t s)override{spells.push_back(s);}void Experiment(bool g)override{g?gas++:slime++;}void Transition(unsigned,bool)override{transitions++;}void Resume(unsigned)override{resumes++;}};
+int main(){for(auto mode:{Difficulty::Normal10,Difficulty::Normal25,Difficulty::Heroic10,Difficulty::Heroic25}){World w;w.mode=mode;Putricide c(42);c.Reset(w);c.Health(w,81);Require(c.Phase()==1,"phase-one health boundary");for(int i=0;i<160;i++)c.Tick(w,250);Require(w.slime==1&&!w.gas,"first experiment is volatile ooze");c.Health(w,80);Require(c.Phase()==2&&c.Transitioning()&&w.transitions==1,"80 percent phase transition");c.Health(w,1);Require(c.Phase()==2,"large hit cannot skip transition");unsigned delay=Heroic(mode)?49000:24000;for(unsigned i=0;i<delay/250+8;i++)c.Tick(w,250);Require(!c.Transitioning()&&w.resumes==1,"transition ends deterministically");if(Heroic(mode))Require(w.slime==2&&w.gas==1,"heroic transition releases both experiments");c.Health(w,35);Require(c.Phase()==3&&w.transitions==2,"35 percent final phase");for(unsigned i=0;i<delay/250+8;i++)c.Tick(w,250);unsigned summons=w.slime+w.gas;for(unsigned i=0;i<2400;i++)c.Tick(w,250);Require(w.slime+w.gas==summons,"no new experiments in final phase");Require(std::find(w.spells.begin(),w.spells.end(),72451)!=w.spells.end(),"final-phase mutated plague");Require(std::count(w.spells.begin(),w.spells.end(),26662)==1,"ten-minute berserk once");}
+ std::cout<<"ICC_PUTRICIDE_PASS phase_boundaries experiments heroic_double transition_pause final_plague enrage four_modes\n";
+}

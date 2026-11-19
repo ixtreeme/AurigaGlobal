@@ -771,12 +771,12 @@ namespace quest
 				const string quest_name = it->first.substr(0, it->first.size()-9);
 				const char* state_name = CQuestManager::instance().GetQuestStateName(quest_name, it->second);
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 758, "%s#%s#%d", quest_name.c_str(), state_name, it->second);
+				ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 758, "%s#%s#%lld", quest_name.c_str(), state_name, static_cast<long long>(it->second));
 #endif
 			}
 #ifdef TEXTS_IMPROVEMENT
 			else {
-				ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 757, "%s#%d", it->first.c_str(), it->second);
+				ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 757, "%s#%lld", it->first.c_str(), static_cast<long long>(it->second));
 			}
 #endif
 		}
