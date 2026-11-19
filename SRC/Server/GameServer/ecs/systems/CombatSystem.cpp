@@ -3806,8 +3806,8 @@ static std::vector<entt::entity> DropContributors(entt::entity victim)
 // with the kill's legacy GetDropPct values, and each drop goes to the owner
 // the legacy rule picks: the killer for a single drop, else the main
 // attackers in turn (a party's own ownership order); in a shared dungeon every
-// winner gets its own copy. The rare bonus chance is not applied yet.
-static void GiveTypedMobDrops(entt::entity victim, entt::entity killer, int deltaPercent, int randRange)
+// winner gets its own copy.
+static void GiveTypedMobDrops(entt::entity victim, entt::entity killer, double deltaPercent, int randRange)
 {
 	namespace items = auriga::item;
 	items::MobDropContext kill;
@@ -3820,7 +3820,7 @@ static void GiveTypedMobDrops(entt::entity victim, entt::entity killer, int delt
 	kill.doubleDrop = ecs::PlayerRuntime::GetPremiumRemainSeconds(killer, PREMIUM_ITEM) > 0 ||
 		ItemSystem::IsEquipUniqueGroup(killer, UNIQUE_GROUP_DOUBLE_ITEM)
 #ifdef ENABLE_NEW_COMMON_BONUSES
-		|| ecs::PointSystem::Get(killer, APPLY_DOUBLE_DROP_ITEM) > 0
+		|| ecs::PointSystem::GetPrecise(killer, POINT_DOUBLE_DROP_ITEM) > 0
 #endif
 		;
 	const auto drops = RollTypedMobDrops(kill);
@@ -3966,7 +3966,8 @@ void Reward(entt::entity e, bool bItemDrop)
 	//
 	//
     // Native catalog drops are the only item reward path.
-    int deltaPercent = 0, randomRange = 0;
+    double deltaPercent = 0;
+    int randomRange = 0;
     if (ITEM_MANAGER::instance().GetDropPct(e, attacker, deltaPercent, randomRange))
         GiveTypedMobDrops(e, attacker, deltaPercent, randomRange);
     CombatSystem::ClearDamageLedger(e);

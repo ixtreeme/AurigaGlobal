@@ -73,7 +73,7 @@ struct MobDropContext
     std::uint8_t mobRank = 0;
     bool stone = false;
     std::uint16_t killerLevel = 0;
-    std::int64_t deltaPercent = 100;     // level difference and drop bonuses, percent
+    double deltaPercent = 100;           // level difference and drop bonuses, percent
     std::uint32_t randomRange = 4'000'000; // after privileges and events
     bool doubleDrop = false;             // premium, gloves, APPLY_DOUBLE_DROP_ITEM
 };

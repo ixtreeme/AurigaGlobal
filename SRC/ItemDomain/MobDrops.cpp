@@ -3,6 +3,7 @@
 #include <item/PersistentItems.hpp>
 #include "ContentValidation.hpp"
 #include <algorithm>
+#include <cmath>
 #include <limits>
 
 namespace auriga::item
@@ -92,7 +93,8 @@ std::expected<void, MobDropGroupError> ValidateMobDropItems(const MobDropGroup& 
 
 std::expected<std::vector<MobDrop>, MobDropError> PlanMobDrops(const ItemCatalog& catalog, const MobDropContext& kill, const MobDropDraw& draw)
 {
-    if (!kill.randomRange || !kill.killerLevel) return std::unexpected(MobDropError::InvalidContext);
+    if (!kill.randomRange || !kill.killerLevel || !std::isfinite(kill.deltaPercent))
+        return std::unexpected(MobDropError::InvalidContext);
     std::vector<MobDrop> drops;
     const auto roll = [&](std::uint32_t bound) -> std::expected<std::uint32_t, MobDropError> {
         const auto value = draw(bound);
@@ -103,7 +105,7 @@ std::expected<std::vector<MobDrop>, MobDropError> PlanMobDrops(const ItemCatalog
         drops.push_back({group.id, entry.entry, entry.item, entry.refinementLevel, entry.amount, entry.rareAttributeChanceBp});
     };
     // Legacy: (dwPct * delta / 100) >= number(1, range), with dwPct = ppb / 250.
-    const auto scaled = [&](std::uint32_t ppb) { return static_cast<std::int64_t>(ppb) * kill.deltaPercent / 25'000; };
+    const auto scaled = [&](std::uint32_t ppb) { return ppb * kill.deltaPercent / 25'000.0; };
     const auto inWindow = [&](const MobDropEntry& entry) {
         return kill.killerLevel >= entry.killerLevelMin && kill.killerLevel <= entry.killerLevelMax;
     };
@@ -120,7 +122,7 @@ std::expected<std::vector<MobDrop>, MobDropError> PlanMobDrops(const ItemCatalog
             {
                 if (!inWindow(entry)) continue;
                 const auto value = roll(kill.randomRange); if (!value) return std::unexpected(value.error());
-                if (scaled(entry.chancePpb) >= static_cast<std::int64_t>(*value)) give(*group, entry);
+                if (scaled(entry.chancePpb) >= *value) give(*group, entry);
             }
             break;
         case MobDropRoll::OneInKills:
@@ -128,7 +130,7 @@ std::expected<std::vector<MobDrop>, MobDropError> PlanMobDrops(const ItemCatalog
             // Legacy: (40000 * delta / killDrop) >= number(1, range), then one
             // weighted entry: number(1, total) against the cumulative weights.
             const auto value = roll(kill.randomRange); if (!value) return std::unexpected(value.error());
-            if (40'000 * kill.deltaPercent / group->killsPerDrop < static_cast<std::int64_t>(*value)) break;
+            if (40'000 * kill.deltaPercent / group->killsPerDrop < *value) break;
             std::uint32_t total = 0;
             for (const auto& entry : group->entries) total += entry.weight;
             const auto pick = roll(total); if (!pick) return std::unexpected(pick.error());

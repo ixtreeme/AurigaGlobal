@@ -402,12 +402,12 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		bool			GetVnum(const char * c_pszName, uint32_t & r_dwVnum);
 		bool			GetVnumByOriginalName(const char * c_pszName, uint32_t & r_dwVnum);
 
-		bool			GetDropPct(entt::entity victim, entt::entity killer, OUT int& iDeltaPercent, OUT int& iRandRange);
+		bool			GetDropPct(entt::entity victim, entt::entity killer, OUT double& iDeltaPercent, OUT int& iRandRange);
 		// iDeltaPercent/iRandRange come from GetDropPct, once per kill. Without
 		// tableDrops the drop tables (common drop, drop/kill/limit/thiefgloves
 		// groups) are skipped: the typed catalog rolls them (items.drops = "typed").
 		bool			CreateDropItem(entt::entity victim, entt::entity killer, std::vector<entt::entity>& vec_item,
-							int iDeltaPercent, int iRandRange, bool tableDrops = true);
+								double iDeltaPercent, int iRandRange, bool tableDrops = true);
 		// A ground VID from the item VID counter for typed ground loot (C7c), so
 		// it never meets a legacy item's VID; 0 when the counter is exhausted.
 		uint32_t		AllocateGroundVID();

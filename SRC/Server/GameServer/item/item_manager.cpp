@@ -1056,7 +1056,7 @@ uint32_t ITEM_MANAGER::AllocateGroundVID()
 }
 
 bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::vector<entt::entity>& vec_item,
-	int iDeltaPercent, int iRandRange, bool tableDrops)
+	double iDeltaPercent, int iRandRange, bool tableDrops)
 {
 #ifdef ENABLE_METINSTONE_DROP_BUGFIX_RAZOR9d
 	const CMobItemGroup* pGroup = quest::CQuestManager::instance().GetMobDropItem(ecs::PlayerRuntime::GetRaceNum(chr));
