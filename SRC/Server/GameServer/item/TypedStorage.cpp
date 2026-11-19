@@ -74,7 +74,17 @@ void Fetch(entt::entity e,const std::shared_ptr<TypedStorageSession>& s,bool con
     if(!store::ItemStore::Instance().Submit([pid,token,generation,facts,request,s,confirm,held,accountLogin](CAsyncSQL& db,const item::ItemCatalog& c)->store::ItemStore::Completion{auto loaded=Load(db,c,facts,request,generation,accountLogin);return [pid,token,s,confirm,held,loaded=std::move(loaded)]()mutable{
         const auto e=Current(pid,token);if(e==entt::null || Session(e)!=s)return;const auto release=[&](){s->pending=false;g_registry.remove<ecs::TypedItemBusy>(e);};if(!loaded || !Admitted(e) || !held->Current()){release();s->status=loaded?Denied:Failed;Reply(e,s,s->status);PumpTypedItemGrants(e);return;}const auto now=Facts(e,s->request);if(now.account!=loaded->facts.account || now.guild!=loaded->facts.guild){release();s->status=Denied;s->loaded.reset();Reply(e,s,Denied);return;}loaded->facts=now;g_registry.emplace_or_replace<ecs::TypedItems>(e,loaded->actor);
         const auto catalog=store::CurrentCatalog();const auto ids=store::PeekInstanceIds(item::MaxItemCommitItems);
-        if(!confirm){s->loaded=std::move(*loaded);if(s->request.action==2){auto plan=Plan(*catalog,*s,*s->loaded,ids);if(plan){s->quote=std::move(*plan);s->status=Ready;}else s->status=Invalid;}else s->status=Ready;release();Reply(e,s,s->status);PumpTypedItemGrants(e);return;}
+        if(!confirm){
+            if(item::IsCollectionRoute(static_cast<item::StorageRoute>(s->request.route)))
+                AccountCollectionSystem::Apply(e,loaded->account);
+            s->loaded=std::move(*loaded);
+            if(s->request.action==2){
+                auto plan=Plan(*catalog,*s,*s->loaded,ids);
+                if(plan){s->quote=std::move(*plan);s->status=Ready;}
+                else s->status=Invalid;
+            }else s->status=Ready;
+            release();Reply(e,s,s->status);PumpTypedItemGrants(e);return;
+        }
         if(!s->loaded || !s->quote || !Fresh(*s->loaded,*loaded,s->quote->commit)){s->loaded=std::move(*loaded);release();s->status=Stale;Reply(e,s,Stale);PumpTypedItemGrants(e);return;}auto plan=Plan(*catalog,*s,*loaded,ids);s->loaded=std::move(*loaded);if(!plan || plan->amount!=s->quote->amount || plan->units!=s->quote->units){release();s->status=Stale;Reply(e,s,Stale);PumpTypedItemGrants(e);return;}
         std::vector<store::OwnerRead> reads;for(const auto& f:plan->commit.owners)reads.push_back({f.owner,f.owner.kind==item::ItemOwnerKind::Character && f.owner.id==pid?f.sessionGeneration:0});unsigned spent=0;for(const auto& ch:plan->commit.items)if(!ch.before)spent++;s->status=Pending;
         if(!store::RequestCommitMany(reads,std::move(plan->commit),[pid,token,s,held](store::MultiCommitOutcome result)mutable{const auto e=Current(pid,token);if(e==entt::null || Session(e)!=s)return;for(auto& state:result.states)if(state){if(state->fence.owner==s->loaded->actor.fence.owner){s->loaded->actor=*state;g_registry.emplace_or_replace<ecs::TypedItems>(e,*state);}else if(state->fence.owner==s->loaded->account.fence.owner)

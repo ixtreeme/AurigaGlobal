@@ -7,6 +7,7 @@
 #include "../item/TypedEquipment.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/components/identity_components.hpp"
+#include "../ecs/systems/MountSystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../entity/char_manager.h"
 #include "../network/desc.h"
@@ -27,6 +28,7 @@ namespace sql = item::persistence;
 struct Projection
 {
     std::uint64_t revision = 0;
+    std::uint16_t mountCount = 0;
     std::vector<item::BonusEntry> bonuses;
 };
 struct PendingLoad { bool repeat = false; };
@@ -46,7 +48,10 @@ CollectionBonuses::Totals Collect(const item::ItemCatalog& catalog, const sql::L
     {
         if (seal.destroyed || !seal.placement || seal.placement->kind != item::ItemStorageKind::Safebox ||
             seal.placement->storageId != item::AccountStorageId(route) ||
-            !item::CanStoreInCollection(catalog, seal, route) || !totals.AddItem(seal.key.LocalId()))
+            !item::CanStoreInCollection(catalog, seal, route))
+            continue;
+        ++totals.storedSeals;
+        if (!totals.AddItem(seal.key.LocalId()))
             continue;
         const auto add = [&](const item::BonusEntry& entry) {
             for (std::uint16_t apply = 1; apply < MAX_APPLY_NUM; ++apply)
@@ -104,6 +109,8 @@ void Apply(entt::entity owner, const sql::LoadedItemOwner& account)
     const auto pets = Collect(*catalog, account, item::StorageRoute::PetCollection, CollectionBonuses::PetWindow);
     Projection projection;
     projection.revision = account.fence.revision;
+    projection.mountCount = mounts.storedSeals;
+    const bool mountCountChanged = !previous || previous->mountCount != projection.mountCount;
     for (const auto* totals : {&mounts, &pets})
     {
         for (const auto& [apply, bonus] : totals->bonuses)
@@ -112,6 +119,8 @@ void Apply(entt::entity owner, const sql::LoadedItemOwner& account)
         Send(desc, *totals);
     }
     g_registry.emplace_or_replace<Projection>(owner, std::move(projection));
+    if (mountCountChanged)
+        MountSystem::UpdateMountCountOverheadToViewers(owner);
     RefreshTypedEquipment(owner);
     SendTypedEquipment(owner);
 }
@@ -167,6 +176,12 @@ void Notify(std::uint32_t account)
 {
     TPacketGGCollectionChanged packet{HEADER_GG_COLLECTION_CHANGED, account};
     P2P_MANAGER::instance().Send(&packet, sizeof(packet));
+}
+
+std::optional<std::uint16_t> MountCount(entt::entity owner)
+{
+    const auto* projection = g_registry.valid(owner) ? g_registry.try_get<Projection>(owner) : nullptr;
+    return projection ? std::optional{projection->mountCount} : std::nullopt;
 }
 
 std::uint64_t Revision(entt::entity owner)

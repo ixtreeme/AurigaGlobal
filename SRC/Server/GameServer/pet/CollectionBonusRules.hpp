@@ -24,6 +24,7 @@ struct Totals {
     }
     uint8_t window;
     uint8_t threshold;
+    uint16_t storedSeals = 0;
     std::set<uint32_t> items;
     std::map<uint8_t,Bonus> bonuses;
     unsigned Count() const { return static_cast<unsigned>(items.size()); }
