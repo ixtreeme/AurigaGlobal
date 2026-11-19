@@ -4,6 +4,11 @@
 #include <iostream>
 #include <source_location>
 #include <stdexcept>
+#include <filesystem>
+#include <fstream>
+#include <nlohmann/json.hpp>
+#include <item/TypedInventoryWire.hpp>
+#include <item/TypedItemDetails.hpp>
 using namespace auriga::item;
 namespace f=persistent_item_fixture;
 namespace
@@ -97,6 +102,19 @@ void Run()
         Check(edge.has_value(),"last column of a row accepted");
         auto equip=MakeMoveCommit(c,op,fence,bags,items,f::Sword().id,at(ItemStorageKind::Equipment,1,0));
         Check(!equip && equip.error()==ItemPersistenceError::UnsupportedState,"equipping is not a move");
+        // C47: the special inventory takes only its own type's eight 9x4 pages (upgrade materials: pages 0..7).
+        auto special=bags;special.push_back({{f::Character(),ItemStorageKind::SpecialInventory,1},9,4,48});
+        auto stored=MakeMoveCommit(c,op,fence,special,items,f::Leather().id,at(ItemStorageKind::SpecialInventory,1,9*4*7+3));
+        Check(stored && stored->items[0].after.placement->kind==ItemStorageKind::SpecialInventory && ValidateItemCommit(c,*stored).has_value(),"material enters its special pages");
+        auto wrongType=MakeMoveCommit(c,op,fence,special,items,f::Leather().id,at(ItemStorageKind::SpecialInventory,1,9*4*8));
+        Check(!wrongType && wrongType.error()==ItemPersistenceError::InvalidPlacement,"another type's page refused");
+        auto weapon=MakeMoveCommit(c,op,fence,special,items,f::Sword().id,at(ItemStorageKind::SpecialInventory,1,0));
+        Check(!weapon && weapon.error()==ItemPersistenceError::InvalidPlacement,"equipment has no special type");
+        const std::vector<PersistentItem> inside{f::Sword(),stored->items[0].after};
+        auto back=MakeMoveCommit(c,op,fence,special,inside,f::Leather().id,at(ItemStorageKind::Inventory,1,20));
+        Check(back.has_value() && back->items[0].after.placement->kind==ItemStorageKind::Inventory,"special item returns to the bag");
+        auto within=MakeMoveCommit(c,op,fence,special,inside,f::Leather().id,at(ItemStorageKind::SpecialInventory,1,0));
+        Check(within.has_value(),"special item moves between its own pages");
         auto missing=MakeMoveCommit(c,op,fence,bags,items,ItemInstanceId::Create(77).value(),at(ItemStorageKind::Inventory,1,12));
         Check(!missing && missing.error()==ItemPersistenceError::MissingItem,"unknown item refused");
         auto nowhere=MakeMoveCommit(c,op,fence,bags,items,f::Sword().id,at(ItemStorageKind::Inventory,9,0));
@@ -128,6 +146,12 @@ void Run()
               swap->items[1].after.id==f::Sword().id && swap->items[1].after.placement==spare.placement,"equip swaps the worn item back");
         auto off=MakeUnequipCommit(c,op,fence,bags,worn,f::Sword().id,ItemPlacement{ItemStorageKind::Inventory,1,12});
         Check(off && off->items[0].after.placement->kind==ItemStorageKind::Inventory,"unequip into free cells");
+        auto fixedSource=f::Catalog();ItemDefinitionRules fixed{f::Sword().key};fixed.level=9;fixed.allowUnequip=false;fixedSource.definitionRules.push_back(fixed);
+        const auto fixedCatalog=BuildItemCatalog(fixedSource).value();
+        Check(!MakeUnequipCommit(*fixedCatalog,op,fence,bags,worn,f::Sword().id,ItemPlacement{ItemStorageKind::Inventory,1,12}),"irremovable definition prevents unequipping");
+        Check(!MakeEquipCommit(*fixedCatalog,op,fence,bags,worn,spare.id,hero),"replacement cannot bypass the worn item's irremovable rule");
+        auto bypass=*off;bypass.catalogHash=fixedCatalog->ContentHash();
+        Check(!ValidateItemCommit(*fixedCatalog,bypass),"crafted move cannot bypass irremovable admission");
         auto blocked=MakeUnequipCommit(c,op,fence,bags,worn,f::Sword().id,ItemPlacement{ItemStorageKind::Inventory,1,1});
         Check(!blocked && blocked.error()==ItemPersistenceError::InvalidPlacement,"unequip onto an occupied cell refused");
         Check(MakeUnequipCommit(c,op,fence,bags,items,f::Sword().id,ItemPlacement{ItemStorageKind::Inventory,1,10}).error()==ItemPersistenceError::UnsupportedState,"unequip of a carried item refused");
@@ -210,23 +234,25 @@ void Run()
         Check(bracelet && bracelet->items.size()==1 && bracelet->items[0].after.accessory==AccessorySocketState{} &&
               ValidateItemCommit(c,*bracelet).has_value(),"a socketed accessory is granted with its empty concrete state");
         std::vector<PersistentItem> fragmented;
-        for(std::uint32_t n=0;n<33;++n)
+        const std::uint32_t boundary=static_cast<std::uint32_t>(MaxItemCommitItems);
+        const std::vector<ItemStorageLayout> largeBags{{{f::Character(),ItemStorageKind::Inventory,1},5,9,4},{{f::Character(),ItemStorageKind::Equipment,1},8,1,1}};
+        for(std::uint32_t n=0;n<boundary+1;++n)
         {
             auto partial=f::Leather(100+n);partial.count=199;partial.placement->anchor=n;fragmented.push_back(partial);
         }
-        auto many=MakeGrantCommit(c,op,fence,bags,fragmented,{k::Leather(),0,33},ids);
+        auto many=MakeGrantCommit(c,op,fence,largeBags,fragmented,{k::Leather(),0,boundary+1},ids);
         Check(many && many->items.size()==MaxItemCommitItems && !many->items.back().before && many->items.back().after.count==2,
               "fragmented stacks leave a write slot for the remainder instead of exceeding the commit limit");
         std::uint32_t added=0;
         for(const auto& change:many->items)added+=change.after.count-(change.before ? change.before->count : 0);
-        Check(added==33 && ValidateItemCommit(c,*many).has_value(),"bounded grant preserves every incoming unit");
-        auto exact=MakeGrantCommit(c,op,fence,bags,fragmented,{k::Leather(),0,32},{});
-        Check(exact && exact->items.size()==MaxItemCommitItems,"exactly 32 top-ups need no new ID or cell");
-        for(std::uint32_t n=33;n<90;++n)
+        Check(added==boundary+1 && ValidateItemCommit(c,*many).has_value(),"bounded grant preserves every incoming unit");
+        auto exact=MakeGrantCommit(c,op,fence,largeBags,fragmented,{k::Leather(),0,boundary},{});
+        Check(exact && exact->items.size()==MaxItemCommitItems,"exactly the bounded number of top-ups need no new ID or cell");
+        for(std::uint32_t n=boundary+1;n<180;++n)
         {
             auto partial=f::Leather(100+n);partial.count=199;partial.placement->anchor=n;fragmented.push_back(partial);
         }
-        auto full=MakeGrantCommit(c,op,fence,bags,fragmented,{k::Leather(),0,33},ids);
+        auto full=MakeGrantCommit(c,op,fence,largeBags,fragmented,{k::Leather(),0,boundary+1},ids);
         Check(!full && full.error()==ItemPersistenceError::InvalidPlacement && fragmented[0].count==199,
               "an unrepresentable full-inventory grant takes the ground fallback, without partial changes");
         Check(MakeGrantCommit(c,op,fence,bags,items,{k::SocketDrill(),0,45},std::span(ids).first(2)).error()==ItemPersistenceError::LimitExceeded,"too few IDs");
@@ -278,6 +304,9 @@ void Run()
         auto taken=expected;taken.owner=other;taken.revision++;taken.placement=ItemPlacement{ItemStorageKind::Inventory,1,2};
         Check(pickup && pickup->owners.size()==2 && pickup->items[0].after==taken,"pickup transfers one full instance with both owner fences");
         auto mine=MakeGroundPickupCommit(c,op,fence,fence,bags,held,expected.id,{ItemStorageKind::Inventory,1,2});
+        auto noGetSource=f::Catalog();ItemDefinitionRules noGet{expected.key};noGet.level=expected.refinementLevel;noGet.allowAcquire=false;noGetSource.definitionRules.push_back(noGet);
+        const auto noGetCatalog=BuildItemCatalog(noGetSource).value();
+        Check(!MakeGroundPickupCommit(*noGetCatalog,op,fence,fence,bags,held,expected.id,{ItemStorageKind::Inventory,1,2}),"non-acquirable definition prevents even owner pickup");
         Check(mine && mine->owners.size()==1,"own pickup deduplicates the owner fence");
         auto stale=fence;stale.revision++;
         Check(MakeGroundPickupCommit(c,op,fence,stale,bags,held,expected.id,{ItemStorageKind::Inventory,1,2}).error()==ItemPersistenceError::InvalidFence,"same owner cannot supply conflicting fences");
@@ -349,4 +378,17 @@ void Run()
     }
 }
 }
-int main(){try{Run();std::cout<<checks<<" Persistent item checks passed\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+void SourceBirthSockets()
+{
+ const auto owner=f::Character();const ItemOwnerFence fence{owner,7,1};const std::array bags{f::Inventory()};const std::array ids{ItemInstanceId::Create(450001).value()};
+ for(unsigned count=1;count<=3;++count){auto source=f::Catalog();ItemDefinitionRules rule{f::Sword().key};rule.birthOpenStoneSockets=static_cast<std::uint8_t>(count);source.definitionRules={rule};const auto catalog=BuildItemCatalog(source).value();
+  const auto granted=MakeGrantCommit(*catalog,{0xBC,static_cast<std::uint8_t>(count)},fence,bags,{},ItemGrant{rule.key},ids).value();const auto& item=granted.items.front().after;
+  for(unsigned slot=0;slot<3;++slot)Check(item.stones[slot]==(slot<count ? StoneSocketSlot{StoneSocketState::Empty,1} : StoneSocketSlot{}),"source socket count opens exact normal slots without an RNG draw");
+  const auto again=MakeGrantCommit(*catalog,{0xBC,static_cast<std::uint8_t>(count)},fence,bags,{},ItemGrant{rule.key},ids).value();Check(again.items.size()==granted.items.size() && again.items.front().after==granted.items.front().after,"same source birth does not change sockets on retry");
+  auto moved=MakeMoveCommit(*catalog,{0xBD},fence,bags,std::array{item},item.id,{ItemStorageKind::Inventory,1,20}).value();Check(moved.items[0].after.stones==item.stones,"moving never rebuilds source sockets");
+ }
+ auto source=f::Catalog();ItemDefinitionRules invalid{f::Sword().key};invalid.birthOpenStoneSockets=4;source.definitionRules={invalid};Check(!BuildItemCatalog(source),"more than three source sockets is invalid native content");
+}
+#include "SourceAddonBirthCases.hpp"
+#include "SourceMagicBirthCases.hpp"
+int main(int argc,char** argv){try{Run();SourceBirthSockets();SourceAddonBirth();SourceMagicBirth();if(argc==3 && std::string_view(argv[1])=="--mob-drop-client-fixture")ExportMobDropBirth(argv[2]);std::cout<<checks<<" Persistent item checks passed\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

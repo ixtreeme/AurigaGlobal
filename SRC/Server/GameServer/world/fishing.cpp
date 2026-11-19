@@ -1,6 +1,7 @@
 //#define __FISHING_MAIN__
 #include "stdafx.h"
 #include "../item/ItemStore.hpp"
+#include "../item/TypedRecovery.hpp"
 #include "../ecs/systems/ViewSystem.hpp"
 #include "../ecs/systems/InventorySystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
@@ -340,6 +341,7 @@ void FishingPractice(entt::entity ch)
 
 bool PredictFish(entt::entity ch)
 {
+	if(HasTypedTimedUtility(ch,auriga::item::TimedEffectUtility::FishMind))return true;
 	// ADD_PREMIUM
 	if (AffectSystem::FindAffect(ch, AFFECT_FISH_MIND_PILL) ||
 			ecs::PlayerRuntime::GetPremiumRemainSeconds(ch, PREMIUM_FISH_MIND) > 0 ||

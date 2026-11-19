@@ -2,12 +2,14 @@
 #include "ItemKey.hpp"
 #include <cstdint>
 #include <expected>
+#include <optional>
 
 namespace auriga::item
 {
 // Items that carry wallet money (gold bars, coin vouchers). The per-unit value
 // is an explicit field, never the hidden shop price of the old item_proto.
-enum class WalletCurrency : std::uint8_t { Gold = 1, DragonCoin = 2 };
+enum class WalletCurrency : std::uint8_t { Gold = 1, DragonCoin = 2, Gaya = 3 };
+inline constexpr std::uint64_t MaxNativeGayaBalance=999'998;
 inline constexpr std::uint64_t MaxTokenUnitAmount = 9'223'372'036'854'775'807ULL;
 
 class ItemCatalog;
@@ -17,6 +19,7 @@ struct TokenRedeemRequest
     std::uint32_t unitsInStack = 0;
     std::uint64_t walletBalance = 0;
     std::uint64_t walletCap = 0; // runtime configuration (e.g. GOLD_MAX), not catalog data
+    std::optional<std::uint64_t> instanceAmount; // Required only by a dynamic native pouch.
 };
 struct TokenRedeemPlan
 {

@@ -15,6 +15,7 @@ struct AttributeRuntimeQuote
     std::vector<AttributeRuntimeTier> tiers;
     std::vector<AttributeRuntimeChoice> choices;
     std::vector<std::uint8_t> locks;
+    bool pairedAddon=false;
     bool operator==(const AttributeRuntimeQuote&)const=default;
 };
 struct AttributeRuntimePlan {ItemCommit commit;InstanceAttributes after;bool succeeded=false;};

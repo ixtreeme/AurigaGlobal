@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <set>
 #include <tuple>
+#include <cmath>
 
 namespace auriga::item
 {
@@ -39,7 +40,7 @@ std::set<BonusId> Excluded(const ItemCatalog& catalog,ItemKey key,std::uint16_t 
     return result;
 }
 unsigned TargetMask(const ItemCatalogEntry& e)
-{return e.base.key.Category()==ItemCategory::Weapon ? 1 : e.base.key.Category()==ItemCategory::Armor ? 2 : e.base.key.Category()==ItemCategory::Accessory ? 4 : e.base.key.Category()==ItemCategory::Costume ? 8 : 0;}
+{const auto* armor=std::get_if<ItemArmorRow>(&e.category);return e.base.key.Category()==ItemCategory::Weapon ? 1 : armor ? (armor->slot==EquipmentSlot::Pendant ? 16 : 2) : e.base.key.Category()==ItemCategory::Accessory ? 4 : e.base.key.Category()==ItemCategory::Costume ? 8 : 0;}
 }
 bool ValidAttributeProfile(const AttributeProfile& p)
 {
@@ -49,7 +50,7 @@ bool ValidAttributeProfile(const AttributeProfile& p)
     if(p.allowLock && !Group(p,AttributePool::Normal))return false;
     for(const auto& c:p.candidates)
     {
-        if(!Group(p,c.pool) || !c.weight || c.weight>1'000'000 || c.values.empty() || c.values.size()>MaxAttributeTiers || !keys.insert({c.pool,c.bonus}).second)return false;
+        if(!Group(p,c.pool) || c.weight>1'000'000 || c.values.empty() || c.values.size()>MaxAttributeTiers || !keys.insert({c.pool,c.bonus}).second)return false;
         for(std::size_t i=0;i<c.values.size();++i)if(c.values[i].tier!=i+1 || !Bonus(c.bonus,c.values[i].value))return false;
     }
     for(const auto& g:p.groups)if(!std::ranges::any_of(p.candidates,[&](const auto& c){return c.pool==g.pool;}))return false;
@@ -57,17 +58,29 @@ bool ValidAttributeProfile(const AttributeProfile& p)
 }
 bool ValidAttributeService(const AttributeServiceProfile& p) noexcept
 {
-    if(!p.id || !detail::ContentCode(p.code) || !Pool(p.pool) || !p.units || !p.successBp || p.successBp>10000 ||
-       !p.targetMask || p.targetMask>15 || p.minimumCount>p.maximumCount || p.maximumCount>Limit(p.pool) ||
+    if(p.targetRerollGroup>2 || (p.targetRerollGroup && (p.operation!=AttributeOperation::Reroll || p.pool!=AttributePool::Normal)))return false;
+    if(!p.id || !detail::ContentCode(p.code) || !Pool(p.pool) || !p.successBp || p.successBp>10000 ||
+       !p.targetMask || p.targetMask>31 || p.minimumCount>p.maximumCount || p.maximumCount>Limit(p.pool) ||
        p.operation<AttributeOperation::Add || p.operation>AttributeOperation::Unlock || p.tiers.size()>MaxAttributeTiers)return false;
+    if(!p.units && (p.operation!=AttributeOperation::Reroll || p.pool!=AttributePool::Rare || p.targetMask!=7 || p.minimumCount<1 || p.successBp!=10000 || p.consumeOnFailure))return false;
     const bool rolling=p.operation==AttributeOperation::Add || p.operation==AttributeOperation::Reroll;
     if((p.operation==AttributeOperation::Add)!=bool(p.addCount) || p.addCount>Limit(p.pool))return false;
     if(p.operation!=AttributeOperation::Add && (p.successBp!=10000 || p.consumeOnFailure))return false;
-    if(!rolling && (p.pool!=AttributePool::Normal || !p.tiers.empty() || (p.targetMask&8)))return false;
+    if(!rolling && (p.pool!=AttributePool::Normal || !p.tiers.empty() || (p.targetMask&24)))return false;
     if(rolling && p.tiers.empty())return false;
     unsigned total=0;std::uint8_t previous=0;
     for(const auto& t:p.tiers){if(t.tier<=previous || t.tier>MaxAttributeTiers || !t.chanceBp || t.chanceBp>10000-total)return false;total+=t.chanceBp;previous=t.tier;}
     return true;
+}
+bool ValidAttributeBirthProfile(const AttributeBirthProfile& p) noexcept
+{
+    if(!p.id || !detail::ContentCode(p.code) || p.secondChanceBp>10000 || p.thirdChanceBp>10000 || p.tiers.empty() || p.tiers.size()>3*MaxAttributeTiers)return false;
+    std::array<unsigned,3> sums{};std::array<std::array<bool,16>,3> seen{};
+    for(const auto& t:p.tiers) {
+        if(t.draw>2 || !t.tier || t.tier>MaxAttributeTiers || !t.chanceBp || t.chanceBp>10000 || seen[t.draw][t.tier-1])return false;
+        seen[t.draw][t.tier-1]=true;sums[t.draw]+=t.chanceBp;
+    }
+    return sums==std::array<unsigned,3>{10000,10000,10000};
 }
 std::expected<void,AttributeError> ValidateInstanceAttributes(const ItemCatalog& c,ItemKey key,const InstanceAttributes& s)
 {
@@ -84,12 +97,74 @@ std::expected<void,AttributeError> ValidateInstanceAttributes(const ItemCatalog&
         for(unsigned i=0;i<Limit(pool);++i)
         {
             const auto& e=s.slots[Begin(pool)+i];if(!e)continue;
-            if(!g || i>=g->capacity || !Bonus(e->bonus,e->valueScaled) || !Candidate(*p,pool,e->bonus) ||
+            // Explicit donor tools have their own published payload policy. They
+            // must not change the ordinary random attribute candidate weights.
+            const bool donor=pool==AttributePool::Rare && key.Category()==ItemCategory::Costume && std::ranges::any_of(c.Entries(),[&](const auto& entry){
+                const auto* tool=std::get_if<ItemBonusToolRow>(&entry.second.category);return tool && tool->operation==SpecialBonusOperation::CostumeGrant &&
+                    ((tool->payload && tool->payload->bonus==e->bonus) || std::ranges::any_of(tool->choices,[&](const auto& choice){return choice.payload.bonus==e->bonus;}));
+            });
+            const auto* rules=c.FindDefinitionRules(key);
+            const bool addon=pool==AttributePool::Normal && (key.Category()==ItemCategory::Weapon || (rules && rules->birthAddon)) && (e->bonus==BonusId::NormalDamagePercent || e->bonus==BonusId::SkillDamagePercent);
+            // Donor-only rare slots are independent of the random rare pool.
+            // Ordinary costumes often publish only their normal reroll group.
+            if((donor ? i>=2 : !g || i>=g->capacity) || !Bonus(e->bonus,e->valueScaled) || (!Candidate(*p,pool,e->bonus) && !donor && !addon) ||
                !(pool==AttributePool::Normal ? normal : rare).insert(e->bonus).second)return std::unexpected(E::InvalidState);
         }
     }
     if(s.lockedSlot && (!p->allowLock || *s.lockedSlot>=5 || !s.slots[*s.lockedSlot]))return std::unexpected(E::InvalidState);
     return {};
+}
+bool UsesPairedAttributeAddon(const ItemCatalog& c,ItemKey key,std::uint16_t level,const AttributeServiceProfile& service)
+{
+    const auto* rules=c.FindDefinitionRules(key,level);
+    return service.operation==AttributeOperation::Reroll && service.pool==AttributePool::Normal && rules && rules->birthAddon;
+}
+std::expected<InstanceAttributes,AttributeError> AttributeRerollBase(const ItemCatalog& c,ItemKey key,const InstanceAttributes& before,std::span<const std::uint32_t> rolls,std::uint16_t level)
+{
+    auto after=before;
+    for(unsigned i=0;i<5;++i)if(before.lockedSlot!=i)after.slots[i].reset();
+    if(rolls.empty())return after;
+    if(rolls.size()!=5 || !rolls[0] || !rolls[1] || rolls[2]>16 || rolls[3]>16 || rolls[4]>=20)return std::unexpected(E::InvalidDecision);
+    const auto* profile=c.FindItemAttributes(key);if(!profile || !Group(*profile,AttributePool::Normal))return std::unexpected(E::InvalidState);
+    const double u=(double(rolls[0])-.5)/double(UINT32_MAX),v=(double(rolls[1])-.5)/double(UINT32_MAX);
+    const auto skill=std::clamp(static_cast<int>(std::sqrt(-2*std::log(u))*std::cos(6.2831853071795864769*v)*5+.5),-30,30);
+    const int hit=-2*skill+(std::abs(skill)<=20 ? std::abs(int(rolls[2])+int(rolls[3])-16)+int(rolls[4]%4)+1 : int(rolls[4]%5)+1);
+    for(const auto entry:{BonusEntry{BonusId::NormalDamagePercent,hit*100LL},BonusEntry{BonusId::SkillDamagePercent,skill*100LL}})
+    {
+        if(!entry.valueScaled || Excluded(c,key,level,*profile,AttributePool::Normal,after).contains(entry.bonus))continue;
+        const auto free=std::ranges::find_if(after.slots.begin(),after.slots.begin()+5,[](const auto& b){return !b;});
+        if(free==after.slots.begin()+5)return std::unexpected(E::NoEffect);*free=entry;
+    }
+    if(!ValidateInstanceAttributes(c,key,after))return std::unexpected(E::InvalidState);
+    return after;
+}
+std::expected<InstanceAttributes,AttributeError> RollBirthMagicAttributes(const ItemCatalog& c,ItemKey key,std::uint16_t level,
+    const InstanceAttributes& before,const AttributeBirthProfile& profile,std::uint16_t chance,const AttributeBirthRandom& random)
+{
+    if(chance>10000 || !ValidAttributeBirthProfile(profile) || !ValidateInstanceAttributes(c,key,before))return std::unexpected(E::InvalidState);
+    if(!chance)return before;
+    const auto* attributes=c.FindItemAttributes(key);const auto* group=attributes ? Group(*attributes,AttributePool::Normal) : nullptr;
+    if(!group)return std::unexpected(E::IncompatibleTarget);
+    const auto draw=[&](std::uint32_t maximum)->std::optional<std::uint32_t>{if(!maximum || !random)return {};const auto value=random(maximum);return value && *value>=1 && *value<=maximum ? value : std::nullopt;};
+    const auto gate=draw(10000);if(!gate)return std::unexpected(E::InvalidDecision);if(*gate>chance)return before;
+    auto after=before;
+    for(unsigned ordinal=0;ordinal<3;++ordinal) {
+        if(ordinal){const auto roll=draw(10000);if(!roll)return std::unexpected(E::InvalidDecision);if(*roll>(ordinal==1 ? profile.secondChanceBp : profile.thirdChanceBp))continue;}
+        const auto free=std::ranges::find_if(after.slots.begin(),after.slots.begin()+group->capacity,[](const auto& b){return !b;});
+        if(free==after.slots.begin()+group->capacity)continue;
+        const auto roll=draw(10000);if(!roll)return std::unexpected(E::InvalidDecision);unsigned remaining=*roll,tier=0;
+        for(const auto& t:profile.tiers)if(t.draw==ordinal){if(remaining<=t.chanceBp){tier=t.tier;break;}remaining-=t.chanceBp;}
+        if(!tier)return std::unexpected(E::UnassignedTier);
+        const auto excluded=Excluded(c,key,level,*attributes,AttributePool::Normal,after);std::uint32_t total=0;
+        for(const auto& candidate:attributes->candidates)if(candidate.pool==AttributePool::Normal && !excluded.contains(candidate.bonus))total+=candidate.weight;
+        if(!total)continue;
+        const auto type=draw(total);if(!type)return std::unexpected(E::InvalidDecision);remaining=*type;
+        for(const auto& candidate:attributes->candidates)if(candidate.pool==AttributePool::Normal && candidate.weight && !excluded.contains(candidate.bonus)) {
+            if(remaining>candidate.weight){remaining-=candidate.weight;continue;}
+            *free=BonusEntry{candidate.bonus,candidate.values[std::min<std::size_t>(tier,candidate.values.size())-1].value};break;
+        }
+    }
+    if(!ValidateInstanceAttributes(c,key,after))return std::unexpected(E::InvalidState);return after;
 }
 std::expected<AttributePlan,AttributeError> PlanAttributeService(const ItemCatalog& c,const AttributeRequest& r)
 {
@@ -101,7 +176,11 @@ std::expected<AttributePlan,AttributeError> PlanAttributeService(const ItemCatal
     const auto* p=c.FindItemAttributes(r.items.target.item);const auto* g=p ? Group(*p,service->pool) : nullptr;
     if(!p || !g)return std::unexpected(E::IncompatibleTarget);
     const auto& target=*c.Find(r.items.target.item);
-    if(!(service->targetMask&TargetMask(target)) || (service->maximumTargetLevel && target.base.minimumLevel>service->maximumTargetLevel))return std::unexpected(E::TargetDenied);
+    const auto* targetRules=c.FindDefinitionRules(r.items.target.item,r.items.target.refinementLevel);
+    if(service->targetRerollGroup && service->targetRerollGroup!=(targetRules ? targetRules->attributeRerollGroup : 1))return std::unexpected(E::TargetDenied);
+    const bool paired=UsesPairedAttributeAddon(c,r.items.target.item,r.items.target.refinementLevel,*service);
+    if(paired ? r.addonRolls.size()!=5 : !r.addonRolls.empty())return std::unexpected(E::InvalidDecision);
+    if(!(service->targetMask&TargetMask(target)) || (service->maximumTargetLevel && c.LevelPolicy(r.items.target.item,r.items.target.refinementLevel).minimumLevel>service->maximumTargetLevel))return std::unexpected(E::TargetDenied);
     if(r.items.source.count<service->units)return std::unexpected(E::InsufficientUnits);
     if(auto valid=ValidateInstanceAttributes(c,r.items.target.item,r.state);!valid)return std::unexpected(valid.error());
     const auto count=Count(r.state,service->pool);
@@ -139,6 +218,11 @@ std::expected<AttributePlan,AttributeError> PlanAttributeService(const ItemCatal
         for(unsigned i=Begin(service->pool);i<Begin(service->pool)+g->capacity;++i)
             if(plan.after.slots[i]){if(r.state.lockedSlot==i)--needed;else plan.after.slots[i].reset();}
         if(!needed)return std::unexpected(E::NoEffect);
+        if(paired)
+        {
+            const auto base=AttributeRerollBase(c,r.items.target.item,r.state,r.addonRolls,r.items.target.refinementLevel);if(!base)return std::unexpected(base.error());
+            plan.after=*base;needed=count>Count(plan.after,service->pool) ? count-Count(plan.after,service->pool) : 0;
+        }
     }
     if(service->successBp<10000 && r.successRoll>service->successBp)
     {

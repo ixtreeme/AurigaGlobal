@@ -11,14 +11,16 @@ import time
 
 from PySide6.QtCore import QProcess, QSettings, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QColor, QDesktopServices, QFont, QFontDatabase, QKeySequence, QShortcut
-from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComboBox,
-    QFileDialog, QFrame, QHBoxLayout, QHeaderView, QInputDialog, QLabel, QLineEdit,
+from PySide6.QtWidgets import (QAbstractItemView, QApplication, QBoxLayout, QCheckBox, QComboBox,
+    QFileDialog, QFrame, QGridLayout, QHBoxLayout, QHeaderView, QInputDialog, QLabel, QLineEdit,
     QListWidget, QListWidgetItem, QMainWindow, QMessageBox, QPlainTextEdit,
     QPushButton, QScrollArea, QSizePolicy, QSplitter, QStackedWidget, QStyledItemDelegate, QTabWidget,
     QTableWidget, QTableWidgetItem, QToolButton, QMenu, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
 
 import backend as api
+import change_review as review
 from config_form import ConfigForm
+from channel_editor import ChannelDialog
 from gathering_rules_form import GatheringRulesForm
 from remote_page import RemotePage
 from code_editor import CodePane
@@ -27,8 +29,12 @@ import ssh_connection as ssh
 from crash_page import CrashPage
 from backup_page import BackupPage
 from item_page import ItemPage
+from drop_page import DropsPage
+from pending_changes import PendingChanges
+from pending_page import PendingPage
 from bench_page import BenchPage
-from manager_ui import STYLE, ChannelBox, DashboardContent, NavigationDelegate, card_layout, line_icon, metric_card, tone
+from manager_navigation import ManagerNavigation, PAGES
+from manager_ui import ACCENTS, PAGE_ACCENTS, STYLE, ChannelBox, DashboardContent, accent, card_layout, line_icon, metric_card, tone
 
 PATH_ROLE = int(Qt.ItemDataRole.UserRole)
 VALUE_ROLE = PATH_ROLE + 1
@@ -82,7 +88,11 @@ class ElidedLabel(QLabel):
     def setText(self, text):
         self.full_text = text
         self.setToolTip(text)
+        self.setAccessibleName(text)
         super().setText(self.fontMetrics().elidedText(text, Qt.TextElideMode.ElideMiddle, max(40, self.width())))
+
+    def text(self):
+        return self.full_text
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -161,6 +171,7 @@ class JsonFields(QWidget):
         self.add_button = button('Hozzáadás', self.add)
         self.copy_button = button('Sor másolása', self.duplicate)
         self.remove_button = button('Törlés', self.remove)
+        self.remove_button.setProperty('role', 'danger')
         for control in (self.add_button, self.copy_button, self.remove_button):
             tools.addWidget(control)
         layout.addLayout(tools)
@@ -449,7 +460,8 @@ class Editor(QWidget):
         self.saved_badge = QLabel('Mentett')
         self.saved_badge.setObjectName('SavedBadge')
         bar.addWidget(self.saved_badge)
-        self.save_button = button('Ellenőrzés és mentés', self.save, 'Primary')
+        self.save_button = button('Ideiglenes mentés', self.save, 'Primary')
+        self.save_button.setProperty('role', 'success')
         self.save_button.setEnabled(False)
         bar.addWidget(self.save_button)
         more = QToolButton()
@@ -466,6 +478,7 @@ class Editor(QWidget):
         self.config_form = ConfigForm(JsonFields)
         self.config_form.error.connect(lambda text: window.error(text))
         self.config_form.changed.connect(self.changed)
+        self.config_form.topologyRequested.connect(self.open_topology)
         self.gathering_form = GatheringRulesForm()
         self.gathering_form.changed.connect(self.changed)
         self.gathering_form.error.connect(window.error)
@@ -475,8 +488,8 @@ class Editor(QWidget):
         self.field_pages.addWidget(self.gathering_form)
         self.code = CodePane()
         self.source = self.code.edit
-        self.tabs.addTab(self.field_pages, 'Szerkesztés')
-        self.tabs.addTab(self.code, 'Forráskód')
+        self.tabs.addTab(self.field_pages, 'Űrlap és táblázat')
+        self.tabs.addTab(self.code, 'Forráskód · haladó')
         self.fields.changed.connect(self.changed)
         self.source.textChanged.connect(self.changed)
         self.tabs.currentChanged.connect(self.switch_tab)
@@ -500,6 +513,25 @@ class Editor(QWidget):
         self.empty.show()
         self.saved_badge.hide()
         self.save_button.setEnabled(False)
+
+    def open_topology(self):
+        if not self.document or self.document.relative != 'server.json' or self.window.busy():
+            return
+        try:
+            value = self.config_form.checked_value()
+            names = {}
+            if self.window.root and not self.window.is_remote():
+                path = self.window.root / 'data/map/index.json'
+                if path.is_file():
+                    index = api.strict_json(path.read_text(encoding='utf-8-sig'))
+                    names = {row['index']: row['name'] for row in index.get('maps', [])}
+            dialog = ChannelDialog(value, self.document.value, names,
+                                   running=bool((self.window.state() or {}).get('running')), parent=self.window)
+            if dialog.exec() == dialog.DialogCode.Accepted and dialog.value != value:
+                self.config_form.set_value(dialog.value)
+                self.changed()
+        except (api.EditorError, OSError, ValueError, KeyError, TypeError) as error:
+            self.window.error(str(error))
 
     def changed(self):
         if not self.syncing and self.document:
@@ -536,6 +568,7 @@ class Editor(QWidget):
             return False
 
     def display(self, document):
+        if hasattr(self.window,'pending_changes'):document=self.window.pending_changes.overlay_document(document)
         document.target_id = self.window.target_id()
         try:
             self.syncing = True
@@ -561,7 +594,7 @@ class Editor(QWidget):
             self.tabs.setCurrentIndex(0 if document.is_json and not document.parse_error else 1)
             self.filename.setText('Szerver beállításai' if document.relative == 'server.json' else Path(document.relative).name)
             self.filename.setToolTip(document.relative)
-            self.saved_badge.setText('Mentett')
+            self.saved_badge.setText('Feltöltésre vár' if getattr(document,'staged',False) else 'Mentett')
             self.saved_badge.setProperty('dirty', False)
             self.saved_badge.style().unpolish(self.saved_badge)
             self.saved_badge.style().polish(self.saved_badge)
@@ -607,18 +640,30 @@ class Editor(QWidget):
     def save(self):
         if not self.document or self.window.busy():
             return
+        stage=None
         try:
             payload = self.document.encoded(self.text())
             if getattr(self.document, 'target_id', None) != self.window.target_id():
                 raise api.EditorError('A megnyitott fájl másik szerverhez tartozik. Töltsd újra a kiválasztott célgépről.')
+            original=getattr(self.document,'staged_base',self.document)
+            rows=review.text_rows(self.filename.text(),original.text,self.text(),self.document.is_json,LABELS)
+            stage=review.request(self.window,'Állomány módosítása: '+self.filename.text(),'file',
+                dict(relative=self.document.relative,data=base64.b64encode(payload).decode('ascii'),expected_hash=self.document.digest,
+                     base_data=base64.b64encode(original.original).decode('ascii'),encoding=original.encoding),rows)
+            if stage is None:
+                if review.queued(self.window):self.dirty=False;self.display(self.window.pending_changes.overlay_document(original))
+                self.saved_badge.setText('Ideiglenesen mentve')
+                self.info.setText('Ideiglenesen mentve. Jóváhagyás nélkül az eredeti állomány változatlan.');return
+            approved=stage.begin(self.window);payload=base64.b64decode(approved['data'],validate=True)
             if self.window.is_remote():
-                relative = self.document.relative
+                relative = approved['relative']
                 def saved(result):
+                    stage.finish(True)
                     self.window.show_remote_output(result.get('output', 'Mentve.'))
                     self.display(targets.document(result['document']))
                     self.window.poll_remote(force=True)
-                self.window.remote_request('save', dict(relative=relative,
-                    data=base64.b64encode(payload).decode('ascii'), expected_hash=self.document.digest), saved)
+                started=self.window.remote_request('save', {key:approved[key] for key in ('relative','data','expected_hash')}, saved,error_callback=lambda message:stage.finish(False))
+                if not started:stage.finish(False)
                 return
             directory = self.window.root / 'run/editor-pending'
             directory.mkdir(parents=True, exist_ok=True)
@@ -626,15 +671,17 @@ class Editor(QWidget):
             descriptor = os.open(pending, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
             with os.fdopen(descriptor, 'wb') as handle:
                 handle.write(payload)
-            relative = self.document.relative
+            relative = approved['relative']
             def finished(ok):
+                stage.finish(ok)
                 pending.unlink(missing_ok=True)
                 if ok:
                     self.load(relative, force=True)
                     if relative == 'server.json':
                         self.window.update_channels()
-            self.window.job(['save', relative, str(pending), self.document.digest], finished)
+            self.window.job(['save', relative, str(pending), approved['expected_hash']], finished)
         except (api.EditorError, OSError, ValueError) as error:
+            if stage is not None:stage.finish(False)
             self.window.error(str(error))
 
     def reload(self):
@@ -693,6 +740,13 @@ class Editor(QWidget):
 
 
 class FilePage(QWidget):
+    QUICK_FILES = {
+        'data/typed_shops.json': 'NPC-boltok',
+        'data/typed_crafting.json': 'Műhelyreceptek és hozzávalók',
+        'data/typed_character_creation.json': 'Kezdőfelszerelés',
+        'data/typed_gathering.json': 'Halászati és bányászati helyek',
+    }
+
     def __init__(self, window, quests=False):
         super().__init__()
         self.window, self.quests = window, quests
@@ -709,6 +763,12 @@ class FilePage(QWidget):
         self.search.textChanged.connect(self.filter)
         self.count = note('Állományok')
         left.addWidget(self.count)
+        self.quick_files = QComboBox()
+        self.quick_files.setAccessibleName('Gyakori játékadatok megnyitása')
+        self.quick_files.addItem('Gyakori adatfájlok…', None)
+        self.quick_files.activated.connect(self.open_quick_file)
+        self.quick_files.setVisible(not quests)
+        left.addWidget(self.quick_files)
         left.addWidget(self.search)
         left.addWidget(button('Lista frissítése', window.refresh_inventory))
         self.files = QTreeWidget()
@@ -727,6 +787,13 @@ class FilePage(QWidget):
 
     def refresh(self):
         paths = self.window.file_paths(self.quests)
+        self.quick_files.blockSignals(True)
+        self.quick_files.clear()
+        self.quick_files.addItem('Gyakori adatfájlok…', None)
+        for relative, label in self.QUICK_FILES.items():
+            if relative in paths:
+                self.quick_files.addItem(label, relative)
+        self.quick_files.blockSignals(False)
         self.files.clear()
         folders = {}
         prefix = 'data/quest' if self.quests else 'data'
@@ -746,6 +813,12 @@ class FilePage(QWidget):
         self.count.setText('%d állomány · %s' % (len(paths), 'Questek és Lua' if self.quests else 'Játékadatok'))
         self.files.expandToDepth(0)
         self.filter()
+
+    def open_quick_file(self, index):
+        relative = self.quick_files.itemData(index)
+        if relative:
+            self.editor.load(relative)
+            self.quick_files.setCurrentIndex(0)
 
     def filter(self):
         text = self.search.text().casefold()
@@ -781,8 +854,8 @@ class MainWindow(QMainWindow):
         self.action_log, self.log_text, self.on_finished = None, '', None
         self.settings = QSettings('Auriga', 'ServerManager')
         self.setWindowTitle('Auriga • Szerverkezelő')
-        self.setMinimumSize(1100, 760)
-        self.resize(1440, 940)
+        self.setMinimumSize(1024, 720)
+        self.resize(1320, 940)
         center = QWidget()
         self.setCentralWidget(center)
         shell = QHBoxLayout(center)
@@ -790,10 +863,10 @@ class MainWindow(QMainWindow):
         shell.setSpacing(0)
         sidebar = QWidget()
         sidebar.setObjectName('Sidebar')
-        sidebar.setFixedWidth(218)
+        sidebar.setFixedWidth(236)
         rail = QVBoxLayout(sidebar)
-        rail.setContentsMargins(14, 24, 14, 16)
-        rail.setSpacing(12)
+        rail.setContentsMargins(12, 18, 12, 12)
+        rail.setSpacing(10)
         brand = QHBoxLayout()
         mark = QLabel('A')
         mark.setObjectName('BrandMark')
@@ -809,41 +882,49 @@ class MainWindow(QMainWindow):
         brand.addLayout(brand_text)
         brand.addStretch()
         rail.addLayout(brand)
-        rail.addSpacing(20)
-        caption = QLabel('MUNKATERÜLET')
-        caption.setObjectName('Eyebrow')
-        rail.addWidget(caption)
-        self.navigation = QListWidget()
-        self.navigation.setObjectName('Navigation')
-        self.navigation.setMouseTracking(True)
-        self.navigation.setItemDelegate(NavigationDelegate(self.navigation))
-        labels = ['Szerverállapot', 'Szerverbeállítások', 'Adatfájlok', 'Küldetések és Lua', 'Szervernaplók',
-                  'Távoli elérés és telepítés', 'Összeomlások', 'Biztonsági mentések', 'Tárgykatalógus', 'Tárgypróbapad']
-        icons = ['overview', 'settings', 'data', 'code', 'logs', 'remote', 'warning', 'backup', 'items', 'bench']
-        for label, icon in zip(labels, icons):
-            item = QListWidgetItem(line_icon(icon), 'Távoli elérés' if icon == 'remote' else label)
-            item.setToolTip(label)
-            self.navigation.addItem(item)
+        self.navigation_search = QLineEdit()
+        self.navigation_search.setPlaceholderText('Oldal keresése…  Ctrl+K')
+        self.navigation_search.setAccessibleName('Oldal vagy funkció keresése')
+        rail.addWidget(self.navigation_search)
+        self.navigation = ManagerNavigation()
+        self.navigation_search.textChanged.connect(self.navigation.filter)
+        self.navigation_search.returnPressed.connect(self.navigation.open_first_match)
+        self.navigation.filterResetRequested.connect(self.navigation_search.clear)
         rail.addWidget(self.navigation, 1)
-        rail.addWidget(note('Minden művelet a kiválasztott szerverre vonatkozik.'))
+        self.navigation_empty = note('Nincs találat. Próbálj másik kifejezést.')
+        self.navigation_empty.hide()
+        self.navigation.resultsChanged.connect(lambda count: self.navigation_empty.setVisible(count == 0))
+        rail.addWidget(self.navigation_empty)
+        rail.addWidget(note('Ctrl+K · Oldal keresése\nCtrl+S · Aktuális szerkesztés mentése'))
         shell.addWidget(sidebar)
         workspace = QWidget()
+        self.workspace = workspace
+        workspace.setObjectName('Workspace')
         layout = QVBoxLayout(workspace)
-        layout.setContentsMargins(24, 20, 24, 8)
-        layout.setSpacing(14)
+        layout.setContentsMargins(20, 16, 20, 8)
+        layout.setSpacing(10)
         shell.addWidget(workspace, 1)
         header = QHBoxLayout()
         self.page_title = QLabel('Szerverállapot')
         self.page_title.setObjectName('Title')
+        self.page_title.setWordWrap(True)
         header.addWidget(self.page_title, 1)
+        self.unsaved_button = QToolButton()
+        self.unsaved_button.setObjectName('UnsavedChanges')
+        self.unsaved_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self.unsaved_menu = QMenu(self.unsaved_button)
+        self.unsaved_menu.aboutToShow.connect(self.populate_unsaved_menu)
+        self.unsaved_button.setMenu(self.unsaved_menu)
+        self.unsaved_button.hide()
+        header.addWidget(self.unsaved_button)
         self.target_badge = QLabel('HELYI')
         self.target_badge.setObjectName('TargetBadge')
         header.addWidget(self.target_badge)
         self.target_choice = QComboBox()
         self.target_choice.setAccessibleName('Kezelt szerver')
         self.target_choice.setToolTip('A kiválasztott szerver minden oldalra érvényes.')
-        self.target_choice.setMinimumWidth(200)
-        self.target_choice.setMaximumWidth(290)
+        self.target_choice.setMinimumWidth(175)
+        self.target_choice.setMaximumWidth(245)
         self.target_choice.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         self.target_choice.setMinimumContentsLength(22)
         header.addWidget(self.target_choice)
@@ -851,6 +932,9 @@ class MainWindow(QMainWindow):
         self.connect_button.setIcon(line_icon('refresh'))
         header.addWidget(self.connect_button)
         layout.addLayout(header)
+        self.page_description = note('')
+        self.page_description.setObjectName('PageDescription')
+        layout.addWidget(self.page_description)
         target_bar = QHBoxLayout()
         self.location = ElidedLabel('Válassz szervercsomagot a kezdéshez.')
         self.location.setObjectName('Subtle')
@@ -880,13 +964,15 @@ class MainWindow(QMainWindow):
         self.backup_page = BackupPage(self)
         self.item_page = ItemPage(self)
         self.bench_page = BenchPage(self)
+        self.drop_page = DropsPage(self,self.item_page)
+        self.pending_changes=PendingChanges(self)
+        self.pending_page=PendingPage(self,self.pending_changes)
         self.profiles_changed()
         self.target_choice.currentIndexChanged.connect(self.target_selected)
-        for page in (self.overview, self.config_editor, self.data_page, self.quest_page, self.log_page, self.remote_page, self.crash_page, self.backup_page, self.item_page, self.bench_page):
+        for page in (self.overview, self.config_editor, self.data_page, self.quest_page, self.log_page, self.remote_page, self.crash_page, self.backup_page, self.item_page, self.bench_page, self.drop_page,self.pending_page):
             self.pages.addWidget(page)
         body.addWidget(self.pages)
-        self.navigation.currentRowChanged.connect(self.pages.setCurrentIndex)
-        self.navigation.currentRowChanged.connect(lambda row: self.page_title.setText(labels[row]) if row >= 0 else None)
+        self.navigation.currentRowChanged.connect(self.activate_page)
         self.navigation.setCurrentRow(0)
         main.addWidget(body)
         console_panel = QWidget()
@@ -918,6 +1004,7 @@ class MainWindow(QMainWindow):
         self.timer.timeout.connect(self.refresh)
         self.timer.start(1200)
         QShortcut(QKeySequence.StandardKey.Save, self, activated=self.save_current)
+        QShortcut(QKeySequence('Ctrl+K'), self, activated=self.focus_navigation)
         geometry = self.settings.value('geometry')
         if geometry:
             self.restoreGeometry(geometry)
@@ -925,6 +1012,62 @@ class MainWindow(QMainWindow):
             self.set_root(root)
         else:
             self.refresh()
+
+    def activate_page(self, page):
+        if page not in PAGES:
+            return
+        group, label, icon, description, keywords = PAGES[page]
+        self.pages.setCurrentIndex(page)
+        self.page_title.setText(label)
+        accent(self.workspace, PAGE_ACCENTS[page])
+        accent(self.page_title, PAGE_ACCENTS[page])
+        self.page_description.setText(description)
+        self.page_description.setToolTip(group + ' / ' + label)
+        if page==8:self.item_page.catalog_activated()
+        if page==10 and hasattr(self,'console'):self.refresh()
+        if page==11:self.pending_page.fill()
+
+    def focus_navigation(self):
+        self.navigation_search.setFocus()
+        self.navigation_search.selectAll()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if hasattr(self, 'server_control_row'):
+            self.server_control_row.setDirection(QBoxLayout.Direction.LeftToRight if self.width() >= 1220 else QBoxLayout.Direction.TopToBottom)
+            QTimer.singleShot(0, self.reflow_channels)
+
+    def reflow_channels(self):
+        if not hasattr(self, 'channel_boxes'): return
+        columns = max(1, self.channel_container.width() // 90)
+        if columns == getattr(self, 'channel_columns', None) and self.channel_layout.count() == len(self.channel_boxes): return
+        self.channel_columns = columns
+        while self.channel_layout.count(): self.channel_layout.takeAt(0)
+        for index, box in enumerate(self.channel_boxes):
+            self.channel_layout.addWidget(box, index // columns, index % columns, Qt.AlignmentFlag.AlignLeft)
+
+    def unsaved_documents(self):
+        result = []
+        for page, editor in ((1, self.config_editor), (2, self.data_page.editor), (3, self.quest_page.editor)):
+            if editor.dirty:
+                result.append((page, editor.document.relative if editor.document else PAGES[page][1]))
+        if self.item_page.dirty:
+            result.append((8, 'Tárgykatalógus · szerkesztett tárgy'))
+        if self.remote_page.dirty:
+            result.append((5, 'Távoli elérés · SSH-profil'))
+        return result
+
+    def populate_unsaved_menu(self):
+        self.unsaved_menu.clear()
+        for page, label in self.unsaved_documents():
+            action = self.unsaved_menu.addAction(line_icon(PAGES[page][2]), label)
+            action.triggered.connect(lambda checked=False, target=page: self.navigation.setCurrentRow(target))
+
+    def update_unsaved_indicator(self):
+        count = len(self.unsaved_documents())
+        self.unsaved_button.setText('%d nincs mentve' % count)
+        self.unsaved_button.setToolTip('A nem mentett szerkesztések megnyitása. Ctrl+S az aktuális oldalt menti.')
+        self.unsaved_button.setVisible(count > 0)
 
     def toggle_console(self, shown):
         self.console_panel.setVisible(shown)
@@ -950,11 +1093,25 @@ class MainWindow(QMainWindow):
                 ('stack', 'SZERVER ÁLLAPOTA', 'Nincs szervercsomag', 'Válassz szervert a kezdéshez.'),
                 ('core', 'JÁTÉKSZERVER CORE-OK', '—', 'A játékot futtató folyamatok.'),
                 ('db', 'ADATBÁZIS', 'SQL: —', 'Adatbázis-kapcsolat állapota.')):
-            card, value, description = metric_card(caption, initial, hint)
+            card, value, description = metric_card(caption, initial, hint,
+                                                    {'stack': 'green', 'core': 'blue', 'db': 'violet'}[name])
             setattr(self, name + '_metric', value)
             setattr(self, name + '_description', description)
             metrics.addWidget(card, 1)
         layout.addLayout(metrics)
+
+        quick = QWidget()
+        quick.setObjectName('QuickLinks')
+        shortcuts = QHBoxLayout(quick)
+        shortcuts.setContentsMargins(4, 4, 4, 4)
+        shortcuts.setSpacing(4)
+        for destination, caption in ((8, 'Tárgyak szerkesztése'), (3, 'Küldetések szerkesztése'), (7, 'Biztonsági mentések')):
+            link = button(caption, lambda checked=False, page=destination: self.navigation.setCurrentRow(page), 'QuickLink')
+            link.setProperty('accent', PAGE_ACCENTS[destination])
+            link.setIcon(line_icon(PAGES[destination][2], ACCENTS[PAGE_ACCENTS[destination]][0]))
+            link.setToolTip(PAGES[destination][3])
+            shortcuts.addWidget(link, 1)
+        layout.addWidget(quick)
 
         self.guidance = QWidget()
         self.guidance.setObjectName('Guidance')
@@ -980,38 +1137,44 @@ class MainWindow(QMainWindow):
         guidance_layout.addWidget(self.guidance_action)
         layout.addWidget(self.guidance)
 
-        controls, controls_layout = card_layout()
+        controls, controls_layout = card_layout(accent_name='teal')
+        control_heading = QHBoxLayout()
         title = QLabel('Szervervezérlés')
         title.setObjectName('SectionTitle')
-        controls_layout.addWidget(title)
-        control_row = QHBoxLayout()
+        control_heading.addWidget(title, 1)
+        self.topology_button = button('CH-k és core-ok…', self.open_topology, 'Quiet')
+        control_heading.addWidget(self.topology_button)
+        controls_layout.addLayout(control_heading)
+        control_row = QBoxLayout(QBoxLayout.Direction.LeftToRight)
+        self.server_control_row = control_row
         channel_column = QVBoxLayout()
         channel_column.setSpacing(8)
         channels = QWidget()
+        self.channel_container = channels
+        channels.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         channels.setObjectName('Transparent')
-        self.channel_layout = QHBoxLayout(channels)
+        self.channel_layout = QGridLayout(channels)
         self.channel_layout.setContentsMargins(0, 0, 0, 0)
         self.channel_layout.setSpacing(7)
         self.channel_boxes = []
         channel_column.addWidget(channels)
         control_row.addLayout(channel_column, 1)
         self.start_button = button('Szerver indítása', self.start_stack, 'Primary')
+        self.start_button.setProperty('role', 'success')
         self.start_button.setIcon(line_icon('play', '#f5f3ff'))
         self.stop_button = button('Leállítás', lambda: self.job(['stop']), 'Stop')
         self.stop_button.setIcon(line_icon('stop', '#ffc0c4'))
-        action_column = QVBoxLayout()
-        action_column.addStretch()
         action_row = QHBoxLayout()
+        action_row.addStretch()
         action_row.addWidget(self.start_button)
         action_row.addWidget(self.stop_button)
-        action_column.addLayout(action_row)
-        control_row.addLayout(action_column)
+        control_row.addLayout(action_row)
         controls_layout.addLayout(control_row)
         self.channel_summary = note('A közös CH99 automatikusan elindul a kijelölt csatornákkal.')
         controls_layout.addWidget(self.channel_summary)
         layout.addWidget(controls)
 
-        processes, process_layout = card_layout()
+        processes, process_layout = card_layout(accent_name='blue')
         process_title = QHBoxLayout()
         title = QLabel('Folyamatok')
         title.setObjectName('SectionTitle')
@@ -1041,7 +1204,7 @@ class MainWindow(QMainWindow):
         self.core_table.setShowGrid(False)
         self.core_table.setAlternatingRowColors(True)
         self.core_table.setWordWrap(False)
-        self.core_table.setMinimumHeight(100)
+        self.core_table.setMinimumHeight(184)
         self.core_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.core_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.core_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
@@ -1055,6 +1218,7 @@ class MainWindow(QMainWindow):
         self.core_selection_hint = note('Jelölj ki egy sort a külön vezérléshez. Több sor: Ctrl + kattintás.')
         core_tools.addWidget(self.core_selection_hint, 1)
         self.start_cores_button = button('Kijelöltek indítása', lambda: self.control_selected_cores('start'))
+        self.start_cores_button.setProperty('role', 'success')
         self.stop_cores_button = button('Kijelöltek leállítása', lambda: self.control_selected_cores('stop'), 'Stop')
         core_tools.addWidget(self.start_cores_button)
         core_tools.addWidget(self.stop_cores_button)
@@ -1079,17 +1243,18 @@ class MainWindow(QMainWindow):
         database_tools.addWidget(self.setup_db_button)
         database_tools.addWidget(note('Első használatkor létrehozza a helyi MariaDB-t és betölti az ellenőrzött mentést.'), 1)
         maintenance.addWidget(self.database_tools_panel)
-        tools = QHBoxLayout()
+        tools = QGridLayout()
         self.prepare_button = button('Előkészítés', lambda: self.job(['prepare']))
         self.check_button = button('Fájlok ellenőrzése', lambda: self.job(['check']))
         self.stop_db_button = button('MariaDB leállítása', lambda: self.job(['stop-db']))
+        self.stop_db_button.setProperty('role', 'danger')
         self.db_check_button = button('SQL-kapcsolatok ellenőrzése', lambda: self.job(['database-check']))
-        for item in (self.check_button, self.db_check_button, self.prepare_button, self.stop_db_button):
-            tools.addWidget(item)
-        tools.addStretch()
+        for index, item in enumerate((self.check_button, self.db_check_button, self.prepare_button, self.stop_db_button)):
+            tools.addWidget(item, index // 2, index % 2)
         maintenance.addLayout(tools)
         quest_tools = QHBoxLayout()
         self.quest_reload_button = button('Questek frissítése', self.reload_quests)
+        self.quest_reload_button.setProperty('role', 'reload')
         quest_tools.addWidget(self.quest_reload_button)
         quest_tools.addWidget(note('A mentett questek frissítése futás közben, a játékosok kiléptetése nélkül.'), 1)
         maintenance.addLayout(quest_tools)
@@ -1100,6 +1265,10 @@ class MainWindow(QMainWindow):
     def toggle_maintenance(self, shown):
         self.maintenance_panel.setVisible(shown)
         self.maintenance_toggle.setArrowType(Qt.ArrowType.DownArrow if shown else Qt.ArrowType.RightArrow)
+
+    def open_topology(self):
+        self.navigation.setCurrentRow(1)
+        self.config_editor.open_topology()
 
     def follow_guidance(self):
         action = self.guidance_action.property('action')
@@ -1191,6 +1360,7 @@ class MainWindow(QMainWindow):
                 title, action, label = 'Az adatbázis előkészítése még nem érhető el', 'logs', 'Műveleti napló'
                 self.target_hint.setText('Hiányzik a helyi adatbázishoz szükséges ellenőrzött mentés vagy futtatókörnyezet. Ellenőrizd a szervercsomagot.')
         elif state['running']:
+            color = 'good'
             title = 'A szerver fut'
             self.target_hint.setText('További csatornákat indíthatsz, vagy a táblázatban külön kezelheted a core-okat. A questek futás közben frissíthetők.')
             if not state.get('core_control'):
@@ -1245,6 +1415,21 @@ class MainWindow(QMainWindow):
         bar.addWidget(self.log_choice, 1)
         bar.addWidget(button('Lista frissítése', self.update_logs))
         layout.addLayout(bar)
+        filters = QHBoxLayout()
+        self.log_search = QLineEdit()
+        self.log_search.setPlaceholderText('Keresés a napló szövegében…')
+        self.log_search.setAccessibleName('Keresés a megnyitott naplóban')
+        self.log_search.textChanged.connect(self.filter_log)
+        filters.addWidget(self.log_search, 1)
+        self.log_level = QComboBox()
+        self.log_level.addItems(['Minden bejegyzés', 'Hibák', 'Figyelmeztetések'])
+        self.log_level.setAccessibleName('Napló szűrése súlyosság szerint')
+        self.log_level.currentIndexChanged.connect(self.filter_log)
+        filters.addWidget(self.log_level)
+        layout.addLayout(filters)
+        self.log_full_text = ''
+        self.log_count = note('Nincs megnyitott napló.')
+        layout.addWidget(self.log_count)
         self.log_view = QPlainTextEdit()
         self.log_view.setReadOnly(True)
         self.log_view.setFont(QFont('Cascadia Mono', 10))
@@ -1255,8 +1440,8 @@ class MainWindow(QMainWindow):
     def error(self, text):
         QMessageBox.warning(self, 'Auriga szerverkezelő', text)
 
-    def busy(self):
-        return (self.process is not None and self.process.state() != QProcess.ProcessState.NotRunning) or \
+    def busy(self,include_pending=True):
+        return (include_pending and hasattr(self,'pending_changes') and self.pending_changes.active) or (self.process is not None and self.process.state() != QProcess.ProcessState.NotRunning) or \
             bool(hasattr(self, 'crash_page') and self.crash_page.active()) or \
             bool(hasattr(self, 'backup_page') and self.backup_page.active()) or \
             bool(hasattr(self, 'item_page') and self.item_page.active()) or \
@@ -1270,6 +1455,15 @@ class MainWindow(QMainWindow):
 
     def target_id(self):
         return (self.target_epoch, 'remote', self.remote_profile['id']) if self.is_remote() else (self.target_epoch, 'local', str(self.root))
+
+    def refresh_pending_views(self):
+        for editor in self.editors:
+            if editor.document is not None and not editor.dirty:editor.load(editor.document.relative,force=True)
+        if self.item_page.packet is not None and not self.item_page.dirty:
+            # Reload the real baseline after discard/publication; the loader overlays remaining drafts.
+            self.item_page.attempted=None
+            if not self.pending_changes.active and not self.item_page.active():self.item_page.reload_rewards()
+        self.pending_page.signature=None
 
     def state(self):
         if self.is_remote():
@@ -1356,7 +1550,10 @@ class MainWindow(QMainWindow):
             if item.widget(): item.widget().deleteLater()
         self.channel_boxes = []
         self.log_choice.blockSignals(True); self.log_choice.clear(); self.log_choice.blockSignals(False)
-        self.log_view.clear(); self.console.clear()
+        self.set_log_text(''); self.console.clear()
+        for page in (self.data_page, self.quest_page):
+            page.quick_files.clear()
+            page.quick_files.addItem('Gyakori adatfájlok…', None)
         self.action_log, self.detached = None, None
 
     def choose_root(self):
@@ -1464,6 +1661,7 @@ class MainWindow(QMainWindow):
                     raise api.EditorError('A válasz nem a kért távoli fájlhoz tartozik.')
                 callback(value)
             except (api.EditorError, OSError, ValueError, KeyError, TypeError, UnicodeError) as error:
+                if error_callback:error_callback(str(error))
                 self.error(str(error))
             self.refresh()
         def failed(message):
@@ -1538,9 +1736,9 @@ class MainWindow(QMainWindow):
             box.setProperty('channel', channel)
             box.setChecked(selected.get(channel, channel == channels[0]))
             box.toggled.connect(self.update_channel_summary)
-            self.channel_layout.addWidget(box)
             self.channel_boxes.append(box)
-        self.channel_layout.addStretch()
+        self.channel_columns = None
+        self.reflow_channels()
         self.update_channel_summary()
 
     def command(self, arguments, logfile):
@@ -1552,9 +1750,23 @@ class MainWindow(QMainWindow):
         folder.mkdir(parents=True, exist_ok=True)
         return folder / ('job-' + secrets.token_hex(8) + '.log')
 
-    def job(self, arguments, callback=None):
+    def job(self, arguments, callback=None,*,_pending=False):
+        if not _pending and arguments and arguments[0] in ('setup-db','prepare','apply-quests','reload-quests'):
+            if self.busy() or (not self.root and not self.is_remote()):return
+            descriptions={'setup-db':'SQL-sémák ellenőrzése és előkészítése','prepare':'Szerverfájlok előállítása a mentett beállításokból',
+                          'apply-quests':'A mentett questforrások fordítása és aktiválása','reload-quests':'A mentett questforrások fordítása és élő újratöltése'}
+            try:
+                stage=review.request(self,'Szerveradatok előkészítése / aktiválása','server_action',dict(argv=list(arguments)),
+                    [('Kiválasztott szerver','Művelet','Jelenlegi állapot',descriptions[arguments[0]])])
+                if stage is None:return
+                arguments=stage.begin(self)['argv']
+            except (api.EditorError,OSError,ValueError) as error:self.error(str(error));return
+            original_callback=callback
+            def callback(ok):
+                stage.finish(ok)
+                if original_callback:original_callback(ok)
         if self.is_remote():
-            if self.busy(): return
+            if self.busy(include_pending=not _pending): return
             self.console_toggle.setChecked(True)
             self.console.clear()
             self.console.appendPlainText('Távoli szerver: %s\nMűvelet: %s' % (self.remote_profile['name'], arguments[0]))
@@ -1566,9 +1778,10 @@ class MainWindow(QMainWindow):
                 self.remote_next_poll = 0
                 self.refresh_inventory()
                 if callback: callback(True)
-            self.remote_request('action', dict(argv=list(arguments)), finished)
+            started=self.remote_request('action', dict(argv=list(arguments)), finished,error_callback=lambda message:callback(False) if callback else None)
+            if not started and callback:callback(False)
             return
-        if not self.root or self.busy():
+        if not self.root or self.busy(include_pending=not _pending):
             return
         self.action_log, self.log_text = self.new_log(), ''
         self.console_toggle.setChecked(True)
@@ -1712,6 +1925,7 @@ class MainWindow(QMainWindow):
     def refresh(self):
         if not hasattr(self, 'console'): return
         try:
+            self.update_unsaved_indicator()
             busy = self.busy()
             switching_blocked = bool(self.process or (self.remote_client and self.remote_client.mutating) or self.remote_page.work.active() or self.remote_page.probe_process or self.crash_page.active() or self.backup_page.active() or self.item_page.active() or self.bench_page.active())
             self.target_choice.setEnabled(not switching_blocked)
@@ -1725,6 +1939,8 @@ class MainWindow(QMainWindow):
             self.crash_page.tick(state)
             self.backup_page.tick(state)
             self.item_page.tick(state)
+            self.drop_page.tick(state)
+            self.pending_page.tick()
             self.bench_page.tick(state)
             busy = self.busy()
             actions = (self.prepare_button, self.check_button, self.start_button, self.stop_button, self.stop_db_button, self.setup_db_button, self.quest_reload_button, self.db_check_button,
@@ -1807,6 +2023,7 @@ class MainWindow(QMainWindow):
                                         'A bejelölt csatornák core-jainak indítása a futó szerverhez.' if running else
                                         'Kijelölt csatornák és közös CH99 indítása a kiválasztott szerveren.')
             for box in self.channel_boxes: box.setEnabled(not busy and not starting)
+            self.topology_button.setEnabled(not busy and bool(self.config_editor.document))
             self.update_core_buttons(state)
             self.stop_button.setEnabled(not busy and state['running'])
             self.stop_db_button.setEnabled(not busy and not running and state['database_running'])
@@ -1815,7 +2032,7 @@ class MainWindow(QMainWindow):
             for page in (self.data_page, self.quest_page): page.files.setEnabled(not busy)
             for editor in self.editors:
                 editor.tabs.setEnabled(not busy)
-                can_save = not running or (state.get('hotreload') and editor.document and api.hotreload_file(editor.document.relative))
+                can_save = hasattr(self,'pending_changes') or not running or (state.get('hotreload') and editor.document and api.hotreload_file(editor.document.relative))
                 editor.save_button.setEnabled(bool(editor.document and editor.dirty and not busy and can_save))
             if self.pages.currentWidget() == self.log_page and (not self.is_remote() or (self.remote_client and not self.remote_client.process and time.monotonic() >= self.remote_next_log)):
                 self.refresh_log()
@@ -1835,6 +2052,17 @@ class MainWindow(QMainWindow):
         self.refresh_log()
 
     def set_log_text(self, text):
+        self.log_full_text = text
+        self.filter_log()
+
+    def filter_log(self, *_):
+        lines = self.log_full_text.splitlines()
+        query = self.log_search.text().casefold()
+        level = self.log_level.currentIndex()
+        markers = ('[error]', '[critical]', '[fatal]', 'error:', 'traceback', 'exception') if level == 1 else ('[warn]', '[warning]', 'warning:', 'warn:')
+        visible = [line for line in lines if query in line.casefold() and (level == 0 or any(marker in line.casefold() for marker in markers))]
+        text = '\n'.join(visible) if query or level else self.log_full_text
+        self.log_count.setText('%d / %d sor' % (len(visible), len(lines)))
         if self.log_view.toPlainText() != text:
             bottom = self.log_view.verticalScrollBar().value() == self.log_view.verticalScrollBar().maximum()
             self.log_view.setPlainText(text)
@@ -1843,7 +2071,7 @@ class MainWindow(QMainWindow):
     def refresh_log(self):
         relative = self.log_choice.currentData()
         if not relative:
-            self.log_view.clear(); return
+            self.set_log_text(''); return
         if self.is_remote():
             if not self.remote_online or not self.remote_client or self.remote_client.process: return
             self.remote_next_log = time.monotonic() + 5
@@ -1851,7 +2079,7 @@ class MainWindow(QMainWindow):
             return
         if not self.root: return
         try: self.set_log_text(api.redact(api.tail(self.root / relative), self.root))
-        except OSError: self.log_view.setPlainText('A napló jelenleg nem olvasható.')
+        except OSError: self.set_log_text('A napló jelenleg nem olvasható.')
 
     def save_current(self):
         current = self.pages.currentWidget()
@@ -1910,7 +2138,7 @@ def run(arguments):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--package', type=Path)
     parser.add_argument('--screenshot', type=Path, help=argparse.SUPPRESS)
-    parser.add_argument('--screenshot-page', choices=['overview', 'settings', 'data', 'quests', 'remote', 'crashes', 'backups', 'items'], default='overview', help=argparse.SUPPRESS)
+    parser.add_argument('--screenshot-page', choices=['overview', 'settings', 'channels', 'data', 'quests', 'logs', 'remote', 'crashes', 'backups', 'items', 'bench', 'drops','pending'], default='overview', help=argparse.SUPPRESS)
     parser.add_argument('--screenshot-file', help=argparse.SUPPRESS)
     args = parser.parse_args(arguments)
     application = QApplication.instance() or QApplication([sys.argv[0]])
@@ -1923,15 +2151,17 @@ def run(arguments):
     application.setStyleSheet(STYLE)
     window = MainWindow(args.package or default_root())
     if args.screenshot:
-        window.resize(1320, 860)
-        window.navigation.setCurrentRow({'overview': 0, 'settings': 1, 'data': 2, 'quests': 3, 'remote': 5, 'crashes': 6, 'backups': 7, 'items': 8}[args.screenshot_page])
+        window.resize(1320, 940)
+        window.navigation.setCurrentRow({'overview': 0, 'settings': 1, 'channels': 1, 'data': 2, 'quests': 3, 'logs': 4, 'remote': 5, 'crashes': 6, 'backups': 7, 'items': 8, 'bench': 9, 'drops':10,'pending':11}[args.screenshot_page])
         if args.screenshot_file and args.screenshot_page in ('data', 'quests'):
             page = window.data_page if args.screenshot_page == 'data' else window.quest_page
             page.editor.load(args.screenshot_file)
     window.show()
     if args.screenshot:
+        if args.screenshot_page == 'channels':
+            QTimer.singleShot(0, window.open_topology)
         def capture():
-            window.grab().save(str(args.screenshot))
+            (application.activeWindow() or window).grab().save(str(args.screenshot))
             application.quit()
         QTimer.singleShot(900, capture)
     elif not window.root:

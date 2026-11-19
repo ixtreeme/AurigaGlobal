@@ -26,6 +26,11 @@ void CQuestManager::CloseRuntime(const std::shared_ptr<RuntimeGeneration>& runti
     runtime->closed = true;
 }
 std::string CQuestManager::RuntimeRevision() const { return m_activeRuntime ? m_activeRuntime->revision : ""; }
+bool CQuestManager::HasTypedItemUse(std::string_view contentCode) const {
+    if (m_activeRuntime && m_activeRuntime != m_currentRuntime)
+        return m_activeRuntime->typedItemUses.contains(contentCode);
+    return m_typedItemUses.contains(contentCode);
+}
 void CQuestManager::CollectRuntimes() {
     for (auto it = m_runtimes.begin(); it != m_runtimes.end();) {
         if (*it != m_activeRuntime && *it != m_preparedRuntime && *it != m_currentRuntime && it->use_count() == 1) {
@@ -94,10 +99,15 @@ bool CQuestManager::CommitReload(const std::string& revision, std::string& error
     if (!m_preparedRuntime || m_preparedRuntime->revision != revision) { error = "quest generation was not prepared"; return false; }
     if (m_runtimeExecutionDepth || m_currentRuntime != m_activeRuntime) { error = "quest execution is in progress"; return false; }
     auto next = m_preparedRuntime;
+    const bool actionsChanged = m_typedItemUses.size() != next->typedItemUses.size() ||
+        std::ranges::any_of(m_typedItemUses, [&](const auto& entry) {
+            return !next->typedItemUses.contains(entry.first);
+        });
     SwitchRuntime(next);
     next->staging = false; SetRuntimeStaging(L, false);
     m_activeRuntime = next; m_preparedRuntime.reset();
     m_CurrentRunningState = nullptr;
+    if (actionsChanged) RefreshTypedQuestItemActions();
     LOG_INFO("QUEST hotreload activated {}", revision);
     CollectRuntimes(); error.clear(); return true;
 }

@@ -1,0 +1,12 @@
+#pragma once
+
+#include <entt/entity/fwd.hpp>
+#include <item/ItemMissions.hpp>
+#include <functional>
+#include "../quest/quest.h"
+
+// Exchange quest materials, optional rewards and Yang in one owner commit.
+std::expected<void, auriga::item::ItemMissionError> RequestTypedQuestItemExchange(entt::entity character,
+	std::vector<auriga::item::MissionItemAmount> costs, std::vector<auriga::item::MissionItemAmount> rewards,
+	std::uint64_t goldCost, std::function<void(bool written)> done,
+	quest::TypedItemUseSource source = {}, std::uint64_t goldReward = 0);

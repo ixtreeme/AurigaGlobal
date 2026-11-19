@@ -15,7 +15,8 @@ struct GatheringSite
     std::vector<GatheringReward> rewards;
 };
 enum class ResourceError:std::uint8_t { Invalid,Forbidden,WrongTool,NoBait,NoRoom,Unavailable,InvalidDecision,NotCompleted };
-struct ResourceRequest { ItemInstanceId tool;ToolRuntimeActor actor;bool completed=false,eligible=true; std::uint64_t nowUtcMs=0; };
+struct ResourceRequest { ItemInstanceId tool;ToolRuntimeActor actor;bool completed=false,eligible=true; std::uint64_t nowUtcMs=0;std::optional<std::uint32_t> selectedRewardRoll; };
+const GatheringReward* SelectGatheringReward(const GatheringSite&,std::uint32_t roll);
 struct ResourcePlan { ItemCommit commit;bool success=false;std::uint32_t points=0,bait=0;std::vector<FishingYield> yields; };
 std::expected<void,ResourceError> ValidateGatheringSites(const ItemCatalog&,std::span<const GatheringSite>);
 std::expected<std::vector<GatheringSite>,std::string> ParseGatheringSites(std::string_view,const ItemCatalog&);
@@ -30,6 +31,7 @@ struct ResourceView
     const PersistentItem* tool=nullptr;const GatheringSite* site=nullptr;std::uint32_t target=0,remainingMs=0;
     std::uint16_t chance=0;const ResourcePlan* result=nullptr;
     const FishingRuntimeView* fishing=nullptr;
+    std::optional<ItemKey> predictedReward;
 };
 std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeResourceGathering(const ItemCatalog&,const ResourceView&);
 }

@@ -3,6 +3,7 @@
 #include "ItemCatalogRuntime.hpp"
 #include "ItemStore.hpp"
 #include "TypedItemOps.hpp"
+#include "TypedRecovery.hpp"
 #include "TypedInventorySync.hpp"
 #include "TypedLoot.hpp"
 #include "../core/utils.h"
@@ -81,7 +82,7 @@ std::vector<items::MobDrop> RollTypedMobDrops(const items::MobDropContext& kill)
 {
 	if (!items::runtime::TypedDropsEnabled())
 		return {};
-	const auto catalog = items::runtime::CurrentCatalog();
+	const auto catalog = items::runtime::CurrentDropCatalog();
 	if (!catalog)
 		return {};
 	auto drops = items::PlanMobDrops(*catalog, kill, Draw);
@@ -104,7 +105,8 @@ void QueueTypedItemGrant(entt::entity owner, const items::ItemGrant& grant)
 		return;
 	auto& queue = g_registry.get_or_emplace<ecs::TypedGrantQueue>(owner);
 	const std::uint32_t stack = std::max<std::uint32_t>(entry->base.maxStack, 1);
-	if (!items::QueueGrant(queue.pending, grant, stack))
+	auto queued=grant;if(!queued.createdAtUtcMs)queued.createdAtUtcMs=TypedItemEffectNow();
+	if (!items::QueueGrant(queue.pending, queued, stack))
 	{
 		LOG_ERROR("TypedDrops: pid {} has {} drops waiting; {} x{} is lost", ecs::PlayerRuntime::GetPlayerID(owner),
 			queue.pending.size(), entry->base.contentCode, grant.count);

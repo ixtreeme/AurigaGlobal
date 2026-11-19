@@ -1,0 +1,256 @@
+{
+  "date": "2026-11-17",
+  "checked_utc": "2026-11-17T16:36:13.833739+00:00",
+  "feature": "live_chest_contents_and_bulk_rewards",
+  "complete": true,
+  "server_branch": "20261103",
+  "unity_branch": "/main/unity63-integration-20261103",
+  "unity_editor": "6000.3.27f1",
+  "instance_migration": 44,
+  "local_package": "D:\\AurigaGlobal\\Server2-Local",
+  "deployment_backup": "D:\\AurigaGlobal\\Server2-Local\\run\\deployments\\live-rewards-20261117T162100Z",
+  "final_manager_backup": "D:\\AurigaGlobal\\Server2-Local\\run\\deployments\\bulk-rewards-final-manager-20261117T163506Z",
+  "base_catalog_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+  "source_catalog_sha256": "9ab3dac7f81d2898ab89aeeca641bffc4f59b28ac5f7683d080282ea9913babd",
+  "deferred_637_unchanged": true,
+  "final_drop_groups": 183,
+  "final_drop_entries": 9027,
+  "final_chest_overrides": 0,
+  "final_release": "cd049acb4e7fa3f6161334a8560cc016",
+  "all_cores_live_chests": true,
+  "installed_files_verified": 251,
+  "server_processes": {
+    "database": 31428,
+    "ch1-core1": 10880,
+    "ch1-core2": 34024,
+    "ch99-core99": 20684,
+    "login": 24644
+  },
+  "live_proof": {
+    "first_hash": "aea0c96e7683adfa7bb88c1d7cb97c4c3090d062179adac60486259d05ada90a",
+    "second_hash": "3b90a2650eb4550d284963d186e72e0d5eb8550b571d29b1cd7cf1613fb510c6",
+    "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+    "first_activation": {
+      "available": true,
+      "containers_available": true,
+      "running": true,
+      "cores": [
+        {
+          "name": "ch1-core1",
+          "hash": "aea0c96e7683adfa7bb88c1d7cb97c4c3090d062179adac60486259d05ada90a",
+          "release": "487d4f88ad4305b99345216ad55078ab",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch1-core2",
+          "hash": "aea0c96e7683adfa7bb88c1d7cb97c4c3090d062179adac60486259d05ada90a",
+          "release": "487d4f88ad4305b99345216ad55078ab",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch99-core99",
+          "hash": "aea0c96e7683adfa7bb88c1d7cb97c4c3090d062179adac60486259d05ada90a",
+          "release": "487d4f88ad4305b99345216ad55078ab",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        }
+      ],
+      "hash": "aea0c96e7683adfa7bb88c1d7cb97c4c3090d062179adac60486259d05ada90a",
+      "release": "487d4f88ad4305b99345216ad55078ab",
+      "activated": true
+    },
+    "second_activation": {
+      "available": true,
+      "containers_available": true,
+      "running": true,
+      "cores": [
+        {
+          "name": "ch1-core1",
+          "hash": "3b90a2650eb4550d284963d186e72e0d5eb8550b571d29b1cd7cf1613fb510c6",
+          "release": "d3d85bb431ddfc7964a802d93bb3b1bf",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch1-core2",
+          "hash": "3b90a2650eb4550d284963d186e72e0d5eb8550b571d29b1cd7cf1613fb510c6",
+          "release": "d3d85bb431ddfc7964a802d93bb3b1bf",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch99-core99",
+          "hash": "3b90a2650eb4550d284963d186e72e0d5eb8550b571d29b1cd7cf1613fb510c6",
+          "release": "d3d85bb431ddfc7964a802d93bb3b1bf",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        }
+      ],
+      "hash": "3b90a2650eb4550d284963d186e72e0d5eb8550b571d29b1cd7cf1613fb510c6",
+      "release": "d3d85bb431ddfc7964a802d93bb3b1bf",
+      "activated": true
+    },
+    "server_processes_unchanged": {
+      "database": 31428,
+      "ch1-core1": 10880,
+      "ch1-core2": 34024,
+      "ch99-core99": 20684,
+      "login": 24644
+    },
+    "two_chests_opened": true,
+    "actual_mob_kills": true,
+    "old_quote_preserved": true,
+    "same_connection": true,
+    "relog_persisted": true,
+    "protected_state": {
+      "items": "5ece41c57b2502e544f8dd7ddb7016506f364d5c9d5eb7bbcbb71e08fb160a73",
+      "wallets": "134ef18248817b5dcedb24c97964c5f1116f5ebceb9bbe3b63fd407980558b92"
+    },
+    "original_contents_restored": true,
+    "cleanup_activation": {
+      "available": true,
+      "containers_available": true,
+      "running": true,
+      "cores": [
+        {
+          "name": "ch1-core1",
+          "hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "release": "cd049acb4e7fa3f6161334a8560cc016",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch1-core2",
+          "hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "release": "cd049acb4e7fa3f6161334a8560cc016",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch99-core99",
+          "hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "release": "cd049acb4e7fa3f6161334a8560cc016",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        }
+      ],
+      "hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+      "release": "cd049acb4e7fa3f6161334a8560cc016",
+      "activated": true
+    }
+  },
+  "ctest_passed": [
+    "container_opening",
+    "catalog_editor",
+    "bulk_rewards_editor",
+    "drop_reload_control",
+    "live_rewards_mariadb",
+    "live_mob_drops_mariadb",
+    "item_catalog_runtime_mariadb"
+  ],
+  "clarity_tests_passed": 6,
+  "unity_compilation": true,
+  "unity_live_validator": true,
+  "readonly_full_data_qt_preview": true,
+  "frozen_native_gui_smoke": true,
+  "largest_chest_profile": {
+    "entries": 170,
+    "before_seconds": 26.483,
+    "after_seconds": 6.193,
+    "profiler_enabled": true
+  },
+  "checks": {
+    "bulk-rewards-native-verified-build.log": {
+      "path": "build/bulk-rewards-native-verified-build.log",
+      "sha256": "2dd93fd742e9ae9d9c52270635149a4ca24241e2334bdab16e1401c3aa56463d"
+    },
+    "bulk-rewards-verified-tests.log": {
+      "path": "build/bulk-rewards-verified-tests.log",
+      "sha256": "470af4685f88feea479ef5e81b8beeffc371063ebb4d2871b60ab73f4552d744"
+    },
+    "bulk-rewards-clarity-tests.log": {
+      "path": "build/bulk-rewards-clarity-tests.log",
+      "sha256": "bb910c867dd108097202e00b16d20f78b9fa6ca5a068c5c80ec771714199da8b"
+    },
+    "bulk-rewards-fast-manager-build.log": {
+      "path": "build/bulk-rewards-fast-manager-build.log",
+      "sha256": "26c239ca3217f379bdfe6950d3ae35af2eed85c6b97e993d119b488cd41f162b"
+    },
+    "bulk-rewards-deploy-resume.log": {
+      "path": "build/bulk-rewards-deploy-resume.log",
+      "sha256": "2f6c8d6de6f6451832fcee176d7d3161db87ac7fe2621ee4d57bad3203818e52"
+    },
+    "bulk-rewards-unity-live.log": {
+      "path": "build/bulk-rewards-unity-live.log",
+      "sha256": "b960a7ad4a5f0b50207f15d5d65ce595b25abb7ab1f21e587e2c88b641f92b54"
+    },
+    "bulk-rewards-live-proof.log": {
+      "path": "build/bulk-rewards-live-proof.log",
+      "sha256": "b1e4917ca2030a768d7885cf6c63007d537fc41ea193546078874fe035197561"
+    },
+    "bulk-rewards-ui-preview.log": {
+      "path": "build/bulk-rewards-ui-preview.log",
+      "sha256": "6684cb8edc3965c9cdccb212edacbfac92a837a85a5ddbe30cee3b1ad3ba15a8"
+    },
+    "bulk-rewards-final-editor-ctest.log": {
+      "path": "build/bulk-rewards-final-editor-ctest.log",
+      "sha256": "079acbf6a46c59c8001694163e5c465e904d809ebeccd5ddde4cf67532348f1c"
+    },
+    "bulk-rewards-final-clarity.log": {
+      "path": "build/bulk-rewards-final-clarity.log",
+      "sha256": "4204fe33304a1f17630113392c96449afb00df9753ec1c2b0c99e91e5d3095bc"
+    },
+    "bulk-rewards-final-manager-deploy.log": {
+      "path": "build/bulk-rewards-final-manager-deploy.log",
+      "sha256": "4a44593062c12616f82e82a52500c45534224d1fe2fd0d936283a30f78e450c0"
+    },
+    "bulk-rewards-chest-profile-before.log": {
+      "path": "build/bulk-rewards-chest-profile-before.log",
+      "sha256": "7ba4219ca7da57d2ff074f7ebe94b6142d25ceb8b56349c703c352cc36a3d7ca"
+    },
+    "bulk-rewards-chest-profile-after.log": {
+      "path": "build/bulk-rewards-chest-profile-after.log",
+      "sha256": "0e75382fa426e644407844ffa7e36a22ce40654efb859597b76d1c86e10279e8"
+    }
+  },
+  "screenshots": [
+    "../ui/2026-11-17_live_chest_contents.png",
+    "../ui/2026-11-17_live_chest_editor.png",
+    "../ui/2026-11-17_bulk_reward_editor.png"
+  ],
+  "not_run": [
+    "FreeBSD build",
+    "standalone/mobile Unity build",
+    "remote package editing",
+    "load and multi-host outage tests"
+  ]
+}

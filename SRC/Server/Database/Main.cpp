@@ -6,7 +6,6 @@
 #include <Core/server_config.h>
 #include <iostream>
 #include "GuildManager.h"
-#include "ItemAwardManager.h"
 #include "PrivManager.h"
 #include "MoneyLog.h"
 #include "Marriage.h"
@@ -100,7 +99,6 @@ int main(int argc, char** argv)
 	CGuildManager GuildManager;
 	CPrivManager PrivManager;
 	CMoneyLog MoneyLog;
-	ItemAwardManager ItemAwardManager;
 	marriage::CManager MarriageManager;
 	CItemIDRangeManager ItemIDRangeManager;
 	if (!Start())
@@ -108,7 +106,6 @@ int main(int argc, char** argv)
 
 	GuildManager.Initialize();
 	MarriageManager.Initialize();
-	ItemIDRangeManager.Build();
 	LOG_INFO("Metin2DBCacheServer Start\n");
 
 	CClientManager::instance().MainLoop();

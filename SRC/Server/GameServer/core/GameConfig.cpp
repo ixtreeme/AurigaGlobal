@@ -208,13 +208,14 @@ bool GameConfig::Load(const auriga::config::Section& input, std::string& error)
 			gameplay.skillBookNextReadMax = gp.value("skillbook_nextread_max", 43200u);
 		}
 
+		if(doc.contains("social_history"))parsed.socialHistoryKeyFile=doc.at("social_history").value("key_file",std::string());
 		if (doc.contains("items"))
 		{
 			const auto& it = doc.at("items");
-			items.catalog = it.value("catalog", std::string("off"));
+			items.catalog = it.value("catalog", std::string("required"));
 			items.catalogRevision = it.value("catalog_revision", uint64_t { 1 });
 			items.catalogSha256 = it.value("catalog_sha256", std::string());
-			items.drops = it.value("drops", std::string("legacy"));
+			items.drops = it.value("drops", std::string("typed"));
 		}
 	}
 	catch (const std::exception&)
@@ -223,21 +224,15 @@ bool GameConfig::Load(const auriga::config::Section& input, std::string& error)
 		return false;
 	}
 
-	if (items.catalog != "off" && items.catalog != "required")
+	if (items.catalog != "required")
 	{
-		error = "GameServer: 'items.catalog' must be \"off\" or \"required\"";
+		error = "GameServer: 'items.catalog' must be \"required\"; the legacy item backend has been retired";
 		return false;
 	}
 
-	if (items.drops != "legacy" && items.drops != "typed")
+	if (items.drops != "typed")
 	{
-		error = "GameServer: 'items.drops' must be \"legacy\" or \"typed\"";
-		return false;
-	}
-
-	if (items.drops == "typed" && items.catalog != "required")
-	{
-		error = "GameServer: 'items.drops' \"typed\" needs 'items.catalog' \"required\"";
+		error = "GameServer: 'items.drops' must be \"typed\"; legacy drop tables have been retired";
 		return false;
 	}
 

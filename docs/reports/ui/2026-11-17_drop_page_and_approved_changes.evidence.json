@@ -1,0 +1,86 @@
+{
+  "date": "2026-11-17",
+  "checked_utc": "2026-11-17T18:20:51.306897+00:00",
+  "result": "SUCCESS",
+  "feature": "dedicated_drop_workspace_and_mandatory_change_approval",
+  "package": "D:\\AurigaGlobal\\Server2-Local",
+  "manager_files_verified": 248,
+  "manager_exe_sha256": "771f4abac9e83aca7f89de4f1fdc3126207bfcfa6190008dd45bccb5b527b0b4",
+  "manager_backup": "D:\\AurigaGlobal\\Server2-Local\\run\\deployments\\reviewed-changes-complete-20261117T181910Z",
+  "server_processes_before": [
+    [
+      "Database.exe",
+      31428
+    ],
+    [
+      "GameServer.exe",
+      10880
+    ],
+    [
+      "GameServer.exe",
+      20684
+    ],
+    [
+      "GameServer.exe",
+      34024
+    ],
+    [
+      "LoginServer.exe",
+      24644
+    ]
+  ],
+  "server_processes_after": [
+    [
+      "Database.exe",
+      31428
+    ],
+    [
+      "GameServer.exe",
+      10880
+    ],
+    [
+      "GameServer.exe",
+      20684
+    ],
+    [
+      "GameServer.exe",
+      34024
+    ],
+    [
+      "LoginServer.exe",
+      24644
+    ]
+  ],
+  "server_restart": false,
+  "live_content_published": false,
+  "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+  "live_hash": "162ef5115b58d6b833aa303550d0eef430a266fbe42296ca63d490c116c6d95a",
+  "installed_review_dialog_observed": true,
+  "installed_review_cancelled_without_publication": true,
+  "live_release": "ae3c6e6e6242e5cbe7ba744b881b17f6",
+  "existing_chest_overrides_preserved": 1,
+  "deferred_merge_items": 637,
+  "deferred_source_sha256": "9ab3dac7f81d2898ab89aeeca641bffc4f59b28ac5f7683d080282ea9913babd",
+  "preview_targets": 6,
+  "preview_rows": 26,
+  "checks": [
+    "21 approval/snapshot/no-write cancellation tests",
+    "catalog_editor and bulk_rewards_editor CTest",
+    "46 local GUI/native/backend integration tests",
+    "23 RPC/target GUI tests",
+    "25 SSH GUI tests",
+    "53 remote-work tests (2 skipped)",
+    "15 backup tests",
+    "14 package-manager tests",
+    "16 password tests (2 skipped)",
+    "12 item workflow tests",
+    "7 layout/clarity tests",
+    "read-only full-data review preview",
+    "frozen build and native helper startup",
+    "installed manager native GUI navigation and cancelled review"
+  ],
+  "not_run": [
+    "real external FreeBSD SSH publication",
+    "new Unity compilation or gameplay test: no gameplay/protocol changes"
+  ]
+}

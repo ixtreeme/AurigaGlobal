@@ -77,7 +77,7 @@ std::expected<FishProcessingQuote,E> CheckFishProcessing(const ItemCatalog& c,It
     for(const auto& reward:quote.possibilities)
     {
         const auto* target=reward.item ? c.Find(*reward.item) : nullptr;
-        if(reward.kind!=LootRewardKind::Item || reward.rareAttributeChanceBp || !reward.amount || reward.amount>UINT32_MAX ||
+        if(reward.kind!=LootRewardKind::Item || reward.rareAttributeChanceBp || reward.refinementLevel || !reward.amount || reward.amount>UINT32_MAX ||
            !target || target->base.retired || !SupportsPersistentGrant(c,*target))return std::unexpected(E::Unsupported);
         if(reward.weight<10000)++uncertain;
     }

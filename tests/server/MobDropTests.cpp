@@ -196,6 +196,14 @@ int main(int argc, char** argv)
     try
     {
         Validation(); Lookup(); SqlRows(); Planner();
+        const auto base=BuildItemCatalog(Fixture()).value();const auto pin=base->ContentHash();
+        auto groups=Fixture().mobDropGroups;groups[1].entries[0].amount=1;groups[1].killsPerDrop=1;
+        auto changed=base->WithMobDrops(groups);
+        Check(changed && (*changed)->ContentHash()!=pin,"drop-only view needs its own hash");
+        Check(base->ContentHash()==pin && base->FindMobDropGroup(2)->killsPerDrop==50,"drop view mutated the original persistence catalog");
+        groups[1].entries[0].refinementLevel=65535;
+        Check(!base->WithMobDrops(groups),"invalid live refinement accepted");
+        Check(base->WithMobDrops({}).has_value(),"deleting every drop group must be supported");
         std::cout << "Mob drop checks passed: " << checks << '\n';
         return 0;
     }

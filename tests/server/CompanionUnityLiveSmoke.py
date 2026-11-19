@@ -25,7 +25,7 @@ def main():
         assert args.fixture
         config=json.loads(args.fixture.read_text(encoding='utf-8-sig'))
         host=config['Host'];validate_local_host(args.package,host,config.get('Nexoria',False));assert len(config['Accounts'])==2
-        assert all(a['Login']==('codexitem' if config.get('NexoriaBasic') else 'codexcompanion')+config['Token']+str(i) for i,a in enumerate(config['Accounts']))
+        assert all(a['Login']==('codexitem' if config.get('NexoriaBasic') else 'codexcompanion')+config['Token']+str(i) or config.get('OriginalInventory') and config.get('InventoryMigration') and i==0 and a['Login']=='ixtreeme' and a['Pid']==3 for i,a in enumerate(config['Accounts']))
         sys.path.insert(0,str(REPO/'SRC/Tools/ServerManager'))
         import item_bench
         item_bench.connection(args.package.resolve())

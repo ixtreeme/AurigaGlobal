@@ -34,11 +34,58 @@ std::string Hex(const ItemCatalogDigest& digest)
     for (auto value : digest) result << std::hex << std::setw(2) << std::setfill('0') << static_cast<unsigned>(value);
     return result.str();
 }
+void DefinitionRules()
+{
+    auto source=item_catalog_fixture::Catalog();
+    const auto key=item_catalog_fixture::Sword();
+    ItemDefinitionRules root{key};root.rarity=3;root.allowAccountStorage=false;
+    ItemDefinitionRules level=root;level.level=3;level.available=false;level.allowedEmpires=2;
+    source.definitionRules={level,root};
+    const auto catalog=BuildItemCatalog(source).value();
+    Check(catalog->FindDefinitionRules(key)->rarity==3,"definition rules retain rarity");
+    Check(!catalog->FindDefinitionRules(key,3)->available,"exact level can be unavailable");
+    Check(catalog->FindDefinitionRules(key,2)->rarity==3,"unspecified levels inherit base rules");
+    Check(!catalog->FindDefinitionRules(item_catalog_fixture::Armor()),"existing native definition keeps defaults");
+    std::ranges::reverse(source.definitionRules);
+    Check(BuildItemCatalog(source).value()->ContentHash()==catalog->ContentHash(),"definition rule hash ignores source order");
+    source.definitionRules[1].available=true;
+    Check(BuildItemCatalog(source).value()->ContentHash()!=catalog->ContentHash(),"availability participates in catalog identity");
+    Reject([&](auto& s){s.definitionRules={root,root};},ItemCatalogErrorCode::DuplicateCategoryRow);
+    Reject([&](auto& s){auto r=root;r.allowedEmpires=0;s.definitionRules={r};},ItemCatalogErrorCode::InvalidProfile);
+    Reject([&](auto& s){auto r=root;r.clock=CostumeClock::SinceCreation;r.durationMs=0;s.definitionRules={r};},ItemCatalogErrorCode::InvalidProfile);
+    Reject([&](auto& s){auto r=root;r.level=10;s.definitionRules={r};},ItemCatalogErrorCode::InvalidRefinement);
+    Reject([&](auto& s){auto r=root;r.birthSocketChanceBp=10001;s.definitionRules={r};},ItemCatalogErrorCode::InvalidProfile);
+    Reject([&](auto& s){auto r=root;r.uniqueGroup="../unsafe";s.definitionRules={r};},ItemCatalogErrorCode::InvalidProfile);
+    auto extended=item_catalog_fixture::Catalog();
+    extended.armors[0].slot=EquipmentSlot::Pendant;
+    extended.accessories[0].slot=EquipmentSlot::Belt;extended.accessories[0].socketProfile.reset();
+    extended.materials[0].kind=MaterialKind::Component;
+    Check(BuildItemCatalog(extended).has_value(),"pendant belt and component are native categories");
+    Check(FitsEquipmentSlot(EquipmentSlot::Unique,22) && FitsEquipmentSlot(EquipmentSlot::Unique,23) && !FitsEquipmentSlot(EquipmentSlot::Unique,21),"unique item fits exactly either paired slot");
+}
 void ValidSnapshot()
 {
     auto source = item_catalog_fixture::Catalog();
+    auto spaced=source;spaced.items[0].iconAsset="icon/item/armor effect purple moon.tga";
+    Check(BuildItemCatalog(spaced).has_value(),"authored icon names retain internal spaces");
+    for(const auto path:{"icon/item/ armor.tga","icon/item/armor.tga ","icon /armor.tga","icon/item/armor\teffect.tga","../armor effect.tga"}) {
+        spaced.items[0].iconAsset=path;Check(!BuildItemCatalog(spaced),"asset spaces cannot conceal controls, traversal or padded path components");
+    }
     const auto snapshot = BuildItemCatalog(source).value();
-    const auto sword = item_catalog_fixture::Sword(), armor = item_catalog_fixture::Armor();
+    const auto sword=item_catalog_fixture::Sword();
+    Check(snapshot->LevelPolicy(sword,3).minimumLevel==snapshot->Find(sword)->base.minimumLevel,"default level policy uses prototype");
+    source.refinements[1].levels[3].minimumLevel=42;
+    source.refinements[1].levels[3].buyAmount=0;
+    source.refinements[1].levels[3].sellAmount=77;
+    const auto overridden=BuildItemCatalog(source).value();
+    Check(overridden->LevelPolicy(sword,3).minimumLevel==42 && overridden->LevelPolicy(sword,3).buyAmount==0 && overridden->LevelPolicy(sword,3).sellAmount==77,"per-level policy retains zero price and level requirement");
+    Check(overridden->LevelPolicy(sword,4).minimumLevel==snapshot->LevelPolicy(sword,4).minimumLevel,"override affects only its exact level");
+    Check(overridden->ContentHash()!=snapshot->ContentHash(),"level policy participates in content identity");
+    auto templated=item_catalog_fixture::Catalog();templated.appearances[1].modelAsset="Metin2Equipment/a{race}_5";
+    Check(BuildItemCatalog(templated).has_value(),"authored race-specific armor address accepted");
+    templated.appearances[1].modelAsset="Metin2Equipment/a{race}_../5";
+    Check(!BuildItemCatalog(templated),"armor placeholders cannot introduce traversal or another template");
+    const auto armor = item_catalog_fixture::Armor();
     Check(snapshot->Size() == item_catalog_fixture::FixtureItems && snapshot->Revision() == 1, "eight categories and fifteen typed composite prototypes published");
     Check(snapshot->RefinedBaseStats(sword, 3).value() == ItemBaseStats{150000, 42000, 0, 0}, "weapon golden");
     Check(snapshot->RefinedBaseStats(armor, 2).value() == ItemBaseStats{0, 0, 50000, 24000}, "armor golden");
@@ -164,7 +211,7 @@ void InvalidCatalogs()
     Reject([](auto& s) { s.accessories[0].slot = static_cast<EquipmentSlot>(9); }, ItemCatalogErrorCode::InvalidProfile);
     Reject([](auto& s) { s.accessories[0].resistanceProfile = 999; }, ItemCatalogErrorCode::MissingProfile);
     Reject([](auto& s) { s.materials[0].kind = static_cast<MaterialKind>(0); }, ItemCatalogErrorCode::InvalidProfile);
-    Reject([](auto& s) { s.materials[0].kind = static_cast<MaterialKind>(6); }, ItemCatalogErrorCode::InvalidProfile);
+    Reject([](auto& s) { s.materials[0].kind = static_cast<MaterialKind>(7); }, ItemCatalogErrorCode::InvalidProfile);
     Reject([](auto& s) { s.accessories[0] = ItemAccessoryRow{item_catalog_fixture::Bracelet()}; }, ItemCatalogErrorCode::InvalidProfile);
     Reject([](auto& s) { s.materials[0] = ItemMaterialRow{item_catalog_fixture::Leather()}; }, ItemCatalogErrorCode::InvalidProfile);
     Reject([](auto& s) { s.items[2].maxStack = 2; }, ItemCatalogErrorCode::InvalidBase);
@@ -366,7 +413,7 @@ int main(int argc, char** argv)
         {
             std::cout << Hex(BuildItemCatalog(item_catalog_fixture::Catalog()).value()->ContentHash()) << '\n'; return 0;
         }
-        ValidSnapshot(); InvalidCatalogs(); DeterministicHash(); ExtendedRefinementKeepsOnePrototype(); AccessoryAndMaterialProfiles();
+        ValidSnapshot(); InvalidCatalogs(); DeterministicHash(); ExtendedRefinementKeepsOnePrototype(); AccessoryAndMaterialProfiles(); DefinitionRules();
         std::cout << "Catalog checks passed: " << checks << '\n'; return 0;
     }
     catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

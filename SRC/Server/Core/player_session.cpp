@@ -22,8 +22,6 @@ uint32_t Part(uint8_t header)
         return 1;
     case HEADER_DG_PLAYER_LOAD_FAILED:
         return 2;
-    case HEADER_DG_ITEM_LOAD:
-        return 4;
     case HEADER_DG_QUEST_LOAD:
         return 8;
     case HEADER_DG_AFFECT_LOAD:
@@ -40,7 +38,7 @@ uint32_t Part(uint8_t header)
 }
 uint32_t RequiredParts()
 {
-    uint32_t mask = 1 | 4 | 8 | 16;
+    uint32_t mask = 1 | 8 | 16;
 #ifdef __SKILL_COLOR_SYSTEM__
     mask |= 64;
 #endif
@@ -232,13 +230,6 @@ bool ValidPayload(uint8_t header, std::span<const uint8_t> bytes, uint32_t chara
         return bytes.size() == sizeof(TPlayerTable) && NativeU32(bytes) == character;
     case HEADER_DG_PLAYER_LOAD_FAILED:
         return bytes.empty();
-    case HEADER_DG_ITEM_LOAD:
-        if (bytes.size() < 4 || !Rows(bytes, 4, NativeU32(bytes), sizeof(TPlayerItem)))
-            return false;
-        for (size_t i = 4; i < bytes.size(); i += sizeof(TPlayerItem))
-            if (NativeU32(bytes, i + offsetof(TPlayerItem, owner)) != character)
-                return false;
-        return true;
     case HEADER_DG_QUEST_LOAD:
         if (bytes.size() < 4 || !Rows(bytes, 4, NativeU32(bytes), sizeof(TQuestTable)))
             return false;

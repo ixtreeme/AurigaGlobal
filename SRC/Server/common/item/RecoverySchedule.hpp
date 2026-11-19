@@ -1,6 +1,7 @@
 #pragma once
 #include "Consumables.hpp"
 #include "PolymorphItems.hpp"
+#include "RecallItems.hpp"
 #include <array>
 #include <functional>
 #include <span>
@@ -20,11 +21,20 @@ struct RecoveryDose
 };
 struct RecoveryCooldown
 {std::uint32_t profile=0;std::uint64_t remainingMs=0;bool operator==(const RecoveryCooldown&)const=default;};
+// World item reuse deadlines continue while offline and are not death effects.
+// Keep them separate from the existing measured-online recovery cooldowns.
+struct WorldItemCooldown
+{std::uint32_t profile=0;std::uint64_t expiresAtUtcMs=0;bool operator==(const WorldItemCooldown&)const=default;};
+// The scroll and this intent commit together. It survives a lost callback or
+// logout and is acknowledged only once the character reaches the destination.
+struct WorldWarpIntent
+{RecallPosition destination;std::uint64_t hpCeiling=0;bool operator==(const WorldWarpIntent&)const=default;};
 inline constexpr std::size_t MaxRuntimeTimedEffects=32,MaxRuntimeToggleEffects=16;
 struct TimedItemEffect
 {
     std::uint64_t id=0;ItemKey source;
     std::uint64_t remainingMs=0,expiresAtMs=0;
+    std::uint8_t energyPercent=0;
     bool operator==(const TimedItemEffect&)const=default;
 };
 struct ActivePolymorph
@@ -40,6 +50,8 @@ struct RecoverySchedule
     std::vector<RecoveryCooldown> cooldowns;
     std::vector<TimedItemEffect> effects;
     std::optional<ActivePolymorph> polymorph;
+    std::vector<WorldItemCooldown> worldCooldowns;
+    std::optional<WorldWarpIntent> worldWarp;
     bool operator==(const RecoverySchedule&)const=default;
 };
 struct RecoverySchedulePlan

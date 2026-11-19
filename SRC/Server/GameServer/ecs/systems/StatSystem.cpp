@@ -202,7 +202,7 @@ void Compute(entt::entity e)
     SetReal(e, POINT_MAX_SP, maxSP);
     Change(e, POINT_MAX_HP, 0);
     Change(e, POINT_MAX_SP, 0);
-    ecs::PlayerRuntime::SetMaxStamina(e, maxStamina);
+    ecs::PlayerRuntime::SetMaxStamina(e, EquipmentPointValue(e, POINT_MAX_STAMINA, maxStamina));
     if (!HasPointState(e)) return;
 
     std::unordered_set<entt::entity> applied;

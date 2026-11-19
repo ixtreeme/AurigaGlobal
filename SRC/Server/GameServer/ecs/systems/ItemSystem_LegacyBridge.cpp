@@ -7,6 +7,7 @@
 #include "ActivitySystem.hpp"
 
 #include "ItemSystem.hpp"
+#include "../../item/TypedMoney.hpp"
 #include "WoodcuttingRules.hpp"
 #include "HerbalismRules.hpp"
 #include "MovementSystem.hpp"
@@ -646,46 +647,6 @@ void NotifyRefineFail(entt::entity ch, entt::entity item, const char* way, int s
 	}
 }
 
-
-void ItemSystem::RemoveSpecifyTypeItem(entt::entity e, uint8_t type, int count)
-{
-	if (0 == count)
-		return;
-
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	for (int i = 0; i < InventorySystem::GetInventorySize(e); ++i)
-#else
-	for (UINT i = 0; i < INVENTORY_MAX_NUM; ++i)
-#endif
-	{
-		const entt::entity item = ItemSystem::GetInventoryItem(e, i);
-		if (item == entt::null)
-			continue;
-
-		if (ItemSystem::GetItemType(item) != type)
-			continue;
-
-
-		const entt::entity myShop = ecs::SocialSystem::GetMyShop(e);
-		if (myShop != entt::null && ShopSystem::IsSellingItem(myShop, ItemSystem::GetItemID(item)))
-			continue;
-
-		const int itemCount = ItemSystem::GetItemCount(item);
-		if (count >= itemCount)
-		{
-			count -= itemCount;
-			ItemSystem::ConsumeItemEcs(item, itemCount);
-
-			if (0 == count)
-				return;
-		}
-		else
-		{
-			ItemSystem::ConsumeItemEcs(item, count);
-			return;
-		}
-	}
-}
 
 bool ItemSystem::GiveItem(entt::entity e, entt::entity victimEntity, TItemPos Cell)
 {
@@ -5465,7 +5426,8 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				if (canAdd == 0)
 					break;
 
-				ecs::PlayerRuntime::SetDragonCoin(e, curCoins + canAdd);
+				if (!ecs::PlayerRuntime::AddDragonCoin(e, canAdd))
+					break; // wallet refused: the item stays
 
 				ConsumeItemEcs(itemEntity, count); // teljes stack felhasznalasa
 				ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "Kaptal %lld Sarkanyermet.", static_cast<long long>(canAdd));
@@ -8696,60 +8658,10 @@ void ProcessRecallItem(entt::entity e, entt::entity item)
 }
 
 // Handing gold to a character, and crediting the farm-yang mission.
-void GiveGold(entt::entity e, int64_t iAmount)
+void GiveGold(entt::entity e, int64_t amount)
 {
-	if (iAmount <= 0)
-		return;
-
-	LOG_INFO("GIVE_GOLD: {} {}", ecs::PlayerRuntime::GetName(e).data(), iAmount);
-
-
-	/*
-	// PARTY GOLD SPLIT -  kikommentelve
-
-
-	if (ecs::SocialSystem::GetParty(e))
-	{
-		LPPARTY pParty = ecs::SocialSystem::GetParty(e);
-
-		int64_t dwTotal = iAmount;
-		int64_t dwMyAmount = dwTotal;
-
-		NPartyPickupDistribute::FCountNearMember funcCountNearMember(e);
-		pParty->ForEachOnlineMember(funcCountNearMember);
-
-		if (funcCountNearMember.total > 1)
-		{
-			int64_t dwShare = dwTotal / funcCountNearMember.total;
-			dwMyAmount -= dwShare * (funcCountNearMember.total - 1);
-
-			NPartyPickupDistribute::FMoneyDistributor funcMoneyDist(e, dwShare);
-			pParty->ForEachOnlineMember(funcMoneyDist);
-		}
-
-		ecs::PointSystem::Change(e, POINT_GOLD, dwMyAmount, true);
-
-		if (dwMyAmount > 1000)
-		{
-			LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().CharLog(e, dwMyAmount, "GET_GOLD", ""));
-		}
-	}
-	else
-	{
-		ecs::PointSystem::Change(e, POINT_GOLD, iAmount, true);
-
-		if (iAmount > 1000)
-		{
-			LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().CharLog(e, iAmount, "GET_GOLD", ""));
-		}
-	}
-	*/
-
-	// Mindig csak az kapja a goldot, akihez a ItemSystem::GiveGold(GetEntityHandle(), ) meghivodik
-	ecs::PointSystem::Change(e, POINT_GOLD, iAmount, true);
-
-	//	LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().CharLog(e, iAmount, "GET_GOLD", ""));
-	//}
+    if (amount > 0 && g_registry.valid(e) && g_registry.all_of<ecs::TypedItems>(e))
+        QueueTypedGold(e, static_cast<std::uint64_t>(amount));
 }
 
 // The automatic potion tick: top the character up while an auto-recovery

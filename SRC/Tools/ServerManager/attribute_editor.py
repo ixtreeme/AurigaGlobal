@@ -1,5 +1,7 @@
 """Typed instance-attribute authoring. No player instance or SQL editing."""
 import copy
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QStandardItem,QStandardItemModel
 from PySide6.QtWidgets import (QCheckBox,QComboBox,QGridLayout,QHBoxLayout,QSizePolicy,QLabel,QPushButton,QTabWidget,QVBoxLayout,QWidget)
 from pet_lifecycle_editor import table,cell,text
 from growth_pet_editor import number
@@ -11,7 +13,7 @@ UNITS={1:(1000,'pont'),2:(100,'%'),3:(1,'egész')}
 
 class AttributePanel(QWidget):
     def __init__(self,changed):
-        super().__init__();self.changed=changed;self.loading=True;self.definitions=[];self.capacities=[];self.exclusions=[]
+        super().__init__();self.changed=changed;self.loading=True;self.definitions=[];self.capacities=[];self.exclusions=[];self.bonus_model=QStandardItemModel(self)
         layout=QVBoxLayout(self);self.enabled=QCheckBox('A tárgy kaphat saját példánybónuszokat');layout.addWidget(self.enabled)
         self.body=QWidget();body=QVBoxLayout(self.body);layout.addWidget(self.body)
         self.allow_lock=QCheckBox('Egy normál bónuszhely védhető');body.addWidget(self.allow_lock)
@@ -41,8 +43,8 @@ class AttributePanel(QWidget):
         value=value or dict(pool_kind='1',bonus_id=str(self.definitions[0]['id']),tier='1',value_scaled='1000')
         row=self.values.rowCount();self.values.insertRow(row);pool=QComboBox();bonus=QComboBox()
         for identity,label in POOLS:pool.addItem(label,identity)
-        from item_page import BONUS_LABELS
-        for d in self.definitions:bonus.addItem(BONUS_LABELS.get(d['code'],d['code']),str(d['id']))
+        bonus.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon);bonus.setMinimumContentsLength(18)
+        bonus.setModel(self.bonus_model)
         pool.setCurrentIndex(pool.findData(str(value['pool_kind'])));index=bonus.findData(str(value['bonus_id']))
         if index<0:bonus.addItem('Ismeretlen #'+str(value['bonus_id']),str(value['bonus_id']));index=bonus.count()-1
         bonus.setCurrentIndex(index);self.values.setCellWidget(row,0,pool);self.values.setCellWidget(row,1,bonus)
@@ -60,7 +62,13 @@ class AttributePanel(QWidget):
         self.notify()
 
     def load(self,document,definitions):
-        self.loading=True;self.definitions=[d for d in definitions if int(d['sources'])&8]
+        self.loading=True;filtered=[d for d in definitions if int(d['sources'])&8]
+        self.values.setRowCount(0)
+        if filtered!=self.definitions:
+            from item_page import BONUS_LABELS
+            self.definitions=filtered;self.bonus_model.clear()
+            for definition in self.definitions:
+                item=QStandardItem(BONUS_LABELS.get(definition['code'],definition['code']));item.setData(str(definition['id']),Qt.ItemDataRole.UserRole);self.bonus_model.appendRow(item)
         self.enabled.setChecked(document.get('attribute_profile') is not None)
         self.allow_lock.setChecked(str((document.get('attribute_profile') or {}).get('allow_lock','0'))=='1')
         groups={r['pool_kind']:r for r in document['attribute_groups']}
@@ -80,7 +88,7 @@ class AttributePanel(QWidget):
             if pool not in allowed:continue
             identity=self.values.cellWidget(row,1).currentData();definition=self.definition(identity)
             if not definition:raise api.EditorError('Ismeretlen példánybónusz.')
-            weight=number(text(self.values,row,2),'Típus súlya',1,1000000);key=(pool,identity)
+            weight=number(text(self.values,row,2),'Típus súlya',0,1000000);key=(pool,identity)
             if key in candidates and candidates[key]['weight']!=weight:raise api.EditorError('Egy bónusztípus minden értékszintjén azonos súly kell.')
             candidates[key]=dict(pool_kind=pool,bonus_id=identity,weight=weight)
             tier=number(text(self.values,row,3),'Minőségi szint',1,16);scale=UNITS[int(definition['unit'])][0]
@@ -95,18 +103,19 @@ class AttributeServicePanel(QWidget):
         self.pool=self.form.add('attribute_service','pool_kind','Csoport','choice',choices=POOLS)
         self.form.add('attribute_service','units_per_use','Felhasznált darab',range=(1,65535))
         self.success=self.form.add('attribute_service','success_bp','Hozzáadás sikeresélye','scaled',scale=100,range=(1,10000),unit='%')
-        self.targets=self.form.add('attribute_service','target_mask','Célok','bits',names=['Fegyver','Páncél','Ékszer','Kosztüm'])
+        self.targets=self.form.add('attribute_service','target_mask','Célok','bits',names=['Fegyver','Páncél','Ékszer','Kosztüm','Talizmán'])
         self.form.add('attribute_service','minimum_count','Legkevesebb meglévő bónusz',range=(0,5))
         self.form.add('attribute_service','maximum_count','Legtöbb meglévő bónusz',range=(0,5))
         self.add_count=self.form.add('attribute_service','add_count','Hozzáadott bónuszok',range=(1,5))
         self.form.add('attribute_service','maximum_target_level','Céltárgy legnagyobb minimumszintje (0: nincs korlát)',range=(0,65535))
+        self.reroll_group=self.form.add('attribute_service','target_reroll_group','Bónuszváltó tárgycsoport','choice',choices=[('0','Minden'),('1','Hagyományos'),('2','Zodiákus')])
         self.consume=self.form.add('attribute_service','consume_on_failure','Sikertelen hozzáadás is fogyaszt','bool')
         self.form.finish();self.form.setSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Maximum);layout.addWidget(self.form)
         self.tiers=table(['Minőségi szint','Esély (%)']);layout.addWidget(self.tiers)
         buttons=QHBoxLayout();self.add=QPushButton('Minőségi szint hozzáadása');self.remove=QPushButton('Kijelölt törlése');buttons.addWidget(self.add);buttons.addWidget(self.remove);buttons.addStretch();layout.addLayout(buttons)
         hint=QLabel('A minőségi esélyek összege legfeljebb 100%. A hiányzó tartomány sikertelen előkészítés, fogyasztás nélkül. A típusok súlyait a céltárgy Példánybónuszok lapján állítod. A védelem a helyet és a meglévő értéket őrzi meg.')
         hint.setWordWrap(True);layout.addWidget(hint)
-        self.add.clicked.connect(lambda:self.add_tier());self.remove.clicked.connect(self.remove_tiers);self.tiers.itemChanged.connect(self.notify);self.operation.widget.currentIndexChanged.connect(self.controls)
+        self.add.clicked.connect(lambda:self.add_tier());self.remove.clicked.connect(self.remove_tiers);self.tiers.itemChanged.connect(self.notify);self.operation.widget.currentIndexChanged.connect(self.controls);self.pool.widget.currentIndexChanged.connect(self.controls)
         self.loading=False
 
     def notify(self,*_):
@@ -120,7 +129,9 @@ class AttributeServicePanel(QWidget):
         op=self.operation.widget.currentData();rolling=op in ('1','2');adding=op=='1'
         for widget in (self.tiers,self.add,self.remove):widget.setVisible(rolling)
         for field in (self.success,self.add_count,self.consume):field.widget.setEnabled(adding)
-        self.pool.widget.setEnabled(rolling);self.targets.boxes[3].setEnabled(rolling)
+        self.pool.widget.setEnabled(rolling)
+        self.reroll_group.widget.setEnabled(op=='2' and self.pool.widget.currentData()=='1')
+        for box in self.targets.boxes[3:]:box.setEnabled(rolling)
         if not self.loading:
             if adding and self.add_count.edit.text() in ('','0'):self.add_count.edit.setText('1')
             if rolling and not self.tiers.rowCount():self.add_tier()
@@ -136,4 +147,5 @@ class AttributeServicePanel(QWidget):
         head=document['attribute_service']
         if not adding:head.update(success_bp='10000',consume_on_failure='0',add_count='0')
         if not rolling:head.update(pool_kind='1',target_mask=str(int(head['target_mask'])&7))
+        if op!='2' or head['pool_kind']!='1':head['target_reroll_group']='0'
         document['attribute_tiers']=[dict(tier=number(text(self.tiers,r,0),'Minőségi szint',1,16),chance_bp=str(catalog.scaled(text(self.tiers,r,1),100))) for r in range(self.tiers.rowCount())] if rolling else []

@@ -10,7 +10,7 @@ INSERT INTO protos.item_base VALUES
   1,1,1,100,0,1,2,1,1,NULL,NULL,1,0,0,0),
  (18,1,'container_key.iron_key','item.iron_key.name','item.iron_key.description','icons/iron_key.png',
   1,1,20,100,0,1,2,1,1,NULL,NULL,1,0,0,0);
-INSERT INTO protos.loot_entry VALUES
+INSERT INTO protos.loot_entry(profile_id,entry_no,reward_kind,item_category_id,item_local_id,amount,weight,rare_attribute_chance_bp) VALUES
  (1,1,1,6,1,5,70,0),(1,2,2,NULL,NULL,1000,20,0),(1,3,1,1,1,1,10,500),
  (2,1,1,5,2,3,10000,0),(2,2,3,NULL,NULL,5000,2500,0),(2,3,5,NULL,NULL,101,500,0),(2,4,8,NULL,NULL,0,100,0);
 INSERT INTO protos.item_container(category_id,local_id,container_kind,loot_profile_id,lock_id)

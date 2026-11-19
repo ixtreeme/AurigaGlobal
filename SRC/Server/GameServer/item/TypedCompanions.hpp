@@ -25,6 +25,7 @@ void AwardTypedGrowthPetMobExperience(entt::entity owner,entt::entity defeated,i
 void StopTypedGrowthPetClock(entt::entity owner);
 void FinishTypedGrowthPetClocks();
 bool HandleTypedCompanionPacket(entt::entity owner, const char* data);
+void ResumeTypedCompanionSummon(entt::entity owner);
 
 namespace auriga::item::runtime
 {

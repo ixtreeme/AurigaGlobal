@@ -2,12 +2,19 @@
 #include <common/stl.h>
 #include "constants.h"
 #include "packet_info.h"
+#include <item/NativeMoneyWire.hpp>
+#include <item/PrivateShopWire.hpp>
 #ifdef __INGAME_WIKI__
 #include <common/in_game_wiki.h>
 #endif
 
 #include <fmt/format.h>
 #include <fstream>
+
+static_assert(HEADER_CG_MOUNT_FLIGHT == 221 && HEADER_GC_MOUNT_FLIGHT == 221,
+    "Mount flight uses header 221 in both directions");
+static_assert(HEADER_CG_TYPED_ITEM_MOVE == 225 && HEADER_GC_TYPED_INVENTORY == 225,
+    "Header 225 is reserved for typed inventory traffic");
 
 CPacketInfo::CPacketInfo()
 	: m_pCurrentPacket(nullptr), m_dwStartTime(0)
@@ -174,6 +181,10 @@ CPacketInfoCG::CPacketInfoCG()
 	Set(HEADER_CG_TYPED_ITEM_MOVE, sizeof(TPacketCGTypedItemMove), "TypedItemMove", true);
 	Set(HEADER_CG_TYPED_ITEM_USE, sizeof(TPacketCGTypedItemUse), "TypedItemUse", true);
 	Set(HEADER_CG_TYPED_ITEM_REFINE, sizeof(TPacketCGTypedItemRefine), "TypedItemRefine", true);
+    static_assert(HEADER_CG_TYPED_MONEY==auriga::item::NativeMoneyRequestHeader);
+    Set(HEADER_CG_TYPED_MONEY,auriga::item::NativeMoneyRequestBodySize,"TypedMoney",true);
+    static_assert(HEADER_CG_TYPED_PRIVATE_SHOP==auriga::item::PrivateShopRequestHeader);
+    Set(HEADER_CG_TYPED_PRIVATE_SHOP,auriga::item::PrivateShopRequestMin,"TypedPrivateShop",true);
 	Set(HEADER_CG_TYPED_ITEM_DROP, sizeof(TPacketCGTypedItemDrop), "TypedItemDrop", true);
 	Set(HEADER_CG_TYPED_SHOP, sizeof(TPacketCGTypedShop), "TypedShop", true);
 	Set(HEADER_CG_TYPED_TRADE, sizeof(TPacketCGTypedTrade), "TypedTrade", true);

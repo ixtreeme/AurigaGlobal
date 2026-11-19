@@ -67,6 +67,7 @@ namespace quest
 #if defined(__DUNGEON_INFO_SYSTEM__)
 		QUEST_DAMAGE_EVENT,
 #endif
+		QUEST_TYPED_ITEM_USE_EVENT,
 		QUEST_EVENT_COUNT
 	};
 
@@ -115,9 +116,16 @@ namespace quest
 		{}
 	};
 
+	struct TypedItemUseSource
+	{
+		uint64_t id = 0;
+		uint64_t revision = 0;
+	};
+
 	struct QuestState
 	{
 		std::shared_ptr<RuntimeGeneration> runtime;
+		TypedItemUseSource typedItemUse;
 		lua_State *	co;
 		int		ico;
 		short int	args;

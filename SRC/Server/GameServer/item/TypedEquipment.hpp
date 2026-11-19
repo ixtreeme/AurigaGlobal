@@ -5,6 +5,7 @@
 #include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include <algorithm>
+#include "EquipmentPointBindings.hpp"
 
 namespace ecs
 {
@@ -98,6 +99,7 @@ inline std::int64_t EquipmentDamageModifiers(entt::entity attacker,entt::entity 
 }
 inline bool IsEquipmentDerivedPoint(std::uint8_t type)
 {
+    if(EquipmentPointBindingFor(type))return true;
     switch(type){case POINT_ST:case POINT_HT:case POINT_DX:case POINT_IQ:case POINT_ATT_GRADE:case POINT_MAGIC_ATT_GRADE:
     case POINT_DEF_GRADE:case POINT_CLIENT_DEF_GRADE:case POINT_MAGIC_DEF_GRADE:case POINT_MOV_SPEED:case POINT_ATT_SPEED:case POINT_CASTING_SPEED:return true;default:return false;}
 }
@@ -106,6 +108,8 @@ inline std::int64_t EquipmentPointValue(entt::entity e,std::uint8_t type,std::in
     using namespace auriga::item;
     const auto* p=g_registry.try_get<ecs::TypedEquipmentProjection>(e);if(!p || !p->stats || !IsEquipmentDerivedPoint(type))return base;
     const auto& s=*p->stats;std::int64_t flat=0,bp=0;bool raw=false;
+    const auto binding=EquipmentPointBindingFor(type);
+    const auto property=binding ? s.Bonus(binding->bonus)/binding->divisor : 0;
     switch(type)
     {
     case POINT_ST:flat=s.Bonus(BonusId::Strength);break;
@@ -114,12 +118,12 @@ inline std::int64_t EquipmentPointValue(entt::entity e,std::uint8_t type,std::in
     case POINT_IQ:flat=s.Bonus(BonusId::Intelligence);break;
     case POINT_ATT_GRADE:flat=s.flat.physicalAttackRaw;bp=s.Bonus(BonusId::PhysicalAttackPercent);raw=true;break;
     case POINT_MAGIC_ATT_GRADE:flat=s.flat.magicalAttackRaw;bp=s.Bonus(BonusId::MagicalAttackPercent);raw=true;break;
-    case POINT_DEF_GRADE:case POINT_CLIENT_DEF_GRADE:flat=s.flat.physicalDefenseRaw;raw=true;break;
+    case POINT_DEF_GRADE:case POINT_CLIENT_DEF_GRADE:flat=s.flat.physicalDefenseRaw-s.Bonus(BonusId::ArmorPhysicalDefense);raw=true;break;
     case POINT_MAGIC_DEF_GRADE:flat=s.flat.magicalDefenseRaw;raw=true;break;
-    case POINT_MOV_SPEED:bp=s.Bonus(BonusId::MovementSpeedPercent);break;
-    case POINT_ATT_SPEED:bp=s.Bonus(BonusId::AttackSpeedPercent);break;
-    case POINT_CASTING_SPEED:bp=s.Bonus(BonusId::CastSpeedPercent);break;
-    default:break;
+    case POINT_MOV_SPEED:flat=property;bp=s.Bonus(BonusId::MovementSpeedPercent);break;
+    case POINT_ATT_SPEED:flat=property;bp=s.Bonus(BonusId::AttackSpeedPercent);break;
+    case POINT_CASTING_SPEED:flat=property;bp=s.Bonus(BonusId::CastSpeedPercent);break;
+    default:return std::clamp<std::int64_t>(auriga::item::AddEquipmentValue(base,property).value_or(0),INT_MIN,INT_MAX);
     }
     // This boundary feeds the existing whole-point formulas, whose public
     // interfaces are int32. Aggregate in raw units first, round only once.

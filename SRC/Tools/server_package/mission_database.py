@@ -77,8 +77,9 @@ def local_grants(target, player, account=None):
         account_grant = 'GRANT SELECT ON ' + identifier(account['database']) + '.`account` TO ' + user + ';\n'
     typed_tables = ('item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance',
                     'item_instance_attribute','item_instance_socket','item_occupied_cell','item_recovery_schedule',
-                    'item_book_learning','item_pet_study_cooldown','item_mission_watch','item_mission_event')
-    # Typed items are optional on a fresh package. Grant only existing tables;
+                    'item_book_learning','item_pet_study_cooldown','item_mission_watch','item_mission_event',
+                    'item_native_award')
+    # Grant existing native tables;
     # never give CREATE just to make a grant against a missing table succeed.
     # Re-running this installer after the typed schema upgrade adds its rights.
     typed_grants = ''
@@ -91,6 +92,4 @@ def local_grants(target, player, account=None):
     return ("SET SESSION sql_mode='NO_BACKSLASH_ESCAPES';\nCREATE USER IF NOT EXISTS " + user +
             ' IDENTIFIED BY ' + literal(target['password']) + ';\nGRANT ALL ON ' +
             identifier(target['database']) + '.* TO ' + user + ';\nGRANT SELECT,UPDATE ON ' +
-            identifier(player['database']) + '.`player` TO ' + user + ';\nGRANT SELECT,INSERT,UPDATE,DELETE ON ' +
-            identifier(player['database']) + '.`item` TO ' + user + ';\n' + account_grant + 'GRANT SELECT,INSERT ON ' +
-            identifier(player['database']) + '.`item_award` TO ' + user + ';\n' + typed_grants)
+            identifier(player['database']) + '.`player` TO ' + user + ';\n' + account_grant + typed_grants)

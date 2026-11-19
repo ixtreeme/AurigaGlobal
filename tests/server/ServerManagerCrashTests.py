@@ -50,6 +50,9 @@ class CrashTests(unittest.TestCase):
         self.core.unlink()
         launch=manage.crash_launch(self.program,self.core.parent,{})
         self.core.write_bytes(elf(4))
+        # Windows filesystem timestamps can lag time_ns within the same tick.
+        # This fixture represents a dump created after the recorded launch.
+        os.utime(self.core, ns=(launch['started_ns']+1_000_000, launch['started_ns']+1_000_000))
         (self.core.parent/'console.log').write_text('last crash details')
         process=types.SimpleNamespace(pid=412,poll=lambda:3)
         return manage.record_crash('ch1-core1',process,self.core.parent,launch,'listening')

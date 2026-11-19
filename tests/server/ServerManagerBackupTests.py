@@ -223,6 +223,8 @@ class BackupGuiTests(unittest.TestCase):
         self.temp=tempfile.TemporaryDirectory(prefix='auriga-backup-ui-');self.addCleanup(self.temp.cleanup)
         self.root=Path(self.temp.name).resolve();fixture(self.root)
         self.view=window.MainWindow(self.root);self.addCleanup(self.view.close)
+        from ReviewFixture import approve_fixture
+        approve_fixture(self,self.view)
         self.errors=[];self.view.error=self.errors.append
         self.page=self.view.backup_page
 

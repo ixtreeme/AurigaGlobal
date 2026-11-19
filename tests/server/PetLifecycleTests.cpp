@@ -190,7 +190,7 @@ void BuffTransportAndSkin() {
     Check(skills[unsigned(PetEffect::WarriorResistancePercent)]==100 &&
         std::ranges::count_if(skills,[](auto value){return value!=0;})==1,"only learned skill sources enter the passive runtime");
     Check(CollectPetSkillBonuses(*c,r,false,false)==PetBonusValues{},"forbidden map removes skill bonuses");
-    for(unsigned effect=1;effect<=18;++effect) {
+    for(unsigned effect=1;effect<=30;++effect) {
         auto data=f::Catalog();
         data.petTrainingProfiles[0].skills[0].effect=static_cast<PetEffect>(effect);
         const auto catalog=BuildItemCatalog(data).value();

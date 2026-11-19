@@ -7,7 +7,9 @@
 #include <stdexcept>
 using namespace auriga::item;namespace f=polymorph_runtime_fixture;namespace pf=persistent_item_fixture;
 unsigned checks=0;void Check(bool b,const char* message){++checks;if(!b)throw std::runtime_error(message);}
+#include "SourceOriginalPolymorphCases.hpp"
 int main(int argc,char** argv){try{
+ OriginalPolymorphCases();
  auto c=BuildItemCatalog(f::Catalog()).value();std::vector<PersistentItem> items;for(unsigned n=0;n<4;++n)items.push_back(f::Item(n));std::array layouts{pf::Inventory()};ItemOwnerFence fence{pf::Character(),7,1};RecoverySchedule state;auto a=f::Facts();
  auto use=[&](unsigned n,std::uint64_t now=1000,std::uint16_t roll=0){return MakePolymorphRuntimeCommit(*c,{24,1},fence,layouts,items,state,items[n].id,a,0,now,roll);};
  for(const auto& i:items)Check(ValidatePersistentItem(*c,i).has_value(),"polymorph payload validated");auto bad=items[0];bad.polymorph.reset();Check(!ValidatePersistentItem(*c,bad),"missing payload refused");bad=items[0];bad.polymorph->boundForm=24001;Check(!ValidatePersistentItem(*c,bad),"fixed form cannot carry alternative binding");bad=items[1];bad.polymorph->boundForm=999;Check(!ValidatePersistentItem(*c,bad),"unknown bound form refused");

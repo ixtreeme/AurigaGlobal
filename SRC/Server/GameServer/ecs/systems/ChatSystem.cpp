@@ -78,7 +78,7 @@ void ChatSystem::SendV(entt::entity e, uint8_t type, const char* format, va_list
 
     d->Packet(buf.read_peek(), buf.size());
 
-    if (type == CHAT_TYPE_COMMAND && test_server) {
+    if (type == CHAT_TYPE_COMMAND && test_server && std::string_view(chatbuf).find("social_log_")!=0) {
         LOG_INFO("SEND_COMMAND {} {}", ecs::PlayerRuntime::GetName(e).data(), chatbuf);
     }
 }

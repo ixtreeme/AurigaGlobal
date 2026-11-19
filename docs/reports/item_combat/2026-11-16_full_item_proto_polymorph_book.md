@@ -1,0 +1,11 @@
+# Eredeti átváltozási gyakorlókönyv
+
+A 50322 eredeti gyakorlókönyv a meglévő natív átváltozási rendszerhez kapcsolódik. Az eredeti küldetésből történő kiadás is a natív ItemStore útvonalat használja: az alak, a fokozat és a hátralévő gyakorlás a tárgy létrehozásával együtt, egyszer mentődik. A kliens és az újrabelépés nem választhat másik alakot. A megadott eredeti LevelLimit paramétert a forrás sem olvasta, ezért nem lett kitalált szintszabály belőle.
+
+A siker esélye a karakter és a szörny szintkülönbsége +29 +képességszint +könyvfokozat, 0..100%-ra korlátozva. Az eredeti négy mesterfok 10/15/20/25 másodperces átváltozást ad, a könyvbónusz egy másodperccel korábban lejár. A forrás két sebességbónuszos szörnye 101 és 1901; a többi eredeti alak nem örökli a szerkesztői fixture-k külön bónuszát. Siker esetén egy gyakorlás teljesül, a könyv megmarad. Sikertelenségkor a teljes könyvállapot megmarad. A fejlesztés a korábbi fokozat ×50 gyakorlást és a következő fokozatot együtt menti.
+
+1990 valódi kliensmodell-kötés kapott külön, eredeti szabály szerinti natív alakbejegyzést. A szerver használatkor külön ellenőrzi a tényleges szörnydefiníciót és típust; a renderelhető NPC/modell önmagában nem engedélyezett átváltozás. A meglévő szerkesztői bejegyzések megmaradtak. A katalógus és a GC247 protokoll formátuma változatlanul49/v1.
+
+Ellenőrzés: 298 natív átváltozási ellenőrzés, 84 konverterteszt, 3517 tényleges ItemStore/SQL-ellenőrzés 36 esetben és 276 csomagállapottal. A sikertelen határdobás, siker, ismételt nyugta, használat, fejlesztés, újrabelépés, pontos lejárat és régi nyugta utáni állapotmegőrzés ellenőrzött. A Unity 6.3 fordítása és14553 ellenőrzése252 tényleges leltár-/használat-/fejlesztés-/megszakításgombot, valamint a101/103/1901 eredeti prefabját próbálta. GameServer és Database fordítás, valamint a teljes66 tesztes regresszió sikeres. A teljes katalógust használó SQL-jelölt, végleges és ismételt konverzió bájtpontosan azonos.
+
+Állapot:9821 konvertált,491 kivezetett,630 merge-re váró hiányos eredeti sor és44 további bekötendő sor;6903 natív definíció. Négy már natív idéző külön hiányzó világmodellre vár. Az aktív helyi szerverre nem történt telepítés;94 játékosadat-tábla üres és1574 katalógusdefiníció maradt. Teljes TLS-belépéses ECS-játékpróba és Addressables player build nem futott. A teljes konverzió folytatódik.

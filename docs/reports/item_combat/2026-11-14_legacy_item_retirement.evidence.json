@@ -1,0 +1,71 @@
+{
+  "status": "native-owner isolation locally verified; authorized local player-state reset completed; full legacy code retirement remains open",
+  "server_branch": "20261103",
+  "unity_branch": "/main/unity63-integration-20261103",
+  "unity_editor": "6000.3.27f1",
+  "ui_visual_changes": false,
+  "existing_item_data_deleted": true,
+  "global_backend_changed": false,
+  "user_data_policy": "All old accounts, characters and their associated item/player state will be deleted; no old player-state migration or retention in the new game state.",
+  "destructive_reset_timing": "Explicitly authorized immediately, on the local server only. Completed on 2026-11-14; independently verified after restart.",
+  "local_player_reset_evidence": "2026-11-14_local_player_reset.evidence.json",
+  "retired_mutation_headers_for_native_owners": [11,12,13,20,21,22,23,27,50,55,57,60,69,70,71,77,83,96,125,126,127,146,171,211,215],
+  "shared_pickup_header_preserved": 15,
+  "original_data_excluding_two_new_fixture_characters": {
+    "legacy_rows": 3214,
+    "legacy_units": 68079,
+    "legacy_owners": 216,
+    "legacy_distinct_vnums": 411,
+    "characters_without_native_fence": 235,
+    "native_owners_with_legacy_rows": 4,
+    "legacy_rows_beside_native_owners": 72,
+    "native_catalog_definitions": 1574,
+    "native_mob_drop_entries": 0,
+    "catalog_mode": "required",
+    "drop_mode": "legacy (default)"
+  },
+  "checks": {
+    "msvc_release_gameserver": "passed",
+    "native_ctest": {
+      "passed": ["legacy_item_boundary", "item_runtime", "quickslots", "typed_ground", "typed_inventory_wire"],
+      "failed": 0,
+      "boundary_assertions": 70
+    },
+    "python_protocol_tests": {"passed": 2, "failed": 0},
+    "unity_compilation": "passed in pinned open Editor",
+    "unity_item_boundary_offline": "passed",
+    "unity_typed_item_integration": {"passed": true, "checks": 14002},
+    "final_unity_live_result_time_local": "2026-11-14 08:00:21",
+    "unity_live": {
+      "dedicated_new_accounts": 2,
+      "mixed_native_and_legacy_owners": 2,
+      "passed": ["native login without legacy item packets", "native inventory move", "client legacy-use refusal", "sequence unchanged by refusal", "next native request accepted", "partial native ground drop", "typed loot pickup through shared VID packet", "logout and relog", "repeat on existing split stacks", "raw legacy use refused by server", "raw variable-length private-shop packet refused by server"],
+      "final_server_refusals_local": ["2026-11-14 08:00:17.792 header=11", "2026-11-14 08:00:20.685 header=55"],
+      "parser_continuation_after_final_refusal": false
+    },
+    "stopped_stack_sql_verification_time_local": "2026-11-14 08:06:26",
+    "sql_preservation": {
+      "passed": true,
+      "legacy_fixture_source_rows_unchanged": true,
+      "all_other_legacy_rows_unchanged": true,
+      "all_other_native_instances_unchanged": true,
+      "all_other_native_wallets_unchanged": true,
+      "fixture_native_units": 20,
+      "fixture_native_gold_each": 1000000,
+      "remaining_fixture_ground_escrow": 0
+    }
+  },
+  "local_deployment": {
+    "package": "D:/AurigaGlobal/Server2-Local",
+    "gameserver_sha256": "541d371af3f8eca3a79691a06b4832d536865a9c9c09af06612f61b04e7c57ee",
+    "backup": "run/deployments/item-boundary-20261114T065825"
+  },
+  "not_validated_or_not_completed": [
+    "world drops, NPC shops and recipes conversion",
+    "legacy Lua item requirements, consumption and rewards conversion",
+    "native-only fresh character and starter items",
+    "global native-only activation and removal of legacy fallback",
+    "physical removal of old Database, CItem and Unity code and tables",
+    "full world, standalone, FreeBSD and load regression"
+  ]
+}

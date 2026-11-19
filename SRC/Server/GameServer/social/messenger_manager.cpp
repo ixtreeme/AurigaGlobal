@@ -5,6 +5,7 @@
 #include "constants.h"
 #include "gm.h"
 #include "messenger_manager.h"
+#include "SocialActions.hpp"
 #include "buffer_manager.h"
 #include "desc_client.h"
 #include "log.h"
@@ -185,6 +186,7 @@ void MessengerManager::RequestToAdd(entt::entity chEntity, entt::entity targetEn
 	snprintf(buf, sizeof(buf), "%u:%u", dw1, dw2);
 	uint32_t dwComplex = GetCRC32(buf, strlen(buf));
 
+	if(!SaveSocialFriendRequest(std::string(ecs::PlayerRuntime::GetName(chEntity)),std::string(ecs::PlayerRuntime::GetName(targetEntity))))return;
 	m_set_requestToAdd.insert(dwComplex);
 
 	ecs::ChatSystem::Send(targetEntity, CHAT_TYPE_COMMAND, "messenger_auth %s", ecs::PlayerRuntime::GetName(chEntity).data());
@@ -200,7 +202,7 @@ bool MessengerManager::AuthToAdd(MessengerManager::keyA account, MessengerManage
 	snprintf(buf, sizeof(buf), "%u:%u", dw1, dw2);
 	uint32_t dwComplex = GetCRC32(buf, strlen(buf));
 
-	if (m_set_requestToAdd.find(dwComplex) == m_set_requestToAdd.end())
+	if (!ResolveSocialFriendRequest(account,companion,bDeny))
 	{
 		LOG_INFO("MessengerManager::AuthToAdd : request not exist {} -> {}", companion.c_str(), account.c_str());
 		return false;
@@ -213,6 +215,7 @@ bool MessengerManager::AuthToAdd(MessengerManager::keyA account, MessengerManage
 		AddToList(companion, account);
 		AddToList(account, companion);
 	}
+	NotifySocialChanged(account);NotifySocialChanged(companion);
 	return true;
 }
 
@@ -244,7 +247,7 @@ void MessengerManager::AddToList(MessengerManager::keyA account, MessengerManage
 	LOG_INFO("Messenger Add {} {}", account.c_str(), companion.c_str());
 
 	char insertQuery[256];
-	snprintf(insertQuery, sizeof(insertQuery), "INSERT INTO messenger_list%s VALUES (?, ?)", get_table_postfix());
+	snprintf(insertQuery, sizeof(insertQuery), "INSERT IGNORE INTO messenger_list%s VALUES (?, ?)", get_table_postfix());
 	DBManager::instance().QueryPrepared(insertQuery, { SqlParam::Text(account), SqlParam::Text(companion) });
 
 	__AddToList(account, companion);

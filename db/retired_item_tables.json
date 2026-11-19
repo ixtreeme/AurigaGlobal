@@ -1,0 +1,8 @@
+[
+  "item", "safebox", "item_award", "myshop_pricelist",
+  "account_mount_inventory", "new_petsystem",
+  "offlineshop_shops", "offlineshop_shop_items", "offlineshop_offers",
+  "offlineshop_auctions", "offlineshop_auction_offers", "offlineshop_safebox_items",
+  "offlineshop_safebox_valutes", "offlineshop_logs",
+  "item_legacy_archive", "item_legacy_import", "item_legacy_owner_state"
+]

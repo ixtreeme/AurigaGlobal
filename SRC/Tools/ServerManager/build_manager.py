@@ -21,8 +21,11 @@ def fix_windows_icu(bundle):
     # Windows loader uses System32, as it does in the working Qt environment.
     import pefile
     internal = bundle.resolve() / '_internal'
-    core, collected = internal / 'PySide6/Qt6Core.dll', internal / 'icuuc.dll'
-    if not core.is_file() or not collected.is_file():
+    # PyInstaller 6 can collect Qt DLLs at the bundle root or under PySide6.
+    core = next((path for path in (internal / 'PySide6/Qt6Core.dll', internal / 'Qt6Core.dll')
+                 if path.is_file()), None)
+    collected = internal / 'icuuc.dll'
+    if core is None or not collected.is_file():
         return
     with pefile.PE(str(core)) as module:
         icu = next((entry for entry in module.DIRECTORY_ENTRY_IMPORT if entry.dll.lower() == b'icuuc.dll'), None)
@@ -116,6 +119,11 @@ def main():
                         help='Directory containing CatalogEditorTool (default: the matching SRC/ItemDomain build folder)')
     args = parser.parse_args()
     source = Path(__file__).resolve().parent
+    content_names = source.parents[2] / 'config/server_manager/content_names_hu.json'
+    item_icons = source.parents[2] / 'config/server_manager/item_icons.zip'
+    if not content_names.is_file():
+        parser.error('Missing editor name catalog; run export_content_names.py first')
+    if not item_icons.is_file():parser.error('Missing item icon bundle; run export_item_icons.py first')
     # The frozen app carries its API index; stale suggestions must not silently ship.
     subprocess.run([sys.executable, '-B', str(source / 'generate_quest_api.py'), '--check'], check=True)
     validators = args.validators.resolve()
@@ -130,10 +138,12 @@ def main():
             parser.error('Missing native item tool: ' + str(item_tools / (name + suffix)))
     # The test bench installs the additive item persistence tables itself.
     persistence_schemas = [source.parents[2] / 'db/migrations/item_instance' / name
-                           for name in ('001_item_persistence.sql', '002_instance_id_allocator.sql', '003_owned_ground.sql', '004_recovery_schedule.sql', '005_automatic_recovery.sql', '006_item_effects.sql', '007_book_learning.sql', '008_polymorph.sql', '009_gathering_tools.sql', '010_companion_seals.sql', '011_growth_pet_birth.sql', '012_pet_study_cooldown.sql', '013_pet_supplies.sql', '014_mount_riding.sql', '015_companion_lifetime.sql', '016_costume_lifetime.sql', '017_regalia_special_bonuses.sql', '018_soul_runtime.sql', '019_ammo_runtime.sql', '020_shared_storage.sql', '021_mission_events.sql')]
+                           for name in ('001_item_persistence.sql', '002_instance_id_allocator.sql', '003_owned_ground.sql', '004_recovery_schedule.sql', '005_automatic_recovery.sql', '006_item_effects.sql', '007_book_learning.sql', '008_polymorph.sql', '009_gathering_tools.sql', '010_companion_seals.sql', '011_growth_pet_birth.sql', '012_pet_study_cooldown.sql', '013_pet_supplies.sql', '014_mount_riding.sql', '015_companion_lifetime.sql', '016_costume_lifetime.sql', '017_regalia_special_bonuses.sql', '018_soul_runtime.sql', '019_ammo_runtime.sql', '020_shared_storage.sql', '021_mission_events.sql', '024_dragon_coin_wallet.sql', '025_special_inventory.sql')]
     for schema in persistence_schemas:
         if not schema.is_file():
             parser.error('Missing item persistence schema: ' + str(schema))
+    persistence_schemas.append(source.parents[2] / 'db/migrations/item_instance/043_live_mob_drops.sql')
+    persistence_schemas.append(source.parents[2] / 'db/migrations/item_instance/044_live_container_loot.sql')
     output, work = args.output.resolve(), args.work.resolve()
     if output.exists() or work.exists():
         parser.error('Output and work must be new directories')
@@ -143,6 +153,8 @@ def main():
                '--name', 'AurigaServerManager', '--distpath', str(output),
                '--workpath', str(work / 'cache'), '--specpath', str(work),
                '--paths', str(source), '--paths', str(source.parent),
+               '--add-data', str(content_names) + os.pathsep + '.',
+               '--add-data', str(item_icons) + os.pathsep + '.',
                '--hidden-import', 'server_package.manage', '--hidden-import', 'run_server',
                '--hidden-import', 'server_package.mission_database',
                '--hidden-import', 'ctypes.wintypes', '--exclude-module', 'PySide6.QtNetwork',

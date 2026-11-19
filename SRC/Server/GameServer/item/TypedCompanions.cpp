@@ -122,6 +122,12 @@ struct CompanionProjection
     std::uint32_t ridingRace = 0;
 };
 
+struct PendingCompanionSummon
+{
+    std::uint64_t seal;
+    std::uint64_t loginToken;
+};
+
 bool OwnRiding(entt::entity owner)
 {
     const auto* projection=g_registry.try_get<CompanionProjection>(owner);
@@ -162,9 +168,15 @@ bool WorldAllowsRiding(entt::entity owner)
         && !CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(owner));
 }
 
-std::uint32_t RidingRace(const item::ItemCatalog& catalog,const item::ItemCompanionRow& row)
+std::optional<std::uint32_t> WornSkin(entt::entity owner,const item::ItemCatalog& catalog,item::CostumeKind kind)
 {
-    const auto* form=row.kind==item::CompanionKind::Mount && row.ridingForm ? catalog.FindCompanionForm(*row.ridingForm) : nullptr;
+    const auto* typed=g_registry.try_get<ecs::TypedItems>(owner);if(!typed)return {};
+    auto effective=typed->state.items;ProjectTypedCostumes(owner,effective);
+    return item::WornCompanionCostumeForm(catalog,effective,kind);
+}
+std::uint32_t RidingRace(const item::ItemCatalog& catalog,const item::ItemCompanionRow& row,entt::entity owner)
+{
+    const auto* form=row.kind==item::CompanionKind::Mount && row.ridingForm ? catalog.FindCompanionForm(WornSkin(owner,catalog,item::CostumeKind::MountSkin).value_or(*row.ridingForm)) : nullptr;
     return form && form->mobTemplateId<=UINT16_MAX && CMobManager::instance().Get(form->mobTemplateId) ? form->mobTemplateId : 0;
 }
 
@@ -203,6 +215,7 @@ std::uint32_t FollowerRace(const item::ItemCatalog& catalog, const item::ItemCom
         if(const auto* typed=g_registry.try_get<ecs::TypedItems>(owner))
             if(const auto skin=TypedPetSkinForm(owner,typed->state,seal.id.Value()))formId=skin;
     }
+    if(const auto skin=WornSkin(owner,catalog,row.kind==item::CompanionKind::Mount ? item::CostumeKind::MountSkin : item::CostumeKind::PetSkin))formId=*skin;
     const auto* form = catalog.FindCompanionForm(formId);
     if (!form || form->mobTemplateId > UINT16_MAX || !CMobManager::instance().Get(form->mobTemplateId))
         return 0;
@@ -525,7 +538,7 @@ std::uint64_t RefreshTypedCompanion(entt::entity owner)
     const bool formChanged = live && live==id && previous && previous->race!=race;
     const bool canFollow = race && lifeRemaining && !entry->base.retired && WorldAllowsFollower(owner) && !OtherFollower(owner, live);
     const bool wantsRide=desired && desired->companion && desired->companion->ridingRequested;
-    const auto rideRace=wantsRide && row ? RidingRace(*catalog,*row) : 0;
+    const auto rideRace=wantsRide && row ? RidingRace(*catalog,*row,owner) : 0;
     const bool canRide=wantsRide && canFollow && rideRace && WorldAllowsRiding(owner);
     if(previous && previous->ridingRace && (!canRide || previous->live!=id || previous->ridingRace!=rideRace))
     {
@@ -610,6 +623,13 @@ void AwardTypedGrowthPetMobExperience(entt::entity owner,entt::entity defeated,i
 
 void TickTypedCompanions()
 {
+    // A summon can still be waiting for another item operation when affects finish loading.
+    std::vector<entt::entity> pending;
+    for (auto owner : g_registry.view<PendingCompanionSummon>())
+        pending.push_back(owner);
+    for (auto owner : pending)
+        ResumeTypedCompanionSummon(owner);
+
     // Refresh may remove a projection. Keep a stable list across that pass.
     std::vector<entt::entity> due;
     const auto now = get_dword_time();
@@ -630,29 +650,38 @@ void TickTypedCompanions()
     TickTypedFixedCompanions();
 }
 
-bool HandleTypedCompanionPacket(entt::entity owner, const char* data)
+namespace
 {
-    static_assert(sizeof(TPacketCGTypedCompanion) == 10);
+bool ApplyCompanionAction(entt::entity owner, Action action, std::uint64_t seal)
+{
     if (!InGame(owner))
         return true;
-    TPacketCGTypedCompanion packet{};
-    std::memcpy(&packet, data, sizeof(packet));
-    const auto action = static_cast<Action>(packet.bAction);
-    if (!packet.qwItemId || action<Action::Summon || action>Action::Dismount)
-        return true;
+
     const auto* typed = g_registry.try_get<ecs::TypedItems>(owner);
     const auto* login = g_registry.try_get<ecs::TypedItemLogin>(owner);
     const auto catalog = store::CurrentCatalog();
     if (!typed || !login || !catalog)
         return true;
-    if (g_registry.all_of<ecs::TypedItemBusy>(owner))
+
+    if (const auto* pending = g_registry.try_get<PendingCompanionSummon>(owner);
+        pending && pending->loginToken == login->token)
     {
-        SendRefusal(owner, "Az előző tárgyművelet még folyamatban van.");
-        return true;
+        if (action == Action::Dismiss && pending->seal == seal)
+        {
+            g_registry.remove<PendingCompanionSummon>(owner);
+            SendTypedInventory(owner);
+            return true;
+        }
+        if (action == Action::Summon)
+        {
+            if (pending->seal != seal)
+                SendRefusal(owner, "Egy másik idézés még folyamatban van.");
+            return true;
+        }
     }
 
     const auto& state = typed->state;
-    const auto* found = FindSeal(state,packet.qwItemId);
+    const auto* found = FindSeal(state, seal);
     if (!found)
     {
         SendRefusal(owner, "A pecsét nincs a leltáradban.");
@@ -660,6 +689,19 @@ bool HandleTypedCompanionPacket(entt::entity owner, const char* data)
     }
     const bool summon = action == Action::Summon;
     const auto* row = CompanionRow(*catalog, found->key);
+    if (summon && row && !item::RecallRequested(*found) && !AffectSystem::IsLoaded(owner))
+    {
+        // The inventory arrives independently of saved affects. Retain this request
+        // in the current login and revalidate it once the authoritative state is ready.
+        g_registry.emplace_or_replace<PendingCompanionSummon>(owner, seal, login->token);
+        LOG_INFO("TYPED_COMPANION_SUMMON_DEFERRED pid={} seal={}", ecs::PlayerRuntime::GetPlayerID(owner), seal);
+        return true;
+    }
+    if (g_registry.all_of<ecs::TypedItemBusy>(owner))
+    {
+        SendRefusal(owner, "Az előző tárgyművelet még folyamatban van.");
+        return true;
+    }
     const bool rideAction=action==Action::Mount || action==Action::Dismount;
     if(rideAction && (!row || row->kind!=item::CompanionKind::Mount || !found->companion))
     {
@@ -684,7 +726,7 @@ bool HandleTypedCompanionPacket(entt::entity owner, const char* data)
     }
     if(action==Action::Mount && (!facts.allowed || !facts.alive || !CanSummonFromBag(owner) ||
         !WorldAllowsRiding(owner) || live!=found->id.Value() || !active || active->id!=found->id ||
-        OtherFollower(owner,live) || !RidingRace(*catalog,*row)))
+        OtherFollower(owner,live) || !RidingRace(*catalog,*row,owner)))
     {
         SendRefusal(owner,"A megidézett hátasra ebben az állapotban nem ülhetsz fel.");return true;
     }
@@ -780,4 +822,39 @@ bool HandleTypedCompanionPacket(entt::entity owner, const char* data)
         SendRefusal(owner, "A tárgytároló nem elérhető.");
     }
     return true;
+}
+}
+
+bool HandleTypedCompanionPacket(entt::entity owner, const char* data)
+{
+    static_assert(sizeof(TPacketCGTypedCompanion) == 10);
+    TPacketCGTypedCompanion packet{};
+    std::memcpy(&packet, data, sizeof(packet));
+    const auto action = static_cast<Action>(packet.bAction);
+    if (!packet.qwItemId || action < Action::Summon || action > Action::Dismount)
+        return true;
+    return ApplyCompanionAction(owner, action, packet.qwItemId);
+}
+
+void ResumeTypedCompanionSummon(entt::entity owner)
+{
+    if (!g_registry.valid(owner))
+        return;
+    const auto* pending = g_registry.try_get<PendingCompanionSummon>(owner);
+    if (!pending)
+        return;
+
+    const auto* login = g_registry.try_get<ecs::TypedItemLogin>(owner);
+    if (!InGame(owner) || !login || login->token != pending->loginToken)
+    {
+        g_registry.remove<PendingCompanionSummon>(owner);
+        return;
+    }
+    if (!AffectSystem::IsLoaded(owner) || g_registry.all_of<ecs::TypedItemBusy>(owner))
+        return;
+
+    const auto seal = pending->seal;
+    g_registry.remove<PendingCompanionSummon>(owner);
+    LOG_INFO("TYPED_COMPANION_SUMMON_RESUMED pid={} seal={}", ecs::PlayerRuntime::GetPlayerID(owner), seal);
+    ApplyCompanionAction(owner, Action::Summon, seal);
 }

@@ -15,7 +15,7 @@ from pathlib import Path
 import re
 import unicodedata
 
-TOOL_VERSION = 1
+TOOL_VERSION = 2
 MAX_PROTOTYPES = 100_000
 MAX_INSTANCES = 5_000_000
 INT_TYPES = {'int', 'bigint', 'tinyint', 'smallint', 'mediumint'}
@@ -24,6 +24,7 @@ CATEGORY_CODES = {
     6: 'material', 7: 'socket_stone', 8: 'container', 9: 'skill_book',
     10: 'quest', 11: 'tool', 12: 'fishing', 13: 'polymorph', 14: 'soul',
     15: 'companion', 16: 'currency_token', 17: 'special', 18: 'container_key',
+    19: 'regalia', 20: 'bonus_tool', 21: 'ammo', 22: 'forge_aid',
 }
 NAME_FIELDS = ('name', 'locale_name', 'locale_name_en', 'locale_name_ro', 'locale_name_it',
                'locale_name_tr', 'locale_name_de', 'locale_name_pl', 'locale_name_pt',
@@ -134,6 +135,8 @@ def classification(row):
     if kind in (29, 30, 31) or kind == 5 and subtype in (5, 6, 7) or kind == 3 and subtype in (27, 28, 42):
         return None, 'retired', 'retired_dragonsoul_content'
     if kind == 1:
+        if subtype == 6:
+            return 21, 'candidate', 'ammunition'
         return (1, 'quarantine', 'unsupported_weapon_subtype') if subtype > 7 else (1, 'candidate', 'weapon_or_ammunition')
     if kind == 2:
         if subtype == 7:
@@ -144,6 +147,10 @@ def classification(row):
     if kind == 5:
         return (6, 'candidate', 'ordinary_material') if subtype <= 4 else (6, 'quarantine', 'unknown_material_subtype')
     if kind == 28:
+        if subtype in (3, 5) or 10 <= subtype <= 16:
+            return 19, 'candidate', 'regalia'
+        if subtype == 2:
+            return 15, 'candidate', 'mount_seal'
         return (4, 'candidate', 'costume') if subtype <= 16 else (4, 'quarantine', 'undeclared_costume_subtype')
     simple = {0: 10, 3: 5, 4: 5, 6: 17, 7: 11, 8: 8, 9: 16, 10: 7, 11: 8, 12: 12,
               13: 11, 14: 6, 15: 11, 16: 3, 17: 9, 18: 10, 19: 13, 20: 8, 21: 18,
@@ -154,8 +161,11 @@ def classification(row):
     # Some old USE items have a different actual domain (bait/fish/companions).
     category = simple[kind]
     if kind == 3 and subtype in (6, 49): category = 12
-    if kind == 3 and subtype in (43, 44): category = 15
+    if kind == 3 and subtype in (43, 44): category = 17
     if kind == 3 and subtype in (4, 5): category = 8
+    if kind == 3 and subtype == 2: category = 22
+    if kind == 3 and subtype in (31, 32, 45, 46, 48): category = 20
+    if kind == 36: category = 20
     return category, 'candidate', 'quest_exchange_token' if kind == 0 else 'typed_port_required'
 
 
@@ -494,11 +504,20 @@ def analyze(tables, source_hash, owner_keys=None):
                                 source_level=source['refinement_level'], target=target['target'],
                                 target_level=target['refinement_level'], source_recipe_id=recipe_id,
                                 recipe_found=recipe_id in recipe_ids, status=source['status']))
-    instance_map, instance_ids = [], set()
+    # Native development/user items already have global instance identities.
+    # Preserve them and reserve their IDs before allocating legacy/auxiliary
+    # IDs. A source ID collision is an audited remap, never an overwrite.
+    native_ids = {uint(r['instance_id'],64,'preserved instance id') for r in tables.get('player.item_instance', [])}
+    if 0 in native_ids or len(native_ids) != len(tables.get('player.item_instance', [])):
+        raise MigrationError('Duplicate or zero preserved item instance ID')
+    instance_map, instance_ids = [], set(native_ids)
     quantities_before, quantities_after = Counter(), Counter()
+    legacy_ids = [uint(row['id'],64,'source instance id') for row in instances]
+    if 0 in legacy_ids or len(legacy_ids) != len(set(legacy_ids)):
+        raise MigrationError('Duplicate or zero source item instance ID')
     all_instances = [('player.item',row,row['id'],row['owner_id'],row['window'],row['pos'])
                      for row in sorted(instances,key=lambda r:r['id'])]
-    next_instance_id = max((row['id'] for row in instances),default=0)+1
+    next_instance_id = max(max((row['id'] for row in instances),default=0), max(native_ids,default=0))+1
     for table, owner_field, window in (('player.account_mount_inventory','account_id','ACCOUNT_MOUNT'),
                                         ('player.guild_renewal_storage','guild_id','GUILD_STORAGE')):
         auxiliary = sorted(tables.get(table,[]),key=lambda row:(row[owner_field],row['slot'],row.get('id',0)))
@@ -512,6 +531,11 @@ def analyze(tables, source_hash, owner_keys=None):
     if len(all_instances)>MAX_INSTANCES:raise MigrationError('Too many source item instances')
     for table, row, instance_id, owner, window, position in all_instances:
         instance_id = uint(instance_id, 64, 'instance id')
+        source_instance_id = row.get('id')
+        if table == 'player.item' and instance_id in native_ids:
+            instance_id = uint(next_instance_id,64,'remapped instance id')
+            next_instance_id += 1
+            issue('preserved_instance_id_collision',source_store=table,source_instance_id=source_instance_id,instance_id=instance_id)
         if not instance_id or instance_id in instance_ids: raise MigrationError('Duplicate or zero item instance ID')
         instance_ids.add(instance_id)
         reference = mapping.get(row['vnum'])
@@ -527,7 +551,7 @@ def analyze(tables, source_hash, owner_keys=None):
         if owner_valid is False:issue('missing_instance_owner',instance_id=instance_id,source_store=table,owner_kind=owner_kind)
         # Source state is retained by hash and instance ID, not normalized by
         # guessing what an overloaded socket means. Such a row is not ready.
-        instance_map.append(dict(instance_id=instance_id, source_store=table, target=reference['target'] if reference else None,
+        instance_map.append(dict(instance_id=instance_id, source_instance_id=source_instance_id, source_store=table, target=reference['target'] if reference else None,
                                  refinement_level=reference['refinement_level'] if reference else None,
                                  count=quantity, owner_id=owner, window=window, position=position,
                                  owner_kind=owner_kind,owner_valid=owner_valid,
@@ -543,6 +567,7 @@ def analyze(tables, source_hash, owner_keys=None):
                    instance_status=dict(sorted(Counter(m['status'] for m in instance_map).items())),
                    source_recipes=len(recipes), refinement_edges=len(edges), transitions=len(transitions),
                    preserved_catalog_items=len(preserved), diagnostics=dict(sorted(Counter(d['code'] for d in diagnostics).items())),
+                   preserved_native_instances=len(native_ids),
                    category_proposals={str(k): sum(g['key'] is not None and g['key']['category_id']==k for g in groups) for k in CATEGORY_CODES},
                    source_total_quantity=sum(quantities_before.values()), mapped_total_quantity=sum(quantities_after.values()))
     result = dict(format_version=1, tool_version=TOOL_VERSION, source_hash=source_hash,

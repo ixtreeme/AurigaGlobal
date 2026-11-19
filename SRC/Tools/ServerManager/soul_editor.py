@@ -17,6 +17,7 @@ class SoulPanel(QWidget):
         layout=QVBoxLayout(self);self.form=Form(changed)
         self.kind=self.form.add('child','soul_kind','Működés','choice',choices=[(1,'Aktiválható lélek'),(2,'Lélekfejlesztő tekercs')])
         self.channel=self.form.add('child','damage_channel','Szín és sebzési csatorna','choice',choices=[(1,'Vörös — normál támadás'),(2,'Kék — képesség')])
+        self.next_core=self.form.add('child','next_local_id','Következő lélekmag helyi azonosítója (0: nincs)','int',range=(0,4294967295))
         self.chance=self.form.add('child','refine_chance_bp','Tekercs sikeresélye','scaled',scale=100,unit='%',range=(0,10000))
         self.form.setSizePolicy(QSizePolicy.Policy.Preferred,QSizePolicy.Policy.Maximum);layout.addWidget(self.form)
         self.core=QWidget();core=QVBoxLayout(self.core);row=QHBoxLayout();row.addWidget(QLabel('Legmagasabb fejlesztési szint'))
@@ -61,7 +62,7 @@ class SoulPanel(QWidget):
         self.capture();self.maximum=value;self.render();self.notify()
 
     def load(self,document):
-        self.loading=True;self.form.load(dict(child=dict(document['child'],damage_channel=document['child'].get('damage_channel') or '1')))
+        self.loading=True;self.form.load(dict(child=dict(document['child'],damage_channel=document['child'].get('damage_channel') or '1',next_local_id=document['child'].get('next_local_id') or '0')))
         self.maximum=int(document['refinement']['max_level']);self.max_level.setValue(self.maximum)
         self.drafts={int(r['level']):{k:catalog.display(r[k],1000 if k=='recharge_interval_ms' else 100 if k.endswith('_bp') else 1) for k,_ in self.COLUMNS} for r in document['soul_levels']}
         self.render();self.controls();self.loading=False
@@ -70,6 +71,7 @@ class SoulPanel(QWidget):
         self.capture();document['child']['soul_kind']=self.kind.value();core=document['child']['soul_kind']=='1'
         document['child']['damage_channel']=self.channel.value() if core else None
         document['child']['refine_chance_bp']='0' if core else self.chance.value()
+        next_id=self.next_core.value() if core else '0';document['child'].update(next_category_id='14' if int(next_id) else None,next_local_id=next_id if int(next_id) else None)
         document['bonuses']=[]
         document['refinement'].update(profile_kind='8' if core else '1',max_level=str(self.maximum) if core else '0')
         document['levels']=[dict(level=str(i),**{k:'0' for k in catalog.GAINS},extra_bonus_profile_id=None,bonuses=[]) for i in range((self.maximum if core else 0)+1)]

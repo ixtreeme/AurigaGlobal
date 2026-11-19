@@ -36,6 +36,10 @@ INPUT_TABLES = (
     'player.account_mount_inventory', 'player.guild_renewal_storage',
     'player.ishop_data', 'player.new_petsystem', 'player.object_proto',
     'player.quest', 'player.affect',
+    # Existing native identities must be reserved by the cutover, too. The
+    # full SQL dump already preserves their state; expose exact IDs here so
+    # the offline planner cannot reuse a live development/user instance ID.
+    'player.item_instance',
 )
 
 

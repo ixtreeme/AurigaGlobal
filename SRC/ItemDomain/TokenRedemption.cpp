@@ -4,6 +4,22 @@
 
 namespace auriga::item
 {
+bool ValidTokenRedemptionWrite(const ItemCatalog& c,const ItemCommit& out)
+{
+    const auto& b=out.result;
+    if(out.outcomeCode!=TokenRedemptionOutcome || out.kind!=ItemOperationKind::Service || out.owners.size()!=1 || out.wallets.size()!=1 || out.recovery || out.ground || out.learning || out.petStudyCooldown || b.size()!=45 || b[0]!='T' || b[1]!='K' || b[2]!='N' || b[3]!=1)return false;
+    const auto get=[&](unsigned at,unsigned size){std::uint64_t v=0;for(unsigned n=0;n<size;++n)v|=std::uint64_t{b[at+n]}<<(8*n);return v;};
+    const auto id=ItemInstanceId::Create(get(4,8));if(!id)return false;
+    const auto source=std::ranges::find(out.items,*id,[](const auto& ch){return ch.after.id;});if(source==out.items.end() || !source->before || !PlainInventoryItem(*source->before,out.owners[0].owner))return false;
+    const auto& before=*source->before;const auto& wallet=out.wallets[0];const auto unit=CurrencyUnitAmount(c,before);const auto cap=get(37,8);
+    if(!unit || out.owners[0].owner.kind!=ItemOwnerKind::Character || wallet.before.owner!=before.owner || wallet.before.currency!=WalletCurrency::Gold || !cap || cap>INT64_MAX || get(20,1)!=static_cast<unsigned>(WalletCurrency::Gold) || get(21,8)!=*unit)return false;
+    const auto requested=static_cast<std::uint32_t>(get(12,4));if(!requested || requested>before.count)return false;
+    const auto plan=PlanTokenRedeem(c,{before.key,requested,wallet.before.balance,cap,c.CurrencyMode(before.key)==CurrencyTokenMode::DynamicGold ? before.currencyAmount : std::nullopt});
+    if(!plan || get(16,4)!=plan->unitsToConsume || get(29,8)!=plan->amountToCredit)return false;
+    auto expected=before;++expected.revision;expected.count-=plan->unitsToConsume;if(!expected.count){expected.destroyed=true;expected.placement.reset();}if(expected!=source->after)return false;
+    auto after=wallet.before;++after.revision;after.balance+=plan->amountToCredit;if(after!=wallet.after)return false;
+    return std::ranges::all_of(out.items,[&](const auto& ch){return ch.after.id==*id || MoneyPassiveAccessoryDebit(ch);});
+}
 std::expected<TokenRedemptionPlan,TokenRedemptionError> MakeTokenRedemptionCommit(const ItemCatalog& c,
     std::array<std::uint8_t,16> operation,ItemOwnerFence fence,std::span<const ItemStorageLayout> layouts,
     std::span<const PersistentItem> inventory,std::span<const ItemWallet> wallets,ItemInstanceId id,
@@ -25,10 +41,12 @@ std::expected<TokenRedemptionPlan,TokenRedemptionError> MakeTokenRedemptionCommi
     const ItemWallet* wallet=nullptr;
     for(const auto& candidate:wallets)if(candidate.owner==fence.owner && candidate.currency==WalletCurrency::Gold){if(wallet)return std::unexpected(E::Invalid);wallet=&candidate;}
     if(!wallet || !wallet->revision || wallet->revision==UINT64_MAX || wallet->balance>cap)return std::unexpected(E::Invalid);
-    const auto redeem=PlanTokenRedeem(c,{source->key,requested,wallet->balance,cap});
+    const auto unit=CurrencyUnitAmount(c,*source);if(!unit)return std::unexpected(E::Invalid);
+    const auto dynamic=c.CurrencyMode(source->key)==CurrencyTokenMode::DynamicGold;
+    const auto redeem=PlanTokenRedeem(c,{source->key,requested,wallet->balance,cap,dynamic ? source->currencyAmount : std::nullopt});
     if(!redeem)return std::unexpected(redeem.error()==TokenRedeemError::WalletFull ? E::WalletFull : E::Invalid);
     auto commit=MakeConsumeCommit(c,operation,fence,layouts,inventory,id,redeem->unitsToConsume);if(!commit)return std::unexpected(E::Invalid);
-    TokenRedemptionPlan plan{std::move(*commit),{source->count,requested,redeem->unitsToConsume,token->currency,token->amountPerUnit,redeem->amountToCredit,wallet->balance,cap}};
+    TokenRedemptionPlan plan{std::move(*commit),{source->count,requested,redeem->unitsToConsume,token->currency,*unit,redeem->amountToCredit,wallet->balance,cap}};
     auto after=*wallet;after.balance+=redeem->amountToCredit;++after.revision;
     auto& out=plan.commit;out.kind=ItemOperationKind::Service;out.wallets.push_back({*wallet,after});out.outcomeCode=TokenRedemptionOutcome;
     out.result={'T','K','N',1};const auto put=[&](std::uint64_t value,unsigned n){for(unsigned i=0;i<n;++i)out.result.push_back(static_cast<std::uint8_t>(value>>(i*8)));};
@@ -40,10 +58,10 @@ std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeTokenRedempt
 {
     const auto* entry=item ? c.Find(item->key) : nullptr;const auto* token=entry ? std::get_if<ItemCurrencyTokenRow>(&entry->category) : nullptr;
     const bool actionable=status==TokenRedemptionStatus::Ready || status==TokenRedemptionStatus::Redeemed;
-    if(static_cast<unsigned>(status)>11 || (item ? (!session || !revision || !token || !q.available || q.available!=item->count || q.currency!=token->currency || q.unit!=token->amountPerUnit) : (session || revision || q!=TokenRedemptionQuote{} || actionable || status==TokenRedemptionStatus::Pending)))return std::unexpected(TypedInventoryWireError::BadValue);
+    if(static_cast<unsigned>(status)>11 || (item ? (!session || !revision || !token || !q.available || q.available!=item->count || q.currency!=token->currency || q.unit!=CurrencyUnitAmount(c,*item)) : (session || revision || q!=TokenRedemptionQuote{} || actionable || status==TokenRedemptionStatus::Pending)))return std::unexpected(TypedInventoryWireError::BadValue);
     if(actionable && (q.currency!=WalletCurrency::Gold || !q.unit || !q.cap || q.cap>INT64_MAX || q.balance>q.cap || !q.requested || q.requested>q.available || !q.consumed || q.consumed!=std::min<std::uint64_t>(q.requested,(q.cap-q.balance)/q.unit) || q.credit!=std::uint64_t(q.consumed)*q.unit))return std::unexpected(TypedInventoryWireError::BadValue);
     std::vector<std::byte> out;const auto put=[&](std::uint64_t value,unsigned n){for(unsigned i=0;i<n;++i)out.push_back(std::byte((value>>(i*8))&255));};
-    put(234,1);put(0,4);put(1,1);put(static_cast<unsigned>(status),1);put(session,8);put(item ? item->id.Value() : 0,8);put(revision,8);
+    put(234,1);put(0,4);put(item && c.CurrencyMode(item->key)==CurrencyTokenMode::DynamicGold ? 2 : 1,1);put(static_cast<unsigned>(status),1);put(session,8);put(item ? item->id.Value() : 0,8);put(revision,8);
     put(item ? static_cast<unsigned>(item->key.Category()) : 0,2);put(item ? item->key.LocalId() : 0,4);put(item ? item->refinementLevel : 0,2);
     put(static_cast<unsigned>(q.currency),1);put(q.available,4);put(q.requested,4);put(q.consumed,4);put(q.unit,8);put(q.credit,8);put(q.balance,8);put(q.cap,8);
     const auto details=item ? EncodeTypedItemDetails(c,{},false,std::array{ItemGrant{item->key,item->refinementLevel,1}}) : std::expected<std::vector<std::byte>,TypedInventoryWireError>(std::vector<std::byte>{});

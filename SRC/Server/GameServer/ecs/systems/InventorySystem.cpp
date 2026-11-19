@@ -17,6 +17,7 @@
 
 #include "InventorySystem.hpp"
 #include "../../item/TypedEquipment.hpp"
+#include "../../item/LegacyItemBoundary.hpp"
 #include "SocialSystem.hpp"
 #include "PointSystem.hpp"
 #include "ItemSystem.hpp"
@@ -1096,6 +1097,7 @@ bool DestinationFits(entt::entity owner, entt::entity item, TItemPos position)
 
 bool InsertInventoryItem(entt::entity item, entt::entity owner, TItemPos position, bool highlight)
 {
+    if (BlocksLegacyItems(owner)) return false;
     if (!Unowned(item) || !ecs::PlayerRuntime::IsValid(owner) ||
         !g_registry.all_of<ecs::PlayerID>(owner) ||
         !EnsureStorage(owner, position.window_type) ||
@@ -1156,6 +1158,7 @@ bool AddToCharacter(entt::entity item, entt::entity owner, TItemPos position, bo
 bool AddToCharacter(entt::entity item, entt::entity owner, TItemPos position)
 #endif
 {
+    if (BlocksLegacyItems(owner)) return false;
 #ifndef __HIGHLIGHT_SYSTEM__
     const bool highlight = false;
 #endif
@@ -2472,6 +2475,7 @@ void PublishEquipmentInsertion(entt::entity itemEntity, entt::entity charEntity,
 
 bool EquipTo(entt::entity itemEntity, entt::entity charEntity, uint8_t bWearCell)
 {
+	if (BlocksLegacyItems(charEntity)) return false;
 	if (!ecs::PlayerRuntime::IsValid(charEntity) || !g_registry.all_of<ecs::PlayerID>(charEntity) ||
         !ItemSystem::IsValidItem(itemEntity) || !ItemSystem::GetItemProto(itemEntity) ||
         unequipping.contains(itemEntity))
@@ -3084,6 +3088,7 @@ bool HasInventorySpaceForItemVnum(entt::entity owner, uint32_t itemVnum)
 
 bool PlaceItemEcs(entt::entity owner, entt::entity item, uint8_t window, uint16_t cell)
 {
+    if (BlocksLegacyItems(owner)) return false;
     return InventorySystem::InsertInventoryItem(item, owner, TItemPos(window, cell), true);
 }
 
@@ -3669,7 +3674,7 @@ struct ItemDeliveryGuard {
 
 bool GiveOwner(entt::entity owner)
 {
-    return ecs::PlayerRuntime::IsPC(owner) && g_registry.all_of<ecs::PlayerID>(owner);
+    return !BlocksLegacyItems(owner) && ecs::PlayerRuntime::IsPC(owner) && g_registry.all_of<ecs::PlayerID>(owner);
 }
 bool GiveDetached(entt::entity item)
 {
@@ -3831,6 +3836,11 @@ void AutoGiveItem(entt::entity owner, entt::entity item, bool longOwnership
 entt::entity AutoGiveItemEcs(entt::entity owner, uint32_t vnum, uint32_t count,
     int rarePct, bool message, bool highlight)
 {
+    if (BlocksLegacyItems(owner))
+    {
+        LOG_ERROR("TypedItems: blocked legacy grant vnum {} x{} for pid {} (content requires migration)", vnum, count, ecs::PlayerRuntime::GetPlayerID(owner));
+        return entt::null;
+    }
     if (!GiveOwner(owner) || !vnum || !count) return entt::null;
     const auto* table = ITEM_MANAGER::instance().GetTable(vnum);
     if (!table || !table->bSize || (table->bType != ITEM_ELK && g_bItemCountLimit <= 0)) return entt::null;

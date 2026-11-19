@@ -10,6 +10,16 @@ constexpr std::uint8_t BookRuntimeSkillCap(std::uint32_t type,std::uint8_t decla
 {return type==0 && declared<MaxBookSkillLevel ? declared : MaxBookSkillLevel;}
 const SkillBookProfile* BookItemProfile(const ItemCatalog&,ItemKey);
 const BookAidProfile* BookAidItemProfile(const ItemCatalog&,ItemKey);
+inline constexpr std::uint16_t CharacterServiceOutcome=0x2310;
+struct CharacterServicePlan {
+    std::uint32_t before=0,after=0,granted=0;
+    std::uint16_t previousDyeLevel=0,nextDyeLevel=0,characterLevel=0;
+};
+std::expected<CharacterServicePlan,SkillBookError> PrepareCharacterService(const ItemCatalog&,const PersistentItem&,const BookCharacter&,const SkillBookAdmission&);
+struct CharacterServiceWrite {ItemCommit commit;CharacterServicePlan result;};
+std::expected<CharacterServiceWrite,SkillBookError> MakeCharacterServiceCommit(const ItemCatalog&,std::array<std::uint8_t,16>,ItemOwnerFence,
+    std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const BookLearning&,const BookCharacter&,ItemInstanceId,const SkillBookAdmission&);
+bool ValidCharacterServiceWrite(const ItemCatalog&,const ItemCommit&);
 struct BookAidPlan { BookAidKind kind; std::uint16_t units; std::uint32_t charges,maximum; };
 std::expected<BookAidPlan,SkillBookError> PrepareBookAidUse(const ItemCatalog&,const PersistentItem&,const BookLearning&,const BookCharacter&,const SkillBookAdmission&);
 struct BookAidRuntimePlan { ItemCommit commit; BookAidPlan result; };
@@ -26,6 +36,7 @@ struct BookRuntimeView
     BookCharacter character;SkillBookAdmission actor;std::string skillName;
     const SkillBookPlan* result=nullptr;SkillBookDecisions decisions;
     const BookAidPlan* aidResult=nullptr;
+    const CharacterServicePlan* characterResult=nullptr;
 };
 std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeBookRuntime(const ItemCatalog&,const BookRuntimeView&);
 }

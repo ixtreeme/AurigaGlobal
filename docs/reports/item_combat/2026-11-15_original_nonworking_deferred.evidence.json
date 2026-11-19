@@ -1,0 +1,525 @@
+{
+  "candidate": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-addon-v42-final.json",
+  "candidate_sha256": "a1ec65d95b722f1acbfe78ca2d56eabc3e4e0a317597b66cbf7f33ba703ad1e7",
+  "added_deferred": 17,
+  "deferred": 559,
+  "remaining_behavior_or_policy": 173,
+  "native_catalog_unchanged": true,
+  "source_outcomes_unchanged": true,
+  "items": [
+    {
+      "reasons": [
+        "semantic_converter_required:3:29"
+      ],
+      "source_id": 18900,
+      "source_row_hash": "5e18316fd2d28b40c2cb917aebee54cbf7772f3a0499a958650aa882ded997bf",
+      "hu_name": "Tűzvörös kő",
+      "deferred_kind": "missing_or_invalid_original",
+      "deferral_explanation": "Az övfoglalat ága ki van kommentezve az eredetiben; a két kompatibilitási függvény egyetlen jelenlegi kiegészítőhöz sem engedi ezt az anyagot.",
+      "deferral_evidence": {
+        "kind": "source_socket_material_has_no_compatible_target",
+        "file": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\SRC\\Server\\GameServer\\ecs\\systems\\ItemSystem.cpp",
+        "sha256": "eeda85ec6aaa1784cb0c113f9b8e17a29facdbc30598217552834312ea4a48fe",
+        "active_accessory_states_checked": 728
+      }
+    },
+    {
+      "reasons": [
+        "semantic_converter_required:3:29"
+      ],
+      "source_id": 18901,
+      "source_row_hash": "c1da575b5153a9f60f2477cacb9b7bc75d5f3f2fd853c70c1cbe06a368ca9c2c",
+      "hu_name": "Vörös láng ko (Végtelen)",
+      "deferred_kind": "missing_or_invalid_original",
+      "deferral_explanation": "Az övfoglalat ága ki van kommentezve az eredetiben; a két kompatibilitási függvény egyetlen jelenlegi kiegészítőhöz sem engedi ezt az anyagot.",
+      "deferral_evidence": {
+        "kind": "source_socket_material_has_no_compatible_target",
+        "file": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\SRC\\Server\\GameServer\\ecs\\systems\\ItemSystem.cpp",
+        "sha256": "eeda85ec6aaa1784cb0c113f9b8e17a29facdbc30598217552834312ea4a48fe",
+        "active_accessory_states_checked": 728
+      }
+    },
+    {
+      "reasons": [
+        "semantic_converter_required:3:1"
+      ],
+      "source_id": 22040,
+      "source_row_hash": "da3ce10b0c1ea3d321bc8ff5d3428187a7edad1724206dec19939318dbc93f73",
+      "hu_name": "Élet Tekercs",
+      "deferred_kind": "missing_or_invalid_original",
+      "deferral_explanation": "Az eredeti talizmánkezelő csak az 1-es és 2-es módot valósítja meg; ehhez a módhoz nincs használati ág.",
+      "deferral_evidence": {
+        "kind": "source_talisman_mode_has_no_handler",
+        "file": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\SRC\\Server\\GameServer\\ecs\\systems\\ItemSystem_LegacyBridge.cpp",
+        "sha256": "55669ab4242253088400f4a4c2e931209ef00327bca6b6645e4f5aa344ab5068",
+        "mode": 3
+      }
+    },
+    {
+      "reasons": [
+        "semantic_converter_required:3:1"
+      ],
+      "source_id": 22050,
+      "source_row_hash": "68bf4fbcabc9e7fdd95ca164c0e67c386a890633b14edb54e921676d0c406942",
+      "hu_name": "Életre keltő tekercs",
+      "deferred_kind": "missing_or_invalid_original",
+      "deferral_explanation": "Az eredeti talizmánkezelő csak az 1-es és 2-es módot valósítja meg; ehhez a módhoz nincs használati ág.",
+      "deferral_evidence": {
+        "kind": "source_talisman_mode_has_no_handler",
+        "file": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\SRC\\Server\\GameServer\\ecs\\systems\\ItemSystem_LegacyBridge.cpp",
+        "sha256": "55669ab4242253088400f4a4c2e931209ef00327bca6b6645e4f5aa344ab5068",
+        "mode": 4
+      }
+    },
+    {
+      "reasons": [
+        "unsupported_ability_effect"
+      ],
+      "source_id": 50819,
+      "source_row_hash": "d60b946d52c9ca00a4893a53977db9b6c85b49976ff87706086224f9971ea9e6",
+      "hu_name": "Mong-víz",
+      "deferred_kind": "missing_or_invalid_original",
+      "deferral_explanation": "Az eredeti normál USE_ABILITY_UP kezelőben nincs a protó 37-es hatásához ág; a tárgy elfogyna hatás nélkül. Az archivált szerverforrás ugyanezt mutatja.",
+      "deferral_evidence": {
+        "kind": "source_apply_has_no_active_handler",
+        "file": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\SRC\\Server\\GameServer\\ecs\\systems\\ItemSystem_LegacyBridge.cpp",
+        "sha256": "55669ab4242253088400f4a4c2e931209ef00327bca6b6645e4f5aa344ab5068",
+        "archive": "F:\\SF_V3_5\\SOURCE_SERVER_9999\\Server\\game\\src\\char_item.cpp",
+        "archive_sha256": "bae9fdc4cfb394f2bda07f4c9b1a77577e76a35da8cab2ed6d89a2d6231980d0",
+        "apply": 37
+      }
+    },
+    {
+      "reasons": [
+        "semantic_converter_required:27:0"
+      ],
+      "source_id": 50821,
+      "source_row_hash": "c38342be2a86ff622e51b1f111230ec184b1b9e4979da0325ffcb570fdc90037",
+      "hu_name": "Vörös harmat",
+      "deferred_kind": "missing_or_invalid_original",
+      "deferral_explanation": "Sem az aktív, sem a felsorolt mentett blend-adatokban nincs hozzá hatás-/érték-/időtábla; egyik készlet sem tartalmazza ezt a protót.",
+      "deferral_evidence": {
+        "kind": "missing_original_blend_definition",
+        "files": [
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Auriga-Server\\srv1\\share\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2\\srv1\\share\\locale\\germany\\blend.txt",
+            "sha256": "278e0e82394f17775940a5e08e68a12865598b9178856b9c2e869706ce998a04"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2\\srv1\\share\\locale\\germany---------\\blend.txt",
+            "sha256": "278e0e82394f17775940a5e08e68a12865598b9178856b9c2e869706ce998a04"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261028-source\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261028-source-v2\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-before-c43\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-before-c44\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-original-before-c44\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-source-c42\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          }
+        ]
+      }
+    },
+    {
+      "reasons": [
+        "semantic_converter_required:27:0"
+      ],
+      "source_id": 50822,
+      "source_row_hash": "7825ccc61adaa6d343e50f555eb94b1a5f5b5a1a9cf3eef83e5fce71afc58851",
+      "hu_name": "Rózsaszín harmat",
+      "deferred_kind": "missing_or_invalid_original",
+      "deferral_explanation": "Sem az aktív, sem a felsorolt mentett blend-adatokban nincs hozzá hatás-/érték-/időtábla; egyik készlet sem tartalmazza ezt a protót.",
+      "deferral_evidence": {
+        "kind": "missing_original_blend_definition",
+        "files": [
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Auriga-Server\\srv1\\share\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2\\srv1\\share\\locale\\germany\\blend.txt",
+            "sha256": "278e0e82394f17775940a5e08e68a12865598b9178856b9c2e869706ce998a04"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2\\srv1\\share\\locale\\germany---------\\blend.txt",
+            "sha256": "278e0e82394f17775940a5e08e68a12865598b9178856b9c2e869706ce998a04"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261028-source\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261028-source-v2\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-before-c43\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-before-c44\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-original-before-c44\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-source-c42\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          }
+        ]
+      }
+    },
+    {
+      "reasons": [
+        "semantic_converter_required:27:0"
+      ],
+      "source_id": 50824,
+      "source_row_hash": "71dbc098a748eb840e7d9cbe00773b5f6a2ab8ab337b78c36c3de449218f632c",
+      "hu_name": "Zöld harmat",
+      "deferred_kind": "missing_or_invalid_original",
+      "deferral_explanation": "Sem az aktív, sem a felsorolt mentett blend-adatokban nincs hozzá hatás-/érték-/időtábla; egyik készlet sem tartalmazza ezt a protót.",
+      "deferral_evidence": {
+        "kind": "missing_original_blend_definition",
+        "files": [
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Auriga-Server\\srv1\\share\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2\\srv1\\share\\locale\\germany\\blend.txt",
+            "sha256": "278e0e82394f17775940a5e08e68a12865598b9178856b9c2e869706ce998a04"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2\\srv1\\share\\locale\\germany---------\\blend.txt",
+            "sha256": "278e0e82394f17775940a5e08e68a12865598b9178856b9c2e869706ce998a04"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261028-source\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261028-source-v2\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-before-c43\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-before-c44\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-original-before-c44\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-source-c42\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          }
+        ]
+      }
+    },
+    {
+      "reasons": [
+        "semantic_converter_required:27:0"
+      ],
+      "source_id": 50825,
+      "source_row_hash": "6bfe2abc908949373a25b8e4d939c30f38f10feedb6dadb456cfcbc56f991499",
+      "hu_name": "Kék harmat",
+      "deferred_kind": "missing_or_invalid_original",
+      "deferral_explanation": "Sem az aktív, sem a felsorolt mentett blend-adatokban nincs hozzá hatás-/érték-/időtábla; egyik készlet sem tartalmazza ezt a protót.",
+      "deferral_evidence": {
+        "kind": "missing_original_blend_definition",
+        "files": [
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Auriga-Server\\srv1\\share\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2\\srv1\\share\\locale\\germany\\blend.txt",
+            "sha256": "278e0e82394f17775940a5e08e68a12865598b9178856b9c2e869706ce998a04"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2\\srv1\\share\\locale\\germany---------\\blend.txt",
+            "sha256": "278e0e82394f17775940a5e08e68a12865598b9178856b9c2e869706ce998a04"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261028-source\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261028-source-v2\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-before-c43\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-before-c44\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-original-before-c44\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-source-c42\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          }
+        ]
+      }
+    },
+    {
+      "reasons": [
+        "semantic_converter_required:27:0"
+      ],
+      "source_id": 50826,
+      "source_row_hash": "f51721b4331c0a799b73a5bcfc1d4d1dcfc86b6f3b7d3a9a9ffd209322e3370c",
+      "hu_name": "Fehér harmat",
+      "deferred_kind": "missing_or_invalid_original",
+      "deferral_explanation": "Sem az aktív, sem a felsorolt mentett blend-adatokban nincs hozzá hatás-/érték-/időtábla; egyik készlet sem tartalmazza ezt a protót.",
+      "deferral_evidence": {
+        "kind": "missing_original_blend_definition",
+        "files": [
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Auriga-Server\\srv1\\share\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2\\srv1\\share\\locale\\germany\\blend.txt",
+            "sha256": "278e0e82394f17775940a5e08e68a12865598b9178856b9c2e869706ce998a04"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2\\srv1\\share\\locale\\germany---------\\blend.txt",
+            "sha256": "278e0e82394f17775940a5e08e68a12865598b9178856b9c2e869706ce998a04"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261028-source\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261028-source-v2\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-before-c43\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-before-c44\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-original-before-c44\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-source-c42\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          }
+        ]
+      }
+    },
+    {
+      "reasons": [
+        "semantic_converter_required:3:23"
+      ],
+      "source_id": 50905,
+      "source_row_hash": "ba3110ba44d60940570f0023de83c82008a4f03cdd2d7135cf0f3ce80b06ae12",
+      "hu_name": "Sim-víz recept",
+      "deferred_kind": "missing_or_invalid_original",
+      "deferral_explanation": "A recept sikeres ágának esélye nulla; öt sornál az eredmény és az összetevők is üresek.",
+      "deferral_evidence": {
+        "kind": "zero_source_recipe_success_chance",
+        "file": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\SRC\\Server\\GameServer\\ecs\\systems\\ItemSystem_LegacyBridge.cpp",
+        "sha256": "55669ab4242253088400f4a4c2e931209ef00327bca6b6645e4f5aa344ab5068",
+        "chance": 0,
+        "result": 50801
+      }
+    },
+    {
+      "reasons": [
+        "semantic_converter_required:3:23"
+      ],
+      "source_id": 50906,
+      "source_row_hash": "27ad1a0c3197d3fd365f547a557850cc0b54da25118edd5814660c21652341cd",
+      "hu_name": "Dok-víz recept",
+      "deferred_kind": "missing_or_invalid_original",
+      "deferral_explanation": "A recept sikeres ágának esélye nulla; öt sornál az eredmény és az összetevők is üresek.",
+      "deferral_evidence": {
+        "kind": "zero_source_recipe_success_chance",
+        "file": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\SRC\\Server\\GameServer\\ecs\\systems\\ItemSystem_LegacyBridge.cpp",
+        "sha256": "55669ab4242253088400f4a4c2e931209ef00327bca6b6645e4f5aa344ab5068",
+        "chance": 0,
+        "result": 0
+      }
+    },
+    {
+      "reasons": [
+        "semantic_converter_required:3:23"
+      ],
+      "source_id": 50907,
+      "source_row_hash": "5fa76235e0c102427c2bf6a813dd630f692270731e9f0c8cb126bb87018a2077",
+      "hu_name": "Bo-víz recept",
+      "deferred_kind": "missing_or_invalid_original",
+      "deferral_explanation": "A recept sikeres ágának esélye nulla; öt sornál az eredmény és az összetevők is üresek.",
+      "deferral_evidence": {
+        "kind": "zero_source_recipe_success_chance",
+        "file": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\SRC\\Server\\GameServer\\ecs\\systems\\ItemSystem_LegacyBridge.cpp",
+        "sha256": "55669ab4242253088400f4a4c2e931209ef00327bca6b6645e4f5aa344ab5068",
+        "chance": 0,
+        "result": 0
+      }
+    },
+    {
+      "reasons": [
+        "semantic_converter_required:3:23"
+      ],
+      "source_id": 50908,
+      "source_row_hash": "1c4b3b7f91a65a3169084bb664287de144c6615dcb1be0e443843d2969bc67d4",
+      "hu_name": "Young-víz recept",
+      "deferred_kind": "missing_or_invalid_original",
+      "deferral_explanation": "A recept sikeres ágának esélye nulla; öt sornál az eredmény és az összetevők is üresek.",
+      "deferral_evidence": {
+        "kind": "zero_source_recipe_success_chance",
+        "file": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\SRC\\Server\\GameServer\\ecs\\systems\\ItemSystem_LegacyBridge.cpp",
+        "sha256": "55669ab4242253088400f4a4c2e931209ef00327bca6b6645e4f5aa344ab5068",
+        "chance": 0,
+        "result": 0
+      }
+    },
+    {
+      "reasons": [
+        "semantic_converter_required:3:23"
+      ],
+      "source_id": 50909,
+      "source_row_hash": "95c96b2d08582a5faa7c4eba63d793c5da106322a815316642b5b4cb340eafe9",
+      "hu_name": "Zin-víz recept",
+      "deferred_kind": "missing_or_invalid_original",
+      "deferral_explanation": "A recept sikeres ágának esélye nulla; öt sornál az eredmény és az összetevők is üresek.",
+      "deferral_evidence": {
+        "kind": "zero_source_recipe_success_chance",
+        "file": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\SRC\\Server\\GameServer\\ecs\\systems\\ItemSystem_LegacyBridge.cpp",
+        "sha256": "55669ab4242253088400f4a4c2e931209ef00327bca6b6645e4f5aa344ab5068",
+        "chance": 0,
+        "result": 0
+      }
+    },
+    {
+      "reasons": [
+        "semantic_converter_required:3:23"
+      ],
+      "source_id": 50910,
+      "source_row_hash": "9c497c46e73a25cd05285724d587fae2e40ee96a16fc7d7d4b94f0120780ddc3",
+      "hu_name": "Hwal-víz recept",
+      "deferred_kind": "missing_or_invalid_original",
+      "deferral_explanation": "A recept sikeres ágának esélye nulla; öt sornál az eredmény és az összetevők is üresek.",
+      "deferral_evidence": {
+        "kind": "zero_source_recipe_success_chance",
+        "file": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\SRC\\Server\\GameServer\\ecs\\systems\\ItemSystem_LegacyBridge.cpp",
+        "sha256": "55669ab4242253088400f4a4c2e931209ef00327bca6b6645e4f5aa344ab5068",
+        "chance": 0,
+        "result": 0
+      }
+    },
+    {
+      "reasons": [
+        "semantic_converter_required:27:0"
+      ],
+      "source_id": 71157,
+      "source_row_hash": "f9f846288f1d459143db365f3faa455b30852c07537762ce342396da67c1a767",
+      "hu_name": "°ćÇčŔÇ ą°ľŕ",
+      "deferred_kind": "missing_or_invalid_original",
+      "deferral_explanation": "Sem az aktív, sem a felsorolt mentett blend-adatokban nincs hozzá hatás-/érték-/időtábla; egyik készlet sem tartalmazza ezt a protót.",
+      "deferral_evidence": {
+        "kind": "missing_original_blend_definition",
+        "files": [
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Auriga-Server\\srv1\\share\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2\\srv1\\share\\locale\\germany\\blend.txt",
+            "sha256": "278e0e82394f17775940a5e08e68a12865598b9178856b9c2e869706ce998a04"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2\\srv1\\share\\locale\\germany---------\\blend.txt",
+            "sha256": "278e0e82394f17775940a5e08e68a12865598b9178856b9c2e869706ce998a04"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261028-source\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261028-source-v2\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-before-c43\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-before-c44\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-original-before-c44\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          },
+          {
+            "path": "D:\\AurigaGlobal\\Server2-Local\\run\\item-migration\\20261110-source-c42\\data\\blend.json",
+            "sha256": "10a96a3c3bccd375ca3fc5109b4c7a6a258f4016b9a5a6ffb052d8ff98eed14f"
+          }
+        ]
+      }
+    }
+  ]
+}

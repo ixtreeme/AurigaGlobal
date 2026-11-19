@@ -1,0 +1,86 @@
+{
+  "checked_utc": "2026-11-13T16:45:32.427442+00:00",
+  "server_branch": "20261103",
+  "unity_branch": "/main/unity63-integration-20261103",
+  "unity_editor": "6000.3.27f1",
+  "layout": {
+    "default_dock": "right",
+    "design_aspect": 1.4,
+    "screen_fraction": [
+      0.4,
+      0.48
+    ],
+    "desktop_map_area_below": 0.2,
+    "small_window_readable_scrolling": true
+  },
+  "functions": [
+    "zoom",
+    "pan",
+    "centre_on_player",
+    "six_marker_filters",
+    "localized_npc_names",
+    "accent_insensitive_search",
+    "focus_search_result",
+    "per_character_per_map_persisted_waypoint",
+    "waypoint_remove",
+    "party_npc_gate_boss_quest_player_markers",
+    "current_coordinates_channel_map_and_safe_zone",
+    "teleport_confirmation_cancel_and_pending_feedback"
+  ],
+  "teleport": {
+    "fee_yang": 1000000,
+    "cooldown_real_seconds": 10,
+    "validation": "same map, strict integer/bounds, movable terrain, player state, native wallet transaction",
+    "successes_in_final_tls_run": 2,
+    "total_fee_verified_sql": 2000000,
+    "final_native_wallet_verified_sql": 100000,
+    "receipts_in_final_tls_run": 2
+  },
+  "checks": {
+    "native_build": "GameServer succeeded",
+    "native_tests_passed": [
+      "atlas_teleport_rules",
+      "typed_inventory_wire",
+      "persistent_items",
+      "item_persistence_completion"
+    ],
+    "unity_compile": "passed",
+    "atlas_controls_checks": 38,
+    "nexoria_offline_suite": "passed",
+    "remaining_window_checks": 527,
+    "live_tls": "passed",
+    "live_flow": [
+      "map metadata and NPC registry",
+      "real confirmation and cancellation",
+      "actual coordinate change",
+      "strict invalid coordinate refusal",
+      "cooldown refusal and real-time expiry",
+      "native Yang fee and inventory update",
+      "reconnect persistence of position and balance",
+      "insufficient Yang refusal"
+    ],
+    "sql_verification": "passed",
+    "resolutions": [
+      "1280x720",
+      "1920x1080",
+      "2560x1440",
+      "3840x2160",
+      "800x600",
+      "640x480",
+      "1080x2340 touch safe area",
+      "resize back to 1920x1080"
+    ]
+  },
+  "artifacts": {
+    "psd_unchanged_sha256": "d5a22651662ed539d27eb6f982a00ae3efb98da118021fb7c1c7e165f64f73de",
+    "native_photoshop_assets": 25,
+    "local_game_server_sha256": "944fe9001e89f4d0a37a39c00e09d60e69b9f31786a300c3b9700c114ce2b889",
+    "preview": "D:\\Auriga-Unity6\\SRC\\AurigaUnity-20261103\\NexoriaCaptures\\c38-atlas-controls.png",
+    "readability": "D:\\Auriga-Unity6\\SRC\\AurigaUnity-20261103\\NexoriaCaptures\\readability-c38-atlas-controls.txt"
+  },
+  "not_run": [
+    "Standalone player build",
+    "Physical Android/iOS device smoke test"
+  ],
+  "local_server_left_running": true
+}

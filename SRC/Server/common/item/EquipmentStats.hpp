@@ -27,7 +27,7 @@ struct FixedCompanionSource
 struct EquipmentStats
 {
     ItemBaseStats flat;
-    std::array<std::int64_t,35> bonuses{}; // stable BonusId, in its registry unit
+    std::array<std::int64_t,MaximumBonusId+1> bonuses{}; // stable BonusId, in its registry unit
     std::array<std::int64_t,15> resistances{}; // ItemResistanceProfile::Values order, bp
     std::vector<EquippedStatItem> equipped;
     std::optional<WeaponSubtype> weapon;
@@ -45,7 +45,7 @@ std::expected<FixedCompanionSource,EquipmentStatsError> CollectFixedCompanionBon
 std::expected<EquipmentStats,EquipmentStatsError> BuildEquipmentStats(const ItemCatalog&,ItemOwner,std::span<const PersistentItem>,std::span<const BonusEntry> effects={});
 // Checked signed nearest rounding (ties away from zero). No floating point or
 // balance clamp. A negative factor is interpreted as zero at the call site.
-std::expected<std::int64_t,EquipmentStatsError> ScaleEquipmentValue(std::int64_t value,std::int64_t numerator,std::int64_t denominator=10000);
+std::expected<std::int64_t,EquipmentStatsError> ScaleEquipmentValue(std::int64_t value,std::int64_t numerator,std::int64_t denominator=10000,bool truncate=false);
 std::expected<std::int64_t,EquipmentStatsError> AddEquipmentValue(std::int64_t,std::int64_t);
 // Owner-only GC231 v1: header,size:u32,version,status,vid:u32,statRevision:u64,
 // inventoryRevision:u64,weapon:u8 (0:none),4 flat raw:i64,13 effective points:i64

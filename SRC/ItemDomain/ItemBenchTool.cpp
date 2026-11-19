@@ -4,6 +4,7 @@
 #include "CatalogSqlReader.hpp"
 #include "ItemPersistenceSql.hpp"
 #include "StoragePersistenceSql.hpp"
+#include "NativeAwardsSql.hpp"
 #include <SQL/AsyncSQL.h>
 #include <Core/Logging.hpp>
 #include <nlohmann/json.hpp>
@@ -29,9 +30,10 @@ ItemOwner BenchOwner{ItemOwnerKind::Character,TestCharacter};
 // Every working request claims a new session first, like a login does.
 std::uint64_t BenchSession=0;
 constexpr std::uint64_t BenchCatalogRevision=1;
-ItemStorageLayout Inventory{{BenchOwner,ItemStorageKind::Inventory,1},5,9,4};
+// New bench bags match EnsureRuntimeStorageOwner (C47: eight pages); Load() adopts the stored layout.
+ItemStorageLayout Inventory{{BenchOwner,ItemStorageKind::Inventory,1},5,9,8};
 // Slots 1..8 (weapon, body, head, shield, feet, wrist, neck, ear) at anchors 0..7.
-ItemStorageLayout Equipment{{BenchOwner,ItemStorageKind::Equipment,1},20,1,1};
+ItemStorageLayout Equipment{{BenchOwner,ItemStorageKind::Equipment,1},EquipmentSlotCount,1,1};
 
 struct Failure : std::runtime_error { using std::runtime_error::runtime_error; };
 void Require(bool condition,const std::string& reason){if(!condition)throw Failure(reason);}
@@ -83,7 +85,7 @@ bool Installed(CAsyncSQL& sql)
 {
     return Rows(sql,"SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN "
         "('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance',"
-        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule','item_pet_study_cooldown','item_soul_strike_event','item_ammo_shot_event','item_shared_storage_gate','item_mission_event','item_mission_watch')").at(0).at(0)=="19" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob','companion_riding_requested','companion_lifetime_blob','costume_lifetime_blob','regalia_blob','bonus_tool_blob','soul_blob','soul_channel','soul_active')").at(0).at(0)=="21";
+        "'item_instance_attribute','item_instance_socket','item_occupied_cell','item_instance_id_allocator','item_ground_core','item_ground_entry','item_recovery_schedule','item_pet_study_cooldown','item_soul_strike_event','item_ammo_shot_event','item_shared_storage_gate','item_mission_event','item_mission_watch')").at(0).at(0)=="19" && Rows(sql,"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob','companion_riding_requested','companion_lifetime_blob','costume_lifetime_blob','regalia_blob','bonus_tool_blob','soul_blob','soul_channel','soul_active','pet_supply_blob','sash_blob','recall_blob','tool_remaining_uses','energy_percent','currency_amount','shop_permit_deadline_ms','private_shop_operation','private_shop_price','private_shop_cell')").at(0).at(0)=="31";
 }
 std::shared_ptr<const ItemCatalog> Catalog(CAsyncSQL& sql)
 {
@@ -105,6 +107,9 @@ p::LoadedItemOwner Load(CAsyncSQL& sql,const ItemCatalog& c)
 {
     auto loaded=p::LoadItemOwner(sql,c,BenchOwner,BenchSession);
     Require(loaded.has_value(),std::string("A próbapad állapota nem tölthető be: ")+PersistenceText(loaded.error())+".");
+    // Commits name the stored bag layout; migrated bags (e.g. eight pages) must not conflict.
+    const auto bag=std::ranges::find_if(loaded->storages,[](const ItemStorageLayout& s){return s.storage.kind==ItemStorageKind::Inventory && s.storage.id==1;});
+    if(bag!=loaded->storages.end())Inventory=*bag;
     return std::move(*loaded);
 }
 Json State(const ItemCatalog& c,const p::LoadedItemOwner& o)
@@ -218,7 +223,7 @@ bool FollowCatalog(CAsyncSQL& sql,const ItemCatalog& c)
     const auto old=Rows(sql,"SELECT catalog_revision,catalog_sha256 FROM player.item_persistence_format WHERE singleton=1");
     if(old.empty())
     {
-        Query(sql,"INSERT INTO player.item_persistence_format VALUES(1,1,?,?)",{SqlParam::UInt(c.Revision()),SqlParam::Blob(digest)});
+        Query(sql,"INSERT INTO player.item_persistence_format(singleton,schema_version,catalog_revision,catalog_sha256) VALUES(1,1,?,?)",{SqlParam::UInt(c.Revision()),SqlParam::Blob(digest)});
         return true;
     }
     if(PinHash(sql)==Hex(c.ContentHash()))return false;
@@ -324,11 +329,27 @@ Json Grant(CAsyncSQL& sql,const Json& request)
     const auto key=ItemKey::Create(static_cast<ItemCategory>(request.at("category").get<unsigned>()),request.at("local").get<std::uint32_t>());
     Require(key.has_value(),"Érvénytelen tárgykulcs.");
     const auto* entry=c->Find(*key);Require(entry,"Nincs ilyen tárgy a katalógusban.");
+    Require(request.value("count",1u)>0 && request.value("count",1u)<=entry->base.maxStack && request.value("level",0u)<=255,"Érvénytelen darabszám vagy fejlesztési szint.");
     if(const auto* seal=std::get_if<ItemCompanionRow>(&entry->category);seal && seal->kind==CompanionKind::GrowthPet)
         throw Failure("A fejlődő pet pecsétje keltetéssel hozható létre.");
     // The same shared allocator the game servers use, so a running server never collides with the bench.
     const auto ids=p::ReserveItemInstanceIds(sql,*c,1);
     Require(ids.has_value(),std::string("Nincs kiosztható tárgyazonosító: ")+(ids?"":PersistenceText(ids.error()))+".");
+    // Ordinary issuance follows exactly the game's native birth policies,
+    // including authored open sockets and clocks. Explicit fixture states
+    // below remain available for the owned test bench.
+    const bool fixture=std::ranges::any_of(request.items(),[](const auto& field){
+        const auto& name=field.key();return name!="action" && name!="owner" && name!="connection" && name!="category" && name!="local" && name!="level" && name!="count" && name!="try_magic";
+    });
+    if(!fixture) {
+        ItemGrant grant{*key,static_cast<std::uint16_t>(request.value("level",0u)),request.value("count",1u)};
+        grant.tryMagic=request.value("try_magic",false);
+        grant.createdAtUtcMs=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        const auto id=ItemInstanceId::Create(ids->first).value();
+        auto plan=MakeGrantCommit(*c,OperationId(),o.fence,o.storages,o.items,grant,std::span(&id,1));
+        Require(plan.has_value(),std::string("A tárgy nem adható: ")+(plan?"":PersistenceText(plan.error()))+".");
+        return Commit(sql,*c,*plan,{{"granted",std::to_string(id.Value())}});
+    }
     PersistentItem item{ItemInstanceId::Create(ids->first).value(),*key,BenchOwner};
     item.count=request.value("count",1u);item.refinementLevel=static_cast<std::uint16_t>(request.value("level",0u));
     if(entry->base.binding==BindingPolicy::OnAcquire)item.boundTo=BenchOwner;
@@ -351,8 +372,9 @@ Json Grant(CAsyncSQL& sql,const Json& request)
     if(const auto initial=InitialToggleEffectState(*c,item.key);initial)item.toggle=*initial;if(request.contains("book_skill"))item.bookSkill=request.at("book_skill").get<std::uint16_t>();
     if(const auto* poly=std::get_if<ItemPolymorphRow>(&entry->category))
     {item.polymorph=PolymorphInstanceState{};if(request.contains("polymorph_form"))item.polymorph->boundForm=request.at("polymorph_form").get<std::uint32_t>();if(request.contains("polymorph_grade"))item.polymorph->bookGrade=request.at("polymorph_grade").get<std::uint16_t>();if(request.contains("polymorph_practice"))item.polymorph->practiceRemaining=request.at("polymorph_practice").get<std::uint32_t>();}
-    if(std::holds_alternative<ItemToolRow>(entry->category))
-    {const auto points=request.value("tool_points",std::uint64_t{}),bait=request.value("tool_bait",std::uint64_t{});Require(points<=UINT32_MAX && bait<=INT32_MAX,"Érvénytelen eszközállapot.");item.tool=ToolInstanceState{static_cast<std::uint32_t>(points),static_cast<std::uint32_t>(bait)};}
+    if(const auto* tool=std::get_if<ItemToolRow>(&entry->category))
+    {const auto points=request.value("tool_points",std::uint64_t{}),bait=request.value("tool_bait",std::uint64_t{});Require(points<=UINT32_MAX && bait<=INT32_MAX,"Érvénytelen eszközállapot.");item.tool=ToolInstanceState{static_cast<std::uint32_t>(points),static_cast<std::uint32_t>(bait)};if(tool->kind==ToolKind::Detector)item.tool->remainingUses=tool->maximumUses;}
+    if(RecallItemMode(*c,item.key)!=RecallMode::None)item.recall=RecallItemState{};
     if(const auto* seal=std::get_if<ItemCompanionRow>(&entry->category);seal && SupportsPersistentItem(*c,*entry)) {
         const auto now=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         const auto initial=MakeCompanionState(*c,item.key,now);Require(initial.has_value(),"Érvénytelen társ-élettartam.");item.companion=*initial;
@@ -363,11 +385,11 @@ Json Grant(CAsyncSQL& sql,const Json& request)
     }
     if(const auto* soul=std::get_if<ItemSoulRow>(&entry->category);soul && soul->kind==SoulKind::Core){const auto initial=MakeSoulState(*c,item.key,item.refinementLevel);Require(initial.has_value(),"Érvénytelen lélekállapot.");item.soul=*initial;}
     const auto grantEntropy=OperationId();
-    if(const auto* regalia=std::get_if<ItemRegaliaRow>(&entry->category))item.regalia=InitialRegalia(*regalia,grantEntropy,item.id.Value());
+    if(const auto* regalia=std::get_if<ItemRegaliaRow>(&entry->category)){if(regalia->kind==RegaliaKind::AbsorptionSash)item.sash=InitialAbsorptionSash(*c->FindAbsorptionSash(item.key),grantEntropy,item.id.Value());else item.regalia=InitialRegalia(*regalia,grantEntropy,item.id.Value());}
     if(const auto* bonusTool=std::get_if<ItemBonusToolRow>(&entry->category))item.bonusTool=InitialBonusTool(*bonusTool);
-    if(const auto* costume=std::get_if<ItemCostumeRow>(&entry->category)) {
+    if(const auto clock=FindWearableClock(*c,item.key);clock && (item.key.Category()==ItemCategory::Costume || clock->clock!=CostumeClock::Permanent)) {
         const auto now=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-        const auto initial=MakeCostumeLifetime(*costume,now);Require(initial.has_value(),"Érvénytelen jelmezóra.");item.costume=*initial;
+        const auto initial=MakeItemClock(*clock,now);Require(initial.has_value(),"Érvénytelen jelmezóra.");item.costume=*initial;
     }
     item.placement=ItemPlacement{ItemStorageKind::Inventory,1,0};
     if(auto valid=ValidatePersistentItem(*c,item);!valid)
@@ -485,9 +507,11 @@ Json Socket(CAsyncSQL& sql,const Json& request)
 Json Wallet(CAsyncSQL& sql,const Json& request)
 {
     const auto c=Catalog(sql);const auto o=Load(sql,*c);
-    const auto gold=request.at("gold").get<std::uint64_t>();
+    const auto currency=request.value("currency",1u);Require(currency==1 || currency==3,"Only character Yang/Gaya wallets can be changed.");
+    const auto gold=request.at(currency==3?"amount":"gold").get<std::uint64_t>();
+    Require(currency!=3 || gold<=MaxNativeGayaBalance,"Gaya exceeds its native cap.");
     Require(gold<=static_cast<std::uint64_t>((std::numeric_limits<std::int64_t>::max)()),"Túl nagy összeg.");
-    const auto it=std::ranges::find_if(o.wallets,[](const auto& w){return w.currency==WalletCurrency::Gold;});
+    const auto it=std::ranges::find_if(o.wallets,[&](const auto& w){return static_cast<unsigned>(w.currency)==currency;});
     Require(it!=o.wallets.end(),"A próbapadnak nincs Yang-pénztárcája.");
     if(it->balance==gold)return {{"state",State(*c,o)}};
     auto after=*it;after.revision++;after.balance=gold;
@@ -503,7 +527,8 @@ Json StorageProvider(CAsyncSQL& sql,const std::string& action,const Json& reques
         const auto key=ItemKey::Create(static_cast<ItemCategory>(request.at("category").get<unsigned>()),request.at("local").get<std::uint32_t>());Require(key.has_value(),"Érvénytelen kézbesítési tárgy.");const auto kind=static_cast<ItemStorageKind>(request.at("storage_kind").get<unsigned>());Require(kind==ItemStorageKind::Mall || kind==ItemStorageKind::Mail || kind==ItemStorageKind::PendingAward,"Csak kézbesítési tárolóba adható tárgy.");const auto target=std::ranges::find_if(state->storages,[&](const auto& l){return l.storage.kind==kind && l.storage.id==1;});Require(target!=state->storages.end(),"Hiányzó kézbesítési tároló.");
         const auto block=p::ReserveItemInstanceIds(sql,*c,MaxItemCommitItems);Require(block.has_value(),"Nem foglalhatók kézbesítési azonosítók.");std::vector<ItemInstanceId> ids;for(auto n=block->first;n<block->end;n++)ids.push_back(ItemInstanceId::Create(n).value());
         const ItemOwner factory{ItemOwnerKind::Character,value};ItemStorageLayout bag{{factory,ItemStorageKind::Inventory,1},target->columns,target->rows,target->pages};const auto operation=OperationId();ItemGrant grant{*key,static_cast<std::uint16_t>(request.value("level",0u)),request.value("count",1u)};grant.createdAtUtcMs=static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
-        auto planned=MakeGrantCommit(*c,operation,{factory,1,1},std::span(&bag,1),{},grant,ids);Require(planned.has_value(),"Nem hozható létre a kézbesítési tárgy.");ItemCommit commit;commit.operationId=operation;commit.catalogRevision=c->Revision();commit.catalogHash=c->ContentHash();commit.kind=ItemOperationKind::Grant;commit.owners={state->fence};commit.storages={*target};commit.outcomeCode=1;commit.result={'D','L','V',1};auto working=state->items;
+        grant.tryMagic=request.value("try_magic",false);if(request.contains("magic_chance_bp")){const auto chance=request.at("magic_chance_bp").get<unsigned>();Require(chance<=10000,"Érvénytelen mágikus születési esély.");grant.magicChanceBp=static_cast<std::uint16_t>(chance);}
+        auto planned=MakeGrantCommit(*c,operation,{factory,1,1},std::span(&bag,1),{},grant,ids);Require(planned.has_value(),"Nem hozható létre a kézbesítési tárgy.");ItemCommit commit;commit.operationId=operation;commit.catalogRevision=c->Revision();commit.catalogHash=c->ContentHash();commit.kind=ItemOperationKind::Grant;commit.owners={state->fence};commit.storages={*target};commit.outcomeCode=1;commit.result=planned->result;auto working=state->items;
         for(const auto& ch:planned->items){auto item=ch.after;item.owner=owner;if(item.boundTo)item.boundTo=owner;bool placed=false;for(std::uint32_t at=0;at<std::uint32_t(target->columns)*target->rows*target->pages && !placed;at++){item.placement=ItemPlacement{kind,1,at};auto cells=OccupiedItemCells(*c,item,*target);if(!cells)continue;placed=true;for(const auto& before:working)if(before.placement && before.placement->kind==kind && before.placement->storageId==1){auto other=OccupiedItemCells(*c,before,*target);Require(other.has_value(),"Sérült kézbesítési helyfoglalás.");if(std::ranges::any_of(*cells,[&](auto n){return std::ranges::find(*other,n)!=other->end();})){placed=false;break;}}}Require(placed,"A kézbesítési tároló megtelt.");working.push_back(item);commit.items.push_back({{},item});}
         Require(p::CommitItems(sql,*c,commit).has_value(),"A kézbesítés nem menthető.");state=p::LoadCurrentItemOwner(sql,*c,owner);
     }
@@ -516,6 +541,15 @@ Json Run(const Json& request)
     const auto user=auth.at("user").get<std::string>(),password=auth.at("password").get<std::string>();
     Require(sql.Setup("127.0.0.1",user.c_str(),password.c_str(),"player","utf8mb4",true,auth.at("port").get<unsigned>()),"A helyi adatbázis nem érhető el.");
     const auto action=request.at("action").get<std::string>();
+    if(action=="guild_native_award") {
+        const auto c=Catalog(sql);FollowCatalog(sql,*c);
+        const auto key=ItemKey::Create(request.at("category").get<std::uint16_t>(),request.at("local").get<std::uint32_t>());
+        Require(key.has_value(),"Érvénytelen natív céhjutalom.");
+        const auto operation=OperationId();
+        const auto queued=p::EnqueueGuildNativeAwards(sql,*c,request.at("guild").get<std::uint32_t>(),operation,*key,request.value("level",std::uint16_t{}),request.value("count",1u));
+        Require(queued.has_value(),"A natív céhjutalom nem menthető.");
+        return {{"queued",*queued},{"request",Hex(operation)}};
+    }
     const auto pid=request.value("owner",std::uint64_t{TestCharacter});
     Require(pid>0 && pid<=0xffffffffull,"Érvénytelen karakterazonosító.");
     BenchOwner={ItemOwnerKind::Character,pid};Inventory.storage.owner=BenchOwner;Equipment.storage.owner=BenchOwner;

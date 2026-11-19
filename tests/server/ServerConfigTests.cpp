@@ -46,6 +46,11 @@ int main() {
         Check(auriga::config::Resolve(fixture, source, Role::Game, "ch1-core1", section, error), "valid central config rejected");
         GameConfig game;
         Check(game.Load(section, error), "typed game config rejected");
+        Check(game.socialHistoryKeyFile.empty(),"history must remain disabled without an explicit server key");
+        auto historyFixture=fixture;historyFixture["game_defaults"]["social_history"]["key_file"]="history-test.key";
+        auriga::config::Section historySection;GameConfig historyGame;
+        Check(auriga::config::Resolve(historyFixture,source,Role::Game,"ch1-core1",historySection,error)&&historyGame.Load(historySection,error),"history config rejected");
+        Check(historyGame.socialHistoryKeyFile=="history-test.key","history key setting lost when parsed config was committed");
         Check(game.network.port == 30054 && game.network.dbPort == 5300 && game.network.dbAddr == "127.0.0.1", "network inheritance lost");
         Check(game.server.channel == 1 && game.server.maxLevel == 160 && game.server.hostname == "core one", "recursive defaults overwrite instance fields");
         Check(game.sql.player.password == "PASSWORD_DO_NOT_LOG" && game.sql.log.database == "log" && game.interserverKey == "fixture-key", "shared connection fields lost");
@@ -71,27 +76,27 @@ int main() {
               error.find("PASSWORD_DO_NOT_LOG") == std::string::npos,
               "routing overflow accepted, changed live config or leaked credentials");
         Check(game.Load(first, error), "valid config did not recover after routing overflow");
-        // Typed item catalog switch (F4): off by default, fail closed on bad values.
-        Check(game.items.catalog == "off" && game.items.catalogRevision == 1 && game.items.catalogSha256.empty(), "item catalog is not off by default");
+        // Native items are mandatory; omitted settings cannot restore retired paths.
+        Check(game.items.catalog == "required" && game.items.catalogRevision == 1 && game.items.catalogSha256.empty(), "native item catalog is not required by default");
         auto items = first;
         items.values["items"] = Json{{"catalog", "required"}, {"catalog_revision", 7}, {"catalog_sha256", std::string(64, 'a')}};
         Check(game.Load(items, error) && game.items.catalog == "required" && game.items.catalogRevision == 7 &&
-              game.items.catalogSha256 == std::string(64, 'a') && game.items.drops == "legacy", "required item catalog settings lost");
-        // Typed drops (C7b-3) need the catalog; "legacy" is the default.
+              game.items.catalogSha256 == std::string(64, 'a') && game.items.drops == "typed", "required item catalog settings lost");
+        // Both explicit and omitted drop settings use the native catalog.
         auto typedDrops = items; typedDrops.values["items"]["drops"] = "typed";
         Check(game.Load(typedDrops, error) && game.items.drops == "typed", "typed drop setting lost");
         auto noCatalog = typedDrops; noCatalog.values["items"]["catalog"] = "off";
-        Check(!game.Load(noCatalog, error) && game.items.drops == "typed" && error.find("items.drops") != std::string::npos,
+        Check(!game.Load(noCatalog, error) && game.items.drops == "typed" && error.find("items.catalog") != std::string::npos,
               "typed drops accepted without the catalog");
-        Check(game.Load(items, error) && game.items.drops == "legacy", "drop setting survived a reload without it");
-        for (const auto& [field, value] : std::vector<std::pair<std::string, Json>>{{"catalog", "on"}, {"catalog_revision", 0},
+        Check(game.Load(items, error) && game.items.drops == "typed", "drop setting survived a reload without it");
+        for (const auto& [field, value] : std::vector<std::pair<std::string, Json>>{{"catalog", "off"}, {"drops", "legacy"}, {"catalog", "on"}, {"catalog_revision", 0},
                  {"catalog_sha256", std::string(64, 'A')}, {"catalog_sha256", "abc"}, {"drops", "on"}})
         {
             auto bad = items; bad.values["items"][field] = value;
             Check(!game.Load(bad, error) && game.items.catalogRevision == 7 && error.find("items.") != std::string::npos,
                   "invalid item catalog setting accepted or changed the live config");
         }
-        Check(game.Load(first, error) && game.items.catalog == "off", "item catalog setting survived a reload without it");
+        Check(game.Load(first, error) && game.items.catalog == "required", "item catalog setting survived a reload without it");
         DatabaseConfig database; LoginConfig login;
         Check(auriga::config::Resolve(fixture, source, Role::Database, {}, section, error) && database.Load(section, error), "database section rejected");
         Check(database.network.bindPort == 5300 && database.sql.account.database == "account" && database.server.tablePostfix == "_fixture", "database shared mapping lost");

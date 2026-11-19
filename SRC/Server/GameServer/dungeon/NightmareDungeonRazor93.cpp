@@ -1,5 +1,6 @@
 
 #include "stdafx.h"
+#include "../item/TypedDungeonEntry.hpp"
 #include "../mission_pass/MissionPassEvents.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/ItemSystem.hpp"
@@ -42,6 +43,8 @@ namespace
     constexpr int32_t  kMinLevel = 82;
     constexpr int32_t  kMaxLevel = 102;
     constexpr uint32_t kEntryItemVnum = 71095;
+    constexpr std::string_view kNativeEntryCode="catalog.6.entry_permit_ecc50f34dded";
+    std::uint64_t EntryTicketCount(entt::entity e){return HasTypedDungeonInventory(e)?TypedDungeonTicketCount(e,kNativeEntryCode):ItemSystem::CountItem(e,kEntryItemVnum);}
     constexpr int32_t  kEntryItemCount = 1;
     constexpr int32_t  kCooldownSeconds = 1200;
 
@@ -322,12 +325,12 @@ namespace
 
     inline bool HasEntryItem(entt::entity ch)
     {
-        return (ItemSystem::CountItem(ch, kEntryItemVnum) >= kEntryItemCount);
+        return (EntryTicketCount(ch) >= kEntryItemCount);
     }
 
     inline void RemoveEntryItem(entt::entity ch)
     {
-        ItemSystem::RemoveSpecifyItemEcs(ch, kEntryItemVnum, kEntryItemCount);
+        if(!HasTypedDungeonInventory(ch))ItemSystem::RemoveSpecifyItemEcs(ch, kEntryItemVnum, kEntryItemCount);
     }
 
     inline void FormatCooldown(int32_t sec, char* out, size_t outSz)
@@ -464,6 +467,7 @@ void CNightmareDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity vic
 
 bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
 {
+    if(TypedDungeonEntryPending(character))return true;
     if (!ecs::PlayerRuntime::IsPC(character))
         return false;
 
@@ -604,15 +608,17 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
     }
 
     // Create dungeon instance
+    auto prepare=[=]() -> std::optional<TypedDungeonEntryPlan> {
     const entt::entity d = CDungeonManager::instance().Create(kOriginalMap);
     if (d == entt::null)
-        return true;
+        return std::nullopt;
 
     DungeonSystem::SetFlag(d, kFlagFloor, 0); // OnPlayerLogin will initialize to floor 2 and schedule waves/timer
     DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
 
     const int32_t newMapIndex = DungeonSystem::GetMapIndex(d);
 
+        TypedDungeonEntryPlan plan;plan.dungeon=d;plan.cancel=[d]{CancelTypedDungeonPreflight(d);};plan.publish=[=]{
     // Consume items + set cooldown + save return location BEFORE join
     auto applyMember = [&](entt::entity m){
             if (!ecs::PlayerRuntime::IsPC(m))
@@ -642,6 +648,14 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
     ClearRejoinFlags(character);
 
     ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "[Nightmare] Entering...");
+        };return plan;
+    };
+    if(HasTypedDungeonInventory(character)){
+        if(!BeginTypedDungeonEntry(character,"dungeon.nightmare.entry",kNativeEntryCode,1,[](entt::entity pc){return CheckLevel(pc) && CooldownRemain(pc)==0;},prepare))
+            ecs::ChatSystem::Send(character,CHAT_TYPE_INFO,"A teljes csapatnak készen kell állnia, és a belépőnek a hátizsákban kell lennie.");
+        return true;
+    }
+    if(auto plan=prepare())plan->publish();
     return true;
 }
 

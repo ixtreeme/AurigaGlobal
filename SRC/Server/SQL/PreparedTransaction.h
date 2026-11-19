@@ -39,8 +39,10 @@ inline constexpr size_t SqlTransactionNoStep = static_cast<size_t>(-1);
 
 namespace SqlTransactionLimits
 {
-inline constexpr size_t Steps = 512;
-inline constexpr size_t Parameters = 4096;
+// A native120-slot personal shop and its permit are one atomic item operation.
+// Keep the full before-image/child/footprint checks for every listed instance.
+inline constexpr size_t Steps = 2048;
+inline constexpr size_t Parameters = 32768;
 inline constexpr size_t QueryBytes = 65536;
 inline constexpr size_t TotalBytes = 32 * 1024 * 1024;
 } // namespace SqlTransactionLimits

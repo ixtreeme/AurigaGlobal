@@ -1,0 +1,259 @@
+{
+  "date": "2026-11-17",
+  "checked_utc": "2026-11-17T17:01:49.381550+00:00",
+  "complete": true,
+  "feature": "live_bulk_reward_removal_and_catalog_performance",
+  "server_branch": "20261103",
+  "unity_branch": "/main/unity63-integration-20261103",
+  "unity_editor": "6000.3.27f1",
+  "local_package": "D:\\AurigaGlobal\\Server2-Local",
+  "manager_backup": "D:\\AurigaGlobal\\Server2-Local\\run\\deployments\\bulk-removal-manager-20261117T165906Z",
+  "installed_manager_files_verified": 248,
+  "no_server_restart": true,
+  "server_processes": {
+    "database": 31428,
+    "ch1-core1": 10880,
+    "ch1-core2": 34024,
+    "ch99-core99": 20684,
+    "login": 24644
+  },
+  "base_catalog_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+  "source_catalog_sha256": "9ab3dac7f81d2898ab89aeeca641bffc4f59b28ac5f7683d080282ea9913babd",
+  "deferred_637_unchanged": true,
+  "final_mob_groups": 183,
+  "final_mob_entries": 9027,
+  "final_chest_overrides": 0,
+  "live_proof": {
+    "run": "9458d7bbee83c06a",
+    "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+    "first_hash": "a4b182397b4b90d395a3efd5ab5860a79ab1042f5e6d4d8e9a2a1e0644d5c888",
+    "removed_hash": "20d8621992cf88e85ef5b0fefb2dc28b2d2a1660393573e5d7bb06f801488445",
+    "first_activation": {
+      "available": true,
+      "containers_available": true,
+      "running": true,
+      "cores": [
+        {
+          "name": "ch1-core1",
+          "hash": "a4b182397b4b90d395a3efd5ab5860a79ab1042f5e6d4d8e9a2a1e0644d5c888",
+          "release": "66002a25d127fc2fde9d7025e9fa3c1f",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch1-core2",
+          "hash": "a4b182397b4b90d395a3efd5ab5860a79ab1042f5e6d4d8e9a2a1e0644d5c888",
+          "release": "66002a25d127fc2fde9d7025e9fa3c1f",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch99-core99",
+          "hash": "a4b182397b4b90d395a3efd5ab5860a79ab1042f5e6d4d8e9a2a1e0644d5c888",
+          "release": "66002a25d127fc2fde9d7025e9fa3c1f",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        }
+      ],
+      "hash": "a4b182397b4b90d395a3efd5ab5860a79ab1042f5e6d4d8e9a2a1e0644d5c888",
+      "release": "66002a25d127fc2fde9d7025e9fa3c1f",
+      "activated": true
+    },
+    "removal_activation": {
+      "available": true,
+      "containers_available": true,
+      "running": true,
+      "cores": [
+        {
+          "name": "ch1-core1",
+          "hash": "20d8621992cf88e85ef5b0fefb2dc28b2d2a1660393573e5d7bb06f801488445",
+          "release": "77c9f5b8c7eb22d38fbc37f7351c1087",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch1-core2",
+          "hash": "20d8621992cf88e85ef5b0fefb2dc28b2d2a1660393573e5d7bb06f801488445",
+          "release": "77c9f5b8c7eb22d38fbc37f7351c1087",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch99-core99",
+          "hash": "20d8621992cf88e85ef5b0fefb2dc28b2d2a1660393573e5d7bb06f801488445",
+          "release": "77c9f5b8c7eb22d38fbc37f7351c1087",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        }
+      ],
+      "hash": "20d8621992cf88e85ef5b0fefb2dc28b2d2a1660393573e5d7bb06f801488445",
+      "release": "77c9f5b8c7eb22d38fbc37f7351c1087",
+      "activated": true
+    },
+    "server_processes_unchanged": {
+      "database": 31428,
+      "ch1-core1": 10880,
+      "ch1-core2": 34024,
+      "ch99-core99": 20684,
+      "login": 24644
+    },
+    "two_chests_opened_after_removal": true,
+    "actual_mob_kills_before_and_after": true,
+    "no_removed_item_granted": true,
+    "held_quote_preserved": true,
+    "same_connection": true,
+    "relog_persisted": true,
+    "protected_state": {
+      "items": "5ece41c57b2502e544f8dd7ddb7016506f364d5c9d5eb7bbcbb71e08fb160a73",
+      "wallets": "134ef18248817b5dcedb24c97964c5f1116f5ebceb9bbe3b63fd407980558b92"
+    },
+    "backup": "D:\\AurigaGlobal\\Server2-Local\\run\\deployments\\live-removal-proof-20261117T165626Z",
+    "original_contents_restored": true,
+    "cleanup_activation": {
+      "available": true,
+      "containers_available": true,
+      "running": true,
+      "cores": [
+        {
+          "name": "ch1-core1",
+          "hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "release": "21edce4637984099c20e6b3e4e74df14",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch1-core2",
+          "hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "release": "21edce4637984099c20e6b3e4e74df14",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch99-core99",
+          "hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "release": "21edce4637984099c20e6b3e4e74df14",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        }
+      ],
+      "hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+      "release": "21edce4637984099c20e6b3e4e74df14",
+      "activated": true
+    }
+  },
+  "performance": {
+    "before": {
+      "loaded": 11.1476,
+      "filter_weapons": 3.1186,
+      "select_weapon": 1.3536,
+      "open_weapon": 9.3176
+    },
+    "after": {
+      "loaded": 1.3197,
+      "filter_weapons": 0.0595,
+      "select_weapon": 0.0078,
+      "open_weapon": 1.3187,
+      "back_catalog": 0.009,
+      "show_drops": 0.0822,
+      "show_containers": 0.0331,
+      "open_largest_chest_item": 0.0454
+    },
+    "profiler_enabled": true,
+    "sql_read_excluded": true
+  },
+  "ctest_passed": [
+    "container_opening",
+    "catalog_editor",
+    "bulk_rewards_editor",
+    "live_rewards_mariadb"
+  ],
+  "workflow_cases": 12,
+  "clarity_cases": 6,
+  "reward_editor_cases": 11,
+  "live_sql_cases": 9,
+  "frozen_native_gui_smoke": {
+    "catalog_loaded": true,
+    "bulk_remove_dialog_opened": true,
+    "names_readable": true,
+    "no_ui_data_saved": true
+  },
+  "screenshots": [
+    "../ui/2026-11-17_bulk_remove_chests.png",
+    "../ui/2026-11-17_bulk_remove_editor.png"
+  ],
+  "checks": {
+    "bulk-remove-final-tests.log": {
+      "path": "build/bulk-remove-final-tests.log",
+      "sha256": "9fd8f1cbb953f2b957a0fbc462fddcf97b2377141c85c5fa7c81625409231983"
+    },
+    "bulk-remove-final-clarity.log": {
+      "path": "build/bulk-remove-final-clarity.log",
+      "sha256": "a5d781ef0510cef12a0934b41de6fe82d109c9f984e39e9aabe4cd93d3a7baee"
+    },
+    "bulk-remove-workflow-tests.log": {
+      "path": "build/bulk-remove-workflow-tests.log",
+      "sha256": "5e67f0df85223590e88821e9bdd8384bf3e16491e0759b0227a6c9de004217e5"
+    },
+    "bulk-remove-ui-preview.log": {
+      "path": "build/bulk-remove-ui-preview.log",
+      "sha256": "1d62edf5c77a89714cefc0243e235333351bdafffbf81321b7a95c644d663485"
+    },
+    "bulk-remove-unity-live.log": {
+      "path": "build/bulk-remove-unity-live.log",
+      "sha256": "1eb74d7fc1717e50d46a760474de4340960941550201d7096ba3b0f25a79ccbd"
+    },
+    "bulk-remove-live-proof.log": {
+      "path": "build/bulk-remove-live-proof.log",
+      "sha256": "2fd1f34eb5148b2c9546c6a36328e90a19eabb73e6f5d1025d18da33b42cb753"
+    },
+    "catalog-navigation-before.log": {
+      "path": "build/catalog-navigation-before.log",
+      "sha256": "dd0b03e36948174286d891a103f9a0cd07325d2ac06acf39732f5927856fb81a"
+    },
+    "catalog-navigation-final.log": {
+      "path": "build/catalog-navigation-final.log",
+      "sha256": "797a40e53ab636222d21ba43be2f0c4546784b03caf76254e26df7a518e43269"
+    },
+    "bulk-remove-manager-build.log": {
+      "path": "build/bulk-remove-manager-build.log",
+      "sha256": "766a8cb38db3c017e613249a06062bd814a4f52416dc22e5941012811f9bfd8d"
+    },
+    "bulk-remove-manager-deploy.log": {
+      "path": "build/bulk-remove-manager-deploy.log",
+      "sha256": "4a44593062c12616f82e82a52500c45534224d1fe2fd0d936283a30f78e450c0"
+    }
+  },
+  "not_run": [
+    "FreeBSD build",
+    "standalone/mobile Unity build",
+    "remote package editing",
+    "load and multi-host outage tests"
+  ]
+}

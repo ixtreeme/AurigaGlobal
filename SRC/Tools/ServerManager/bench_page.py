@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QComboBox, QDialog, QDialogBut
 import backend as api
 import item_bench as bench
 import item_catalog as catalog
+import change_review as review
 from item_page import BONUS_LABELS, UNITS, Task, recipe_text
 from item_workflows import readable_name
 from manager_ui import card_layout, confirm_action
@@ -59,7 +60,9 @@ class BenchPage(QWidget):
         title = QLabel('Próbapad és karakter'); title.setObjectName('SectionTitle'); setup_layout.addWidget(title)
         bar = QHBoxLayout()
         self.start_db_button = QPushButton('Helyi adatbázis indítása'); self.start_db_button.clicked.connect(self.start_database)
+        self.start_db_button.setProperty('role', 'success')
         self.reload_button = QPushButton('Karakter állapotának frissítése'); self.reload_button.clicked.connect(self.reload)
+        self.reload_button.setProperty('role', 'reload')
         self.install_button = QPushButton('Próbapad előkészítése…'); self.install_button.clicked.connect(self.install)
         self.character = QComboBox(); self.character.setMinimumWidth(220)
         self.character.addItem('Tesztkarakter (#%d)' % bench.BENCH_OWNER, bench.BENCH_OWNER)
@@ -83,11 +86,11 @@ class BenchPage(QWidget):
         hint.setWordWrap(True); hint.setObjectName('Subtle'); side.addWidget(hint)
         self.category = QComboBox(); self.category.addItem('Minden kategória', 0)
         for category, name in catalog.CATEGORIES.items(): self.category.addItem(name, category)
-        self.search = QLineEdit(); self.search.setPlaceholderText('Tárgy elnevezése vagy azonosítója…')
+        self.search = QLineEdit(); self.search.setPlaceholderText('Tárgy keresése név szerint…')
         side.addWidget(self.category); side.addWidget(self.search)
         self.catalog_list = QTableWidget(0, 3); self.catalog_list.setHorizontalHeaderLabels(['Elnevezés', 'Azonosító', 'Kategória'])
         self.catalog_list.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        self.catalog_list.setColumnHidden(2, True)
+        self.catalog_list.setColumnHidden(1, True)
         self.catalog_list.verticalHeader().hide(); self.catalog_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.catalog_list.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.catalog_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
@@ -116,6 +119,7 @@ class BenchPage(QWidget):
         self.inventory_views.addTab(grid_page, 'Leltár')
         self.items = QTableWidget(0, 7)
         self.items.setHorizontalHeaderLabels(['Példányazonosító', 'Tárgypéldány', 'Fejlesztés', 'Darab', 'Leltárhely', 'Bónuszok', 'Kövek'])
+        self.items.setColumnHidden(0, True)
         self.items.setColumnHidden(0, True)
         self.items.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self.items.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
@@ -251,6 +255,24 @@ class BenchPage(QWidget):
 
     def act(self, action, message, describe=None, **fields):
         root = self.owner.root
+        who=self.character.currentText();before={};after=dict(fields)
+        if 'category' in after and 'local' in after:
+            after['tárgy']=readable_name(self.base(after.pop('category'),after.pop('local')) or {})
+        for field in ('item','target','tool'):
+            if field in after:
+                item=next((row for row in (self.bench or {}).get('items',[]) if row['id']==str(after[field])),None)
+                if item:after[field]=self.name(item);before[field]=self.name(item)
+        selected=self.selected_item()
+        for field in ('count','level','cell'):
+            if field in after and selected and field in selected:before[field]=selected[field]
+        if action=='wallet':before['gold']=next((w['balance'] for w in (self.bench or {}).get('wallets',[]) if w['currency']==1),0)
+        rows=review.dict_rows(who,before,after,dict(count='Darabszám',level='Fejlesztés',cell='Leltárhely',gold='Yang',item='Tárgy',target='Céltárgy',tool='Felhasznált tárgy'))
+        if action=='destroy' and selected:rows=[(who,self.name(selected),str(selected['count'])+' db','Megsemmisítés')]
+        if action in ('refine','attribute','socket'):rows.append((who,'Véletlen kimenetel','Jelenlegi tárgyállapot','A jóváhagyott művelet és anyagfelhasználás; az eredményt a szerver sorsolja'))
+        if not rows:rows=[(who,message.rstrip('…'),'Jelenlegi állapot','A megadott művelet végrehajtása')]
+        try:stage=review.request(self.owner,message.rstrip('…'),'bench',dict(action=action,owner=self.character_id,fields=fields),rows)
+        except (api.EditorError,OSError,ValueError) as error:self.owner.error(str(error));return
+        if stage is None:return
         def done(result):
             self.bench = result['state']
             if result.get('catalog_followed'): self.write('A katalógus változott; a próbapad átvette az új katalógust.')
@@ -258,7 +280,7 @@ class BenchPage(QWidget):
             self.status.setText('A művelet befejeződött. A karakter tárgyai frissültek.' if self.packet else '')
             self.render()
         owner = self.character_id
-        self.run(lambda: bench.call(root, action, owner=owner, **fields), done, message)
+        self.run(lambda:review.publish(stage,self.owner,lambda data:bench.call(root,data['action'],owner=data['owner'],**data['fields'])),done,message)
 
     def fill_characters(self, characters):
         self.characters = characters
@@ -283,16 +305,18 @@ class BenchPage(QWidget):
         return self.bases.get((int(category), int(local)))
 
     def fill_catalog(self):
+        from content_names import item_sort_key, search_text
         self.catalog_list.setRowCount(0)
         if not self.packet: return
-        category = self.category.currentData(); needle = self.search.text().strip().lower()
+        category = self.category.currentData(); needle = search_text(self.search.text().strip())
         rows = [r for r in self.cached.items() if r['retired'] != '1' and (not category or int(r['category_id']) == category)
-                and (not needle or needle in (readable_name(r) + ' ' + r['content_code'] + ' ' + r['category_id'] + ':' + r['local_id']).lower())]
+                and (not needle or needle in search_text(readable_name(r) + ' ' + catalog.CATEGORIES.get(int(r['category_id']), '')))]
+        rows.sort(key=item_sort_key)
         self.catalog_list.setRowCount(len(rows))
         for index, row in enumerate(rows):
             key = (int(row['category_id']), int(row['local_id']))
             for column, value in enumerate((readable_name(row), '%d:%d' % key, catalog.CATEGORIES.get(key[0], str(key[0])))):
-                cell = QTableWidgetItem(value); cell.setData(KEY_ROLE, key); cell.setToolTip(row['content_code']); self.catalog_list.setItem(index, column, cell)
+                cell = QTableWidgetItem(value); cell.setData(KEY_ROLE, key); cell.setToolTip(readable_name(row)); self.catalog_list.setItem(index, column, cell)
         self.catalog_list.resizeColumnToContents(1)
 
     def chosen_catalog(self):
@@ -306,7 +330,7 @@ class BenchPage(QWidget):
         self.level.setRange(0, top or 0); self.controls()
 
     def name(self, item):
-        return '%s  (%d:%d)' % (readable_name(self.base(item['category'], item['local']) or item), item['category'], item['local'])
+        return readable_name(self.base(item['category'], item['local']) or item)
 
     def bonus(self, bonus_id, value):
         d = next((d for d in (self.packet or {}).get('bonuses', []) if str(d['id']) == str(bonus_id)), None)
@@ -364,11 +388,11 @@ class BenchPage(QWidget):
         self.items.setRowCount(len(live))
         for index, item in enumerate(live):
             attributes = ', '.join(self.bonus(a['bonus'], a['value']) + (' (zárolt)' if item.get('locked_slot') == a['slot'] else '') for a in item['attributes'])
-            stones = ', '.join('kő %d:%d +%d' % (s['stone'][0], s['stone'][1], s['level']) if s['stone'] else STONE_STATES.get(s['state'], '?') for s in item['stones'])
+            stones = ', '.join('%s +%d' % (readable_name(self.base(*s['stone']) or {}), s['level']) if s['stone'] else STONE_STATES.get(s['state'], '?') for s in item['stones'])
             values = (item['id'], self.name(item), '+%d' % item['level'], str(item['count']), '' if item['cell'] is None else str(item['cell']), attributes, stones)
             for column, value in enumerate(values):
                 cell = QTableWidgetItem(value); cell.setData(KEY_ROLE, item['id'])
-                cell.setToolTip('Példányazonosító: %s\nTartalomkód: %s' % (item['id'], item.get('content_code', '?')))
+                cell.setToolTip(self.name(item))
                 self.items.setItem(index, column, cell)
             if selected and item['id'] == selected['id']: self.items.selectRow(index)
         self.items.resizeColumnToContents(0)
@@ -403,13 +427,14 @@ class BenchPage(QWidget):
 
     # --- actions -----------------------------------------------------------------
     def install(self):
-        if not confirm_action(self, 'Tárgypróbapad előkészítése',
-            'A próbapad létrehozza a tárgypéldányok tárolásához szükséges táblákat. Előtte teljes mentés készül a helyi player adatbázisról.',
-            'Próbapad előkészítése'): return
+        try:stage=review.request(self.owner,'Tárgypróbapad előkészítése','bench_install',{},
+            [('Tárgypróbapad','Mentési táblák','Hiányzó / korábbi táblák','Ellenőrzött telepítés, előtte teljes player védőmentés')])
+        except (api.EditorError,OSError,ValueError) as error:self.owner.error(str(error));return
+        if stage is None:return
         root = self.owner.root
         def done(result):
             self.write('Mentési táblák telepítve. Mentés: ' + result.get('folder', '—')); self.attempted = None; self.status_info = None; self.reload()
-        self.run(lambda: bench.install(root), done, 'Mentési táblák telepítése…')
+        self.run(lambda:review.publish(stage,self.owner,lambda data:bench.install(root)),done,'Jóváhagyott mentésitábla-telepítés…')
 
     def ask_gold(self, title, default):
         text, ok = QInputDialog.getText(self, title, 'Yang (egész szám):', text=str(default))
@@ -422,11 +447,14 @@ class BenchPage(QWidget):
     def setup(self):
         reset = bool((self.status_info or {}).get('owner'))
         who = self.character.currentText().replace('  ✓', '')
-        if reset and not confirm_action(self, 'Karakter tárgyainak visszaállítása',
-            '%s próbapadon kezelt tárgypéldányai és pénztárcái törlődnek. A karakter üres leltárral és a következő lépésben megadott Yang-egyenleggel indul újra.' % who,
-            'Tárgyak törlése és visszaállítás', destructive=True): return
         gold = self.ask_gold('A karakter induló Yang-egyenlege', 1000000000)
         if gold is None: return
+        rows=[(who,'Karakter tárgykezelése','Meglévő' if reset else 'Nincs','Üres leltár, új pénztárca'),(who,'Kezdő Yang','Jelenlegi egyenleg',str(gold))]
+        for item in (self.bench or {}).get('items',[]):
+            if not item['destroyed']:rows.append((who,self.name(item),str(item['count'])+' db','Törlés'))
+        try:stage=review.request(self.owner,'Karakter előkészítése / visszaállítása','bench_setup',dict(owner=self.character_id,gold=gold),rows)
+        except (api.EditorError,OSError,ValueError) as error:self.owner.error(str(error));return
+        if stage is None:return
         root = self.owner.root
         def done(result):
             self.bench = result['state']; self.status_info = dict(self.status_info or {}, owner=True, pin_matches=True); self.status_info.pop('load_error', None)
@@ -437,7 +465,7 @@ class BenchPage(QWidget):
             done(result)
             if not any(row['id'] == owner and row.get('provisioned') for row in self.characters) and owner != bench.BENCH_OWNER:
                 self.fill_characters([dict(row, provisioned=row.get('provisioned') or row['id'] == owner) for row in self.characters])
-        self.run(lambda: bench.call(root, 'setup', owner=owner, reset=True, gold=gold), made, 'Karakter előkészítése…')
+        self.run(lambda:review.publish(stage,self.owner,lambda data:bench.call(root,'setup',owner=data['owner'],reset=True,gold=data['gold'])),made,'Jóváhagyott karakter-előkészítés…')
 
     def set_gold(self):
         wallet = next((w for w in self.bench['wallets'] if w['currency'] == 1), None)
@@ -448,7 +476,7 @@ class BenchPage(QWidget):
         key = self.chosen_catalog()
         if key is None: return
         base = self.base(*key)
-        self.act('grant', 'Tárgy adása…', lambda r: 'Kapott: %s ×%d +%d (ID %s).' % (base['content_code'], self.count.value(), self.level.value(), r.get('granted')),
+        self.act('grant', 'Tárgy adása…', lambda r: 'Kapott: %s ×%d +%d.' % (readable_name(base), self.count.value(), self.level.value()),
                  category=key[0], local=key[1], count=self.count.value(), level=self.level.value())
 
     def move(self):
@@ -458,19 +486,16 @@ class BenchPage(QWidget):
     def destroy(self):
         item = self.selected_item()
         if not item: return
-        if not confirm_action(self, 'Tárgypéldány törlése',
-            'A kiválasztott példány teljes mennyisége (%s darab) törlődik a karakter tárgyai közül.\n\n%s\nPéldányazonosító: %s' % (item['count'], self.name(item), item['id']),
-            'Kijelölt példány törlése', destructive=True): return
         self.act('destroy', 'Megsemmisítés…', lambda _: 'Megsemmisítve: %s.' % self.name(item), item=item['id'])
 
     def recipe_label(self, recipe):
         target = 'ugyanez' if recipe['target_category_id'] == recipe['source_category_id'] and recipe['target_local_id'] == recipe['source_local_id'] else \
-            ((self.base(recipe['target_category_id'], recipe['target_local_id']) or {}).get('content_code', '?'))
+            readable_name(self.base(recipe['target_category_id'], recipe['target_local_id']) or {})
         ingredients = []
         for row in self.cached.tables['refinement_ingredient']:
             if row['recipe_id'] == recipe['recipe_id']:
                 part = self.base(row['category_id'], row['local_id']) or {}
-                ingredients.append('%s ×%s' % (part.get('content_code', '?'), row['amount']))
+                ingredients.append('%s ×%s' % (readable_name(part), row['amount']))
         text = '→ %s +%s • %s' % (target, recipe['target_level'], recipe_text(dict(recipe, ingredients=ingredients)))
         return text + ('  [' + ', '.join(ingredients) + ']' if ingredients else '')
 
@@ -487,7 +512,7 @@ class BenchPage(QWidget):
         def describe(result):
             after = next((i for i in result['state']['items'] if i['id'] == item['id']), None)
             outcome = 'SIKER' if result['success'] else 'KUDARC'
-            now = 'megsemmisült' if after is None or after['destroyed'] else '%s +%d' % (after.get('content_code'), after['level'])
+            now = 'megsemmisült' if after is None or after['destroyed'] else '%s +%d' % (self.name(after), after['level'])
             return 'Fejlesztés %s (dobás %s): %s → %s.' % (outcome, result['roll'] or '—', self.name(item), now)
         self.act('refine', 'Fejlesztés…', describe, item=item['id'], **dialog.choice())
 
@@ -495,7 +520,7 @@ class BenchPage(QWidget):
         item = self.selected_item()
         tools = self.tools('attribute_service_profile_id' if kind == 'attribute' else 'socket_service_profile_id')
         if not item or not tools: return
-        labels = ['%s ×%d (ID %s)' % (t.get('content_code'), t['count'], t['id']) for t in tools]
+        labels = ['%s ×%d · %s' % (self.name(t), t['count'], 'felszerelve' if t['cell'] is None else 'leltárhely: %s' % t['cell']) for t in tools]
         title = 'Bónuszszolgáltatás' if kind == 'attribute' else 'Foglalatszolgáltatás'
         label, ok = QInputDialog.getItem(self, title, 'Eszköz erre: ' + self.name(item), labels, 0, False)
         if not ok: return

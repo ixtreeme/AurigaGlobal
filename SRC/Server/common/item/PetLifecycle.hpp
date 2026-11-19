@@ -1,6 +1,7 @@
 #pragma once
 #include "PetCare.hpp"
 #include "Costumes.hpp"
+#include "BonusProfiles.hpp"
 #include <span>
 #include <variant>
 #include <vector>
@@ -15,6 +16,11 @@ enum class PetEffect : std::uint8_t {
     SuraResistancePercent=8,NinjaResistancePercent=9,ShamanResistancePercent=10,
     BossDamagePercent=11,MetinDamagePercent=12,PveCriticalChance=13,ExperiencePercent=14,
     GoldDropPercent=15,AttackBonusPercent=16,BlockChance=17,DodgeArrowChance=18,
+    // Character-point stages differ from the earlier authored pet multipliers.
+    CharacterWarriorResistance=19,CharacterSuraResistance=20,CharacterNinjaResistance=21,
+    CharacterShamanResistance=22,CharacterMonsterCriticalChance=23,CharacterStoneDamage=24,
+    CharacterBossDamage=25,CharacterPremiumExperience=26,CharacterPremiumGold=27,
+    CharacterAttackMultiplier=28,CharacterMeleeBlock=29,CharacterMeleeReflection=30,
 };
 struct PetAgeTier {
     std::uint64_t minimumAgeMs=0;
@@ -161,7 +167,7 @@ struct PetBonusPlan {
     std::vector<PetBonusContribution> contributions;
     bool replaceSource=true;
 };
-using PetBonusValues=std::array<std::int64_t,19>;
+using PetBonusValues=std::array<std::int64_t,31>;
 struct PetPassiveBonuses {
     PetBonusValues age{},traits{},skills{},total{};
     // Stable between tier boundaries: wall-clock age must not invalidate the
@@ -169,6 +175,7 @@ struct PetPassiveBonuses {
     std::uint64_t ageTierMinimumMs=0;
     bool operator==(const PetPassiveBonuses&) const=default;
 };
+std::vector<BonusEntry> CharacterPetBonuses(const PetPassiveBonuses&);
 std::expected<PetPassiveBonuses,PetLifecycleError> CollectPetPassiveBonuses(const ItemCatalog&,
     const PetLifecycleRequest&,bool worldAllowsPet,bool inDungeon);
 std::expected<PetBonusValues,PetLifecycleError> CollectPetSkillBonuses(const ItemCatalog&,

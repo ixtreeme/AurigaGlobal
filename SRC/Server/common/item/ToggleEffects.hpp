@@ -20,7 +20,7 @@ struct ToggleEffectProfile
     std::string code;
     std::uint32_t group = 0, bonusProfile = 0;
     std::uint16_t variant = 0; // Same group+variant rejects another instance; other variant replaces.
-    std::uint64_t durationMs = 0; // Finite active online time, initialized once on acquisition.
+    std::uint64_t durationMs = 0; // Zero: permanent. Otherwise finite active online time, initialized once.
     std::uint8_t requirements = 0, allowedContexts = 0;
     bool allowDuringPvp = false;
     std::optional<std::uint32_t> cooldownProfile;

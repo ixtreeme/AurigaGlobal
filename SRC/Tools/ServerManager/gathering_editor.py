@@ -3,7 +3,7 @@ import copy
 import re
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QComboBox,QFormLayout,QHBoxLayout,QHeaderView,QLabel,
-    QTableWidget,QTableWidgetItem,QVBoxLayout,QWidget)
+    QTableWidget,QTableWidgetItem,QVBoxLayout,QWidget,QCheckBox,QSpinBox)
 import backend as api
 import item_catalog as catalog
 
@@ -11,16 +11,18 @@ import item_catalog as catalog
 class ToolPanel(QWidget):
     COLUMNS=[('level','Szint'),('power','Eszközerő'),('gather_bonus_bp','Gyűjtési bónusz %'),
              ('required_points','Szükséges pont'),('practice_numerator','Pontesély N'),('practice_denominator','Pontesély D'),
-             ('refine_chance_bp','Fejlesztési esély %'),('failure_kind','Kudarc'),('failure_level','Kudarc szintje'),('failure_loss_bp','Pontvesztés %')]
+             ('refine_chance_bp','Fejlesztési esély %'),('failure_kind','Kudarc'),('failure_level','Kudarc szintje'),('failure_loss_bp','Pontvesztés %'),('success_category_id','Siker kategória'),('success_local_id','Siker tárgy'),('success_level','Siker állapot'),('failure_category_id','Kudarc kategória'),('failure_local_id','Kudarc tárgy'),('display_grade','Kijelzett fokozat')]
     def __init__(self,changed):
         super().__init__();self.changed=changed;self.loading=True;self.drafts={};self.maximum=0
         layout=QVBoxLayout(self);form=QFormLayout();self.kind=QComboBox();self.pool=QComboBox()
-        for i,label in enumerate(('Csákány','Horgászbot','Fejsze','Metszőolló'),1):self.kind.addItem(label,str(i))
+        for i,label in enumerate(('Csákány','Horgászbot','Fejsze','Metszőolló','Kőkereső'),1):self.kind.addItem(label,str(i))
         for i,label in enumerate(('Nem halászati eszköz','Első zsákmánytábla','Második zsákmánytábla'),1):self.pool.addItem(label,str(i))
+        self.maximum_uses=QSpinBox();self.maximum_uses.setRange(0,65535);form.addRow('Kőkereső használatai',self.maximum_uses);self.maximum_uses.valueChanged.connect(self.notify)
+        self.all_water=QCheckBox('A vízterület zsákmánytábláját használja');form.addRow(self.all_water);self.all_water.toggled.connect(self.notify)
         form.addRow('Eszköz típusa',self.kind);form.addRow('Halászati zsákmány',self.pool);layout.addLayout(form)
         hint=QLabel('A maximumot a Fejlesztés fülön állítsd be. A gyakorlópont külön példányállapot; sikeres fejlesztéskor '
                     'nullázódik. N/D a pontos pontszerzési esély (például 1/5). Kudarc: pontvesztés az aktuális szinten, '
-                    'vagy visszaállítás megadott szintre, 0 ponttal. A legmagasabb szinten nincs további fejlődés.')
+                    'vagy visszaállítás megadott szintre, 0 ponttal. A legutolsó állapotból külön céltárgyhoz is vezethet fejlesztés.')
         hint.setWordWrap(True);layout.addWidget(hint)
         self.table=QTableWidget(0,len(self.COLUMNS));self.table.setHorizontalHeaderLabels([c[1] for c in self.COLUMNS])
         self.table.verticalHeader().hide();self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
@@ -32,20 +34,24 @@ class ToolPanel(QWidget):
         if not self.loading:self.changed()
 
     def controls(self,*_):
-        rod=self.kind.currentData()=='2';self.pool.setEnabled(rod)
+        detector=self.kind.currentData()=='5';self.maximum_uses.setEnabled(detector)
+        if detector and self.maximum_uses.value()==0:self.maximum_uses.setValue(6)
+        rod=self.kind.currentData()=='2';self.pool.setEnabled(rod);self.all_water.setEnabled(rod)
         if rod and self.pool.currentData()=='1':self.pool.setCurrentIndex(self.pool.findData('2'))
         self.notify()
 
     def load(self,document):
         self.loading=True
+        self.maximum_uses.setValue(int(document['child'].get('maximum_uses','0')))
         self.kind.setCurrentIndex(self.kind.findData(document['child']['tool_kind']))
         self.pool.setCurrentIndex(self.pool.findData(document['child']['fishing_pool']))
+        self.all_water.setChecked(document['child'].get('all_water_pools','0')=='1')
         self.drafts={int(r['level']):copy.deepcopy(r) for r in document['tool_levels']}
         self.maximum=int(document['refinement']['max_level']);self.render();self.controls();self.loading=False
 
     def capture(self):
         for row in range(self.table.rowCount()):
-            values={}
+            values=copy.deepcopy(self.drafts.get(row,catalog.Catalog.tool_level(row)))
             for col,(field,_) in enumerate(self.COLUMNS):
                 if field=='failure_kind':value=self.table.cellWidget(row,col).currentData()
                 else:
@@ -55,14 +61,14 @@ class ToolPanel(QWidget):
                         # are not sent to the catalog until exact conversion succeeds.
                         try:value=str(catalog.scaled(value,100))
                         except api.EditorError:value='!'+value
-                    if field=='failure_level' and not value:value=None
+                    if field in ('failure_level','success_category_id','success_local_id','failure_category_id','failure_local_id') and not value:value=None
                 values[field]=value
             previous=self.drafts.get(row,{})
             if values['failure_kind']=='1':values['failure_level']=None
             else:values['failure_loss_bp']='0'
             # Terminal controls are a projection, not a destructive edit to a
             # previously nonterminal draft when the maximum is temporarily lowered.
-            if row==self.maximum and previous.get('required_points') not in (None,'0'):
+            if row==self.maximum and not previous.get('success_local_id') and previous.get('required_points') not in (None,'0'):
                 previous.update(power=values['power'],gather_bonus_bp=values['gather_bonus_bp'])
             else:self.drafts[row]=values
 
@@ -76,13 +82,13 @@ class ToolPanel(QWidget):
         self.table.clearContents();self.table.setRowCount(self.maximum+1)
         for row in range(self.maximum+1):
             value=copy.deepcopy(self.drafts.get(row,catalog.Catalog.tool_level(row)))
-            if row==self.maximum:
-                value.update({k:v for k,v in catalog.Catalog.tool_level(row,True).items() if k not in ('power','gather_bonus_bp')})
+            if row==self.maximum and not value.get('success_local_id'):
+                value.update({k:v for k,v in catalog.Catalog.tool_level(row,True).items() if k not in ('power','gather_bonus_bp','display_grade')})
             elif value.get('required_points')=='0':
-                value.update({k:v for k,v in catalog.Catalog.tool_level(row).items() if k not in ('power','gather_bonus_bp')})
+                value.update({k:v for k,v in catalog.Catalog.tool_level(row).items() if k not in ('power','gather_bonus_bp','display_grade')})
             self.drafts.setdefault(row,copy.deepcopy(value))
             for col,(field,_) in enumerate(self.COLUMNS):
-                active=row!=self.maximum or field in ('power','gather_bonus_bp')
+                active=row!=self.maximum or bool(value.get('success_local_id')) or field in ('power','gather_bonus_bp','display_grade')
                 if field=='failure_kind':
                     widget=QComboBox();widget.addItem('Pontvesztés','1');widget.addItem('Szint és pont nullázása','2')
                     widget.setCurrentIndex(widget.findData(value[field]));widget.setEnabled(active)
@@ -104,7 +110,7 @@ class ToolPanel(QWidget):
             cell=self.table.item(row,col)
             if cell is not None:
                 flags=Qt.ItemFlag.ItemIsEnabled|Qt.ItemFlag.ItemIsSelectable
-                if row!=self.maximum and active:flags|=Qt.ItemFlag.ItemIsEditable
+                if (row!=self.maximum or self.drafts.get(row,{}).get('success_local_id')) and active:flags|=Qt.ItemFlag.ItemIsEditable
                 cell.setFlags(flags)
 
     def set_maximum(self,maximum):
@@ -114,13 +120,13 @@ class ToolPanel(QWidget):
         self.capture();result=[]
         for row in range(self.maximum+1):
             value=copy.deepcopy(self.drafts[row]);value['level']=str(row)
-            if row==self.maximum:
-                value.update({k:v for k,v in catalog.Catalog.tool_level(row,True).items() if k not in ('power','gather_bonus_bp')})
+            if row==self.maximum and not value.get('success_local_id'):
+                value.update({k:v for k,v in catalog.Catalog.tool_level(row,True).items() if k not in ('power','gather_bonus_bp','display_grade')})
             for key,text in value.items():
                 if text is not None and not re.fullmatch(r'[0-9]+',text):
                     raise api.EditorError(f'Eszköz +{row}, {dict(self.COLUMNS)[key]}: érvénytelen szám.')
             result.append(value)
-        document['child'].update(tool_kind=self.kind.currentData(),fishing_pool=self.pool.currentData() if self.kind.currentData()=='2' else '1')
+        document['child'].update(tool_kind=self.kind.currentData(),fishing_pool=self.pool.currentData() if self.kind.currentData()=='2' else '1',all_water_pools='1' if self.kind.currentData()=='2' and self.all_water.isChecked() else '0',maximum_uses=str(self.maximum_uses.value()) if self.kind.currentData()=='5' else '0')
         document['tool_levels']=result
 
 
@@ -132,7 +138,7 @@ class FishingPanel(QWidget):
         self.power=self.form.add('child','bait_power','Csali ereje',range=(0,2147483647));self.form.finish();layout.addWidget(self.form)
         row=QHBoxLayout();self.grill=QComboBox();row.addWidget(QLabel('Sütés eredménye'));row.addWidget(self.grill,1);layout.addLayout(row)
         self.mode=QComboBox();self.mode.addItem('Pontosan egy eredmény, súlyozottan','1');self.mode.addItem('Soronkénti esély','2')
-        layout.addWidget(self.mode);self.loot=LootTable(changed,allowed_kinds={1});self.loot.table.setColumnHidden(4,True);layout.addWidget(self.loot,1)
+        layout.addWidget(self.mode);self.loot=LootTable(changed,allowed_kinds={1});self.loot.table.setColumnHidden(4,True);self.loot.table.setColumnHidden(6,True);layout.addWidget(self.loot,1)
         hint=QLabel('Élő hal használatakor egy darab fogy; eredménye csak tárgy lehet. Döglött hal sütése az egész kijelölt '
                     'halmot dolgozza fel ugyanannyi eredménytárggyá. Csali cseréjekor egy darab fogy és felülírja a bot korábbi csaliját.')
         hint.setWordWrap(True);layout.addWidget(hint)
@@ -144,10 +150,11 @@ class FishingPanel(QWidget):
         if not self.loading:self.changed()
 
     def set_items(self,rows):
+        from content_names import item_name, item_sort_key
         self.grill.clear();self.grill.addItem('Nem süthető','')
-        for row in rows:
+        for row in sorted(rows, key=item_sort_key):
             if row['category_id']=='5' and row['retired']=='0':
-                key=row['category_id']+':'+row['local_id'];self.grill.addItem(key+' '+row['content_code'],key)
+                key=row['category_id']+':'+row['local_id'];self.grill.addItem(item_name(row),key)
         self.loot.set_items(rows)
 
     def controls(self,*_):

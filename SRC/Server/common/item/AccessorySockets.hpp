@@ -19,6 +19,7 @@ struct AccessorySocketGrade
     std::int32_t minimumBp = 0, minimumInteger = 0;
     // Chance of the NEXT operation from this capacity/active-grade index.
     std::uint16_t unlockChanceBp = 0, chargeChanceBp = 0;
+    bool truncateBonus = false; // Explicit imported whole-point rounding.
 };
 struct AccessorySocketProfile
 {

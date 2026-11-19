@@ -1,7 +1,10 @@
+#include <item/BookRuntime.hpp>
 #include <item/SoulRuntime.hpp>
 #include <item/AmmoRuntime.hpp>
 #include "ItemPersistenceSql.hpp"
 #include "StoragePersistenceSql.hpp"
+#include "PrivateShopsSql.hpp"
+#include "DungeonEntrySql.hpp"
 #include <item/OwnedGround.hpp>
 #include <random>
 #include <SQL/AsyncSQL.h>
@@ -24,7 +27,7 @@ using Cell=std::optional<std::string>;
 using Row=std::vector<Cell>;
 using Rows=std::vector<Row>;
 using U=SqlParam;
-constexpr std::string_view Columns="instance_id,category_id,local_id,owner_kind,owner_id,state_revision,refinement_level,stack_count,destroyed,bound_kind,bound_id,storage_kind,storage_id,anchor_cell,locked_attribute,accessory_capacity,accessory_grade,accessory_remaining_ms,accessory_permanent,state_sha256,automatic_remaining_raw,automatic_active,automatic_next_ms,toggle_remaining_ms,toggle_active,book_skill_id,polymorph_form_id,polymorph_book_grade,polymorph_practice,tool_training_points,tool_bait_power,companion_recall_requested,growth_pet_blob,pet_supply_blob,companion_riding_requested,companion_lifetime_blob,costume_lifetime_blob,regalia_blob,bonus_tool_blob,soul_blob,soul_channel,soul_active";
+constexpr std::string_view Columns="instance_id,category_id,local_id,owner_kind,owner_id,state_revision,refinement_level,stack_count,destroyed,bound_kind,bound_id,storage_kind,storage_id,anchor_cell,locked_attribute,accessory_capacity,accessory_grade,accessory_remaining_ms,accessory_permanent,state_sha256,automatic_remaining_raw,automatic_active,automatic_next_ms,toggle_remaining_ms,toggle_active,book_skill_id,polymorph_form_id,polymorph_book_grade,polymorph_practice,tool_training_points,tool_bait_power,companion_recall_requested,growth_pet_blob,pet_supply_blob,companion_riding_requested,companion_lifetime_blob,costume_lifetime_blob,regalia_blob,bonus_tool_blob,soul_blob,soul_channel,soul_active,sash_blob,recall_blob,tool_remaining_uses,energy_percent,currency_amount,shop_permit_deadline_ms,private_shop_operation,private_shop_price,private_shop_cell";
 template<class Range> std::string Bytes(const Range& values){std::string out;out.reserve(values.size());for(auto b:values)out.push_back(static_cast<char>(b));return out;}
 SqlParams Owner(ItemOwner o){return {U::UInt(static_cast<unsigned>(o.kind)),U::UInt(o.id)};}
 void Append(SqlParams& to,SqlParams from){for(auto& p:from)to.push_back(std::move(p));}
@@ -41,9 +44,9 @@ SqlTransaction Guards(const ItemCatalog& c)
     // The stopped publisher must replace this pin with the catalog release.
     return {
         {"SELECT 1 WHERE @@tx_isolation='REPEATABLE-READ' AND @@foreign_key_checks=1 AND @@check_constraint_checks=1",{},{},1},
-        {"SELECT 1 FROM player.item_persistence_format WHERE singleton=1 AND schema_version=1 AND catalog_revision=? AND catalog_sha256=? LOCK IN SHARE MODE",
+        {"SELECT 1 FROM player.item_persistence_format WHERE singleton=1 AND schema_version=1 AND gaya_wallet_version=1 AND catalog_revision=? AND catalog_sha256=? LOCK IN SHARE MODE",
             {U::UInt(c.Revision()),U::Blob(Bytes(c.ContentHash()))},{},1},
-        {"SELECT 1 FROM information_schema.TABLES WHERE (TABLE_SCHEMA='player' AND TABLE_NAME IN ('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance','item_instance_attribute','item_instance_socket','item_occupied_cell','item_recovery_schedule')) OR (TABLE_SCHEMA='protos' AND TABLE_NAME IN ('item_base','bonus_definition')) HAVING COUNT(*)=12 AND SUM(ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE')=12 AND (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob','pet_supply_blob','companion_riding_requested','companion_lifetime_blob','costume_lifetime_blob','regalia_blob','bonus_tool_blob','soul_blob','soul_channel','soul_active'))=22 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_book_learning' AND ENGINE='InnoDB')=1 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_pet_study_cooldown' AND ENGINE='InnoDB')=1 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_soul_strike_event' AND ENGINE='InnoDB')=1 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_ammo_shot_event' AND ENGINE='InnoDB')=1",{},{},1},
+        {"SELECT 1 FROM information_schema.TABLES WHERE (TABLE_SCHEMA='player' AND TABLE_NAME IN ('item_persistence_format','item_owner_fence','item_storage','item_wallet','item_operation_receipt','item_instance','item_instance_attribute','item_instance_socket','item_occupied_cell','item_recovery_schedule')) OR (TABLE_SCHEMA='protos' AND TABLE_NAME IN ('item_base','bonus_definition')) HAVING COUNT(*)=12 AND SUM(ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE')=12 AND (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='player' AND COLUMN_NAME='part_hair')=1 AND (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_instance' AND COLUMN_NAME IN ('automatic_remaining_raw','automatic_active','automatic_next_ms','toggle_remaining_ms','toggle_active','book_skill_id','polymorph_form_id','polymorph_book_grade','polymorph_practice','tool_training_points','tool_bait_power','companion_recall_requested','growth_pet_blob','pet_supply_blob','companion_riding_requested','companion_lifetime_blob','costume_lifetime_blob','regalia_blob','bonus_tool_blob','soul_blob','soul_channel','soul_active','sash_blob','recall_blob','tool_remaining_uses','energy_percent','currency_amount','shop_permit_deadline_ms','private_shop_operation','private_shop_price','private_shop_cell'))=31 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_book_learning' AND ENGINE='InnoDB')=1 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_pet_study_cooldown' AND ENGINE='InnoDB')=1 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_soul_strike_event' AND ENGINE='InnoDB')=1 AND (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_ammo_shot_event' AND ENGINE='InnoDB')=1",{},{},1},
     };
 }
 void StorageGuards(SqlTransaction& tx,const StorageAuthorization& auth,ItemOwner remote={})
@@ -86,6 +89,15 @@ SqlParams ItemValues(const ItemCatalog& c,const PersistentItem& p)
     const auto* soul=std::get_if<ItemSoulRow>(&c.Find(p.key)->category);
     a.push_back(soul && soul->channel ? U::UInt(static_cast<unsigned>(*soul->channel)) : U::Null());
     a.push_back(U::UInt(p.soul && p.soul->active && !p.destroyed));
+    a.push_back(p.sash ? U::Blob(Bytes(*EncodeAbsorptionSashState(*p.sash))) : U::Null());
+    a.push_back(p.recall ? U::Blob(Bytes(EncodeRecallItemState(*p.recall))) : U::Null());
+    a.push_back(p.tool && p.tool->remainingUses ? U::UInt(*p.tool->remainingUses) : U::Null());
+    a.push_back(p.energy ? U::UInt(p.energy->percent) : U::Null());
+    a.push_back(p.currencyAmount ? U::UInt(*p.currencyAmount) : U::Null());
+    a.push_back(p.shopPermitDeadline ? U::UInt(*p.shopPermitDeadline) : U::Null());
+    a.push_back(p.privateShop ? U::Blob(Bytes(p.privateShop->shop)) : U::Null());
+    a.push_back(p.privateShop ? U::UInt(p.privateShop->price) : U::Null());
+    a.push_back(p.privateShop ? U::UInt(p.privateShop->cell) : U::Null());
     return a;
 }
 std::string Marks(std::size_t n){std::string s;for(std::size_t i=0;i<n;++i){if(i)s+=",";s+="?";}return s;}
@@ -156,7 +168,11 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
 {
     const auto digest=ItemCommitDigest(c,r);if(!digest)return std::unexpected(digest.error());
     auto tx=Guards(c);
+    if(r.currencyDrop)tx.push_back({"SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN ('item_ground_core','item_currency_ground') HAVING COUNT(*)=2 AND SUM(ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE')=2",{},{},1});
+    if(r.currencyAward)tx.push_back({"SELECT 1 FROM information_schema.TABLES WHERE (TABLE_SCHEMA='player' AND TABLE_NAME='item_currency_award') OR (TABLE_SCHEMA='account' AND TABLE_NAME='account') HAVING COUNT(*)=2 AND SUM(ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE')=2",{},{},1});
+    if(r.nativeAward)tx.push_back({"SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_native_award' AND ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE'",{},{},1});
     if(const auto auth=StorageWriteAuthorization(r))StorageGuards(tx,*auth);
+    if(r.currencyDrop)tx.push_back({"SELECT run_generation FROM player.item_ground_core WHERE core_key=? AND run_generation=? FOR UPDATE",{U::Blob(r.currencyDrop->core),U::UInt(r.currencyDrop->run)},{},1});
     if(r.ground) tx.push_back({"SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN ('item_ground_core','item_ground_entry') HAVING COUNT(*)=2 AND SUM(ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE')=2",{},{},1});
     if(r.ground) tx.push_back({"SELECT run_generation FROM player.item_ground_core WHERE core_key=? AND run_generation=? FOR UPDATE",
         {U::Blob(r.ground->core),U::UInt(r.ground->run)},{},1});
@@ -178,6 +194,28 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
     {
         auto p=Owner(o.owner);Append(p,{U::UInt(o.sessionGeneration),U::UInt(o.revision)});
         tx.push_back({"UPDATE player.item_owner_fence SET state_revision=state_revision+1 WHERE owner_kind=? AND owner_id=? AND session_generation=? AND state_revision=?",std::move(p),1,{}});
+    }
+    PrivateShopWriteBefore(tx,r);
+    DungeonEntryWriteBefore(tx,r);
+    if(r.currencyDrop){const auto& d=*r.currencyDrop;
+        SqlParams identity{U::Blob(Bytes(d.operation)),U::Blob(d.core),U::UInt(d.run),U::UInt(d.owner),U::UInt(d.amount),U::Int(d.map),U::Int(d.x),U::Int(d.y),U::Int(d.z),U::UInt(d.createdAtMs),U::UInt(d.expiresAtMs)};
+        if(d.create)tx.push_back({"INSERT INTO player.item_currency_ground(operation_id,core_key,run_generation,owner_id,amount,map_index,x,y,z,created_at_ms,expires_at_ms) VALUES(?,?,?,?,?,?,?,?,?,?,?)",std::move(identity),1,{}});
+        else{
+            identity.push_back(U::UInt(d.nowAtMs));
+            tx.push_back({"SELECT 1 FROM player.item_currency_ground WHERE operation_id=? AND core_key=? AND run_generation=? AND owner_id=? AND amount=? AND map_index=? AND x=? AND y=? AND z=? AND created_at_ms=? AND expires_at_ms=? AND claimed_operation IS NULL AND expires_at_ms>GREATEST(?,CAST(UNIX_TIMESTAMP(NOW(3))*1000 AS UNSIGNED)) FOR UPDATE",std::move(identity),{},1});
+            tx.push_back({"UPDATE player.item_currency_ground SET claimed_operation=?,claimed_at=NOW(6) WHERE operation_id=? AND claimed_operation IS NULL AND expires_at_ms>GREATEST(?,CAST(UNIX_TIMESTAMP(NOW(3))*1000 AS UNSIGNED))",{U::Blob(Bytes(r.operationId)),U::Blob(Bytes(d.operation)),U::UInt(d.nowAtMs)},1,{}});
+        }
+    }
+    if(r.currencyAward){const auto& claim=*r.currencyAward;
+        tx.push_back({"SELECT 1 FROM account.account WHERE id=? AND BINARY LOWER(TRIM(login))=? LOCK IN SHARE MODE",{U::UInt(owners.front().owner.id),U::Blob(claim.login)},{},1});
+        tx.push_back({"SELECT 1 FROM player.item_currency_award WHERE id=? AND BINARY login=? AND amount=? AND claimed_operation IS NULL FOR UPDATE",{U::UInt(claim.id),U::Blob(claim.login),U::UInt(claim.amount)},{},1});
+        tx.push_back({"UPDATE player.item_currency_award SET claimed_owner_id=?,claimed_operation=?,claimed_at=NOW(6) WHERE id=? AND BINARY login=? AND amount=? AND claimed_operation IS NULL",{U::UInt(owners.front().owner.id),U::Blob(Bytes(r.operationId)),U::UInt(claim.id),U::Blob(claim.login),U::UInt(claim.amount)},1,{}});
+    }
+    if(r.nativeAward){const auto& a=*r.nativeAward;
+        const SqlParams identity{U::UInt(a.id),U::UInt(a.account),U::UInt(static_cast<unsigned>(a.key.Category())),U::UInt(a.key.LocalId()),U::UInt(a.level),U::UInt(a.count)};
+        tx.push_back({"SELECT 1 FROM player.item_native_award WHERE id=? AND account_id=? AND category_id=? AND local_id=? AND refinement_level=? AND stack_count=? AND claimed_operation IS NULL FOR UPDATE",identity,{},1});
+        auto update=SqlParams{U::Blob(Bytes(r.operationId))};Append(update,identity);
+        tx.push_back({"UPDATE player.item_native_award SET claimed_operation=?,claimed_at=NOW(6) WHERE id=? AND account_id=? AND category_id=? AND local_id=? AND refinement_level=? AND stack_count=? AND claimed_operation IS NULL",std::move(update),1,{}});
     }
     if(r.petStudyCooldown)
     {
@@ -300,6 +338,7 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
         tx.push_back({"DELETE FROM player.item_storage WHERE owner_kind=? AND owner_id=? AND storage_kind=? AND storage_id=?",
             Storage({change.before->owner,ItemStorageKind::PetCarrier,change.before->placement->storageId}),1,{}});
     }
+    PrivateShopWriteAfter(tx,r);
     if(r.ground)
     {
         const auto& g=*r.ground;
@@ -333,6 +372,17 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
         if(!a.before.revision){tx.push_back({"SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM player.item_book_learning WHERE owner_kind=? AND owner_id=?)",Owner(a.owner),{},1});auto p=Owner(a.owner);Append(p,{U::UInt(a.after.revision),U::Blob(Bytes(*after)),U::Blob(Bytes(*hash)),U::Blob(Bytes(r.operationId))});tx.push_back({"INSERT INTO player.item_book_learning(owner_kind,owner_id,state_revision,state_blob,state_sha256,last_operation) VALUES(?,?,?,?,?,?)",std::move(p),1,{}});}
         else{const auto oldHash=BookLearningDigest(a.owner,a.before);SqlParams p{U::UInt(a.after.revision),U::Blob(Bytes(*after)),U::Blob(Bytes(*hash)),U::Blob(Bytes(r.operationId))};Append(p,Owner(a.owner));Append(p,{U::UInt(a.before.revision),U::Blob(Bytes(*before)),U::Blob(Bytes(*oldHash))});tx.push_back({"UPDATE player.item_book_learning SET state_revision=?,state_blob=?,state_sha256=?,last_operation=? WHERE owner_kind=? AND owner_id=? AND state_revision=? AND state_blob=? AND state_sha256=?",std::move(p),1,{}});}
         const auto& c=a.after.character;
+        // Unchanged participant values may report zero affected rows. The
+        // final revision-changing UPDATE below remains the required one-row CAS.
+        if(c.alignment)tx.push_back({"UPDATE player.player SET alignment=? WHERE id=? AND typed_book_revision=?",{U::UInt(*c.alignment),U::UInt(a.owner.id),U::UInt(a.before.revision)},{},{}});
+        if(c.statResetCredits)tx.push_back({"UPDATE player.player SET stat_reset_count=? WHERE id=? AND typed_book_revision=?",{U::UInt(*c.statResetCredits),U::UInt(a.owner.id),U::UInt(a.before.revision)},{},{}});
+        if(c.hair){
+            std::uint32_t expected=c.hair->part;
+            if(r.outcomeCode==CharacterServiceOutcome && r.result.size()==22 && r.result[3]==2){expected=0;for(unsigned j=0;j<4;++j)expected|=std::uint32_t(r.result[4+j])<<(j*8);}
+            tx.push_back({"SELECT 1 FROM player.player WHERE id=? AND typed_book_revision=? AND part_hair=? FOR UPDATE",{U::UInt(a.owner.id),U::UInt(a.before.revision),U::UInt(expected)},{},1});
+            tx.push_back({"UPDATE player.player SET part_hair=? WHERE id=? AND typed_book_revision=?",{U::UInt(c.hair->part),U::UInt(a.owner.id),U::UInt(a.before.revision)},{},{}});
+        }
+
         if(c.progression){const auto& p=*c.progression;tx.push_back({"UPDATE player.player SET level=?,level_step=?,stat_point=?,random_hp=?,random_sp=? WHERE id=? AND typed_book_revision=?",{U::UInt(p.level),U::UInt(p.step),U::UInt(p.statPoints),U::UInt(p.randomHP),U::UInt(p.randomSP),U::UInt(a.owner.id),U::UInt(a.before.revision)},{},{}});}
         tx.push_back({"UPDATE player.player SET typed_book_revision=?,exp=?,skill_point=?,sub_skill_point=?,horse_skill_point=?,skill_level=? WHERE id=? AND typed_book_revision=?",{U::UInt(a.after.revision),U::UInt(c.experience),U::UInt(c.points[0]),U::UInt(c.points[1]),U::UInt(c.points[2]),U::Blob(Bytes(LegacyBookSkillBytes(c))),U::UInt(a.owner.id),U::UInt(a.before.revision)},1,{}});
     }
@@ -346,10 +396,13 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
             if(!a.destroyed && a.placement && a.placement->kind==ItemStorageKind::Inventory && a.count>previous)missionEvent(ordinal++,a.owner,1,a.key,a.refinementLevel,a.count-previous);
         }
     }
-    if(r.kind==ItemOperationKind::Service && r.result.size()>=36 && r.result[0]=='C' && r.result[1]=='R' && r.result[2]=='F' && r.result[3]==2){
+    if(r.kind==ItemOperationKind::Service && r.result.size()>=36 && r.result[0]=='C' && r.result[1]=='R' && r.result[2]=='F' && (r.result[3]==2 || r.result[3]==3)){
         const auto read=[&](unsigned at,unsigned n){std::uint64_t v=0;for(unsigned j=0;j<n;j++)v|=std::uint64_t(r.result[at+j])<<(8*j);return v;};
-        const auto tail=r.result.size()-12;const auto key=ItemKey::Create(read(tail,2),read(tail+2,4));
-        if(key && r.owners.size()==1)missionEvent(0,r.owners[0].owner,2,*key,read(tail+6,2),read(12,4)*read(tail+8,4));
+        const auto attempts=read(8,4),successes=read(12,4);const auto extra=r.result[3]==3?16u:0u;
+        if(attempts && attempts<=100 && successes<=attempts && r.result.size()==36+attempts*2+extra){
+            const auto tail=r.result.size()-12-extra;const auto key=ItemKey::Create(read(tail,2),read(tail+2,4));
+            if(key && r.owners.size()==1)missionEvent(0,r.owners[0].owner,2,*key,read(tail+6,2),successes*read(tail+8,4));
+        }
     }
     std::size_t parameters=0,bytes=0;
     for(const auto& step:tx){parameters+=step.params.size();bytes+=step.query.size();for(const auto& p:step.params)bytes+=p.bytes.size();if(step.query.size()>SqlTransactionLimits::QueryBytes)return std::unexpected(E::LimitExceeded);}
@@ -472,8 +525,8 @@ std::expected<bool,E> ProvisionOwner(CAsyncSQL& db,const ItemCatalog& c,ItemOwne
     for(const auto& l:storages)if(!ValidItemStorage(l) || l.storage.owner!=owner || !uniqueStorages.insert(l.storage).second)return std::unexpected(E::InvalidStorage);
     std::set<WalletCurrency> currencies;
     for(const auto& w:wallets)
-        if(w.owner!=owner || !w.revision || w.balance>static_cast<std::uint64_t>(INT64_MAX) || !currencies.insert(w.currency).second ||
-           (w.currency==WalletCurrency::Gold ? owner.kind!=ItemOwnerKind::Character : w.currency!=WalletCurrency::DragonCoin || owner.kind!=ItemOwnerKind::Account))
+        if(w.owner!=owner || !w.revision || w.balance>static_cast<std::uint64_t>(INT64_MAX) || (w.currency==WalletCurrency::Gaya && w.balance>MaxNativeGayaBalance) || !currencies.insert(w.currency).second ||
+           ((w.currency==WalletCurrency::Gold || w.currency==WalletCurrency::Gaya) ? owner.kind!=ItemOwnerKind::Character : w.currency!=WalletCurrency::DragonCoin || owner.kind!=ItemOwnerKind::Account))
             return std::unexpected(E::InvalidWallet);
     const auto exists=[&]()->std::expected<bool,E>{
         auto tx=Guards(c);const auto step=tx.size();
@@ -518,7 +571,7 @@ static std::expected<LoadedItemOwner,E> LoadItemOwnerImpl(CAsyncSQL& db,const It
     Message m(db.DirectTransactionPrepared(std::move(tx)));if(!m)return std::unexpected(E::SqlFailure);
     auto recoveryRows=Result(*m,first+7,3,1);auto learningRows=Result(*m,first+8,3,1);auto petCooldownRows=Result(*m,first+9,2,4096);
     auto fence=Result(*m,first,1,1),storageRows=Result(*m,first+1,5,MaxLoadedOwnerStorages),walletRows=Result(*m,first+2,3,2),
-        itemRows=Result(*m,first+3,42,MaxLoadedOwnerItems),attributes=Result(*m,first+4,4,MaxLoadedOwnerItems*8),stones=Result(*m,first+5,7,MaxLoadedOwnerItems*3),cells=Result(*m,first+6,6,65536);
+        itemRows=Result(*m,first+3,51,MaxLoadedOwnerItems),attributes=Result(*m,first+4,4,MaxLoadedOwnerItems*8),stones=Result(*m,first+5,7,MaxLoadedOwnerItems*3),cells=Result(*m,first+6,6,65536);
     for(const auto* r:{&fence,&storageRows,&walletRows,&itemRows,&attributes,&stones,&cells,&recoveryRows,&learningRows,&petCooldownRows})if(!*r)return std::unexpected(r->error());
     try
     {
@@ -547,7 +600,7 @@ static std::expected<LoadedItemOwner,E> LoadItemOwnerImpl(CAsyncSQL& db,const It
         for(const auto& row:*walletRows)
         {
             ItemWallet w{owner,static_cast<WalletCurrency>(Number<std::uint8_t>(row[0])),Number<std::uint64_t>(row[1]),Number<std::uint64_t>(row[2])};
-            if(!w.revision || w.balance>INT64_MAX || (w.currency==WalletCurrency::Gold ? owner.kind!=ItemOwnerKind::Character : w.currency!=WalletCurrency::DragonCoin || owner.kind!=ItemOwnerKind::Account))throw Invalid{};
+            if(!w.revision || w.balance>INT64_MAX || (w.currency==WalletCurrency::Gaya && w.balance>MaxNativeGayaBalance) || ((w.currency==WalletCurrency::Gold || w.currency==WalletCurrency::Gaya) ? owner.kind!=ItemOwnerKind::Character : w.currency!=WalletCurrency::DragonCoin || owner.kind!=ItemOwnerKind::Account))throw Invalid{};
             if(std::ranges::any_of(out.wallets,[&](const auto& old){return old.currency==w.currency;}))throw Invalid{};out.wallets.push_back(w);
         }
         std::map<std::uint64_t,std::size_t> indexes;std::vector<ItemCatalogDigest> hashes;
@@ -599,6 +652,13 @@ static std::expected<LoadedItemOwner,E> LoadItemOwnerImpl(CAsyncSQL& db,const It
             if(row[38]){const auto state=DecodeBonusToolState({reinterpret_cast<const std::uint8_t*>(row[38]->data()),row[38]->size()});if(!state)throw Invalid{};item.bonusTool=*state;}
             if(row[39]){const auto decoded=DecodeSoulState({reinterpret_cast<const std::uint8_t*>(row[39]->data()),row[39]->size()});if(!decoded)throw Invalid{};item.soul=*decoded;}
             {const auto* definition=std::get_if<ItemSoulRow>(&c.Find(item.key)->category);const auto channel=definition && definition->channel ? std::optional{std::to_string(static_cast<unsigned>(*definition->channel))} : std::nullopt;if(row[40]!=channel || row[41]!=std::optional<std::string>{item.soul && item.soul->active && !item.destroyed ? "1" : "0"})throw Invalid{};}
+            if(row[42]){const auto state=DecodeAbsorptionSashState({reinterpret_cast<const std::uint8_t*>(row[42]->data()),row[42]->size()});if(!state)throw Invalid{};item.sash=*state;}
+            if(row[43]){const auto state=DecodeRecallItemState({reinterpret_cast<const std::uint8_t*>(row[43]->data()),row[43]->size()});if(!state)throw Invalid{};item.recall=*state;}
+            if(row[44]){if(!item.tool)throw Invalid{};item.tool->remainingUses=Number<std::uint16_t>(row[44]);}
+            if(row[45])item.energy=EnergyCrystalState{Number<std::uint8_t>(row[45])};
+            if(row[46])item.currencyAmount=Number<std::uint64_t>(row[46]);
+            if(row[47])item.shopPermitDeadline=Number<std::uint64_t>(row[47]);
+            if(row[48] || row[49] || row[50]){if(!row[48] || !row[49] || !row[50])throw Invalid{};item.privateShop=PrivateShopListing{Array<16>(row[48]),Number<std::uint64_t>(row[49]),Number<std::uint16_t>(row[50])};}
             if(!indexes.emplace(id->Value(),out.items.size()).second)throw Invalid{};out.items.push_back(item);hashes.push_back(Array<32>(row[19]));
         }
         std::set<std::pair<std::uint64_t,unsigned>> seenAttributes,seenStones;
@@ -650,13 +710,88 @@ std::expected<LoadedItemOwner,E> LoadAuthorizedStorageOwner(CAsyncSQL& db,const 
     if(!session){auto current=LoadCurrentItemOwner(db,c,owner);if(!current)return current;session=current->fence.sessionGeneration;}
     return LoadItemOwnerImpl(db,c,owner,session,&auth);
 }
+std::expected<void,E> IssueFreshCharacterItems(CAsyncSQL& db,const ItemCatalog& c,std::uint32_t pid,
+    std::span<const CharacterBirthProfile> profiles,std::uint64_t now)
+{
+    const ItemOwner owner{ItemOwnerKind::Character,pid};
+    auto loaded=LoadCurrentItemOwner(db,c,owner);if(!loaded)return std::unexpected(loaded.error());
+    // No retroactive freebies, including after the pack has been sold/deleted.
+    if(loaded->fence.revision!=1 || !loaded->items.empty() ||
+       std::ranges::any_of(loaded->wallets,[](const auto& w){return w.balance!=0;}))return {};
+    auto tx=Guards(c);const auto at=tx.size();
+    tx.push_back({"SELECT job,skill_group FROM player.player WHERE id=?",{U::UInt(pid)},{},1});
+    Message message(db.DirectTransactionPrepared(std::move(tx)));if(!message)return std::unexpected(E::SqlFailure);
+    const auto rows=Result(*message,at,2,1);if(!rows || rows->size()!=1)return std::unexpected(rows ? E::InvalidStoredData : rows.error());
+    try {
+        const auto race=Number<std::uint8_t>(rows->front()[0]),group=Number<std::uint8_t>(rows->front()[1]);
+        const auto profile=std::ranges::find_if(profiles,[&](const auto& p){return p.race==race && p.skillGroup==group;});
+        if(profile==profiles.end() || profile->grants.empty() || profile->grants.size()>32 || !now)return std::unexpected(E::InvalidOperation);
+        ItemMission mission;mission.id=1;mission.version=1;mission.code="character.birth."+profile->contract;
+        mission.name="Native character starter pack";mission.rewardExtension=true;
+        ItemMissionProof proof{owner};constexpr std::string_view action="NATIVE_CHARACTER_BIRTH_V1";
+        std::ranges::copy(action,proof.action.begin());
+        const auto receipt=FindItemMissionReceipt(db,c,loaded->fence,mission,proof);if(!receipt)return std::unexpected(receipt.error());if(*receipt)return {};
+        const auto block=ReserveItemInstanceIds(db,c,static_cast<std::uint32_t>(profile->grants.size()));if(!block)return std::unexpected(block.error());
+        std::vector<ItemInstanceId> ids;for(auto id=block->first;id<block->end;++id)ids.push_back(*ItemInstanceId::Create(id));
+        auto commit=MakeItemMissionCommit(c,mission,proof,0,loaded->fence,loaded->storages,loaded->items,loaded->wallets,ids,now);
+        if(!commit)return std::unexpected(E::InvalidOperation);
+        std::vector<PersistentItem> working;std::size_t used=0;
+        for(const auto& request:profile->grants) {
+            auto grant=request.item;grant.createdAtUtcMs=now;
+            const auto* entry=c.Find(grant.key);if(!entry || grant.count>entry->base.maxStack)return std::unexpected(E::InvalidItem);
+            auto born=MakeGrantCommit(c,commit->operationId,loaded->fence,loaded->storages,working,grant,std::span(ids).subspan(used));
+            if(!born)return std::unexpected(born.error());
+            // Authored packs use distinct states; never mutate an earlier birth.
+            if(born->items.size()!=1 || born->items.front().before)return std::unexpected(E::InvalidOperation);
+            auto item=born->items.front().after;++used;
+            if(request.attributes)item.attributes=*request.attributes;
+            if(request.equipped) {
+                if(item.count!=1)return std::unexpected(E::InvalidPlacement);
+                item.placement=ItemPlacement{ItemStorageKind::Equipment,1,static_cast<std::uint32_t>(*request.equipped)-1};
+                if(entry->base.binding==BindingPolicy::OnEquip)item.boundTo=owner;
+                if(item.costume) {
+                    const auto clock=FindWearableClock(c,item.key);if(!clock)return std::unexpected(E::InvalidItem);
+                    const auto use=AdvanceItemClock(*clock,*item.costume,{now,0,false,true});
+                    if(!use || use->removeItem)return std::unexpected(E::InvalidItem);item.costume=use->after;
+                }
+            }
+            working.push_back(item);commit->items.push_back({{},item});
+        }
+        for(const auto& item:working) {
+            const ItemStorage storage{owner,item.placement->kind,item.placement->storageId};
+            if(std::ranges::find(commit->storages,storage,&ItemStorageLayout::storage)!=commit->storages.end())continue;
+            const auto found=std::ranges::find(loaded->storages,storage,&ItemStorageLayout::storage);
+            if(found==loaded->storages.end())return std::unexpected(E::InvalidStorage);commit->storages.push_back(*found);
+        }
+        if(auto valid=ValidateItemCommit(c,*commit);!valid)return std::unexpected(valid.error());
+        const auto write=CommitItems(db,c,*commit);if(!write)return std::unexpected(write.error());return {};
+    } catch(const Invalid&){return std::unexpected(E::InvalidStoredData);}
+}
+std::expected<bool,E> EnsureFreshCharacterOwner(CAsyncSQL& db,const ItemCatalog& c,std::uint32_t pid)
+{
+    if(!pid)return std::unexpected(E::InvalidOwner);
+    const ItemOwner owner{ItemOwnerKind::Character,pid};auto tx=Guards(c);
+    tx.push_back({"INSERT IGNORE INTO player.item_owner_fence(owner_kind,owner_id,session_generation,state_revision) SELECT 1,p.id,1,1 FROM player.player p WHERE p.id=? AND p.gold=0 AND p.gaya=0",{U::UInt(pid)},{},{}});
+    // Initialize the newly admitted owner in the same transaction, without
+    // spending state revisions on filling its initial empty storage layout.
+    for(const auto& layout:std::array<std::array<unsigned,4>,5>{{{1,5,9,8},{11,SpecialInventoryColumns,SpecialInventoryRows,SpecialInventoryPagesPerType*SpecialInventoryTypes},{2,EquipmentSlotCount,1,1},{8,5,9,3},{9,5,9,3}}})
+        tx.push_back({"INSERT IGNORE INTO player.item_storage(owner_kind,owner_id,storage_kind,storage_id,grid_columns,grid_rows,grid_pages) SELECT 1,owner_id,?,1,?,?,? FROM player.item_owner_fence WHERE owner_kind=1 AND owner_id=? AND state_revision=1",{U::UInt(layout[0]),U::UInt(layout[1]),U::UInt(layout[2]),U::UInt(layout[3]),U::UInt(pid)},{},{}});
+    tx.push_back({"INSERT IGNORE INTO player.item_wallet(owner_kind,owner_id,currency,state_revision,balance) SELECT 1,owner_id,1,1,0 FROM player.item_owner_fence WHERE owner_kind=1 AND owner_id=? AND state_revision=1",{U::UInt(pid)},{},{}});
+    tx.push_back({"INSERT IGNORE INTO player.item_wallet(owner_kind,owner_id,currency,state_revision,balance) SELECT 1,owner_id,3,1,0 FROM player.item_owner_fence WHERE owner_kind=1 AND owner_id=? AND state_revision=1",{U::UInt(pid)},{},{}});
+    const auto at=tx.size();tx.push_back({"SELECT owner_id FROM player.item_owner_fence WHERE owner_kind=1 AND owner_id=?",{U::UInt(pid)},{},{}});
+    Message m(db.DirectTransactionPrepared(std::move(tx)));if(!m)return std::unexpected(E::SqlFailure);
+    auto rows=Result(*m,at,1,1);if(!rows)return std::unexpected(rows.error());if(rows->empty())return false;
+    if(auto ready=EnsureRuntimeStorageOwner(db,c,owner);!ready)return std::unexpected(ready.error());
+    if(auto ground=ProvisionGroundStorage(db,c,owner);!ground)return std::unexpected(ground.error());
+    return true;
+}
 std::expected<void,E> EnsureRuntimeStorageOwner(CAsyncSQL& db,const ItemCatalog& c,ItemOwner owner)
 {
     if(!ValidItemOwner(owner))return std::unexpected(E::InvalidOwner);
     std::vector<ItemStorageLayout> layouts;std::vector<ItemWallet> wallets;
     const auto add=[&](ItemStorageKind kind,unsigned columns=5,unsigned rows=9,unsigned pages=3){layouts.push_back({{owner,kind,1},static_cast<std::uint16_t>(columns),static_cast<std::uint16_t>(rows),static_cast<std::uint16_t>(pages)});};
-    if(owner.kind==ItemOwnerKind::Character){add(ItemStorageKind::Inventory,5,9,2);add(ItemStorageKind::Equipment,20,1,1);add(ItemStorageKind::Mail);add(ItemStorageKind::PendingAward);wallets.push_back({owner,WalletCurrency::Gold,1,0});}
-    else if(owner.kind==ItemOwnerKind::Account){add(ItemStorageKind::Safebox);add(ItemStorageKind::Mall);wallets.push_back({owner,WalletCurrency::DragonCoin,1,0});}
+    if(owner.kind==ItemOwnerKind::Character){add(ItemStorageKind::Inventory,5,9,8);add(ItemStorageKind::SpecialInventory,SpecialInventoryColumns,SpecialInventoryRows,SpecialInventoryPagesPerType*SpecialInventoryTypes);add(ItemStorageKind::Equipment,EquipmentSlotCount,1,1);add(ItemStorageKind::Mail);add(ItemStorageKind::PendingAward);wallets.push_back({owner,WalletCurrency::Gold,1,0});wallets.push_back({owner,WalletCurrency::Gaya,1,0});}
+    else if(owner.kind==ItemOwnerKind::Account){add(ItemStorageKind::Safebox,9,5,3);add(ItemStorageKind::Mall,9,5,3);wallets.push_back({owner,WalletCurrency::DragonCoin,1,0});}
     else add(ItemStorageKind::GuildStorage,10,9,3);
     const auto provisioned=ProvisionOwner(db,c,owner,layouts,wallets);if(!provisioned){auto existing=LoadCurrentItemOwner(db,c,owner);if(!existing)return std::unexpected(provisioned.error());}
     auto tx=Guards(c);tx.push_back({"SELECT state_revision FROM player.item_owner_fence WHERE owner_kind=? AND owner_id=? FOR UPDATE",Owner(owner),{},1});

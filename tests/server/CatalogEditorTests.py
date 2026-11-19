@@ -5,10 +5,12 @@ With --mariadb-bin the commit path also runs against a newly spawned private
 MariaDB; no existing database is touched.
 """
 import argparse
+import os
 import copy
 from pathlib import Path
 import sys
 import unittest
+from unittest import mock
 import uuid
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -114,6 +116,28 @@ def attribute_service(document,operation='1',pool='1'):
 
 
 class OfflineModelTests(unittest.TestCase):
+    def test_costume_transfer_permission_roundtrip_clone_and_native_kind_guard(self):
+        packet,key=create(catalog.blank(TOOL),4,lambda d:d.update(costume_transfer_allowed=True))
+        document=catalog.Catalog(packet).item(key);self.assertTrue(document['costume_transfer_allowed']);catalog.validate(packet,document,key,TOOL)
+        clone=catalog.Catalog(packet).duplicate(key);other=key_of(clone);self.assertTrue(clone['costume_transfer_allowed']);packet=saved(packet,catalog.Catalog(packet).apply(clone),other)
+        self.assertEqual(len(rows(packet,'costume_transfer_target')),2)
+        changed=catalog.Catalog(packet).item(other);changed['costume_transfer_allowed']=False;packet=saved(packet,catalog.Catalog(packet).apply(changed,other));self.assertFalse(catalog.Catalog(packet).item(other)['costume_transfer_allowed']);self.assertTrue(catalog.Catalog(packet).item(key)['costume_transfer_allowed'])
+        bad=catalog.Catalog(packet).item(key);bad['child'].update(costume_kind='6',body_effect_id='10');bad['visuals']=[]
+        with self.assertRaises(api.EditorError):catalog.validate(packet,bad,key,TOOL)
+    def test_random_donor_choice_table_roundtrip_clone_and_native_validation(self):
+        def donor(d):
+            d['child'].update(operation_kind='4',units='1',parameter='0',bonus_id=None,value_scaled=None)
+            d['base']['max_stack']='1';d['bonus_choices']=[dict(choice_no=str(i),bonus_id=str(28+i),value_scaled=str(i)) for i in range(1,6)]
+        packet,key=create(catalog.blank(TOOL),20,donor);document=catalog.Catalog(packet).item(key);catalog.validate(packet,document,key,TOOL)
+        self.assertEqual(len(document['bonus_choices']),5);clone=catalog.Catalog(packet).duplicate(key);self.assertEqual(clone['bonus_choices'],document['bonus_choices']);catalog.validate(packet,clone,None,TOOL)
+        document['bonus_choices'][1]['choice_no']='1'
+        with self.assertRaises(api.EditorError):catalog.validate(packet,document,key,TOOL)
+    def test_soul_explicit_next_key_roundtrip_and_cycle_rejection(self):
+        packet,key=create(catalog.blank(TOOL),14);packet,next_key=create(packet,14)
+        document=catalog.Catalog(packet).item(key);document['child'].update(next_category_id='14',next_local_id=str(next_key[1]));catalog.validate(packet,document,key,TOOL)
+        packet=saved(packet,catalog.Catalog(packet).apply(document,key));self.assertEqual(catalog.Catalog(packet).item(key)['child']['next_local_id'],str(next_key[1]))
+        back=catalog.Catalog(packet).item(next_key);back['child'].update(next_category_id='14',next_local_id=str(key[1]))
+        with self.assertRaises(api.EditorError):catalog.validate(packet,back,next_key,TOOL)
     def test_all_forge_presets_round_trip_and_clone(self):
         packet=catalog.blank(TOOL)
         for preset in ('blessing','metal','dragon_god','smith_book','musin','memo','black_dragon','low','medium','high'):
@@ -717,8 +741,7 @@ class OfflineModelTests(unittest.TestCase):
         document['base']['max_stack'] = '1'
         duration = document['toggle']['duration_ms']
         document['toggle']['duration_ms'] = '0'
-        with self.assertRaisesRegex(api.EditorError, '[Kk]apcsolható harmat'):
-            catalog.validate(packet, document, second, TOOL)
+        catalog.validate(packet, document, second, TOOL)
         document['toggle']['duration_ms'] = duration
         document['toggle_group']['remove_on_death'] = '1'
         with self.assertRaisesRegex(api.EditorError, 'hatáscsoport szabályai'): model.apply(document, second)
@@ -866,6 +889,38 @@ def drop_fixture():
     return packet, material, sword
 
 
+class ContentNameTests(unittest.TestCase):
+    def test_export_keeps_hungarian_names_and_collapses_refinement(self):
+        import json
+        import tempfile
+        from export_content_names import export
+        with tempfile.TemporaryDirectory(prefix='auriga-names-') as temporary:
+            root = Path(temporary)
+            def write(name, value):
+                (root / name).write_text(json.dumps(value, ensure_ascii=False), encoding='utf-8')
+            for language, sword, dog in (('en', 'Iron Sword', 'Wild Dog'), ('hu', 'Vaskard', 'Vadkutya')):
+                write(language + '_items.json', dict(entries=[dict(vnum=10, name=sword + '+0'), dict(vnum=11, name=sword + '+1')]))
+                write(language + '_item_extras.json', dict(entries=[]))
+                write(language + '_typed_equipment.json', dict(entries=[dict(key='item.sword.name', text='English override')] if language == 'en'
+                                                                               else [dict(key='item.other.name', text='Magyar név')]))
+                write(language + '_mobs.json', dict(entries=[dict(vnum=101, name=dog, level=2, rank=0)]))
+            write('catalog.json', dict(packet=dict(columns={'item_base': ['category_id', 'local_id', 'name_key']},
+                tables={'item_base': [['1','1','item.sword.name'], ['1','2','item.other.name']]}),
+                accepted=[dict(item=dict(category_id=1, local_id=1), source_id=i, refinement_level=i-10) for i in (10,11)],
+                blocked=[dict(source_id=999)], localization={}))
+            result = export(root, root / 'catalog.json')
+            self.assertEqual(result['items'], {'item.sword.name':'Vaskard', 'item.other.name':'Magyar név'})
+            self.assertEqual(result['mobs']['101']['name'], 'Vadkutya')
+            self.assertNotIn('999', result['mobs'])
+
+    def test_missing_names_do_not_reveal_codes_and_search_ignores_accents(self):
+        import content_names
+        with mock.patch.object(content_names, 'names', return_value=dict(items={}, mobs={})):
+            self.assertEqual(content_names.item_name(dict(content_code='catalog.8.hidden_abc123', name_key='missing')), 'Névtelen tárgy')
+            self.assertEqual(content_names.mob_name(123456), 'Névtelen szörny')
+        self.assertEqual(content_names.search_text('VÉRVÖRÖS Gyöngy'), 'vervoros gyongy')
+
+
 class DropTableModelTests(unittest.TestCase):
     """Monster drop tables (IC-035): document round trip and native checks."""
 
@@ -930,7 +985,7 @@ class DropTableModelTests(unittest.TestCase):
         levels = drop_document(entries=[(material, 1, 1000, 0)]); levels['entries'][0].update(killer_level_min='50', killer_level_max='40')
         with self.assertRaisesRegex(api.EditorError, 'szintablak'): catalog.validate_drops(packet, levels, executable=TOOL)
         rare = drop_document(entries=[(material, 1, 1000, 0)]); rare['entries'][0]['rare_attribute_chance_bp'] = '10001'
-        with self.assertRaisesRegex(api.EditorError, 'ritka bónusz'): catalog.validate_drops(packet, rare, executable=TOOL)
+        with self.assertRaisesRegex(api.EditorError, 'bónusszal létrejövés'): catalog.validate_drops(packet, rare, executable=TOOL)
         # Retiring an item that a drop table still gives is refused, by name.
         retired = catalog.Catalog(packet).item(material); retired['base']['retired'] = '1'
         with self.assertRaises(api.EditorError) as raised: catalog.validate(packet, retired, material, TOOL)
@@ -943,6 +998,15 @@ class PageCase(unittest.TestCase):
         self.qt_signal_errors=[];previous=sys.excepthook
         sys.excepthook=lambda kind,error,traceback:self.qt_signal_errors.append(f'{kind.__name__}: {error}')
         self.addCleanup(setattr,sys,'excepthook',previous)
+        import tempfile,change_review
+        from unittest import mock
+        temporary=tempfile.TemporaryDirectory(prefix='auriga-review-fixture-');self.addCleanup(temporary.cleanup)
+        self.owner.change_review_root=Path(temporary.name)
+        self.real_review_request=change_review.request
+        def approved(owner,title,kind,payload,rows):
+            stage=change_review.Stage.create(owner,title,kind,payload,rows);stage.approve(owner);return stage
+        self.approve_review=approved
+        patch=mock.patch.object(change_review,'request',side_effect=approved);patch.start();self.addCleanup(patch.stop)
 
     def tearDown(self):
         self.app.processEvents()
@@ -1025,6 +1089,54 @@ class PageCase(unittest.TestCase):
         return packet, keys
 
 class EditorPageTests(PageCase):
+    def test_random_donor_pool_survives_form_collection(self):
+        def donor(d):
+            d['child'].update(operation_kind='4',units='1',parameter='0',bonus_id=None,value_scaled=None);d['base']['max_stack']='1'
+            d['bonus_choices']=[dict(choice_no=str(i),bonus_id=str(28+i),value_scaled=str(i)) for i in range(1,6)]
+        packet,key=create(catalog.blank(TOOL),20,donor);self.page.loaded(packet,key);document=self.page.collect();self.assertEqual(len(document['bonus_choices']),5);self.assertIsNone(document['child']['bonus_id']);catalog.validate(packet,document,key,TOOL)
+        self.page.special_bonus_panel.choices.setPlainText('{}')
+        with self.assertRaises(api.EditorError):self.page.collect()
+        self.page.dirty=False
+    def test_weapon_alternate_policy_survives_editor_round_trip(self):
+        def weapon(d):
+            d['child']['weapon_subtype']='2'
+            d['definition_rules']=[dict(refinement_level='0',display_refinement_offset='0',rarity='0',clock_kind='1',duration_ms='0',allow_account_storage='1',allow_acquire='1',allow_unequip='1',allowed_empires='7',minimum_grant_count='1',birth_magic_chance_bp='0',birth_socket_chance_bp='0',birth_addon='0',unique_group='',available='1',attribute_reroll_group='1',weapon_effect_alternate='1')]
+        packet,key=create(catalog.blank(TOOL),1,weapon);self.page.loaded(packet,key);document=self.page.collect();catalog.validate(packet,document,key,TOOL)
+        self.assertEqual(document['definition_rules'][0]['weapon_effect_alternate'],'1');self.assertEqual(document['definition_rules'][0]['category_id'],'1');self.page.dirty=False
+    def test_weapon_costume_effect_form_round_trip(self):
+        from pathlib import Path
+        fields=('weapon_sword_effect_id','weapon_dagger_effect_id','weapon_bow_effect_id','weapon_two_handed_effect_id','weapon_bell_effect_id','weapon_fan_effect_id','weapon_dagger_alternate_effect_id','weapon_fan_alternate_effect_id')
+        def effect(d):
+            d['child'].update(costume_kind='7',companion_form_id=None,weapon_subtype=None,body_effect_id='0',clock_kind='3',duration_ms='604800000',**{k:str(v) for k,v in zip(fields,(77,79,80,78,81,82,579,582))});d['visuals']=[]
+        packet,key=create(catalog.blank(TOOL),4,effect);self.page.loaded(packet,key);panel=self.page.costume_panel
+        self.assertTrue(all(w.isEnabled() for w in panel.weapon_effects));self.assertFalse(panel.body_effect.isEnabled())
+        document=self.page.collect();catalog.validate(packet,document,key,TOOL);self.assertEqual(document['visuals'],[]);self.assertEqual(document['child']['weapon_fan_alternate_effect_id'],'582')
+        panel.weapon_effects[6].setText('0')
+        with self.assertRaises(api.EditorError):self.page.collect()
+        self.page.dirty=False
+    def test_body_costume_effect_form_round_trip(self):
+        def effect(d):
+            d['child'].update(costume_kind='6',companion_form_id=None,weapon_subtype=None,body_effect_id='794',clock_kind='2',duration_ms='604800000');d['visuals']=[]
+        packet,key=create(catalog.blank(TOOL),4,effect);self.page.loaded(packet,key);panel=self.page.costume_panel
+        self.assertEqual(panel.body_effect.text(),'794');self.assertFalse(panel.visuals.isEnabled());self.assertFalse(panel.companion_form.isEnabled())
+        document=self.page.collect();catalog.validate(packet,document,key,TOOL);self.assertEqual(document['child']['body_effect_id'],'794');self.assertEqual(document['visuals'],[])
+        panel.body_effect.setText('65536')
+        with self.assertRaises(api.EditorError):self.page.collect()
+        self.page.dirty=False
+    def test_companion_skin_form_round_trip(self):
+        packet,_=create(catalog.blank(TOOL),15)
+        form=catalog.Catalog(packet).tables['companion_form'][0]['form_id']
+        def skin(d):
+            d['child'].update(costume_kind='4',companion_form_id=form,weapon_subtype=None,clock_kind='3',duration_ms='604800000');d['visuals']=[]
+        packet,key=create(packet,4,skin);self.page.loaded(packet,key);panel=self.page.costume_panel
+        self.assertEqual(panel.companion_form.text(),form);self.assertFalse(panel.visuals.isEnabled());self.assertFalse(panel.weapon.isEnabled())
+        document=self.page.collect();catalog.validate(packet,document,key,TOOL)
+        self.assertEqual(document['visuals'],[]);self.assertEqual(document['child']['companion_form_id'],form)
+        panel.kind.setCurrentIndex(panel.kind.findData('5'));document=self.page.collect();catalog.validate(packet,document,key,TOOL)
+        self.assertEqual(document['child']['costume_kind'],'5');self.assertEqual(document['child']['duration_ms'],'604800000')
+        panel.companion_form.setText('0')
+        with self.assertRaises(api.EditorError):self.page.collect()
+        self.page.dirty=False
     def test_forge_table_form_round_trip(self):
         packet,key=create(catalog.blank(TOOL),22);self.page.loaded(packet,key);panel=self.page.forge_panel
         panel.preset.setCurrentIndex(panel.preset.findData('dragon_god'));panel.seed();self.assertEqual(panel.rows.rowCount(),256)
@@ -1066,8 +1178,13 @@ class EditorPageTests(PageCase):
         packet,service=create(packet,5,attribute_service);self.page.loaded(packet,service);panel=self.page.attribute_service_panel
         self.assertEqual(self.page.consumable_kind.currentData(),'5');panel.success.edit.setText('73')
         d=self.page.collect();self.assertEqual(d['attribute_service']['success_bp'],'7300');catalog.validate(packet,d,service,TOOL)
+        panel.operation.widget.setCurrentIndex(panel.operation.widget.findData('2'))
+        self.assertTrue(panel.reroll_group.widget.isEnabled());panel.reroll_group.widget.setCurrentIndex(panel.reroll_group.widget.findData('2'))
+        d=self.page.collect();self.assertEqual(d['attribute_service']['target_reroll_group'],'2');catalog.validate(packet,d,service,TOOL)
+        packet=saved(packet,catalog.Catalog(packet).apply(d,service));self.page.loaded(packet,service)
+        self.assertEqual(panel.reroll_group.widget.currentData(),'2')
         panel.operation.widget.setCurrentIndex(panel.operation.widget.findData('3'));panel.success.edit.setText('invalid inactive');panel.add_count.edit.setText('invalid inactive');panel.tiers.item(0,1).setText('invalid inactive')
-        d=self.page.collect();self.assertEqual(d['attribute_service']['success_bp'],'10000');self.assertEqual(d['attribute_service']['add_count'],'0');self.assertFalse(d['attribute_tiers']);catalog.validate(packet,d,service,TOOL)
+        d=self.page.collect();self.assertEqual(d['attribute_service']['target_reroll_group'],'0');self.assertFalse(panel.reroll_group.widget.isEnabled());self.assertEqual(d['attribute_service']['success_bp'],'10000');self.assertEqual(d['attribute_service']['add_count'],'0');self.assertFalse(d['attribute_tiers']);catalog.validate(packet,d,service,TOOL)
         self.page.consumable_kind.setCurrentIndex(0);d=self.page.collect();self.assertIsNone(d['attribute_service']);catalog.validate(packet,d,service,TOOL);self.page.dirty=False
 
     def test_socket_service_form_switches_ignore_inactive_drafts(self):
@@ -1208,6 +1325,16 @@ class EditorPageTests(PageCase):
         with self.assertRaises(api.EditorError):catalog.validate(packet,self.page.collect(),key,TOOL)
         self.page.dirty=False
 
+    def test_tool_explicit_transition_form_round_trip(self):
+        def tool(d):
+            local=d['base']['local_id'];d['child'].update(tool_kind='2',fishing_pool='2',all_water_pools='1')
+            d['tool_levels'][0].update(required_points='20',practice_numerator='1',practice_denominator='5',refine_chance_bp='5000',failure_kind='2',failure_level='0',success_category_id='11',success_local_id=local,success_level='0',failure_category_id='11',failure_local_id=local,display_grade='5')
+        packet,key=create(catalog.blank(TOOL),11,tool);original=catalog.Catalog(packet).item(key);self.page.loaded(packet,key)
+        panel=self.page.tool_panel;self.assertTrue(panel.all_water.isChecked());self.assertEqual(panel.table.item(0,3).text(),'20')
+        document=self.page.collect();self.assertEqual(document['tool_levels'],original['tool_levels']);catalog.validate(packet,document,key,TOOL)
+        packet=saved(packet,catalog.Catalog(packet).apply(document,key));self.page.loaded(packet,key)
+        self.assertEqual(panel.table.item(0,11).text(),str(key[1]));self.assertEqual(panel.table.item(0,15).text(),'5');self.page.dirty=False
+
     def test_tool_and_fishing_forms_keep_progression_and_kind_rules(self):
         from PySide6.QtCore import Qt
         packet,key=create(catalog.blank(TOOL),11);self.page.loaded(packet,key)
@@ -1294,6 +1421,60 @@ class EditorPageTests(PageCase):
         self.page.dirty=False
 
     """Form <-> document round trip of the Qt page."""
+
+    def test_energy_crystal_strength_chances_round_trip_through_actual_form(self):
+        def energy(document):
+            document.update(catalog.Catalog.timed_defaults(document['base']['local_id']))
+            document['timed'].update(utility_kind='3',duration_ms='1800000')
+            document['timed_group'].update(remove_on_death='0')
+            document['timed_bonuses']=[]
+            document['energy_tiers']=[dict(percent=str(p),chance_bp=str(w)) for p,w in ((1,500),(3,1000),(5,4500),(7,2500),(10,1500))]
+            document['recovery']=document['effect']=None
+        packet,key=create(catalog.blank(TOOL),5,energy)
+        self.page.dirty=False;self.page.loaded(packet,key)
+        self.assertEqual(self.page.timed_utility_field.value(),'3')
+        self.assertFalse(self.page.energy_tiers.isHidden())
+        self.assertFalse(self.page.timed_bonuses.isEnabled())
+        self.assertEqual(self.page.energy_tiers.table.rowCount(),5)
+        self.page.energy_tiers.table.cellWidget(0,1).setValue(6)
+        self.page.energy_tiers.table.cellWidget(1,1).setValue(9)
+        document=self.page.collect()
+        self.assertEqual(document['energy_tiers'][0],dict(percent='1',chance_bp='600'))
+        self.assertEqual(document['energy_tiers'][1],dict(percent='3',chance_bp='900'))
+        self.assertEqual(document['timed_bonuses'],[])
+        catalog.validate(packet,document,key,TOOL)
+        self.page.dirty=False
+
+    def test_variable_money_policy_round_trip_through_actual_form(self):
+        def payout(document):
+            document['base']['max_stack']='1';document['child'].update(wallet_currency='1',amount_per_unit='0');document['money_policy']={'mode_kind':'2'}
+        packet,key=create(catalog.blank(TOOL),16,payout)
+        self.page.dirty=False;self.page.loaded(packet,key)
+        self.assertEqual(self.page.money_mode_field.value(),'2')
+        self.assertFalse(self.page.money_amount_field.widget.isEnabled())
+        self.assertFalse(self.page.money_currency_field.widget.isEnabled())
+        document=self.page.collect();self.assertEqual(document['money_policy']['mode_kind'],'2')
+        self.assertEqual(document['child']['amount_per_unit'],'0');catalog.validate(packet,document,key,TOOL)
+        self.page.money_mode_field.widget.setCurrentIndex(2)
+        document=self.page.collect();self.assertEqual(document['money_policy']['mode_kind'],'3')
+        self.assertEqual(document['child']['amount_per_unit'],'1');catalog.validate(packet,document,key,TOOL)
+        self.page.dirty=False
+
+    def test_private_shop_permits_keep_role_stack_and_clock_through_actual_form(self):
+        for code,stack,clock,duration in [('shop.bundle','50000','1','0'),('shop.silk_bundle','1','2','864000000')]:
+            with self.subTest(code=code):
+                def permit(d):
+                    d['base']['max_stack']=stack
+                    d['child'].update(dispatch_kind='2',group_code=code,allowed_contexts='1')
+                    d['definition_rules']=[dict(refinement_level='0',display_refinement_offset='0',rarity='0',clock_kind=clock,duration_ms=duration,allow_account_storage='1',allow_acquire='1',allow_unequip='1',allowed_empires='7',minimum_grant_count='1',birth_magic_chance_bp='0',birth_socket_chance_bp='0',birth_addon='0',unique_group='',available='1',attribute_reroll_group='1',weapon_effect_alternate='0')]
+                packet,key=create(catalog.blank(TOOL),10,permit)
+                self.page.dirty=False;self.page.loaded(packet,key);document=self.page.collect()
+                self.assertEqual(document['child']['group_code'],code)
+                self.assertEqual(document['child']['dispatch_kind'],'2')
+                self.assertEqual(document['base']['max_stack'],stack)
+                self.assertEqual(document['definition_rules'][0]['clock_kind'],clock)
+                self.assertEqual(document['definition_rules'][0]['duration_ms'],duration)
+                catalog.validate(packet,document,key,TOOL);self.page.dirty=False
 
     def test_quest_token_fields_and_dispatch_modes_round_trip(self):
         packet,key=create(catalog.blank(TOOL),10)
@@ -1821,6 +2002,12 @@ class RecipePanelTests(PageCase):
         self.assertEqual(self.page.refinement.recipe_column(), 2)
 
 
+def saved_live_drop(before,tables):
+    result=copy.deepcopy(before)
+    result['live_drops']['tables']={k:copy.deepcopy(tables[k]) for k in ('mob_drop_group','mob_drop_entry')}
+    return result
+
+
 class DropPageTests(PageCase):
     """Droptáblák view and dialog; saves are stubbed, no database."""
 
@@ -1828,8 +2015,18 @@ class DropPageTests(PageCase):
         super().setUp()
         from unittest import mock
         self.packet, self.material, self.sword = drop_fixture()
+        import content_names
+        labels = copy.deepcopy(content_names.names())
+        self.name_labels = labels
+        for key, label in ((self.material, 'Vérvörös gyöngy'), (self.sword, 'Acélkard')):
+            base = catalog.Catalog(self.packet).item(key)['base']
+            labels['items'][base['name_key']] = label
+        patch = mock.patch.object(content_names, 'names', return_value=labels)
+        patch.start(); self.addCleanup(patch.stop)
         rank = drop_document('2', '4', entries=[(self.material, 1, 40_000, 0)], code='drop.rank_4')
         self.packet = saved(self.packet, catalog.Catalog(self.packet).apply_drops(rank))
+        self.packet['live_drops']=dict(supported=True,release='',hash=self.packet['hash'],base_hash=self.packet['hash'],
+                                      tables={k:copy.deepcopy(self.packet['tables'][k]) for k in ('mob_drop_group','mob_drop_entry')})
         for patch in (mock.patch.object(self.page, 'local', return_value=True),):
             patch.start(); self.addCleanup(patch.stop)
         self.page.state = dict(database_running=True, running=False)
@@ -1848,17 +2045,52 @@ class DropPageTests(PageCase):
             else: done(value)
         return mock.patch.object(self.page, 'run', side_effect=run)
 
+    def test_reload_button_reports_acknowledged_and_pending_versions(self):
+        result=copy.deepcopy(self.packet);result['drop_activation']=dict(activated=True,running=True,cores=[{},{}])
+        with self.sync_run(),mock.patch.object(catalog,'reload_drops',return_value=result) as reload:
+            self.page.reload_live_drops()
+        reload.assert_called_once_with(self.owner.root)
+        self.assertIn('2 futó core',self.page.status.text())
+        result['drop_activation']=dict(activated=False,running=True,cores=[])
+        self.page.drops_saved(result)
+        self.assertIn('mentve',self.page.status.text());self.assertIn('függőben',self.page.status.text())
+
+    def test_equal_names_keep_distinct_item_identities_and_invalid_text_is_rejected(self):
+        from item_page import item_model, item_combo, chosen_key
+        from drop_editor import DropGroupDialog
+        model = catalog.Catalog(self.packet)
+        for key in (self.material, self.sword):
+            self.name_labels['items'][model.item(key)['base']['name_key']] = 'Azonos név'
+        choices = item_model(model)
+        combo = item_combo(choices, '%d:%d' % self.material)
+        self.assertEqual(combo.currentText(), 'Azonos név'); self.assertEqual(chosen_key(combo), self.material)
+        combo.setCurrentIndex(combo.findData('%d:%d' % self.sword))
+        self.assertEqual(combo.currentText(), 'Azonos név'); self.assertEqual(chosen_key(combo), self.sword)
+        combo.setEditText('Nincs ilyen tárgy'); self.assertIsNone(chosen_key(combo))
+        dialog = DropGroupDialog(self.page, model, model.drop_group('1'), '1')
+        self.assertEqual(dialog.mob.currentText(), 'Vadkutya')
+        self.assertEqual(dialog.collect()['group']['target_value'], '101')
+        self.assertEqual(dialog.collect()['group']['code'], 'drop.mob_101')
+        self.assertTrue(dialog.code.isHidden()); self.assertNotIn('#1', dialog.windowTitle())
+        dialog.mob.setEditText('Nincs ilyen szörny')
+        with self.assertRaisesRegex(api.EditorError, 'Válassz szörnyet'): dialog.collect()
+        dialog.deleteLater(); combo.deleteLater()
+
     def test_list_search_and_controls(self):
         p = self.page
         p.show_drops()
         self.assertIs(p.workspace.currentWidget(), p.drops_page)
         self.assertEqual(p.drop_list.rowCount(), 2)
-        self.assertEqual([p.drop_list.item(r, 2).text() for r in range(2)], ['Szörny #101', 'Rang: Főnök (BOSS)'])
-        self.assertIn('2 ·', p.drop_list.item(0, 4).text())
+        self.assertEqual({p.drop_list.item(r, 0).text() for r in range(2)}, {'Vadkutya', 'Közös drop · Főnök'})
+        self.assertEqual(p.drop_list.columnCount(), 4)
+        self.assertFalse(any('drop.' in p.drop_list.item(r,c).text() or '#101' in p.drop_list.item(r,c).text()
+                             for r in range(2) for c in range(4)))
         self.assertFalse(p.edit_drop_button.isEnabled())
-        p.drop_search.setText('BOSS'); self.assertEqual(p.drop_list.rowCount(), 1)
-        p.drop_search.setText('weapon.'); self.assertEqual(p.drop_list.rowCount(), 1)
-        self.assertEqual(p.drop_list.item(0, 1).text(), 'drop.mob_101')
+        p.drop_search.setText('fonok'); self.assertEqual(p.drop_list.rowCount(), 1)
+        p.drop_search.setText('acelkard'); self.assertEqual(p.drop_list.rowCount(), 1)
+        self.assertEqual(p.drop_list.item(0, 0).text(), 'Vadkutya')
+        self.assertIn('2 tárgy ·', p.drop_list.item(0, 3).text())
+        self.assertIn('Vérvörös gyöngy', p.drop_list.item(0, 3).toolTip())
         p.drop_list.selectRow(0)
         self.assertEqual(p.chosen_drop(), '1')
         self.assertTrue(p.edit_drop_button.isEnabled()); self.assertTrue(p.delete_drop_button.isEnabled())
@@ -1866,7 +2098,10 @@ class DropPageTests(PageCase):
         self.assertIn('Nincs találat', p.empty_drops.text())
         p.drop_search.clear()
         p.state = dict(database_running=True, running=True); p.controls()
-        self.assertIn('állítsd le', p.drop_note.text())
+        self.assertIn('friss szerverbuild', p.drop_note.text())
+        p.state['drop_reload']=dict(available=True,cores=[dict(name='ch1-core1')]);p.controls()
+        self.assertIn('újraindítás nélkül',p.drop_note.text());p.drop_list.selectRow(0);p.controls()
+        self.assertTrue(p.delete_drop_button.isEnabled());self.assertTrue(p.reload_drop_button.isEnabled())
         # A reload keeps the drop view open.
         p.loaded(self.packet); self.assertIs(p.workspace.currentWidget(), p.drops_page)
         p.back_to_catalog(); self.assertIs(p.workspace.currentWidget(), p.catalog_page)
@@ -1876,7 +2111,7 @@ class DropPageTests(PageCase):
         model = catalog.Catalog(self.packet)
         dialog = DropGroupDialog(self.page, model)
         self.assertEqual(dialog.code.text(), 'drop.mob_1')
-        dialog.mob.setValue(101); self.assertEqual(dialog.code.text(), 'drop.mob_101_2')
+        dialog.mob.setCurrentIndex(dialog.mob.findData('101')); self.assertEqual(dialog.code.text(), 'drop.mob_101_2')
         dialog.roll.setCurrentIndex(dialog.roll.findData('2')); self.assertEqual(dialog.code.text(), 'drop.mob_101_kill')
         dialog.kills.setValue(50)
         self.assertFalse(dialog.form.isRowVisible(dialog.minimum)); self.assertTrue(dialog.form.isRowVisible(dialog.kills))
@@ -1911,7 +2146,7 @@ class DropPageTests(PageCase):
         dialog.deleteLater()
         # A saved table keeps its code and offers deletion; a blocked save says why.
         saved_dialog = DropGroupDialog(self.page, model, model.drop_group('1'), '1', 'Előző hiba', 'Állítsd le a szervert.')
-        saved_dialog.mob.setValue(202); self.assertEqual(saved_dialog.code.text(), 'drop.mob_101')
+        saved_dialog.mob.setCurrentIndex(saved_dialog.mob.findData('202')); self.assertEqual(saved_dialog.code.text(), 'drop.mob_101')
         self.assertFalse(saved_dialog.save_button.isEnabled()); self.assertFalse(saved_dialog.delete_button.isEnabled())
         self.assertIn('Előző hiba', saved_dialog.error.text())
         self.assertEqual(saved_dialog.table.rowCount(), 2)
@@ -1924,10 +2159,10 @@ class DropPageTests(PageCase):
         p.open_item(self.sword); p.mark_dirty(); self.assertTrue(p.dirty)
         p.show_drops()
         document = drop_document(entries=[(self.material, 7, 5_000_000, 0)], code='drop.mob_303', target_value='303')
-        stub = lambda root, before, document, original_id=None: saved(before, catalog.Catalog(before).apply_drops(document, original_id))
+        stub = lambda root, before, document, original_id=None: saved_live_drop(before, catalog.Catalog(before,live_drops=True).apply_drops(document, original_id))
         with self.sync_run(), mock.patch.object(catalog, 'save_drops', side_effect=stub):
             p.save_drop_group(document, None)
-        self.assertEqual([g['code'] for g in catalog.Catalog(p.packet).drop_groups()], ['drop.mob_101', 'drop.rank_4', 'drop.mob_303'])
+        self.assertEqual([g['code'] for g in catalog.Catalog(p.packet,live_drops=True).drop_groups()], ['drop.mob_101', 'drop.rank_4', 'drop.mob_303'])
         self.assertEqual(p.chosen_drop(), '3'); self.assertIn('mentve', p.status.text())
         self.assertTrue(p.dirty); self.assertEqual(p.original_key, self.sword)
         self.assertIs(p.workspace.currentWidget(), p.drops_page)
@@ -1945,17 +2180,19 @@ class DropPageTests(PageCase):
             dialog.accept_group(); return dialog.result()
         with mock.patch.object(DropGroupDialog, 'exec', new=accept), \
                 mock.patch.object(p, 'save_drop_group') as save:
-            p.open_drop_dialog(catalog.Catalog(p.packet).drop_group('3'), '3')
+            p.open_drop_dialog(catalog.Catalog(p.packet,live_drops=True).drop_group('3'), '3')
         self.assertEqual(save.call_args.args[1], '3')
         self.assertEqual(save.call_args.args[0]['entries'][0]['amount'], '7')
         # Deletion asks first and keeps the draft too.
-        p.drop_list.selectRow(0)
-        remove = lambda root, before, group_id: saved(before, catalog.Catalog(before).delete_drop_group(group_id))
+        p.drop_list.selectRow(next(r for r in range(p.drop_list.rowCount()) if p.drop_list.item(r,0).text() == 'Vadkutya'))
+        remove = lambda root, before, group_id: saved_live_drop(before, catalog.Catalog(before,live_drops=True).delete_drop_group(group_id))
+        import change_review
+        decisions=iter([False,True])
         with self.sync_run(), mock.patch.object(catalog, 'delete_drops', side_effect=remove), \
-                mock.patch.object(p, 'confirm_drop_delete', side_effect=[False, True]):
-            p.delete_selected_drop(); self.assertEqual(len(catalog.Catalog(p.packet).drop_groups()), 3)
+                mock.patch.object(change_review,'request',side_effect=lambda *args:self.approve_review(*args) if next(decisions) else None):
+            p.delete_selected_drop(); self.assertEqual(len(catalog.Catalog(p.packet,live_drops=True).drop_groups()), 3)
             p.delete_selected_drop()
-        self.assertEqual([g['code'] for g in catalog.Catalog(p.packet).drop_groups()], ['drop.rank_4', 'drop.mob_303'])
+        self.assertEqual([g['code'] for g in catalog.Catalog(p.packet,live_drops=True).drop_groups()], ['drop.rank_4', 'drop.mob_303'])
         self.assertTrue(p.dirty)
         p.dirty = False; p.show_document(None)
 
@@ -1965,7 +2202,13 @@ class BenchPageTests(PageCase):
 
     def test_grid_list_controls_and_recipe_choice(self):
         import bench_page
+        import content_names
         packet, keys = self.fixture()
+        labels = copy.deepcopy(content_names.names())
+        for key, name in ((keys[1], 'Vaskard'), (keys[6], 'Vasérc')):
+            labels['items'][catalog.Catalog(packet).item(key)['base']['name_key']] = name
+        patch = mock.patch.object(content_names, 'names', return_value=labels)
+        patch.start(); self.addCleanup(patch.stop)
         document = catalog.Catalog(packet).item(keys[1]); document['base']['inventory_height'] = '2'
         document['recipes'] = [chain_recipe(1, 2500, '7500', ingredients=[(keys[6], 2)])]
         packet = saved(packet, catalog.Catalog(packet).apply(document, keys[1]))
@@ -1980,8 +2223,9 @@ class BenchPageTests(PageCase):
         self.assertEqual(page.summary.text(), '#990001 tesztkarakter • 1 234 567 Yang • 2 tárgy')
         self.assertIn('átvette', page.log.toPlainText())
         self.assertEqual(page.items.rowCount(), 2)
-        self.assertEqual(page.grid.item(0, 0).text(), 'Alapanyag #1 ×9')
-        self.assertEqual((page.grid.item(1, 1).text(), page.grid.rowSpan(1, 1)), ('Sword iron', 2))
+        self.assertEqual(page.grid.item(0, 0).text(), 'Vasérc ×9')
+        self.assertEqual((page.grid.item(1, 1).text(), page.grid.rowSpan(1, 1)), ('Vaskard', 2))
+        self.assertTrue(page.items.isColumnHidden(0)); self.assertTrue(page.catalog_list.isColumnHidden(1))
         self.assertEqual(page.occupied(), {0, 6, 11})
         self.assertFalse(page.refine_button.isEnabled())
         page.items.selectRow(1)
@@ -1996,10 +2240,10 @@ class BenchPageTests(PageCase):
         page.grid.setCurrentCell(0, 0); self.assertFalse(page.move_button.isEnabled())   # occupied by the ore
         page.grid_clicked(0, 0); self.assertEqual(page.selected_item()['id'], ore['id'])
         recipe = next(r for r in page.cached.tables['refinement_recipe'] if r['source_local_id'] == str(keys[1][1]))
-        self.assertEqual(page.recipe_label(recipe), '→ ugyanez +1 • 2 500 Yang · 75% · 1 hozzávaló · kudarcnál marad  [material.new_item_1 ×2]')
+        self.assertEqual(page.recipe_label(recipe), '→ ugyanez +1 • 2 500 Yang · 75% · 1 hozzávaló · kudarcnál marad  [Vasérc ×2]')
         page.pages_bar.setCurrentIndex(1)
         self.assertEqual(page.grid.item(0, 0).text(), '')
-        page.catalog_list.selectRow(0); page.grant_limits()
+        page.catalog_list.selectRow(next(r for r in range(page.catalog_list.rowCount()) if page.catalog_list.item(r,0).text() == 'Vaskard')); page.grant_limits()
         self.assertEqual((page.count.maximum(), page.level.maximum()), (1, 3))
 
     def test_character_selector_lists_real_characters_and_keeps_choice(self):
@@ -2633,7 +2877,7 @@ def main():
     args, rest = parser.parse_known_args()
     TOOL = args.tool.resolve()
     MARIADB = args.mariadb_bin
-    WORK = args.work_dir or Path(__file__).resolve().parents[2] / 'build/catalog-editor-sql-isolated'
+    WORK = Path(os.environ['AURIGA_ITEM_SQL_TEST_ROOT']) / 'catalog-editor' if os.environ.get('AURIGA_ITEM_SQL_TEST_ROOT') else args.work_dir or Path(__file__).resolve().parents[2] / 'build/catalog-editor-sql-isolated'
     unittest.main(argv=[sys.argv[0], *rest], verbosity=2)
 
 

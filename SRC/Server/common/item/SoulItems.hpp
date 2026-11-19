@@ -29,6 +29,7 @@ struct ItemSoulRow
     std::optional<SoulChannel> channel;
     std::optional<std::uint32_t> profile;
     std::uint16_t refineChanceBp=0; // Scroll only; consumes one on either outcome.
+    std::optional<ItemKey> nextCore; // Explicit native transition after the last local level.
 };
 struct SoulState
 {
@@ -73,6 +74,7 @@ struct SoulPlan
     bool success=false;
     std::uint64_t catalogRevision=0;
     std::array<std::uint8_t,32> catalogHash{};
+    std::optional<ItemKey> resultKey;
 };
 enum class SoulError
 {

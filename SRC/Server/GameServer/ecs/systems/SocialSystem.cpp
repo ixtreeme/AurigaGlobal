@@ -4,6 +4,7 @@
 #include "CombatSystem.hpp"
 
 #include "SocialSystem.hpp"
+#include "../../item/TypedPrivateShops.hpp"
 #include "InventorySystem.hpp"
 
 #include "../../combat/affect.h"
@@ -541,6 +542,7 @@ void OpenMyShop(entt::entity e, const char* c_pszSign, TShopItemTable* pTable, u
 
 void CloseMyShop(entt::entity e)
 {
+    if(CloseTypedPrivateShop(e))return;
 	if (e == entt::null || !g_registry.valid(e))
 		return;
 

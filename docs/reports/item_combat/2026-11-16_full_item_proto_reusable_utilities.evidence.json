@@ -1,0 +1,119 @@
+{
+  "candidate": "build\\full-proto-reusable-utilities-v49-final.json",
+  "sha256": "6c7967b439150fa54323642c7b9b431c441ea3703722ebc02aae77668745ddb0",
+  "catalog_hash": "139919726fd147cb799b180997e6c1b5358d9a9a0235c2b5e19fbc23a7fd663b",
+  "schema": 49,
+  "summary": {
+    "blocked_reasons": {
+      "invalid_chest_lock": 2,
+      "invalid_inventory_height": 6,
+      "invalid_mount_definition": 10,
+      "invalid_timed_effect_duration": 6,
+      "invalid_toggle_effect_definition": 18,
+      "invalid_weapon_costume_effect_attachment:163": 1,
+      "missing_equipment_asset": 49,
+      "missing_secondary_skill_definition:123": 3,
+      "missing_source_container_reward_group": 236,
+      "missing_source_icon": 168,
+      "missing_stole_model": 1,
+      "missing_unity_asset_reference": 12,
+      "missing_weapon_costume_effect_mapping:1297": 1,
+      "missing_weapon_costume_effect_mapping:1326": 2,
+      "missing_weapon_costume_effect_mapping:1335": 2,
+      "missing_weapon_costume_effect_mapping:1344": 2,
+      "semantic_converter_required:11:0": 1,
+      "semantic_converter_required:15:0": 1,
+      "semantic_converter_required:16:10": 4,
+      "semantic_converter_required:27:0": 7,
+      "semantic_converter_required:36:0": 1,
+      "semantic_converter_required:37:0": 12,
+      "semantic_converter_required:38:0": 1,
+      "semantic_converter_required:3:1": 9,
+      "semantic_converter_required:3:10": 61,
+      "semantic_converter_required:3:15": 1,
+      "semantic_converter_required:3:23": 6,
+      "semantic_converter_required:3:29": 2,
+      "semantic_converter_required:9:0": 1,
+      "skill_selected_on_instance_not_in_prototype": 3,
+      "source_bonus_out_of_native_bounds:31": 1,
+      "source_fish_has_no_effect": 1,
+      "source_reward_rare_field_out_of_range": 2,
+      "source_stone_has_no_equipment_target": 3,
+      "unported_apply:125": 3,
+      "unported_apply:126": 1,
+      "unported_apply:127": 1,
+      "unresolved_container_reward:2871": 4,
+      "unresolved_container_reward:2872": 1,
+      "unresolved_container_reward:2875": 3,
+      "unresolved_container_reward:2876": 3,
+      "unresolved_container_reward:2877": 1,
+      "unresolved_container_reward:2878": 1,
+      "unresolved_container_reward:2879": 1,
+      "unresolved_container_reward:48611": 1,
+      "unresolved_container_reward:55003": 1,
+      "unresolved_container_reward:55010": 1,
+      "unresolved_container_reward:70065": 1,
+      "unresolved_container_reward:71035": 1,
+      "unresolved_container_reward:72044": 5,
+      "unresolved_container_reward:72320": 4,
+      "unresolved_fishing_result:27847": 1,
+      "unresolved_fishing_result:27877": 1,
+      "unsupported_ability_effect": 1
+    },
+    "blocked_source_rows": 672,
+    "converted_source_rows": 9823,
+    "new_native_definitions": 2,
+    "retired_source_rows": 491,
+    "source_rows": 10986
+  },
+  "native_definitions": 6905,
+  "new_sources": [
+    {
+      "item": {
+        "category_id": 10,
+        "local_id": 1587
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "compiled_world_utility",
+      "source_extra": null,
+      "source_id": 70302,
+      "source_level_issues": [],
+      "source_row_hash": "c9f43b894733f1536e4febbabb64f985d77e8b7e7bbd443d73d05357ba5d4a40"
+    },
+    {
+      "item": {
+        "category_id": 10,
+        "local_id": 1588
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "compiled_world_utility",
+      "source_extra": null,
+      "source_id": 71092,
+      "source_level_issues": [],
+      "source_row_hash": "d6dd19a31b50f456609a4f8b888a1dfa58f0cd4b92c8e7f21151fb598384b4dc"
+    }
+  ],
+  "native_checks": 278,
+  "converter_tests": 85,
+  "sql": {
+    "checks": 126,
+    "packets": 10,
+    "result": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-reusable-utilities-v49\\source-reusable-utility-worker-result.json"
+  },
+  "unity": {
+    "checks": 615,
+    "buttons": 100
+  },
+  "ctest": 66,
+  "deferred": 630,
+  "remaining": 42,
+  "reproduced_byte_identical": true,
+  "installed_to_game": false,
+  "untested": [
+    "Full TLS login / ECS gameplay",
+    "Actual cross-server spouse warp",
+    "Addressables player build"
+  ]
+}

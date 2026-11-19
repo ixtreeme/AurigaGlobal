@@ -20,5 +20,6 @@ inline constexpr std::uint16_t TypedActionAttributes = 256, TypedActionRecovery 
 inline constexpr std::uint32_t TypedActionForge=262144,TypedActionSoul=131072,TypedActionSpecialBonus=65536;
 inline constexpr std::uint16_t TypedActionPetHatch = 32768; // hatch an egg or inspect a growth seal
 std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDetails(
-    const ItemCatalog&, std::span<const PersistentItem>, bool ownedDropEnabled = false, std::span<const ItemGrant> extraStates = {});
+    const ItemCatalog&, std::span<const PersistentItem>, bool ownedDropEnabled = false,
+    std::span<const ItemGrant> extraStates = {}, std::span<const ItemKey> scriptedUse = {});
 }

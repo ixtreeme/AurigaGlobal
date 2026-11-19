@@ -27,6 +27,7 @@ enum class LootPickMode : std::uint8_t
 enum class LootRewardKind : std::uint8_t
 {
     Item = 1, Gold = 2, Experience = 3, SpawnMonster = 4, SpawnMonsterGroup = 5, Slow = 6, DrainHp = 7, Poison = 8,
+    Nothing = 9, // Explicit unsuccessful draw, e.g. opening an empty shell.
 };
 inline constexpr std::size_t MaxLootEntries = 256;
 inline constexpr std::uint32_t LootChanceScaleBp = 10'000;
@@ -43,6 +44,7 @@ struct LootEntry
     std::uint64_t amount = 0;
     std::uint32_t weight = 0;      // WeightedOne: relative weight; IndependentChance: bp chance
     std::uint16_t rareAttributeChanceBp = 0; // Item only
+    std::uint16_t refinementLevel = 0; // Item only; exact native state, never inferred from its key.
 };
 struct LootProfile
 {
@@ -51,10 +53,16 @@ struct LootProfile
     LootPickMode mode = LootPickMode::WeightedOne;
     std::vector<LootEntry> entries;
 };
+struct ContainerLootOverride
+{
+    ItemKey key;
+    LootPickMode mode;
+    std::vector<LootEntry> entries;
+};
 enum class LootProfileError
 {
     InvalidIdentity, InvalidMode, EmptyProfile, TooManyEntries, InvalidEntryOrder,
-    InvalidReward, InvalidAmount, InvalidWeight, InvalidRareChance, WeightOverflow,
+    InvalidReward, InvalidAmount, InvalidWeight, InvalidRareChance, WeightOverflow, InvalidRefinementLevel,
 };
 class ValidatedLootProfile;
 std::expected<ValidatedLootProfile, LootProfileError> ValidateLootProfile(LootProfile source);

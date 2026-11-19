@@ -6,14 +6,16 @@ The page never builds SQL and never edits more than one item per save.
 import copy
 import re
 
-from PySide6.QtCore import QThread, Qt, QTimer, Signal
+from PySide6.QtCore import QThread, Qt, QTimer, Signal, QSize
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFormLayout,
     QGridLayout, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListWidget, QMenu, QMessageBox, QPushButton, QScrollArea,
-    QSizePolicy, QSpinBox, QSplitter, QStackedWidget, QTabWidget, QTableWidget, QTableWidgetItem, QToolButton, QVBoxLayout, QWidget)
+    QSizePolicy, QSpinBox, QSplitter, QStackedWidget, QTabWidget, QTableWidget, QTableWidgetItem, QToolButton, QTreeView, QVBoxLayout, QWidget)
 
 import backend as api
 import item_catalog as catalog
+import change_review as review
+from name_picker import enable_name_search
 from skill_book_editor import SkillBookPanel
 from costume_editor import CostumePanel
 from special_bonus_editor import SpecialBonusPanel
@@ -24,10 +26,15 @@ from soul_editor import SoulPanel
 from companion_editor import CompanionPanel
 from pet_care_editor import PetHatchPanel,PetFoodPanel
 from pet_lifecycle_editor import PetSupplyPanel
+from energy_editor import EnergyTierTable
 from attribute_editor import AttributePanel,AttributeServicePanel
 from item_workflows import NewItemDialog, CATEGORY_HELP, SECTION_HELP, TYPE_SECTION, readable_name, summary_lines
 from drop_editor import DropGroupDialog, roll_text, target_text
 from manager_ui import card_layout, line_icon
+from content_names import item_sort_key, mob_record, search_text
+from reward_terms import BONUS_CHANCE_HEADER,BONUS_CHANCE_LABEL,BOX_BONUS_HELP
+from item_icons import ICON_ASSET_ROLE,ITEM_CATEGORY_ROLE,ITEM_RETIRED_ROLE,item_icon,icon_available,ItemIconDelegate
+from reward_split import RewardDropTable
 
 KEY_ROLE = int(Qt.ItemDataRole.UserRole)
 BONUS_LABELS = {
@@ -409,25 +416,26 @@ class FillDialog(QDialog):
 
 
 REWARD_KINDS = [(1, 'Tárgy'), (2, 'Yang'), (3, 'Tapasztalat'), (4, 'Szörny idézése'), (5, 'Szörnycsoport idézése'),
-                (6, 'Lassítás'), (7, 'HP-szívás'), (8, 'Mérgezés')]
+                (6, 'Lassítás'), (7, 'HP-szívás'), (8, 'Mérgezés'), (9, 'Nincs jutalom')]
 # Display scale and unit of the amount per reward kind; drain HP is bp of max HP.
 AMOUNT_UNITS = {1: (1, 'db'), 2: (1, 'Yang'), 3: (1, 'TP'), 4: (1, 'szörny vnum'), 5: (1, 'csoport-ID'), 6: (1, 'pont'),
-                7: (100, '% max HP'), 8: (1, '')}
+                7: (100, '% max HP'), 8: (1, ''), 9: (1, '')}
 
 
 class LootTable(QWidget):
     """Rewards of one container. Weighted mode shows relative weights and the
     resulting chance; independent mode shows each row's own chance in %."""
-    COLUMNS = ['Jutalom', 'Tárgy', 'Mennyiség', 'Súly', 'Ritka bónusz %', 'Esély']
+    COLUMNS = ['Jutalom', 'Tárgy', 'Mennyiség', 'Súly', BONUS_CHANCE_HEADER, 'Esély', 'Fejlesztés +']
 
     def __init__(self, changed, allowed_kinds=None):
-        super().__init__(); self.changed = changed; self.mode = '1'; self.items = QStandardItemModel(self); self.allowed_kinds = allowed_kinds
+        super().__init__(); self.changed = changed; self.mode = '1'; self.items = ItemChoiceModel(self); self.allowed_kinds = allowed_kinds
         layout = QVBoxLayout(self); layout.setContentsMargins(0, 0, 0, 0)
-        self.table = QTableWidget(0, len(self.COLUMNS)); self.table.setHorizontalHeaderLabels(self.COLUMNS)
+        self.table = RewardDropTable(0, len(self.COLUMNS)); self.table.setHorizontalHeaderLabels(self.COLUMNS)
         header = self.table.horizontalHeader()
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        for column, width in ((0, 170), (2, 110), (3, 90), (4, 110), (5, 80)): self.table.setColumnWidth(column, width)
-        self.table.verticalHeader().hide(); self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        for column, width in ((0, 170), (2, 110), (3, 90), (4, 175), (5, 80)): self.table.setColumnWidth(column, width)
+        self.table.horizontalHeaderItem(4).setToolTip(BOX_BONUS_HELP)
+        self.table.verticalHeader().hide(); self.table.verticalHeader().setDefaultSectionSize(44); self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         layout.addWidget(self.table, 1)
         row = QHBoxLayout()
         add, remove = QPushButton('Jutalom hozzáadása'), QPushButton('Kijelölt törlése')
@@ -438,10 +446,9 @@ class LootTable(QWidget):
 
     def set_items(self, rows):
         self.items.clear()
-        for row in rows:
-            key = '%s:%s' % (row['category_id'], row['local_id'])
-            entry = QStandardItem('%s  %s%s' % (key, row['content_code'], '  (kivezetve)' if row['retired'] == '1' else ''))
-            entry.setData(key, Qt.ItemDataRole.UserRole); self.items.appendRow(entry)
+        self.items.setHorizontalHeaderLabels(['Tárgy neve', 'Kategória', 'Szinttől'])
+        for row in sorted(rows, key=item_sort_key):
+            append_item_choice(self.items, row)
 
     def row_of(self, widget, column):
         for index in range(self.table.rowCount()):
@@ -454,30 +461,23 @@ class LootTable(QWidget):
         for value, text in REWARD_KINDS:
             if self.allowed_kinds is None or value in self.allowed_kinds: kind.addItem(text, str(value))
         kind.setCurrentIndex(max(0, kind.findData(str(entry.get('reward_kind') or '1'))))
-        item = QComboBox(); item.setModel(self.items); item.setEditable(True); item.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
-        item.completer().setFilterMode(Qt.MatchFlag.MatchContains); item.completer().setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-        if entry.get('item_category_id') is not None:
-            key = '%s:%s' % (entry['item_category_id'], entry['item_local_id'])
-            index = item.findData(key)
-            if index < 0:
-                missing = QStandardItem(key + '  (nem létező tárgy)'); missing.setData(key, Qt.ItemDataRole.UserRole); self.items.appendRow(missing)
-                index = item.findData(key)
-            item.setCurrentIndex(index)
-        else:
-            item.setCurrentIndex(-1)
-        amount, weight, rare = QLineEdit(), QLineEdit(), QLineEdit()
+        key='%s:%s'%(entry['item_category_id'],entry['item_local_id']) if entry.get('item_category_id') is not None else None
+        item=item_combo(self.items,key)
+        amount, weight, rare, level = QLineEdit(), QLineEdit(), QLineEdit(), QLineEdit()
+        rare.setAccessibleName(BONUS_CHANCE_LABEL);rare.setToolTip(BOX_BONUS_HELP)
         chance = QTableWidgetItem(''); chance.setFlags(Qt.ItemFlag.ItemIsEnabled)
-        for column, widget in ((0, kind), (1, item), (2, amount), (3, weight), (4, rare)): self.table.setCellWidget(row, column, widget)
+        for column, widget in ((0, kind), (1, item), (2, amount), (3, weight), (4, rare), (6, level)): self.table.setCellWidget(row, column, widget)
         self.table.setItem(row, 5, chance)
         reward = int(kind.currentData()); scale = AMOUNT_UNITS[reward][0]
         amount.setText(catalog.display(entry.get('amount') or 0, scale) if scale > 1 else str(entry.get('amount') or '0'))
         weight.setText(self.show_weight(int(entry.get('weight') or 0)))
         rare.setText(catalog.display(entry.get('rare_attribute_chance_bp') or 0, 100))
+        level.setText(str(entry.get('refinement_level') or '0'))
         def kind_changed(*_):
             self.kind_state(self.row_of(kind, 0)); self.changed()
         kind.currentIndexChanged.connect(kind_changed)
         item.currentIndexChanged.connect(lambda *_: self.changed())
-        for edit in (amount, rare): edit.textEdited.connect(lambda *_: self.changed())
+        for edit in (amount, rare, level): edit.textEdited.connect(lambda *_: self.changed())
         weight.textEdited.connect(lambda *_: (self.refresh(), self.changed()))
         self.kind_state(row); self.refresh()
 
@@ -487,8 +487,10 @@ class LootTable(QWidget):
         item.setEnabled(kind == 1)
         if kind != 1: item.setCurrentIndex(-1); rare.setText('0')
         rare.setEnabled(kind == 1)
-        amount.setEnabled(kind != 8)
-        if kind == 8: amount.setText('0')
+        level=self.table.cellWidget(row,6);level.setEnabled(kind==1)
+        if kind!=1:level.setText('0')
+        amount.setEnabled(kind not in (8,9))
+        if kind in (8,9): amount.setText('0')
         amount.setPlaceholderText(AMOUNT_UNITS[kind][1]); amount.setToolTip(AMOUNT_UNITS[kind][1])
 
     def show_weight(self, raw):
@@ -509,6 +511,7 @@ class LootTable(QWidget):
 
     def refresh(self):
         raws = [self.raw_weight(row) for row in range(self.table.rowCount())]
+        if not raws:self.total.setText('Üres láda – nyitáskor nem ad jutalmat.');return
         total = sum(raw for raw in raws if raw)
         for row, raw in enumerate(raws):
             if raw is None: text = '?'
@@ -519,9 +522,20 @@ class LootTable(QWidget):
                            else 'Minden sor a saját esélyével, egymástól függetlenül nyer (lehet, hogy egy sem).')
 
     def remove(self):
-        rows = sorted({index.row() for index in self.table.selectedIndexes()}, reverse=True)
+        self.remove_rows({index.row() for index in self.table.selectedIndexes()})
+
+    def remove_rows(self,rows):
+        rows=sorted(set(rows),reverse=True)
         for row in rows: self.table.removeRow(row)
         if rows: self.refresh(); self.changed()
+
+    def add_items(self,keys):
+        if not keys or self.table.rowCount()+len(keys)>catalog.MAX_DROP_ENTRIES:return False
+        if any(self.items.match(self.items.index(0,0),Qt.ItemDataRole.UserRole,key,1,Qt.MatchFlag.MatchExactly)==[] for key in keys):return False
+        for key in keys:
+            category,local=key.split(':')
+            self.append(dict(reward_kind='1',item_category_id=category,item_local_id=local,amount='1',weight='1' if self.mode=='1' else '10000',rare_attribute_chance_bp='0',refinement_level='0'))
+        self.changed();return True
 
     def load(self, entries, mode):
         self.table.setRowCount(0); self.mode = str(mode)
@@ -529,14 +543,15 @@ class LootTable(QWidget):
         for entry in entries or []: self.append(entry)
         self.refresh()
 
-    def entries(self):
+    def entries(self,rows=None):
         result = []
-        for row in range(self.table.rowCount()):
+        for row in (range(self.table.rowCount()) if rows is None else rows):
             where = '%d. jutalomsor' % (row + 1)
             kind = int(self.table.cellWidget(row, 0).currentData())
             entry = dict(reward_kind=str(kind), item_category_id=None, item_local_id=None)
             if kind == 1:
-                key = self.table.cellWidget(row, 1).currentData()
+                selected=chosen_key(self.table.cellWidget(row,1))
+                key='%s:%s'%selected if selected else None
                 if not key: raise api.EditorError(where + ': válassz tárgyat.')
                 entry['item_category_id'], entry['item_local_id'] = key.split(':')
             scale = AMOUNT_UNITS[kind][0]
@@ -547,7 +562,10 @@ class LootTable(QWidget):
             if raw is None: raise api.EditorError(where + ', ' + ('súly' if self.mode == '1' else 'esély') + ': érvénytelen szám.')
             entry['weight'] = str(raw)
             try: entry['rare_attribute_chance_bp'] = str(catalog.scaled(self.table.cellWidget(row, 4).text() or '0', 100)) if kind == 1 else '0'
-            except api.EditorError: raise api.EditorError(where + ', ritka bónusz: érvénytelen szám.') from None
+            except api.EditorError: raise api.EditorError(where + ', bónusszal létrejövés esélye: érvénytelen szám.') from None
+            text=self.table.cellWidget(row,6).text().strip()
+            if not re.fullmatch('[0-9]+',text) or int(text)>255:raise api.EditorError(where + ': a fejlesztési szint 0 és 255 közötti egész legyen.')
+            entry['refinement_level']=text if kind==1 else '0'
             result.append(entry)
         return result
 
@@ -557,22 +575,59 @@ MAX_GOLD = 9223372036854775807
 MAX_INGREDIENTS = 32
 
 
+class ItemChoiceModel(QStandardItemModel):
+    def data(self,index,role=Qt.ItemDataRole.DisplayRole):
+        if role==Qt.ItemDataRole.DecorationRole and index.column()==0:
+            asset=super().data(index,ICON_ASSET_ROLE)
+            if asset:return item_icon(asset)
+        return super().data(index,role)
+
+
 def item_model(model):
     """Combo model of every item; the 'category:local' key is the user data."""
-    items = QStandardItemModel()
-    for row in model.items():
-        key = '%s:%s' % (row['category_id'], row['local_id'])
-        entry = QStandardItem('%s  %s%s' % (key, row['content_code'], '  (kivezetve)' if row['retired'] == '1' else ''))
-        entry.setData(key, Qt.ItemDataRole.UserRole); items.appendRow(entry)
+    items = ItemChoiceModel()
+    items.setHorizontalHeaderLabels(['Tárgy neve', 'Kategória', 'Szinttől'])
+    for row in sorted(model.items(), key=item_sort_key):
+        append_item_choice(items, row)
     return items
 
 
+def append_item_choice(items, row):
+    key = '%s:%s' % (row['category_id'], row['local_id'])
+    label = readable_name(row) + (' (kivezetve)' if row['retired'] == '1' else '')
+    entry = QStandardItem(label)
+    entry.setData(key, Qt.ItemDataRole.UserRole)
+    entry.setData(row.get('icon_asset',''),ICON_ASSET_ROLE)
+    entry.setData(int(row['category_id']),ITEM_CATEGORY_ROLE);entry.setData(row['retired']=='1',ITEM_RETIRED_ROLE)
+    entry.setToolTip(label+' · '+catalog.CATEGORIES[int(row['category_id'])]+' · '+row['min_level']+'. szinttől')
+    if not icon_available(row.get('icon_asset','')):entry.setToolTip(entry.toolTip()+'\nEhhez a tárgyhoz nincs hozzárendelt eredeti ikon.')
+    items.appendRow([entry, QStandardItem(catalog.CATEGORIES[int(row['category_id'])]),
+                     QStandardItem(row['min_level'])])
+
+
+def choice_view(combo):
+    """Names stay clean; popup columns distinguish equal names by game context."""
+    combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+    combo.setMinimumContentsLength(18)
+    view = QTreeView(combo); view.setRootIsDecorated(False); view.setItemsExpandable(False)
+    view.setMinimumWidth(540); view.setUniformRowHeights(True)
+    view.setIconSize(QSize(32,32));combo.setIconSize(QSize(28,28))
+    combo.setView(view)
+    # A large chest has a picker per reward. Bound popup sizing work instead
+    # of scanning thousands of catalog rows for each hidden picker.
+    view.header().setResizeContentsPrecision(32)
+    view.header().setStretchLastSection(False)
+    view.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+    for column in range(1, combo.model().columnCount()):
+        view.header().setSectionResizeMode(column, QHeaderView.ResizeMode.ResizeToContents)
+
+
 def item_combo(items, key):
-    combo = QComboBox(); combo.setModel(items); combo.setEditable(True); combo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
-    combo.completer().setFilterMode(Qt.MatchFlag.MatchContains); combo.completer().setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+    combo = QComboBox(); combo.setModel(items); choice_view(combo)
+    enable_name_search(combo,'Kezdd el beírni a tárgy nevét…')
     index = combo.findData(key) if key else -1
     if key and index < 0:
-        missing = QStandardItem(key + '  (nem létező tárgy)'); missing.setData(key, Qt.ItemDataRole.UserRole); items.appendRow(missing)
+        missing = QStandardItem('Nem elérhető tárgy'); missing.setData(key, Qt.ItemDataRole.UserRole); items.appendRow(missing)
         index = combo.findData(key)
     combo.setCurrentIndex(index)
     return combo
@@ -849,7 +904,9 @@ class RefinementPanel(QWidget):
 
     def set_catalog(self, model, key):
         """Item choices and level ranges for recipes, from the loaded catalog."""
-        self.items = item_model(model); self.levels_of = model.target_levels; self.self_key = tuple(key)
+        if getattr(self,'catalog_model',None) is not model:
+            self.catalog_model=model;self.items=item_model(model)
+        self.levels_of = model.target_levels; self.self_key = tuple(key)
 
     def set_category(self, category, definitions):
         self.category = category; self.definitions = definitions
@@ -860,6 +917,10 @@ class RefinementPanel(QWidget):
 
     def load(self, refinement, levels, recipes=None):
         self.loading = True
+        exact=str(refinement['profile_kind'])=='10'
+        self.exact_snapshot=copy.deepcopy(dict(refinement=refinement,levels=levels,recipes=recipes or [])) if exact else None
+        if exact and self.kind.findData('10')<0:self.kind.addItem('Rögzített tárgyállapot','10')
+        self.setEnabled(not exact)
         self.rules = {}  # step per ('stat', column) / ('bonus', id) / ('recipe', field), from the fill dialog
         self.kind.setCurrentIndex(max(0, self.kind.findData(str(refinement['profile_kind']))))
         self.levels = [copy.deepcopy(level) for level in levels]
@@ -899,7 +960,7 @@ class RefinementPanel(QWidget):
     def add_row(self, row, texts):
         stats = self.stats()
         self.table.insertRow(row)
-        item = QTableWidgetItem('+' + str(row)); item.setFlags(Qt.ItemFlag.ItemIsEnabled); self.table.setItem(row, 0, item)
+        item = QTableWidgetItem('+' + str(self.levels[row]['level'])); item.setFlags(Qt.ItemFlag.ItemIsEnabled); self.table.setItem(row, 0, item)
         for column, text in enumerate(texts, 1):
             cell = QTableWidgetItem(text)
             if row == 0: cell.setFlags(Qt.ItemFlag.ItemIsEnabled)
@@ -1129,6 +1190,8 @@ class RefinementPanel(QWidget):
             self.apply_fill(*dialog.last)
 
     def collect(self, document):
+        if getattr(self,'exact_snapshot',None) is not None:
+            document.update(copy.deepcopy(self.exact_snapshot));return
         stats = self.stats()
         levels = []
         for row, level in enumerate(self.levels):
@@ -1167,15 +1230,15 @@ class ItemPage(QWidget):
         purpose = QLabel('Tárgytípusok keresése, készítése és szerkesztése. Konkrét példányok kipróbálása: Tárgypróbapad.')
         purpose.setWordWrap(True); purpose.setObjectName('Subtle'); bar.addWidget(purpose, 1)
         self.start_db_button = QPushButton('Helyi adatbázis indítása'); self.start_db_button.clicked.connect(self.start_database)
+        self.start_db_button.setProperty('role', 'success')
         self.reload_button = QPushButton('Katalógus újraolvasása'); self.reload_button.clicked.connect(self.reload)
+        self.reload_button.setProperty('role', 'reload')
         self.reload_button.setIcon(line_icon('refresh'))
         self.new_button = QPushButton('Új tárgytípus…'); self.new_button.setObjectName('Primary')
         self.new_button.clicked.connect(self.new_item_wizard)
-        self.drops_button = QPushButton('Droptáblák'); self.drops_button.clicked.connect(self.show_drops)
-        self.drops_button.setToolTip('Mit ejtenek a szörnyek: droptáblák szörnyenként és szörnyrangonként.')
         self.gathering_button = QPushButton('Gyűjtőhelyek'); self.gathering_button.clicked.connect(self.show_gathering)
         self.gathering_button.setToolTip('Halászati és bányászati helyek, esélyek és jutalmak szerkesztése.')
-        for widget in (self.start_db_button, self.reload_button, self.drops_button, self.gathering_button, self.new_button): bar.addWidget(widget)
+        for widget in (self.start_db_button, self.reload_button, self.gathering_button, self.new_button): bar.addWidget(widget)
         layout.addLayout(bar)
         self.status = QLabel('Válassz helyi szervercsomagot.'); self.status.setWordWrap(True); self.status.setObjectName('Subtle')
         self.status.setTextFormat(Qt.TextFormat.PlainText)
@@ -1192,7 +1255,7 @@ class ItemPage(QWidget):
         self.category_filter = QComboBox(); self.category_filter.addItem('Minden kategória', 0)
         for category, name in catalog.CATEGORIES.items(): self.category_filter.addItem(name, category)
         self.category_filter.setAccessibleName('Tárgykategória szűrése')
-        self.search = QLineEdit(); self.search.setPlaceholderText('Keresés elnevezésre, tartalomkódra vagy azonosítóra…')
+        self.search = QLineEdit(); self.search.setPlaceholderText('Tárgy keresése név szerint…')
         self.search.setAccessibleName('Keresés a tárgykatalógusban')
         self.clear_filter_button = QPushButton('Szűrők törlése'); self.clear_filter_button.clicked.connect(self.clear_filters)
         filters.addWidget(self.search, 1); filters.addWidget(self.category_filter); filters.addWidget(self.clear_filter_button)
@@ -1200,14 +1263,14 @@ class ItemPage(QWidget):
         filter_note = QHBoxLayout()
         self.show_retired = QCheckBox('Kivezetett tárgytípusok megjelenítése'); filter_note.addWidget(self.show_retired)
         filter_note.addStretch()
-        name_note = QLabel('Az elnevezés a belső kódból készül; a játékbeli fordítás külön adat.')
+        name_note = QLabel('A tárgyak a magyar játékbeli nevükkel jelennek meg.')
         name_note.setObjectName('FieldHint'); name_note.setWordWrap(True); filter_note.addWidget(name_note)
         side.addLayout(filter_note)
-        self.list = QTableWidget(0, 6)
-        self.list.setHorizontalHeaderLabels(['Elnevezés', 'Kategória', 'Azonosító', 'Szinttől', 'Állapot', 'Tartalomkód'])
+        self.list = QTableWidget(0, 4)
+        self.list.setItemDelegateForColumn(0,ItemIconDelegate(self.list));self.list.verticalHeader().setDefaultSectionSize(44)
+        self.list.setHorizontalHeaderLabels(['Tárgy neve', 'Kategória', 'Szinttől', 'Állapot'])
         self.list.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        self.list.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
-        for column in (1, 2, 3, 4): self.list.horizontalHeader().setSectionResizeMode(column, QHeaderView.ResizeMode.ResizeToContents)
+        for column in (1, 2, 3): self.list.horizontalHeader().setSectionResizeMode(column, QHeaderView.ResizeMode.ResizeToContents)
         self.list.verticalHeader().hide(); self.list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.list.verticalHeader().setDefaultSectionSize(40)
         self.list.setAlternatingRowColors(True); self.list.setShowGrid(False)
@@ -1231,6 +1294,7 @@ class ItemPage(QWidget):
             signal.connect(lambda *_: self.fill_list())
         self.workspace.addWidget(self.catalog_page)
         self.build_drops_page()
+        self.build_containers_page()
         self.editor_page = QWidget(); body = QVBoxLayout(self.editor_page); body.setContentsMargins(0, 0, 0, 0)
         head = QHBoxLayout()
         self.back_button = QPushButton('← Katalógus'); self.back_button.clicked.connect(self.back_to_catalog); head.addWidget(self.back_button)
@@ -1261,7 +1325,8 @@ class ItemPage(QWidget):
         save_layout.addWidget(self.inline_error)
         actions = QHBoxLayout()
         self.check_button = QPushButton('Tárgy ellenőrzése'); self.check_button.clicked.connect(self.check)
-        self.save_button = QPushButton('Változtatások mentése'); self.save_button.setObjectName('Primary'); self.save_button.clicked.connect(self.save)
+        self.save_button = QPushButton('Ideiglenes mentés'); self.save_button.setObjectName('Primary'); self.save_button.clicked.connect(self.save)
+        self.save_button.setProperty('role', 'success')
         self.discard_button = QPushButton('Módosítások visszaállítása'); self.discard_button.clicked.connect(self.discard_requested)
         self.save_note = QLabel(''); self.save_note.setObjectName('Subtle'); self.save_note.setWordWrap(True)
         actions.addWidget(self.save_note, 1)
@@ -1314,20 +1379,21 @@ class ItemPage(QWidget):
         head.addStretch(); side.addLayout(head)
         hint = QLabel('Itt dől el, mit ejthet egy szörny vagy egy szörnyrang az új tárgyrendszerben. Az esély ölésenként, '
                       'semleges szorzókkal értendő; a szintkülönbség, a prémium és az események a régi szabályok szerint '
-                      'módosítják. Mentés előtt a játék a teljes katalógust ellenőrzi. A játékszerver még nem sorsol ezekből '
-                      'a táblákból: a szörny halálához kötés a következő lépés.')
+                      'módosítják. Mentés előtt a játék a teljes katalógust ellenőrzi. A mentett változásokat a futó '
+                      'core-ok újraindítás nélkül átveszik; az átvételt minden futó core visszaigazolja.')
         hint.setObjectName('FieldHint'); hint.setWordWrap(True); side.addWidget(hint)
-        self.drop_search = QLineEdit(); self.drop_search.setPlaceholderText('Keresés kódra, szörny-vnumra, rangra vagy tárgyra…')
+        self.drop_search = QLineEdit(); self.drop_search.setPlaceholderText('Szörny vagy tárgy keresése név szerint…')
         self.drop_search.setAccessibleName('Keresés a droptáblákban'); self.drop_search.textChanged.connect(lambda *_: self.fill_drops())
         side.addWidget(self.drop_search)
-        self.drop_list = QTableWidget(0, 5)
-        self.drop_list.setHorizontalHeaderLabels(['Azonosító', 'Kód', 'Kinek a dropja', 'Sorsolás', 'Tárgyak'])
+        self.drop_list = QTableWidget(0, 4)
+        self.drop_list.setHorizontalHeaderLabels(['Szörny / csoport', 'Szint', 'Sorsolás', 'Dobható tárgyak'])
         header = self.drop_list.horizontalHeader()
-        for column in (0, 2, 3): header.setSectionResizeMode(column, QHeaderView.ResizeMode.ResizeToContents)
-        for column in (1, 4): header.setSectionResizeMode(column, QHeaderView.ResizeMode.Stretch)
+        for column in (0, 1, 2): header.setSectionResizeMode(column, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
         self.drop_list.verticalHeader().hide(); self.drop_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.drop_list.verticalHeader().setDefaultSectionSize(36)
         self.drop_list.setAlternatingRowColors(True); self.drop_list.setShowGrid(False)
+        self.drop_list.setWordWrap(False)
         self.drop_list.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.drop_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.drop_list.itemSelectionChanged.connect(self.controls)
@@ -1341,10 +1407,197 @@ class ItemPage(QWidget):
         self.new_drop_button.clicked.connect(self.new_drop_group)
         self.edit_drop_button = QPushButton('Megnyitás…'); self.edit_drop_button.clicked.connect(self.edit_selected_drop)
         self.delete_drop_button = QPushButton('Törlés…'); self.delete_drop_button.clicked.connect(self.delete_selected_drop)
+        self.delete_drop_button.setProperty('role', 'danger')
+        self.reload_drop_button=QPushButton('Dropok újratöltése');self.reload_drop_button.clicked.connect(self.reload_live_drops)
+        self.reload_drop_button.setProperty('role', 'reload')
+        self.bulk_drop_button=QPushButton('Tömeges módosítás…');self.bulk_menu(self.bulk_drop_button)
         actions.addWidget(self.drop_note, 1)
-        for widget in (self.delete_drop_button, self.edit_drop_button, self.new_drop_button): actions.addWidget(widget)
+        for widget in (self.bulk_drop_button,self.reload_drop_button,self.delete_drop_button, self.edit_drop_button, self.new_drop_button): actions.addWidget(widget)
         side.addLayout(actions)
         self.workspace.addWidget(self.drops_page)
+
+    def build_containers_page(self):
+        self.containers_page,layout=card_layout()
+        head=QHBoxLayout();back=QPushButton('← Katalógus');back.clicked.connect(self.back_to_catalog);self.containers_back_button=back
+        title=QLabel('Ládák tartalma');title.setObjectName('SectionTitle');self.container_count=QLabel();self.container_count.setObjectName('Subtle')
+        head.addWidget(back);head.addWidget(title);head.addWidget(self.container_count);head.addStretch();layout.addLayout(head)
+        hint=QLabel('A ládát név szerint keresheted. Dupla kattintással módosítható a teljes tartalma; a változások újraindítás nélkül élesednek. A pettojásokat és quest által nyitott dobozokat a saját szabályuk kezeli.')
+        hint.setWordWrap(True);hint.setObjectName('Subtle');layout.addWidget(hint)
+        self.container_search=QLineEdit();self.container_search.setPlaceholderText('Láda vagy benne szereplő tárgy neve…');self.container_search.textChanged.connect(self.fill_containers);layout.addWidget(self.container_search)
+        self.container_list=QTableWidget(0,3);self.container_list.setHorizontalHeaderLabels(['Láda neve','Sorsolás','Tartalom'])
+        self.container_list.horizontalHeader().setSectionResizeMode(0,QHeaderView.ResizeMode.ResizeToContents)
+        self.container_list.horizontalHeader().setSectionResizeMode(1,QHeaderView.ResizeMode.ResizeToContents)
+        self.container_list.horizontalHeader().setSectionResizeMode(2,QHeaderView.ResizeMode.Stretch)
+        self.container_list.verticalHeader().hide();self.container_list.setAlternatingRowColors(True);self.container_list.setShowGrid(False);self.container_list.setWordWrap(False)
+        self.container_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.container_list.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.container_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.container_list.itemSelectionChanged.connect(self.controls);self.container_list.itemDoubleClicked.connect(lambda:self.edit_container())
+        layout.addWidget(self.container_list,1)
+        actions=QHBoxLayout();self.container_note=QLabel();self.container_note.setWordWrap(True);self.container_note.setObjectName('Subtle');actions.addWidget(self.container_note,1)
+        self.container_bulk_button=QPushButton('Tömeges módosítás…');self.bulk_menu(self.container_bulk_button)
+        self.container_edit_button=QPushButton('Tartalom szerkesztése…');self.container_edit_button.setObjectName('Primary');self.container_edit_button.clicked.connect(self.edit_container)
+        actions.addWidget(self.container_bulk_button);actions.addWidget(self.container_edit_button);layout.addLayout(actions)
+        self.workspace.addWidget(self.containers_page)
+
+    def show_containers(self):
+        if self.packet is None:return
+        if hasattr(self.owner,'drop_page'):
+            self.owner.drop_page.activate(self.containers_page);return
+        self.workspace.setCurrentWidget(self.containers_page);self.fill_containers();self.controls()
+
+    def view_cache(self):
+        if getattr(self,'_view_packet',None) is not self.packet:
+            self._view_packet=self.packet;self._view_cache={}
+        return self._view_cache
+
+    def catalog_model(self, live=False):
+        cache=self.view_cache();key=('catalog',live)
+        if key not in cache:cache[key]=catalog.Catalog(self.packet,live_drops=live)
+        return cache[key]
+
+    def rewards_model(self):
+        from reward_catalog import Rewards
+        cache=self.view_cache()
+        if 'rewards' not in cache:cache['rewards']=Rewards(self.packet,model=self.catalog_model(True))
+        return cache['rewards']
+
+    def chosen_container(self):
+        selected=self.container_list.selectedItems()
+        return selected[0].data(KEY_ROLE) if selected else None
+
+    def fill_containers(self,*_):
+        selected=self.chosen_container()
+        self.container_list.blockSignals(True);self.container_list.setRowCount(0)
+        if self.packet is None:self.container_list.blockSignals(False);self.container_count.clear();return
+        model=self.rewards_model();needle=search_text(self.container_search.text().strip());boxes=model.containers()
+        for base in boxes:
+            key=(int(base['category_id']),int(base['local_id']));loot=model.loot(key)
+            labels=[readable_name(model.bases.get((int(e['item_category_id']),int(e['item_local_id'])),{})) if e['reward_kind']=='1' else
+                    dict(REWARD_KINDS).get(int(e['reward_kind']),'Jutalom') for e in loot['entries']]
+            name=readable_name(base)
+            if needle and needle not in search_text(' '.join([name,*labels])):continue
+            row=self.container_list.rowCount();self.container_list.insertRow(row)
+            preview=list(dict.fromkeys(labels))
+            for column,value in enumerate((name,'Egy jutalom, súly szerint' if loot['pick_mode']=='1' else 'Minden jutalom külön eséllyel',
+                                            '%d bejegyzés · %s'%(len(labels),', '.join(preview[:3])+(', …' if len(preview)>3 else '')))):
+                cell=QTableWidgetItem(value);cell.setData(KEY_ROLE,key);cell.setToolTip('\n'.join(labels));self.container_list.setItem(row,column,cell)
+            if key==selected:self.container_list.selectRow(row)
+        self.container_count.setText('%d találat / %d láda'%(self.container_list.rowCount(),len(boxes)))
+        self.container_list.blockSignals(False)
+
+    def reward_save_note(self):
+        note=self.drop_save_note()
+        if note:return note
+        if not (self.packet or {}).get('live_drops',{}).get('containers_supported'):
+            return 'Az élő ládatartalomhoz friss szerververzió és a 044-es migráció szükséges.'
+        state=getattr(self,'state',None) or {}
+        if state.get('running') and not state.get('drop_reload',{}).get('containers_available'):
+            return 'Az élő ládatartalomhoz minden futó core-on az új szerververzió szükséges.'
+        return None
+
+    def rewards_saved(self,packet):
+        self.drops_saved(packet);self.fill_containers()
+        activation=packet.get('drop_activation',{})
+        self.status.setText('Ládák és dropok frissítve mind a(z) %d futó core-on.'%len(activation['cores']) if activation.get('activated') else
+                            'Jutalmak mentve; a futó core-ok visszaigazolása még függőben van.' if activation.get('running') else
+                            'Jutalmak mentve; a következő szerverindításkor betöltődnek.')
+        if hasattr(self.owner,'drop_page'):self.owner.drop_page.show_status(self.status.text())
+
+    def open_container_drop(self):
+        key=self.original_key
+        if key is None:return
+        self.show_containers()
+        for row in range(self.container_list.rowCount()):
+            if self.container_list.item(row,0).data(KEY_ROLE)==key:self.container_list.selectRow(row);break
+        self.edit_container(key=key)
+
+    def edit_container(self,*_,key=None,document=None,error=None):
+        if self.packet is None:return
+        key=key or self.chosen_container()
+        if key is None:return
+        from reward_editor import ContainerLootDialog
+        import reward_catalog
+        dialog=ContainerLootDialog(self,self.packet,key,document=document,error=error,save_note=self.reward_save_note(),model=self.catalog_model(True))
+        accepted=dialog.exec()==QDialog.DialogCode.Accepted;result=dialog.result_document;dialog.deleteLater()
+        if not accepted:return
+        root,before=self.owner.root,self.packet
+        def failed(message):QTimer.singleShot(0,lambda:self.edit_container(key=key,document=result,error=message))
+        rewards=self.rewards_model();draft=copy.copy(rewards);draft.overrides=copy.deepcopy(rewards.overrides);draft.set_loot(key,result)
+        rows=review.reward_rows(before,rewards.model.encode(),draft.container_rows())
+        self.review_write('Ládatartalom módosítása','container',dict(before=before,key=list(key),document=result),rows,
+            lambda data:reward_catalog.save_contents(root,data['before'],tuple(data['key']),data['document']),self.rewards_saved,
+            'Jóváhagyott ládatartalom ellenőrzése és élő mentése…',failed,
+            lambda:self.edit_container(key=key,document=result))
+
+    def bulk_menu(self,button,item_provider=None):
+        menu=QMenu(button)
+        item=lambda:item_provider() if item_provider else None
+        menu.addAction('Esély és darabszám több helyen…',lambda:self.open_bulk_rewards(item=item(),operation='update'))
+        menu.addAction('Hozzáadás több helyre…',lambda:self.open_bulk_rewards(item=item()))
+        menu.addAction('Eltávolítás több helyről…',lambda:self.open_bulk_remove(item=item()))
+        button.setMenu(menu)
+
+    def open_bulk_rewards(self,*_,item=None,state=None,error=None,operation='add'):
+        if self.packet is None:return
+        from reward_editor import BulkRewardDialog
+        import reward_catalog
+        dialog=BulkRewardDialog(self,self.packet,item=item,state=state,error=error,save_note=self.reward_save_note(),model=self.catalog_model(True),operation=operation)
+        accepted=dialog.exec()==QDialog.DialogCode.Accepted;plan=dialog.result_plan;snapshot=dialog.snapshot();dialog.deleteLater()
+        if not accepted:return
+        root,before=self.owner.root,self.packet
+        def failed(message):QTimer.singleShot(0,lambda:self.open_bulk_rewards(state=snapshot,error=message))
+        self.review_write('Ládák és mobdropok tömeges módosítása','bulk_rewards',dict(before=before,plan=plan),
+            review.reward_rows(before,plan['tables'],plan['containers']),
+            lambda data:reward_catalog.save_bulk(root,data['before'],data['plan']),self.rewards_saved,
+            'Jóváhagyott jutalmak közös ellenőrzése és élő mentése…',failed,
+            lambda:self.open_bulk_rewards(state=snapshot))
+
+    def open_group_distribution(self, group, *, operation='add', selected=(), error=None, update_state=None):
+        if self.packet is None or not self.local():
+            return
+        from reward_editor import GroupDistributionDialog
+        import reward_catalog
+
+        root, before = self.owner.root, self.packet
+        dialog = GroupDistributionDialog(self, self.rewards_model(), group, operation=operation, save_note=self.reward_save_note(),
+                                         selected=selected, error=error, update_state=update_state)
+        accepted = dialog.exec() == QDialog.DialogCode.Accepted
+        plan, selected = dialog.result_plan, dialog.selected()
+        update_state = dialog.update_snapshot()
+        dialog.deleteLater()
+        if not accepted:
+            return
+        if self.packet is not before or self.owner.root != root:
+            self.owner.error('A dropok megváltoztak a kijelölés közben. Nyisd meg újra a műveletet.')
+            return
+        if note := self.reward_save_note():
+            self.owner.error(note)
+            return
+
+        def reopen(message=None):
+            self.open_group_distribution(group, operation=operation, selected=selected, error=message, update_state=update_state)
+
+        action = {'add': 'hozzáadása', 'remove': 'kivétele', 'update': 'esélye és darabszáma'}[operation]
+        self.review_write(f"Tárgycsoport {action} · {group['name']}", 'bulk_rewards', dict(before=before, plan=plan),
+                          review.reward_rows(before, plan['tables'], plan['containers']),
+                          lambda data: reward_catalog.save_bulk(root, data['before'], data['plan']), self.rewards_saved,
+                          'Jóváhagyott tárgycsoport mentése a kijelölt helyeken…',
+                          lambda message: QTimer.singleShot(0, lambda: reopen(message)), reopen)
+
+    def open_bulk_remove(self,*_,item=None,state=None,error=None):
+        if self.packet is None:return
+        from reward_editor import BulkRemoveDialog
+        import reward_catalog
+        dialog=BulkRemoveDialog(self,self.packet,item=item,state=state,error=error,save_note=self.reward_save_note(),model=self.catalog_model(True))
+        accepted=dialog.exec()==QDialog.DialogCode.Accepted;plan=dialog.result_plan;snapshot=dialog.snapshot();dialog.deleteLater()
+        if not accepted:return
+        root,before=self.owner.root,self.packet
+        def failed(message):QTimer.singleShot(0,lambda:self.open_bulk_remove(state=snapshot,error=message))
+        self.review_write('Tárgy eltávolítása ládákból és mobdropokból','bulk_rewards',dict(before=before,plan=plan),
+            review.reward_rows(before,plan['tables'],plan['containers']),
+            lambda data:reward_catalog.save_bulk(root,data['before'],data['plan']),self.rewards_saved,
+            'Jóváhagyott eltávolítás mentése a kijelölt helyeken…',failed,
+            lambda:self.open_bulk_remove(state=snapshot))
 
     def show_gathering(self):
         if not self.local() or self.owner.busy(): return
@@ -1353,6 +1606,8 @@ class ItemPage(QWidget):
 
     def show_drops(self):
         if self.packet is None: return
+        if hasattr(self.owner,'drop_page'):
+            self.owner.drop_page.activate(self.drops_page);return
         self.workspace.setCurrentWidget(self.drops_page); self.fill_drops(); self.controls()
 
     def chosen_drop(self):
@@ -1362,19 +1617,22 @@ class ItemPage(QWidget):
     def fill_drops(self, select=None):
         if self.packet is None:
             self.drop_list.setRowCount(0); self.drop_count.setText(''); return
-        model = catalog.Catalog(self.packet)
+        model = self.catalog_model(True)
         select = select or self.chosen_drop()
-        codes = {(r['category_id'], r['local_id']): r['content_code'] for r in model.tables['item_base']}
+        labels = {(r['category_id'], r['local_id']): readable_name(r) for r in model.tables['item_base']}
         entries = {}
         for row in sorted(model.tables['mob_drop_entry'], key=lambda r: int(r['entry_no'])): entries.setdefault(row['group_id'], []).append(row)
-        needle = self.drop_search.text().strip().lower(); groups = model.drop_groups(); shown = []
+        needle = search_text(self.drop_search.text().strip()); groups = model.drop_groups(); shown = []
         for group in groups:
-            keys = ['%s:%s' % (e['category_id'], e['local_id']) for e in entries.get(group['group_id'], [])]
-            names = [codes.get((e['category_id'], e['local_id']), key) for e, key in zip(entries.get(group['group_id'], []), keys)]
-            cells = ['#' + group['group_id'], group['code'], target_text(group), roll_text(group),
-                     '%d · %s' % (len(names), ', '.join(names[:3]) + (', …' if len(names) > 3 else ''))]
-            if needle and needle not in ' '.join(cells + keys + names).lower(): continue
-            shown.append((group['group_id'], cells, '\n'.join('%s  %s' % pair for pair in zip(keys, names))))
+            item_names = [labels.get((e['category_id'], e['local_id']), 'Nem elérhető tárgy')
+                          for e in entries.get(group['group_id'], [])]
+            preview_names = list(dict.fromkeys(item_names))
+            mob = mob_record(group['target_value']) if group['target_kind'] == '1' else {}
+            cells = [target_text(group), str(mob.get('level', '—')), roll_text(group),
+                     '%d tárgy · %s' % (len(item_names), ', '.join(preview_names[:3]) + (', …' if len(preview_names) > 3 else ''))]
+            if needle and needle not in search_text(' '.join(cells + item_names)): continue
+            shown.append((group['group_id'], cells, '\n'.join(item_names)))
+        shown.sort(key=lambda row: (search_text(row[1][0]), row[1][1], row[1][2], int(row[0])))
         self.drop_list.blockSignals(True); self.drop_list.setRowCount(len(shown)); target = -1
         for index, (identity, cells, tooltip) in enumerate(shown):
             for column, value in enumerate(cells):
@@ -1395,7 +1653,8 @@ class ItemPage(QWidget):
         if not self.local(): return 'Droptábla csak helyi szervercsomagon menthető.'
         if self.active() or self.owner.busy(): return 'Művelet folyamatban…'
         if not state.get('database_running'): return 'Az adatbázis nem fut; a mentéshez indítsd el.'
-        if state.get('running'): return 'A mentéshez állítsd le a helyi játékszervert.'
+        if state.get('running') and not state.get('drop_reload',{}).get('available'): return 'A futó core-ok élő dropfrissítése még nem érhető el; friss szerverbuild és a 043-as migráció szükséges.'
+        if self.packet is not None and not self.packet.get('live_drops',{}).get('supported'):return 'A dropok mentéséhez a 043_live_mob_drops.sql migráció szükséges.'
         return None
 
     def new_drop_group(self):
@@ -1404,13 +1663,13 @@ class ItemPage(QWidget):
     def edit_selected_drop(self):
         identity = self.chosen_drop()
         if identity is None or self.packet is None: return
-        try: document = catalog.Catalog(self.packet).drop_group(identity)
+        try: document = self.catalog_model(True).drop_group(identity)
         except api.EditorError as error: self.owner.error(str(error)); return
         self.open_drop_dialog(document, identity)
 
     def open_drop_dialog(self, document, original_id, error=None):
         if self.packet is None: return
-        dialog = DropGroupDialog(self, catalog.Catalog(self.packet), document, original_id, error, self.drop_save_note())
+        dialog = DropGroupDialog(self, self.catalog_model(True), document, original_id, error, self.drop_save_note())
         accepted = dialog.exec() == QDialog.DialogCode.Accepted
         result, deleted = dialog.result_document, dialog.deleted
         dialog.deleteLater()
@@ -1424,21 +1683,34 @@ class ItemPage(QWidget):
         self.packet = packet; self.checked_document = None
         self.status.setToolTip('Katalógus-ellenőrzőösszeg: ' + packet['hash'])
         self.fill_drops(select); self.controls()
+        activation=packet.get('drop_activation',{})
+        if activation.get('activated'):
+            self.status.setText('Dropok betöltve mind a(z) %d futó core-on.' % len(activation['cores']))
+        elif activation.get('running'):
+            self.status.setText('Droptábla mentve. Az újratöltés visszaigazolása még függőben van; a „Dropok újratöltése” gombbal ellenőrizhető.')
+        else:self.status.setText('Droptábla mentve. A következő szerverindítás ezt a verziót tölti be.')
+        if hasattr(self.owner,'drop_page'):self.owner.drop_page.show_status(self.status.text())
+
+    def reload_live_drops(self):
+        if self.packet is None or self.active() or self.owner.busy():return
+        self.run(lambda:catalog.reload_drops(self.owner.root),lambda result:self.drops_saved(result),
+                 'Dropok újratöltése és visszaigazolása minden futó core-on…')
 
     def save_drop_group(self, document, original_id):
         note = self.drop_save_note()
         if note: self.owner.error(note); return
         root, packet, code = self.owner.root, self.packet, document['group']['code']
         def done(result):
-            identity = next((g['group_id'] for g in catalog.Catalog(result).drop_groups() if g['code'] == code), None)
+            identity = next((g['group_id'] for g in catalog.Catalog(result,live_drops=True).drop_groups() if g['code'] == code), None)
             self.drops_saved(result, identity)
-            self.status.setText('Droptábla mentve: %s (#%s). A lista a mentett állapotot mutatja.' % (code, identity))
             self.owner.statusBar().showMessage('Droptábla mentve: ' + code, 6000)
         def failed(message):
             # Reopen with the user's input; nothing was written.
             QTimer.singleShot(0, lambda: self.open_drop_dialog(document, original_id, message))
-        self.run(lambda: catalog.save_drops(root, packet, document, original_id), done,
-                 'Droptábla ellenőrzése és mentése a helyi katalógusba…', failed)
+        tables=catalog.Catalog(packet,live_drops=True).apply_drops(document,original_id)
+        self.review_write('Mobdroptábla módosítása','mob_drop',dict(before=packet,document=document,original_id=original_id),review.reward_rows(packet,tables),
+            lambda data:catalog.save_drops(root,data['before'],data['document'],data['original_id']),done,
+            'Jóváhagyott droptábla ellenőrzése és mentése…',failed,lambda:self.open_drop_dialog(document,original_id))
 
     def delete_selected_drop(self):
         identity = self.chosen_drop()
@@ -1446,8 +1718,8 @@ class ItemPage(QWidget):
 
     def confirm_drop_delete(self, group):
         dialog = QMessageBox(QMessageBox.Icon.Warning, 'Droptábla törlése',
-            'A(z) „%s” droptábla (#%s, %s) minden tárgysorával együtt törlődik a helyi katalógusból. '
-            'Az előző állapot a run/catalog-editor mappában megmarad.' % (group['code'], group['group_id'], target_text(group)), parent=self)
+            'A(z) „%s” droptáblája minden tárgysorával együtt törlődik. '
+            'A törlés előtti változatról biztonsági másolat készül.' % target_text(group), parent=self)
         delete = dialog.addButton('Droptábla törlése', QMessageBox.ButtonRole.DestructiveRole)
         keep = dialog.addButton('Mégse', QMessageBox.ButtonRole.RejectRole)
         dialog.setDefaultButton(keep); dialog.exec()
@@ -1457,14 +1729,14 @@ class ItemPage(QWidget):
         if self.packet is None: return
         note = self.drop_save_note()
         if note: self.owner.error(note); return
-        group = catalog.Catalog(self.packet).row('mob_drop_group', group_id, 'group_id')
+        group = self.catalog_model(True).row('mob_drop_group', group_id, 'group_id')
         if group is None: self.owner.error('A droptábla már nem található; frissítsd a listát.'); return
-        if not self.confirm_drop_delete(group): return
         root, packet = self.owner.root, self.packet
         def done(result):
             self.drops_saved(result)
-            self.status.setText('Droptábla törölve: %s (#%s).' % (group['code'], group['group_id']))
-        self.run(lambda: catalog.delete_drops(root, packet, group_id), done, 'Droptábla törlése a helyi katalógusból…')
+        tables=catalog.Catalog(packet,live_drops=True).delete_drop_group(group_id)
+        self.review_write('Mobdroptábla törlése','mob_drop_delete',dict(before=packet,group_id=group_id),review.reward_rows(packet,tables),
+            lambda data:catalog.delete_drops(root,data['before'],data['group_id']),done,'Jóváhagyott droptábla-törlés mentése…')
 
     def chosen_key(self):
         items = self.list.selectedItems()
@@ -1502,7 +1774,7 @@ class ItemPage(QWidget):
         if self.packet is None: return
         key = self.original_key if self.workspace.currentWidget() == self.editor_page else self.chosen_key()
         if key is None: return
-        source = catalog.Catalog(self.packet).item(key)
+        source = self.catalog_model().item(key)
         dialog = NewItemDialog(self, self.packet, source=source)
         if dialog.exec() == QDialog.DialogCode.Accepted and self.may_discard():
             self.open_draft(dialog.result_document)
@@ -1563,8 +1835,7 @@ class ItemPage(QWidget):
         self.overview_title.setText(readable_name(base))
         self.overview_details.setText('\n'.join(summary_lines(document)))
         self.heading.setText(readable_name(base) + ' · ' + catalog.CATEGORIES[int(base['category_id'])])
-        self.identity_line.setText('Tárgytípus %s:%s · %s · %s' % (base['category_id'], base['local_id'], base['content_code'],
-                                  'új, még nem mentett' if self.original_key is None else 'meglévő katalógusbejegyzés'))
+        self.identity_line.setText('Új, még nem mentett tárgy' if self.original_key is None else 'Meglévő tárgy szerkesztése')
 
     def show_form_error(self, message):
         self.inline_error.setText('Javítandó: ' + message); self.inline_error.show()
@@ -1584,7 +1855,7 @@ class ItemPage(QWidget):
         except api.EditorError as error:
             self.review_summary.setText('A változtatások áttekintéséhez előbb javítsd a hibás vagy hiányzó mezőt.')
             self.changes_table.setRowCount(0); self.show_form_error(str(error)); return
-        previous = catalog.Catalog(self.packet).item(self.original_key) if self.original_key else {}
+        previous = self.catalog_model().item(self.original_key) if self.original_key else {}
         labels = {field.column: field for form in self.findChildren(Form) for field in form.fields}
         sections = {'base': 'Alapadatok', 'child': 'Tárgy működése', 'use': 'Használat', 'trade': 'Kereskedelem',
                     'appearance': 'Megjelenés', 'refinement': 'Fejlesztés', 'levels': 'Fejlesztési szintek',
@@ -1613,6 +1884,14 @@ class ItemPage(QWidget):
             if before == after: return
             if isinstance(after, dict) or isinstance(before, dict):
                 left, right = before or {}, after or {}
+                for category,local in (('category_id','local_id'),('item_category_id','item_local_id'),('target_category_id','target_local_id'),('source_category_id','source_local_id')):
+                    if category not in left and category not in right:continue
+                    old=(left.get(category),left.get(local));new=(right.get(category),right.get(local))
+                    if old==new:continue
+                    def reference(key):
+                        if key[0] is None or key[1] is None:return 'Nincs'
+                        return readable_name(next((row for row in self.catalog_model().tables['item_base'] if row['category_id']==str(key[0]) and row['local_id']==str(key[1])),{}))
+                    changes.append((' · '.join([sections.get(path[0],str(path[0])) if path else 'Tárgy',*map(str,path[1:]),'Hivatkozott tárgy']),reference(old),reference(new)))
                 for key in dict.fromkeys([*left, *right]): visit(left.get(key), right.get(key), (*path, key), left, right)
             elif isinstance(after, list) or isinstance(before, list):
                 left, right = before or [], after or []
@@ -1620,7 +1899,7 @@ class ItemPage(QWidget):
                     visit(left[index] if index < len(left) else None, right[index] if index < len(right) else None, (*path, '+%d' % index if path and path[0] == 'levels' else '%d. sor' % (index + 1)))
             else:
                 column = str(path[-1]); field = labels.get(column)
-                if column.endswith('_profile_id') or column in ('profile_id', 'category_id', 'local_id'): return
+                if column.endswith('_profile_id') or column in ('profile_id', 'category_id', 'local_id','item_category_id','item_local_id','target_category_id','target_local_id','source_category_id','source_local_id'): return
                 name = field.label if field else {'level': 'Szint', 'value_scaled': 'Bónusz értéke', 'bonus_id': 'Bónuszazonosító',
                     'gold_cost': 'Yang-költség', 'success_chance_bp': 'Sikeresély', 'amount': 'Darabszám',
                     'physical_attack_gain_raw': 'Fizikai támadás többlete', 'magical_attack_gain_raw': 'Mágikus támadás többlete',
@@ -1733,6 +2012,11 @@ class ItemPage(QWidget):
         self.loot_mode.currentIndexChanged.connect(lambda *_: (self.loot_table.set_mode(self.loot_mode.currentData()), changed()))
         mode_row.addWidget(self.loot_mode); mode_row.addStretch(); container_layout.addWidget(self.loot_mode_row)
         self.loot_table = LootTable(changed); container_layout.addWidget(self.loot_table, 1)
+        self.edit_live_contents_button=QPushButton('Megnyitás a Dropok oldalon…')
+        self.edit_live_contents_button.setObjectName('Quiet');self.edit_live_contents_button.clicked.connect(self.open_container_drop)
+        container_layout.addWidget(self.edit_live_contents_button)
+        self.live_contents_note=QLabel('A láda jutalmai a külön Dropok oldalon szerkeszthetők.');self.live_contents_note.setObjectName('Subtle');self.live_contents_note.setWordWrap(True)
+        container_layout.addWidget(self.live_contents_note)
         self.pet_hatch_panel=PetHatchPanel(changed,Form);container_layout.addWidget(self.pet_hatch_panel)
         self.loot_hint = QLabel('A questdoboz tartalmát a quest adja; itt nincs beépített jutalom.')
         self.loot_hint.setObjectName('FieldHint'); self.loot_hint.setWordWrap(True); container_layout.addWidget(self.loot_hint)
@@ -1742,11 +2026,18 @@ class ItemPage(QWidget):
         key_form.note('A kulcs a láda kinyitásakor egy darabot fogy, a ládával együtt.')
         key_form.finish()
         token_form = Form(changed)
-        token_form.add('child', 'wallet_currency', 'Pénznem', 'choice', choices=[(1, 'Yang'), (2, 'Sárkányérme')])
-        token_form.add('child', 'amount_per_unit', 'Érték darabonként', unit='egység', range=(1, 2 ** 63 - 1),
+        self.money_mode_field=token_form.add('money_policy','mode_kind','Működés','choice',choices=[(1,'Rögzített értékű pénzjegy'),(2,'Változó összegű érme'),(3,'Földi Yang')])
+        self.money_currency_field=token_form.add('child', 'wallet_currency', 'Pénznem', 'choice', choices=[(1, 'Yang'), (2, 'Sárkányérme')])
+        self.money_amount_field=token_form.add('child', 'amount_per_unit', 'Érték darabonként', unit='egység', range=(0, 2 ** 63 - 1),
                        hint='Ennyit ír jóvá a pénztárcában egy beváltott darab.')
         token_form.note('Használatkor a halomból annyi darab váltódik be, amennyi értéke még belefér a pénztárcába; '
                         'a többi darab megmarad. Egy darab sem fogy el úgy, hogy az értéke elveszne.')
+        token_form.note('A változó összegű érme a jutalom létrehozásakor kapja meg a saját értékét. A földi Yang közvetlenül a pénztárcába kerül; nem foglal leltárhelyet.')
+        def money_controls():
+            mode=self.money_mode_field.value();fixed=mode=='1';self.money_amount_field.widget.setEnabled(fixed);self.money_currency_field.widget.setEnabled(fixed)
+            if not fixed:
+                self.money_currency_field.load('1');self.money_amount_field.load('0' if mode=='2' else '1');self.stack_field.load('1')
+        self.money_controls=money_controls;self.money_mode_field.widget.currentIndexChanged.connect(money_controls)
         token_form.finish()
         quest_form = Form(changed)
         self.quest_dispatch_field = quest_form.add('child','dispatch_kind','Használat','choice',choices=[
@@ -1846,6 +2137,7 @@ class ItemPage(QWidget):
         # Timed stat effects are another typed consumable, never a recovery subtype.
         timed_page = QWidget(); timed_layout = QVBoxLayout(timed_page)
         self.timed_form = Form(changed)
+        self.timed_utility_field=self.timed_form.add('timed','utility_kind','Hatás típusa','choice',choices=[(0,'Bónuszcsomag'),(1,'Horgászgömb'),(2,'Halálbüntetés-védelem'),(3,'Energiakristály')])
         self.timed_form.add('timed', 'duration_ms', 'Időtartam', 'scaled', scale=1000, unit='mp', range=(1, 2 ** 63 - 1))
         self.timed_form.add('timed', 'units_per_use', 'Darab használatonként', range=(1, 65535))
         self.timed_form.add('timed', 'allowed_contexts', 'Használható', 'bits', names=['Világ', 'Párbaj', 'Aréna', 'Céhháború'])
@@ -1871,9 +2163,14 @@ class ItemPage(QWidget):
         timed_cooldown.addWidget(QLabel('mp')); timed_cooldown.addStretch(); timed_layout.addLayout(timed_cooldown)
         timed_layout.addWidget(QLabel('A hatás bónuszai (együtt kerülnek fel és együtt szűnnek meg):'))
         self.timed_bonuses = BonusTable(changed, '3'); timed_layout.addWidget(self.timed_bonuses, 1)
+        self.energy_tiers=EnergyTierTable(changed);timed_layout.addWidget(self.energy_tiers)
+        def energy_kind():
+            kind=self.timed_utility_field.widget.currentData();self.energy_tiers.setVisible(kind=='3');self.timed_bonuses.setEnabled(kind=='0')
+            if kind=='3' and not self.energy_tiers.table.rowCount():self.energy_tiers.load([dict(percent=str(p),chance_bp=str(w)) for p,w in ((1,500),(3,1000),(5,4500),(7,2500),(10,1500))])
+        self.timed_utility_field.widget.currentIndexChanged.connect(energy_kind);energy_kind()
         toggle_page = QWidget(); toggle_layout = QVBoxLayout(toggle_page)
         self.toggle_form = Form(changed)
-        self.toggle_form.add('toggle', 'duration_ms', 'Összes aktív idő', 'scaled', scale=1000, unit='mp', range=(1, 2 ** 63 - 1))
+        self.toggle_form.add('toggle', 'duration_ms', 'Aktív idő (0 = állandó)', 'scaled', scale=1000, unit='mp', range=(0, 2 ** 63 - 1))
         self.toggle_form.add('toggle', 'variant_id', 'Variáns', range=(1, 65535))
         self.toggle_form.add('toggle', 'requirements', 'Feltételek', 'bits', names=['Házas karakter', 'Csoportvezető'])
         self.toggle_form.add('toggle', 'allowed_contexts', 'Használható', 'bits', names=['Világ', 'Párbaj', 'Aréna', 'Céhháború'])
@@ -1977,12 +2274,21 @@ class ItemPage(QWidget):
 
     def container_kind_changed(self):
         kind = self.container_kind_field.value()
+        live=self.live_container_contents()
         self.lock_field.widget.setEnabled(kind == '2')
         if kind != '2' and not self.loading: self.lock_field.edit.setText('0')
-        for widget in (self.loot_mode, self.loot_table): widget.setEnabled(kind not in ('3','4'))
-        for widget in (self.loot_mode_row,self.loot_table): widget.setVisible(kind not in ('3','4'))
+        for widget in (self.loot_mode, self.loot_table): widget.setEnabled(kind not in ('3','4') and not live)
+        for widget in (self.loot_mode_row,self.loot_table): widget.setVisible(kind not in ('3','4') and not live)
+        saved=bool(self.original_key and self.document and self.document['base']['category_id']=='8' and self.document['child']['container_kind'] in ('1','2'))
+        self.edit_live_contents_button.setVisible(live and saved);self.live_contents_note.setVisible(live)
+        self.live_contents_note.setText('A láda jutalmai a külön Dropok oldalon szerkeszthetők.' if saved else
+                                       'Előbb mentsd el a ládát. A tartalmát utána a Dropok oldalon állíthatod be.')
         self.pet_hatch_panel.setVisible(kind=='4')
         self.loot_hint.setVisible(kind == '3')
+
+    def live_container_contents(self):
+        return bool(self.document and self.document['base']['category_id']=='8' and self.container_kind_field.value() in ('1','2') and
+                    (self.packet or {}).get('live_drops',{}).get('containers_supported'))
 
     def recovery_controls(self):
         automatic = self.consumable_kind.currentData() == '1' and self.delivery_field.value() == '4'
@@ -2009,7 +2315,7 @@ class ItemPage(QWidget):
     def timed_group_changed(self):
         selected = self.timed_group_field.value()
         if not self.loading and self.document is not None:
-            group = catalog.Catalog(self.packet).row('timed_effect_group', selected, 'group_id') if selected else None
+            group = self.catalog_model().row('timed_effect_group', selected, 'group_id') if selected else None
             if group is None: group = catalog.Catalog.timed_defaults(self.document['base']['local_id'])['timed_group']
             self.timed_group_form.load(dict(timed_group=group))
             self.mark_dirty()
@@ -2018,7 +2324,7 @@ class ItemPage(QWidget):
     def toggle_group_changed(self):
         selected = self.toggle_group_field.value()
         if not self.loading and self.document is not None:
-            group = catalog.Catalog(self.packet).row('toggle_effect_group', selected, 'group_id') if selected else None
+            group = self.catalog_model().row('toggle_effect_group', selected, 'group_id') if selected else None
             if group is None: group = catalog.Catalog.toggle_defaults(self.document['base']['local_id'])['toggle_group']
             self.toggle_group_form.load(dict(toggle_group=group))
             self.mark_dirty()
@@ -2060,13 +2366,15 @@ class ItemPage(QWidget):
     def tick(self, state):
         if self.target != self.owner.target_id():
             self.target = self.owner.target_id(); self.attempted = None
-            self.packet = None; self.dirty = False; self.show_document(None); self.list.setRowCount(0); self.fill_drops()
+            self.packet = None; self.dirty = False; self.show_document(None); self.list.setRowCount(0); self.fill_drops();self.fill_containers()
         if not self.local():
             self.status.setText('A tárgyszerkesztő csak helyi szervercsomagon érhető el; a távoli gép protos adatbázisa nem szerkeszthető innen.')
         elif state and not state.get('database_running') and not self.active():
             self.status.setText('A helyi adatbázis nem fut. Indítsd el az „Adatbázis indítása” gombbal (a játékszerver ettől nem indul el).')
-        elif self.isVisible() and state and self.packet is None and self.attempted != self.target and not self.active() and not self.owner.busy():
-            self.attempted = self.target; self.reload()
+        elif (self.isVisible() or (hasattr(self.owner,'drop_page') and self.owner.drop_page.isVisible())) and state and self.packet is None and self.attempted != self.target and not self.active() and not self.owner.busy():
+            self.attempted = self.target
+            if hasattr(self.owner,'drop_page') and self.owner.drop_page.isVisible():self.reload_rewards()
+            else:self.reload()
         self.state = state; self.controls()
 
     def controls(self):
@@ -2078,16 +2386,21 @@ class ItemPage(QWidget):
         self.reload_button.setEnabled(local and db and not busy)
         self.new_button.setEnabled(local and db and not busy and self.packet is not None)
         loaded = self.packet is not None; chosen_drop = self.chosen_drop() is not None
-        self.drops_button.setEnabled(not busy and loaded)
-        self.gathering_button.setEnabled(local and not busy and (self.owner.root / 'data/typed_gathering.json').is_file())
+        for control in (self.bulk_drop_button,self.container_bulk_button):control.setEnabled(not busy and loaded)
+        self.container_list.setEnabled(not busy and loaded)
+        self.container_edit_button.setEnabled(not busy and loaded and self.chosen_container() is not None)
+        self.container_note.setText(self.reward_save_note() or 'A mentett ládatartalom és a dropok futás közben frissülnek.')
+        self.gathering_button.setEnabled(local and not busy and self.owner.root is not None and (self.owner.root / 'data/typed_gathering.json').is_file())
         self.drop_list.setEnabled(not busy and loaded)
         self.drops_back_button.setEnabled(not busy)
         self.new_drop_button.setEnabled(not busy and loaded)
         self.edit_drop_button.setEnabled(not busy and loaded and chosen_drop)
-        self.delete_drop_button.setEnabled(local and db and not busy and loaded and chosen_drop and not state.get('running'))
-        self.drop_note.setText('Művelet folyamatban…' if busy else 'A droptáblák mentéséhez állítsd le a helyi játékszervert.' if state.get('running')
-                               else 'Az adatbázis nem fut; a mentéshez indítsd el.' if loaded and not db else
-                               'Jelölj ki egy droptáblát. Dupla kattintás: megnyitás.' if loaded and not chosen_drop else '')
+        drop_note=self.drop_save_note()
+        self.delete_drop_button.setEnabled(local and db and not busy and loaded and chosen_drop and not drop_note)
+        self.reload_drop_button.setEnabled(local and db and not busy and loaded and state.get('running',False))
+        self.drop_note.setText('Művelet folyamatban…' if busy else drop_note or
+                               ('A mentett dropverzió újraindítás nélkül betöltődik a futó core-okon.' if state.get('running') else
+                                'Jelölj ki egy droptáblát. Dupla kattintás: megnyitás.' if loaded and not chosen_drop else ''))
         self.list.setEnabled(not busy and self.packet is not None)
         has = self.document is not None
         self.tabs.setEnabled(has and not busy)
@@ -2103,20 +2416,38 @@ class ItemPage(QWidget):
         self.resume_button.setText('Mentetlen piszkozat folytatása' if self.dirty or (has and self.original_key is None) else 'Megnyitott tárgy folytatása')
         self.check_button.setEnabled(has and not busy and self.packet is not None)
         running = bool(state.get('running'))
-        can_save = has and not busy and db and not running and (self.dirty or self.original_key is None)
+        can_save = has and not busy and db and (not running or hasattr(self.owner,'pending_changes')) and (self.dirty or self.original_key is None)
         self.save_button.setEnabled(can_save)
-        self.save_button.setText('Új tárgytípus mentése' if has and self.original_key is None else 'Változtatások mentése')
+        self.save_button.setText('Ideiglenes mentés')
         self.discard_button.setEnabled(has and not busy and (self.dirty or self.original_key is None))
         self.discard_button.setText('Piszkozat eldobása…' if has and self.original_key is None else 'Módosítások visszaállítása…')
-        self.save_note.setText('A mentéshez állítsd le a helyi játékszervert.' if has and running else
+        self.save_note.setText('Ideiglenesen most is menthetsz. A tárgydefiníciók feltöltése előtt állítsd le a játékszervert.' if has and running and hasattr(self.owner,'pending_changes') else 'A mentéshez állítsd le a helyi játékszervert.' if has and running else
                                'Művelet folyamatban…' if busy else 'Az adatbázis nem érhető el; a mentéshez indítsd el.' if has and not db else
                                ('Ellenőrzés rendben. A piszkozat még nincs mentve.' if self.dirty or self.original_key is None else
                                 'Ellenőrzés rendben. A mentett értékek érvényesek.') if self.checked_document is not None else
                                'Mentetlen piszkozat. Mentés előtt a teljes katalógust ellenőrizzük.' if has and (self.dirty or self.original_key is None) else
                                'A tárgy betöltött értékei megegyeznek a mentett állapottal.' if has else '')
-        self.save_button.setToolTip(self.save_note.text() if not can_save else 'Ellenőrzés és mentés a helyi tárgykatalógusba.')
+        self.save_button.setToolTip(self.save_note.text() if not can_save else 'Mentés a helyi tervezetek közé. Több szerkesztés a Függő módosítások oldalon együtt jóváhagyható.')
+        if hasattr(self.owner,'drop_page'):self.owner.drop_page.sync()
 
     # --- background work ---------------------------------------------------------
+    def review_write(self,title,kind,payload,rows,writer,done,message,failed=None,cancelled=None):
+        try:stage=review.request(self.owner,title,kind,payload,rows)
+        except (api.EditorError,OSError,ValueError) as error:self.owner.error(str(error));return
+        if stage is None:
+            if review.queued(self.owner):
+                if kind=='item':
+                    self.dirty=False;key=tuple(int(payload['document']['base'][field]) for field in ('category_id','local_id'))
+                    self.loaded(self.owner.pending_changes.overlay_packet(payload['before']),key)
+                else:self.accept_reward_refresh(self.owner.pending_changes.overlay_packet(payload['before']))
+                self.status.setText('Ideiglenesen mentve. A Függő módosítások oldalon több szerkesztés együtt jóváhagyható.')
+                if hasattr(self.owner,'drop_page'):self.owner.drop_page.show_status(self.status.text())
+                return
+            self.status.setText('Ideiglenesen mentve. Jóváhagyás nélkül nem történt feltöltés.')
+            if cancelled:QTimer.singleShot(0,cancelled)
+            return
+        self.run(lambda:review.publish(stage,self.owner,writer),done,message,failed)
+
     def run(self, function, done, message, failed=None):
         """Run `function` off the GUI thread. A rejection goes to `failed` if
         given (it shows the error itself), else to the item form and a box."""
@@ -2134,6 +2465,7 @@ class ItemPage(QWidget):
             elif 'value' in outcome:
                 try: done(outcome['value'])
                 except Exception as error: self.status.setText(str(error)); self.owner.error(str(error))
+            if hasattr(self.owner,'drop_page') and self.owner.drop_page.isVisible():self.owner.drop_page.show_status(self.status.text())
             self.controls(); self.owner.refresh()
         task.finished.connect(finished); task.start(); self.controls()
 
@@ -2148,10 +2480,33 @@ class ItemPage(QWidget):
         keep = self.original_key
         self.run(lambda: catalog.request(root), lambda packet: self.loaded(packet, keep), 'Katalógus olvasása a helyi protos adatbázisból…')
 
+    def reload_rewards(self):
+        if not self.local() or self.active() or self.owner.busy():return
+        root=self.owner.root
+        self.run(lambda:catalog.request(root),self.accept_reward_refresh,'Dropadatok olvasása a helyi adatbázisból…')
+
+    def accept_reward_refresh(self,packet):
+        if hasattr(self.owner,'pending_changes'):packet=self.owner.pending_changes.overlay_packet(packet)
+        if self.packet is None or self.packet['hash']!=packet['hash']:
+            if self.dirty or (self.document and self.original_key is None):
+                raise api.EditorError('A tárgykatalógus közben megváltozott. A Tárgykatalógus oldalon előbb rendezd a mentetlen piszkozatot.')
+            self.loaded(packet,self.original_key)
+        else:
+            self.packet=packet;self.checked_document=None;self.fill_drops();self.fill_containers();self.controls()
+        self.status.setText('Dropadatok beolvasva a helyi adatbázisból.')
+        if hasattr(self.owner,'drop_page'):self.owner.drop_page.show_status(self.status.text())
+
+    def catalog_activated(self):
+        if self.packet is None or self.active():return
+        items=self.catalog_model().tables['item_base']
+        self.status.setText('Helyi tárgykatalógus · %d tárgytípus · %d kivezetett'%(len(items),sum(row['retired']=='1' for row in items)))
+
     def loaded(self, packet, select=None):
+        if hasattr(self.owner,'pending_changes'):packet=self.owner.pending_changes.overlay_packet(packet)
         on_drops = self.workspace.currentWidget() is self.drops_page
+        on_containers=self.workspace.currentWidget() is self.containers_page
         self.packet = packet
-        model = catalog.Catalog(packet)
+        model = self.catalog_model()
         self.bonuses.set_definitions(packet['bonuses'])
         self.timed_bonuses.set_definitions(packet['bonuses'])
         self.toggle_bonuses.set_definitions(packet['bonuses'])
@@ -2168,37 +2523,46 @@ class ItemPage(QWidget):
         select = tuple(select) if select is not None else None
         if select is not None and any((int(r['category_id']), int(r['local_id'])) == select for r in items): self.open_item(select)
         else: self.original_key = None; self.show_document(None)
-        self.fill_list(); self.fill_drops()
+        self.fill_list(); self.fill_drops();self.fill_containers()
         if on_drops: self.workspace.setCurrentWidget(self.drops_page)
+        if on_containers:self.workspace.setCurrentWidget(self.containers_page)
 
     def fill_list(self):
         if self.packet is None: return
         selected = self.chosen_key() or self.original_key
-        category = self.category_filter.currentData(); needle = self.search.text().strip().lower()
-        rows = [row for row in catalog.Catalog(self.packet).items()
-                if (not category or int(row['category_id']) == category) and (self.show_retired.isChecked() or row['retired'] != '1')
-                and (not needle or needle in (readable_name(row) + ' ' + row['content_code'] + ' ' + row['name_key'] + ' ' + catalog.CATEGORIES.get(int(row['category_id']), '') + ' ' + row['category_id'] + ':' + row['local_id']).lower())]
-        self.list.blockSignals(True); self.list.setRowCount(len(rows)); target = -1
-        for index, row in enumerate(rows):
-            key = (int(row['category_id']), int(row['local_id']))
-            cells = [readable_name(row), catalog.CATEGORIES.get(key[0], str(key[0])), '%d:%d' % key, row['min_level'], 'Kivezetett' if row['retired'] == '1' else 'Aktív', row['content_code']]
-            for column, value in enumerate(cells):
-                item = QTableWidgetItem(value); item.setData(KEY_ROLE, key)
-                item.setToolTip('%s\nAzonosító: %d:%d\nFordítási kulcs: %s' % (row['content_code'], *key, row['name_key']))
-                self.list.setItem(index, column, item)
-            if selected is not None and key == tuple(selected): target = index
-        self.list.clearSelection()
-        if target >= 0: self.list.selectRow(target)
-        self.list.blockSignals(False)
-        self.result_count.setText('%d találat / %d tárgytípus' % (len(rows), len(catalog.Catalog(self.packet).items())))
-        self.empty_list.setText('Nincs találat. Módosítsd a keresést, vagy töröld a szűrőket.' if not rows else '')
-        self.empty_list.setVisible(not rows)
+        category = self.category_filter.currentData(); needle = search_text(self.search.text().strip())
+        cache=self.view_cache()
+        if 'list_rows' not in cache:
+            cache['list_rows']=[];cache['list_icons']={}
+            for row in sorted(self.catalog_model().items(),key=item_sort_key):
+                key=(int(row['category_id']),int(row['local_id']));name=readable_name(row);kind=catalog.CATEGORIES.get(key[0],'Tárgy')
+                cache['list_icons'][key]=row.get('icon_asset','')
+                cache['list_rows'].append((key,row['retired'],search_text(name+' '+kind),(name,kind,row['min_level'],'Kivezetett' if row['retired']=='1' else 'Aktív')))
+        criteria=(category,needle,self.show_retired.isChecked())
+        self.list.blockSignals(True);self.list.setUpdatesEnabled(False)
+        if cache.get('list_filter')!=criteria:
+            shown=[r for r in cache['list_rows'] if (not category or r[0][0]==category) and (criteria[2] or r[1]!='1') and (not needle or needle in r[2])]
+            cache['list_filter']=criteria;cache['list_shown']=shown
+            self.list.setRowCount(len(shown))
+            for index,(key,_,_,cells) in enumerate(shown):
+                for column,value in enumerate(cells):
+                    item=QTableWidgetItem(value);item.setData(KEY_ROLE,key);item.setToolTip(cells[0]);self.list.setItem(index,column,item)
+                    if column==0:item.setData(ICON_ASSET_ROLE,cache['list_icons'][key])
+        shown=cache['list_shown'];target=next((index for index,row in enumerate(shown) if row[0]==selected),-1)
+        if self.chosen_key()!=selected or target<0:
+            self.list.clearSelection()
+            if target>=0:self.list.selectRow(target)
+        elif target>=0:self.list.selectRow(target)
+        self.list.setUpdatesEnabled(True);self.list.blockSignals(False)
+        self.result_count.setText('%d találat / %d tárgytípus' % (len(shown),len(cache['list_rows'])))
+        self.empty_list.setText('Nincs találat. Módosítsd a keresést, vagy töröld a szűrőket.' if not shown else '')
+        self.empty_list.setVisible(not shown)
         self.selected()
 
     def selected(self):
         key = self.chosen_key()
         if key and self.packet:
-            document = catalog.Catalog(self.packet).item(key)
+            document = self.catalog_model().item(key)
             self.selection_description.setText(readable_name(document['base']) + '\n' + summary_lines(document)[1])
         else:
             self.selection_description.setText('Jelölj ki egy tárgytípust a részletekhez. Dupla kattintás: szerkesztés.')
@@ -2206,7 +2570,7 @@ class ItemPage(QWidget):
 
     def open_item(self, key):
         try:
-            document = catalog.Catalog(self.packet).item(key)
+            document = self.catalog_model().item(key)
         except (api.EditorError, StopIteration, KeyError) as error:
             self.owner.error(str(error) or 'A tárgy adatai hiányosak.'); return
         self.original_key = tuple(key); self.show_document(document)
@@ -2214,13 +2578,13 @@ class ItemPage(QWidget):
 
     def create(self, category):
         if self.packet is None or not self.may_discard(): return
-        try: document = catalog.Catalog(self.packet).new(category)
+        try: document = self.catalog_model().new(category)
         except api.EditorError as error: self.owner.error(str(error)); return
         self.open_draft(document)
 
     def duplicate(self):
         if self.packet is None or self.original_key is None or not self.may_discard(): return
-        try: document = catalog.Catalog(self.packet).duplicate(self.original_key)
+        try: document = self.catalog_model().duplicate(self.original_key)
         except api.EditorError as error: self.owner.error(str(error)); return
         self.open_draft(document)
         self.status.setText('Új, még nem mentett másolat. A név, megjelenés és beállítások átvehetők; az eredeti tárgy változatlan.')
@@ -2259,7 +2623,7 @@ class ItemPage(QWidget):
             self.socket_service_form.load(dict(socket_service=document.get('socket_service') or dict(service_kind='1',units_per_use='1')))
             timed = document.get('timed') is not None
             toggle = document.get('toggle') is not None
-            recovery_doc = document if not (aid or timed or toggle or service or attribute_service) else catalog.Catalog(self.packet).new(5)
+            recovery_doc = document if not (aid or timed or toggle or service or attribute_service) else self.catalog_model().new(5)
             self.category_forms[5].load(recovery_doc)
             kind = int(recovery_doc['recovery']['delivery_kind'])
             self.finite_capacity_text = catalog.display(recovery_doc['effect']['capacity_raw']) if kind == 4 and recovery_doc['effect']['supply_kind'] == '1' else '1000'
@@ -2273,20 +2637,22 @@ class ItemPage(QWidget):
             timed_doc = copy.deepcopy(document) if timed else dict(document, **catalog.Catalog.timed_defaults(base['local_id']))
             combo = self.timed_group_field.widget
             combo.blockSignals(True); combo.clear(); combo.addItem('Új hatáscsoport', '')
-            for gid, code in catalog.Catalog(self.packet).choices('timed_effect_group', 'group_id'):
+            for gid, code in self.catalog_model().choices('timed_effect_group', 'group_id'):
                 combo.addItem(code + ' (#' + gid + ')', gid)
             combo.blockSignals(False)
             timed_doc['timed']['group_id'] = timed_doc['timed'].get('group_id') or ''
             self.timed_form.load(timed_doc); self.timed_group_form.load(timed_doc)
             self.timed_group_changed()
             self.timed_bonuses.load(timed_doc['timed_bonuses'])
+            self.timed_bonuses.setEnabled(timed_doc['timed'].get('utility_kind','0')=='0')
+            self.energy_tiers.load(timed_doc.get('energy_tiers',[]));self.energy_tiers.setVisible(timed_doc['timed'].get('utility_kind')=='3')
             self.timed_cooldown_check.setChecked(bool(cooldown) and timed)
             self.timed_cooldown_edit.setText(catalog.display(cooldown['duration_ms']) if cooldown and timed else '1')
             self.timed_cooldown_edit.setEnabled(self.timed_cooldown_check.isChecked())
             toggle_doc = copy.deepcopy(document) if toggle else dict(document, **catalog.Catalog.toggle_defaults(base['local_id']))
             combo = self.toggle_group_field.widget
             combo.blockSignals(True); combo.clear(); combo.addItem('Új hatáscsoport', '')
-            for gid, code in catalog.Catalog(self.packet).choices('toggle_effect_group', 'group_id'):
+            for gid, code in self.catalog_model().choices('toggle_effect_group', 'group_id'):
                 combo.addItem(code + ' (#' + gid + ')', gid)
             combo.blockSignals(False)
             toggle_doc['toggle']['group_id'] = toggle_doc['toggle'].get('group_id') or ''
@@ -2304,44 +2670,47 @@ class ItemPage(QWidget):
             self.forge_panel.load(document)
         elif category == 21:
             combo=self.ammo_policy_field.widget;combo.blockSignals(True);combo.clear()
-            for row in catalog.Catalog(self.packet).tables['item_ammo_policy']:
+            for row in self.catalog_model().tables['item_ammo_policy']:
                 if row['ammo_kind']=='2':combo.addItem(row['code']+' ('+row['units_per_hit']+' db/lövés)',row['policy_id'])
             combo.blockSignals(False);self.category_forms[21].load(document)
         elif category == 15:
-            self.companion_panel.set_forms(catalog.Catalog(self.packet).tables['companion_form']);self.companion_panel.load(document)
+            self.companion_panel.set_forms(self.catalog_model().tables['companion_form']);self.companion_panel.load(document)
         elif category == 14:
             self.soul_panel.load(document);self.soul_controls()
         elif category == 13:
-            self.poly_panel.set_forms(catalog.Catalog(self.packet).tables['polymorph_form'])
+            self.poly_panel.set_forms(self.catalog_model().tables['polymorph_form'])
             self.poly_panel.load(document)
             self.poly_controls()
         elif category == 11:
             self.tool_panel.load(document)
         elif category == 12:
-            self.fishing_panel.set_items(catalog.Catalog(self.packet).items())
+            self.fishing_panel.set_items(self.catalog_model().items())
             self.fishing_panel.load(document)
         elif category in (19,20):
             (self.regalia_panel if category==19 else self.special_bonus_panel).load(document,self.packet['bonuses'])
         elif category == 4:
             self.costume_panel.load(document)
         elif category == 17:
-            self.pet_supply_panel.set_catalog(catalog.Catalog(self.packet));self.pet_supply_panel.load(document)
+            self.pet_supply_panel.set_catalog(self.catalog_model());self.pet_supply_panel.load(document)
         elif category == 9:
             self.book_panel.load(document)
         else:
             document = dict(document, child=dict(document['child'], socket_profile_id=document['child'].get('socket_profile_id') or ''))
             self.category_forms[category].load(document)
+            if category==16:self.money_controls()
         if category == 8:
-            self.pet_hatch_panel.set_targets(catalog.Catalog(self.packet));self.pet_hatch_panel.load(document)
+            self.pet_hatch_panel.set_targets(self.catalog_model());self.pet_hatch_panel.load(document)
             loot = document.get('loot') or dict(pick_mode='1', entries=[])
             self.loot_mode.blockSignals(True); self.loot_mode.setCurrentIndex(max(0, self.loot_mode.findData(str(loot['pick_mode'])))); self.loot_mode.blockSignals(False)
-            self.loot_table.load(loot['entries'], loot['pick_mode'])
+            # Saved ordinary chests use the live contents dialog; do not build
+            # hundreds of hidden pickers when opening their item properties.
+            self.loot_table.load([] if self.live_container_contents() else loot['entries'], loot['pick_mode'])
             self.container_kind_changed()
         if category == 10:self.quest_controls()
         if refinable:
             self.refinement.setEnabled(True);self.bonuses.setEnabled(True)
             self.refinement.set_category(category, self.packet['bonuses'] if self.packet else [])
-            if self.packet: self.refinement.set_catalog(catalog.Catalog(self.packet), (category, int(base['local_id'])))
+            if self.packet: self.refinement.set_catalog(self.catalog_model(), (category, int(base['local_id'])))
             self.refinement.load(document['refinement'], document['levels'], document.get('recipes'))
             self.bonuses.load(document.get('bonuses'))
         if category==7:self.stone_controls()
@@ -2400,14 +2769,15 @@ class ItemPage(QWidget):
                 self.timed_form.collect(document); self.timed_group_form.collect(document)
                 document['timed']['group_id'] = document['timed']['group_id'] or None
                 document['timed_group']['group_id'] = document['timed']['group_id']
-                document['timed_bonuses'] = self.timed_bonuses.entries()
+                document['timed_bonuses'] = self.timed_bonuses.entries() if document['timed']['utility_kind']=='0' else []
+                document['energy_tiers']=self.energy_tiers.entries() if document['timed']['utility_kind']=='3' else []
                 document['recovery'] = None; document['effect'] = None
                 document['toggle'] = None
                 check, edit = self.timed_cooldown_check, self.timed_cooldown_edit
             else:
                 document['timed'] = None; document['toggle'] = None
                 if document.get('recovery') is None:
-                    fresh = catalog.Catalog(self.packet).new(5)
+                    fresh = self.catalog_model().new(5)
                     document.update(recovery=fresh['recovery'], effect=fresh['effect'])
                 self.category_forms[5].collect(document)
                 kind = int(document['recovery']['delivery_kind'])
@@ -2450,7 +2820,11 @@ class ItemPage(QWidget):
                 scripted = document['child']['container_kind'] in ('3','4')
                 if document['child']['container_kind']=='4':self.pet_hatch_panel.collect(document)
                 else:document['hatch']=None
-                document['loot'] = None if scripted else dict(pick_mode=self.loot_mode.currentData(), entries=self.loot_table.entries())
+                if scripted:document['loot']=None
+                elif not self.live_container_contents():document['loot']=dict(pick_mode=self.loot_mode.currentData(), entries=self.loot_table.entries())
+                elif not document.get('loot'):
+                    document['loot']=dict(pick_mode='1',entries=[dict(entry_no='1',reward_kind='9',item_category_id=None,item_local_id=None,
+                        amount='0',weight='1',rare_attribute_chance_bp='0',refinement_level='0')])
         if category in (1, 2, 3, 4, 7, 11, 15):
             if category==15 and document['child']['companion_kind']=='3':
                 document['refinement']=dict(profile_kind='1',max_level='0')
@@ -2488,7 +2862,7 @@ class ItemPage(QWidget):
         if self.packet is None or self.document is None: return
         if self.workspace.currentWidget() != self.editor_page or self.active() or self.owner.busy(): return
         state = getattr(self, 'state', None) or {}
-        if not self.local() or not state.get('database_running') or state.get('running'):
+        if not self.local() or not state.get('database_running') or (state.get('running') and not hasattr(self.owner,'pending_changes')):
             self.show_form_error('A mentéshez válassz helyi szervert, indítsd el az adatbázist és állítsd le a játékszervert.')
             return
         if not self.dirty and self.original_key is not None: return
@@ -2499,11 +2873,15 @@ class ItemPage(QWidget):
         def done(result):
             self.dirty = False; self.document = None; self.original_key = None
             self.loaded(result, new_key)
-            self.status.setText('Mentve: %s · tárgytípus %d:%d. A katalógus a mentett értékeket mutatja.' % (readable_name(document['base']), *new_key))
+            self.status.setText('Mentve: %s. A katalógus a mentett értékeket mutatja.' % readable_name(document['base']))
             self.owner.statusBar().showMessage('Tárgytípus mentve: %d:%d' % new_key, 6000)
-        self.run(lambda: catalog.save(root, packet, document, key), done, 'Tárgy ellenőrzése és mentése a helyi katalógusba…')
+        self.refresh_review()
+        rows=[(readable_name(document['base']),*[self.changes_table.item(row,column).text() for column in range(3)]) for row in range(self.changes_table.rowCount())]
+        self.review_write('Tárgytípus módosítása','item',dict(before=packet,document=document,key=key),rows,
+            lambda data:catalog.save(root,data['before'],data['document'],tuple(data['key']) if data['key'] is not None else None),done,
+            'Jóváhagyott tárgy ellenőrzése és mentése…')
 
     def discard(self):
         if self.original_key is None:
             self.dirty = False; self.show_document(None); return
-        self.show_document(catalog.Catalog(self.packet).item(self.original_key))
+        self.show_document(self.catalog_model().item(self.original_key))

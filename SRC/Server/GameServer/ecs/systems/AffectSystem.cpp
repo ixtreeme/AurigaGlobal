@@ -1,8 +1,10 @@
 #include "../../core/stdafx.h"
+#include "../../combat/DeathRecapEvents.hpp"
 #include <common/retired_content.h>
 #include "PointSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
 #include "../../item/ItemStore.hpp"
+#include "../../item/TypedCompanions.hpp"
 #include "../../item/TypedRecovery.hpp"
 #include "../../item/TypedEquipment.hpp"
 #include "../CharacterAccessors.hpp"
@@ -163,6 +165,7 @@ EVENTFUNC(fire_event)
         g_dispatcher.trigger(ecs::EvFireApplied { character, dam });
     }
 
+    DeathRecap::Events::PeriodicScope recapPeriodic;
     if (CombatSystem::Damage(character, info->attacker, dam, DAMAGE_TYPE_FIRE)) {
         if (auto* state = g_registry.try_get<ecs::AffectEventState>(character))
             state->fireEvent = nullptr;
@@ -525,7 +528,10 @@ bool IsImmune(entt::entity e, uint32_t immuneFlag)
     }
 
     const auto* immunity = g_registry.try_get<ecs::ImmunityFlags>(e);
-    if (!immunity || !IS_SET(immunity->flags, immuneFlag)) {
+    const bool equipmentImmune=HasTypedEquipment(e) && ((IS_SET(immuneFlag,IMMUNE_STUN) && ecs::PointSystem::Get(e,POINT_IMMUNE_STUN)>0)
+        || (IS_SET(immuneFlag,IMMUNE_SLOW) && ecs::PointSystem::Get(e,POINT_IMMUNE_SLOW)>0)
+        || (IS_SET(immuneFlag,IMMUNE_FALL) && ecs::PointSystem::Get(e,POINT_IMMUNE_FALL)>0));
+    if (!equipmentImmune && (!immunity || !IS_SET(immunity->flags, immuneFlag))) {
         if (test_server && ecs::PlayerRuntime::IsPC(e)) {
             const std::string name(ecs::PlayerRuntime::GetName(e));
             ecs::ChatSystem::Send(e, CHAT_TYPE_PARTY, "<IMMUNE_FAIL> (%s) NO_IMMUNE_FLAG", name.c_str());
@@ -1237,6 +1243,7 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
     // Typed items can load before saved affects. A dormant pet has no source
     // transition to trigger another projection, so publish the final values too.
     if(g_registry.valid(entity) && g_registry.all_of<ecs::TypedItems>(entity))SendTypedEquipment(entity);
+    ResumeTypedCompanionSummon(entity);
 }
 
 bool IsGoodAffect(uint8_t bAffectType)

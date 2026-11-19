@@ -52,6 +52,8 @@ class PasswordTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.addCleanup(passwords.forget)
         self.profile = profile(self.root)
+        from ReviewFixture import approve_fixture
+        approve_fixture(self,type('ApprovalOwner',(),{})())
 
     def test_old_profiles_upgrade_to_key_authentication(self):
         old = copy.deepcopy(self.profile)

@@ -54,6 +54,11 @@ void Decisions()
     r.draws={{4001,21}};p=Value(PlanAttributeService(*c,r));Check(p.after.slots[0]==BonusEntry{BonusId::PhysicalDefenseFlat,200},"next tier and next weighted type boundary");
     auto source=a::Catalog();source.attributeProfiles[0].candidates[1].values.resize(1);c=Catalog(source);r.draws={{10000,1}};
     Check(Value(PlanAttributeService(*c,r)).after.slots[0]->valueScaled==100,"tier clamped to selected type maximum");
+    auto retained=a::Catalog();retained.attributeProfiles[0].candidates.push_back({AttributePool::Normal,BonusId::CritChance,0,{{1,100}}});
+    auto retainedCatalog=Catalog(retained);auto retainedState=InstanceAttributes{};retainedState.slots[0]=BonusEntry{BonusId::CritChance,800};
+    Check(ValidateInstanceAttributes(*retainedCatalog,f::Sword(),retainedState).has_value(),"zero-weight admission preserves a historical instance bonus");
+    auto draw=Request(1);draw.draws={{1,1}};
+    Check(Value(PlanAttributeService(*retainedCatalog,draw)).after.slots[0]->bonus!=BonusId::CritChance,"retained-only bonus has no roll probability");
     source=a::Catalog();source.attributeServices[0].successBp=5000;source.attributeServices[0].consumeOnFailure=true;c=Catalog(source);r=Request(1);r.successRoll=5001;
     p=Value(PlanAttributeService(*c,r));Check(!p.succeeded && p.consumeUnits==1 && p.after==r.state,"failed consuming attempt retains state");
     r.successRoll=5000;r.draws={{1,1}};Check(Value(PlanAttributeService(*c,r)).succeeded,"inclusive success endpoint");
@@ -118,13 +123,29 @@ void CodecAndPublication()
     Check(contributions.size()==2 && contributions[0]==contributions[1],"same bonus in normal and rare remains two separate sources");
     auto source=a::Catalog();std::ranges::reverse(source.attributeProfiles[0].candidates);std::ranges::reverse(source.attributeServices);std::ranges::reverse(source.attributeBindings);
     Check(Catalog(source)->ContentHash()==c->ContentHash(),"content order cannot change hash");
-    for(unsigned i=0;i<10;++i){auto invalid=a::Catalog();auto& p=invalid.attributeProfiles[0];
-        switch(i){case 0:p.groups[0].capacity=6;break;case 1:p.candidates[0].weight=0;break;case 2:p.candidates[0].values[0].value=0;break;
+    for(unsigned i=0;i<11;++i){auto invalid=a::Catalog();auto& p=invalid.attributeProfiles[0];
+        switch(i){case 0:p.groups[0].capacity=6;break;case 1:p.candidates[0].weight=1000001;break;case 2:p.candidates[0].values[0].value=0;break;
         case 3:p.candidates[0].values[1].tier=3;break;case 4:p.candidates.push_back(p.candidates[0]);break;
         case 5:invalid.attributeBindings.push_back(invalid.attributeBindings[0]);break;case 6:invalid.attributeServices[0].tiers={{1,10001}};break;
         case 7:invalid.attributeServices[2].targetMask=8;break;case 8:invalid.attributeServices[1].consumeOnFailure=true;break;
-        case 9:invalid.consumables.back().recoveryProfile=1;break;}
+        case 9:invalid.consumables.back().recoveryProfile=1;break;case 10:invalid.attributeServices[2].targetMask=16;break;}
         Check(!BuildItemCatalog(invalid),"invalid content never publishes");}
+}
+void PendantAndLevelPolicies()
+{
+    auto source=a::Catalog();source.armors[0].slot=EquipmentSlot::Pendant;
+    auto request=Request(1);request.items.target.item=f::Armor();request.items.target.refinementLevel=0;request.draws={{5000,1}};
+    Check(PlanAttributeService(*Catalog(source),request).error()==AttributeError::TargetDenied,"ordinary armor tools cannot target a pendant");
+    source.attributeServices[0].targetMask=16;
+    Check(PlanAttributeService(*Catalog(source),request).has_value(),"explicit pendant tool rolls the pendant profile");
+    source.armors[0].slot=EquipmentSlot::Body;
+    Check(PlanAttributeService(*Catalog(source),request).error()==AttributeError::TargetDenied,"pendant tool cannot target ordinary armor");
+    source=a::Catalog();source.attributeServices[0].maximumTargetLevel=30;
+    source.refinements[1].levels[9].minimumLevel=42;
+    auto high=Request(1);high.draws={{1,1}};
+    Check(PlanAttributeService(*Catalog(source),high).error()==AttributeError::TargetDenied,"green tool checks the target's exact refinement-level requirement");
+    source.attributeServices[0].targetMask=32;
+    Check(!BuildItemCatalog(source),"unknown target bits remain invalid");
 }
 }
 int main(int argc,char** argv)
@@ -132,6 +153,6 @@ int main(int argc,char** argv)
     try{
         if(argc==2 && std::string_view(argv[1])=="--hash-fixture"){for(auto b:Catalog(a::HashFixture())->ContentHash())std::printf("%02x",b);std::puts("");return 0;}
         if(argc==2 && std::string_view(argv[1])=="--state-fixture"){for(auto b:Value(EncodeInstanceAttributes(*Catalog(),f::Sword(),a::PayloadFixture())))std::printf("%02x",b);std::puts("");return 0;}
-        Lifecycle();Decisions();Rejections();CodecAndPublication();std::cout<<checks<<" Instance attribute checks passed\n";return 0;
+        Lifecycle();Decisions();Rejections();CodecAndPublication();PendantAndLevelPolicies();std::cout<<checks<<" Instance attribute checks passed\n";return 0;
     }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
 }

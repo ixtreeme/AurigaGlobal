@@ -8,10 +8,11 @@
 
 namespace auriga::item
 {
-enum class ToolKind : std::uint8_t { Pick = 1, Rod = 2, Axe = 3, Shears = 4 };
+enum class ToolKind : std::uint8_t { Pick = 1, Rod = 2, Axe = 3, Shears = 4, Detector = 5 };
 struct ToolInstanceState
 {
     std::uint32_t trainingPoints=0,baitPower=0;
+    std::optional<std::uint16_t> remainingUses;
     bool operator==(const ToolInstanceState&) const = default;
 };
 enum class FishingPool : std::uint8_t { None = 1, First = 2, Second = 3 };
@@ -26,6 +27,8 @@ struct ToolLevel
     ToolFailure failure = ToolFailure::LosePoints;
     std::optional<std::uint16_t> failureLevel;
     std::uint16_t failureLossBp = 0;
+    std::optional<ItemKey> successItem, failureItem;
+    std::uint16_t successLevel=0,displayGrade=65535; // Display grade may differ from the native state index.
 };
 struct ToolProfile { std::uint32_t id = 0; std::string code; std::vector<ToolLevel> levels; };
 struct ItemToolRow
@@ -34,6 +37,8 @@ struct ItemToolRow
     ToolKind kind{};
     std::uint32_t profile = 0;
     FishingPool fishingPool = FishingPool::None;
+    bool allWaterPools=false;
+    std::uint16_t maximumUses=0; // Detectors only; separate from gathering practice and bait.
 };
 bool ValidToolProfile(const ToolProfile&) noexcept;
 enum class FishingKind : std::uint8_t { LiveFish = 1, DeadFish = 2, Bait = 3 };
@@ -86,6 +91,7 @@ struct ToolActionPlan
     std::uint16_t afterLevel = 0;
     std::uint32_t afterPoints = 0;
     bool success = false;
+    std::optional<ItemKey> afterItem; // Explicit transitions reset the old instance's bait.
 };
 class ItemCatalog;
 std::expected<ToolActionPlan,GatheringError> PlanToolAction(const ItemCatalog&,const ToolActionRequest&);

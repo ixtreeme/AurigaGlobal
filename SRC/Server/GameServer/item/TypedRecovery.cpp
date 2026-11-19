@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "TypedRecovery.hpp"
+#include "TypedWorldUtilities.hpp"
 #include "TypedPolymorph.hpp"
+#include "TypedGathering.hpp"
 #include "TypedTrade.hpp"
 #include "TypedEquipment.hpp"
 #include "../social/marriage.h"
@@ -14,12 +16,14 @@
 #include "../quest/questpc.h"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
+#include "../ecs/systems/AffectSystem.hpp"
 #include "../ecs/systems/InventorySystem.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../entity/char_manager.h"
 #include "../network/desc.h"
 #include "../core/packet.h"
+#include "EquipmentPointBindings.hpp"
 #include <item/RecoveryRuntime.hpp>
 #include <item/AutomaticRuntime.hpp>
 #include <item/SocketMaintenance.hpp>
@@ -55,7 +59,7 @@ std::shared_ptr<RecoveryClock> Find(entt::entity e)
 {const auto* t=g_registry.valid(e) ? g_registry.try_get<ecs::TypedItems>(e) : nullptr;if(!t)return {};const auto i=clocks.find({t->state.fence.owner,t->state.fence.sessionGeneration});return i==clocks.end() ? nullptr : i->second;}
 std::uint64_t Elapsed(const RecoveryClock& c)
 {if(!c.active)return 0;const auto now=c.stopped ? c.end : Time::now();return static_cast<std::uint64_t>(std::max<std::int64_t>(0,std::chrono::duration_cast<std::chrono::milliseconds>(now-c.anchor).count()));}
-bool Timed(const items::persistence::LoadedItemOwner& state){return !state.recovery.doses.empty() || !state.recovery.cooldowns.empty() || !state.recovery.effects.empty() || state.recovery.polymorph.has_value() || std::ranges::any_of(state.items,[](const auto& i){return (i.automatic && i.automatic->active) || (i.toggle && i.toggle->active);});}
+bool Timed(const items::persistence::LoadedItemOwner& state){return !state.recovery.worldCooldowns.empty() || !state.recovery.doses.empty() || !state.recovery.cooldowns.empty() || !state.recovery.effects.empty() || state.recovery.polymorph.has_value() || std::ranges::any_of(state.items,[](const auto& i){return (i.automatic && i.automatic->active) || (i.toggle && i.toggle->active);});}
 bool AutomaticAllowed(const items::InstantRecoveryAdmission& a){return a.context==items::RecoveryContext::World || a.context==items::RecoveryContext::Duel || a.context==items::RecoveryContext::GuildWar;}
 bool SameAutomaticPreview(items::PersistentItem a,items::PersistentItem b)
 {if(!a.automatic || !b.automatic || a.automatic->active!=b.automatic->active)return false;a.revision=b.revision;a.automatic=b.automatic;return a==b;}
@@ -103,16 +107,35 @@ void StartTypedRecoveryClock(entt::entity e)
 {const auto* t=g_registry.try_get<ecs::TypedItems>(e);const auto* l=g_registry.try_get<ecs::TypedItemLogin>(e);if(!t || !l)return;auto c=std::make_shared<RecoveryClock>();c->state=t->state;c->token=l->token;c->actor.pools={1000,1000,0,0};c->actor.context=items::RecoveryContext::World;clocks[{c->state.fence.owner,c->state.fence.sessionGeneration}]=std::move(c);}
 std::uint64_t TypedItemEffectNow(){return static_cast<std::uint64_t>(std::max<std::int64_t>(0,std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()));}
 items::ItemEffectFacts TypedItemEffectFacts(entt::entity e)
-{items::ItemEffectFacts f;f.actor=TypedRecoveryAdmission(e,{},0);f.alive=f.actor.pools.hpRaw>0 && !CombatSystem::IsDead(e);if(const auto clock=Find(e);clock && clock->died)f.alive=false;f.allowed=f.actor.context==items::RecoveryContext::World || f.actor.context==items::RecoveryContext::Duel || f.actor.context==items::RecoveryContext::Arena || f.actor.context==items::RecoveryContext::GuildWar;if(const auto clock=Find(e);clock && clock->clearPolymorph)f.polymorphAllowed=false;f.married=marriage::CManager::instance().IsMarried(ecs::PlayerRuntime::GetPlayerID(e));f.partyLeader=ecs::SocialSystem::GetPartyLeader(e)==e;return f;}
+{items::ItemEffectFacts f;f.actor=TypedRecoveryAdmission(e,{},0);f.alive=f.actor.pools.hpRaw>0 && !CombatSystem::IsDead(e);if(const auto clock=Find(e);clock && clock->died)f.alive=false;f.allowed=f.actor.context==items::RecoveryContext::World || f.actor.context==items::RecoveryContext::Duel || f.actor.context==items::RecoveryContext::Arena || f.actor.context==items::RecoveryContext::GuildWar;if(const auto clock=Find(e);clock && clock->clearPolymorph)f.polymorphAllowed=false;if(ecs::SocialSystem::GetMyShop(e)!=entt::null)f.polymorphAllowed=false;f.married=marriage::CManager::instance().IsMarried(ecs::PlayerRuntime::GetPlayerID(e));f.partyLeader=ecs::SocialSystem::GetPartyLeader(e)==e;if(AffectSystem::FindAffect(e,AFFECT_FISH_MIND_PILL))f.existingUtilityMask|=1;if(AffectSystem::FindAffect(e,AFFECT_NO_DEATH_PENALTY))f.existingUtilityMask|=2;if(AffectSystem::FindAffect(e,AFFECT_BLEND,POINT_ENERGY) || AffectSystem::FindAffect(e,AFFECT_EXP_BONUS_EURO_FREE,POINT_RESIST_MAGIC))f.existingUtilityMask|=4;if(AffectSystem::FindAffect(e,AFFECT_NOG_ABILITY))f.existingFoodFamilyMask|=4;if(AffectSystem::FindAffect(e,AFFECT_RAMADAN_ABILITY))f.existingFoodFamilyMask|=8;if(const auto* list=g_registry.try_get<ecs::AffectList>(e))for(const auto& slot:list->affects)if(slot.value.dwType==AFFECT_FISH_BONUS)if(const auto binding=EquipmentPointBindingFor(slot.value.bApplyOn);binding && std::ranges::find(f.existingFishBonuses,binding->bonus)==f.existingFishBonuses.end())f.existingFishBonuses.push_back(binding->bonus);return f;}
 std::uint64_t TypedRecoveryElapsed(entt::entity e){const auto c=Find(e);if(c && !c->active && !c->stopped && InGame(e)){c->active=true;c->anchor=Time::now();}return c ? Elapsed(*c) : 0;}
 std::uint64_t TypedRecoveryCooldown(entt::entity e,std::uint32_t id)
 {const auto* t=g_registry.try_get<ecs::TypedItems>(e);if(!t)return 0;const auto remaining=items::RecoveryCooldownRemaining(t->state.recovery,id),elapsed=TypedRecoveryElapsed(e);return remaining-std::min(remaining,elapsed);}
 void SendTypedRecovery(entt::entity e){if(auto* s=Session(e)){s->visible=true;Reply(e,s->status==Status::Closed ? Status::Ready : s->status,s->error);}}
-void NotifyTypedRecoveryDeath(entt::entity e){const auto c=Find(e);if(c){c->died=true;TickTypedRecovery();}}
+bool HasTypedTimedUtility(entt::entity e,items::TimedEffectUtility utility)
+{
+    const auto c=store::CurrentCatalog();const auto* t=g_registry.valid(e) ? g_registry.try_get<ecs::TypedItems>(e) : nullptr;if(!c || !t)return false;
+    auto projected=items::AdvanceRecoverySchedule(*c,t->state.recovery,TypedRecoveryElapsed(e));if(!projected)return false;const auto facts=TypedItemEffectFacts(e);const auto now=TypedItemEffectNow();items::NormalizeTimedItems(*c,*projected,now,&facts);
+    return items::FindTimedUtility(*c,*projected,utility,now).has_value();
+}
+bool RequestTypedDeathProtection(entt::entity e,std::function<void(bool)> done)
+{
+    const auto c=store::CurrentCatalog();const auto clock=Find(e);const auto* t=g_registry.valid(e) ? g_registry.try_get<ecs::TypedItems>(e) : nullptr;
+    if(!c || !t || !clock || !InGame(e))return false;
+    const auto elapsed=TypedRecoveryElapsed(e),now=TypedItemEffectNow();auto projected=items::AdvanceRecoverySchedule(*c,t->state.recovery,elapsed);if(!projected)return false;items::NormalizeTimedItems(*c,*projected,now);
+    const auto effect=items::FindTimedUtility(*c,*projected,items::TimedEffectUtility::NoDeathPenalty,now);if(!effect)return false;
+    auto permit=ecs::resource_admission::Enter({e},auriga::resource_admission::Operation::ItemUse);items::ItemCommit operation;
+    if(!permit || !permit->Current() || Current(*clock)!=e || clock->pending || g_registry.all_of<ecs::TypedItemBusy>(e) || !Operation(operation)){done(false);return true;}
+    const auto commit=items::MakeItemEffectCancel(*c,operation.operationId,t->state.fence,t->state.recovery,elapsed,now,t->state.recovery.generation,*effect);if(!commit){done(false);return true;}
+    const auto fence=t->state.fence;auto held=std::make_shared<auriga::resource_admission::Permit>(std::move(*permit));g_registry.emplace_or_replace<ecs::TypedItemBusy>(e);g_registry.emplace_or_replace<TypedRecoveryBusy>(e);
+    if(!store::RequestCommit(fence.owner,fence.sessionGeneration,*commit,[clock,held,done](store::CommitOutcome out){const auto owner=Current(*clock);if(owner==entt::null || clock->stopped)return;const bool saved=out.write.has_value() && out.state.has_value();if(saved)done(true);Complete(clock,std::move(out),{},true,false);if(!saved && Current(*clock)==owner && InGame(owner))done(false);})){g_registry.remove<ecs::TypedItemBusy,TypedRecoveryBusy>(e);done(false);}
+    return true;
+}
+void NotifyTypedRecoveryDeath(entt::entity e){StopTypedGathering(e);const auto c=Find(e);if(c){c->died=true;TickTypedRecovery();}}
 bool RequestTypedPolymorphClear(entt::entity e)
 {const auto c=Find(e);const auto* t=g_registry.valid(e) ? g_registry.try_get<ecs::TypedItems>(e) : nullptr;if(!c || !t || !t->state.recovery.polymorph)return false;c->clearPolymorph=true;RefreshTypedPolymorph(e);TickTypedRecovery();return true;}
 void StopTypedRecoveryClock(entt::entity e)
-{const auto c=Find(e);if(!c || c->stopped)return;c->stopped=true;c->end=Time::now();if(g_registry.valid(e)){c->actor=TypedRecoveryAdmission(e,{},0);c->effects=TypedItemEffectFacts(e);}if(!c->pending)c->state=g_registry.get<ecs::TypedItems>(e).state;TickTypedRecovery();}
+{StopTypedGathering(e);const auto c=Find(e);if(!c || c->stopped)return;c->stopped=true;c->end=Time::now();if(g_registry.valid(e)){c->actor=TypedRecoveryAdmission(e,{},0);c->effects=TypedItemEffectFacts(e);}if(!c->pending)c->state=g_registry.get<ecs::TypedItems>(e).state;TickTypedRecovery();}
 namespace auriga::item::runtime
 {
 bool DeferRecoveryLogin(std::uint32_t pid,std::function<void()> resume)
@@ -138,6 +161,7 @@ void TickTypedRecovery()
         const auto c=it->second;const auto e=Current(*c);if(!c->stopped && e==entt::null){c->stopped=true;c->end=Time::now();}
         if(!c->active && !c->stopped && InGame(e)){c->active=true;c->anchor=Time::now();}
         if(c->pending){++it;continue;}
+        if(!c->stopped && e!=entt::null && ResumeTypedWorldWarp(e)){++it;continue;}
         if(!c->stopped && e!=entt::null){if(g_registry.all_of<ecs::TypedItemBusy>(e) && !TypedTradeAllowsRecoveryTick(e)){++it;continue;}c->state=g_registry.get<ecs::TypedItems>(e).state;if(c->active){c->actor=TypedRecoveryAdmission(e,{},0);c->effects=TypedItemEffectFacts(e);}}
         if(c->clearPolymorph && !c->state.recovery.polymorph)c->clearPolymorph=false;
         if(c->died && c->state.recovery.doses.empty() && c->state.recovery.creditRaw==std::array<std::uint16_t,2>{} && !items::HasDeathItemEffects(*catalog,c->state.recovery,c->state.items))c->died=false;

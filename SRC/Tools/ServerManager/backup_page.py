@@ -17,6 +17,7 @@ import backend as api
 import backup_tools as backups
 import server_targets as targets
 import ssh_connection as ssh
+import change_review as review
 
 
 class BackupTask(QThread):
@@ -52,6 +53,7 @@ class BackupPage(QWidget):
         self.comment=QLineEdit();self.comment.setPlaceholderText('Opcionális megjegyzés a mentéshez');inner.addWidget(self.comment)
         row=QHBoxLayout()
         self.create_button=QPushButton('Új mentés');self.create_button.setObjectName('Primary');self.create_button.clicked.connect(self.create)
+        self.create_button.setProperty('role', 'success')
         self.download_button=QPushButton('Letöltés / másolat mentése…');self.download_button.clicked.connect(self.download)
         self.import_button=QPushButton('Mentési archívum betöltése…');self.import_button.clicked.connect(self.import_file)
         for button in (self.create_button,self.download_button,self.import_button):row.addWidget(button)
@@ -65,6 +67,7 @@ class BackupPage(QWidget):
         self.preview.setPlaceholderText('A terv megmutatja a fájlcseréket, törléseket és az érintett SQL-adatbázisokat.');inner.addWidget(self.preview)
         row=QHBoxLayout()
         self.restore_button=QPushButton('Terv szerinti visszaállítás');self.restore_button.setObjectName('Primary');self.restore_button.clicked.connect(self.restore)
+        self.restore_button.setProperty('role', 'warning')
         row.addWidget(self.restore_button)
         row.addWidget(QLabel('Előtte automatikus védőmentés készül. A játékszervert állítsd le.'),1);inner.addLayout(row)
         policy=QHBoxLayout()
@@ -77,6 +80,7 @@ class BackupPage(QWidget):
         policy.addStretch();inner.addLayout(policy)
         row=QHBoxLayout();row.addWidget(self.auto_deploy)
         self.policy_button=QPushButton('Mentési beállítások mentése');self.policy_button.clicked.connect(self.save_policy);row.addWidget(self.policy_button);row.addStretch();inner.addLayout(row)
+        self.policy_button.setProperty('role', 'success')
         hint=QLabel('Az SQL-mentés idején az írások átmenetileg várakozhatnak. A csomag jelszavakat és privát kulcsokat is tartalmazhat. '
             'Az ütemezés a célgép idejét követi, az app bezárása után is fut; Windowson bejelentkezett felhasználó szükséges.')
         hint.setWordWrap(True);inner.addWidget(hint)
@@ -119,9 +123,28 @@ class BackupPage(QWidget):
         self.restore_button.setEnabled(enabled and self.plan is not None and self.confirm.isChecked() and not running)
 
     def failed(self,text):
+        stage=getattr(self,'import_stage',None)
+        if stage:stage.finish(False);self.import_stage=None
         if self.task is None and self.transfer is None and self.temporary:
             self.temporary.cleanup();self.temporary=None
         self.status.setText(text);self.invalidate()
+        self.pending_done(False,text)
+
+    def pending_done(self,ok,message=''):
+        callback=getattr(self,'pending_callback',None);self.pending_callback=None
+        if callback:
+            from PySide6.QtCore import QTimer
+            QTimer.singleShot(0,lambda:callback(ok,message))
+
+    def execute_pending_import(self,stage,data,callback):
+        value=dict(data['arguments']);value['path']=str(stage.path/'files/backup.tar.gz');self.pending_callback=callback;self.import_stage=stage
+        if not self.owner.is_remote():
+            self.run('backup-import',value,lambda result:self.pending_done(True),stage=stage);return
+        self.temporary=tempfile.TemporaryDirectory(prefix='auriga-approved-backup-');identity=secrets.token_hex(12)
+        def prepared(packet):
+            def uploaded():self.run('backup-import',dict(transfer=identity,sha256=value['sha256']),lambda result:(self.transfer_done('Archívum feltöltve.'),self.pending_done(True)),stage=stage)
+            self.start_sftp('put',packet['path'],Path(value['path']),uploaded)
+        self.run('backup-upload-prepare',dict(transfer=identity),prepared)
 
     def run_local(self,function,callback):
         task=BackupTask(function,self);self.task=task
@@ -138,10 +161,34 @@ class BackupPage(QWidget):
             self.owner.refresh()
         task.finished.connect(finished);task.start();self.owner.refresh()
 
-    def run(self,operation,args,callback):
+    def run(self,operation,args,callback,stage=None):
         self.next_poll=time.monotonic()+30
+        if stage is None and operation in ('backup-create','backup-policy','backup-restore'):
+            if operation=='backup-policy':rows=review.dict_rows('Mentési beállítások',self.data.get('policy',{}),args['policy'])
+            elif operation=='backup-create':rows=[('Biztonsági mentés','Új archívum','Nincs',', '.join(args['scopes'])+' · '+args.get('comment',''))]
+            else:
+                plan=self.plan or {};rows=[('Visszaállítás','Mentés', 'Jelenlegi állapot',args['id']),
+                    ('SQL-kapcsolatok','Megtartás','Jelenlegi kapcsolatok','Igen' if args['preserve_connections'] else 'Nem, a mentésből kerülnek vissza')]
+                rows.extend((name,'Fájl','Jelenlegi fájl','Mentésből visszaállítva') for name in plan.get('replace',[]))
+                if not plan.get('replace'):rows.append(('Visszaállítás','Fájlok száma','Jelenlegi állapot',str(plan.get('files',0))))
+                rows.extend((name,'Többletfájl','Meglévő','Törlés') for name in plan.get('remove',[]))
+                rows.extend((row['host']+':'+str(row['port']),'SQL-adatbázisok teljes felülírása',', '.join(row['databases']),'Mentés állapota') for row in plan.get('sql',[]))
+            try:stage=review.request(self.owner,'Mentési művelet jóváhagyása',operation,dict(arguments=args,plan=self.plan if operation=='backup-restore' else None,
+                before_policy=self.data.get('policy') if operation=='backup-policy' else None),rows)
+            except (api.EditorError,OSError,ValueError) as error:self.failed(str(error));return
+            if stage is None:self.status.setText('Ideiglenes mentés elkészült. Nem történt feltöltés.');return
+            try:args=stage.begin(self.owner)['arguments']
+            except (api.EditorError,OSError,ValueError) as error:self.failed(str(error));return
+        original_callback=callback
+        if stage is not None:
+            def callback(value):stage.finish(True);original_callback(value)
+        def failed(message):
+            if stage is not None:stage.finish(False)
+            self.failed(message)
         if self.owner.is_remote():
-            return self.owner.remote_request(operation,args,callback,error_callback=self.failed)
+            started=self.owner.remote_request(operation,args,callback,error_callback=failed)
+            if stage is not None and not started:stage.finish(False)
+            return started
         root=self.owner.root
         actions={
             'backup-list':lambda:backups.inventory(root,api),
@@ -151,7 +198,12 @@ class BackupPage(QWidget):
             'backup-policy':lambda:backups.save_policy(root,api,args['policy']),
             'backup-info':lambda:backups.archive_info(root,args['id']),
             'backup-import':lambda:backups.import_archive(root,api,args['path'],args['sha256'])}
-        self.run_local(actions[operation],callback)
+        def write():
+            try:return actions[operation]()
+            except Exception:
+                if stage is not None:stage.finish(False)
+                raise
+        self.run_local(write,callback)
 
     def refresh_list(self):
         if self.owner.busy():return
@@ -217,7 +269,7 @@ class BackupPage(QWidget):
         if self.owner.busy() or not self.plan or not self.confirm.isChecked():return
         if any(editor.dirty for editor in self.owner.editors):
             self.failed('Visszaállítás előtt mentsd vagy vesd el a megnyitott szerkesztők módosításait.');return
-        plan=self.plan;self.invalidate();self.status.setText('Védőmentés és visszaállítás folyamatban. Hagyd nyitva az alkalmazást…')
+        plan=self.plan
         args=dict(id=plan['id'],scopes=plan['scopes'],fingerprint=plan['fingerprint'],preserve_connections=self.preserve.isChecked())
         def restored(value):
             self.done('Visszaállítás kész. Védőmentés: '+value['safety_backup'])
@@ -276,12 +328,21 @@ class BackupPage(QWidget):
         self.temporary=tempfile.TemporaryDirectory(prefix='auriga-backup-upload-');path=Path(self.temporary.name)/'backup.tar.gz'
         def snapshot():shutil.copyfile(source,path);return dict(sha256=backups.digest(path),path=str(path))
         def ready(value):
+            try:
+                stage=review.request(self.owner,'Mentési archívum betöltése','backup-import',dict(arguments=value),
+                    [(Path(source).name,'Mentési archívum','Nincs a mentéstárban','Betöltés; a szerveradatok visszaállítása külön művelet')],
+                    files={'backup.tar.gz':value})
+                if stage is None:
+                    self.temporary.cleanup();self.temporary=None;self.status.setText('Ideiglenes mentés elkészült. Nem történt feltöltés.');return
+                value=stage.begin(self.owner)['arguments'];value['path']=str(stage.path/'files/backup.tar.gz')
+            except (api.EditorError,OSError,ValueError) as error:self.failed(str(error));return
             if not self.owner.is_remote():
-                self.run('backup-import',value,lambda result:self.transfer_done('A mentés betöltve: '+result['id']));return
+                self.run('backup-import',value,lambda result:self.transfer_done('A mentés betöltve: '+result['id']),stage=stage);return
             identity=secrets.token_hex(12)
+            self.import_stage=stage
             def prepared(packet):
-                def uploaded():self.run('backup-import',dict(transfer=identity,sha256=value['sha256']),lambda result:self.transfer_done('A mentés feltöltve és ellenőrizve: '+result['id']))
-                self.start_sftp('put',packet['path'],path,uploaded)
+                def uploaded():self.run('backup-import',dict(transfer=identity,sha256=value['sha256']),lambda result:self.transfer_done('A mentés feltöltve és ellenőrizve: '+result['id']),stage=stage)
+                self.start_sftp('put',packet['path'],Path(value['path']),uploaded)
             self.run('backup-upload-prepare',dict(transfer=identity),prepared)
         self.status.setText('Feltöltési pillanatkép és ellenőrzőösszeg készítése…');self.run_local(snapshot,ready)
 
@@ -308,11 +369,14 @@ class BackupPage(QWidget):
         except Exception as error:self.transfer_failed(str(error))
 
     def transfer_failed(self,text):
+        stage=getattr(self,'import_stage',None)
+        if stage:stage.finish(False);self.import_stage=None
         if self.session:self.session.close();self.session=None
         self.transfer=None
         if self.temporary:self.temporary.cleanup();self.temporary=None
         self.failed(text)
 
     def transfer_done(self,text):
+        self.import_stage=None
         if self.temporary:self.temporary.cleanup();self.temporary=None
         self.done(text)

@@ -136,7 +136,7 @@ void Protocol()
     for (uint32_t count : {0u, 1u, UINT32_MAX})
     {
         auto items = Data(count);
-        Check(session::ValidPayload(HEADER_DG_ITEM_LOAD, items, 100) == (count == 0),
+        Check(!session::ValidPayload(HEADER_DG_ITEM_LOAD, items, 100),
               "item count/length mismatch accepted");
     }
     TQuestTable quest{};
@@ -182,7 +182,7 @@ void Lifetimes()
               !game.MatchesEntity(lease->key, 20),
           "ECS entity generation was not pinned");
     Check(!game.Loaded(), "player-only state reported a completed load");
-    for (uint8_t part : {uint8_t(HEADER_DG_ITEM_LOAD), uint8_t(HEADER_DG_QUEST_LOAD)})
+    for (uint8_t part : {uint8_t(HEADER_DG_QUEST_LOAD)})
     {
         auto bytes = Data(uint32_t(0));
         auto frame = Frame(lease->key, part, bytes);

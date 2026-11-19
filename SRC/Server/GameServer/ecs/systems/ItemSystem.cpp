@@ -5,6 +5,7 @@
 #include "QuestSystem.hpp"
 #include "SocialSystem.hpp"
 #include "InventorySystem.hpp"
+#include "../../item/LegacyItemBoundary.hpp"
 
 #include "ItemSystem.hpp"
 #include "WoodcuttingSystem.hpp"
@@ -359,6 +360,7 @@ ecs::ItemProtoRef MakeItemPrototype(const TItemTable* proto, uint32_t displayVnu
 } // namespace
 
 
+#ifdef AURIGA_LEGACY_ITEM_TESTS
 entt::entity EntityFactory::CreateItemEntity(entt::registry& reg, const TItemTable* proto,
     uint32_t vnum, uint32_t id, uint32_t vid, uint32_t mask)
 {
@@ -421,6 +423,8 @@ entt::entity EntityFactory::CreateItemEntity(entt::registry& reg, const TItemTab
     }
 }
 
+#endif
+
 void EntityFactory::DestroyItemEntity(entt::registry& reg, entt::entity item)
 {
     if (&reg != &g_registry || !reg.valid(item)) return;
@@ -471,6 +475,7 @@ bool RefreshItemPrototype(entt::entity item, const TItemTable* proto)
 
 bool PickupItem(entt::entity character, uint32_t vid)
 {
+    if (BlocksLegacyItems(character)) return false;
     if (!ecs::PlayerRuntime::IsPC(character)) return false;
     const auto initiating = ecs::resource_admission::Enter({character},
         auriga::resource_admission::Operation::Pickup);

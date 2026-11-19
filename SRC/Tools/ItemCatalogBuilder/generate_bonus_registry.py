@@ -19,7 +19,8 @@ ENUMS = {
     "target": ("BonusTarget", ["PhysicalAttack", "MagicalAttack", "PhysicalDefense", "MagicalDefense",
                                "OutgoingDamage", "IncomingDamage", "FlatPenetration", "PercentPenetration",
                                "Resistance", "CritChance", "CritResistance", "CritMultiplierExtra", "BlockReduction", "Evasion", "MovementSpeed", "AttackSpeed", "CastSpeed",
-                               "Strength", "Dexterity", "Constitution", "Intelligence", "Experience"]),
+                               "Strength", "Dexterity", "Constitution", "Intelligence", "Experience",
+                               "EquipmentPointRaw", "EquipmentPointInteger", "EquipmentPointPercent"]),
     "stage": ("BonusStage", ["StatFlat", "StatPercent", "OutgoingAction", "OutgoingMode", "Penetration",
                              "Resistance", "Critical", "IncomingAction", "IncomingMode", "Block", "Accuracy", "OutgoingGlobal", "Reward"]),
     "channel": ("BonusChannel", ["Any", "Physical", "Magical"]),
@@ -63,6 +64,11 @@ def semantic_contract(row):
             expected_mode = row["mode"]
         else:
             raise ValueError("damage bonus needs exactly one action or mode filter")
+    elif target in ("EquipmentPointRaw", "EquipmentPointInteger", "EquipmentPointPercent"):
+        unit = "Raw" if target=="EquipmentPointRaw" else "BasisPoints" if target=="EquipmentPointPercent" else "Integer"
+        cap = "RawStat" if unit=="Raw" else "StatPercent" if unit=="BasisPoints" else "Attribute"
+        expected_channel="Any"
+        if stage!="StatFlat":raise ValueError("equipment property requires an additive stat stage")
     elif target in ("MovementSpeed", "AttackSpeed", "CastSpeed", "Strength", "Dexterity", "Constitution", "Intelligence", "Experience"):
         expected_channel = "Any"
         if target in ("MovementSpeed", "AttackSpeed", "CastSpeed"):
@@ -146,7 +152,7 @@ def render(document):
              '#pragma once', '#include "BonusTypes.hpp"', '#include <array>', '', 'namespace auriga::item', '{',
              'enum class BonusId : std::uint32_t', '{']
     lines += [f"    {row['cpp_name']} = {row['id']}," for row in rows]
-    lines += ['};', 'inline constexpr std::uint32_t BonusRegistrySchemaVersion = 1;',
+    lines += ['};', f'inline constexpr std::uint32_t MaximumBonusId = {max(r["id"] for r in rows)};', 'inline constexpr std::uint32_t BonusRegistrySchemaVersion = 1;',
               f'inline constexpr std::string_view BonusRegistryStatus = "{document["status"]}";',
               f'inline constexpr std::array<BonusDefinition, {len(rows)}> BonusDefinitions {{{{']
     for row in rows:

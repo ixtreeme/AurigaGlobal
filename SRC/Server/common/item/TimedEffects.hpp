@@ -7,6 +7,7 @@ namespace auriga::item
 {
 enum class TimedEffectReapply : std::uint8_t { Reject = 1, Replace = 2 };
 enum class TimedEffectClock : std::uint8_t { OnlineTime = 1, WallTime = 2 };
+enum class TimedEffectFamily : std::uint8_t { Generic=0, Fish=1, WinterDrink=2, FestivalCandy=3 };
 struct TimedEffectGroup
 {
     std::uint32_t id = 0;
@@ -14,7 +15,9 @@ struct TimedEffectGroup
     TimedEffectReapply reapply{};
     TimedEffectClock clock{};
     bool removeOnDeath = false;
+    TimedEffectFamily family=TimedEffectFamily::Generic;
 };
+enum class TimedEffectUtility : std::uint8_t { None=0,FishMind=1,NoDeathPenalty=2,Energy=3 };
 struct TimedEffectProfile
 {
     std::uint32_t id = 0;
@@ -25,6 +28,8 @@ struct TimedEffectProfile
     std::uint8_t allowedContexts = 0; // RecoveryContext bits, not legacy map IDs
     bool allowDuringPvp = false;
     std::optional<std::uint32_t> cooldownProfile;
+    TimedEffectUtility utility=TimedEffectUtility::None;
+    std::optional<BonusId> conflictBonus;
 };
 bool ValidTimedEffectGroup(const TimedEffectGroup& source) noexcept;
 bool ValidTimedEffectProfile(const TimedEffectProfile& source) noexcept;
@@ -36,6 +41,7 @@ struct ActiveTimedEffect
     std::uint64_t effectId = 0;
     std::uint32_t group = 0;
     std::uint64_t remainingMs = 0;
+    std::uint32_t profileId=0;
 };
 inline constexpr std::size_t MaxActiveTimedEffects = 1024;
 struct TimedEffectAdmission

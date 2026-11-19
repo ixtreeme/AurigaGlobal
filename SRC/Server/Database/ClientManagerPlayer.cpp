@@ -7,7 +7,6 @@
 
 #include "Main.h"
 #include "QID.h"
-#include "ItemAwardManager.h"
 #include "Cache.h"
 #include "player_load.h"
 
@@ -29,57 +28,7 @@ extern int g_log;
 //
 // Check all SELECT syntax on item table before change this function!!!
 //
-bool CreateItemTableFromRes(MYSQL_RES * res, std::vector<TPlayerItem> * pVec, uint32_t dwPID)
-{
-	if (!res)
-	{
-		pVec->clear();
-		return true;
-	}
 
-	uint64_t rows;
-
-	if ((rows = mysql_num_rows(res)) <= 0)
-	{
-		pVec->clear();
-		return true;
-	}
-
-	pVec->resize(rows);
-
-	for (uint64_t i = 0; i < rows; ++i)
-	{
-		MYSQL_ROW row = mysql_fetch_row(res);
-		TPlayerItem & item = pVec->at(i);
-
-		int cur = 0;
-
-		// Check all SELECT syntax on item table before change this function!!!
-		// Check all SELECT syntax on item table before change this function!!!
-		// Check all SELECT syntax on item table before change this function!!!
-		str_to_number(item.id, row[cur++]);
-		str_to_number(item.window, row[cur++]);
-		str_to_number(item.pos, row[cur++]);
-		str_to_number(item.count, row[cur++]);
-		str_to_number(item.vnum, row[cur++]);
-#ifdef ATTR_LOCK
-		str_to_number(item.lockedattr, row[cur++]);
-#endif
-		str_to_number(item.alSockets[0], row[cur++]);
-		str_to_number(item.alSockets[1], row[cur++]);
-		str_to_number(item.alSockets[2], row[cur++]);
-
-		for (int j = 0; j < ITEM_ATTRIBUTE_MAX_NUM; j++)
-		{
-			str_to_number(item.aAttr[j].bType, row[cur++]);
-			str_to_number(item.aAttr[j].sValue, row[cur++]);
-		}
-
-		item.owner		= dwPID;
-	}
-
-	return true;
-}
 
 #ifdef __SKILL_COLOR_SYSTEM__
 bool CreateSkillColorTableFromRes(MYSQL_RES * res, uint32_t * dwSkillColor)
@@ -124,7 +73,7 @@ void CClientManager::PutPlayerCache(TPlayerTable * pNew)
 		m_map_playerCache.insert(TPlayerTableCacheMap::value_type(pNew->id, c));
 	}
 
-    if(const auto* old=c->Get(false);old && old->typed_book_revision>pNew->typed_book_revision){pNew->typed_book_revision=old->typed_book_revision;pNew->exp=old->exp;pNew->level=old->level;pNew->level_step=old->level_step;pNew->stat_point=old->stat_point;pNew->sRandomHP=old->sRandomHP;pNew->sRandomSP=old->sRandomSP;pNew->skill_point=old->skill_point;pNew->sub_skill_point=old->sub_skill_point;pNew->horse_skill_point=old->horse_skill_point;std::copy_n(old->skills,SKILL_MAX_NUM,pNew->skills);}
+    if(const auto* old=c->Get(false);old && old->typed_book_revision>pNew->typed_book_revision){pNew->typed_book_revision=old->typed_book_revision;pNew->exp=old->exp;pNew->lAlignment=old->lAlignment;pNew->stat_reset_count=old->stat_reset_count;pNew->level=old->level;pNew->level_step=old->level_step;pNew->stat_point=old->stat_point;pNew->sRandomHP=old->sRandomHP;pNew->sRandomSP=old->sRandomSP;pNew->skill_point=old->skill_point;pNew->sub_skill_point=old->sub_skill_point;pNew->horse_skill_point=old->horse_skill_point;std::copy_n(old->skills,SKILL_MAX_NUM,pNew->skills);}
 	c->Put(pNew);
 }
 
@@ -247,94 +196,11 @@ bool CClientManager::QUERY_PLAYER_LOAD(CPeer *peer, uint32_t dwHandle, TPlayerLo
 
 		char szQuery[QUERY_MAX_LEN] = { 0, };
 
-		TItemCacheSet * pSet = GetItemCacheSet(pTab->id);
-
-		LOG_INFO("[PLAYER_LOAD] ID {} pid {} gold {} ", pTab->name, pTab->id, pTab->gold);
-
-#ifdef ENABLE_GAYA_SYSTEM
-		LOG_INFO("[PLAYER_LOAD] ID {} pid {} gaya {} ", pTab->name, pTab->id, pTab->gaya);
-#endif
-
-		if (pSet)
-		{
-			std::vector<TPlayerItem> s_items;
-			s_items.resize(pSet->size());
-
-			uint32_t dwCount = 0;
-			auto it = pSet->begin();
-
-			while (it != pSet->end())
-			{
-				CItemCache * c = *it++;
-
-				if (const TPlayerItem * p = c->Get(); p->vnum)
-					memcpy(&s_items[dwCount++], p, sizeof(TPlayerItem));
-			}
-
-			if (g_test_server)
-				LOG_INFO("ITEM_CACHE: HIT! {} count: {}", pTab->name, dwCount);
-
-			m_playerSessions.TakePart(*lease, HEADER_DG_ITEM_LOAD);
-            EncodePlayerLoadHeader(peer, *loadInfo, HEADER_DG_ITEM_LOAD, sizeof(uint32_t) + sizeof(TPlayerItem) * dwCount);
-			peer->EncodeDWORD(dwCount);
-
-			if (dwCount)
-				peer->Encode(s_items.data(), sizeof(TPlayerItem) * dwCount);
-
-			// Quest
-			snprintf(szQuery, sizeof(szQuery),
-					"SELECT dwPID,szName,szState,lValue FROM quest%s WHERE dwPID=%u AND lValue<>0",
-					GetTablePostfix(), pTab->id);
-
-			CDBManager::instance().ReturnQuery(szQuery, QID_QUEST, peer->GetHandle(), makeInfo());
-
-			// Affect
-			snprintf(szQuery, sizeof(szQuery),
-					"SELECT dwPID,bType,bApplyOn,lApplyValue,dwFlag,lDuration,lSPCost FROM affect%s WHERE dwPID=%u",
-					GetTablePostfix(), pTab->id);
-			// @fixme402 ClientHandleInfo+pTab->id
-			CDBManager::instance().ReturnQuery(szQuery, QID_AFFECT, peer->GetHandle(), makeInfo());
-		}
-
-		else
-		{
-			snprintf(szQuery, sizeof(szQuery),
-					"SELECT id,window+0,pos,count,vnum,"
-#ifdef ATTR_LOCK
-					"lockedattr,"
-#endif
-					"socket0,socket1,socket2,attrtype0,attrvalue0,attrtype1,attrvalue1,attrtype2,attrvalue2,attrtype3,attrvalue3,attrtype4,attrvalue4,attrtype5,attrvalue5,attrtype6,attrvalue6,attrtype7,attrvalue7 "
-					"FROM item%s WHERE owner_id=%u AND (window in ('INVENTORY','EQUIPMENT','BELT_INVENTORY'"
-#ifdef ENABLE_EXTRA_INVENTORY
-					",'EXTRA_INVENTORY'"
-#endif
-#ifdef ENABLE_SWITCHBOT
-					",'SWITCHBOT'"
-#endif		
-					"))",
-					GetTablePostfix(), pTab->id);
-
-			CDBManager::instance().ReturnQuery(szQuery,
-					QID_ITEM,
-					peer->GetHandle(),
-					makeInfo());
-			snprintf(szQuery, sizeof(szQuery),
-					"SELECT dwPID, szName, szState, lValue FROM quest%s WHERE dwPID=%u",
-					GetTablePostfix(), pTab->id);
-
-			CDBManager::instance().ReturnQuery(szQuery,
-					QID_QUEST,
-					peer->GetHandle(),
-					makeInfo());
-			snprintf(szQuery, sizeof(szQuery),
-					"SELECT dwPID, bType, bApplyOn, lApplyValue, dwFlag, lDuration, lSPCost FROM affect%s WHERE dwPID=%u",
-					GetTablePostfix(), pTab->id);
-
-			CDBManager::instance().ReturnQuery(szQuery,
-					QID_AFFECT,
-					peer->GetHandle(),
-					makeInfo());
-		}
+        // Items are loaded exclusively by the GameServer's native ItemStore.
+        snprintf(szQuery, sizeof(szQuery), "SELECT dwPID,szName,szState,lValue FROM quest%s WHERE dwPID=%u", GetTablePostfix(), pTab->id);
+        CDBManager::instance().ReturnQuery(szQuery, QID_QUEST, peer->GetHandle(), makeInfo());
+        snprintf(szQuery, sizeof(szQuery), "SELECT dwPID,bType,bApplyOn,lApplyValue,dwFlag,lDuration,lSPCost FROM affect%s WHERE dwPID=%u", GetTablePostfix(), pTab->id);
+        CDBManager::instance().ReturnQuery(szQuery, QID_AFFECT, peer->GetHandle(), makeInfo());
 		//ljw
 		//return;
 	}
@@ -391,22 +257,6 @@ bool CClientManager::QUERY_PLAYER_LOAD(CPeer *peer, uint32_t dwHandle, TPlayerLo
 		auto pkInfo = makeInfo();
 		CDBManager::instance().ReturnQuery(queryStr, QID_PLAYER, peer->GetHandle(), pkInfo);
 
-		snprintf(queryStr, sizeof(queryStr),
-				"SELECT id,window+0,pos,count,vnum,"
-#ifdef ATTR_LOCK
-				"lockedattr,"
-#endif
-				"socket0,socket1,socket2,attrtype0,attrvalue0,attrtype1,attrvalue1,attrtype2,attrvalue2,attrtype3,attrvalue3,attrtype4,attrvalue4,attrtype5,attrvalue5,attrtype6,attrvalue6,attrtype7,attrvalue7 "
-				"FROM item%s WHERE owner_id=%u AND (window in ('INVENTORY','EQUIPMENT','BELT_INVENTORY'"
-#ifdef ENABLE_EXTRA_INVENTORY
-				",'EXTRA_INVENTORY'"
-#endif
-#ifdef ENABLE_SWITCHBOT
-				",'SWITCHBOT'"
-#endif
-				"))",
-				GetTablePostfix(), packet->player_id);
-		CDBManager::instance().ReturnQuery(queryStr, QID_ITEM, peer->GetHandle(), makeInfo());
 
 
 		snprintf(queryStr, sizeof(queryStr),
@@ -425,35 +275,7 @@ bool CClientManager::QUERY_PLAYER_LOAD(CPeer *peer, uint32_t dwHandle, TPlayerLo
     return true;
 }
 
-void CClientManager::ItemAward(CPeer * peer,char* login)
-{
-	char login_t[LOGIN_MAX_LEN + 1] = "";
-	strlcpy(login_t,login,LOGIN_MAX_LEN + 1);
-	auto* pSet = ItemAwardManager::instance().GetByLogin(login_t);
-	if(pSet == nullptr)
-		return;
-	auto it = pSet->begin();
-	while(it != pSet->end() )
-	{
-		TItemAward * pItemAward = *it++;
-        if (pItemAward->bTaken || pItemAward->bGiftDismissed)
-            continue;
-		char* whyStr = pItemAward->szWhy;
-		char cmdStr[100] = "";
-		strcpy(cmdStr,whyStr);
-		char command[20] = "";
-		
-		GetCommand(cmdStr, command);
-		if( !(strcmp(command,"GIFT") ))
-		{
-			TPacketItemAwardInfromer giftData;
-			strcpy(giftData.login, pItemAward->szLogin);
-			strcpy(giftData.command, command);
-			giftData.vnum = pItemAward->dwVnum;
-			ForwardPacket(HEADER_DG_ITEMAWARD_INFORMER,&giftData,sizeof(TPacketItemAwardInfromer));
-		}
-	}
-}
+
 char* CClientManager::GetCommand(char* str, char* command) // @fixme203
 {
 	char* tok;
@@ -608,7 +430,6 @@ void CClientManager::RESULT_COMPOSITE_PLAYER(CPeer * peer, SQLMsg * pMsg, uint32
     switch (dwQID)
     {
         case QID_PLAYER: part = HEADER_DG_PLAYER_LOAD_SUCCESS; break;
-        case QID_ITEM: part = HEADER_DG_ITEM_LOAD; break;
         case QID_QUEST: part = HEADER_DG_QUEST_LOAD; break;
         case QID_AFFECT: part = HEADER_DG_AFFECT_LOAD; break;
 #ifdef __SKILL_COLOR_SYSTEM__
@@ -634,11 +455,6 @@ void CClientManager::RESULT_COMPOSITE_PLAYER(CPeer * peer, SQLMsg * pMsg, uint32
 
 			break;
 
-		case QID_ITEM:
-			LOG_INFO("QID_ITEM {}", info->dwHandle);
-			RESULT_ITEM_LOAD(peer, pSQLResult, *info);
-			break;
-
 
 #ifdef __SKILL_COLOR_SYSTEM__
 		case QID_SKILL_COLOR:
@@ -647,63 +463,15 @@ void CClientManager::RESULT_COMPOSITE_PLAYER(CPeer * peer, SQLMsg * pMsg, uint32
 			break;
 #endif
 
-		case QID_QUEST:
-			{
-				LOG_INFO("QID_QUEST {}", info->dwHandle);
-				RESULT_QUEST_LOAD(peer, pSQLResult, *info);
-				ClientHandleInfo*  temp1 = info.get();
-				if (temp1 == nullptr)
-					break;
-
-				CLoginData* pLoginData1 = GetLoginDataByAID(temp1->account_id);	//
-				if( pLoginData1 == nullptr)
-					break;
-
-				if( pLoginData1->GetAccountRef().login == nullptr)
-					break;
-
-				LOG_INFO("info of pLoginData1 before call ItemAwardfunction {}", static_cast<const void*>(pLoginData1));
-				ItemAward(peer,pLoginData1->GetAccountRef().login);
-			}
-			break;
+        case QID_QUEST:
+            RESULT_QUEST_LOAD(peer, pSQLResult, *info);
+            break;
 
 		case QID_AFFECT:
 			LOG_INFO("QID_AFFECT {}", info->dwHandle);
 			// @fixme402 RESULT_AFFECT_LOAD+info->player_id
 			RESULT_AFFECT_LOAD(peer, pSQLResult, *info);
 			break;
-			/*
-			   case QID_PLAYER_ITEM_QUEST_AFFECT:
-			   LOG_INFO("QID_PLAYER_ITEM_QUEST_AFFECT {}", info->dwHandle);
-			   RESULT_PLAYER_LOAD(peer, pSQLResult, info->dwHandle);
-
-			   if (!pMsg->Next())
-			   {
-			   LOG_ERROR("RESULT_COMPOSITE_PLAYER: QID_PLAYER_ITEM_QUEST_AFFECT: ITEM FAILED");
-			   return;
-			   }
-
-			   case QID_ITEM_QUEST_AFFECT:
-			   LOG_INFO("QID_ITEM_QUEST_AFFECT {}", info->dwHandle);
-			   RESULT_ITEM_LOAD(peer, pSQLResult, *info);
-
-			   if (!pMsg->Next())
-			   {
-			   LOG_ERROR("RESULT_COMPOSITE_PLAYER: QID_PLAYER_ITEM_QUEST_AFFECT: QUEST FAILED");
-			   return;
-			   }
-
-			   case QID_QUEST_AFFECT:
-			   LOG_INFO("QID_QUEST_AFFECT {}", info->dwHandle);
-			   RESULT_QUEST_LOAD(peer, pSQLResult, info->dwHandle);
-
-			   if (!pMsg->Next())
-			   LOG_ERROR("RESULT_COMPOSITE_PLAYER: QID_PLAYER_ITEM_QUEST_AFFECT: AFFECT FAILED");
-			   else
-			   RESULT_AFFECT_LOAD(peer, pSQLResult, info->dwHandle);
-
-			   break;
-			   */
 
 	}
 
@@ -747,30 +515,7 @@ void CClientManager::RESULT_PLAYER_LOAD(CPeer * peer, MYSQL_RES * pRes, ClientHa
 	}
 }
 
-void CClientManager::RESULT_ITEM_LOAD(CPeer *peer, MYSQL_RES *pRes, const ClientHandleInfo &info)
-{
-    const uint32_t dwPID = info.player_id;
-	std::vector<TPlayerItem> s_items;
-	CreateItemTableFromRes(pRes, &s_items, dwPID);
-	uint32_t dwCount = (uint32_t)s_items.size();
 
-	EncodePlayerLoadHeader(peer, info, HEADER_DG_ITEM_LOAD, sizeof(uint32_t) + sizeof(TPlayerItem) * dwCount);
-	peer->EncodeDWORD(dwCount);
-
-	CreateItemCacheSet(dwPID);
-
-	// ITEM_LOAD_LOG_ATTACH_PID
-	LOG_INFO("ITEM_LOAD: count {} pid {}", dwCount, dwPID);
-	// END_OF_ITEM_LOAD_LOG_ATTACH_PID
-
-	if (dwCount)
-	{
-		peer->Encode(s_items.data(), sizeof(TPlayerItem) * dwCount);
-
-		for (uint32_t i = 0; i < dwCount; ++i)
-			PutItemCache(&s_items[i], true);
-	}
-}
 
 #ifdef __SKILL_COLOR_SYSTEM__
 void CClientManager::RESULT_SKILL_COLOR_LOAD(CPeer *peer, MYSQL_RES *pRes, const ClientHandleInfo &info)
@@ -1025,6 +770,13 @@ void CClientManager::__QUERY_PLAYER_CREATE(CPeer *peer, uint32_t dwHandle, TPlay
 	pack.player.x = packet->player_table.x;
 	pack.player.y = packet->player_table.y;
 
+	// The session authority validates the live account's owned slots. Publish
+	// the committed creation there before the client can select its new player.
+	// Otherwise first entry is refused until the entire account logs in again.
+	if (auto* login = GetLoginDataByAID(packet->account_id); login &&
+		packet->account_index < PLAYER_PER_ACCOUNT)
+		login->GetAccountRef().players[packet->account_index] = pack.player;
+
 	peer->EncodeHeader(HEADER_DG_PLAYER_CREATE_SUCCESS, dwHandle, sizeof(TPacketDGCreateSuccess));
 	peer->Encode(&pack, sizeof(TPacketDGCreateSuccess));
 
@@ -1163,24 +915,6 @@ void CClientManager::__RESULT_PLAYER_DELETE(CPeer *peer, SQLMsg* msg)
 			delete pkPlayerCache;
 		}
 
-		TItemCacheSet * pSet = GetItemCacheSet(pi->player_id);
-
-		if (pSet)
-		{
-			TItemCacheSet::iterator it = pSet->begin();
-
-			while (it != pSet->end())
-			{
-				CItemCache * pkItemCache = *it++;
-				DeleteItemCache(pkItemCache->Get()->id);
-			}
-
-			pSet->clear();
-			delete pSet;
-
-			m_map_pkItemCacheSetPtr.erase(pi->player_id);
-		}
-
 		snprintf(queryStr, sizeof(queryStr), "UPDATE player_index%s SET pid%u=0 WHERE pid%u=%u",
 				GetTablePostfix(),
 				pi->account_index + 1,
@@ -1200,17 +934,6 @@ void CClientManager::__RESULT_PLAYER_DELETE(CPeer *peer, SQLMsg* msg)
 		snprintf(queryStr, sizeof(queryStr), "DELETE FROM player%s WHERE id=%d", GetTablePostfix(), pi->player_id);
 		CDBManager::instance().AsyncQuery(queryStr);
 
-		snprintf(queryStr, sizeof(queryStr), "DELETE FROM item%s WHERE owner_id=%u AND (window in ('INVENTORY','EQUIPMENT','BELT_INVENTORY'"
-#ifdef ENABLE_EXTRA_INVENTORY
-		",'EXTRA_INVENTORY'"
-#endif
-#ifdef ENABLE_SWITCHBOT
-		",'SWITCHBOT'"
-#endif
-		"))",
-		GetTablePostfix(), pi->player_id);
-		CDBManager::instance().AsyncQuery(queryStr);
-
 		snprintf(queryStr, sizeof(queryStr), "DELETE FROM quest%s WHERE dwPID=%u", GetTablePostfix(), pi->player_id);
 		CDBManager::instance().AsyncQuery(queryStr);
 
@@ -1220,9 +943,6 @@ void CClientManager::__RESULT_PLAYER_DELETE(CPeer *peer, SQLMsg* msg)
 		snprintf(queryStr, sizeof(queryStr), "DELETE FROM guild_member%s WHERE pid=%u", GetTablePostfix(), pi->player_id);
 		CDBManager::instance().AsyncQuery(queryStr);
 
-		// MYSHOP_PRICE_LIST
-		snprintf(queryStr, sizeof(queryStr), "DELETE FROM myshop_pricelist%s WHERE owner_id=%u", GetTablePostfix(), pi->player_id);
-		CDBManager::instance().AsyncQuery(queryStr);
 		// END_OF_MYSHOP_PRICE_LIST
 
 		snprintf(queryStr, sizeof(queryStr), "DELETE FROM messenger_list%s WHERE account=? OR companion=?", GetTablePostfix());
@@ -1405,7 +1125,6 @@ void CClientManager::UpdateLogoutPlayer()
 
 		if (now - g_iLogoutSeconds > pLogout->time)
 		{
-			FlushItemCacheSet(pLogout->pid);
 			FlushPlayerCacheSet(pLogout->pid);
 
 			delete pLogout;

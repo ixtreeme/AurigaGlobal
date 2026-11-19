@@ -223,6 +223,8 @@ class SshGuiTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(prefix='auriga-ssh-gui-tests-')
         self.folder = Path(self.temp.name).resolve()
         self.parent = self.Widget()
+        from ReviewFixture import approve_fixture
+        approve_fixture(self,self.parent)
         self.errors = []
         self.parent.error = self.errors.append
         self.page = self.RemotePage(self.parent, self.folder / 'settings/profiles.json')

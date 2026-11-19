@@ -126,6 +126,7 @@ class DataBuilder:
                     self.copy(source, data / 'quest' / source.relative_to(quest))
         for name in ('questlib.lua','locale.lua','quest_list','quest_functions'):
             self.copy(quest / name, data / 'quest' / name)
+        self.apply_native_quests(data)
         if self.checker is None:
             raise PackageError('Current ServerPackageCheck is required to validate quest sources')
         from prepare_quests import reconcile
@@ -227,9 +228,23 @@ class DataBuilder:
                 changes.append(dict(file=path.relative_to(self.output).as_posix(), replacements=changed))
         return dict(lua_path_changes=changes, unresolved_lua_resources=sorted(missing))
 
+    def apply_native_quests(self, data):
+        # Native replacements travel with every newly prepared package.
+        native_quests = TOOLS.parents[1] / 'config/typed_quests'
+        if native_quests.is_dir():
+            for source in sorted(native_quests.glob('*.lua')):
+                matches = list((data / 'quest/Quest').rglob(source.name))
+                if len(matches) != 1:
+                    raise PackageError('Native quest replacement needs one source: ' + source.name)
+                shutil.copy2(source, matches[0])
+                key = '@native-quests/' + source.name
+                self.inputs[key] = dict(sha256=digest(source), size=source.stat().st_size)
+                self.operations.append(dict(source=key, target=matches[0].relative_to(self.output).as_posix(), operation='native-replacement'))
+
     def verify_originals(self):
         for relative, metadata in self.inputs.items():
-            if digest(self.source / relative) != metadata['sha256']:
+            path = TOOLS.parents[1] / 'config/typed_quests' / relative.removeprefix('@native-quests/') if relative.startswith('@native-quests/') else self.source / relative
+            if digest(path) != metadata['sha256']:
                 raise PackageError('Source changed during conversion: ' + relative)
 
 

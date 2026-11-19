@@ -4,6 +4,7 @@
 #include <limits>
 #include <set>
 #include <type_traits>
+#include <tuple>
 
 namespace auriga::item::sql
 {
@@ -47,6 +48,11 @@ struct Reader
         const auto key = ItemKey::Create(static_cast<ItemCategory>(U16(c)), U32(c + 1));
         if (!key) Fail(ReadErrorCode::InvalidKey, c);
         return *key;
+    }
+    std::optional<ItemKey> OptionalKey(std::size_t c) const
+    {
+        if(bool(row[c])!=bool(row[c+1]))Fail(ReadErrorCode::InvalidKey,c);
+        return row[c] ? std::optional{Key(c)} : std::nullopt;
     }
 };
 template <typename F> void Each(const Snapshot& source, Table table, F apply)
@@ -136,7 +142,7 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
     Each(source, Table::BonusEntries, [&](const Reader& r) { Parent(s.bonuses, bonuses, r).entries.push_back({static_cast<BonusId>(r.U32(1)), r.I64(2)}); });
     Each(source, Table::Refinements, [&](const Reader& r) { s.refinements.push_back({r.U32(0), r.Text(1,96), static_cast<RefinementKind>(r.U8(2)), r.U16(3), {}}); });
     const auto refinements = Index(s.refinements, Table::Refinements);
-    Each(source, Table::RefinementLevels, [&](const Reader& r) { Parent(s.refinements, refinements, r).levels.push_back({r.U16(1), {r.I64(2),r.I64(3),r.I64(4),r.I64(5)},r.OptionalId(6)}); });
+    Each(source, Table::RefinementLevels, [&](const Reader& r) { Parent(s.refinements, refinements, r).levels.push_back({r.U16(1), {r.I64(2),r.I64(3),r.I64(4),r.I64(5)},r.OptionalId(6),r.row[7]?std::optional{r.U16(7)}:std::nullopt,r.row[8]?std::optional{r.U64(8)}:std::nullopt,r.row[9]?std::optional{r.U64(9)}:std::nullopt}); });
     Each(source, Table::Items, [&](const Reader& r) {
         ItemBaseRow base{r.Key()};
         base.contentCode=r.Text(2,96); base.nameKey=r.Text(3,128); base.descriptionKey=r.Text(4,128); base.iconAsset=r.Text(5);
@@ -151,7 +157,7 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
     Each(source, Table::Materials, [&](const Reader& r) { s.materials.push_back({r.Key(), static_cast<MaterialKind>(r.U8(2))}); });
     Each(source, Table::SocketProfiles, [&](const Reader& r) { s.accessorySockets.push_back({r.U32(0), r.Text(1,96), r.U8(2), r.U16(3), r.U16(4), {}, {}, {}, {}}); });
     const auto sockets = Index(s.accessorySockets, Table::SocketProfiles);
-    Each(source, Table::SocketGrades, [&](const Reader& r) { Parent(s.accessorySockets, sockets, r).grades.push_back({r.U8(1),r.U64(2),r.U32(3),r.I64(4),r.I32(5),r.I32(6),r.U16(7),r.U16(8)}); });
+    Each(source, Table::SocketGrades, [&](const Reader& r) { Parent(s.accessorySockets, sockets, r).grades.push_back({r.U8(1),r.U64(2),r.U32(3),r.I64(4),r.I32(5),r.I32(6),r.U16(7),r.U16(8),r.Bool(9)}); });
     Each(source, Table::SocketMaterials, [&](const Reader& r) {
         auto& parent = Parent(s.accessorySockets, sockets, r); const auto key = r.Key(2);
         switch (r.U8(1)) {
@@ -181,11 +187,18 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
     Each(source, Table::Periodic, [&](const Reader& r) { recoveryChild(r,3).effect=PeriodicRecovery{r.I64(2),r.I64(3),r.U64(4),r.U64(5)}; });
     Each(source, Table::Automatic, [&](const Reader& r) { recoveryChild(r,4).effect=AutomaticRecovery{static_cast<RecoveryPool>(r.U8(2)),static_cast<RecoverySupply>(r.U8(3)),r.I64(4),r.U64(5),r.U16(6),r.U16(7)}; });
     if (children.size() != s.recoveries.size()) throw ReadError{ReadErrorCode::InvalidChild,Table::Recoveries};
+    Each(source,Table::SashProfiles,[&](const Reader& r){s.absorptionSashes.push_back({r.Key(),r.Key(3),r.U8(2),r.U8(5),r.U8(6),r.U8(7),r.U8(8),r.U8(9),r.U16(10),r.U64(11)});});
+    Each(source,Table::SashDonors,[&](const Reader& r){s.sashDonors.push_back({r.Key(),r.U16(2),r.I64(3),r.I64(4),r.Bool(5),r.Bool(6),{}});});
+    std::map<std::pair<ItemKey,std::uint16_t>,SashDonorProfile*> sashDonors;
+    for(auto& p:s.sashDonors)if(!sashDonors.emplace(std::pair{p.key,p.refinement},&p).second)throw ReadError{ReadErrorCode::InvalidChild,Table::SashDonors};
+    std::set<std::tuple<ItemKey,std::uint16_t,std::uint8_t>> sashComponents;
+    Each(source,Table::SashDonorComponents,[&](const Reader& r){const auto key=std::pair{r.Key(),r.U16(2)};const auto p=sashDonors.find(key);const auto index=r.U8(3);if(p==sashDonors.end() || index>=5 || !sashComponents.emplace(key.first,key.second,index).second)r.Fail(ReadErrorCode::InvalidChild);p->second->components.push_back({static_cast<BonusId>(r.U32(4)),r.I64(5)});});
+    Each(source,Table::CharacterServices,[&](const Reader& r){s.characterServices.push_back({r.Key(),static_cast<CharacterServiceKind>(r.U8(2)),r.U16(3),r.U32(4),r.U32(5),r.U32(6)});});
     Each(source,Table::BookAids,[&](const Reader& r){s.bookAidProfiles.push_back({r.U32(0),r.Text(1,96),static_cast<BookAidKind>(r.U8(2)),r.U16(3),r.U32(4),r.U32(5)});});
     Each(source,Table::SocketServices,[&](const Reader& r){s.socketServiceProfiles.push_back({r.U32(0),r.Text(1,96),static_cast<SocketServiceKind>(r.U8(2)),r.U16(3)});});
     Each(source, Table::Consumables, [&](const Reader& r) {
         if (r.row[2] && r.U32(2) == 0) r.Fail(ReadErrorCode::InvalidNumber, 2);
-        s.consumables.push_back({r.Key(),r.OptionalId(2).value_or(0),r.OptionalId(3),r.OptionalId(4),r.OptionalId(5),r.OptionalId(6),r.OptionalId(7)});
+        s.consumables.push_back({r.Key(),r.OptionalId(2).value_or(0),r.OptionalId(3),r.OptionalId(4),r.OptionalId(5),r.OptionalId(6),r.OptionalId(7),r.Bool(8)});
     });
     Each(source, Table::LootProfiles, [&](const Reader& r) { s.lootProfiles.push_back({r.U32(0),r.Text(1,96),static_cast<LootPickMode>(r.U8(2)),{}}); });
     const auto loots = Index(s.lootProfiles, Table::LootProfiles);
@@ -194,7 +207,7 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
         if (r.row[3].has_value() != r.row[4].has_value()) r.Fail(ReadErrorCode::InvalidKey, 3);
         std::optional<ItemKey> item;
         if (r.row[3]) item = r.Key(3);
-        Parent(s.lootProfiles, loots, r).entries.push_back({r.U16(1),static_cast<LootRewardKind>(r.U8(2)),item,r.U64(5),r.U32(6),r.U16(7)});
+        Parent(s.lootProfiles, loots, r).entries.push_back({r.U16(1),static_cast<LootRewardKind>(r.U8(2)),item,r.U64(5),r.U32(6),r.U16(7),r.U16(8)});
     });
     Each(source, Table::Containers, [&](const Reader& r) {
         s.containers.push_back({r.Key(),static_cast<ContainerKind>(r.U8(2)),r.OptionalId(3),r.U16(4),r.OptionalId(5)});
@@ -204,10 +217,10 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
         s.currencyTokens.push_back({r.Key(),static_cast<WalletCurrency>(r.U8(2)),r.U64(3)});
     });
     Each(source, Table::TimedEffectGroups, [&](const Reader& r) {
-        s.timedEffectGroups.push_back({r.U32(0),r.Text(1,96),static_cast<TimedEffectReapply>(r.U8(2)),static_cast<TimedEffectClock>(r.U8(3)),r.Bool(4)});
+        s.timedEffectGroups.push_back({r.U32(0),r.Text(1,96),static_cast<TimedEffectReapply>(r.U8(2)),static_cast<TimedEffectClock>(r.U8(3)),r.Bool(4),static_cast<TimedEffectFamily>(r.U8(5))});
     });
     Each(source, Table::TimedEffects, [&](const Reader& r) {
-        s.timedEffects.push_back({r.U32(0),r.Text(1,96),r.U32(2),r.U32(3),r.U64(4),r.U16(5),r.U8(6),r.Bool(7),r.OptionalId(8)});
+        s.timedEffects.push_back({r.U32(0),r.Text(1,96),r.U32(2),r.OptionalId(3).value_or(0),r.U64(4),r.U16(5),r.U8(6),r.Bool(7),r.OptionalId(8),static_cast<TimedEffectUtility>(r.U8(9)),r.OptionalId(10).transform([](auto id){return static_cast<BonusId>(id);})});
     });
     Each(source, Table::ToggleEffectGroups, [&](const Reader& r) {
         s.toggleEffectGroups.push_back({r.U32(0),r.Text(1,96),r.Bool(2)});
@@ -240,17 +253,25 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
     Each(source,Table::ForgeAids,[&](const Reader& r){s.forgeAids.push_back({r.Key(),static_cast<ForgeAidKind>(r.U8(2)),r.U16(3),r.U8(4),r.U16(5),r.U16(6),static_cast<ForgeChance>(r.U8(7)),r.U16(8),static_cast<ForgeFailure>(r.U8(9)),r.U8(10),{}});});
     Each(source,Table::ForgeLevels,[&](const Reader& r){auto i=std::ranges::find(s.forgeAids,r.Key(),&ItemForgeAidRow::key);if(i==s.forgeAids.end())r.Fail(ReadErrorCode::OrphanRow);i->levels.push_back({r.U16(2),r.U16(3)});});
     Each(source,Table::Ammunition,[&](const Reader& r){s.ammunition.push_back({r.Key(),r.U32(2)});});
+    Each(source,Table::AttributeBirthProfiles,[&](const Reader& r){s.attributeBirthProfiles.push_back({r.U32(0),r.Text(1,96),r.U16(2),r.U16(3),{}});});
+    const auto birthProfiles=Index(s.attributeBirthProfiles,Table::AttributeBirthProfiles);
+    Each(source,Table::AttributeBirthTiers,[&](const Reader& r){Parent(s.attributeBirthProfiles,birthProfiles,r).tiers.push_back({r.U8(1),r.U8(2),r.U16(3)});});
+    Each(source,Table::DefinitionRules,[&](const Reader& r){ItemDefinitionRules rule{r.Key()};rule.level=r.U16(2);rule.displayRefinementOffset=r.U16(3);rule.rarity=r.U8(4);rule.clock=static_cast<CostumeClock>(r.U8(5));rule.durationMs=r.U64(6);rule.allowAccountStorage=r.Bool(7);rule.allowAcquire=r.Bool(8);rule.allowUnequip=r.Bool(9);rule.allowedEmpires=r.U8(10);rule.minimumGrantCount=r.U32(11);rule.birthMagicChanceBp=r.U16(12);rule.birthSocketChanceBp=r.U16(13);rule.birthAddon=r.U8(14);rule.uniqueGroup=r.Text(15,96);rule.available=r.Bool(16);rule.attributeRerollGroup=r.U8(17);rule.weaponEffectAlternate=r.Bool(18);rule.birthOpenStoneSockets=r.U8(19);rule.birthAttributeProfile=r.OptionalId(20);s.definitionRules.push_back(std::move(rule));});
     Each(source,Table::Regalia,[&](const Reader& r){s.regalia.push_back({r.Key(),static_cast<RegaliaKind>(r.U8(2)),r.U8(3),r.U8(4),r.U64(5),r.U64(6),{}});});
     Each(source,Table::RegaliaRules,[&](const Reader& r){auto i=std::ranges::find(s.regalia,r.Key(),&ItemRegaliaRow::key);if(i==s.regalia.end())r.Fail(ReadErrorCode::OrphanRow);i->rules.push_back({r.U8(2),r.U8(4),r.U16(3),{static_cast<BonusId>(r.U32(5)),r.I64(6)}});});
     Each(source,Table::BonusTools,[&](const Reader& r){s.bonusTools.push_back({r.Key(),static_cast<SpecialBonusOperation>(r.U8(2)),r.U16(3),r.U16(4),r.row[5] ? std::optional{BonusEntry{static_cast<BonusId>(r.U32(5)),r.I64(6)}} : std::nullopt,{}});if(bool(r.row[5])!=bool(r.row[6]))r.Fail(ReadErrorCode::InvalidChild);});
     Each(source,Table::SpecialBonusTiers,[&](const Reader& r){auto i=std::ranges::find(s.bonusTools,r.Key(),&ItemBonusToolRow::key);if(i==s.bonusTools.end())r.Fail(ReadErrorCode::OrphanRow);i->tiers.push_back({r.U8(2),r.U8(3),r.U16(4)});});
-    Each(source,Table::Costumes,[&](const Reader& r){s.costumes.push_back({r.Key(),static_cast<CostumeKind>(r.U8(2)),r.row[3] ? std::optional{static_cast<WeaponSubtype>(r.U8(3))} : std::nullopt,static_cast<CostumeClock>(r.U8(4)),r.U64(5)});});
+    Each(source,Table::BonusToolChoices,[&](const Reader& r){auto i=std::ranges::find(s.bonusTools,r.Key(),&ItemBonusToolRow::key);if(i==s.bonusTools.end())r.Fail(ReadErrorCode::OrphanRow);i->choices.push_back({r.U8(2),{static_cast<BonusId>(r.U32(3)),r.I64(4)}});});
+    Each(source,Table::CurrencyTokenPolicies,[&](const Reader& r){s.currencyTokenPolicies.push_back({r.Key(),static_cast<CurrencyTokenMode>(r.U8(2))});});
+    Each(source,Table::EnergyCrystalTiers,[&](const Reader& r){s.energyCrystalTiers.push_back({r.U32(0),r.U8(1),r.U16(2)});});
+    Each(source,Table::CostumeTransferTargets,[&](const Reader& r){s.costumeTransferTargets.push_back(r.Key());});
+    Each(source,Table::Costumes,[&](const Reader& r){s.costumes.push_back({r.Key(),static_cast<CostumeKind>(r.U8(2)),r.row[3] ? std::optional{static_cast<WeaponSubtype>(r.U8(3))} : std::nullopt,static_cast<CostumeClock>(r.U8(4)),r.U64(5),r.OptionalId(6),r.U16(7),{r.U16(8),r.U16(9),r.U16(10),r.U16(11),r.U16(12),r.U16(13),r.U16(14),r.U16(15)}});});
     Each(source,Table::CostumeVisuals,[&](const Reader& r){s.costumeVisuals.push_back({r.Key(),r.U8(2),r.U8(3),r.Text(4)});});
     Each(source,Table::SocketStones,[&](const Reader& r){s.socketStones.push_back({r.Key(),static_cast<SocketStoneKind>(r.U8(2)),r.U8(3),r.U8(4),r.Text(5,96),r.Text(6,96)});});
     Each(source,Table::ToolProfiles,[&](const Reader& r){s.toolProfiles.push_back({r.U32(0),r.Text(1,96),{}});});
     const auto toolIndex=Index(s.toolProfiles,Table::ToolProfiles);
-    Each(source,Table::ToolLevels,[&](const Reader& r){Parent(s.toolProfiles,toolIndex,r).levels.push_back({r.U16(1),r.U32(2),r.U16(3),r.U32(4),r.U32(5),r.U32(6),r.U16(7),static_cast<ToolFailure>(r.U8(8)),r.row[9] ? std::optional{r.U16(9)} : std::nullopt,r.U16(10)});});
-    Each(source,Table::Tools,[&](const Reader& r){s.tools.push_back({r.Key(),static_cast<ToolKind>(r.U8(2)),r.U32(3),static_cast<FishingPool>(r.U8(4))});});
+    Each(source,Table::ToolLevels,[&](const Reader& r){Parent(s.toolProfiles,toolIndex,r).levels.push_back({r.U16(1),r.U32(2),r.U16(3),r.U32(4),r.U32(5),r.U32(6),r.U16(7),static_cast<ToolFailure>(r.U8(8)),r.row[9] ? std::optional{r.U16(9)} : std::nullopt,r.U16(10),r.OptionalKey(11),r.OptionalKey(14),r.U16(13),r.U16(16)});});
+    Each(source,Table::Tools,[&](const Reader& r){s.tools.push_back({r.Key(),static_cast<ToolKind>(r.U8(2)),r.U32(3),static_cast<FishingPool>(r.U8(4)),r.Bool(5),r.U16(6)});});
     Each(source,Table::FishingItems,[&](const Reader& r){
         if(r.row[4].has_value()!=r.row[5].has_value())r.Fail(ReadErrorCode::InvalidChild,4);
         s.fishingItems.push_back({r.Key(),static_cast<FishingKind>(r.U8(2)),r.OptionalId(3),r.row[4] ? std::optional{r.Key(4)} : std::nullopt,r.U32(6)});
@@ -270,7 +291,7 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
     Each(source,Table::SoulProfiles,[&](const Reader& r){s.soulProfiles.push_back({r.U32(0),r.Text(1,96),{}});});
     const auto soulIndex=Index(s.soulProfiles,Table::SoulProfiles);
     Each(source,Table::SoulLevels,[&](const Reader& r){Parent(s.soulProfiles,soulIndex,r).levels.push_back({r.U16(1),r.U32(2),r.U32(3),r.U32(4),r.U32(5),r.U32(6),r.U64(7),r.U32(8),r.U32(9),r.U32(10)});});
-    Each(source,Table::SoulItems,[&](const Reader& r){s.soulItems.push_back({r.Key(),static_cast<SoulKind>(r.U8(2)),r.row[3] ? std::optional{static_cast<SoulChannel>(r.U8(3))} : std::nullopt,r.OptionalId(4),r.U16(5)});});
+    Each(source,Table::SoulItems,[&](const Reader& r){if(bool(r.row[6])!=bool(r.row[7]))r.Fail(ReadErrorCode::InvalidChild);s.soulItems.push_back({r.Key(),static_cast<SoulKind>(r.U8(2)),r.row[3] ? std::optional{static_cast<SoulChannel>(r.U8(3))} : std::nullopt,r.OptionalId(4),r.U16(5),r.row[6] ? std::optional{r.Key(6)} : std::nullopt});});
     Each(source,Table::PetHatchProfiles,[&](const Reader& r){s.petHatchProfiles.push_back({r.U32(0),r.Text(1,96),r.Key(2),r.U64(4),{r.U16(5),r.U16(6),r.U16(7)},{r.U16(8),r.U16(9),r.U16(10)},{r.U16(11),r.U16(12),r.U16(13)}});});
     Each(source,Table::PetFeedRules,[&](const Reader& r){s.petFeedRules.push_back({r.Key(),static_cast<PetFeedingService>(r.U8(2)),static_cast<PetFoodKind>(r.U8(3)),static_cast<PetFoodConsumption>(r.U8(4)),r.U32(5),r.U16(6),r.U16(7),r.U32(8)});});
     Each(source,Table::PetTrainingProfiles,[&](const Reader& r){s.petTrainingProfiles.push_back({r.U32(0),r.Text(1,96),r.U16(2),r.U16(3),r.U16(4),r.U16(5),r.U16(6),{},{},{}});});
@@ -297,7 +318,7 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
     Each(source,Table::AttributeCandidates,[&](const Reader& r){Parent(s.attributeProfiles,attributeIndex,r).candidates.push_back({static_cast<AttributePool>(r.U8(1)),static_cast<BonusId>(r.U32(2)),r.U32(3),{}});});
     Each(source,Table::AttributeValues,[&](const Reader& r){auto& rows=Parent(s.attributeProfiles,attributeIndex,r).candidates;auto it=std::ranges::find_if(rows,[&](const auto& a){return a.pool==static_cast<AttributePool>(r.U8(1)) && a.bonus==static_cast<BonusId>(r.U32(2));});if(it==rows.end())r.Fail(ReadErrorCode::InvalidChild,2);it->values.push_back({r.U8(3),r.I64(4)});});
     Each(source,Table::AttributeBindings,[&](const Reader& r){s.attributeBindings.push_back({r.Key(),r.U32(2)});});
-    Each(source,Table::AttributeServices,[&](const Reader& r){s.attributeServices.push_back({r.U32(0),r.Text(1,96),static_cast<AttributeOperation>(r.U8(2)),static_cast<AttributePool>(r.U8(3)),r.U16(4),r.U16(5),r.U8(6),r.U8(7),r.U8(8),r.U8(9),r.U16(10),r.Bool(11),{}});});
+    Each(source,Table::AttributeServices,[&](const Reader& r){s.attributeServices.push_back({r.U32(0),r.Text(1,96),static_cast<AttributeOperation>(r.U8(2)),static_cast<AttributePool>(r.U8(3)),r.U16(4),r.U16(5),r.U8(6),r.U8(7),r.U8(8),r.U8(9),r.U16(10),r.Bool(11),{},r.U8(12)});});
     const auto attributeServiceIndex=Index(s.attributeServices,Table::AttributeServices);
     Each(source,Table::AttributeTiers,[&](const Reader& r){Parent(s.attributeServices,attributeServiceIndex,r).tiers.push_back({r.U8(1),r.U16(2)});});
     Each(source,Table::MobDropGroups,[&](const Reader& r){s.mobDropGroups.push_back({r.U32(0),r.Text(1,96),static_cast<MobDropTarget>(r.U8(2)),r.U32(3),

@@ -1,5 +1,11 @@
 #include "stdafx.h"
+#include "../dungeon/DungeonUiEvents.hpp"
 #include "TypedItemOps.hpp"
+#include "TypedQuestItems.hpp"
+#include "TypedMoney.hpp"
+#include "TypedPrivateShops.hpp"
+#include "TypedWorldUtilities.hpp"
+#include "TypedDungeonItems.hpp"
 #include "TypedRecovery.hpp"
 #include "TypedDrops.hpp"
 #include "ItemCatalogRuntime.hpp"
@@ -13,6 +19,8 @@
 #include "../core/packet.h"
 #include "../core/utils.h"
 #include "../ecs/Registry.hpp"
+#include "../ecs/AIHelpers.hpp"
+#include "../ecs/ResourceAdmission.hpp"
 #include "../ecs/services/VisibilityService.hpp"
 #include "../ecs/systems/ChatSystem.hpp"
 #include "../ecs/systems/InventorySystem.hpp"
@@ -22,15 +30,26 @@
 #include "../ecs/systems/NetworkSyncSystem.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
+#include "../ecs/systems/MovementSystem.hpp"
+#include "../ecs/components/status_components.hpp"
+#include "../ecs/components/social_components.hpp"
+#include "../ecs/components/quest_components.hpp"
+#include "../quest/questpc.h"
+#include "../network/desc.h"
 #include "../entity/char_manager.h"
 #include "../combat/pvp.h"
 #include "../quest/questmanager.h"
 #include "../world/arena.h"
 #include "../world/war_map.h"
+#include "../social/marriage.h"
 
 #include <Core/Logging.hpp>
 #include <item/Consumables.hpp>
 #include <item/ItemCatalog.hpp>
+#include <item/BuiltinUtilityRuntime.hpp>
+#include "../ecs/systems/AffectSystem.hpp"
+#include "../combat/affect.h"
+#include "../core/config.h"
 
 #include <algorithm>
 #include <array>
@@ -40,6 +59,8 @@
 #include <string>
 #include <type_traits>
 #include <variant>
+
+bool IS_SUMMONABLE_ZONE(int map_index);
 
 namespace
 {
@@ -77,6 +98,102 @@ void Tell(entt::entity character, const char* text)
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s", text);
 }
 } // namespace
+
+std::expected<void, items::ItemMissionError> RequestTypedQuestItemExchange(entt::entity character,
+	std::vector<items::MissionItemAmount> costs, std::vector<items::MissionItemAmount> rewards,
+	std::uint64_t goldCost, std::function<void(bool)> done,
+	quest::TypedItemUseSource source, std::uint64_t goldReward)
+{
+	using Error = items::ItemMissionError;
+	if (!g_registry.valid(character) || g_registry.all_of<ecs::TypedItemBusy>(character))
+		return std::unexpected(Error::Unavailable);
+
+	const auto catalog = items::runtime::CurrentCatalog();
+	const auto* typed = g_registry.try_get<ecs::TypedItems>(character);
+	const auto* login = g_registry.try_get<ecs::TypedItemLogin>(character);
+	const auto* quest = g_registry.try_get<ecs::QuestPCState>(character);
+	auto* desc = ecs::PlayerRuntime::GetDesc(character);
+	if (!catalog || !typed || !login || !quest || !quest->pc || !quest->pc->IsRunning() ||
+		!desc || !desc->IsPhase(PHASE_GAME) || !InventorySystem::CanHandleItems(character))
+		return std::unexpected(Error::Unavailable);
+
+	const auto fence = typed->state.fence;
+	const auto pid = ecs::PlayerRuntime::GetPlayerID(character);
+	const auto token = login->token;
+	const auto current = [pid, token] {
+		const auto entity = CHARACTER_MANAGER::instance().FindEntityByPID(pid);
+		const auto* active = g_registry.valid(entity) ? g_registry.try_get<ecs::TypedItemLogin>(entity) : nullptr;
+		return active && active->token == token ? entity : entt::null;
+	};
+	auto permit = ecs::resource_admission::Enter({character}, auriga::resource_admission::Operation::ItemUse);
+	if (!permit || !permit->Current() || current() != character)
+		return std::unexpected(Error::Unavailable);
+	typed = g_registry.try_get<ecs::TypedItems>(character);
+	if (!typed || typed->state.fence != fence || g_registry.all_of<ecs::TypedItemBusy>(character))
+		return std::unexpected(Error::Unavailable);
+
+	const auto& state = typed->state;
+	std::optional<items::ItemInstanceId> sourceId;
+	if (source.id)
+	{
+		const auto id = items::ItemInstanceId::Create(source.id);
+		if (!id)
+			return std::unexpected(Error::Requirements);
+		sourceId = *id;
+		const auto selected = std::ranges::find(state.items, *sourceId, &items::PersistentItem::id);
+		if (selected == state.items.end() || selected->revision != source.revision ||
+			!items::MissionItemUsable(*selected, fence.owner))
+			return std::unexpected(Error::Requirements);
+		costs = {{selected->key, selected->refinementLevel, 1}};
+	}
+
+	items::ItemMissionProof proof{fence.owner};
+	const auto nonce = NewOperationId();
+	std::ranges::copy(nonce, proof.action.begin());
+	items::ItemMission exchange;
+	exchange.id = exchange.version = 1;
+	exchange.code = "quest.item_exchange";
+	exchange.name = "Quest item exchange";
+	exchange.costs = std::move(costs);
+	exchange.rewards = std::move(rewards);
+	exchange.goldCost = goldCost;
+	exchange.goldReward = goldReward;
+	const auto ids = exchange.rewards.empty() ? std::vector<items::ItemInstanceId>{}
+		: items::runtime::PeekInstanceIds(items::MaxItemCommitItems);
+	auto commit = items::MakeItemMissionCommit(*catalog, exchange, proof, 0, fence, state.storages,
+		state.items, state.wallets, ids, TypedItemEffectNow(), sourceId);
+	if (!commit)
+		return std::unexpected(commit.error());
+	if (goldReward && std::ranges::any_of(commit->wallets, [](const auto& change) { return change.after.balance >= GOLD_MAX; }))
+		return std::unexpected(Error::Limit);
+
+	items::runtime::SpendInstanceIds(static_cast<std::size_t>(std::ranges::count_if(
+		commit->items, [](const items::ItemChange& change) { return !change.before; })));
+	auto held = std::make_shared<auriga::resource_admission::Permit>(std::move(*permit));
+	g_registry.emplace<ecs::TypedItemBusy>(character);
+	if (!items::runtime::RequestCommit(fence.owner, fence.sessionGeneration, std::move(*commit),
+		[current, done = std::move(done), held = std::move(held)](items::runtime::CommitOutcome result) mutable {
+			const auto entity = current();
+			if (entity == entt::null)
+				return;
+			if (result.state)
+				g_registry.emplace_or_replace<ecs::TypedItems>(entity, std::move(*result.state));
+			g_registry.remove<ecs::TypedItemBusy>(entity);
+			held.reset();
+			SendTypedInventory(entity);
+			if (current() != entity)
+				return;
+			if (done)
+				done(result.write.has_value());
+			if (current() == entity)
+				PumpTypedItemGrants(entity);
+		}))
+	{
+		g_registry.remove<ecs::TypedItemBusy>(character);
+		return std::unexpected(Error::Unavailable);
+	}
+	return {};
+}
 
 void RequestTypedItemMove(entt::entity character, std::uint64_t itemId, std::uint8_t storageKind, std::uint64_t storageId, std::uint32_t cell)
 {
@@ -347,6 +464,159 @@ void ApplyInstantRecovery(entt::entity character, const items::InstantRecoveryPl
 items::InstantRecoveryAdmission TypedRecoveryAdmission(entt::entity e,std::optional<std::uint32_t> cd,std::uint32_t units){return RecoveryAdmission(e,cd,units);}
 void ApplyTypedRecovery(entt::entity e,const items::InstantRecoveryPlan& p){ApplyInstantRecovery(e,p);}
 
+namespace {
+struct TypedTeleportChoice
+{
+    std::uint64_t item=0,token=0,revision=0,session=0;
+    unsigned stage=0;
+    std::chrono::steady_clock::time_point deadline;
+};
+struct TeleportDestination { const char* label; std::int32_t x,y; unsigned level; };
+// Reviewed destinations/gates from the authored ring quest, not item numbers.
+constexpr TeleportDestination Cities[]={{"Főváros",984217,265525,0},{"Dungeon",535279,1428276,0},{"Játszótér",384465,249238,0}};
+constexpr TeleportDestination Hunting[]={{"Orkok",478084,722518,0},{"Jégföld",172510,338610,1},{"Nefrit",1087234,1654784,60},{"Sivatag",286791,542794,72},{"Rémálom",37078,173319,82},{"Sötét erdő",855317,367769,92},{"Tűzföld",743387,236596,112},{"SD5",362166,36355,122},{"Vérföld",2148100,2668000,140}};
+void TypedQuestScript(entt::entity e,const std::string& text)
+{
+    auto* d=ecs::PlayerRuntime::GetDesc(e);if(!d)return;
+    packet_script p{};p.header=HEADER_GC_SCRIPT;p.skin=quest::CQuestManager::QUEST_SKIN_NORMAL;p.src_size=static_cast<decltype(p.src_size)>(text.size());p.size=sizeof(p)+p.src_size;
+    d->BufferedPacket(&p,sizeof(p));d->Packet(text.data(),static_cast<int>(text.size()));
+}
+bool UtilityAdmitted(entt::entity e)
+{
+    if(CombatSystem::IsDead(e) || !InventorySystem::CanHandleItems(e) || g_registry.all_of<ecs::TypedItemBusy>(e) || ecs::SocialSystem::HasExchange(e) || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e) || ecs::SocialSystem::GetMyShop(e)!=entt::null || ecs::SocialSystem::GetShopOwner(e)!=entt::null)return false;
+    const auto* q=g_registry.try_get<ecs::QuestPCState>(e);const auto* f=g_registry.try_get<ecs::StatusFlags>(e);
+    return q && q->pc && !q->pc->IsRunning() && (!f || (!f->isObserverMode && !f->isStunned));
+}
+bool TryUseTypedQuestScript(entt::entity character, const items::PersistentItem& source, const items::ItemCatalog& catalog)
+{
+	const auto* entry = catalog.Find(source.key);
+	const auto* script = entry ? std::get_if<items::ItemQuestRow>(&entry->category) : nullptr;
+	auto& quests = quest::CQuestManager::instance();
+	if (!script || script->dispatch != items::QuestItemDispatch::FirstHandler || !script->groupCode.empty() ||
+		!quests.HasTypedItemUse(entry->base.contentCode))
+		return false;
+
+	const auto* policy = catalog.FindUsePolicy(entry->base.usePolicy);
+	const auto facts = RecoveryAdmission(character, {}, source.count);
+	const bool admitted = UtilityAdmitted(character) && items::MissionItemUsable(source, source.owner) &&
+		policy && (policy->allowedClasses & (1u << facts.classIndex)) && (policy->allowedSexes & (1u << facts.sexIndex));
+	const auto plan = items::PlanQuestItemUse(catalog, {source.key, source.count, facts.level,
+		static_cast<items::QuestItemContext>(facts.context), false, facts.inCombat, admitted, true});
+	if (!plan || !quests.UseTypedQuestItem(character, entry->base.contentCode, {source.id.Value(), source.revision}))
+		Tell(character, "Ez a küldetéstárgy most nem használható.");
+	return true;
+}
+
+bool UseTypedUtility(entt::entity e,const items::PersistentItem& source,const items::ItemCatalog& catalog)
+{
+    const auto* entry=catalog.Find(source.key);const auto* quest=entry?std::get_if<items::ItemQuestRow>(&entry->category):nullptr;
+    if(!quest)return false;
+    const auto handler=items::BuiltinQuestHandler(quest->groupCode);
+    if(handler==items::BuiltinQuestItem::PrivateShopBundle || handler==items::BuiltinQuestItem::PrivateShopSilk){if(!OpenTypedPrivateShopComposer(e,source.id))Tell(e,"A bolt most nem nyitható meg.");return true;}
+    const auto facts=TypedRecoveryAdmission(e,{},source.count);const auto* policy=catalog.FindUsePolicy(entry->base.usePolicy);
+    const bool admitted=UtilityAdmitted(e) && source.placement && source.placement->kind==items::ItemStorageKind::Inventory &&
+        policy && (policy->allowedClasses&(1u<<ecs::PlayerRuntime::GetJob(e))) && (policy->allowedSexes&(1u<<ecs::PlayerRuntime::GetSex(e)));
+    items::BuiltinUtilityFacts utility{{source.key,source.count,static_cast<std::uint16_t>(ecs::PointSystem::GetLevel(e)),static_cast<items::QuestItemContext>(facts.context),false,facts.inCombat,admitted,true},ecs::PlayerRuntime::GetJob(e),ecs::PlayerRuntime::GetSex(e),ecs::PlayerRuntime::GetMapIndex(e),!CombatSystem::IsDead(e)};
+    if(handler==items::BuiltinQuestItem::SpouseWarp){
+        utility.summonZoneAllowed=IS_SUMMONABLE_ZONE(utility.mapIndex);utility.warpAllowed=ecs::PlayerRuntime::CanWarp(e);
+        utility.currentSp=ecs::PlayerRuntime::GetSP(e);utility.maximumSp=ecs::PointSystem::GetMaxSP(e);
+        const auto couple=marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID(e));
+        if(const auto* m=marriage::MarriageSystem::State(couple)){
+            utility.marriageAvailable=true;
+            for(const auto partner:{m->character1,m->character2})if(ecs::IsCharacter(partner) && CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(partner)))utility.marriageArenaBlocked=true;
+        }
+    }
+#ifdef ENABLE_NEWSTUFF
+    utility.pvpPotionsBlocked=g_NoPotionsOnPVP && CPVPManager::instance().IsFighting(ecs::PlayerRuntime::GetPlayerID(e));
+#endif
+    const auto& state=g_registry.get<ecs::TypedItems>(e).state;
+    const auto plan=items::PrepareBuiltinUtility(catalog,source,state.fence.owner,utility);
+    if(!plan){Tell(e,"Ez a tárgy itt nem használható.");return true;}
+    const auto token=g_registry.get<ecs::TypedItemLogin>(e).token;
+    if(handler==items::BuiltinQuestItem::PolymorphCancel){
+        const auto selected=CombatSystem::GetSelectedTarget(e);const auto target=selected==entt::null ? e : selected;
+        if(!g_registry.valid(target))return true;
+        if(const auto* native=g_registry.try_get<ecs::TypedItems>(target);native && native->state.recovery.polymorph){
+            if(!RequestTypedPolymorphClear(target))Tell(e,"Az átváltozás megszüntetése most nem indítható.");
+        }else if(AffectSystem::IsPolymorphed(target)){
+            AffectSystem::SetPolymorph(target,0,false);AffectSystem::RemoveAffect(target,AFFECT_POLYMORPH);
+        }
+        SendTypedInventory(e);return true;
+    }
+    if(handler==items::BuiltinQuestItem::SpouseWarp){
+        const auto couple=marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID(e));
+        const auto* coupleState=marriage::MarriageSystem::State(couple);if(!coupleState)return true;
+        ecs::PointSystem::Change(e,POINT_SP,-static_cast<std::int64_t>(plan->spCost),false);
+        ecs::SessionSystem::WarpToPID(e,marriage::MarriageSystem::GetOther(couple,ecs::PlayerRuntime::GetPlayerID(e)));return true;
+    }
+    if(handler==items::BuiltinQuestItem::TeleportRing){
+        g_registry.emplace_or_replace<TypedTeleportChoice>(e,source.id.Value(),token,state.fence.revision,state.fence.sessionGeneration,0u,std::chrono::steady_clock::now()+std::chrono::seconds(120));
+        TypedQuestScript(e,"[TITLE]Teleport gyűrű[/TITLE][TEXT]Hová szeretnél utazni?[/TEXT][QUESTION 1;Városok|2;Vadászterületek|3;Mégse]");return true;
+    }
+    auto commit=items::MakeBuiltinUtilityCommit(catalog,NewOperationId(),state.fence,state.storages,state.items,source.id,utility);
+    if(!commit){Tell(e,"A tárgy nem használható.");return true;}
+    const auto pid=ecs::PlayerRuntime::GetPlayerID(e);g_registry.emplace_or_replace<ecs::TypedItemBusy>(e);
+    if(!items::runtime::RequestCommit(state.fence.owner,state.fence.sessionGeneration,std::move(*commit),[pid,token,action=*plan,map=utility.mapIndex](items::runtime::CommitOutcome out){
+        const auto ch=CHARACTER_MANAGER::instance().FindEntityByPID(pid);const auto* login=g_registry.valid(ch)?g_registry.try_get<ecs::TypedItemLogin>(ch):nullptr;
+        if(!login || login->token!=token)return;
+        g_registry.remove<ecs::TypedItemBusy>(ch);if(out.state)g_registry.emplace_or_replace<ecs::TypedItems>(ch,std::move(*out.state));
+        if(out.write && !out.write->replay && !CombatSystem::IsDead(ch) && ecs::PlayerRuntime::GetMapIndex(ch)==map){
+            using Handler=items::BuiltinQuestItem;
+            switch(action.handler){
+            case Handler::Courage:case Handler::CourageCombined:
+                NetworkSyncSystem::BroadcastEffect(g_registry,ch,SE_MANTELLO);CombatSystem::AggregateMonster(ch);
+                if(action.handler==Handler::CourageCombined)CombatSystem::AggregateMonsterPlus(ch);break;
+            case Handler::Cleanse:AffectSystem::RemoveBadAffects(ch);break;
+            case Handler::Invisibility:AffectSystem::AddAffect(ch,AFFECT_INVISIBILITY,POINT_NONE,0,AFF_INVISIBILITY,action.durationSeconds,0,true);break;
+            case Handler::WhiteFlag:CombatSystem::ForgetMyAttacker(ch);break;
+            case Handler::SelfPoison:AffectSystem::ApplyPoison(ch,entt::null);break;
+            case Handler::RestoreHpFull:ecs::PointSystem::Change(ch,POINT_HP,int64_t(ecs::PointSystem::GetMaxHP(ch))-ecs::PlayerRuntime::GetHP(ch));break;
+            case Handler::RestoreSpFull:ecs::PointSystem::Change(ch,POINT_SP,int64_t(ecs::PointSystem::GetMaxSP(ch))-ecs::PlayerRuntime::GetSP(ch));break;
+            case Handler::RestoreStaminaFull:ecs::PointSystem::Change(ch,POINT_STAMINA,int64_t(ecs::PlayerRuntime::GetMaxStamina(ch))-ecs::PlayerRuntime::GetStamina(ch));break;
+            case Handler::ChinaFirework:case Handler::SpinningTop:
+                NetworkSyncSystem::BroadcastEffect(g_registry,ch,action.handler==Handler::ChinaFirework ? SE_CHINA_FIREWORK : SE_SPIN_TOP);
+#ifdef ENABLE_FIREWORK_STUN
+                AffectSystem::AddAffect(ch,AFFECT_CHINA_FIREWORK,POINT_STUN_PCT,30,AFF_CHINA_FIREWORK,300,0,true);
+#endif
+                break;
+            default:if(action.firstFirework)CombatSystem::CreateFly(ch,FLY_FIREWORK1-1+number(action.firstFirework,action.lastFirework),ch);break;
+            }
+        }
+        SendTypedInventory(ch);PumpTypedItemGrants(ch);
+    })){g_registry.remove<ecs::TypedItemBusy>(e);Tell(e,"A tárgytároló nem érhető el.");}
+    return true;
+}
+}
+bool HandleTypedQuestAnswer(entt::entity e,std::uint8_t answer)
+{
+    if(!g_registry.valid(e))return false;auto* choice=g_registry.try_get<TypedTeleportChoice>(e);if(!choice)return false;
+    // The ring menu can be replaced without an answer (a server-opened quest dialog closes it
+    // client-side). Such an answer belongs to the running quest, and an expired menu owns
+    // nothing: forget the menu and let the quest system handle the answer.
+    const auto* questState=g_registry.try_get<ecs::QuestPCState>(e);
+    if((questState && questState->pc && questState->pc->IsRunning()) || std::chrono::steady_clock::now()>choice->deadline){g_registry.remove<TypedTeleportChoice>(e);return false;}
+    const auto* typed=g_registry.try_get<ecs::TypedItems>(e);const auto* login=g_registry.try_get<ecs::TypedItemLogin>(e);
+    const auto catalog=items::runtime::CurrentCatalog();
+    auto close=[&]{g_registry.remove<TypedTeleportChoice>(e);TypedQuestScript(e,"[DONE]");};
+    // Bound to the login/session and the ring instance (checked below), not to the inventory
+    // revision: unrelated item changes, e.g. an automatic elixir tick, must not close the menu.
+    if(!typed || !login || !catalog || login->token!=choice->token || typed->state.fence.sessionGeneration!=choice->session || !UtilityAdmitted(e)){close();return true;}
+    const auto source=std::ranges::find_if(typed->state.items,[&](const auto& i){return i.id.Value()==choice->item && !i.destroyed && i.placement && i.placement->kind==items::ItemStorageKind::Inventory;});
+    const auto* entry=source!=typed->state.items.end()?catalog->Find(source->key):nullptr;const auto* quest=entry?std::get_if<items::ItemQuestRow>(&entry->category):nullptr;
+    if(!quest || items::BuiltinQuestHandler(quest->groupCode)!=items::BuiltinQuestItem::TeleportRing){close();return true;}
+    if(choice->stage==0){
+        if(answer>1){close();return true;}choice->stage=answer+1;
+        std::span<const TeleportDestination> choices=choice->stage==1?std::span<const TeleportDestination>(Cities):std::span<const TeleportDestination>(Hunting);
+        std::string text="[TITLE]Teleport gyűrű[/TITLE][QUESTION ";unsigned n=0;for(const auto& d:choices){if(n)text+='|';text+=std::to_string(++n)+";"+d.label;}
+        text+="|"+std::to_string(n+1)+";Mégse]";TypedQuestScript(e,text);return true;
+    }
+    std::span<const TeleportDestination> choices=choice->stage==1?std::span<const TeleportDestination>(Cities):std::span<const TeleportDestination>(Hunting);
+    if(answer>=choices.size()){close();return true;}const auto destination=choices[answer];close();
+    if(ecs::PointSystem::GetLevel(e)<static_cast<int>(destination.level)){Tell(e,"Az utazáshoz magasabb szint szükséges.");return true;}
+    if(!ecs::MovementSystem::WarpSet(e,destination.x,destination.y))Tell(e,"A célterület most nem érhető el.");
+    return true;
+}
+
 void RequestTypedItemUse(entt::entity character, std::uint64_t itemId)
 {
 	if (!g_registry.valid(character))
@@ -373,6 +643,10 @@ void RequestTypedItemUse(entt::entity character, std::uint64_t itemId)
 		SendTypedInventory(character);
 		return;
 	}
+	if(TryUseTypedDungeonKey(character,*current,*catalog))return;
+	if(TryUseTypedWorldUtility(character,*current,*catalog))return;
+	if(TryUseTypedQuestScript(character,*current,*catalog))return;
+	if(UseTypedUtility(character,*current,*catalog))return;
 	// Anything but a recovery item is refused by the planner (wrong category or delivery).
 	const auto* entry = catalog->Find(current->key);
 	const auto* consumable = entry ? std::get_if<items::ItemConsumableRow>(&entry->category) : nullptr;
@@ -668,13 +942,14 @@ std::expected<void, TypedGrantRefusal> RequestTypedItemGrant(entt::entity charac
 	const auto* entry = catalog->Find(grant.key);
 	if (!entry || !grant.count)
 		return std::unexpected(TypedGrantRefusal::Invalid);
+	if(catalog->CurrencyMode(grant.key)==items::CurrencyTokenMode::GroundGold){if(grant.refinementLevel || grant.count!=1 || !grant.currencyAmount)return std::unexpected(TypedGrantRefusal::Invalid);return RequestTypedGoldCredit(character,*grant.currencyAmount,{},std::move(done));}
 	const std::uint32_t stack = entry->base.maxStack ? entry->base.maxStack : 1;
 	const std::size_t most = (std::size_t { grant.count } + stack - 1) / stack;
 	if (most > items::MaxItemCommitItems)
 		return std::unexpected(TypedGrantRefusal::Invalid);
 	const auto ids = items::runtime::PeekInstanceIds(most);
 	const auto& state = typed->state;
-	auto timedGrant=grant;timedGrant.createdAtUtcMs=TypedItemEffectNow();
+	auto timedGrant=grant;if(!timedGrant.createdAtUtcMs)timedGrant.createdAtUtcMs=TypedItemEffectNow();
 	auto commit = items::MakeGrantCommit(*catalog, NewOperationId(), state.fence, state.storages, state.items, timedGrant, ids);
 	if (!commit)
 	{
@@ -690,9 +965,11 @@ std::expected<void, TypedGrantRefusal> RequestTypedItemGrant(entt::entity charac
 	items::runtime::SpendInstanceIds(static_cast<std::size_t>(std::ranges::count_if(commit->items, [](const items::ItemChange& c) { return !c.before; })));
 	const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(character);
 	const uint64_t token = login->token;
+	const auto dungeonRun=DungeonUi::Events::Context(character);
 	g_registry.emplace_or_replace<ecs::TypedItemBusy>(character);
 	const bool queued = items::runtime::RequestCommit(typed->state.fence.owner, typed->state.fence.sessionGeneration, std::move(*commit),
-		[pid, token, grant, code = entry->base.contentCode, done = std::move(done)](items::runtime::CommitOutcome outcome) {
+		[pid, token, grant, dungeonRun, code = entry->base.contentCode, done = std::move(done)](items::runtime::CommitOutcome outcome) {
+			if(outcome.write)DungeonUi::Events::Loot(dungeonRun,pid,items::PackItemKey(grant.key),grant.refinementLevel,grant.count);
 			const entt::entity entity = CHARACTER_MANAGER::instance().FindEntityByPID(pid);
 			const auto* current = entity != entt::null && g_registry.valid(entity) ? g_registry.try_get<ecs::TypedItemLogin>(entity) : nullptr;
 			if (!current || current->token != token)

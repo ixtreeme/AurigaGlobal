@@ -16,7 +16,164 @@ Induláskor a kezelő a mellette található szervercsomagot választja; másik
 csomag a **Szervermappa…** gombbal nyitható meg. A választást és az
 ablakméretet a felhasználó Qt-beállításaiban tárolja; jelszavakat nem tesz oda.
 
+## Tájékozódás az alkalmazásban
+
+### Ideiglenes mentés és jóváhagyás
+
+Az **Ideiglenes mentés** tartós helyi tervezetet készít. Több tárgy, láda,
+mobdrop vagy fájl egymás után szerkeszthető; a következő megnyitás már a
+tervezet értékeit mutatja. Az éles szerveradatok eközben változatlanok.
+Ugyanannak az elemnek az újabb mentése a meglévő tervezetet frissíti,
+az összesítő pedig továbbra is az eredeti és a legutolsó értéket hasonlítja össze.
+
+A külön **Függő módosítások** oldalon név szerint kereshetsz, kijelölheted a
+tervezeteket, folytathatod a szerkesztést vagy visszavonhatod a helyi változatot.
+Az **Összes átnézése és feltöltése…** egy közös összesítőt nyit az aktuális
+szerver összes tervezetéről. A **Kijelöltek átnézése…** a kijelölt részhalmazt
+nyitja meg. A keresés által elrejtett elemek is az „Összes” csomagjához tartoznak.
+A **Minden szerver** szűrővel más célgépek tervezetei is megtekinthetők;
+feltöltéshez a felső választóban az eredeti szervert kell kiválasztani.
+
+Az összesítő az érintett elemet, a módosított mezőt és a korábbi/új értéket
+mutatja, kereshető és külön teljes szöveges részlettel rendelkezik.
+
+Csak a **Jóváhagyás és feltöltés** indítja el a mentést és az ahhoz tartozó
+élő frissítést. A **Vissza a szerkesztéshez**, az ablak bezárása és az
+alapértelmezett Enter visszalép; ilyenkor a szerveradatok változatlanok,
+a tervezetek a függő listában maradnak, az app bezárása után is.
+A jóváhagyott pillanatkép tartalmát és
+célgépét az app feltöltés előtt újra ellenőrzi. A meglévő natív validálás,
+verzióellenőrzés és biztonsági mentés ezután is érvényes.
+
+A tárgyak, ládák és mobdropok egy adatbázis-tranzakcióban kerülnek mentésre,
+így új tárgy és az arra hivatkozó jutalom is közös csomagba tehető. Kizárólag
+jutalmak esetén egyetlen új élő verzió készül. A fájl- és üzemeltetési műveletek
+igazolt eredménnyel, egymás után futnak. Hiba után az app megmutatja a már
+feltöltött tételek számát, és a hátralévőknél megáll. Bizonytalan helyi fájl-
+és katalógusfeltöltéshez a **Feltöltési eredmény ellenőrzése** művelet használható;
+gazdasági műveletet az app nem ismétel meg automatikusan.
+
+Ez vonatkozik a tárgyakra, ládatartalomra, mobdropokra, tömeges hozzáadásra,
+eltávolításra és esély/darabszám módosításra, konfigurációra, adat- és
+questfájlokra, próbapadműveletekre, SSH-profilokra, mentési beállításokra,
+visszaállításra, archívumimportálásra és a távoli írási műveletekre is.
+Fordításnál vagy sorsolásos próbapadműveletnél az összesítő a végrehajtandó
+művelet paramétereit mutatja; az eredmény a végrehajtás során keletkezik.
+
+A helyi pillanatképek a
+`%LOCALAPPDATA%/AurigaServerManager/temporary-changes/pending` mappába kerülnek.
+Az adatfájlok teljes tartalmát is megőrzik, ezért ezt a saját mentéseidhez
+hasonlóan kezeld. Az SSH-jelszavak továbbra sem kerülnek ezekbe a fájlokba;
+az összesítő a titkos mezők értékét eltakarja. Sikertelen vagy megszakadt
+feltöltést az app nem ismétel meg automatikusan.
+A korábbi kezelőverzió ideiglenes mentései a **Korábbi ideiglenes mentések…**
+ablakban megtekinthetők és kifejezetten átvehetők az új függő listába.
+
+[A gyűjtőoldal előnézete](reports/ui/2026-11-17_pending_changes.png).
+
+### Külön Dropok oldal
+
+A bal oldali **Dropok** menü saját oldalt nyit, **Mobdropok** és
+**Ládák tartalma** fülekkel. Mindkét fülön elérhető a név szerinti keresés,
+az egyedi szerkesztés és a kijelölt célok közös módosítása. A tárgytípusok
+adatait továbbra is a **Tárgykatalógus** kezeli. Egy mentett ládatípusból
+a **Megnyitás a Dropok oldalon…** gomb vezet a tartalomhoz.
+
+A mobdrop és a ládatartalom szerkesztője osztott ablak. Bal oldalon a kereshető,
+kategóriára szűrhető, ikonos tárgylista, jobb oldalon a megnyitott tartalom
+található. Húzd a kijelölt tárgyakat balról jobbra a hozzáadáshoz. A tartalom
+sorait a bal szélükön lévő sorszámnál fogva húzhatod vissza a tárgylistára,
+hogy kivedd őket. Ctrl/Shift kijelöléssel több tárgy vagy sor mozgatható együtt.
+Dupla kattintással és a **Kijelöltek hozzáadása →** gombbal is hozzáadhatsz.
+Az eredeti darabszám, esély, fejlesztési szint és bónuszolási beállítás a
+többi sorban megmarad. A láda összes jutalmának kivétele üres, jutalom nélküli
+ládát eredményez. A mentés a Függő módosítások közé kerül, a feltöltéshez
+továbbra is közös jóváhagyás szükséges.
+
+A katalógus és a választók a kliens eredeti ikonjait használják. Az ikoncsomag
+a kezelő része, Unity-telepítés nélkül is működik. A látható ikonok igény szerint
+töltődnek be és gyorsítótárba kerülnek. Hiányzó ikon esetén kérdőjeles jelölő
+látszik; a katalógusadatok ettől nem változnak.
+
+A tárgy- és szörnyválasztók gépelés közben külön, görgethető találati listát
+nyitnak. A név részletére is keresnek, kis- és nagybetűtől, valamint ékezetektől
+függetlenül: például a `fulbevalo` a fülbevalókat is megtalálja. A listában és
+kiválasztás után az eredeti, ékezetes név marad meg.
+Kattintással vagy a nyilakkal és Enterrel választhatsz; az Escape a listát
+zárja be. Egyszerre legfeljebb 12 sor látszik, de minden egyező találat
+elérhető görgetéssel. A tárgyak mellett a kategória és a szint is látszik.
+Ez a mobdropok, ládatartalmak és a tömeges műveletek választóiban is működik.
+
+A bal oldali menü négy csoportot használ: **Szerver**, **Játéktartalom**,
+**Üzemeltetés** és **Kapcsolatok**. A menü fölötti keresővel az oldalak neve
+és feladata is kereshető, ékezetek nélkül is. A **Ctrl+K** a keresőre ugrik,
+az Enter az első találatot nyitja meg. Az oldal címe alatt rövid leírás segít
+eldönteni, hogy jó helyen jársz-e.
+
+Az Áttekintés gyorsgombjai a tárgykatalógushoz, a küldetésekhez és a mentésekhez
+vezetnek. A szervervezérlők kisebb ablakban egymás alá rendeződnek. A felső
+**Nem mentett** jelzésből vissza lehet ugrani a módosított dokumentumhoz;
+ez önmagában semmit nem ment és nem vet el.
+
+A sötét felületen az oldalak saját színkiemelést kapnak: a tárgykatalógus
+aranyat, a küldetések rózsaszínt, az adatfájlok türkizt, a mentések zöldet,
+a távoli elérés és a próbapad lilát. Ugyanez a szín jelenik meg a menüben,
+az oldalcímben és a kijelölt szerkesztőfüleken. A panelek világosabb háttere,
+a színes kártyaszegélyek és a váltakozó táblázatsorok segítik a tájékozódást.
+Az indítás és mentés zöld, az újratöltés türkiz, a leállítás és törlés piros,
+a mentés-visszaállítás borostyán gombot kap. Az állapotokat továbbra is
+szöveg és jelölés mutatja a szín mellett.
+[A 2026-11-17-i megjelenés előnézete](reports/ui/2026-11-17_server_manager_color_theme.png).
+
+Az **Adatfájlok** oldalon a **Gyakori fájlok** választó közvetlenül megnyitja
+a csomagban ténylegesen létező boltok, műhelyreceptek, kezdőfelszerelés és
+gyűjtögetési helyek fájljait. A **Szervernaplók** oldalon a szöveges kereső
+hibákra vagy figyelmeztetésekre szűréssel együtt is használható; a számláló
+mutatja a megjelenített és a beolvasott sorok számát.
+
 ## Helyi és távoli célgép
+
+### Csatornák és core-ok kezelése
+
+Az **Áttekintés → Szervervezérlés → CH-k és core-ok…**, illetve a
+**Beállítások → CH-k és core-ok…** gomb ugyanazt a tervezőt nyitja meg.
+
+- **Új CH:** válassz új csatornaszámot és egy meglévő CH térképfelosztását,
+  vagy indulj egyetlen, kézzel kiosztott core-ral. A mintacsatorna üres core-jai
+  kimaradnak. A portok, core-azonosítók és futási mappák újak lesznek; a közös
+  SQL-, TLS- és játékszabály-beállítások öröklődnek.
+- **Új core / Térképek módosítása:** térképek neve és azonosítója szerint
+  kereshetsz. Az áthelyezés a kiválasztott CH más core-jaitól veszi át a
+  térképeket; más csatornát nem módosít. Egy core legfeljebb 64 térképet kap.
+- **Kijelölt törlése:** a CH teljes core-listáját vagy egyetlen core definícióját
+  törli a tervezetből. Legalább egy normál CH egy core-ja megmarad. A régi
+  naplókat, mentéseket, karaktereket és a közös játékadatokat nem törli.
+- **Fölösleges felülírások elhagyása:** a közös alapértékekkel egyező
+  core-beállításokat elhagyja, az effektív működés megváltoztatása nélkül.
+
+A **Módosítások átvétele** visszaviszi a tervezetet a meglévő konfigurációs
+szerkesztőbe, a többi nem mentett mezővel együtt. A véglegesítéshez kattints az
+**Ideiglenes mentés** gombra, majd a **Függő módosítások** oldalon hagyd jóvá a feltöltést. A natív ellenőrzés ellenőrzi többek között
+a portütközéseket és az azonosítókat, majd biztonsági másolat készül.
+Futó játék mellett tervezni lehet, menteni leállítás után lehet. Ha kizárólag
+a `game_servers` tartalma változik, a helyi MariaDB-t nem szükséges leállítani;
+a közös konfiguráció módosítása továbbra is SQL-leállítást igényel.
+
+Az új futási mappák előkészítéskor vagy indításkor jönnek létre. A core-ok
+közös binárist, konfigurációt, térkép- és questadatokat használnak. Csak
+a játék által ténylegesen olvasott `BANIP`, `CMD`, `CRC`, `VERSION` alapfájlok
+kerülnek a game core mappájába; céhjel-alapfájlok csak engedélyezett céhjel-
+kiszolgálásnál. Database és LoginServer nem kapnak game-only alapfájlokat.
+A meglévő futási fájlokat az előkészítés nem írja felül és nem törli.
+
+**Kliens CH-lista:** a mentett konfigurációból a tervező **Unity CH-lista
+exportálása…** gombja publikus JSON-t készít, SQL-jelszó és más hitelesítőadat
+nélkül. A Unity aktív projektjében: **Metin2 → Import server channels…**,
+majd válaszd ki az exportot. Az import a normál CH-kat, az auth- és markportot
+frissíti, a hostot, TLS-pint, kliensverziót és item-beállításokat megtartja.
+Megszűnt belépési port helyett érvényes core-portot választ. A CH99 közös
+csatorna az exportban nem jelenik meg játékosok által választható CH-ként.
+Új CH a szerver újraindítása és a kliens profilfrissítése után választható.
 
 Az ablak tetején a szerverválasztó tartalmazza a **Helyi szerver**
 lehetőséget és a mentett SSH-profilokat. A **HELYI / TÁVOLI** jelzés,
@@ -27,9 +184,9 @@ alkalmazásra érvényes:
   fájlellenőrzés, előkészítés, SQL-ellenőrzés, indítás, leállítás és questfrissítés.
 - **Beállítások:** a kiválasztott gép `server.json` fájlja, valamennyi közös,
   core-, hálózati, SQL-, TLS- és játékszabály-mezővel.
-- **Játékadatok, Questek és Lua:** a kiválasztott csomag fájljai,
+- **Adatfájlok, Küldetések és Lua:** a kiválasztott csomag fájljai,
   azonos űrlapos és forráskódos szerkesztővel.
-- **Naplók:** a kiválasztott gép naplólistája és a naplók frissülő vége;
+- **Szervernaplók:** a kiválasztott gép naplólistája és a naplók frissülő vége;
   a konfiguráció ismert jelszavai és vezérlőtokenjei kitakarva jelennek meg.
 
 A helyi és távoli fájlok külön maradnak: a távoli dokumentumot memóriában
@@ -176,15 +333,22 @@ Az oldalsáv többi elnevezése is pontosabb: **Szerverállapot**,
 
 A katalógus böngészése és a tárgy szerkesztése külön munkanézet.
 Egy kattintás kijelöli a sort és összefoglalót ad; dupla kattintás vagy a
-**Szerkesztés megnyitása** gomb nyitja meg a tárgyat. A kereső a kódból képzett
-elnevezést, a kategóriát, a tartalomkódot, a fordítási kulcsot és az azonosítót
-is figyelembe veszi. Az elnevezés a belső kód olvasható változata; a kezelő
-nem állítja róla, hogy a kliens fordítása. A játékbeli név és leírás továbbra
-is kliensoldali fordítási kulcsból származik.
+**Szerkesztés megnyitása** gomb nyitja meg a tárgyat. A lista és a kereső a
+magyar játékbeli neveket használja; ékezetek nélkül is kereshetsz. A belső
+kódok és azonosítók nem jelennek meg a listában. A névjegyzék a kliens
+magyar fordításaiból és az elfogadott tárgyátalakítások megfeleltetéséből
+készül; hiányzó névadat esetén „Névtelen tárgy” jelenik meg.
+
+A névjegyzéket az `SRC/Tools/ServerManager/export_content_names.py` állítja
+elő a `--locales` kliensfordítás-mappából és a `--catalog` elfogadott
+átalakítási katalógusból. Az eredménye a
+`config/server_manager/content_names_hu.json`; ezt a kezelő buildje
+önállóan futtatható adatként csomagolja. A nevek megjelenítése nem írja át
+a katalógust vagy a droptáblákat.
 
 Az **Új tárgytípus…** ablakban válassz kategóriát, ahol elérhető, tárgyfajtát,
 belső elnevezést és szükséges karakterszintet. Az elnevezésből ékezet nélküli
-tartalomkód készül, amely kézzel felülírható. A foglalt vagy hibás kódot az
+tartalomkód készül, amely a **Haladó: belső tartalomkód** alatt felülírható. A foglalt vagy hibás kódot az
 ablak helyben jelzi. A **Piszkozat létrehozása** szerkeszthető tárgyat nyit;
 az adatbázisba csak az **Új tárgytípus mentése** ír. A létrehozás mind a 18
 kategóriában a modell ellenőrzött alapértékeit használja.
@@ -214,21 +378,26 @@ A **Fejlesztési értékek kitöltése** ablak élő előnézetet ad. Csak az
 bezárása visszaállítja a korábbi értékeket. A katalógusba ezután is külön
 mentés szükséges.
 
-A **Droptáblák** gomb a szörnyek droptábláit mutatja (IC-035). Egy tábla
-egy szörnyhöz (régi mob-vnum) vagy egy szörnyranghoz tartozik; a rang a közös
-drop, és csak „minden bejegyzés” módú lehet. A kereső a kódra, a szörnyre, a
-rangra és a tárgyakra is szűr. A **Megnyitás…** és az **Új droptábla…**
+A **Dropok → Mobdropok** fül a szörnyek droptábláit mutatja (IC-035). Egy tábla
+egy szörnyhöz vagy egy szörnyranghoz tartozik; a rang a közös
+drop, és csak „minden bejegyzés” módú lehet. A lista a szörny nevét és szintjét,
+a sorsolás módját, a tárgyak számát és neveit mutatja. A kereső a szörnyek,
+rangok és az összes dobható tárgy nevére szűr, ékezetek nélkül is.
+A **Megnyitás…** és az **Új droptábla…**
 ablakban a sorsolási módtól függően esélyt (százalékban, legfeljebb hét
 tizedesjeggyel) vagy súlyt adsz meg; a másik oszlop rejtve marad, de módváltáskor
 nem vész el. Az **Ölésenként** oszlop a várható esélyt mutatja semleges
-szorzókkal. A kód a célból és a módból készül, amíg kézzel nem írod át.
+szorzókkal. A szörnyet és a tárgyakat név szerint kereshető listából választod;
+az azonos nevek mellett a választóban szint, rang vagy tárgykategória segít.
+A belső kód automatikus, a meglévő táblák kódja változatlanul megmarad.
 
 A **Mentés** csak ezt az egy táblát módosítja, a teljes katalógus natív
 ellenőrzése után. Elutasításkor semmi nem íródik, és az ablak a beírt
 értékekkel, a hibával együtt nyílik újra. A megnyitott tárgypiszkozat
 megmarad. A törlés megerősítést kér; az előző állapot a `run/catalog-editor`
 mappában marad. Droptáblában szereplő tárgy csak akkor vezethető ki, ha előbb
-kiveszed a táblából. A játékszerver a C7b-3-ig nem sorsol ezekből.
+kiveszed a táblából. A mentett dropok a futó core-okon újraindítás nélkül
+betöltődnek; teljes sikert csak minden futó core visszaigazolása után jelez.
 
 A próbapad külön részekben mutatja a karakter előkészítését, a
 tárgypéldány készítését és a karakter leltárát. A példányazonosító a
@@ -236,6 +405,83 @@ részletekben érhető el, a listában az olvasható elnevezés kap elsőbbsége
 A törlő és visszaállító ablak konkrétan megnevezi a műveletet; alapértelmezett
 választása a **Mégse**. Valódi karakterrel végzett próbánál a karakter legyen
 kijelentkezve.
+
+### Ládák és több cél közös szerkesztése
+
+A **Dropok → Ládák tartalma** listában név szerint kereshetsz a használattal
+vagy kulccsal nyitható ládákra és a bennük szereplő tárgyakra. Dupla
+kattintással megnyílik a teljes tartalom: jutalmat adhatsz hozzá, törölhetsz,
+módosíthatod a darabszámot, a fejlesztési szintet, a bónusszal létrejövés esélyét és
+a sorsolást. A pettojásokat és a quest által kezelt dobozokat továbbra is
+a saját szerkesztőjük kezeli.
+
+A **Bónusszal létrejövés esélye %** a kisorsolt felszerelés létrehozásakor
+alkalmazott véletlen normál bónuszolás esélye. A bónuszok fajtáját, számát és
+erősségét a tárgy szabályai határozzák meg; csak az ezt támogató tárgyakon hat.
+Mobdropnál egy pozitív érték felülírja a tárgy alapértelmezett esélyét, a 0
+megőrzi a tárgy alapbeállítását. Ládánál a 0 nem kér külön bónuszolást.
+A fejléc és a mező súgója is mutatja ezt a különbséget.
+
+Egy új tárgy több helyre adásához jelöld ki a katalógusban, majd válaszd a
+**Tömeges módosítás… → Hozzáadás több helyre…** menüt. A ládák és mobdropok
+listáján ugyanebből a menüből érhető el. Név szerint szűrhetsz, kijelölheted az
+összes látható célt, és egy műveletben keverheted a ládákat és a
+mobdroptáblákat. A keresés által elrejtett kijelölések megmaradnak.
+
+A közös alapértékek mellett az előnézet **Darab** és **Esély / súly** mezői
+célonként is módosíthatók. A felület külön kezeli a ládanyitás és a
+mobölés esélyét, a súlyozott listáknál pedig a meglévő súlyokból és szükség
+esetén az ölésszámból számít várható esélyt. A már szereplő tárgy és
+fejlesztési szint alapértelmezetten kimarad; a meglévő sorok módosítását
+külön kell választani.
+
+A **Kijelölt célok mentése** minden változást egyetlen ellenőrzött
+verzióban ír. Hibás adat vagy másik szerkesztő közben mentett változása
+esetén nincs részleges mentés. A futó core-ok újraindítás nélkül átveszik
+a ládatartalmat és a mobdropokat; teljes sikert a kezelő csak minden futó
+core visszaigazolása után jelez. Egy már megnyitott láda megerősítése a
+játékosnak megmutatott tartalmat használja; az új ládanyitások az új
+verziót kapják. Közös jutalomprofilt használó ládák közül is kizárólag a
+kijelöltek változnak.
+
+Ehhez a szerver új buildje és a **044_live_container_loot.sql** migráció
+szükséges. Az élő jutalmak külön, változatlan előzményeket őrző verziókban
+tárolódnak; a tárgydefiníciók és a játékosok tartós katalógushivatkozása
+nem változik a jutalmak szerkesztésekor.
+
+A katalógus, a láda- és a mobdroplista
+**Tömeges módosítás… → Eltávolítás több helyről…** menüje ugyanilyen
+kijelöléssel távolít el egy tárgyat. A listán csak azok a helyek jelennek
+meg, ahol a tárgy szerepel. Alapból minden fejlesztési szint és minden
+ismétlődő egyező sor kikerül; választható egyetlen fejlesztési szint is.
+Az előnézet mutatja a kikerülő és megmaradó sorok számát. A kiürült láda
+nem ad jutalmat; az utolsó sorát elvesztő mobdroptábla megszűnik. A mentés
+közös, ellenőrzött és élőben betöltődik minden futó core-on.
+
+Az **Esély és darabszám több helyen…** ugyanebben a menüben a meglévő
+előfordulások beállítását módosítja. Válaszd ki a tárgyat, majd jelöld ki
+név szerint a célokat. A **Darabszám** és az **Esély / súly** külön
+kapcsolható; a kikapcsolt mező eredeti értéke megmarad. Alapból minden
+fejlesztési szint egyező soraira érvényes, de egyetlen szintre szűkíthető.
+Új bejegyzést nem ad hozzá, a bónusszal létrejövés esélyét és a mobsorok szintkorlátait
+megőrzi. Az előnézetben célonként eltérő érték is megadható; a cellák
+súgója mutatja az előző és új darabszámot, valamint a várható esélyt.
+Súlyozott sorsolásnál a súly módosul, a tényleges százalékot a teljes lista
+alapján számolja. A mentés ugyanazon közös élő kiadásba kerül.
+
+[Tömeges esély- és darabszámmódosítás, ellenőrzések](reports/item_combat/2026-11-17_bulk_reward_update.md).
+[Razor teljes droplistás / TXT-s munkafolyamatának javasolt felülete](server_manager_drop_workbench_direction.md).
+
+A kezelő betöltésenként megtartja a feldolgozott katalógust és a listák
+névadatait. Szűrés vagy egy másik tárgy kijelölése nem másolja újra a teljes
+adatállományt. Új adatbázis-válaszkor a gyorsítótár frissül; egy nyitott
+tárgypiszkozat élő jutalommentéskor megmarad. A meglévő láda tárgyadataihoz
+nem épül fel a külön élő szerkesztőben elérhető, rejtett jutalomtáblázat.
+
+[Eltávolítás, teljesítménymérés és élő játékpróba](reports/item_combat/2026-11-17_bulk_reward_removal_performance.md).
+
+Részletes használat, képernyőképek és a valódi Unity-játékpróba:
+[élő ládatartalom és tömeges hozzáadás](reports/item_combat/2026-11-17_live_chests_bulk_rewards.md).
 
 Ellenőrzés: `tests/server/ItemWorkflowTests.py` a létrehozást, másolást,
 kódütközést, azonosítókimerülést, piszkozatvédelmet, előnézetet, a változások

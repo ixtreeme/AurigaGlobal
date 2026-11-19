@@ -1,5 +1,7 @@
 #pragma once
-// GC_TYPED_INVENTORY (225), versions 1–13. V13 adds owned costume clocks and rules.
+// GC_TYPED_INVENTORY (225). V13 adds owned costume clocks and rules; v19
+// retains all v18 sections and adds companion_form:u32 after costume duration
+// (zero for body/hair/weapon). Kinds 4/5 use appended equipment slots 25/26.
 //
 // Explicit little-endian byte layout, no struct/ABI dependence. The Unity
 // client decodes the same layout (Metin2GamePacketCodec.ReadTypedInventory);
@@ -50,13 +52,18 @@ struct TypedInventoryView
     struct FixedRule {CompanionClock clock;std::uint64_t durationMs;bool flying;bool operator==(const FixedRule&) const=default;};
     std::map<ItemInstanceId,FixedRule> fixedRules;
     std::map<ItemInstanceId,ItemCostumeRow> costumeRules;
+    std::map<ItemInstanceId,CostumeClockDefinition> stoleClocks; // GC225 v24; independent C19 lifetime.
+    std::map<ItemInstanceId,bool> uniqueUnequipAllowed; // GC225 v25 finite C3 source restriction.
     std::map<ItemInstanceId,ItemRegaliaRow> regaliaRules;
+    std::map<ItemInstanceId,std::uint8_t> sashGrades;
+    std::map<ItemInstanceId,std::vector<BonusEntry>> sashContributions;
     std::map<ItemInstanceId,ItemBonusToolRow> bonusToolRules;
     std::map<ItemInstanceId,ItemSoulRow> souls;
-    std::map<ItemInstanceId,SoulProfile> soulRules;
+    std::map<ItemInstanceId,SoulProfile> soulRules;std::map<ItemInstanceId,std::uint16_t> soulGrades;
     struct AmmoRule {std::uint8_t kind;std::uint32_t policy;std::uint16_t units;bool operator==(const AmmoRule&) const=default;};
     std::map<ItemInstanceId,AmmoRule> ammunition;
     std::map<ItemInstanceId,ItemForgeAidRow> forgeAids;
+    std::map<ItemInstanceId,std::uint64_t> energyDurations;
 };
 
 // The owner is the receiving character; it is not repeated on the wire.

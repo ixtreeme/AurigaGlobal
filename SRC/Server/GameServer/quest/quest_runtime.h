@@ -11,6 +11,7 @@ struct RuntimeGeneration : RuntimeSnapshot {
     lua_State* vm = nullptr;
     source::Catalog sources;
     decltype(CQuestManager::m_mapNPC) npcs;
+    decltype(CQuestManager::m_typedItemUses) typedItemUses;
     decltype(CQuestManager::m_mapNPCNameID) aliases;
     decltype(CQuestManager::m_mapTimerID) timers;
     decltype(CQuestManager::m_questCategories) categories;

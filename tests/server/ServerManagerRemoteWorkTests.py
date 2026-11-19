@@ -576,6 +576,8 @@ class GuiTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.errors = []
         self.owner = type('Owner', (), {'error': lambda _, text: self.errors.append(text)})()
+        from ReviewFixture import approve_fixture
+        approve_fixture(self,self.owner)
         self.page = RemotePage(self.owner, self.root / 'profiles.json')
         self.addCleanup(self.page.shutdown)
         self.addCleanup(self.page.close)
@@ -667,6 +669,26 @@ class GuiTests(unittest.TestCase):
         self.assertIn('sikeresen', self.page.work.status.text())
         self.assertIsNone(self.page.work.snapshot)
         self.assertEqual(self.errors, [])
+
+    def test_pending_upload_replays_durable_approved_files_after_original_snapshot_closed(self):
+        import change_review as review
+        source=self.root/'source';source.mkdir();(source/'file').write_bytes(b'approved upload')
+        self.page.work.choose([str(source)]);self.page.work.contents.setChecked(True);target=self.root/'pending-remote'
+        self.owner.remote_profile=self.page.current()
+        def transfer(_):
+            code='import shutil\n'
+            for row in self.page.work.request['files']:
+                destination=target/'.auriga-manager/uploads'/self.page.work.request['id']/'files'/row['key']
+                code+='shutil.copy2('+repr(str(self.page.work.snapshot.root/row['key']))+','+repr(str(destination))+')\n'
+            return sys.executable,['-c',code]
+        with mock.patch.object(ssh.Session,'ssh',return_value=self.local_worker(target)),mock.patch.object(ssh.Session,'sftp',side_effect=transfer):
+            self.page.work.prepare();self.wait(lambda:not self.page.work.active())
+            snapshot=self.page.work.snapshot;request=snapshot.upload_request();files={r['key']:dict(path=str(snapshot.root/r['key']),sha256=r['sha256']) for r in request['files']}
+            stage=review.Stage.create(self.owner,'Feltöltés','remote_operation',request,[('Fájl','Tartalom','Régi','Új')],files,persistent=True)
+            stage.approve(self.owner);stage.begin(self.owner);snapshot.close();self.page.work.snapshot=None;(source/'file').write_bytes(b'changed afterwards')
+            result=[];self.page.work.execute_pending(stage,request,lambda ok,error='':result.append((ok,error)))
+            self.wait(lambda:not self.page.work.active() and bool(result))
+        self.assertEqual((target/'file').read_bytes(),b'approved upload');self.assertEqual(result,[(True,'')]);self.assertEqual(stage.read()[1]['state'],'applied')
 
     def test_deleted_only_pipeline_keeps_backup_and_does_not_start_sftp(self):
         source = self.root / 'empty'; source.mkdir()

@@ -41,18 +41,20 @@ std::expected<AttributeRuntimeQuote,S> PrepareAttributeRuntime(const ItemCatalog
     const unsigned begin=service->pool==AttributePool::Normal ? 0 : service->pool==AttributePool::Rare ? 5 : 7;
     auto working=q.before;unsigned count=0;for(unsigned i=begin;i<begin+group->capacity;++i)count+=working.slots[i].has_value();
     const bool rolling=service->operation==AttributeOperation::Add || service->operation==AttributeOperation::Reroll;
+    q.pairedAddon=UsesPairedAttributeAddon(c,target->key,target->refinementLevel,*service);
     if(rolling)
     {
         if(service->operation==AttributeOperation::Add)q.draws=service->addCount;
         else for(unsigned i=begin;i<begin+group->capacity;++i)if(working.slots[i] && working.lockedSlot!=i){++q.draws;working.slots[i].reset();}
         std::set<BonusId> excluded;
+        if(q.pairedAddon){excluded.insert(BonusId::NormalDamagePercent);excluded.insert(BonusId::SkillDamagePercent);}
         for(unsigned i=begin<5 ? 0 : 5;i<(begin<5 ? 5u : 8u);++i)if(working.slots[i])excluded.insert(working.slots[i]->bonus);
         if(group->excludeStatic)
         {
             const auto profiles=c.BonusProfilesAt(target->key,target->refinementLevel);if(!profiles)return std::unexpected(S::Invalid);
             for(const auto* profile:{profiles->base,profiles->refinement})if(profile)for(const auto& entry:profile->Data().entries)excluded.insert(entry.bonus);
         }
-        for(const auto& candidate:p->candidates)if(candidate.pool==service->pool && !excluded.contains(candidate.bonus))
+        for(const auto& candidate:p->candidates)if(candidate.pool==service->pool && candidate.weight && !excluded.contains(candidate.bonus))
         {AttributeRuntimeChoice choice{candidate.bonus,candidate.weight,{}};for(const auto& value:candidate.values)choice.values.push_back(value.value);q.choices.push_back(std::move(choice));}
         for(const auto& tier:service->tiers)q.tiers.push_back({tier.tier,tier.chanceBp});
     }
@@ -61,7 +63,9 @@ std::expected<AttributeRuntimeQuote,S> PrepareAttributeRuntime(const ItemCatalog
     // A complete deterministic successful proposal validates every requirement
     // before any entropy is read. Repeated bonusRoll=1 selects without replacement.
     AttributeRequest probe{Pair(c,fence,*source,*target,actor),q.before,service->successBp==10000 ? std::uint16_t{0} : std::uint16_t{1},static_cast<std::uint8_t>(q.locks.empty() ? 0 : 1),{}};
-    probe.draws.assign(q.draws,{1,1});const auto valid=PlanAttributeService(c,probe);if(!valid)return std::unexpected(Refusal(valid.error()));
+    unsigned ordinaryDraws=q.draws;
+    if(q.pairedAddon){probe.addonRolls={1,1,1,1,1};const auto base=AttributeRerollBase(c,target->key,q.before,probe.addonRolls);if(!base)return std::unexpected(S::Invalid);unsigned occupied=0;for(unsigned i=0;i<5;++i)occupied+=base->slots[i].has_value();ordinaryDraws=count>occupied ? count-occupied : 0;}
+    probe.draws.assign(ordinaryDraws,{1,1});const auto valid=PlanAttributeService(c,probe);if(!valid)return std::unexpected(Refusal(valid.error()));
     if(rolling && q.choices.size()<q.draws)return std::unexpected(S::NoCandidate);
     return q;
 }
@@ -77,7 +81,9 @@ std::expected<AttributeRuntimePlan,S> MakeAttributeRuntimeCommit(const ItemCatal
     std::set<ItemStorage> storages;for(const auto& l:layouts)if(l.storage.owner!=fence.owner || !ValidItemStorage(l) || !storages.insert(l.storage).second)return std::unexpected(S::Invalid);
     if(std::ranges::all_of(op,[](auto b){return b==0;}))return std::unexpected(S::Invalid);
     AttributeRequest probe{Pair(c,fence,source,target,actor,op),target.attributes,quote->chance==10000 ? std::uint16_t{0} : std::uint16_t{1},static_cast<std::uint8_t>(quote->locks.empty() ? 0 : 1),{}};
-    probe.draws.assign(quote->draws,{1,1});const auto preflight=PlanAttributeService(c,probe);
+    unsigned probeDraws=quote->draws;
+    if(quote->pairedAddon){probe.addonRolls={1,1,1,1,1};const auto base=AttributeRerollBase(c,target.key,target.attributes,probe.addonRolls);if(!base)return std::unexpected(S::Invalid);unsigned before=0,after=0;for(unsigned i=0;i<5;++i){before+=target.attributes.slots[i].has_value();after+=base->slots[i].has_value();}probeDraws=before>after ? before-after : 0;}
+    probe.draws.assign(probeDraws,{1,1});const auto preflight=PlanAttributeService(c,probe);
     if(!preflight || !MakeAttributeCommit(c,*preflight,fence,layouts,items))return std::unexpected(S::Invalid);
     const auto draw=[&](std::uint32_t max)->std::optional<std::uint32_t>{if(!max || !random)return {};auto v=random(max);return v && *v>=1 && *v<=max ? v : std::nullopt;};
     AttributeRequest request{Pair(c,fence,source,target,actor,op),target.attributes};
@@ -87,7 +93,13 @@ std::expected<AttributeRuntimePlan,S> MakeAttributeRuntimeCommit(const ItemCatal
     {
         if(!quote->locks.empty()){const auto roll=draw(static_cast<std::uint32_t>(quote->locks.size()));if(!roll)return std::unexpected(S::Failed);request.lockRoll=static_cast<std::uint8_t>(*roll);}
         auto choices=quote->choices;
-        for(unsigned i=0;i<quote->draws;++i)
+        unsigned ordinaryDraws=quote->draws;
+        if(quote->pairedAddon)
+        {
+            for(const auto max:{UINT32_MAX,UINT32_MAX,17u,17u,20u}){const auto roll=draw(max);if(!roll)return std::unexpected(S::Failed);request.addonRolls.push_back(max==UINT32_MAX ? *roll : *roll-1);}
+            const auto base=AttributeRerollBase(c,target.key,target.attributes,request.addonRolls,target.refinementLevel);if(!base)return std::unexpected(S::Invalid);unsigned before=0,after=0;for(unsigned i=0;i<5;++i){before+=target.attributes.slots[i].has_value();after+=base->slots[i].has_value();}ordinaryDraws=before>after ? before-after : 0;
+        }
+        for(unsigned i=0;i<ordinaryDraws;++i)
         {
             const auto tier=draw(10000);if(!tier)return std::unexpected(S::Failed);
             unsigned covered=0;for(const auto& t:quote->tiers)covered+=t.chance;
@@ -113,8 +125,8 @@ std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeAttributeRun
     std::vector<std::byte> out;const auto put=[&](std::uint64_t v,unsigned n){for(unsigned i=0;i<n;++i)out.push_back(std::byte((v>>(i*8))&255));};
     const auto key=[&](const PersistentItem* i){put(i ? static_cast<unsigned>(i->key.Category()) : 0,2);put(i ? i->key.LocalId() : 0,4);put(i ? i->refinementLevel : 0,2);};
     const auto attributes=[&](const InstanceAttributes& a){put(a.lockedSlot.value_or(255),1);for(const auto& entry:a.slots){put(entry ? static_cast<unsigned>(entry->bonus) : 0,4);put(entry ? static_cast<std::uint64_t>(entry->valueScaled) : 0,8);}};
-    put(236,1);put(0,4);put(1,1);put(static_cast<unsigned>(status),1);put(nonce,8);put(source ? source->id.Value() : 0,8);put(target ? target->id.Value() : 0,8);put(revision,8);key(source);key(target);
-    put(q.operation,1);put(q.pool,1);put(q.units,2);put(q.available,4);put(q.chance,2);put(q.consumeFailure,1);put(q.capacity,1);put(q.draws,1);attributes(q.before);attributes(after ? *after : q.before);
+    put(236,1);put(0,4);put(q.pairedAddon ? 2 : 1,1);put(static_cast<unsigned>(status),1);put(nonce,8);put(source ? source->id.Value() : 0,8);put(target ? target->id.Value() : 0,8);put(revision,8);key(source);key(target);
+    put(q.operation,1);put(q.pool,1);put(q.units,2);put(q.available,4);put(q.chance,2);put(q.consumeFailure,1);put(q.capacity,1);put(q.draws,1);if(q.pairedAddon)put(1,1);attributes(q.before);attributes(after ? *after : q.before);
     put(q.tiers.size(),1);for(const auto& tier:q.tiers){put(tier.tier,1);put(tier.chance,2);}
     put(q.choices.size(),1);for(const auto& choice:q.choices){put(static_cast<unsigned>(choice.bonus),4);put(choice.weight,4);put(choice.values.size(),1);for(auto value:choice.values)put(static_cast<std::uint64_t>(value),8);}
     put(q.locks.size(),1);for(auto slot:q.locks)put(slot,1);put(targets.size(),2);for(auto id:targets)put(id,8);put(details->size(),4);out.insert(out.end(),details->begin(),details->end());

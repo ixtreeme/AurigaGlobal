@@ -4,6 +4,22 @@
 
 namespace auriga::item
 {
+std::optional<std::vector<std::uint8_t>> EncodeCostumeAppearance(const CostumeAppearance& p,std::uint8_t version)
+{
+    if(version<1 || version>5 || !p.vid || !p.revision || p.weapon>7 || p.tool>4 || (p.weapon && p.tool) || p.runeMode>2 || (!p.weapon && (!p.models[4].empty() || p.weaponEffect)))return {};
+    std::vector<std::uint8_t> b;
+    const auto put=[&](std::uint64_t value,unsigned size){for(unsigned n=0;n<size;++n)b.push_back(static_cast<std::uint8_t>(value>>(8*n)));};
+    put(241,1);put(0,4);put(version,1);put(p.vid,4);put(p.revision,8);put(p.weapon,1);put(p.tool,1);
+    for(unsigned n=0;n<(version==1 ? 5u : 6u);++n) {
+        const auto& text=p.models[n];
+        if(text.size()>512 || text.starts_with('/') || text.find("..")!=text.npos || text.find(':')!=text.npos || text.find('\\')!=text.npos || text.find('\0')!=text.npos)return {};
+        put(text.size(),2);b.insert(b.end(),text.begin(),text.end());
+    }
+    if(version>=2)put(p.runeMode,1);if(version>=3)put(p.bodyEffect,2);if(version>=4)put(p.weaponEffect,2);
+    if(version>=5){const auto& text=p.absorptionSash;if(text.size()>512 || text.starts_with('/') || text.find("..")!=text.npos || text.find(':')!=text.npos || text.find('\\')!=text.npos || text.find('\0')!=text.npos)return {};put(text.size(),2);b.insert(b.end(),text.begin(),text.end());}
+    for(unsigned n=0;n<4;++n)b[1+n]=static_cast<std::uint8_t>(b.size()>>(8*n));
+    return b;
+}
 namespace
 {
 constexpr std::uint64_t MaxTime=static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max());
@@ -26,12 +42,33 @@ bool ValidState(CostumeClockDefinition definition,const CostumeLifetimeState& st
     return state.deadlineUtcMs && !state.remainingMs;
 }
 }
+std::optional<CostumeClockDefinition> FindWearableClock(const ItemCatalog& catalog,ItemKey key)
+{
+    const auto* entry=catalog.Find(key);if(!entry)return {};
+    if(const auto* row=std::get_if<ItemCostumeRow>(&entry->category))return CostumeClockDefinition{row->clock,row->durationMs};
+    const auto* accessory=std::get_if<ItemAccessoryRow>(&entry->category);
+    const auto* regalia=std::get_if<ItemRegaliaRow>(&entry->category);
+    if((regalia && regalia->kind==RegaliaKind::Stole) ||
+        (accessory && (accessory->slot==EquipmentSlot::Unique || accessory->slot==EquipmentSlot::UniqueAlternate))){
+        const auto* rule=catalog.FindDefinitionRules(key);
+        return CostumeClockDefinition{rule ? rule->clock : CostumeClock::Permanent,rule ? rule->durationMs : 0};
+    }
+    return {};
+}
+bool ValidItemClock(CostumeClockDefinition definition,const CostumeLifetimeState& state,bool equipped) noexcept
+{
+    return ValidClock(definition) && ValidState(definition,state,equipped) &&
+        (definition.clock!=CostumeClock::EquippedTime || state.expired==!state.remainingMs);
+}
 bool ValidCostume(const ItemCostumeRow& row) noexcept
 {
-    if(row.key.Category()!=ItemCategory::Costume || row.kind<CostumeKind::Body || row.kind>CostumeKind::Weapon)return false;
+    if(row.key.Category()!=ItemCategory::Costume || row.kind<CostumeKind::Body || row.kind>CostumeKind::WeaponEffect)return false;
     if(row.kind==CostumeKind::Weapon)
     {if(!row.weapon || *row.weapon<WeaponSubtype::Sword || *row.weapon>WeaponSubtype::MountSpear)return false;}
     else if(row.weapon)return false;
+    if((row.kind==CostumeKind::PetSkin || row.kind==CostumeKind::MountSkin) ? (!row.companionForm || !*row.companionForm) : row.companionForm.has_value())return false;
+    if((row.kind==CostumeKind::BodyEffect)!=(row.bodyEffect!=0))return false;
+    for(const auto effect:row.weaponEffects)if((row.kind==CostumeKind::WeaponEffect)!=(effect!=0))return false;
     if(row.clock<CostumeClock::Permanent || row.clock>CostumeClock::EquippedTime || row.durationMs>MaxTime)return false;
     return row.clock==CostumeClock::Permanent ? row.durationMs==0 : row.durationMs>0;
 }
@@ -128,6 +165,12 @@ std::expected<CostumeEquipPlan,CostumeEquipError> PlanCostumeEquip(const ItemCat
     if(!lifetime)return std::unexpected(E::InvalidLifetime);
     if(lifetime->removeItem)
         return CostumeEquipPlan{request.item,costume->kind,request.refinementLevel,"",*lifetime,catalog.Revision(),catalog.ContentHash(),false};
+    if(costume->companionForm) {
+        const auto* form=catalog.FindCompanionForm(*costume->companionForm);
+        if(!form)return std::unexpected(E::MissingVisual);
+        return CostumeEquipPlan{request.item,costume->kind,request.refinementLevel,form->modelAsset,*lifetime,catalog.Revision(),catalog.ContentHash()};
+    }
+    if(costume->bodyEffect || costume->kind==CostumeKind::WeaponEffect)return CostumeEquipPlan{request.item,costume->kind,request.refinementLevel,"",*lifetime,catalog.Revision(),catalog.ContentHash()};
     const auto* visual=catalog.FindCostumeVisual(request.item,request.characterClass,request.sex);
     if(!visual)return std::unexpected(E::MissingVisual);
     return CostumeEquipPlan{request.item,costume->kind,request.refinementLevel,visual->modelAsset,*lifetime,catalog.Revision(),catalog.ContentHash()};

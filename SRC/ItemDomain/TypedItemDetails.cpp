@@ -2,6 +2,7 @@
 #include <item/ItemWireCodec.hpp>
 #include <item/BonusRegistry.hpp>
 #include <item/AccessoryRuntime.hpp>
+#include <item/DungeonItems.hpp>
 #include <limits>
 #include <set>
 #include <algorithm>
@@ -38,7 +39,8 @@ bool PetHatchAction(const ItemCatalog& catalog, const ItemCatalogEntry& entry)
 }
 }
 std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDetails(
-    const ItemCatalog& c,std::span<const PersistentItem> items,bool ownedDropEnabled,std::span<const ItemGrant> extraStates)
+    const ItemCatalog& c, std::span<const PersistentItem> items, bool ownedDropEnabled,
+    std::span<const ItemGrant> extraStates, std::span<const ItemKey> scriptedUse)
 {
     try
     {
@@ -64,10 +66,11 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
                 { keys.insert(ingredient.key); states.emplace(ingredient.key,ingredient.refinementLevel); }
             }
         if(keys.size()>65535 || states.size()>65535 || recipes.size()>65535) throw TooLarge{};
-        const bool wide=std::ranges::any_of(keys,[&](auto key){const auto* e=c.Find(key);const auto* r=e ? std::get_if<ItemConsumableRow>(&e->category) : nullptr;const auto* p=r ? c.FindRecovery(r->recoveryProfile) : nullptr;return (e && (PetHatchAction(c,*e) || std::holds_alternative<ItemToolRow>(e->category) || std::holds_alternative<ItemFishingRow>(e->category) || std::holds_alternative<ItemPolymorphRow>(e->category) || std::holds_alternative<ItemSkillBookRow>(e->category))) || (r && (r->bookAidProfile || r->attributeServiceProfile || r->timedEffectProfile || r->toggleEffectProfile || (p && (p->Data().Delivery()==RecoveryDelivery::Reserve || p->Data().Delivery()==RecoveryDelivery::Periodic || p->Data().Delivery()==RecoveryDelivery::Automatic))));});
+        const bool wide=std::ranges::any_of(keys,[&](auto key){const auto* e=c.Find(key);const auto* r=e ? std::get_if<ItemConsumableRow>(&e->category) : nullptr;const auto* p=r ? c.FindRecovery(r->recoveryProfile) : nullptr;return (e && (PetHatchAction(c,*e) || std::holds_alternative<ItemToolRow>(e->category) || std::holds_alternative<ItemFishingRow>(e->category) || std::holds_alternative<ItemPolymorphRow>(e->category) || std::holds_alternative<ItemSkillBookRow>(e->category))) || (r && (c.FindCharacterService(key) || r->bookAidProfile || r->attributeServiceProfile || r->timedEffectProfile || r->toggleEffectProfile || (p && (p->Data().Delivery()==RecoveryDelivery::Reserve || p->Data().Delivery()==RecoveryDelivery::Periodic || p->Data().Delivery()==RecoveryDelivery::Automatic))));});
         const bool forge=std::ranges::any_of(keys,[](auto key){return key.Category()==ItemCategory::ForgeAid;});
         const bool special=forge || std::ranges::any_of(keys,[](auto key){return key.Category()==ItemCategory::Soul || key.Category()==ItemCategory::Regalia || key.Category()==ItemCategory::BonusTool;});
-        Writer w; w.Put(TypedItemDetailsHeader,1); w.Put(0,4); w.Put(forge ? 4 : special ? 3 : wide ? 2 : 1,1); w.Put(c.Revision(),8);
+        const bool levelPolicies=std::ranges::any_of(states,[&](const auto& state){const auto* e=c.Find(state.first);const auto* p=e?c.FindRefinement(e->base.refinementProfile):nullptr;const auto* s=p?p->FindLevel(state.second):nullptr;return s && (s->minimumLevel || s->buyAmount || s->sellAmount);});
+        Writer w; w.Put(TypedItemDetailsHeader,1); w.Put(0,4); w.Put(levelPolicies ? 5 : forge ? 4 : special ? 3 : wide ? 2 : 1,1); w.Put(c.Revision(),8);
         for(auto b:c.ContentHash()) w.Put(b,1);
         w.Put(keys.size(),2);
         for(auto key:keys)
@@ -84,7 +87,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
                 if constexpr(std::is_same_v<std::decay_t<decltype(row)>,ItemConsumableRow>)
                 {
                     if(row.socketServiceProfile) actions|=TypedActionSocket;
-                    if(row.bookAidProfile) actions|=TypedActionBook;
+                    if(row.bookAidProfile || c.FindCharacterService(key)) actions|=TypedActionBook;
                     if(row.attributeServiceProfile) actions|=TypedActionAttributes;
                     if(row.timedEffectProfile || row.toggleEffectProfile)actions|=TypedActionEffects;
                     const auto* recovery=c.FindRecovery(row.recoveryProfile);
@@ -95,9 +98,14 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
             if(const auto* box=std::get_if<ItemContainerRow>(&entry->category);box && (box->kind==ContainerKind::Use || box->kind==ContainerKind::Locked))actions|=TypedActionOpen;
             if(const auto* stone=std::get_if<ItemSocketStoneRow>(&entry->category);stone && stone->kind==SocketStoneKind::Insertable)actions|=TypedActionSocket;
             if(key.Category()==ItemCategory::Material && AccessoryMaterial(c,key))actions|=TypedActionSocket;
-            if(std::holds_alternative<ItemCurrencyTokenRow>(entry->category))actions|=TypedActionRedeem;
+            if(std::holds_alternative<ItemCurrencyTokenRow>(entry->category) && c.CurrencyMode(key)!=CurrencyTokenMode::GroundGold)actions|=TypedActionRedeem;
+            if (const auto* quest = std::get_if<ItemQuestRow>(&entry->category);
+                quest && quest->dispatch == QuestItemDispatch::FirstHandler &&
+                (BuiltinQuestHandler(quest->groupCode) != BuiltinQuestItem::None ||
+                 (quest->groupCode.empty() && std::ranges::find(scriptedUse, key) != scriptedUse.end())))
+                actions |= TypedActionUse;
             if(const auto* fish=std::get_if<ItemFishingRow>(&entry->category);fish && (fish->kind==FishingKind::LiveFish || (fish->kind==FishingKind::DeadFish && fish->grillResult)))actions|=TypedActionFish;
-            if(std::holds_alternative<ItemToolRow>(entry->category)){slot=1;actions|=TypedActionTool;}
+            if(const auto* tool=std::get_if<ItemToolRow>(&entry->category)){if(tool->kind==ToolKind::Detector)actions|=TypedActionUse;else{slot=1;actions|=TypedActionTool;}}
             if(const auto* bait=std::get_if<ItemFishingRow>(&entry->category);bait && bait->kind==FishingKind::Bait)actions|=TypedActionTool;
             if(std::holds_alternative<ItemPolymorphRow>(entry->category))actions|=TypedActionPolymorph;
             if(std::holds_alternative<ItemSkillBookRow>(entry->category))actions|=TypedActionBook;
@@ -106,13 +114,14 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
             const bool hatch = PetHatchAction(c, *entry);
             if (companion && SupportsPersistentItem(c,*entry)) actions|=TypedActionUse;
             if (hatch) actions|=TypedActionPetHatch;
+            if(DungeonItemUseRole(c,key)!=DungeonUseRole::None)actions|=TypedActionUse;
             if(const auto* costume=std::get_if<ItemCostumeRow>(&entry->category))slot=CostumeSlot(costume->kind);
             if(const auto* r=std::get_if<ItemRegaliaRow>(&entry->category))slot=RegaliaSlot(*r);
             if(key.Category()==ItemCategory::Regalia || key.Category()==ItemCategory::BonusTool)actions|=TypedActionSpecialBonus;
             if(key.Category()==ItemCategory::ForgeAid)actions|=TypedActionForge;
             if(key.Category()==ItemCategory::Soul)actions|=TypedActionSoul;
             if(std::holds_alternative<ItemAmmoRow>(entry->category))slot=20;
-            if(slot && slot<=20) actions|=TypedActionEquip;
+            if(slot && slot<=EquipmentSlotCount) actions|=TypedActionEquip;
             if(!growth && refinable.contains(key)) actions|=TypedActionRefine;
             if(!growth && ownedDropEnabled && trade && trade->allowDrop && trade->allowTrade) actions|=TypedActionDrop;
             if(b.retired) actions=hatch && companion ? TypedActionPetHatch : 0;
@@ -120,7 +129,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
             w.Text(b.iconAsset); w.Text(appearance ? appearance->modelAsset : "");
             w.Put(b.width,1); w.Put(b.height,1); w.Put(b.minimumLevel,2);
             w.Put(use ? use->allowedClasses : 0,1); w.Put(use ? use->allowedSexes : 0,1);
-            w.Put(slot,1); w.Put(actions,special ? 4 : wide ? 2 : 1);
+            w.Put(slot,1); w.Put(actions,levelPolicies || special ? 4 : wide ? 2 : 1);
         }
         w.Put(states.size(),2);
         for(const auto& [key,level]:states)
@@ -136,6 +145,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
             if(bonuses.size()>255) throw TooLarge{};
             w.Put(bonuses.size(),1);
             for(const auto& [id,value]:bonuses) { w.Put(static_cast<std::uint32_t>(id),4); w.Put(static_cast<std::uint64_t>(value),8); }
+            if(levelPolicies){const auto policy=c.LevelPolicy(key,level);w.Put(policy.minimumLevel,2);w.Put(policy.buyAmount,8);w.Put(policy.sellAmount,8);}
         }
         w.Put(recipes.size(),2);
         for(const auto& [id,r]:recipes)

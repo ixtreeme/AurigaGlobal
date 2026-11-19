@@ -69,7 +69,8 @@ std::expected<std::vector<std::uint8_t>,E> ItemMissionReceipt(const ItemMission&
 }
 std::expected<ItemCommit,E> MakeItemMissionCommit(const ItemCatalog& c,const ItemMission& m,ItemMissionProof proof,std::uint16_t level,
     ItemOwnerFence fence,std::span<const ItemStorageLayout> layouts,std::span<const PersistentItem> inventory,
-    std::span<const ItemWallet> wallets,std::span<const ItemInstanceId> ids,std::uint64_t nowUtcMs)
+    std::span<const ItemWallet> wallets,std::span<const ItemInstanceId> ids,std::uint64_t nowUtcMs,
+    std::optional<ItemInstanceId> requiredSource)
 {
     if(!ValidateItemMission(c,m) || proof.owner!=fence.owner || inventory.size()>MaxLoadedOwnerItems)return std::unexpected(E::Invalid);
     if(level<m.minimumLevel)return std::unexpected(E::Level);
@@ -77,13 +78,23 @@ std::expected<ItemCommit,E> MakeItemMissionCommit(const ItemCatalog& c,const Ite
     std::set<ItemInstanceId> unique;for(const auto& i:inventory)if(i.owner!=fence.owner || !unique.insert(i.id).second || !ValidatePersistentItem(c,i))return std::unexpected(E::Invalid);
     for(const auto* list:{&m.requirements,&m.costs})for(const auto& v:*list)
         if(CountMissionItems(inventory,fence.owner,v.key,v.level)<v.count)return std::unexpected(E::Requirements);
+    if (requiredSource)
+    {
+        const auto source = std::ranges::find(inventory, *requiredSource, &PersistentItem::id);
+        if (m.costs.size() != 1 || source == inventory.end() || !MissionItemUsable(*source, fence.owner) ||
+            source->key != m.costs.front().key || source->refinementLevel != m.costs.front().level ||
+            source->count < m.costs.front().count)
+            return std::unexpected(E::Requirements);
+    }
     const ItemWallet* gold=nullptr;for(const auto& w:wallets)if(w.owner==fence.owner && w.currency==WalletCurrency::Gold)
     {if(gold || !w.revision || w.revision==UINT64_MAX || w.balance>INT64_MAX)return std::unexpected(E::Invalid);gold=&w;}
     if((m.goldCost || m.goldReward) && !gold)return std::unexpected(E::Invalid);
     if(gold && gold->balance<m.goldCost)return std::unexpected(E::NoMoney);
     if(gold && m.goldReward>std::uint64_t(INT64_MAX)-(gold->balance-m.goldCost))return std::unexpected(E::Limit);
     std::vector<PersistentItem> working(inventory.begin(),inventory.end());std::vector<std::size_t> eligible;
-    for(std::size_t i=0;i<working.size();++i)if(MissionItemUsable(working[i],fence.owner))eligible.push_back(i);
+    for(std::size_t i=0;i<working.size();++i)
+        if(MissionItemUsable(working[i],fence.owner) && (!requiredSource || working[i].id==*requiredSource))
+            eligible.push_back(i);
     std::ranges::sort(eligible,{},[&](auto i){const auto& v=working[i];return std::tuple{v.placement->storageId,v.placement->anchor,v.id};});
     for(const auto& cost:m.costs)
     {

@@ -16,7 +16,7 @@ bool Add(std::int64_t& to,std::int64_t value)
 }
 std::expected<std::int64_t,E> AddEquipmentValue(std::int64_t a,std::int64_t b)
 {if(!Add(a,b))return std::unexpected(E::Overflow);return a;}
-std::expected<std::int64_t,E> ScaleEquipmentValue(std::int64_t value,std::int64_t numerator,std::int64_t denominator)
+std::expected<std::int64_t,E> ScaleEquipmentValue(std::int64_t value,std::int64_t numerator,std::int64_t denominator,bool truncate)
 {
     if(denominator<=0 || numerator<0 || value==INT64_MIN)return std::unexpected(E::Overflow);
     const bool negative=value<0;const auto n=static_cast<std::uint64_t>(negative ? -value : value);
@@ -24,7 +24,7 @@ std::expected<std::int64_t,E> ScaleEquipmentValue(std::int64_t value,std::int64_
     const auto q=n/div,r=n%div;
     if((q && factor>std::uint64_t(INT64_MAX)/q) || (r && factor>UINT64_MAX/r))return std::unexpected(E::Overflow);
     const auto whole=q*factor,part=r*factor;
-    const auto fraction=part/div+(part%div>=div/2+div%2 ? 1 : 0);
+    const auto fraction=part/div+(!truncate && part%div>=div/2+div%2 ? 1 : 0);
     if(fraction>std::uint64_t(INT64_MAX)-whole)return std::unexpected(E::Overflow);
     const auto result=static_cast<std::int64_t>(whole+fraction);return negative ? -result : result;
 }
@@ -78,9 +78,11 @@ std::expected<EquipmentStats,E> BuildEquipmentStats(const ItemCatalog& c,ItemOwn
             {
                 if(value==INT64_MIN)return false;
                 const auto* definition=FindBonusDefinition(id);const auto magnitude=value<0 ? -value : value;
-                const auto delta=ScaleEquipmentValue(magnitude,grade->bonusIncreaseBp);if(!delta)return false;
+                const std::int64_t quantum=grade->truncateBonus ? (definition->unit==BonusUnit::Raw ? 1000 : definition->unit==BonusUnit::BasisPoints ? 100 : 1) : 1;
+                const auto delta=ScaleEquipmentValue(magnitude/quantum,grade->bonusIncreaseBp,10000,grade->truncateBonus);if(!delta)return false;
+                const auto scaledDelta=ScaleEquipmentValue(*delta,quantum,1);if(!scaledDelta)return false;
                 const std::int64_t minimum=definition->unit==BonusUnit::Raw ? grade->minimumRaw : definition->unit==BonusUnit::BasisPoints ? grade->minimumBp : grade->minimumInteger;
-                const auto boosted=AddEquipmentValue(magnitude,std::max(*delta,minimum));if(!boosted)return false;
+                const auto boosted=AddEquipmentValue(magnitude,std::max(*scaledDelta,minimum));if(!boosted)return false;
                 value=value<0 ? -*boosted : *boosted;
             }
             if(!Add(out.bonuses[static_cast<unsigned>(id)],value))return false;
@@ -100,7 +102,8 @@ std::expected<EquipmentStats,E> BuildEquipmentStats(const ItemCatalog& c,ItemOwn
         if(const auto* costume=std::get_if<ItemCostumeRow>(&d->category)){slot=CostumeSlot(costume->kind);if(costume->kind==CostumeKind::Weapon && out.weapon!=costume->weapon)continue;}
         if(const auto* regalia=std::get_if<ItemRegaliaRow>(&d->category))slot=RegaliaSlot(*regalia);
         if(std::holds_alternative<ItemAmmoRow>(d->category))slot=20;
-        if(!slot || slot>20 || item->placement->anchor!=slot-1)return std::unexpected(E::InvalidSlot);
+        if(!slot || slot>EquipmentSlotCount || !FitsEquipmentSlot(static_cast<EquipmentSlot>(slot),item->placement->anchor))return std::unexpected(E::InvalidSlot);
+        slot=item->placement->anchor+1;
         const AccessorySocketGrade* grade=nullptr;
         if(item->accessory && item->accessory->activeGrade)
         {
@@ -119,7 +122,8 @@ std::expected<EquipmentStats,E> BuildEquipmentStats(const ItemCatalog& c,ItemOwn
         if(const auto* regalia=std::get_if<ItemRegaliaRow>(&d->category)){
             bool enabled=true;
             if(regalia->kind==RegaliaKind::Rune && regalia->slot==7)for(unsigned rune=1;rune<7;++rune){const auto found=std::ranges::find_if(equipped,[&](const auto* p){const auto* r=std::get_if<ItemRegaliaRow>(&c.Find(p->key)->category);return r && r->kind==RegaliaKind::Rune && r->slot==rune;});if(found==equipped.end() || !(*found)->regalia->active || (*found)->regalia->remainingMs<((*found)->regalia->capacityMs/2+(*found)->regalia->capacityMs%2)){enabled=false;break;}}
-            if(enabled)for(const auto& b:RegaliaContributions(*regalia,*item->regalia))if(!Add(out.bonuses[static_cast<unsigned>(b.bonus)],b.valueScaled))return std::unexpected(E::Overflow);
+            const auto contributions=regalia->kind==RegaliaKind::AbsorptionSash ? (item->sash->donor ? AbsorptionSashContributions(*c.FindSashDonor(item->sash->donor->key,item->sash->donor->refinement),*item->sash) : std::vector<BonusEntry>{}) : RegaliaContributions(*regalia,*item->regalia);
+            if(enabled)for(const auto& b:contributions)if(!Add(out.bonuses[static_cast<unsigned>(b.bonus)],b.valueScaled))return std::unexpected(E::Overflow);
         }
         if(!base(item->key,item->refinementLevel,grade))return std::unexpected(E::Overflow);
         for(const auto& entry:item->attributes.slots)if(entry && !Add(out.bonuses[static_cast<unsigned>(entry->bonus)],entry->valueScaled))return std::unexpected(E::Overflow);
@@ -132,6 +136,7 @@ std::expected<EquipmentStats,E> BuildEquipmentStats(const ItemCatalog& c,ItemOwn
         }
     }
     for(const auto& effect:effects)if(!FindBonusDefinition(effect.bonus) || !Add(out.bonuses[static_cast<unsigned>(effect.bonus)],effect.valueScaled))return std::unexpected(E::Overflow);
+    if(!Add(out.flat.physicalDefenseRaw,out.Bonus(BonusId::ArmorPhysicalDefense)))return std::unexpected(E::Overflow);
     if(!Add(out.flat.physicalAttackRaw,out.Bonus(BonusId::PhysicalAttackFlat)) || !Add(out.flat.magicalAttackRaw,out.Bonus(BonusId::MagicalAttackFlat)) ||
        !Add(out.flat.physicalDefenseRaw,out.Bonus(BonusId::PhysicalDefenseFlat)) || !Add(out.flat.magicalDefenseRaw,out.Bonus(BonusId::MagicalDefenseFlat)))return std::unexpected(E::Overflow);
     for(const auto [flat,bp]:{std::pair{out.flat.physicalAttackRaw,out.Bonus(BonusId::PhysicalAttackPercent)},std::pair{out.flat.magicalAttackRaw,out.Bonus(BonusId::MagicalAttackPercent)}})
@@ -149,7 +154,8 @@ std::vector<std::byte> EncodeEquipmentStats(const EquipmentStats* stats,std::uin
     const auto nonzero=[](const auto& values){return std::ranges::any_of(values,[](auto v){return v!=0;});};
     const bool natural=s.petBonuses.seal && (nonzero(s.petBonuses.bonuses.age) || nonzero(s.petBonuses.bonuses.traits));
     const bool fixed=s.fixedCompanion.seal!=0;
-    put(231,1);put(0,4);put(fixed ? 5 : s.petBonuses.seal ? natural ? 4 : 3 : s.tool ? 2 : 1,1);put(stats ? 0 : 1,1);put(vid,4);put(revision,8);put(inventoryRevision,8);
+    const bool extendedPet=s.petBonuses.seal && std::ranges::any_of(s.petBonuses.bonuses.total.begin()+19,s.petBonuses.bonuses.total.end(),[](auto value){return value!=0;});
+    put(231,1);put(0,4);put(extendedPet ? 6 : fixed ? 5 : s.petBonuses.seal ? natural ? 4 : 3 : s.tool ? 2 : 1,1);put(stats ? 0 : 1,1);put(vid,4);put(revision,8);put(inventoryRevision,8);
     put(s.weapon ? static_cast<unsigned>(*s.weapon) : 0,1);for(auto value:s.flat.Values())put(static_cast<std::uint64_t>(value),8);
     for(auto value:points)put(static_cast<std::uint64_t>(value),8);
     put(std::ranges::count_if(s.bonuses,[](auto value){return value!=0;}),1);
@@ -165,7 +171,7 @@ std::vector<std::byte> EncodeEquipmentStats(const EquipmentStats* stats,std::uin
             {put(effect,1);put(static_cast<std::uint64_t>(values[effect]),8);}
         };
         effects(s.petBonuses.bonuses.total);
-        if(natural || fixed)
+        if(natural || fixed || extendedPet)
         {
             put(s.petBonuses.bonuses.ageTierMinimumMs,8);
             effects(s.petBonuses.bonuses.age);effects(s.petBonuses.bonuses.traits);effects(s.petBonuses.bonuses.skills);

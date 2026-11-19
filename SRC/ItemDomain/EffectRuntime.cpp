@@ -9,8 +9,15 @@ const ToggleEffectProfile* ToggleItemProfile(const ItemCatalog& c,ItemKey key)
 {const auto* e=c.Find(key);const auto* r=e ? std::get_if<ItemConsumableRow>(&e->category) : nullptr;return r && r->toggleEffectProfile ? c.FindToggleEffect(*r->toggleEffectProfile) : nullptr;}
 std::uint64_t TimedItemRemaining(const TimedItemEffect& effect,std::uint64_t now)
 {return effect.expiresAtMs ? effect.expiresAtMs-std::min(effect.expiresAtMs,now) : effect.remainingMs;}
+std::optional<std::uint64_t> FindTimedUtility(const ItemCatalog& c,const RecoverySchedule& state,TimedEffectUtility utility,std::uint64_t now)
+{
+    if(utility==TimedEffectUtility::None || utility>TimedEffectUtility::Energy || !ValidateRecoverySchedule(c,state))return {};
+    for(const auto& e:state.effects)if(const auto* p=TimedItemProfile(c,e.source);p && p->utility==utility && !c.Find(e.source)->base.retired && TimedItemRemaining(e,now))return e.id;
+    return {};
+}
 void NormalizeTimedItems(const ItemCatalog& c,RecoverySchedule& s,std::uint64_t now,const ItemEffectFacts* facts)
 {
+    std::erase_if(s.worldCooldowns,[&](const auto& cd){return cd.expiresAtUtcMs<=now;});
     if(s.polymorph)
     {
         auto& p=s.polymorph->effect;const auto* entry=c.Find(s.polymorph->source);
@@ -61,10 +68,10 @@ std::expected<void,ItemPersistenceError> SettleToggleTime(const ItemCatalog& c,I
 std::expected<std::vector<BonusEntry>,ItemPersistenceError> CollectItemEffectBonuses(const ItemCatalog& c,const RecoverySchedule& schedule,std::span<const PersistentItem> items)
 {
     if(!ValidateRecoverySchedule(c,schedule))return std::unexpected(ItemPersistenceError::InvalidStoredData);std::vector<BonusEntry> out;
-    for(const auto& effect:schedule.effects){const auto* p=TimedItemProfile(c,effect.source);if(!p)return std::unexpected(ItemPersistenceError::InvalidStoredData);const auto& entries=c.FindBonus(p->bonusProfile)->Data().entries;out.insert(out.end(),entries.begin(),entries.end());}
+    for(const auto& effect:schedule.effects){if(effect.energyPercent){const auto extra=EnergyEquipmentBonuses(c,items,effect.energyPercent);if(!extra)return std::unexpected(ItemPersistenceError::InvalidStoredData);out.insert(out.end(),extra->begin(),extra->end());}const auto* p=TimedItemProfile(c,effect.source);if(!p)return std::unexpected(ItemPersistenceError::InvalidStoredData);if(p->bonusProfile){const auto& entries=c.FindBonus(p->bonusProfile)->Data().entries;out.insert(out.end(),entries.begin(),entries.end());}}
     std::set<std::uint32_t> groups;
     for(const auto& item:items)if(!item.destroyed && item.toggle && item.toggle->active)
-    {const auto* p=ToggleItemProfile(c,item.key);if(!p || !ValidatePersistentItem(c,item) || !groups.insert(p->group).second)return std::unexpected(ItemPersistenceError::InvalidStoredData);const auto& entries=c.FindBonus(p->bonusProfile)->Data().entries;out.insert(out.end(),entries.begin(),entries.end());}
+    {const auto* p=ToggleItemProfile(c,item.key);if(!p || !ValidatePersistentItem(c,item) || !groups.insert(p->group).second)return std::unexpected(ItemPersistenceError::InvalidStoredData);if(p->bonusProfile){const auto& entries=c.FindBonus(p->bonusProfile)->Data().entries;out.insert(out.end(),entries.begin(),entries.end());}}
     return out;
 }
 std::expected<ItemCommit,ItemEffectError> MakeItemEffectUse(const ItemCatalog& c,std::array<std::uint8_t,16> op,ItemOwnerFence fence,
@@ -77,13 +84,20 @@ std::expected<ItemCommit,ItemEffectError> MakeItemEffectUse(const ItemCatalog& c
     if(const auto* p=TimedItemProfile(c,found->key))
     {
         if(!facts.allowed)return std::unexpected(ItemEffectError{6});
-        std::vector<ActiveTimedEffect> active;for(const auto& e:state->effects)active.push_back({e.id,TimedItemProfile(c,e.source)->group,std::min(TimedItemRemaining(e,now),TimedItemProfile(c,e.source)->durationMs)});
+        const auto family=c.FindTimedEffectGroup(p->group)->family;
+        if(facts.existingFoodFamilyMask&~12u)return std::unexpected(ItemEffectError{4});
+        if(family>TimedEffectFamily::Fish && (facts.existingFoodFamilyMask&(1u<<static_cast<unsigned>(family))))return std::unexpected(ItemEffectError{14});
+        if(facts.existingFishBonuses.size()>256 || std::ranges::any_of(facts.existingFishBonuses,[](auto id){return !FindBonusDefinition(id);}))return std::unexpected(ItemEffectError{4});
+        if(p->conflictBonus && std::ranges::find(facts.existingFishBonuses,*p->conflictBonus)!=facts.existingFishBonuses.end())return std::unexpected(ItemEffectError{14});
+        if(facts.existingUtilityMask>7)return std::unexpected(ItemEffectError{4});
+        if(p->utility!=TimedEffectUtility::None && (facts.existingUtilityMask&(1u<<(static_cast<unsigned>(p->utility)-1))))return std::unexpected(ItemEffectError{14});
+        std::vector<ActiveTimedEffect> active;for(const auto& e:state->effects)active.push_back({e.id,TimedItemProfile(c,e.source)->group,std::min(TimedItemRemaining(e,now),TimedItemProfile(c,e.source)->durationMs),TimedItemProfile(c,e.source)->id});
         TimedEffectAdmission actor{found->count,p->cooldownProfile ? RecoveryCooldownRemaining(*state,*p->cooldownProfile) : 0,facts.actor.context,facts.alive,facts.actor.inPvp,facts.actor.inCombat,facts.actor.level,facts.actor.classIndex,facts.actor.sexIndex};
         const auto plan=PlanTimedEffectUse(c,found->key,actor,active);if(!plan)return std::unexpected(ItemEffectError{static_cast<std::uint8_t>(plan.error())});
         if(!effectId || (plan->clock==TimedEffectClock::WallTime && (now>INT64_MAX || plan->durationMs>INT64_MAX-now)))return std::unexpected(ItemEffectError{4});
         if(plan->replaceEffectId)std::erase_if(state->effects,[&](const auto& e){return e.id==*plan->replaceEffectId;});
         if(state->effects.size()>=MaxRuntimeTimedEffects)return std::unexpected(ItemEffectError{15});
-        state->effects.push_back({effectId,found->key,plan->clock==TimedEffectClock::OnlineTime ? plan->durationMs : 0,plan->clock==TimedEffectClock::WallTime ? now+plan->durationMs : 0});
+        state->effects.push_back({effectId,found->key,plan->clock==TimedEffectClock::OnlineTime ? plan->durationMs : 0,plan->clock==TimedEffectClock::WallTime ? now+plan->durationMs : 0,found->energy ? found->energy->percent : std::uint8_t{0}});
         const auto consume=MakeConsumeCommit(c,op,fence,layouts,items,id,plan->unitsToConsume);if(!consume)return std::unexpected(ItemEffectError{4});commit=*consume;commit.outcomeCode=0x2101;cooldown=plan->cooldown;
     }
     else if(const auto* p=ToggleItemProfile(c,found->key))

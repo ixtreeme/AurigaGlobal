@@ -107,12 +107,6 @@ ACMD(do_decline_pvp);
 ACMD(do_block_equipment);
 #endif
 ACMD(do_point_reset);
-ACMD(do_safebox_size);
-ACMD(do_safebox_close);
-ACMD(do_safebox_password);
-ACMD(do_safebox_change_password);
-ACMD(do_mall_password);
-ACMD(do_mall_close);
 ACMD(do_ungroup);
 ACMD(do_makeguild);
 ACMD(do_deleteguild);
@@ -398,6 +392,10 @@ ACMD(do_reward_biologist);
 ACMD(do_change_biologist);
 #endif
 ACMD(do_gotoxy);
+ACMD(do_atlasinfo);
+ACMD(do_social);
+ACMD(do_dungeon_ui);
+ACMD(do_death_ui);
 #ifdef ENABLE_SAVEPOINT_SYSTEM
 ACMD(do_open_savepoint);
 ACMD(do_empty_savepoint);
@@ -532,16 +530,9 @@ struct command_info cmd_info[] =
 	{ "decline_pvp",	do_decline_pvp,		0,	POS_DEAD,	GM_PLAYER	},
 	{ "pvp_block_equipment",	do_block_equipment,		0,	POS_DEAD,	GM_PLAYER	},
 #endif
-
-	{ "safebox",	do_safebox_size,	0,			POS_DEAD,	GM_IMPLEMENTOR	},
-	{ "safebox_close",	do_safebox_close,	0,			POS_DEAD,	GM_PLAYER	},
 	{ "safebox_passwor",do_inputall,		0,			POS_DEAD,	GM_PLAYER	},
-	{ "safebox_password",do_safebox_password,	0,			POS_DEAD,	GM_PLAYER	},
 	{ "safebox_change_passwor", do_inputall,	0,			POS_DEAD,	GM_PLAYER	},
-	{ "safebox_change_password", do_safebox_change_password,	0,	POS_DEAD,	GM_PLAYER	},
 	{ "mall_passwor",	do_inputall,		0,			POS_DEAD,	GM_PLAYER	},
-	{ "mall_password",	do_mall_password,	0,			POS_DEAD,	GM_PLAYER	},
-	{ "mall_close",	do_mall_close,		0,			POS_DEAD,	GM_PLAYER	},
 
 	// Group Command
 	{ "ungroup",	do_ungroup,		0,			POS_DEAD,	GM_PLAYER	},
@@ -801,6 +792,10 @@ struct command_info cmd_info[] =
 	{"change_biologist", do_change_biologist, 0, POS_DEAD, GM_PLAYER},
 #endif
 	{"gotoxy", do_gotoxy, 0, POS_DEAD, GM_PLAYER},
+	{"atlasinfo", do_atlasinfo, 0, POS_DEAD, GM_PLAYER},
+	{"social", do_social, 0, POS_DEAD, GM_PLAYER},
+	{"dungeon_ui", do_dungeon_ui, 0, POS_DEAD, GM_PLAYER},
+	{"death_ui", do_death_ui, 0, POS_DEAD, GM_PLAYER},
 #ifdef ENABLE_SAVEPOINT_SYSTEM
 	{"open_savepoint", do_open_savepoint, 0, POS_DEAD, GM_PLAYER},
 	{"empty_savepoint", do_empty_savepoint, 0, POS_DEAD, GM_PLAYER},

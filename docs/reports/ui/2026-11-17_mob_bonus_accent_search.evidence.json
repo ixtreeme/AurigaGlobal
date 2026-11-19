@@ -1,0 +1,66 @@
+{
+  "result": "SUCCESS",
+  "checked_utc": "2026-11-17T20:00:39.431931+00:00",
+  "feature": "mob_drop_birth_chance_and_accent_free_search",
+  "interaction_tests": 12,
+  "ctest_suites": 7,
+  "native_checks": 5550,
+  "unity_editor": "6000.3.27f1",
+  "unity_compiled": true,
+  "unity_native_packet_cases": 4,
+  "unity_attribute_checks": 4917,
+  "unity_container_checks": 13262,
+  "actual_combat_kill_test": false,
+  "installed_popup_observed": true,
+  "query": "fulbevalo",
+  "matches": 94,
+  "typed_search_seconds": 0.07628989999648184,
+  "manager_files_verified": 248,
+  "runtime": {
+    "result": "SUCCESS",
+    "backup": "D:\\AurigaGlobal\\Server2-Local\\run\\deployments\\bonus-mob-runtime-20261117T195705Z",
+    "runtime_sha256": "24539cf1ff47292f2385554cd9ce1cc1e2696ad035b7a56b8e17fa8689a6ee9b",
+    "cores": [
+      "ch1-core1",
+      "ch1-core2",
+      "ch99-core99"
+    ],
+    "before": {
+      "database": 31428,
+      "ch1-core1": 10880,
+      "ch1-core2": 34024,
+      "ch99-core99": 20684,
+      "login": 24644
+    },
+    "after": {
+      "database": 31428,
+      "ch1-core1": 35512,
+      "ch1-core2": 37476,
+      "ch99-core99": 33020,
+      "login": 24644
+    },
+    "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+    "live_hash": "162ef5115b58d6b833aa303550d0eef430a266fbe42296ca63d490c116c6d95a",
+    "live_release": "ae3c6e6e6242e5cbe7ba744b881b17f6",
+    "chest_overrides": 1,
+    "data_published": false,
+    "database_and_login_preserved": true,
+    "status": "success"
+  },
+  "content_unchanged": true,
+  "deferred_637_unchanged": true,
+  "temporary_user_draft_preserved": {
+    "result": "SUCCESS",
+    "temporary_only": true,
+    "published": false,
+    "id": "20261117T195608-04f595a80d850cee1706e763",
+    "title": "Mobdrop · Közös drop · Gyalog",
+    "item": "Aqua Szilánk",
+    "rank": "Gyalog",
+    "killer_min": 80,
+    "killer_max": 100,
+    "amount": 1,
+    "chance_percent": 1
+  },
+  "data_published": false
+}

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../dungeon/DungeonUiEvents.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
@@ -25,6 +26,10 @@
 #include "db.h"
 #include "config.h"
 #include "../ecs/quest_helpers.hpp"
+#include "../ecs/components/quest_components.hpp"
+#include "../item/TypedDungeonEntry.hpp"
+#include <item/DungeonEntryBindings.hpp>
+#include "questpc.h"
 #include <functional>
 #ifdef ENABLE_MELEY_LAIR
 #include "guild.h"
@@ -948,6 +953,168 @@ ALUA(dungeon_update_rank)
 		}
 	};
 
+	namespace
+	{
+		namespace items = auriga::item;
+
+		struct QuestDungeonEntrance
+		{
+			int map, npc, x, y, minLevel, maxLevel, cooldown;
+			const char* quest;
+			const char* ticketName;
+		};
+
+		// Coordinates, level limits and cooldowns from the existing entrance quests.
+		constexpr QuestDungeonEntrance QuestEntrances[] = {
+			{216, 20367, 4434, 12698, 85, 100, 1800, "catacombe", "Zsugorított fej"},
+			{208, 30121, 8435, 10668, 60, 100, 1800, "dragonlair_zone", "Csavart kulcs"},
+			{217, 30130, 879, 6147, 120, 140, 900, "dungeon_spider", "Pók-kulcs"},
+			{210, 20412, 7824, 15021, 92, 112, 2400, "enchanted_forest", "Tündérek köve"},
+			{352, 20395, 6047, 1926, 42, 65, 2400, "nemere_zone", "Belépési engedély"},
+			{351, 20394, 8109, 6867, 102, 140, 2400, "razador_zone", "Belépési engedély"},
+			{27, 9236, 9420, 1277, 45, 65, 900, "slime_dungeon", "Egy Darab menhir iszap"},
+			{209, 20408, 8836, 14498, 92, 112, 1800, "temple_ochao", "Ochao jegy"},
+		};
+
+		const QuestDungeonEntrance* CurrentEntrance(lua_State* L)
+		{
+			auto& quest=CQuestManager::instance();
+			const auto* state=quest.GetCurrentState();
+			const auto npc=quest.GetCurrentNPCEntity();
+			const auto character=quest.GetCurrentPCEntity();
+			if(!state || state->co!=L || !g_registry.valid(npc) || !g_registry.valid(character) ||
+			   quest.IsInOtherPCBlock() || ecs::PlayerRuntime::GetMapIndex(character)!=ecs::PlayerRuntime::GetMapIndex(npc))
+				return nullptr;
+			const auto found=std::ranges::find_if(QuestEntrances,[&](const auto& entry){
+				return entry.quest==quest.GetCurrentQuestName() &&
+					static_cast<uint32_t>(entry.npc)==ecs::PlayerRuntime::GetRaceNum(npc);
+			});
+			return found==std::end(QuestEntrances)?nullptr:found;
+		}
+
+		PC* EntranceParticipant(entt::entity member)
+		{
+			// Reading another member's cooldown must not move the running
+			// Lua script or its reply to that member's quest context.
+			const auto* state=g_registry.valid(member)?g_registry.try_get<ecs::QuestPCState>(member):nullptr;
+			return state && state->pc && state->pc->IsLoaded()?state->pc.get():nullptr;
+		}
+	}
+
+	ALUA(dungeon_typed_ticket_name)
+	{
+		const auto* entry=CurrentEntrance(L);
+		lua_pushstring(L,entry?entry->ticketName:"Belépő");
+		return 1;
+	}
+
+	ALUA(dungeon_typed_check_entrance)
+	{
+		auto& quest=CQuestManager::instance();
+		const auto* entry=CurrentEntrance(L);
+		const auto* binding=entry?items::DungeonEntryForMap(entry->map):nullptr;
+		const auto character=quest.GetCurrentPCEntity();
+		int status=0;
+		int64_t remaining=0;
+		std::string name;
+		if(binding)
+		{
+			status=1;
+			const auto cooldown=std::string(entry->quest)+".cooldown";
+			const auto inspect=[&](entt::entity member){
+				if(status!=1 || !ecs::PlayerRuntime::IsPC(member))return;
+				auto* participant=EntranceParticipant(member);
+				const auto level=ecs::PointSystem::GetLevel(member);
+				remaining=participant?participant->GetFlag(cooldown)-get_global_time():0;
+				if(!participant || !ecs::PlayerRuntime::CanWarp(member))status=3;
+				else if(level<entry->minLevel)status=4;
+				else if(level>entry->maxLevel)status=5;
+				else if(!TypedDungeonTicketCount(member,binding->ticketCode) &&
+				        !TypedDungeonTicketCount(member,binding->alternateTicketCode))
+					status=binding->alternateTicketCode.empty()?6:7;
+				else if(remaining>0)status=8;
+				if(status!=1)name=ecs::PlayerRuntime::GetName(member);
+			};
+			const auto party=ecs::SocialSystem::GetParty(character);
+			if(party==entt::null)inspect(character);
+			else if(PartySystem::GetLeaderPID(party)!=ecs::PlayerRuntime::GetPlayerID(character))status=2;
+			else PartySystem::ForEachOnMapMember(party,inspect,ecs::PlayerRuntime::GetMapIndex(character));
+		}
+		lua_pushinteger(L,status);
+		lua_pushinteger(L,remaining);
+		lua_pushlstring(L,name.data(),name.size());
+		return 3;
+	}
+
+	ALUA(dungeon_typed_enter)
+	{
+		auto& quest=CQuestManager::instance();
+		const auto* entrance=CurrentEntrance(L);
+		const auto* binding=entrance?items::DungeonEntryForMap(entrance->map):nullptr;
+		if(!binding || !lua_isyieldable(L))
+		{
+			lua_pushboolean(L,false);
+			return 1;
+		}
+		const auto character=quest.GetCurrentPCEntity();
+		const auto npc=quest.GetCurrentNPCEntity();
+		const auto pid=ecs::PlayerRuntime::GetPlayerID(character);
+		const auto sourceMap=ecs::PlayerRuntime::GetMapIndex(character);
+		const auto party=ecs::SocialSystem::GetParty(character);
+		const std::string cooldown=std::string(entrance->quest)+".cooldown";
+		const std::string limiter="ww_"+std::to_string(entrance->map)+"_"+std::to_string(g_bChannel);
+		const auto eligible=[=](entt::entity member){
+			const auto level=ecs::PointSystem::GetLevel(member);
+			const auto now=get_global_time();
+			auto* flags=EntranceParticipant(member);
+			return g_registry.valid(npc) && ecs::PlayerRuntime::GetMapIndex(npc)==sourceMap &&
+				level>=entrance->minLevel && level<=entrance->maxLevel &&
+				flags && flags->GetFlag(cooldown)<=now &&
+				CQuestManager::instance().GetEventFlag(limiter)<=now;
+		};
+		const auto prepare=[=]()->std::optional<TypedDungeonEntryPlan>{
+			const auto dungeon=CDungeonManager::instance().Create(entrance->map);
+			if(dungeon==entt::null)return std::nullopt;
+			TypedDungeonEntryPlan plan;
+			plan.dungeon=dungeon;
+			plan.cancel=[dungeon]{CancelTypedDungeonPreflight(dungeon);};
+			plan.publish=[=]{
+				auto& manager=CQuestManager::instance();
+				const auto now=get_global_time();
+				manager.SetEventFlag(limiter,now+5);
+				manager.RequestSetEventFlag(limiter,now+5);
+				const auto prepareMember=[&](entt::entity member){
+					if(auto* flags=EntranceParticipant(member))
+					{
+						flags->SetFlag(std::string(entrance->quest)+".enter_time",now);
+						flags->SetFlag(cooldown,now+entrance->cooldown);
+					}
+				};
+				if(party==entt::null)
+				{
+					prepareMember(character);
+					DungeonSystem::Join_Coords(dungeon,character,entrance->x,entrance->y,sourceMap);
+				}
+				else
+				{
+					PartySystem::ForEachOnMapMember(party,prepareMember,sourceMap);
+					DungeonSystem::JoinParty_Coords(dungeon,party,entrance->x,entrance->y,sourceMap);
+				}
+			};
+			return plan;
+		};
+		TypedDungeonQuestEntry request{L,binding->alternateTicketCode,
+			[pid,L](bool entered){CQuestManager::instance().ResumeTypedItems(pid,L,entered);}};
+		if(!BeginTypedDungeonEntry(character,binding->gate,binding->ticketCode,1,eligible,prepare,std::move(request)))
+		{
+			lua_pushboolean(L,false);
+			return 1;
+		}
+		lua_settop(L,0);
+		lua_pushliteral(L,"typed_items");
+		return lua_yieldk(L,1,0,[](lua_State* thread,int,lua_KContext){return lua_gettop(thread);});
+	}
+
 	ALUA(dungeon_check_entrance)
 	{
 		// migrated from CHARACTER::GetDungeon
@@ -1333,6 +1500,7 @@ ALUA(dungeon_update_rank)
 		const int32_t cooldown = (int32_t)lua_tonumber(L, 2);
 		const int32_t idx = (int32_t)lua_tonumber(L, 3);
 		const std::string questname = lua_tostring(L, 4);
+		DungeonUi::Events::Complete(ecs::PlayerRuntime::GetMapIndex(chEntity));
 
 		const entt::entity party = ecs::SocialSystem::GetParty(chEntity);
 		if (party != entt::null)
@@ -1846,6 +2014,9 @@ ALUA(dungeon_update_rank)
 			{"restore_mast_partial_hp", dungeon_restore_mast_partial_life},
 #endif
 			{"check_entrance", dungeon_check_entrance},
+			{"typed_check_entrance", dungeon_typed_check_entrance},
+			{"typed_ticket_name", dungeon_typed_ticket_name},
+			{"typed_enter", dungeon_typed_enter},
 			{"remove_item", dungeon_remove_item},
 #ifdef ENABLE_MELEY_LAIR
 			{"check_entrance_meley", dungeon_check_entrance_meley},

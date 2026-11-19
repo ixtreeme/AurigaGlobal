@@ -1,0 +1,115 @@
+{
+  "checked_utc": "2026-11-13T23:28:27.080565+00:00",
+  "scope": "Original PSD death recap over native accepted HP loss and native restart actions",
+  "workspaces": {
+    "server": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal",
+    "server_branch": "20261103",
+    "unity": "D:\\Auriga-Unity6\\SRC\\AurigaUnity-20261103",
+    "unity_branch": "/main/unity63-integration-20261103",
+    "editor": "6000.3.27f1"
+  },
+  "source": {
+    "path": "D:/Nexoria UI/Halal_Osszesito/Nexoria_Halal_Osszesito.psd",
+    "sha256": "23eb608f8d1908a23e25e8ccfbd7edb0fe881a24079a9136fe6be8b0b92a5934",
+    "geometry": "D:/Nexoria UI/Halal_Osszesito/scripts/nx_build_halal_osszesito.jsx",
+    "geometry_sha256": "85ebbe55fb8231a446f3edce1c0d7a60c03895565c3746e401a58b3766e0d6de",
+    "native_photoshop": true,
+    "verified_original_assets": 25,
+    "source_document_unchanged": true
+  },
+  "behavior": {
+    "entrypoint": "Automatic on the local player death event or complete authenticated native death page; replaces restartdialog using its normal GameUi lifecycle",
+    "history": "Only actual accepted negative HP deltas are recorded after native clamping. Rolling ten-second monotonic journal, at most 256 hits, overflow explicitly indicated. Player, NPC and unknown-source metadata copied at the hit, critical outcome, skill ID and periodic poison/fire context retained",
+    "window": "Original two-panel artwork and title, right dock, proportional compact sizing, readable desktop/touch type and minimum action hit areas. Scrollable timeline and source list; health trace; full numbers/source in tooltips; damage share and advice derived from actual received metrics",
+    "names": "Localized player skill names when the existing native skill ID and client skill catalog identify one; generic attack/ability/effect captions otherwise, without invented boss ability names",
+    "restart": "Here/town buttons send the existing /restart_here and /restart_town native commands. The UI never changes HP, position, currency or items. Current native death penalty and dungeon-specific restart rules remain authoritative; the UI closes only on server confirmation",
+    "dismissal": "Escape/dismiss cannot remove restart choices while dead; server revival/logout clears the personal view and restores normal window behavior",
+    "sample_text": "Removed the demonstration one-scroll cost, automatic-town countdown, armor durability and auto-potion claims. The existing native server uses manual restart; no new automatic resurrection policy or item cost was introduced"
+  },
+  "security": {
+    "ownership": "Server snapshots are indexed by the authenticated player PID only; /death_ui accepts no target PID or supplied damage. No history broadcast to other players",
+    "protocol": "Versioned nx_death_* native command messages; owner identity, complete atomic pages, declared counts, exact HP deltas, bounded names/hit count/timestamps, 64-bit values and malformed page rejection validated by Unity",
+    "identity": "Random nonzero 64-bit server death IDs; client tracks recent accepted IDs to reject replay without assuming ordering across different cores",
+    "storage": "Bounded in-memory journal and at most 1024 recent participant snapshots per core, ten-minute expiry. No new database schema or durable death archive; server restart discards this temporary data"
+  },
+  "native_server_sha256": "1b887b16567a5f99f81e223f549ef63906151bcd17a43fadd85a3b6517e4c3c3",
+  "checks": {
+    "native_build": "GameServer, DeathRecapTests, CombatStateTests, PointCalculationTests and AffectLifecycleTests built successfully",
+    "native_rules": "279 assertions passed: HP loss/bounds, exact ten-second cutoff, overflow and pruning, 64-bit damage, saturated sum, nested skill/critical/periodic attribution and context restoration",
+    "native_ctest": [
+      "typed_inventory_wire",
+      "persistent_items",
+      "death_recap",
+      "dungeon_ui_rules",
+      "social_history_crypto",
+      "server_config",
+      "lua_sources",
+      "dungeon_lifecycle",
+      "spatial_lifecycle",
+      "point_calculation",
+      "combat_state",
+      "affect_lifecycle"
+    ],
+    "unity": "Pinned 6000.3.27f1 Editor compiled the runtime and validators; isolated additive scenes restored the original user scene",
+    "ui": "Automatic production death route, original PSD binding, non-dismissible dead state, atomic/foreign/malformed/replayed pages, 64-bit HP loss, critical/dot classification, opaque IDs across cores, real restart commands and authoritative close/logout reset passed",
+    "native_live": "Three newly seeded owned TLS accounts. PID-guarded temporary quest enters a real private map and spawns an aggressive native Ork boss (691). Actual NPC AI/combat kills the owned player twice. Real HP deltas/lethal hits reach the original recap; both real restart buttons restore native health and close the view; outsider target/history requests denied",
+    "live_sql": "Owned player saved alive; native wallet balances unchanged for all three isolated accounts",
+    "regression": "nexoria-offline broad catalog/gallery/settings/item/storage/C47 suite passed; death-offline final composite also passed the dungeon validator, 61 social checks and encrypted chat history validator. Existing unrelated non-death readability warnings in broad legacy captures remain outside this change",
+    "cleanup": "Temporary quest removed, original quest_list restored byte-for-byte and exact original immutable boot snapshot selected; all 76 existing quest IDs preserved and no persisted temporary quest flags",
+    "local_runtime": "Selected Database, CH1 core1/core2, CH99 core99 and login listening; owned local MariaDB running on final native executable",
+    "fixture_link_note": "AffectLifecycleTests needed an inactive TypedMountFlightPermission double for a pre-existing fixture link dependency; no active typed mount behavior is exercised there",
+    "markers": [
+      "METIN2_NEXORIA_REMAINING_GALLERY=SUCCESS windows=90",
+      "METIN2_NEXORIA_REMAINING=SUCCESS checks=455",
+      "METIN2_NEXORIA_REMAINING=SUCCESS checks=498",
+      "METIN2_NEXORIA_REMAINING=SUCCESS checks=499",
+      "METIN2_NEXORIA_REMAINING=SUCCESS checks=527",
+      "METIN2_SOCIAL=SUCCESS checks=27",
+      "METIN2_SOCIAL=SUCCESS checks=29",
+      "METIN2_SOCIAL=SUCCESS checks=30",
+      "METIN2_SOCIAL=SUCCESS checks=32",
+      "METIN2_SOCIAL=SUCCESS checks=41",
+      "METIN2_SOCIAL=SUCCESS checks=61",
+      "METIN2_SOCIAL_HISTORY=SUCCESS index paging timestamps chunks replay malformed integrity unread reset",
+      "METIN2_NEXORIA_DUNGEON=SUCCESS authored_psds=3 native_controls atomic_pages authorization numeric_bounds responsive_captures",
+      "METIN2_DEATH_RECAP=SUCCESS original_psd native_death_route bounded_atomic_history identity 64bit critical_dot revival_commands authoritative_close readable_desktop_touch_portrait",
+      "METIN2_DEATH_RECAP_LIVE=SUCCESS real_npc_ai two_deaths actual_hp_deltas original_psd local_revive town_revive outsider_denied no_client_authority"
+    ]
+  },
+  "captures": [
+    {
+      "name": "death-recap-1920",
+      "audit": "texts=53 small=0 legacy=0 overlap=0 min=15,1px",
+      "sha256": "924ce488b320d7de3018b42555200039a68e64cb0123a25c962368c3f742869f"
+    },
+    {
+      "name": "death-recap-1280",
+      "audit": "texts=53 small=0 legacy=0 overlap=0 min=14,3px",
+      "sha256": "11fbdf7c2db7bcd53930eaaaaa122b0bfecdc815c4cdf404c53a8eaa44b654bd"
+    },
+    {
+      "name": "death-recap-phone",
+      "audit": "texts=53 small=0 legacy=0 overlap=0 min=21,4px",
+      "sha256": "b950ce034c89fb589346f61e4496f0556a0cf5c79fb741062fc48cf58639e75b"
+    },
+    {
+      "name": "death-recap-portrait",
+      "audit": "texts=39 small=0 legacy=0 overlap=0 min=20,3px",
+      "sha256": "6360cf35283451ec54c2f361a0b4329c1e7db2057344e09a4ac0dec614f37f45"
+    }
+  ],
+  "preview_note": "Images use deterministic validation data; the separate TLS integration flow uses actual native NPC AI, damage, death and restart",
+  "untested": [
+    "Standalone Unity player build",
+    "Physical mobile devices (phone/portrait were simulated in the Editor)",
+    "Live PvP, every boss-specific ability and all alternate resurrection mechanics",
+    "Production deployment/concurrent load"
+  ],
+  "version_control": "Local changes only; no Git commit, Unity check-in or push; unrelated pending work preserved",
+  "backdrop_adjustment": {
+    "checked_utc": "2026-11-14T06:31:21.449315+00:00",
+    "change": "Single continuous navy backing behind title, both panels, restart actions and footer; opacity 72%; source-space bounds x=24 y=12 width=1452 height=888; inherits the authored window layout",
+    "validation": "Pinned Unity Editor compilation and existing death/dungeon/social/history validators passed; four death captures small=0 overlap=0",
+    "scope": "Unity presentation only"
+  }
+}

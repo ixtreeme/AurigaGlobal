@@ -16,6 +16,7 @@ struct TokenRedemptionQuote
 };
 struct TokenRedemptionPlan { ItemCommit commit;TokenRedemptionQuote quote; };
 inline constexpr std::uint16_t TokenRedemptionOutcome=0x1401;
+bool ValidTokenRedemptionWrite(const ItemCatalog&,const ItemCommit&);
 std::expected<TokenRedemptionPlan,TokenRedemptionError> MakeTokenRedemptionCommit(const ItemCatalog&,
     std::array<std::uint8_t,16>,ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,
     std::span<const ItemWallet>,ItemInstanceId,std::uint32_t requested,std::uint64_t cap,TokenRedemptionActor);

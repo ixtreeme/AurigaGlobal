@@ -3,6 +3,9 @@
 #include "TypedCostumes.hpp"
 #include "stdafx.h"
 #include "TypedLoot.hpp"
+#include "TypedMoney.hpp"
+#include "TypedPrivateShops.hpp"
+#include "TypedDungeonItems.hpp"
 #include "TypedGathering.hpp"
 #include "TypedCompanions.hpp"
 #include "TypedShop.hpp"
@@ -65,6 +68,7 @@ struct Entry
 	bool pending = false; // a drop, pickup or expiry is in the item store
     std::uint32_t sourcePid = 0;
     std::uint64_t ownedId = 0;
+    std::optional<items::CurrencyDropIntent> currency;
     std::vector<std::byte> reservedView;
 };
 
@@ -142,7 +146,7 @@ bool InReach(entt::entity loot, entt::entity character)
 }
 } // namespace
 
-static std::uint32_t CreateLoot(const items::ItemGrant& grant, std::int32_t mapIndex, std::int32_t x, std::int32_t y, std::int32_t z, entt::entity claimant, bool publish)
+static std::uint32_t CreateLoot(const items::ItemGrant& grant, std::int32_t mapIndex, std::int32_t x, std::int32_t y, std::int32_t z, entt::entity claimant, bool publish,std::uint64_t claimMs=items::GroundClaimMs)
 {
 	const auto catalog = items::runtime::CurrentCatalog();
 	const auto* item = catalog ? catalog->Find(grant.key) : nullptr;
@@ -151,7 +155,7 @@ static std::uint32_t CreateLoot(const items::ItemGrant& grant, std::int32_t mapI
 	const std::uint32_t vid = ITEM_MANAGER::instance().AllocateGroundVID();
 	if (!vid)
 		return 0;
-	auto insert = items::EncodeTypedGround({ vid, x, y, z, grant.key, grant.refinementLevel, grant.count, item->base.contentCode });
+	auto insert = items::EncodeTypedGround({ vid, x, y, z, grant.key, grant.refinementLevel, grant.count, item->base.contentCode,catalog->CurrencyMode(grant.key)==items::CurrencyTokenMode::GroundGold ? grant.currencyAmount.value_or(grant.count) : 0 });
 	if (!insert)
 	{
 		LOG_ERROR("TypedLoot: {} cannot be shown on the ground (error {})", item->base.contentCode, static_cast<int>(insert.error()));
@@ -159,9 +163,10 @@ static std::uint32_t CreateLoot(const items::ItemGrant& grant, std::int32_t mapI
 	}
 	const bool claimed = claimant != entt::null && g_registry.valid(claimant) && ecs::PlayerRuntime::IsPC(claimant) &&
 		!CBattleArena::IsBattleArenaMap(mapIndex);
+	if(!claimMs || claimMs>items::GroundLifetimeMs)return 0;
 	const auto now = NowMs();
 	const items::GroundLoot loot { grant, claimed ? ecs::PlayerRuntime::GetPlayerID(claimant) : 0u,
-		now + items::GroundClaimMs, now + items::GroundLifetimeMs };
+		now + claimMs, now + items::GroundLifetimeMs };
 	const entt::entity entity = g_registry.create();
 	g_registry.emplace<ecs::SpatialKindTag>(entity, ecs::SpatialKind::TypedLoot);
 	if (publish) g_registry.emplace<ecs::TypedLootView>(entity, vid, std::move(*insert),
@@ -181,13 +186,14 @@ static std::uint32_t CreateLoot(const items::ItemGrant& grant, std::int32_t mapI
 	return vid;
 }
 
-bool DropTypedLoot(const items::ItemGrant& grant,std::int32_t map,std::int32_t x,std::int32_t y,std::int32_t z,entt::entity claimant)
-{ return CreateLoot(grant,map,x,y,z,claimant,true)!=0; }
+bool DropTypedLoot(const items::ItemGrant& grant,std::int32_t map,std::int32_t x,std::int32_t y,std::int32_t z,entt::entity claimant,std::uint64_t claimMs)
+{ return CreateLoot(grant,map,x,y,z,claimant,true,claimMs)!=0; }
 
 namespace
 {
 void ExpireOwned(std::uint32_t vid);
 bool PickupOwned(entt::entity character,std::uint32_t vid);
+bool GroundAdmission(entt::entity character);
 }
 
 bool PickupTypedLoot(entt::entity character, std::uint32_t vid)
@@ -228,7 +234,7 @@ bool PickupTypedLoot(entt::entity character, std::uint32_t vid)
 	}
 	const entt::entity receiver = decision == items::GroundPickup::Claimant ? claimant : character;
 	// The loot stays on the ground until the store has written the item.
-	const auto sent = RequestTypedItemGrant(receiver, entry.loot.grant, [vid](bool written) {
+	const auto done = [vid](bool written) {
 		auto& all = Loot();
 		const auto found = all.find(vid);
 		if (found == all.end())
@@ -237,7 +243,11 @@ bool PickupTypedLoot(entt::entity character, std::uint32_t vid)
 			Retire(vid);
 		else
 			found->second.pending = false;
-	});
+	};
+	const auto catalog=items::runtime::CurrentCatalog();
+	const bool money=catalog && catalog->CurrencyMode(entry.loot.grant.key)==items::CurrencyTokenMode::GroundGold;
+	if(money && !GroundAdmission(character))return true;
+	const auto sent = money ? RequestTypedGoldCredit(receiver,entry.loot.grant.currencyAmount.value_or(entry.loot.grant.count),entry.currency,done) : RequestTypedItemGrant(receiver,entry.loot.grant,done);
 	if (sent)
 	{
 		entry.pending = true;
@@ -246,7 +256,7 @@ bool PickupTypedLoot(entt::entity character, std::uint32_t vid)
 	switch (sent.error())
 	{
 	case TypedGrantRefusal::Busy: break; // the client's auto-pickup asks again
-	case TypedGrantRefusal::NoRoom: Tell(character, "Nincs elég hely az inventoryban."); break;
+	case TypedGrantRefusal::NoRoom: Tell(character, money ? "Elérted a Yang-egyenleg felső határát." : "Nincs elég hely az inventoryban."); break;
 	case TypedGrantRefusal::NotEnabled: Tell(character, "Az új tárgyrendszer ennél a karakternél nincs bekapcsolva."); break;
 	case TypedGrantRefusal::Invalid:
 	case TypedGrantRefusal::NoIds:
@@ -259,6 +269,9 @@ bool PickupTypedLoot(entt::entity character, std::uint32_t vid)
 
 void TickTypedLoot()
 {
+    TickTypedMoney();
+    TickTypedPrivateShops();
+    TickTypedDungeonCleanup();
     TickTypedGathering();
 	TickTypedCompanions();TickTypedCostumes();TickTypedSouls();
 	TickTypedItemRefreshes();
@@ -466,7 +479,8 @@ void RequestTypedItemDrop(entt::entity character,std::uint64_t itemId,std::uint3
 	const auto pid=ecs::PlayerRuntime::GetPlayerID(character);const auto now=NowMs();
 	if(nextDrop[pid]>now)return;nextDrop[pid]=now+250;
 	const auto fence=typed->state.fence;const auto token=login->token;
-	const auto vid=CreateLoot({source->key,source->refinementLevel,units ? units : source->count},ecs::PlayerRuntime::GetMapIndex(character),
+	auto droppedGrant=items::ItemGrant{source->key,source->refinementLevel,units ? units : source->count};droppedGrant.currencyAmount=source->currencyAmount;
+	const auto vid=CreateLoot(droppedGrant,ecs::PlayerRuntime::GetMapIndex(character),
 		ecs::PlayerRuntime::GetX(character),ecs::PlayerRuntime::GetY(character),ecs::PlayerRuntime::GetZ(character),entt::null,false);
 	if(!vid){Tell(character,"Itt nem lehet tárgyat a földre tenni.");return;}
     const auto* currentLogin=g_registry.valid(character) ? g_registry.try_get<ecs::TypedItemLogin>(character) : nullptr;
@@ -495,3 +509,23 @@ bool HandleTypedItemDropPacket(entt::entity character,const char* data)
 	const auto* packet=reinterpret_cast<const TPacketCGTypedItemDrop*>(data);
 	RequestTypedItemDrop(character,packet->qwItemId,packet->dwCount);return true;
 }
+
+namespace {
+std::uint32_t CurrencyDropVid(const items::CurrencyDropIntent& intent){for(const auto& [vid,e]:Loot())if(e.currency && e.currency->operation==intent.operation)return vid;return 0;}
+std::uint64_t CurrencyUtc(){return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();}
+}
+bool ReserveTypedCurrencyDrop(const items::CurrencyDropIntent& intent){
+    if(!items::ValidCurrencyDropIntent(intent))return false;if(CurrencyDropVid(intent))return true;
+    const auto catalog=items::runtime::CurrentCatalog();const auto key=catalog?catalog->CurrencyKey(items::CurrencyTokenMode::GroundGold):std::nullopt;
+    const auto now=CurrencyUtc();if(!key || now>=intent.expiresAtMs)return false;items::ItemGrant grant{*key,0,1};grant.currencyAmount=intent.amount;
+    const auto vid=CreateLoot(grant,intent.map,intent.x,intent.y,intent.z,entt::null,false);if(!vid)return false;
+    auto& e=Loot().at(vid);e.currency=intent;e.pending=true;e.loot.expiresMs=NowMs()+static_cast<std::int64_t>(intent.expiresAtMs-now);return true;
+}
+void PublishTypedCurrencyDrop(const items::CurrencyDropIntent& intent){
+    auto vid=CurrencyDropVid(intent);if(!vid){if(!ReserveTypedCurrencyDrop(intent))return;vid=CurrencyDropVid(intent);}
+    auto it=Loot().find(vid);if(it==Loot().end())return;auto& e=it->second;
+    if(CurrencyUtc()>=intent.expiresAtMs || !g_registry.valid(e.entity) || !ecs::SectorOf(g_registry,e.entity)){Retire(vid);return;}
+    if(g_registry.all_of<ecs::TypedLootView>(e.entity))return;
+    e.pending=false;g_registry.emplace<ecs::TypedLootView>(e.entity,vid,std::move(e.reservedView),std::string{});ecs::SpatialService::UpdateSectree(g_registry,e.entity);
+}
+void CancelTypedCurrencyDrop(const items::CurrencyDropIntent& intent){if(auto vid=CurrencyDropVid(intent))Retire(vid);}

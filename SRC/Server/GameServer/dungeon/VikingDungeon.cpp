@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "../item/TypedDungeonEntry.hpp"
+#include "../item/TypedDungeonActions.hpp"
 #include "../mission_pass/MissionPassEvents.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
@@ -51,6 +53,8 @@ namespace
     constexpr int32_t kMinMembers = 2;
 
     constexpr uint32_t kEntryItemVnum  = 33014;
+    constexpr std::string_view kNativeEntryCode="catalog.10.ironclad_amulet_26fbf68fe199";
+    std::uint64_t EntryTicketCount(entt::entity e){return HasTypedDungeonInventory(e)?TypedDungeonTicketCount(e,kNativeEntryCode):ItemSystem::CountItem(e,kEntryItemVnum);}
     constexpr int32_t  kEntryItemCount = 1;
 
     constexpr uint32_t kGateNpc           = 9616;
@@ -1110,6 +1114,7 @@ bool CVikingDungeon::OnUseItem(entt::entity character, entt::entity item)
 
 bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
 {
+    if(TypedDungeonEntryPending(character))return true;
     if (!ecs::PlayerRuntime::IsValid(npc) || !ecs::PlayerRuntime::IsPC(character))
         return false;
 
@@ -1250,7 +1255,7 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
 
         if (!quickRestart)
         {
-            if (ItemSystem::CountItem(m, kEntryItemVnum) < kEntryItemCount)
+            if (EntryTicketCount(m) < kEntryItemCount)
             {
                 ok = false;
                 bad = BAD_ITEM;
@@ -1299,15 +1304,17 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
         return true;
     }
 
+    auto prepare=[=]() -> std::optional<TypedDungeonEntryPlan> {
     const entt::entity d = CDungeonManager::instance().Create(kOriginalMap);
     if (d == entt::null)
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Failed to create dungeon instance.");
-        return true;
+        return std::nullopt;
     }
 
     const int32_t dungeonMapIdx = DungeonSystem::GetMapIndex(d);
 
+        TypedDungeonEntryPlan plan;plan.dungeon=d;plan.cancel=[d]{CancelTypedDungeonPreflight(d);};plan.publish=[=]{
     auto prepareMember = [&](entt::entity m){
         if (!ecs::PlayerRuntime::IsPC(m))
             return;
@@ -1320,7 +1327,7 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
         if (!quickRestart)
         {
             SetCooldown(m);
-            ItemSystem::RemoveSpecifyItemEcs(m, kEntryItemVnum, kEntryItemCount);
+            if(!HasTypedDungeonInventory(m))ItemSystem::RemoveSpecifyItemEcs(m, kEntryItemVnum, kEntryItemCount);
         }
     };
 
@@ -1337,82 +1344,54 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
         DungeonSystem::Join_Coords(d, character, kEnterGlobalX, kEnterGlobalY, ecs::PlayerRuntime::GetMapIndex(character));
 
     BigNoticeMap(dungeonMapIdx, "<Frostbane Fortress> Dungeon instance created.");
+        };return plan;
+    };
+    if(HasTypedDungeonInventory(character) && !quickRestart){
+        if(!BeginTypedDungeonEntry(character,"dungeon.viking.entry",kNativeEntryCode,1,[](entt::entity pc){const auto level=ecs::PointSystem::GetLevel(pc);return level>=kMinLevel && level<=kMaxLevel && ecs::QuestSystem::GetFlag(pc,kQfCooldown)<=get_global_time();},prepare))
+            ecs::ChatSystem::Send(character,CHAT_TYPE_INFO,"A teljes csapatnak készen kell állnia, és a belépőnek a hátizsákban kell lennie.");
+        return true;
+    }
+    if(auto plan=prepare())plan->publish();
     return true;
 }
 
-bool CVikingDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt::entity item)
-{
-    if (!ecs::PlayerRuntime::IsValid(from) || !ecs::PlayerRuntime::IsValid(npc) ||
-        ecs::PlayerRuntime::GetMapIndex(from) != ecs::PlayerRuntime::GetMapIndex(npc))
-        return false;
-
-    if (!ecs::PlayerRuntime::IsValid(npc) || !ItemSystem::CanConsumeOwnedItem(from, item) || !ecs::PlayerRuntime::IsPC(from))
-        return false;
-
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(from);
-    if (!IsVikingDungeonMap(idx))
-        return false;
-
-    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (d == entt::null)
-        return false;
-
-    const uint32_t npcVnum = ecs::PlayerRuntime::GetRaceNum(npc);
-    const uint32_t itemVnum = ItemSystem::GetItemVnum(item);
-    const int32_t floor = DungeonSystem::GetFlag(d, kFlagFloor);
-
-    if (floor == 1 && itemVnum == kFloor1ItemVnum)
-    {
-        if (npcVnum == kCompassEmptyNpc && DungeonSystem::GetFlag(d, kFlagCompassState) == 0)
-        {
-            const ItemSystem::ItemCost cost {item, 1};
-            if (!ItemSystem::ConsumeOwnedItemCosts(from, std::span(&cost, 1)))
-                return true;
-            DungeonSystem::SetFlag(d, kFlagCompassState, 1);
+static std::optional<TypedDungeonAction> PlanVikingAction(entt::entity from,entt::entity npc,auriga::item::DungeonUseRole role){
+ using R=auriga::item::DungeonUseRole;namespace P=ecs::PlayerRuntime;
+ if(!P::IsPC(from))return {};
+ const auto idx=P::GetMapIndex(from);
+ if(role==R::VikingReset){const auto until=ecs::QuestSystem::GetFlag(from,kQfCooldown);if(CVikingDungeon::instance().IsVikingDungeonMap(idx)||until<=get_global_time())return {};
+ return TypedDungeonAction{static_cast<std::uint64_t>(until),[=]{ecs::QuestSystem::SetFlag(from,kQfCooldown,0);ecs::ChatSystem::Send(from,CHAT_TYPE_INFO,"Dungeon cooldown reset successfully.");}};}
+ if(!P::IsValid(npc)||P::GetMapIndex(npc)!=idx||!CVikingDungeon::instance().IsVikingDungeonMap(idx))return {};
+ const auto d=CDungeonManager::instance().FindByMapIndex(idx);if(!g_registry.valid(d))return {};
+ const auto floor=DungeonSystem::GetFlag(d,kFlagFloor);const auto npcVnum=P::GetRaceNum(npc);
+ if(floor==1&&role==R::VikingFire){
+if(npcVnum==kCompassEmptyNpc && DungeonSystem::GetFlag(d,kFlagCompassState)==0){return TypedDungeonAction{1, [=]()mutable{
+DungeonSystem::SetFlag(d, kFlagCompassState, 1);
             ReplaceCompass(d, npc, kCompassSmallNpc);
             DungeonSystem::SpawnRegen(d, kRegen1FloorA, true);
             s_viking.ScheduleFloor1Check(idx);
             NoticeMap(idx, "<Frostbane Fortress> Compass activated. Clear the monsters again.");
-            return true;
-        }
-
-        if (npcVnum == kCompassSmallNpc && DungeonSystem::GetFlag(d, kFlagCompassState) == 1)
-        {
-            const ItemSystem::ItemCost cost {item, 1};
-            if (!ItemSystem::ConsumeOwnedItemCosts(from, std::span(&cost, 1)))
-                return true;
-            DungeonSystem::SetFlag(d, kFlagCompassState, 2);
+}};}
+if(npcVnum==kCompassSmallNpc && DungeonSystem::GetFlag(d,kFlagCompassState)==1){return TypedDungeonAction{2, [=]()mutable{
+DungeonSystem::SetFlag(d, kFlagCompassState, 2);
             ReplaceCompass(d, npc, kCompassMediumNpc);
             DungeonSystem::SpawnRegen(d, kRegen1FloorA, true);
             s_viking.ScheduleFloor1Check(idx);
             NoticeMap(idx, "<Frostbane Fortress> Compass empowered further. Clear the monsters again.");
-            return true;
-        }
-
-        if (npcVnum == kCompassMediumNpc && DungeonSystem::GetFlag(d, kFlagCompassState) == 2)
-        {
-            const ItemSystem::ItemCost cost {item, 1};
-            if (!ItemSystem::ConsumeOwnedItemCosts(from, std::span(&cost, 1)))
-                return true;
-            DungeonSystem::SetFlag(d, kFlagCompassState, 3);
+}};}
+if(npcVnum==kCompassMediumNpc && DungeonSystem::GetFlag(d,kFlagCompassState)==2){return TypedDungeonAction{3, [=]()mutable{
+DungeonSystem::SetFlag(d, kFlagCompassState, 3);
             ReplaceCompass(d, npc, kCompassLargeNpc);
             NoticeMap(idx, "<Frostbane Fortress> The compass was ignited successfully.");
             NoticeMap(idx, "<Frostbane Fortress> The first main boss will appear soon.");
             s_viking.ScheduleFloor1Boss(idx);
-            return true;
-        }
-    }
+}};}
+ }
+ if(floor==4&&role==R::VikingRune&&DungeonSystem::GetFlag(d,kFlagCanUseRune)==1&&(npcVnum==kMemorialNpc1||npcVnum==kMemorialNpc2||npcVnum==kMemorialNpc3)){
+return TypedDungeonAction{100+static_cast<std::uint64_t>(DungeonSystem::GetFlag(d,kFlagFloor3NpcStage)), [=]()mutable{
 
-    if (floor == 4 && itemVnum == kFloor3ItemVnum && DungeonSystem::GetFlag(d, kFlagCanUseRune) == 1)
-    {
-        if (npcVnum != kMemorialNpc1 && npcVnum != kMemorialNpc2 && npcVnum != kMemorialNpc3)
-            return false;
 
-        const ItemSystem::ItemCost cost {item, 1};
-
-        if (!ItemSystem::ConsumeOwnedItemCosts(from, std::span(&cost, 1)))
-
-            return true;
+        
         DungeonSystem::SetFlag(d, kFlagCanUseRune, 0);
 
         int32_t stage = DungeonSystem::GetFlag(d, kFlagFloor3NpcStage) + 1;
@@ -1444,10 +1423,17 @@ bool CVikingDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt::en
             NoticeMap(idx, "<Frostbane Fortress> The final boss will appear in 10 seconds.");
             s_viking.ScheduleFinalSpawn(idx);
         }
-        return true;
-    }
-
-    return false;
+}};
+ }return {};
+}
+bool CVikingDungeon::OnNpcTakeItem(entt::entity from,entt::entity npc,entt::entity item){
+ if(!ItemSystem::CanConsumeOwnedItem(from,item))return false;
+ const auto d=CDungeonManager::instance().FindByMapIndex(ecs::PlayerRuntime::GetMapIndex(from));if(TypedDungeonActionPending(d))return true;
+ using R=auriga::item::DungeonUseRole;const auto v=ItemSystem::GetItemVnum(item);const auto role=v==kFloor1ItemVnum?R::VikingFire:v==kFloor3ItemVnum?R::VikingRune:R::None;
+ auto plan=PlanVikingAction(from,npc,role);if(!plan)return false;const ItemSystem::ItemCost cost{item,1};if(ItemSystem::ConsumeOwnedItemCosts(from,std::span(&cost,1)))plan->publish();return true;
+}
+bool CVikingDungeon::OnUseTypedItem(entt::entity e,const auriga::item::PersistentItem& item,const auriga::item::ItemCatalog& catalog){
+ const auto role=auriga::item::DungeonItemUseRole(catalog,item.key);return UseTypedDungeonAction(e,item,catalog,[role](auto pc,auto npc){return PlanVikingAction(pc,npc,role);},role!=auriga::item::DungeonUseRole::VikingReset);
 }
 
 void CVikingDungeon::OnMobKilled(entt::entity killer, entt::entity victim)

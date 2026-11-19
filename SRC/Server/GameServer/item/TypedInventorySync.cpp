@@ -8,10 +8,12 @@
 #include "TypedCompanions.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
+#include "../ecs/systems/ChatSystem.hpp"
 #include "../network/desc.h"
 #include "../network/p2p.h"
 #include "../entity/char_manager.h"
 #include "../core/packet.h"
+#include "../quest/questmanager.h"
 
 #include <item/TypedInventoryWire.hpp>
 #include <item/TypedItemDetails.hpp>
@@ -107,22 +109,43 @@ void SendTypedInventory(entt::entity character)
 		return;
 	const auto* typed = g_registry.try_get<ecs::TypedItems>(character);
 	auto* desc = ecs::PlayerRuntime::GetDesc(character);
-	if (!typed || !desc || !desc->IsPhase(PHASE_GAME))
+	if (!desc || !desc->IsPhase(PHASE_GAME))
 		return;
+	if (!typed)
+	{
+		const auto* login = g_registry.try_get<ecs::TypedItemLogin>(character);
+		if (login && login->mode == ecs::TypedItemLogin::Mode::Unavailable)
+			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "typed_item_backend unavailable");
+		return;
+	}
 	const auto catalog = auriga::item::runtime::CurrentCatalog();
 	if (!catalog)
 		return;
 	const auto& state = typed->state;
-	// Escrow is server-owned ground state, never a client inventory page.
+	// Escrow is server-owned ground state, never a client inventory page. The special
+	// inventory (C47) is the character's own: it travels in the same snapshot (wire v18).
+	using auriga::item::ItemStorageKind;
+	const auto clientVisible = [](ItemStorageKind kind) {
+		return kind == ItemStorageKind::Inventory || kind == ItemStorageKind::Equipment || kind == ItemStorageKind::PetCarrier || kind == ItemStorageKind::SpecialInventory;
+	};
 	std::vector<auriga::item::ItemStorageLayout> storages;
 	std::vector<auriga::item::PersistentItem> visible;
 	for (const auto& layout : state.storages)
-		if (layout.storage.kind == auriga::item::ItemStorageKind::Inventory || layout.storage.kind == auriga::item::ItemStorageKind::Equipment || layout.storage.kind == auriga::item::ItemStorageKind::PetCarrier)
+		if (clientVisible(layout.storage.kind))
 			storages.push_back(layout);
 	for (const auto& item : state.items)
-		if (!item.destroyed && item.placement && (item.placement->kind == auriga::item::ItemStorageKind::Inventory || item.placement->kind == auriga::item::ItemStorageKind::Equipment || item.placement->kind == auriga::item::ItemStorageKind::PetCarrier))
+		if (!item.destroyed && item.placement && clientVisible(item.placement->kind))
 			visible.push_back(item);
-	const auto details = auriga::item::EncodeTypedItemDetails(*catalog, visible, auriga::item::runtime::ItemStore::Instance().GroundRun().has_value() && std::ranges::any_of(state.storages, [](const auto& s) { return s.storage.kind == auriga::item::ItemStorageKind::TradeEscrow && s.storage.id == auriga::item::OwnedGroundStorageId; }));
+	std::vector<auriga::item::ItemKey> scriptedUse;
+	const auto& quests = quest::CQuestManager::instance();
+	for (const auto& item : visible)
+		if (const auto* definition = catalog->Find(item.key); definition && quests.HasTypedItemUse(definition->base.contentCode))
+			scriptedUse.push_back(item.key);
+	const bool ownedDropEnabled = auriga::item::runtime::ItemStore::Instance().GroundRun().has_value() &&
+		std::ranges::any_of(state.storages, [](const auto& storage) {
+			return storage.storage.kind == ItemStorageKind::TradeEscrow && storage.storage.id == auriga::item::OwnedGroundStorageId;
+		});
+	const auto details = auriga::item::EncodeTypedItemDetails(*catalog, visible, ownedDropEnabled, {}, scriptedUse);
 	const auto bytes = auriga::item::EncodeTypedInventory(*catalog, storages, state.wallets, visible, companion);
 	if (!details)
 	{

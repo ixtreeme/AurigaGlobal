@@ -4,6 +4,7 @@
 namespace quest {
 void RuntimeGeneration::Swap(CQuestManager& q) noexcept {
     std::swap(vm, q.L); sources.swap(q.m_questSources); npcs.swap(q.m_mapNPC); aliases.swap(q.m_mapNPCNameID);
+    typedItemUses.swap(q.m_typedItemUses);
     timers.swap(q.m_mapTimerID); categories.swap(q.m_questCategories); names.swap(q.m_hmQuestName);
     indices.swap(q.m_mapQuestNameByIndex); starts.swap(q.m_hmQuestStartScript); events.swap(q.m_mapEventName);
 #ifdef __QUEST_RENEWAL__

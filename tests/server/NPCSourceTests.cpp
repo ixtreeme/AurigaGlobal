@@ -26,7 +26,7 @@ entt::entity CQuestManager::GetCurrentPCEntity() const { Unexpected(); }
 void CQuestManager::CloseState(QuestState&, bool) const { Unexpected(); }
 bool CQuestManager::CanStartQuest(unsigned int) { Unexpected(); }
 bool CQuestManager::CanStartQuest(unsigned int, const PC&) { Unexpected(); }
-bool CQuestManager::ExecuteQuestScript(PC&, const std::string&, int, const char*, int, std::vector<AArgScript*>*, bool) { Unexpected(); }
+bool CQuestManager::ExecuteQuestScript(PC&, const std::string&, int, const char*, int, std::vector<AArgScript*>*, bool, TypedItemUseSource) { Unexpected(); }
 bool CQuestManager::ExecuteQuestScript(PC&, uint32_t, int, const char*, int, std::vector<AArgScript*>*, bool) { Unexpected(); }
 bool IsScriptTrue(const char*, int) { Unexpected(); }
 std::string ScriptToString(const std::string&) { Unexpected(); }

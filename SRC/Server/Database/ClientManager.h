@@ -19,8 +19,6 @@
 #define ENABLE_PROTO_FROM_DB
 
 class CPlayerTableCache;
-class CItemCache;
-class CItemPriceListTableCache;
 
 #ifdef __SKILL_COLOR_SYSTEM__
 class CSKillColorCache;
@@ -44,10 +42,6 @@ public:
 
 	typedef std::list<CPeer*>			TPeerList;
 	typedef std::unordered_map<uint32_t, CPlayerTableCache*> TPlayerTableCacheMap;
-	typedef std::unordered_map<uint32_t, CItemCache*> TItemCacheMap;
-	typedef std::unordered_set<CItemCache*> TItemCacheSet;
-	typedef std::unordered_map<uint32_t, TItemCacheSet*> TItemCacheSetPtrMap;
-	typedef std::unordered_map<uint32_t, CItemPriceListTableCache*> TItemPriceListCacheMap;
 	typedef std::unordered_map<short, uint8_t> TChannelStatusMap;
 
 #ifdef __SKILL_COLOR_SYSTEM__
@@ -55,7 +49,6 @@ public:
 #endif
 
 	// MYSHOP_PRICE_LIST
-	typedef std::pair< uint32_t, uint32_t >		TItemPricelistReqInfo;
 	// END_OF_MYSHOP_PRICE_LIST
 
 	class ClientHandleInfo
@@ -109,7 +102,7 @@ public:
 	void		SendItemShopData(CPeer* pkPeer = nullptr, bool isPacket = false);
 	void		RecvItemShop(CPeer* pkPeer, uint32_t dwHandle, const char* data);
 	int64_t		GetDragonCoin(uint32_t id);
-	void		SetDragonCoin(uint32_t id, int64_t amount);
+	bool		DebitDragonCoin(uint32_t id, int64_t amount);
 	void		ItemShopIncreaseSellCount(uint32_t itemID, int itemCount);
 protected:
 	uint64_t			itemShopUpdateTime;
@@ -142,18 +135,12 @@ public:
 	CPlayerTableCache* GetPlayerCache(uint32_t id);
 	void			PutPlayerCache(TPlayerTable* pNew);
 
-	void			CreateItemCacheSet(uint32_t dwID);
-	TItemCacheSet* GetItemCacheSet(uint32_t dwID);
-	void			FlushItemCacheSet(uint32_t dwID);
 
-	CItemCache* GetItemCache(uint32_t id);
-	void			PutItemCache(TPlayerItem* pNew, bool bSkipQuery = false);
 	// Native-only preparation API. No source-stop or Mission writer authority is implied.
 	bool BeginPlayerCacheDrain(const auriga::player_session::Lease& lease,
 		const auriga::player_session::Token& challenge);
 	std::optional<auriga::player_cache::Receipt> PollPlayerCacheDrain(
 		const auriga::player_session::Lease& lease, const auriga::player_session::Token& challenge);
-	bool			DeleteItemCache(uint32_t id);
 
 #ifdef __SKILL_COLOR_SYSTEM__
 	CSKillColorCache* GetSkillColorCache(uint32_t id);
@@ -162,15 +149,11 @@ public:
 #endif
 
 	void			UpdatePlayerCache();
-	void			UpdateItemCache();
 
 	// MYSHOP_PRICE_LIST
-	CItemPriceListTableCache* GetItemPriceListCache(uint32_t dwID);
-
-	void			PutItemPriceListCache(const TItemPriceListTable* pItemPriceList);
 
 
-	void			UpdateItemPriceListCache(void);
+
 	// END_OF_MYSHOP_PRICE_LIST
 
 
@@ -189,23 +172,15 @@ public:
 
 	// @fixme203 directly GetCommand instead of strcpy
 	char* GetCommand(char* str, char* command);
-	void			ItemAward(CPeer* peer, char* login);
 
 protected:
 	void	Destroy();
 
 private:
 	bool		InitializeTables();
-	bool		InitializeShopTable();
 	bool		InitializeMobTable();
-	bool		InitializeItemTable();
-	bool		InitializeQuestItemTable();
 	bool		InitializeSkillTable();
-	bool		InitializeRefineTable();
 	bool		InitializeBanwordTable();
-	bool		InitializeItemAttrTable();
-	bool		InitializeItemRareTable();
-	bool		InitializeItemRare8Table();
 	bool		InitializeLandTable();
 	bool		InitializeObjectProto();
 	bool		InitializeObjectTable();
@@ -219,12 +194,10 @@ protected:
 	std::map<uint8_t, std::vector<TEventManagerData > > m_EventManager;
 #endif
 #ifdef ENABLE_ITEM_EXTRA_PROTO
-	bool		InitializeItemExtraProtoTable();
 	void		SendItemExtraProtoTable(CPeer* peer);
 #endif
 
 	bool		MirrorMobTableIntoDB();
-	bool		MirrorItemTableIntoDB();
 
 	void		AddPeer(auriga::net::tcp::socket&& sock);
 	void		RemovePeer(CPeer* pPeer);
@@ -289,7 +262,6 @@ protected:
 	void FailPlayerLoad(CPeer* peer, const ClientHandleInfo& info);
 	void		RESULT_COMPOSITE_PLAYER(CPeer* peer, SQLMsg* pMsg, uint32_t dwQID);
 	void		RESULT_PLAYER_LOAD(CPeer* peer, MYSQL_RES* pRes, ClientHandleInfo* pkInfo);
-	void RESULT_ITEM_LOAD(CPeer* peer, MYSQL_RES* pRes, const ClientHandleInfo& info);
 	void RESULT_QUEST_LOAD(CPeer* peer, MYSQL_RES* pRes, const ClientHandleInfo& info);
 	// @fixme402 (RESULT_AFFECT_LOAD +dwRealPID)
 	void RESULT_AFFECT_LOAD(CPeer* peer, MYSQL_RES* pRes, const ClientHandleInfo& info);
@@ -305,9 +277,7 @@ protected:
 	// END_PLAYER_INDEX_CREATE_BUG_FIX
 
 	// MYSHOP_PRICE_LIST
-	void		RESULT_PRICELIST_LOAD(CPeer* peer, SQLMsg* pMsg);
 
-	void		RESULT_PRICELIST_LOAD_FOR_UPDATE(SQLMsg* pMsg);
 	// END_OF_MYSHOP_PRICE_LIST
 
 	void		QUERY_PLAYER_SAVE(CPeer* peer, uint32_t dwHandle, TPlayerTable*);
@@ -322,24 +292,13 @@ protected:
 	void		QUERY_SKILL_COLOR_SAVE(const char* c_pData);
 #endif
 
-	void		QUERY_ITEM_SAVE(CPeer* pkPeer, const char* c_pData);
-	void		QUERY_ITEM_DESTROY(CPeer* pkPeer, const char* c_pData);
-	void		QUERY_ITEM_FLUSH(CPeer* pkPeer, const char* c_pData);
 
 
 	void		QUERY_QUEST_SAVE(CPeer* pkPeer, TQuestTable*, uint32_t dwLen);
 	void		QUERY_ADD_AFFECT(CPeer* pkPeer, TPacketGDAddAffect* p);
 	void		QUERY_REMOVE_AFFECT(CPeer* pkPeer, TPacketGDRemoveAffect* p);
 
-	void		QUERY_SAFEBOX_LOAD(CPeer* pkPeer, uint32_t dwHandle, TSafeboxLoadPacket*, bool bMall);
-	void		QUERY_SAFEBOX_SAVE(CPeer* pkPeer, TSafeboxTable* pTable);
-	void		QUERY_SAFEBOX_CHANGE_SIZE(CPeer* pkPeer, uint32_t dwHandle, TSafeboxChangeSizePacket* p);
-	void		QUERY_SAFEBOX_CHANGE_PASSWORD(CPeer* pkPeer, uint32_t dwHandle, TSafeboxChangePasswordPacket* p);
 
-	void		RESULT_SAFEBOX_LOAD(CPeer* pkPeer, SQLMsg* msg);
-	void		RESULT_SAFEBOX_CHANGE_SIZE(CPeer* pkPeer, SQLMsg* msg);
-	void		RESULT_SAFEBOX_CHANGE_PASSWORD(CPeer* pkPeer, SQLMsg* msg);
-	void		RESULT_SAFEBOX_CHANGE_PASSWORD_SECOND(CPeer* pkPeer, SQLMsg* msg);
 
 	void		QUERY_EMPIRE_SELECT(CPeer* pkPeer, uint32_t dwHandle, TEmpireSelectPacket* p);
 	void		QUERY_SETUP(CPeer* pkPeer, uint32_t dwHandle, const char* c_pData);
@@ -407,9 +366,7 @@ protected:
 
 	// MYSHOP_PRICE_LIST
 
-	void		MyshopPricelistUpdate(const TItemPriceListTable* pPacket); // @fixme403 (TPacketMyshopPricelistHeader to TItemPriceListTable)
 
-	void		MyshopPricelistRequest(CPeer* peer, uint32_t dwHandle, uint32_t dwPlayerID);
 	// END_OF_MYSHOP_PRICE_LIST
 
 	// Building
@@ -444,7 +401,7 @@ private:
 	std::map<uint32_t, auriga::player_cache::Drain> m_playerCacheDrains;
 	bool PlayerCacheDrainCurrent(const auriga::player_session::Lease& lease);
 	void HandlePlayerCacheRequest(CPeer* peer, uint32_t descriptor, std::span<const uint8_t> bytes);
-	bool PlayerCacheDrainView(uint32_t player, CPlayerTableCache*& cache, std::vector<CItemCache*>& items);
+	bool PlayerCacheDrainView(uint32_t player, CPlayerTableCache*& cache);
 	TLoginDataByLoginKey			m_map_pkLoginData;
 
 	// Login LoginData pair
@@ -492,8 +449,6 @@ private:
 
 	TPlayerTableCacheMap			m_map_playerCache;
 
-	TItemCacheMap				m_map_itemCache;
-	TItemCacheSetPtrMap			m_map_pkItemCacheSetPtr;
 
 
 #ifdef __SKILL_COLOR_SYSTEM__
@@ -501,7 +456,6 @@ private:
 #endif
 
 	// MYSHOP_PRICE_LIST
-	TItemPriceListCacheMap m_mapItemPriceListCache;
 	// END_OF_MYSHOP_PRICE_LIST
 
 	TChannelStatusMap m_mChannelStatus;
@@ -585,7 +539,6 @@ private:
 	void InsertLogoutPlayer(uint32_t pid);
 	void DeleteLogoutPlayer(uint32_t pid);
 	void UpdateLogoutPlayer();
-	void UpdateItemCacheSet(uint32_t pid);
 
 	void FlushPlayerCacheSet(uint32_t pid);
 
@@ -596,13 +549,11 @@ private:
 	void DeleteLoginKey(TPacketDC* data);
 	void ResetLastPlayerID(const TPacketNeedLoginLogInfo* data);
 	//delete gift notify icon
-	void DeleteAwardId(TPacketDeleteAwardID* data);
 	void UpdateChannelStatus(TChannelStatus* pData);
 	void RequestChannelStatus(CPeer* peer, uint32_t dwHandle);
 #ifdef ENABLE_PROTO_FROM_DB
 public:
 	bool		InitializeMobTableFromDB();
-	bool		InitializeItemTableFromDB();
 protected:
 	bool		bIsProtoReadFromDB;
 #endif

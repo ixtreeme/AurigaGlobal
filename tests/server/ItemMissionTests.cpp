@@ -50,6 +50,21 @@ std::vector<std::byte> Run()
     Check(MakeItemMissionCommit(c,mission,proof,5,fence,bags,items,poor,ids).error()==ItemMissionError::NoMoney,"payment shortage rejects whole bundle");
     changed=mission;changed.requirements.clear();changed.costs={{material,0,10}};changed.rewards={{material,0,10}};
     Check(MakeItemMissionCommit(c,changed,m::ItemDeliveryProof(changed,42),5,fence,bags,items,wallets,ids).has_value(),"whole consumed source may become reward footprint");
+    auto bag = changed;
+    bag.costs = {{material,0,1}};
+    bag.rewards.clear();
+    const auto alternate = ItemInstanceId::Create(701).value();
+    auto stacks = items;
+    stacks.push_back(items[0]);
+    stacks[1].id = alternate;
+    stacks[1].placement->anchor = 2;
+    const auto redeem = MakeItemMissionCommit(c,bag,m::ItemDeliveryProof(bag,42),5,fence,bags,stacks,wallets,ids,0,alternate);
+    Check(redeem && redeem->items.size()==1 && redeem->items[0].after.id==alternate &&
+        redeem->items[0].after.count==9 && redeem->wallets[0].after.balance==1075,
+        "redemption spends the selected stack and credits gold in one commit");
+    stacks[1].placement = ItemPlacement{ItemStorageKind::TradeEscrow,1,0};
+    Check(MakeItemMissionCommit(c,bag,m::ItemDeliveryProof(bag,42),5,fence,bags,stacks,wallets,ids,0,alternate).error()==ItemMissionError::Requirements,
+        "redemption never falls back to another carried stack when the selected item is in escrow");
     changed=mission;changed.rewards.push_back(changed.rewards.front());Check(!ValidateItemMission(c,changed),"duplicate reward key and level rejected");
     changed=mission;changed.goldReward=INT64_MAX;Check(MakeItemMissionCommit(c,changed,m::ItemDeliveryProof(changed,42),5,fence,bags,items,wallets,ids).error()==ItemMissionError::Limit,"gold overflow rejected");
     ItemMissionBoard board{9003,"Mission board",{mission}};const std::vector<std::uint32_t> completed{7};

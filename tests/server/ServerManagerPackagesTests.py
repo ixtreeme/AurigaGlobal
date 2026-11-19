@@ -167,6 +167,8 @@ class PackageGuiTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.errors = []
         owner = type('Owner', (), {'error': lambda _, message: self.errors.append(message)})()
+        from ReviewFixture import approve_fixture
+        approve_fixture(self,owner)
         self.page = RemotePage(owner, Path(self.temp.name)/'profiles.json')
         self.addCleanup(self.page.close)
         self.addCleanup(self.page.shutdown)

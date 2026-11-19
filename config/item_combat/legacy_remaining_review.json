@@ -1,0 +1,727 @@
+{
+  "version": 1,
+  "scope": "reviewed_remaining_original_character_and_reward_closure",
+  "items": {
+    "72725": {
+      "category": 5,
+      "kind": "automatic",
+      "code": "sun_elixir_large",
+      "source_sha256": "c366bbf5f4400758888fff6f7a94cc8ebf3714a8ea5ff2eb0cae22de0497368e",
+      "pool": 1
+    },
+    "72729": {
+      "category": 5,
+      "kind": "automatic",
+      "code": "moon_elixir_large",
+      "source_sha256": "409853811abae22bb1a7a9771c955b30f06efbefea7688520efc6bed2a8319b9",
+      "pool": 2
+    },
+    "76018": {
+      "category": 5,
+      "kind": "timed",
+      "code": "green_dew",
+      "source_sha256": "04853b6a4a37aeaf99373bcddb6e3f509f1c843145f08af765fd2c5c974e9539"
+    },
+    "39019": {
+      "category": 5,
+      "kind": "timed",
+      "code": "dragon_god_sp",
+      "source_sha256": "327c6db84785fa699945ae56159ec3a242a46b37fd9c0ccfbc434ed5b0512678"
+    },
+    "72046": {
+      "category": 5,
+      "kind": "timed",
+      "code": "critical_combat",
+      "source_sha256": "97839c0b8b8341968503d511714b4e16b5642a5b4a885bd38680c815b59f813a"
+    },
+    "72025": {
+      "category": 5,
+      "kind": "timed",
+      "code": "piercing_combat",
+      "source_sha256": "9fee8af39ff1ab69db9291ecc28ba05c180c2460d329c0d465beb480758231e6"
+    },
+    "39018": {
+      "category": 5,
+      "kind": "timed",
+      "code": "dragon_god_attack",
+      "source_sha256": "a4867648354edbfb9e89cac601c32e452cb06c6c58efb1306b2238f681837371"
+    },
+    "39030": {
+      "category": 5,
+      "kind": "book_aid",
+      "code": "concentrated_reading",
+      "source_sha256": "047c67ecf8c25f023e87b8994b85b75957b111063ed286596746e7e91e711f55",
+      "aid": 1
+    },
+    "71001": {
+      "category": 5,
+      "kind": "book_aid",
+      "code": "exorcism_scroll",
+      "source_sha256": "a97ec8260121341130d910f94ebb86c83e7ce0de81adf7924fd40c088e19968c",
+      "aid": 2
+    },
+    "71084": {
+      "category": 5,
+      "kind": "reroll",
+      "code": "enchant_item",
+      "source_sha256": "f4bf1dc6970fce72fa2052361dc5931a6b3a9729393faaebf3005feccd5feecf",
+      "tier_percent": [
+        0,
+        10,
+        40,
+        35,
+        15
+      ]
+    },
+    "39065": {
+      "category": 16,
+      "kind": "currency",
+      "code": "dragon_coin_voucher",
+      "source_sha256": "50acfffc76ea77186163ec2ae3af2a5f36f0462fb7fe6b97c32c044ca5f76b10",
+      "currency": 2
+    },
+    "80003": {
+      "category": 16,
+      "kind": "currency",
+      "code": "silver_bar_50k",
+      "source_sha256": "d99c97b25e7975fcc01d4b352bd7d59e47d8901e1717a67ed1a1d2fc2654f10a",
+      "currency": 1
+    },
+    "80004": {
+      "category": 16,
+      "kind": "currency",
+      "code": "silver_bar_100k",
+      "source_sha256": "deadc1e0e26131ca1b2198c758a346d97e182c9b16633c0945a15c0255aad5b9",
+      "currency": 1
+    },
+    "25040": {
+      "category": 22,
+      "kind": "forge",
+      "code": "blessing_scroll",
+      "source_sha256": "c0ceced5684d9a0f3605c1824e27a28ab1b8ccdd90e747d89972d3ed3a4a2f99"
+    },
+    "76016": {
+      "category": 22,
+      "kind": "forge",
+      "code": "blessing_scroll_reward",
+      "source_sha256": "8e7d1ff6c4bd077c40344ad5184c75464b5fa1c3fa09afc5e4c225975ab0f2c8"
+    },
+    "70038": {
+      "category": 10,
+      "kind": "quest_use",
+      "code": "courage_cape",
+      "source_sha256": "e868d477016f155994191d31442394d43c0b032d095e09f38cf120639a2a9a3f",
+      "handler": "utility.courage"
+    },
+    "76007": {
+      "category": 10,
+      "kind": "quest_use",
+      "code": "courage_cape_reward",
+      "source_sha256": "bfc130b53a82688d8bd116df68cdcfa9ac0491aebf3708dbc3100af28a98c1de",
+      "handler": "utility.courage"
+    },
+    "30897": {
+      "category": 10,
+      "kind": "quest_use",
+      "code": "teleport_ring",
+      "source_sha256": "a2df6e171f70acd41853ed52ef2b65d2f39ec925edc807d56a11f8a0bc59af3c",
+      "handler": "utility.teleport_ring"
+    },
+    "30279": {
+      "category": 10,
+      "kind": "quest_token",
+      "code": "sun_crystal",
+      "source_sha256": "97c3687dc36b24795d50ee550ba39b6f58775c749c6f05536251a6ed377125b7"
+    },
+    "27990": {
+      "category": 6,
+      "kind": "material",
+      "code": "stone_piece",
+      "source_sha256": "2ff9f6c978b890ca2322e55bcb6282525007c20ccd2ae7ecea5f6ebde16ccf32"
+    },
+    "50401": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_1",
+      "source_sha256": "21c021b67e9bee7d3f56771ea57007c1cb2205e9ff1c70bab8fcc6e4d1e044a3"
+    },
+    "50402": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_2",
+      "source_sha256": "1c6d12ec8eb8fb8ca0546d9daafb8eac138ae12598be4da1b2277eb61f490c1c"
+    },
+    "50403": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_3",
+      "source_sha256": "58726c942d26e777fac365e203c090cde2ccc2642cddc588242e727f27a73153"
+    },
+    "50404": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_4",
+      "source_sha256": "3a444da7303a9f43145298c7c3c83d20aa27b3542b4179c3e04f5f82006c85d8"
+    },
+    "50405": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_5",
+      "source_sha256": "326716a0987a5ab5062a28ccd282079f2a9145c61e26ee29e4cbabe9f3e2025b"
+    },
+    "50406": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_6",
+      "source_sha256": "2b07b07b54aed34426269960d53aa2fc0ad194337c075eea5465493b9e899d66"
+    },
+    "50416": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_16",
+      "source_sha256": "b5c9638727258daa9ed08ae74ff57b50a4d6dac664cc6d2bfe0260ca0bfc5ef0"
+    },
+    "50417": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_17",
+      "source_sha256": "51281d54c4beede9d729a6021084cbcd361ad1198dd1ef5209a7749e340a4cc7"
+    },
+    "50418": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_18",
+      "source_sha256": "2881e9a44522d1928f4c64a352e472670142d7447e77f330fcfd72771bae6eb9"
+    },
+    "50419": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_19",
+      "source_sha256": "dc8641cf3fcc66f13ce730b73c40345cba61cd37757df508d0f437c674408cae"
+    },
+    "50420": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_20",
+      "source_sha256": "072eb554c4936a08ebb86572870775d490339d3fa84fef5925222e3396fc19fa"
+    },
+    "50421": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_21",
+      "source_sha256": "c6fcb9e18a919bcb33dd33233f40c4271b5ec33e207d29ec13781152e59239ed"
+    },
+    "50431": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_31",
+      "source_sha256": "7b4c46c5bc8ee8741ffd70b714da07396ceb93a1adced8a83146d7eb1490b788"
+    },
+    "50432": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_32",
+      "source_sha256": "c927e2b7d019895c97f8aebb14038b38d094be82c86bacd99c31caca6044161d"
+    },
+    "50433": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_33",
+      "source_sha256": "f8da9aff7ecfde55340bf05bdc4b83070399fa153439c86b6ef0535c0f218fe1"
+    },
+    "50434": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_34",
+      "source_sha256": "ade1d5220ffaf3a2e10ac876c6f7ccab2069f9815f6ab702c53ffccb40cf9592"
+    },
+    "50435": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_35",
+      "source_sha256": "084b932ab7ff68a4c1c55f48f1b66d2a7000a90019f7b6368af64b90f9f97a4f"
+    },
+    "50436": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_36",
+      "source_sha256": "2e3afac482a357485aaa4721b1f62e5aafe026d1e61011d82e281f9a83906eca"
+    },
+    "50446": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_46",
+      "source_sha256": "ad90cb62f6a61999aec5bac277426180608b7a2e11c1e77e8162f8e7c4e68b83"
+    },
+    "50447": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_47",
+      "source_sha256": "da3ad454b00ba4d6f14c79b70b74a6cca2e1a9ba4de9b4cb56e184de16d91c54"
+    },
+    "50448": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_48",
+      "source_sha256": "5eadbebbc0bb621774729f786977f4f229f9034d6be7fbc4fbfe898a59e1aad8"
+    },
+    "50449": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_49",
+      "source_sha256": "cb196f0db321ca29c1a9885cfbd353f12343ab47954bddcb11afc15f54236611"
+    },
+    "50450": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_50",
+      "source_sha256": "0e771e72521925bb6b8617ed572ba06950c774a95d5ca39d27aee2331cd4a542"
+    },
+    "50451": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_51",
+      "source_sha256": "787425fbedece84d36bc4d5d0b143ebed434fa8bad011c1343c43a7c894f5653"
+    },
+    "50476": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_76",
+      "source_sha256": "2d5d27508cf322bd82b57373800284c8a023a55a06f1967bc44863b410221165"
+    },
+    "50477": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_77",
+      "source_sha256": "77cc1243a6bb3dc1cb7f2725c13524cf975f0493ea47ecd457a9d22cccdea678"
+    },
+    "50478": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_78",
+      "source_sha256": "1b6ecc3b640782c0d6401a51eb02dc0e678322537eeb0f1acc64e221d469c7d7"
+    },
+    "50479": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_79",
+      "source_sha256": "a3a9703d22842952705d70c3ff4b9752d7bb4b54a52d32e55f1cc671bf1f90d6"
+    },
+    "50480": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_80",
+      "source_sha256": "686f70e45f0f7fcd400979ad5b6f95f8eb672956b86f2ce7e5a066a2a85e4dc7"
+    },
+    "50481": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_81",
+      "source_sha256": "cfc36aed86ff1a0820c756594b087a64f1972b1fced214762bb4071ff35285de"
+    },
+    "50461": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_61",
+      "source_sha256": "f008c7f142eabcfc6ae7516dc76d76d015fb4850a3a6d73adee4e4df26fa9004"
+    },
+    "50462": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_62",
+      "source_sha256": "c8775d576a20f40ce5a9896ea78e54f67d0b4a105ee945264ba9623f757eddfd"
+    },
+    "50463": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_63",
+      "source_sha256": "cdb3d15e8f68b018de1ec7eefaa3e98572bc73b1bef6cb5d404391697ec16aea"
+    },
+    "50464": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_64",
+      "source_sha256": "f2b7ef052c247659a9063dccec811dbdd88cbf4fb5213e976f5629025c053980"
+    },
+    "50465": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_65",
+      "source_sha256": "f6b88a4db23eff15d34f5e06b38c94cf24d9f9753939bdc342c8be93eed55a7e"
+    },
+    "50466": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_66",
+      "source_sha256": "8bff292cca5fa6b839311fc7e948ecbff834c780d8cb67ad68dbf470cee2ac3e"
+    },
+    "50491": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_91",
+      "source_sha256": "2361789bd6b29d747f0047142a251b2fa4b6dc6ecfb32c08c90d74eeafab10db"
+    },
+    "50492": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_92",
+      "source_sha256": "d21f14b468e768e0fb59548ed274dc88bc67d03450c08d4a1bd90975a7129c17"
+    },
+    "50493": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_93",
+      "source_sha256": "bc44cbb1c12d05c488df9e7d3547419f1dd014e70ecff160fdabf0c536063869"
+    },
+    "50494": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_94",
+      "source_sha256": "c0993cce0c02c2a374122dda8d6883ea87c3a7e11a41a7bb7b4bcc59726571e3"
+    },
+    "50495": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_95",
+      "source_sha256": "efd23d4ded9302d603b068bdd57acf5d8690980053ad0b908db0436b760b9552"
+    },
+    "50496": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_96",
+      "source_sha256": "73412256703c558b1d5b5b261bc0fc160a401304b9a3128452f31554ffa7846c"
+    },
+    "50506": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_106",
+      "source_sha256": "c71e7132ecdea2869a0a28da4e2c2d24543fce0f07a93379bf0d567672d053cc"
+    },
+    "50507": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_107",
+      "source_sha256": "99be4d94dbfc128cc41486c7fb76520e686d5c7f65253f91eaf427916438cf5a"
+    },
+    "50508": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_108",
+      "source_sha256": "991b4365909a4127240eb3bed78793987dc3daab27d1105aac250f67a41c7aee"
+    },
+    "50509": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_109",
+      "source_sha256": "152fd10dd8e2bd020a7fc94b8e72cb4830568d383633812d7151bd2f0a6c5d9a"
+    },
+    "50510": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_110",
+      "source_sha256": "4cc70ff6a93e2977df7c980a444dda98f7ae30602d0d102a446d37b3917dd6df"
+    },
+    "50511": {
+      "category": 9,
+      "kind": "book",
+      "code": "skill_book_111",
+      "source_sha256": "e0e45031d313faa10fc67168ca3c6b8b571464af58f3287c735a132eb42deb86"
+    },
+    "39048": {
+      "category": 8,
+      "kind": "box",
+      "code": "skill_book_chest",
+      "source_sha256": "2c8c94b86d359208c20d0e49cc73441e5966a6117cb51ed062f42ad1e1e7819b",
+      "rewards": [
+        {
+          "source_id": 50401,
+          "amount": 1,
+          "weight": 4
+        },
+        {
+          "source_id": 50402,
+          "amount": 1,
+          "weight": 4
+        },
+        {
+          "source_id": 50403,
+          "amount": 1,
+          "weight": 4
+        },
+        {
+          "source_id": 50404,
+          "amount": 1,
+          "weight": 8
+        },
+        {
+          "source_id": 50405,
+          "amount": 1,
+          "weight": 4
+        },
+        {
+          "source_id": 50406,
+          "amount": 1,
+          "weight": 4
+        },
+        {
+          "source_id": 50416,
+          "amount": 1,
+          "weight": 4
+        },
+        {
+          "source_id": 50417,
+          "amount": 1,
+          "weight": 4
+        },
+        {
+          "source_id": 50418,
+          "amount": 1,
+          "weight": 4
+        },
+        {
+          "source_id": 50419,
+          "amount": 1,
+          "weight": 8
+        },
+        {
+          "source_id": 50420,
+          "amount": 1,
+          "weight": 4
+        },
+        {
+          "source_id": 50421,
+          "amount": 1,
+          "weight": 4
+        },
+        {
+          "source_id": 50431,
+          "amount": 1,
+          "weight": 5
+        },
+        {
+          "source_id": 50432,
+          "amount": 1,
+          "weight": 4
+        },
+        {
+          "source_id": 50433,
+          "amount": 1,
+          "weight": 4
+        },
+        {
+          "source_id": 50434,
+          "amount": 1,
+          "weight": 4
+        },
+        {
+          "source_id": 50435,
+          "amount": 1,
+          "weight": 5
+        },
+        {
+          "source_id": 50436,
+          "amount": 1,
+          "weight": 4
+        },
+        {
+          "source_id": 50446,
+          "amount": 1,
+          "weight": 4
+        },
+        {
+          "source_id": 50447,
+          "amount": 1,
+          "weight": 4
+        },
+        {
+          "source_id": 50448,
+          "amount": 1,
+          "weight": 5
+        },
+        {
+          "source_id": 50449,
+          "amount": 1,
+          "weight": 4
+        },
+        {
+          "source_id": 50450,
+          "amount": 1,
+          "weight": 5
+        },
+        {
+          "source_id": 50451,
+          "amount": 1,
+          "weight": 4
+        },
+        {
+          "source_id": 50476,
+          "amount": 1,
+          "weight": 3
+        },
+        {
+          "source_id": 50477,
+          "amount": 1,
+          "weight": 3
+        },
+        {
+          "source_id": 50478,
+          "amount": 1,
+          "weight": 8
+        },
+        {
+          "source_id": 50479,
+          "amount": 1,
+          "weight": 4
+        },
+        {
+          "source_id": 50480,
+          "amount": 1,
+          "weight": 3
+        },
+        {
+          "source_id": 50481,
+          "amount": 1,
+          "weight": 3
+        },
+        {
+          "source_id": 50461,
+          "amount": 1,
+          "weight": 3
+        },
+        {
+          "source_id": 50462,
+          "amount": 1,
+          "weight": 3
+        },
+        {
+          "source_id": 50463,
+          "amount": 1,
+          "weight": 8
+        },
+        {
+          "source_id": 50464,
+          "amount": 1,
+          "weight": 3
+        },
+        {
+          "source_id": 50465,
+          "amount": 1,
+          "weight": 4
+        },
+        {
+          "source_id": 50466,
+          "amount": 1,
+          "weight": 3
+        },
+        {
+          "source_id": 50491,
+          "amount": 1,
+          "weight": 3
+        },
+        {
+          "source_id": 50492,
+          "amount": 1,
+          "weight": 3
+        },
+        {
+          "source_id": 50493,
+          "amount": 1,
+          "weight": 3
+        },
+        {
+          "source_id": 50494,
+          "amount": 1,
+          "weight": 8
+        },
+        {
+          "source_id": 50495,
+          "amount": 1,
+          "weight": 3
+        },
+        {
+          "source_id": 50496,
+          "amount": 1,
+          "weight": 4
+        },
+        {
+          "source_id": 50506,
+          "amount": 1,
+          "weight": 3
+        },
+        {
+          "source_id": 50507,
+          "amount": 1,
+          "weight": 3
+        },
+        {
+          "source_id": 50508,
+          "amount": 1,
+          "weight": 3
+        },
+        {
+          "source_id": 50509,
+          "amount": 1,
+          "weight": 4
+        },
+        {
+          "source_id": 50510,
+          "amount": 1,
+          "weight": 3
+        },
+        {
+          "source_id": 50511,
+          "amount": 1,
+          "weight": 8
+        }
+      ]
+    },
+    "27987": {
+      "category": 8,
+      "kind": "box",
+      "code": "shell",
+      "source_sha256": "4bd57154340b0178da931b26756988c7b95efe843ee0079a29dfce70dd643ee9",
+      "rewards": [
+        {
+          "source_id": 27990,
+          "amount": 1,
+          "weight": 50
+        },
+        {
+          "source_id": null,
+          "amount": 0,
+          "weight": 45
+        },
+        {
+          "source_id": 27992,
+          "amount": 1,
+          "weight": 2
+        },
+        {
+          "source_id": 27993,
+          "amount": 1,
+          "weight": 2
+        },
+        {
+          "source_id": 27994,
+          "amount": 1,
+          "weight": 1
+        }
+      ]
+    }
+  },
+  "inputs": {
+    "data/special_item_group.json": "6097c3f65ec0af169d0a931133f98919e9a277676696296a0224f6db6ea7fda7",
+    "data/quest/Quest/item/teleportgyuru.quest": "7db3c1c54c5add0d46c3b73cf332af11a0f0e467ebac76b1bb31aaf4f97fcb88"
+  },
+  "implementation_sources": [
+    "ecs/systems/ItemSystem_LegacyBridge.cpp",
+    "ecs/systems/ItemAttributeSystem.cpp",
+    "ecs/systems/SkillSystem.cpp"
+  ],
+  "notes": [
+    "39019 follows APPLY70 (maximum SP percent), even though its legacy display name mentions intelligence.",
+    "Automatic next tick resumes at the next whole one-second tick; legacy SQL did not persist sub-second phase.",
+    "Reward group weights are exact. Shell has a distinct 45% empty outcome.",
+    "Book rules use the existing native master-book policy matching 70%/boosted100%, M1-M10, one success per level."
+  ]
+}

@@ -226,7 +226,7 @@ def free_port(port):
 
 @contextlib.contextmanager
 def named_lock(name):
-    if name not in ('supervisor', 'quest-publication'):
+    if name not in ('supervisor', 'quest-publication', 'drop-publication'):
         raise RuntimeError('Unknown runtime lock')
     path = ROOT / 'run' / (name + '.lock')
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -278,6 +278,23 @@ def reload_quests():
 
 def apply_quests():
     return quest_module().apply_offline(SimpleNamespace(**globals()))
+
+
+def drop_module():
+    spec=importlib.util.spec_from_file_location('_auriga_drop_reload',ROOT/'drop_reload.py')
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
+
+
+def drop_reload_status():
+    return drop_module().status(SimpleNamespace(**globals())) if (ROOT/'drop_reload.py').is_file() else dict(available=False,cores=[])
+
+
+def wait_drop_reload(expected_hash,release,timeout=30):
+    return drop_module().wait(SimpleNamespace(**globals()),expected_hash,release,timeout)
+
+
+def reload_drops():
+    return drop_module().reload(SimpleNamespace(**globals()))
 
 
 def mariadb_bin(explicit=None):
@@ -376,7 +393,20 @@ def stop_db():
     print('LOCAL_MARIADB_STOPPED')
 
 
-def init_db(explicit=None):
+def native_base_schema():
+    """Keep the original schema as an offline restore/conversion input only."""
+    source = (ROOT / 'db/schema.sql').read_text(encoding='utf-8')
+    retired = json.loads((ROOT / 'db/retired_item_tables.json').read_text(encoding='utf-8'))
+    if not retired or any(not re.fullmatch('[a-z_]+', name) for name in retired):
+        raise RuntimeError('Invalid retired item table manifest')
+    for name in retired:
+        source = re.sub(r'(?ms)^CREATE TABLE IF NOT EXISTS `player`\.`' + name + r'` \(\r?\n.*?^\) ENGINE=[^\r\n]+;\r?\n', '', source)
+    if any(re.search(r'CREATE TABLE[^;]*`player`\.`' + name + '`', source) for name in retired):
+        raise RuntimeError('Retired item state remains in native bootstrap')
+    return source
+
+
+def init_db(explicit=None, legacy_restore=False):
     cfg, folder = config(), db_folder()
     if (folder / 'data').exists(): raise RuntimeError('Database data directory already exists; initialization refused')
     ports = {connection['port'] for connection in cfg['common']['sql'].values()}
@@ -396,7 +426,7 @@ def init_db(explicit=None):
     try:
         for name in ('schema.sql','seed_core.sql','live_locale.sql','motion.sql'):
             path = ROOT / 'db' / name
-            if path.is_file(): sql(path.read_text(encoding='utf-8'))
+            if path.is_file(): sql(native_base_schema() if name == 'schema.sql' and not legacy_restore else path.read_text(encoding='utf-8'))
         module = mission_module()
         target, player = module.connection(cfg)
         sql(module.install_sql(ROOT / 'db', target['database']))
@@ -462,7 +492,7 @@ def external_database_check():
         match = re.search(r'\bFROM\s+(common|player)\.([A-Za-z0-9_]+)', statement, re.I)
         if not match: raise RuntimeError('Unsupported database readiness query')
         role, table = match.group(1).lower(), match.group(2)
-        suffix = postfix if role == 'player' and table not in ('shop', 'shop_item') else ''
+        suffix = postfix if role == 'player' and table not in ('item_persistence_format', 'item_native_award') else ''
         query = statement[:match.start()] + 'FROM `' + table + suffix + '`' + statement[match.end():]
         queries[role].append(query.strip().rstrip(';') + ';')
     def quoted(value):
@@ -505,7 +535,7 @@ def setup_database(backup=None, explicit=None):
         raise RuntimeError('The local database already exists; setup will not overwrite it')
     module = load_backup_import()
     module.validate_backup(backup, ROOT / 'db/schema.sql')
-    init_db(explicit)
+    init_db(explicit, legacy_restore=True)
     module.import_backup(SimpleNamespace(**globals()), backup)
     try:
         database_check()
@@ -523,10 +553,11 @@ def request_child_stop(process, directory, token):
 
 
 def select_instances(cfg, channels, all_channels=False):
-    selected = set(channels or [1])
+    available = {core['server']['channel'] for core in cfg['game_servers'].values()}
+    ordinary = available - {99}
+    selected = set(channels or [min(ordinary or available)]) if available else set(channels or [])
     games = [name for name, core in cfg['game_servers'].items()
              if all_channels or core['server']['channel'] in selected or core['server']['channel'] == 99]
-    available = {core['server']['channel'] for core in cfg['game_servers'].values()}
     if selected - available: raise RuntimeError('Unknown selected channel')
     return ['database'] + games + ['login']
 
@@ -590,9 +621,14 @@ def prepare_runtime(cfg, names=None):
     for name in names:
         directory = instance_directory(cfg, name)
         directory.mkdir(parents=True, exist_ok=True)
-        for original in (ROOT / 'runtime_defaults').glob('*'):
-            if original.is_file(): seed(original, directory / original.name)
         if name not in ('database', 'login'):
+            # Game-only runtime inputs. Config, binaries, SQL/TLS, quests and
+            # map resources stay in the shared package, never in each core.
+            for filename in ('BANIP', 'CMD', 'CRC', 'VERSION'):
+                seed(ROOT / 'runtime_defaults' / filename, directory / filename)
+            guild = dict(cfg.get('game_defaults', {}).get('guild', {}), **cfg['game_servers'][name].get('guild', {}))
+            if not guild.get('mark_server', True):
+                continue
             mark = directory / 'mark'
             if not mark.resolve().is_relative_to((ROOT / 'run').resolve()):
                 raise RuntimeError('Runtime mark directory must stay under this package/run')
@@ -984,7 +1020,7 @@ def status():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['prepare','check','setup-db','init-db','init-mission-db','import-db','start-db','stop-db','database-check','start','stop','status','reload-quests','quest-status','apply-quests','start-cores','stop-cores'])
+    parser.add_argument('action', choices=['prepare','check','setup-db','init-db','init-mission-db','import-db','start-db','stop-db','database-check','start','stop','status','reload-quests','quest-status','apply-quests','start-cores','stop-cores','reload-drops','drop-status'])
     parser.add_argument('--channel', type=int, action='append')
     parser.add_argument('--instance', action='append')
     parser.add_argument('--all-channels', action='store_true')
@@ -1003,6 +1039,8 @@ def main():
         elif args.action == 'reload-quests': reload_quests()
         elif args.action == 'apply-quests': apply_quests()
         elif args.action == 'quest-status': print(json.dumps(quest_reload_status(), ensure_ascii=False))
+        elif args.action == 'reload-drops': reload_drops()
+        elif args.action == 'drop-status': print(json.dumps(drop_reload_status(), ensure_ascii=False))
         elif args.action == 'start-db': start_db()
         elif args.action == 'stop-db': stop_db()
         elif args.action == 'database-check': database_check()

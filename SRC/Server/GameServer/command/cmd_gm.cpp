@@ -1792,23 +1792,6 @@ ACMD(do_respawn)
 	}
 }
 
-ACMD(do_safebox_size)
-{
-	char arg1[256];
-	one_argument(argument, arg1, sizeof(arg1));
-
-	int size = 0;
-
-	if (*arg1)
-		str_to_number(size, arg1);
-
-	if (size > 3 || size < 0)
-		size = 0;
-
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Safebox size set to %d", size);
-	ecs::SessionSystem::ChangeSafeboxSize(character, size);
-}
-
 ACMD(do_makeguild)
 {
 	if (ecs::SocialSystem::GetGuild(character))

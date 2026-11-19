@@ -1,0 +1,68 @@
+{
+  "local_only": true,
+  "push": false,
+  "unity_checkin": false,
+  "server_branch": "20261103",
+  "server_head": "a577d68eae9605dca4ad99b3f0262c96e500a80c",
+  "unity_branch": "/main/unity63-integration-20261103",
+  "unity_version": "6000.3.27f1",
+  "fixed_damage": "exact_mean_plus_refinement",
+  "source_equipment_rows_compiled": 3635,
+  "source_equipment_rows_blocked": 3100,
+  "native_equipment_definitions": 491,
+  "total_local_native_definitions": 1426,
+  "native_focused_ctest": 15,
+  "independent_catalog_digest_ctest": 1,
+  "mariadb_schema_tests": 41,
+  "unity_offline_validators": 37,
+  "live_checks": 2078,
+  "live_items": 55,
+  "owner_logins": 3,
+  "observer_real_mesh_validation": true,
+  "deployment": {
+    "local_only": true,
+    "normal_character_preserved": true,
+    "all_legacy_tables_preserved": true,
+    "earlier_native_owners_preserved": true,
+    "faithful_gear_clones": 52,
+    "explicit_extra_state_cases": 3,
+    "imported_items": 55,
+    "pin_follow": {
+      "catalog_hash": "1b17720c46f2ba38fca89e949c96695f3c2546d32a2a9046a527441e1a68f775",
+      "validated_owners": 175
+    },
+    "catalog_hash": "1b17720c46f2ba38fca89e949c96695f3c2546d32a2a9046a527441e1a68f775"
+  },
+  "preservation": {
+    "local_only": true,
+    "legacy_tables_exactly_preserved": [
+      "player.item",
+      "player.account_mount_inventory",
+      "player.guild_renewal_storage",
+      "player.item_proto"
+    ],
+    "previous_native_items_wallets_learning_preserved": true,
+    "normal_character_legacy_items": 76,
+    "reloaded_by_native_reader": 55,
+    "complete_instance_state_exact": true,
+    "gold_preserved": true,
+    "receipt_replay_after_gameplay": true,
+    "archived_source_rows": 55,
+    "active_unity_settings_preserved": 10,
+    "package_binary_hashes_verified": true
+  },
+  "full_original_owner_migrated": false,
+  "exported_windows_android_ios_builds_updated": false,
+  "evidence_files": {
+    "build/c43-tests3.log": "cfce56e03675b4cbff393b1f22f0bb8d696db61d952bd7100232e13cf04d20d9",
+    "build/c43-digest-test.log": "ff5fb48fa1291f9ec7c9d8620b789e8471144a8891050d5f8c98bd46035f460a",
+    "build/c43-schema-tests2.log": "66c7edfcc1b02a7b08ad2d4a448a03dc4e8e21df2f5058a4fbffc1f696a031f1",
+    "build/c43-fresh-stage/catalog-stage-result.json": "49c0ccc95b588a3b3b2d9d4260152d23cbf85ef4dd9315ee3fdadabf0c869da8",
+    "build/c43-upgrade-sandbox/c43-result.json": "602b004e0ec3ccf84f73c337379f20e3c522e739227c6671823dd6551c1af361",
+    "build/c43-offline3.log": "c6863eb53a50d0130d8892fc2a00b1f2c9989ffcaf8b69f390c18a7ef1afeb2e",
+    "build/c43-equipment-live-final.log": "c4fb336821527e39b4f4020896a049d1c398f017d9be71c7a5eb3667f2f968af",
+    "build/c43-final-preservation-proof.json": "77f0b19f9839afa122a60100b8060bf8dc9f87b6d70d424caacab64aa3f0437e",
+    "build/c43-cli-test2.log": "700615a352a2ff8fef5f39b5c45c5aaa3919afefc587f5e6735b45341bcffcef",
+    "docs/reports/item_combat/legacy_equipment_models.png": "d764fb9fa785104a9866da6999e700e811bd93d31423496c3964986776fc27a9"
+  }
+}

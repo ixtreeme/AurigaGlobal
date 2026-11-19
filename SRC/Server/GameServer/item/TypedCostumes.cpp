@@ -34,7 +34,7 @@ entt::entity Owner(const WearClock& c){const auto e=CHARACTER_MANAGER::instance(
 void Worn(WearClock& c,bool worn,bool timed){c.worn=worn;if(worn && timed && !c.since)c.since=Clock::now();else if((!worn || !timed) && c.since){c.accrued+=Clock::now()-*c.since;c.since.reset();}}
 void Stop(WearClock& c){Worn(c,false,false);c.stopped=true;}
 struct Appearance {
-    std::uint8_t weapon=0,tool=0;std::array<std::string,6> models;std::uint8_t runes=0;
+    std::uint8_t weapon=0,tool=0;std::array<std::string,6> models;std::uint8_t runes=0;std::uint16_t bodyEffect=0,weaponEffect=0;std::string absorptionSash;
     bool operator==(const Appearance&) const=default;
 };
 struct CostumeProjection {Appearance data;std::uint64_t revision=1;};
@@ -45,10 +45,12 @@ Appearance Models(entt::entity owner) {
         const auto* e=c->Find(p.key);if(p.placement->anchor==0){if(const auto* w=std::get_if<item::ItemWeaponRow>(&e->category))out.weapon=static_cast<unsigned>(w->subtype);if(const auto* t=std::get_if<item::ItemToolRow>(&e->category))out.tool=static_cast<unsigned>(t->kind);}
         if(p.placement->anchor<2 && e->base.appearanceProfile)out.models[p.placement->anchor]=c->FindAppearance(*e->base.appearanceProfile)->modelAsset;
     }
-    for(const auto& p:effective)if(!p.destroyed && p.costume && p.placement && p.placement->kind==item::ItemStorageKind::Equipment) {
-        const auto& row=std::get<item::ItemCostumeRow>(c->Find(p.key)->category);if(row.weapon && static_cast<unsigned>(*row.weapon)!=out.weapon)continue;
+    for(const auto& p:effective)if(!p.destroyed && p.key.Category()==item::ItemCategory::Costume && p.costume && p.placement && p.placement->kind==item::ItemStorageKind::Equipment) {
+        const auto& row=std::get<item::ItemCostumeRow>(c->Find(p.key)->category);if(row.kind>=item::CostumeKind::PetSkin || (row.weapon && static_cast<unsigned>(*row.weapon)!=out.weapon))continue;
         const auto* visual=c->FindCostumeVisual(p.key,ecs::PlayerRuntime::GetJob(owner)+1,ecs::PlayerRuntime::GetSex(owner)+1);if(visual)out.models[static_cast<unsigned>(row.kind)+1]=visual->modelAsset;
     }
+    for(const auto& p:effective)if(!p.destroyed && p.sash && p.placement && p.placement->kind==item::ItemStorageKind::Equipment && p.placement->anchor==28){const auto* e=c->Find(p.key);if(e && e->base.appearanceProfile)out.absorptionSash=c->FindAppearance(*e->base.appearanceProfile)->modelAsset;}
+    out.bodyEffect=item::WornBodyCostumeEffect(*c,effective);out.weaponEffect=item::WornWeaponCostumeEffect(*c,effective);
     bool set=true,bonus=false;for(const auto& p:effective)if(!p.destroyed && p.regalia && p.placement && p.placement->kind==item::ItemStorageKind::Equipment){const auto& row=std::get<item::ItemRegaliaRow>(c->Find(p.key)->category);if(row.kind==item::RegaliaKind::Stole){const auto& entry=*c->Find(p.key);if(entry.base.appearanceProfile)out.models[5]=c->FindAppearance(*entry.base.appearanceProfile)->modelAsset;}else{out.runes=1;if(row.slot==7)bonus=true;}}
     for(unsigned slot=1;slot<7;++slot){const auto found=std::ranges::find_if(effective,[&](const auto& p){if(p.destroyed || !p.regalia || !p.placement || p.placement->kind!=item::ItemStorageKind::Equipment)return false;const auto& r=std::get<item::ItemRegaliaRow>(c->Find(p.key)->category);return r.kind==item::RegaliaKind::Rune && r.slot==slot;});if(found==effective.end() || !found->regalia->active || found->regalia->remainingMs<found->regalia->capacityMs/2+found->regalia->capacityMs%2)set=false;}
     if(set && bonus)out.runes=2;
@@ -66,9 +68,9 @@ void ProjectTypedCostumes(entt::entity owner,std::vector<item::PersistentItem>& 
     const auto c=store::CurrentCatalog();if(!c)return;const auto elapsed=TypedCostumeElapsed(owner);const auto now=TypedItemEffectNow();
     for(auto& p:items)if(!p.destroyed && p.regalia){const auto& row=std::get<item::ItemRegaliaRow>(c->Find(p.key)->category);const auto debt=std::ranges::find(elapsed,p.id.Value(),&item::CostumeElapsed::instance);p.regalia=item::AdvanceRegalia(row,*p.regalia,debt==elapsed.end() ? 0 : debt->elapsedMs);}
     for(auto& p:items)if(!p.destroyed && p.costume) {
-        const auto& row=std::get<item::ItemCostumeRow>(c->Find(p.key)->category);const auto debt=std::ranges::find(elapsed,p.id.Value(),&item::CostumeElapsed::instance);
+        const auto row=item::FindWearableClock(*c,p.key);const auto debt=std::ranges::find(elapsed,p.id.Value(),&item::CostumeElapsed::instance);
         const auto spent=debt==elapsed.end() ? 0 : debt->elapsedMs;const bool worn=p.placement && p.placement->kind==item::ItemStorageKind::Equipment;
-        const auto plan=item::AdvanceCostumeLifetime(row,*p.costume,{now,spent,worn || spent!=0,false});
+        const auto plan=row ? item::AdvanceItemClock(*row,*p.costume,{now,spent,worn || spent!=0,false}) : std::unexpected(item::CostumeLifetimeError::InvalidDefinition);
         const auto* policy=c->FindUsePolicy(c->Find(p.key)->base.usePolicy);
         const bool allowed=policy && (policy->allowedClasses&(1u<<ecs::PlayerRuntime::GetJob(owner))) && (policy->allowedSexes&(1u<<ecs::PlayerRuntime::GetSex(owner)));
         if(!plan || plan->removeItem || !allowed){p.destroyed=true;p.count=0;p.placement.reset();if(plan)p.costume=plan->after;}
@@ -84,9 +86,9 @@ void UpdateTypedCostumes(entt::entity owner) {
     for(const auto& p:typed->state.items)if(!p.destroyed && (p.costume || p.regalia) && p.placement && (p.placement->kind==item::ItemStorageKind::Inventory || p.placement->kind==item::ItemStorageKind::Equipment)) {
         const auto* rune=std::get_if<item::ItemRegaliaRow>(&c->Find(p.key)->category);
         const bool runeClock=rune && rune->kind==item::RegaliaKind::Rune && rune->slot<7;
-        if(rune && !runeClock)continue;
+        if(rune && !runeClock && !p.costume)continue;
         if(runeClock && !p.regalia->remainingMs)continue; // No tail debt can spend below zero.
-        const auto clockKind=runeClock ? item::CostumeClock::EquippedTime : std::get<item::ItemCostumeRow>(c->Find(p.key)->category).clock;
+        const auto clockKind=runeClock ? item::CostumeClock::EquippedTime : item::FindWearableClock(*c,p.key)->clock;
         if(clockKind==item::CostumeClock::Permanent)continue;
         auto& clock=clocks[Identity(typed->state.fence,p.id.Value())];if(!clock){if(!shared)shared=std::make_shared<item::persistence::LoadedItemOwner>(typed->state);clock=std::make_shared<WearClock>(WearClock{shared,p.id.Value(),login->token});}
         if(!clock->stopped)Worn(*clock,online && p.placement->kind==item::ItemStorageKind::Equipment && (!runeClock || p.regalia->active),clockKind==item::CostumeClock::EquippedTime);
@@ -98,10 +100,8 @@ void SendTypedCostumeAppearance(entt::entity source,entt::entity viewer) {
     if(!g_registry.valid(source) || !g_registry.valid(viewer))return;
     const auto* support=g_registry.try_get<ecs::MountFlightSystem::Supported>(viewer);const auto* p=g_registry.try_get<CostumeProjection>(source);auto* d=ecs::PlayerRuntime::GetDesc(viewer);
     if(!support || !support->costumes || !p || !d || !d->IsPhase(PHASE_GAME))return;
-    std::vector<std::uint8_t> bytes;const auto put=[&](std::uint64_t v,unsigned n){for(unsigned i=0;i<n;++i)bytes.push_back(static_cast<std::uint8_t>(v>>(8*i)));};
-    put(HEADER_GC_TYPED_APPEARANCE,1);put(0,4);put(support->specialBonuses ? 2 : 1,1);put(ecs::PlayerRuntime::GetPacketVID(source),4);put(p->revision,8);put(p->data.weapon,1);put(p->data.tool,1);
-    for(unsigned n=0;n<(support->specialBonuses ? 6u : 5u);++n){const auto& model=p->data.models[n];if(model.size()>512)return;put(model.size(),2);bytes.insert(bytes.end(),model.begin(),model.end());}if(support->specialBonuses)put(p->data.runes,1);
-    for(unsigned i=0;i<4;++i)bytes[1+i]=static_cast<std::uint8_t>(bytes.size()>>(8*i));d->Packet(bytes.data(),static_cast<int>(bytes.size()));
+    const auto bytes=item::EncodeCostumeAppearance({ecs::PlayerRuntime::GetPacketVID(source),p->revision,p->data.weapon,p->data.tool,p->data.models,p->data.runes,p->data.bodyEffect,p->data.weaponEffect,p->data.absorptionSash},support->absorptionSashes ? 5 : support->weaponCostumeEffects ? 4 : support->costumeEffects ? 3 : support->specialBonuses ? 2 : 1);
+    if(bytes)d->Packet(bytes->data(),static_cast<int>(bytes->size()));
 }
 void ReplayTypedCostumeAppearances(entt::entity viewer) {
     for(auto source:g_registry.view<CostumeProjection>())if(source==viewer || (g_registry.all_of<ecs::ViewerMap>(source) && g_registry.get<ecs::ViewerMap>(source).viewers.contains(viewer)))SendTypedCostumeAppearance(source,viewer);
@@ -117,8 +117,8 @@ void TickTypedCostumes() {
         auto clock=it->second;const auto owner=Owner(*clock);if(owner==entt::null)Stop(*clock);
         if(clock->pending){++it;continue;}const auto* p=Costume(*clock);const auto elapsed=Elapsed(*clock);
         if(!p || (clock->stopped && !elapsed)){for(auto& waiter:clock->waiters)resume.push_back(std::move(waiter));it=clocks.erase(it);continue;}++it;
-        const auto now=TypedItemEffectNow();const auto* rune=std::get_if<item::ItemRegaliaRow>(&c->Find(p->key)->category);
-        const auto kind=rune ? item::CostumeClock::EquippedTime : std::get<item::ItemCostumeRow>(c->Find(p->key)->category).clock;
+        const auto now=TypedItemEffectNow();const auto* rune=p->costume ? nullptr : std::get_if<item::ItemRegaliaRow>(&c->Find(p->key)->category);
+        const auto kind=rune ? item::CostumeClock::EquippedTime : item::FindWearableClock(*c,p->key)->clock;
         const auto remaining=rune ? p->regalia->remainingMs : p->costume->remainingMs;
         const bool due=kind==item::CostumeClock::EquippedTime ? elapsed && (!clock->worn || elapsed>=5000 || elapsed>=remaining) : p->costume->started && now>=p->costume->deadlineUtcMs;
         if(!due || (!clock->stopped && g_registry.all_of<ecs::TypedItemBusy>(owner)))continue;

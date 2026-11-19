@@ -1,0 +1,185 @@
+{
+  "checked_utc": "2026-11-13T20:35:09.103610+00:00",
+  "server_branch": "20261103",
+  "unity_branch": "/main/unity63-integration-20261103",
+  "unity_editor": "6000.3.27f1",
+  "sources": [
+    {
+      "key": "social_friends",
+      "psd": "D:/Nexoria UI/Social/Nexoria_Social_Baratok.psd",
+      "source_sha256": "9bc95f0224a2ebc77b4c8bc6804c755aa496ad591883a89c5e34f4e3733bf7cc",
+      "canvas": [
+        1390,
+        760
+      ],
+      "native_photoshop": true,
+      "assets": 25,
+      "source_unchanged": true
+    },
+    {
+      "key": "social_chat",
+      "psd": "D:/Nexoria UI/Social/Nexoria_Social_Cseveges.psd",
+      "source_sha256": "6963b6e788b88789d31ad9c57b476db4c16559c3e18b6c39490645a19ed47df7",
+      "canvas": [
+        1445,
+        880
+      ],
+      "native_photoshop": true,
+      "assets": 22,
+      "source_unchanged": true
+    }
+  ],
+  "implementation": {
+    "windows": [
+      "PSD friends list with private conversation",
+      "PSD conversation list with guild channel"
+    ],
+    "data": "Live friends, guild members, incoming requests, blocked contacts, profiles and existing whisper history; no design sample users or messages at startup",
+    "functions": [
+      "accent-insensitive search",
+      "online and unread filters",
+      "friend add and remove",
+      "persistent incoming requests with accept and decline",
+      "private send and receive",
+      "guild chat through existing guild transport",
+      "unread counts and read state",
+      "draft per conversation",
+      "per character/server pinned conversations",
+      "notification and timestamp preferences",
+      "persistent server-enforced mutual whisper block",
+      "real class/level/presence metadata",
+      "emoji aliases",
+      "item name/refine level/count text sharing from own typed inventory",
+      "current location text sharing",
+      "existing received legacy item link tooltips",
+      "nearby party/guild invitations through existing packets",
+      "gift button opens existing native trade invitation",
+      "existing chat log toggle"
+    ],
+    "persistence": [
+      "player.social_friend_request",
+      "player.social_block",
+      "existing player.messenger_list",
+      "per-character/server local pins and UI preferences"
+    ],
+    "protocol": "Version 1 social command snapshots over existing chat command transport; existing private/guild/trade packets retained",
+    "layout": {
+      "safe_area_fraction": [
+        0.5,
+        0.52
+      ],
+      "readable_minimum_scale_with_overflow_scroll": true,
+      "original_psd_close_with_floating_fallback_only_when_offscreen": true,
+      "maximum_desktop_game_area_fraction": 0.26,
+      "compact_navigation": "Below 0.60 screen pixels per design unit, use full-width readable captions in the original navigation buttons.",
+      "legacy_messenger": "Old presentation root has alpha 0, interaction and raycasts disabled, including any frame created later."
+    },
+    "hud_notifications": {
+      "envelope_slot": "Replaces the heart/skills HUD slot; reuses original Social envelope artwork",
+      "message_count": "Unread private and guild messages, including admin whisper notifications; blocked messages and own guild echoes excluded",
+      "friend_count": "Pending incoming friend requests from authoritative server snapshot",
+      "badge": "Red circle with white number; hidden for zero, 99+ for counts above 99; at least 13 physical pixels for digits",
+      "interaction": "Envelope opens an unread private conversation or guild channel; friends button opens pending requests or the friends list",
+      "background_sync": "Existing throttled Social snapshot continues while game HUD is visible and Social window is closed",
+      "upper_centre_mail_icons": "Suppressed and existing icons cleared for installed Social UI",
+      "reset": "Reading clears only the opened conversation; server request removal and session reset clear their respective badges"
+    },
+    "server_history_report": "docs/reports/ui/nexoria_social_history.evidence.json"
+  },
+  "checks": {
+    "native_build": "GameServer and SocialRulesTests succeeded",
+    "native_tests_passed": [
+      "social_rules",
+      "atlas_teleport_rules",
+      "persistent_items",
+      "typed_inventory_wire"
+    ],
+    "deployed_server_sha256": "50b048b7d4c30be527f2204b2cecd18de76362a4c75d3814a2d6f7a2871dd659",
+    "unity_compilation": "passed in pinned running Editor",
+    "social_ui_checks": 61,
+    "existing_ui_regression": {
+      "ui_checks": 346,
+      "gallery_windows": 21,
+      "remaining_window_checks": 527,
+      "remaining_gallery_windows": 90,
+      "authored_settings_checks": 222,
+      "authored_item_window_checks": 89,
+      "inventory_storage_checks": 39,
+      "c47_checks": 92
+    },
+    "readability": [
+      {
+        "capture": "D:/Auriga-Unity6/SRC/AurigaUnity-20261103/NexoriaCaptures/social-friends-1920.png",
+        "audit": "texts=24 small=0 legacy=0 overlap=0 min=14,5px"
+      },
+      {
+        "capture": "D:/Auriga-Unity6/SRC/AurigaUnity-20261103/NexoriaCaptures/social-friends-1280.png",
+        "audit": "texts=22 small=0 legacy=0 overlap=0 min=14,3px"
+      },
+      {
+        "capture": "D:/Auriga-Unity6/SRC/AurigaUnity-20261103/NexoriaCaptures/social-friends-1500.png",
+        "audit": "texts=23 small=0 legacy=0 overlap=0 min=14,0px"
+      },
+      {
+        "capture": "D:/Auriga-Unity6/SRC/AurigaUnity-20261103/NexoriaCaptures/social-friends-phone.png",
+        "audit": "texts=21 small=0 legacy=0 overlap=0 min=21,0px"
+      },
+      {
+        "capture": "D:/Auriga-Unity6/SRC/AurigaUnity-20261103/NexoriaCaptures/social-chat-1920.png",
+        "audit": "texts=23 small=0 legacy=0 overlap=0 min=13,4px"
+      },
+      {
+        "capture": "D:/Auriga-Unity6/SRC/AurigaUnity-20261103/NexoriaCaptures/social-chat-1280.png",
+        "audit": "texts=23 small=0 legacy=0 overlap=0 min=14,0px"
+      },
+      {
+        "capture": "D:/Auriga-Unity6/SRC/AurigaUnity-20261103/NexoriaCaptures/social-chat-1500.png",
+        "audit": "texts=23 small=0 legacy=0 overlap=0 min=14,0px"
+      },
+      {
+        "capture": "D:/Auriga-Unity6/SRC/AurigaUnity-20261103/NexoriaCaptures/social-chat-phone.png",
+        "audit": "texts=20 small=0 legacy=0 overlap=0 min=21,0px"
+      }
+    ],
+    "local_tls_flow": {
+      "result": "passed",
+      "accounts": "two newly created isolated local test accounts",
+      "steps": [
+        "real add friend command and persisted request",
+        "accept from actual UI button and reciprocal friendship",
+        "live class level and online metadata",
+        "private send button and delivery",
+        "reply and unread/read transitions",
+        "real native trade gift invitation on both clients and cancellation",
+        "block prevents private message delivery",
+        "reconnect retains friendship and block",
+        "unblock restores delivery",
+        "remove friend visible on both resynced clients",
+        "new request declined"
+      ],
+      "native_wallet_yang_after": [
+        1000000,
+        1000000
+      ],
+      "sql_final_state": "passed again after HUD integration: zero outstanding fixture requests, blocks and friendships; both native wallets remain 1000000 Yang",
+      "hud_notifications": "Passed: actual request updates closed Social HUD; friends HUD opens requests; accepting clears count; actual whisper updates envelope with no top icons; clicking envelope opens correct conversation and clears its count."
+    },
+    "local_server": "running all channels plus CH99, login, database and content HTTP",
+    "hud_badge_capture_sizes": [
+      "1920x1080",
+      "1280x720"
+    ],
+    "server_history": "passed: encrypted private, offline and guild persistence, paging, read cursors, authorization and game-stack restart"
+  },
+  "untested": [
+    "standalone player build",
+    "physical Android/iOS device",
+    "live requests across two different cores",
+    "complete live guild create/invite/chat flow with two characters",
+    "completed item or Yang transfer through gift trade"
+  ],
+  "limitations": [
+    "Shared typed inventory attachments currently send actual item data as text; typed clickable item-detail links are not implemented. Existing received legacy item links remain supported."
+  ],
+  "version_control": "Local pending changes only; no commit, check-in or push performed"
+}

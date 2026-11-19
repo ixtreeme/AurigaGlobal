@@ -151,13 +151,6 @@ class CInputMain : public CInputProcessor
 		void		QuestConfirm(entt::entity character, const void* pvData);
 		void		Target(entt::entity character, const char * pcData);
 		void		Warp(entt::entity character, const char * pcData);
-		void		SafeboxCheckin(entt::entity character, const char * c_pData);
-		void		SafeboxCheckout(entt::entity character, const char * c_pData, bool bMall);
-		void		SafeboxItemMove(entt::entity character, const char * data);
-
-		void            MountInventoryCheckin(entt::entity character, const char* c_pData);
-		void            MountInventoryCheckout(entt::entity character, const char* c_pData);
-		static void            MountInventoryItemMove(entt::entity character, const char* data);
 
 		int			Messenger(entt::entity character, const char* c_pData, uint64_t uiBytes);
 
@@ -237,11 +230,6 @@ protected:
 	void		PlayerCreateSuccess(LPDESC d, const char * data);
 	void		Boot(const char* data);
 	void		QuestLoad(LPDESC d, const char * c_pData);
-	void		SafeboxLoad(LPDESC d, const char * c_pData);
-	void		SafeboxChangeSize(LPDESC d, const char * c_pData);
-	void		SafeboxWrongPassword(LPDESC d);
-	void		SafeboxChangePasswordAnswer(LPDESC d, const char* c_pData);
-	void		MallLoad(LPDESC d, const char * c_pData);
 	void		EmpireSelect(LPDESC d, const char * c_pData);
 	void		P2P(const char * c_pData);
 	void		ItemLoad(LPDESC d, const char * c_pData);

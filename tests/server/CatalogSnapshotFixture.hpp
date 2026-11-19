@@ -42,7 +42,7 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
     for (const auto& r : source.refinements) {
         Add(s,T::Refinements,r.id,r.code,r.kind,r.maxLevel);
         for (const auto& l : r.levels) Add(s,T::RefinementLevels,r.id,l.level,l.gain.physicalAttackRaw,l.gain.magicalAttackRaw,
-            l.gain.physicalDefenseRaw,l.gain.magicalDefenseRaw,l.extraBonusProfile);
+            l.gain.physicalDefenseRaw,l.gain.magicalDefenseRaw,l.extraBonusProfile,l.minimumLevel,l.buyAmount,l.sellAmount);
     }
     for (const auto& r : source.items) Add(s,T::Items,r.key.Category(),r.key.LocalId(),r.contentCode,r.nameKey,r.descriptionKey,
         r.iconAsset,r.width,r.height,r.maxStack,r.weightGrams,r.minimumLevel,r.binding,r.usePolicy,r.tradePolicy,
@@ -54,7 +54,7 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
     for (const auto& r : source.materials) Add(s,T::Materials,r.key.Category(),r.key.LocalId(),r.kind);
     for (const auto& r : source.accessorySockets) {
         Add(s,T::SocketProfiles,r.id,r.code,r.maxGrade,r.unlockUnitsPerAttempt,r.chargeUnitsPerAttempt);
-        for (const auto& g : r.grades) Add(s,T::SocketGrades,r.id,g.grade,g.durationMs,g.bonusIncreaseBp,g.minimumRaw,g.minimumBp,g.minimumInteger,g.unlockChanceBp,g.chargeChanceBp);
+        for (const auto& g : r.grades) Add(s,T::SocketGrades,r.id,g.grade,g.durationMs,g.bonusIncreaseBp,g.minimumRaw,g.minimumBp,g.minimumInteger,g.unlockChanceBp,g.chargeChanceBp,g.truncateBonus);
         for (auto key : r.unlockMaterials) Add(s,T::SocketMaterials,r.id,1,key.Category(),key.LocalId());
         for (auto key : r.chargeMaterials) Add(s,T::SocketMaterials,r.id,2,key.Category(),key.LocalId());
         for (auto key : r.permanentChargeMaterials) Add(s,T::SocketMaterials,r.id,3,key.Category(),key.LocalId());
@@ -72,22 +72,22 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
         },r.effect);
     }
     for(const auto& p:source.bookAidProfiles)Add(s,T::BookAids,p.id,p.code,p.kind,p.unitsPerUse,p.chargesPerUse,p.maximumCharges);
-    for (const auto& r : source.consumables) Add(s,T::Consumables,r.key.Category(),r.key.LocalId(),r.recoveryProfile ? std::optional{r.recoveryProfile} : std::nullopt,r.timedEffectProfile,r.toggleEffectProfile,r.socketServiceProfile,r.attributeServiceProfile,r.bookAidProfile);
+    for (const auto& r : source.consumables) Add(s,T::Consumables,r.key.Category(),r.key.LocalId(),r.recoveryProfile ? std::optional{r.recoveryProfile} : std::nullopt,r.timedEffectProfile,r.toggleEffectProfile,r.socketServiceProfile,r.attributeServiceProfile,r.bookAidProfile,r.characterService);
     for (const auto& r : source.lootProfiles) {
         Add(s,T::LootProfiles,r.id,r.code,r.mode);
         for (const auto& e : r.entries) {
             db::Row row{Cell(r.id),Cell(e.entry),Cell(e.kind)};
             row.push_back(e.item ? Cell(e.item->Category()) : db::Cell{});
             row.push_back(e.item ? Cell(e.item->LocalId()) : db::Cell{});
-            row.push_back(Cell(e.amount)); row.push_back(Cell(e.weight)); row.push_back(Cell(e.rareAttributeChanceBp));
+            row.push_back(Cell(e.amount)); row.push_back(Cell(e.weight)); row.push_back(Cell(e.rareAttributeChanceBp)); row.push_back(Cell(e.refinementLevel));
             s[T::LootEntries].push_back(std::move(row));
         }
     }
     for (const auto& r : source.containers) Add(s,T::Containers,r.key.Category(),r.key.LocalId(),r.kind,r.lootProfile,r.lockId,r.hatchProfile);
     for (const auto& r : source.containerKeys) Add(s,T::ContainerKeys,r.key.Category(),r.key.LocalId(),r.lockId);
     for (const auto& r : source.currencyTokens) Add(s,T::CurrencyTokens,r.key.Category(),r.key.LocalId(),r.currency,r.amountPerUnit);
-    for (const auto& r : source.timedEffectGroups) Add(s,T::TimedEffectGroups,r.id,r.code,r.reapply,r.clock,r.removeOnDeath);
-    for (const auto& r : source.timedEffects) Add(s,T::TimedEffects,r.id,r.code,r.group,r.bonusProfile,r.durationMs,r.unitsPerUse,r.allowedContexts,r.allowDuringPvp,r.cooldownProfile);
+    for (const auto& r : source.timedEffectGroups) Add(s,T::TimedEffectGroups,r.id,r.code,r.reapply,r.clock,r.removeOnDeath,static_cast<unsigned>(r.family));
+    for (const auto& r : source.timedEffects) Add(s,T::TimedEffects,r.id,r.code,r.group,r.bonusProfile ? std::optional{r.bonusProfile} : std::nullopt,r.durationMs,r.unitsPerUse,r.allowedContexts,r.allowDuringPvp,r.cooldownProfile,static_cast<unsigned>(r.utility),r.conflictBonus ? std::optional{static_cast<unsigned>(*r.conflictBonus)} : std::nullopt);
     for (const auto& r : source.toggleEffectGroups) Add(s,T::ToggleEffectGroups,r.id,r.code,r.removeOnDeath);
     for (const auto& r : source.toggleEffects) Add(s,T::ToggleEffects,r.id,r.code,r.group,r.bonusProfile,r.variant,r.durationMs,r.requirements,r.allowedContexts,r.allowDuringPvp,r.cooldownProfile);
     for (const auto& p:source.skillBookProfiles) {
@@ -108,20 +108,29 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
     }
     for(const auto& p:source.socketServiceProfiles)Add(s,T::SocketServices,p.id,p.code,p.kind,p.unitsPerUse);
     for(const auto& p:source.attributeProfiles){Add(s,T::AttributeProfiles,p.id,p.code,p.allowLock);for(const auto& g:p.groups)Add(s,T::AttributeGroups,p.id,g.pool,g.capacity,g.excludeStatic);for(const auto& a:p.candidates){Add(s,T::AttributeCandidates,p.id,a.pool,a.bonus,a.weight);for(const auto& v:a.values)Add(s,T::AttributeValues,p.id,a.pool,a.bonus,v.tier,v.value);}}
-    for(const auto& p:source.attributeServices){Add(s,T::AttributeServices,p.id,p.code,p.operation,p.pool,p.units,p.successBp,p.targetMask,p.minimumCount,p.maximumCount,p.addCount,p.maximumTargetLevel,p.consumeOnFailure);for(const auto& t:p.tiers)Add(s,T::AttributeTiers,p.id,t.tier,t.chanceBp);}
+    for(const auto& p:source.attributeServices){Add(s,T::AttributeServices,p.id,p.code,p.operation,p.pool,p.units,p.successBp,p.targetMask,p.minimumCount,p.maximumCount,p.addCount,p.maximumTargetLevel,p.consumeOnFailure,p.targetRerollGroup);for(const auto& t:p.tiers)Add(s,T::AttributeTiers,p.id,t.tier,t.chanceBp);}
     for(const auto& b:source.attributeBindings)Add(s,T::AttributeBindings,b.key.Category(),b.key.LocalId(),b.profile);
     for(const auto& r:source.questItems)Add(s,T::QuestItems,r.key.Category(),r.key.LocalId(),r.dispatch,r.groupCode,r.allowedContexts,r.allowObserver);
     for(const auto& r:source.socketStones)Add(s,T::SocketStones,r.key.Category(),r.key.LocalId(),r.kind,r.allowedTargets,r.minimumSocketGrade,r.primaryGroup,r.secondaryGroup);
-    for(const auto& r:source.costumes)Add(s,T::Costumes,r.key.Category(),r.key.LocalId(),r.kind,r.weapon,r.clock,r.durationMs);
+    for(const auto& r:source.costumes)Add(s,T::Costumes,r.key.Category(),r.key.LocalId(),r.kind,r.weapon,r.clock,r.durationMs,r.companionForm,r.bodyEffect,r.weaponEffects[0],r.weaponEffects[1],r.weaponEffects[2],r.weaponEffects[3],r.weaponEffects[4],r.weaponEffects[5],r.weaponEffects[6],r.weaponEffects[7]);
     for(const auto& r:source.costumeVisuals)Add(s,T::CostumeVisuals,r.key.Category(),r.key.LocalId(),r.characterClass,r.sex,r.modelAsset);
-    for(const auto& p:source.toolProfiles){Add(s,T::ToolProfiles,p.id,p.code);for(const auto& r:p.levels)Add(s,T::ToolLevels,p.id,r.level,r.power,r.gatherBonusBp,r.requiredPoints,r.practiceNumerator,r.practiceDenominator,r.refineChanceBp,r.failure,r.failureLevel,r.failureLossBp);}
-    for(const auto& r:source.tools)Add(s,T::Tools,r.key.Category(),r.key.LocalId(),r.kind,r.profile,r.fishingPool);
+    for(const auto& p:source.toolProfiles){Add(s,T::ToolProfiles,p.id,p.code);for(const auto& r:p.levels)Add(s,T::ToolLevels,p.id,r.level,r.power,r.gatherBonusBp,r.requiredPoints,r.practiceNumerator,r.practiceDenominator,r.refineChanceBp,r.failure,r.failureLevel,r.failureLossBp,r.successItem ? std::optional{r.successItem->Category()} : std::nullopt,r.successItem ? std::optional{r.successItem->LocalId()} : std::nullopt,r.successLevel,r.failureItem ? std::optional{r.failureItem->Category()} : std::nullopt,r.failureItem ? std::optional{r.failureItem->LocalId()} : std::nullopt,r.displayGrade);}
+    for(const auto& r:source.tools)Add(s,T::Tools,r.key.Category(),r.key.LocalId(),r.kind,r.profile,r.fishingPool,r.allWaterPools,r.maximumUses);
     for(const auto& r:source.fishingItems)Add(s,T::FishingItems,r.key.Category(),r.key.LocalId(),r.kind,r.useLootProfile,r.grillResult ? std::optional{static_cast<std::uint16_t>(r.grillResult->Category())} : std::nullopt,r.grillResult ? std::optional{r.grillResult->LocalId()} : std::nullopt,r.baitPower);
     for(const auto& r:source.polymorphForms)Add(s,T::PolymorphForms,r.id,r.code,r.mobTemplate,r.bookBonus);
     for(const auto& p:source.polymorphProfiles){Add(s,T::PolymorphProfiles,p.id,p.code,p.kind,p.mobLevelGrace,p.graceLossNumerator,p.graceLossDenominator,p.maxBookGrade,p.practicePerGrade,p.bookChanceBasePercent);for(const auto& r:p.skills)Add(s,T::PolymorphSkills,p.id,r.skillLevel,r.durationMs,r.attackBonusBp,r.powerBp);for(const auto& r:p.masteries)Add(s,T::PolymorphMasteries,p.id,r.mastery,r.durationMs,r.bonusDurationMs);}
     for(const auto& r:source.polymorphItems)Add(s,T::PolymorphItems,r.key.Category(),r.key.LocalId(),r.profile,r.fixedForm);
     for(const auto& p:source.soulProfiles){Add(s,T::SoulProfiles,p.id,p.code);for(const auto& r:p.levels)Add(s,T::SoulLevels,p.id,r.level,r.chargeCapacity,r.cycleChargeCost,r.strikesPerCycle,r.initialCharge,r.initialStrikes,r.rechargeIntervalMs,r.firstMultiplierBp,r.secondMultiplierBp,r.thirdMultiplierBp);}
-    for(const auto& r:source.soulItems)Add(s,T::SoulItems,r.key.Category(),r.key.LocalId(),r.kind,r.channel,r.profile,r.refineChanceBp);
+    for(const auto& r:source.soulItems)Add(s,T::SoulItems,r.key.Category(),r.key.LocalId(),r.kind,r.channel,r.profile,r.refineChanceBp,r.nextCore ? std::optional{r.nextCore->Category()} : std::nullopt,r.nextCore ? std::optional{r.nextCore->LocalId()} : std::nullopt);
+    for(const auto& r:source.bonusTools) {
+        Add(s,T::BonusTools,r.key.Category(),r.key.LocalId(),r.operation,r.units,r.parameter,r.payload ? std::optional{r.payload->bonus} : std::nullopt,r.payload ? std::optional{r.payload->valueScaled} : std::nullopt);
+        for(const auto& t:r.tiers)Add(s,T::SpecialBonusTiers,r.key.Category(),r.key.LocalId(),t.draw,t.tier,t.chanceBp);
+        for(const auto& choice:r.choices)Add(s,T::BonusToolChoices,r.key.Category(),r.key.LocalId(),choice.choice,choice.payload.bonus,choice.payload.valueScaled);
+    }
+    for(const auto& r:source.regalia) {
+        Add(s,T::Regalia,r.key.Category(),r.key.LocalId(),r.kind,r.slot,r.grade,r.capacityMs,r.initialMs);
+        for(const auto& rule:r.rules)Add(s,T::RegaliaRules,r.key.Category(),r.key.LocalId(),rule.index,rule.minimumChargeBp,rule.variant,rule.bonus.bonus,rule.bonus.valueScaled);
+    }
     for(const auto& r:source.companionForms)Add(s,T::CompanionForms,r.id,r.code,r.mobTemplateId,r.modelAsset);
     for(const auto& r:source.companions)Add(s,T::Companions,r.key.Category(),r.key.LocalId(),r.kind,r.form,r.ridingForm,r.clock,r.durationMs,r.dungeonOnlyBonus,r.growthProfile,r.trainingProfile,r.flyingMount);
     for(const auto& p:source.growthPetProfiles) {
@@ -149,6 +158,11 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
     for(const auto& r:source.petSupplies)Add(s,T::PetSupplies,r.key.Category(),r.key.LocalId(),1,r.profile);
     for(const auto& r:source.ammunition)Add(s,T::Ammunition,r.key.Category(),r.key.LocalId(),r.ammoPolicy);
     for(const auto& r:source.forgeAids){Add(s,T::ForgeAids,r.key.Category(),r.key.LocalId(),r.kind,r.units,r.targetMask,r.minimumLevel,r.maximumLevel,r.chanceMode,r.chanceBp,r.failure,r.boosterGroup);for(const auto& l:r.levels)Add(s,T::ForgeLevels,r.key.Category(),r.key.LocalId(),l.level,l.chanceBp);}
+    for(const auto& p:source.absorptionSashes)Add(s,T::SashProfiles,p.key.Category(),p.key.LocalId(),p.grade,p.next.Category(),p.next.LocalId(),p.initialMinimum,p.initialMaximum,p.combineMinimum,p.combineMaximum,p.maximumPercent,p.successBp,p.goldCost);
+    for(const auto& p:source.sashDonors){Add(s,T::SashDonors,p.key.Category(),p.key.LocalId(),p.refinement,p.physicalMaximumRaw,p.magicalMaximumRaw,p.physicalBasePositive,p.magicalBasePositive);unsigned n=0;for(const auto& b:p.components)Add(s,T::SashDonorComponents,p.key.Category(),p.key.LocalId(),p.refinement,n++,b.bonus,b.valueScaled);}
+    for(const auto& r:source.characterServices)Add(s,T::CharacterServices,r.key.Category(),r.key.LocalId(),r.kind,r.units,r.amount,r.minimum,r.maximum);
+    for(const auto& p:source.attributeBirthProfiles){Add(s,T::AttributeBirthProfiles,p.id,p.code,p.secondChanceBp,p.thirdChanceBp);for(const auto& t:p.tiers)Add(s,T::AttributeBirthTiers,p.id,t.draw,t.tier,t.chanceBp);}
+    for(const auto& r:source.definitionRules)Add(s,T::DefinitionRules,r.key.Category(),r.key.LocalId(),r.level,r.displayRefinementOffset,r.rarity,r.clock,r.durationMs,r.allowAccountStorage,r.allowAcquire,r.allowUnequip,r.allowedEmpires,r.minimumGrantCount,r.birthMagicChanceBp,r.birthSocketChanceBp,r.birthAddon,r.uniqueGroup,r.available,r.attributeRerollGroup,r.weaponEffectAlternate,r.birthOpenStoneSockets,r.birthAttributeProfile);
     return s;
 }
 } // namespace catalog_snapshot_fixture

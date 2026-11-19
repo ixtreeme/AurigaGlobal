@@ -1,0 +1,3288 @@
+{
+  "generated_at": "2026-11-15T18:00:24.464925+00:00",
+  "summary": {
+    "blocked_reasons": {
+      "invalid_chest_lock": 2,
+      "invalid_inventory_height": 6,
+      "invalid_mount_definition": 10,
+      "invalid_timed_effect_duration": 6,
+      "invalid_toggle_effect_definition": 18,
+      "invalid_weapon_costume_effect_attachment:163": 1,
+      "missing_equipment_asset": 49,
+      "missing_secondary_skill_definition:123": 3,
+      "missing_source_container_reward_group": 236,
+      "missing_source_icon": 167,
+      "missing_stole_model": 1,
+      "missing_tool_model:item/etc/canna_2.gr2": 20,
+      "missing_unity_asset_reference": 12,
+      "missing_weapon_costume_effect_mapping:1297": 1,
+      "missing_weapon_costume_effect_mapping:1326": 2,
+      "missing_weapon_costume_effect_mapping:1335": 2,
+      "missing_weapon_costume_effect_mapping:1344": 2,
+      "non_bonus_affect_requires_dedicated_behavior": 2,
+      "semantic_converter_required:11:0": 1,
+      "semantic_converter_required:15:0": 1,
+      "semantic_converter_required:16:10": 4,
+      "semantic_converter_required:19:0": 1,
+      "semantic_converter_required:22:0": 1,
+      "semantic_converter_required:27:0": 7,
+      "semantic_converter_required:28:3": 28,
+      "semantic_converter_required:36:0": 1,
+      "semantic_converter_required:37:0": 12,
+      "semantic_converter_required:38:0": 1,
+      "semantic_converter_required:3:1": 9,
+      "semantic_converter_required:3:10": 94,
+      "semantic_converter_required:3:12": 1,
+      "semantic_converter_required:3:13": 1,
+      "semantic_converter_required:3:15": 1,
+      "semantic_converter_required:3:23": 6,
+      "semantic_converter_required:3:29": 2,
+      "semantic_converter_required:3:45": 1,
+      "semantic_converter_required:9:0": 1,
+      "skill_selected_on_instance_not_in_prototype": 4,
+      "source_bonus_out_of_native_bounds:31": 1,
+      "source_fish_has_no_effect": 1,
+      "source_reward_rare_field_out_of_range": 2,
+      "source_stone_has_no_equipment_target": 3,
+      "unmapped_behavior_value": 1,
+      "unported_apply:125": 3,
+      "unported_apply:126": 1,
+      "unported_apply:127": 1,
+      "unresolved_container_reward:2871": 4,
+      "unresolved_container_reward:2875": 3,
+      "unresolved_container_reward:2878": 1,
+      "unresolved_container_reward:2879": 1,
+      "unresolved_container_reward:48611": 1,
+      "unresolved_container_reward:55003": 1,
+      "unresolved_container_reward:55010": 1,
+      "unresolved_container_reward:70065": 1,
+      "unresolved_container_reward:70102": 11,
+      "unresolved_container_reward:71035": 1,
+      "unresolved_container_reward:71107": 1,
+      "unresolved_container_reward:72044": 5,
+      "unresolved_container_reward:72100": 2,
+      "unresolved_container_reward:72101": 1,
+      "unresolved_container_reward:72320": 4,
+      "unresolved_fishing_result:27847": 1,
+      "unresolved_fishing_result:27877": 1,
+      "unsupported_ability_effect": 1
+    },
+    "blocked_source_rows": 771,
+    "converted_source_rows": 9724,
+    "new_native_definitions": 15,
+    "retired_source_rows": 491,
+    "source_rows": 10986
+  },
+  "catalog_schema": 40,
+  "inventory_version": 24,
+  "persistence_migration": 30,
+  "catalog_hash": "1e411ba667a397e5ec3bb1fefade386d009911b2145aaf7f37b0acbf02860516",
+  "native_definitions": 6806,
+  "candidate": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-stoles-v40-final.json",
+  "candidate_sha256": "f7feda757c49aca045114b0904dc583b4ea9f7a9b2289799adafe15483ac8211",
+  "exact_conversion_reproduced": true,
+  "newly_converted_ids": [
+    85083,
+    85088,
+    85092,
+    85096,
+    85100,
+    85104,
+    85108,
+    85116,
+    85128,
+    85136,
+    85140,
+    85144,
+    85148,
+    85152,
+    85154
+  ],
+  "preserved_definitions": 1574,
+  "preserved_rows": 29204,
+  "previous_candidate_preserved_rows": 104474,
+  "remaining_groups": {
+    "behavior": 182,
+    "assets": 256,
+    "source_or_policy": 57,
+    "loot": 276
+  },
+  "installed_to_game": false,
+  "ctest_latest_status": {
+    "automatic_runtime": "Passed",
+    "attribute_runtime": "Passed",
+    "accessory_runtime": "Passed",
+    "socket_insertion": "Passed",
+    "socket_maintenance": "Passed",
+    "token_redemption": "Passed",
+    "container_opening": "Passed",
+    "item_key": "Passed",
+    "item_catalog": "Passed",
+    "refinement_profiles": "Passed",
+    "bonus_profiles": "Passed",
+    "accessory_sockets": "Passed",
+    "consumables": "Passed",
+    "automatic_recovery": "Passed",
+    "timed_effects": "Passed",
+    "toggle_effects": "Passed",
+    "skill_books": "Passed",
+    "refinement_recipes": "Passed",
+    "mob_drops": "Passed",
+    "quest_items": "Passed",
+    "socket_stones": "Passed",
+    "costumes": "Passed",
+    "special_bonuses": "Passed",
+    "soul_runtime": "Passed",
+    "ammo_runtime": "Passed",
+    "forge_runtime": "Passed",
+    "storage_runtime": "Passed",
+    "gathering_items": "Passed",
+    "soul_items": "Passed",
+    "typed_inventory_wire": "Passed",
+    "typed_ground": "Passed",
+    "companion_items": "Passed",
+    "growth_pet_progression": "Passed",
+    "pet_care": "Passed",
+    "pet_lifecycle": "Passed",
+    "socket_services": "Passed",
+    "instance_attributes": "Passed",
+    "persistent_items": "Passed",
+    "polymorph_items": "Passed",
+    "legacy_item_migration": "Passed",
+    "legacy_equipment_migration": "Passed",
+    "legacy_remaining_migration": "Passed",
+    "quest_token_migration": "Passed",
+    "plain_material_migration": "Passed",
+    "full_catalog_conversion": "Passed",
+    "containers": "Passed",
+    "currency_tokens": "Passed",
+    "catalog_sql_snapshot": "Passed",
+    "item_bonus_generator": "Passed",
+    "item_catalog_digest": "Passed",
+    "item_category_generator": "Passed",
+    "catalog_sql_completion": "Passed",
+    "catalog_editor": "Passed",
+    "item_combat_schema_foundation": "Passed",
+    "catalog_sql_mariadb": "Passed",
+    "catalog_editor_mariadb": "Passed",
+    "item_persistence_completion": "Passed",
+    "item_persistence_mariadb": "Passed",
+    "item_bench_mariadb": "Passed",
+    "npc_shops": "Passed",
+    "tool_runtime": "Passed",
+    "resource_gathering": "Passed",
+    "gathering_rules": "Passed",
+    "item_catalog_runtime_mariadb": "Passed"
+  },
+  "converter_tests": 71,
+  "worker_checks": 1739,
+  "worker": {
+    "success": true,
+    "candidate_sha256": "f7feda757c49aca045114b0904dc583b4ea9f7a9b2289799adafe15483ac8211",
+    "catalog_hash": "1e411ba667a397e5ec3bb1fefade386d009911b2145aaf7f37b0acbf02860516",
+    "sources": [
+      {
+        "item": {
+          "category_id": 19,
+          "local_id": 217
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "stole",
+        "source_extra": null,
+        "source_id": 85083,
+        "source_level_issues": [],
+        "source_row_hash": "728f61f9a8c2b64b7a3f15f60809b8e2ff63db2f402564cb17d95bf52459d805"
+      },
+      {
+        "item": {
+          "category_id": 19,
+          "local_id": 218
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "stole",
+        "source_extra": null,
+        "source_id": 85088,
+        "source_level_issues": [],
+        "source_row_hash": "26f757947658e5c3421b41f0f5c35906b847a46703c42f4f6fee32403cb66fdb"
+      },
+      {
+        "item": {
+          "category_id": 19,
+          "local_id": 219
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "stole",
+        "source_extra": null,
+        "source_id": 85092,
+        "source_level_issues": [],
+        "source_row_hash": "d65970235507a87f9ec9c9d18ff97641f0be8871b957bfe22a272db8a9bd68e2"
+      },
+      {
+        "item": {
+          "category_id": 19,
+          "local_id": 220
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "stole",
+        "source_extra": null,
+        "source_id": 85096,
+        "source_level_issues": [],
+        "source_row_hash": "8618eb63e1d2f7e54117896778767dda7a57fe1496c06b5f0153da9d734b8a7f"
+      },
+      {
+        "item": {
+          "category_id": 19,
+          "local_id": 221
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "stole",
+        "source_extra": null,
+        "source_id": 85100,
+        "source_level_issues": [],
+        "source_row_hash": "4ab7facb930cceaff24b702a3a655aac849d4dc82fe21a3e06580de8ebd109b2"
+      },
+      {
+        "item": {
+          "category_id": 19,
+          "local_id": 222
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "stole",
+        "source_extra": null,
+        "source_id": 85104,
+        "source_level_issues": [],
+        "source_row_hash": "5d6fff272e641f8352f3d83cf9460fca1f4c0f33d90a23b39a55fdefdf8e101f"
+      },
+      {
+        "item": {
+          "category_id": 19,
+          "local_id": 223
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "stole",
+        "source_extra": null,
+        "source_id": 85108,
+        "source_level_issues": [],
+        "source_row_hash": "ca50e0133a4480ddb92f1c1f5edaf08f76628dc87f22f0ff25a15d8abc46ca55"
+      },
+      {
+        "item": {
+          "category_id": 19,
+          "local_id": 224
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "stole",
+        "source_extra": null,
+        "source_id": 85116,
+        "source_level_issues": [],
+        "source_row_hash": "6d347d2362b83b84b6df60d007dd54694d519835c8ad4d75eb4461c55562b29a"
+      },
+      {
+        "item": {
+          "category_id": 19,
+          "local_id": 225
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "stole",
+        "source_extra": null,
+        "source_id": 85128,
+        "source_level_issues": [],
+        "source_row_hash": "5d303d8dfdf530ce9a55634a83dc37842b0105c131b500a41006b4c2b2c0e8ab"
+      },
+      {
+        "item": {
+          "category_id": 19,
+          "local_id": 226
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "stole",
+        "source_extra": null,
+        "source_id": 85136,
+        "source_level_issues": [],
+        "source_row_hash": "3c316628d0f7360454b9e6c8f314661902645ea9868bc4ea31b2267ead5e7e59"
+      },
+      {
+        "item": {
+          "category_id": 19,
+          "local_id": 227
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "stole",
+        "source_extra": null,
+        "source_id": 85140,
+        "source_level_issues": [],
+        "source_row_hash": "5557837acc30650030f59e5390ee8ac216521df9abdfe6c9bd4c000f72bbcdbf"
+      },
+      {
+        "item": {
+          "category_id": 19,
+          "local_id": 228
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "stole",
+        "source_extra": null,
+        "source_id": 85144,
+        "source_level_issues": [],
+        "source_row_hash": "4f167ed528b4cce5d9a50dfe86bed1ab310177cafed6309be3db4c5582dc9f78"
+      },
+      {
+        "item": {
+          "category_id": 19,
+          "local_id": 229
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "stole",
+        "source_extra": null,
+        "source_id": 85148,
+        "source_level_issues": [],
+        "source_row_hash": "a253bdd06485452227ba20a50a5e33f7fea8387376a1e85fe2b00554db4a1762"
+      },
+      {
+        "item": {
+          "category_id": 19,
+          "local_id": 230
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "stole",
+        "source_extra": null,
+        "source_id": 85152,
+        "source_level_issues": [],
+        "source_row_hash": "39db6b82560cce8606a9e975f4f0f87824ec60f6ece01ba9689aed8158cc5e82"
+      },
+      {
+        "item": {
+          "category_id": 19,
+          "local_id": 231
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "stole",
+        "source_extra": null,
+        "source_id": 85154,
+        "source_level_issues": [],
+        "source_row_hash": "b43d0efc9b24e799c873f58f665d6415af3db3cd9cd59ea6ad881d9d7da2a38e"
+      }
+    ],
+    "packets": [
+      {
+        "source": 85083,
+        "category": 19,
+        "local": 217,
+        "level": 0,
+        "phase": "bag",
+        "icon": "icon/item/85083.tga",
+        "model": "Metin2SashEffect/effect/stola/ridack_wingblack",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.0.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.0.bag.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.0.bag.appearance.hex",
+        "hashes": {
+          "inventory": "a6bf20a5a23ab35b42c76917870438cab19b712b89b3e2ba295d6ec47a74182d",
+          "details": "86c31ce3012fd6d0497d5917668f425c6d94690aeb7ac90bdc87753e41b310b4",
+          "appearance": "26b68cf94b70a5c8a5680aa9fe3b6448e397f8c0325b316f29fe7a2b4c5efa71"
+        }
+      },
+      {
+        "source": 85083,
+        "category": 19,
+        "local": 217,
+        "level": 0,
+        "phase": "equipped",
+        "icon": "icon/item/85083.tga",
+        "model": "Metin2SashEffect/effect/stola/ridack_wingblack",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.0.equipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.0.equipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.0.equipped.appearance.hex",
+        "hashes": {
+          "inventory": "96ca6502893bd4e626cd0eae53f071e2a74c8de5ee326fd917344cf79d2c1f3b",
+          "details": "86c31ce3012fd6d0497d5917668f425c6d94690aeb7ac90bdc87753e41b310b4",
+          "appearance": "3cc0502b86a4667b7cec44a140b3b997e9692cfb82c366047e584ebd282f39ff"
+        }
+      },
+      {
+        "source": 85083,
+        "category": 19,
+        "local": 217,
+        "level": 0,
+        "phase": "relogged",
+        "icon": "icon/item/85083.tga",
+        "model": "Metin2SashEffect/effect/stola/ridack_wingblack",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.0.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.0.relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.0.relogged.appearance.hex",
+        "hashes": {
+          "inventory": "96ca6502893bd4e626cd0eae53f071e2a74c8de5ee326fd917344cf79d2c1f3b",
+          "details": "86c31ce3012fd6d0497d5917668f425c6d94690aeb7ac90bdc87753e41b310b4",
+          "appearance": "3cc0502b86a4667b7cec44a140b3b997e9692cfb82c366047e584ebd282f39ff"
+        }
+      },
+      {
+        "source": 85083,
+        "category": 19,
+        "local": 217,
+        "level": 0,
+        "phase": "unequipped",
+        "icon": "icon/item/85083.tga",
+        "model": "Metin2SashEffect/effect/stola/ridack_wingblack",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.0.unequipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.0.unequipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.0.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "a6bf20a5a23ab35b42c76917870438cab19b712b89b3e2ba295d6ec47a74182d",
+          "details": "86c31ce3012fd6d0497d5917668f425c6d94690aeb7ac90bdc87753e41b310b4",
+          "appearance": "f415ae2fb932b5e8032b09ed1d6c72aa20bdd8682cc38e585800787e2d53dc77"
+        }
+      },
+      {
+        "source": 85083,
+        "category": 19,
+        "local": 217,
+        "level": 0,
+        "phase": "rerolled",
+        "icon": "icon/item/85083.tga",
+        "model": "Metin2SashEffect/effect/stola/ridack_wingblack",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.0.rerolled.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.0.rerolled.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.0.rerolled.appearance.hex",
+        "hashes": {
+          "inventory": "cbadbe6718749f668bd64f4c2e184829bb92e9d324d7f966ada788233b413419",
+          "details": "86c31ce3012fd6d0497d5917668f425c6d94690aeb7ac90bdc87753e41b310b4",
+          "appearance": "fb51ae7cd7eba35383c0d3d7103b482580c868152059a09e145de5e827ca8437"
+        }
+      },
+      {
+        "source": 85083,
+        "category": 19,
+        "local": 217,
+        "level": 0,
+        "phase": "permanent_swap",
+        "icon": "icon/item/85083.tga",
+        "model": "Metin2SashEffect/effect/stola/ridack_wingblack",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.0.permanent_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.0.permanent_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.0.permanent_swap.appearance.hex",
+        "hashes": {
+          "inventory": "a06e80bd0c9ba58f468b651c55011ab0b527ed4af2df9bbfc1e8eed16fc858aa",
+          "details": "86c31ce3012fd6d0497d5917668f425c6d94690aeb7ac90bdc87753e41b310b4",
+          "appearance": "15232d50957cf1f86555672d47157c27ef43e7890c732ccf437570ed8a6a5117"
+        }
+      },
+      {
+        "source": 85083,
+        "category": 19,
+        "local": 217,
+        "level": 0,
+        "phase": "timed_swap",
+        "icon": "icon/item/85083.tga",
+        "model": "Metin2SashEffect/effect/stola/ridack_wingblack",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.0.timed_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.0.timed_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.0.timed_swap.appearance.hex",
+        "hashes": {
+          "inventory": "80ec916feda4391e1a54c18a04fe6f94da7dbb4331cfb0722be6b70da056c021",
+          "details": "86c31ce3012fd6d0497d5917668f425c6d94690aeb7ac90bdc87753e41b310b4",
+          "appearance": "b9ec677db6853f70828a0a7cf5cf02ef97d9b105d797385a2be7e376fddaf6f5"
+        }
+      },
+      {
+        "source": 85088,
+        "category": 19,
+        "local": 218,
+        "level": 0,
+        "phase": "bag",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 86400000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.bag.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.bag.appearance.hex",
+        "hashes": {
+          "inventory": "0a9d6c61b0ba2e459ebf04ed4c795b11f3fbb94858836be59134ceeecece2249",
+          "details": "61c151a1d43a4afe1d8efafbe3611a2ec3ab644180d431887b3cf04601025059",
+          "appearance": "26b68cf94b70a5c8a5680aa9fe3b6448e397f8c0325b316f29fe7a2b4c5efa71"
+        }
+      },
+      {
+        "source": 85088,
+        "category": 19,
+        "local": 218,
+        "level": 0,
+        "phase": "equipped",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 86400000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.equipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.equipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.equipped.appearance.hex",
+        "hashes": {
+          "inventory": "2196f8d1b22d60dafe56fe8e21c291c072c153656b8b1f489778634550f8991b",
+          "details": "61c151a1d43a4afe1d8efafbe3611a2ec3ab644180d431887b3cf04601025059",
+          "appearance": "d8715c6a4d1f9ddcb65ed2484c29573bf42baa282c7a7dae95012cec2a3cfd0b"
+        }
+      },
+      {
+        "source": 85088,
+        "category": 19,
+        "local": 218,
+        "level": 0,
+        "phase": "relogged",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 86400000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.relogged.appearance.hex",
+        "hashes": {
+          "inventory": "2196f8d1b22d60dafe56fe8e21c291c072c153656b8b1f489778634550f8991b",
+          "details": "61c151a1d43a4afe1d8efafbe3611a2ec3ab644180d431887b3cf04601025059",
+          "appearance": "d8715c6a4d1f9ddcb65ed2484c29573bf42baa282c7a7dae95012cec2a3cfd0b"
+        }
+      },
+      {
+        "source": 85088,
+        "category": 19,
+        "local": 218,
+        "level": 0,
+        "phase": "unequipped",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 86400000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.unequipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.unequipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "3392dac5c0438e8db038596d09bdca2f440113005b02ecb34abcaed34eaa3a7a",
+          "details": "61c151a1d43a4afe1d8efafbe3611a2ec3ab644180d431887b3cf04601025059",
+          "appearance": "f415ae2fb932b5e8032b09ed1d6c72aa20bdd8682cc38e585800787e2d53dc77"
+        }
+      },
+      {
+        "source": 85088,
+        "category": 19,
+        "local": 218,
+        "level": 0,
+        "phase": "rerolled",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 86400000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.rerolled.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.rerolled.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.rerolled.appearance.hex",
+        "hashes": {
+          "inventory": "1a17762a08a17e030eeff05d4c68fcb0f10982794c941d6f93e297ef09069a89",
+          "details": "61c151a1d43a4afe1d8efafbe3611a2ec3ab644180d431887b3cf04601025059",
+          "appearance": "fb51ae7cd7eba35383c0d3d7103b482580c868152059a09e145de5e827ca8437"
+        }
+      },
+      {
+        "source": 85088,
+        "category": 19,
+        "local": 218,
+        "level": 0,
+        "phase": "permanent_swap",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 86400000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.permanent_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.permanent_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.permanent_swap.appearance.hex",
+        "hashes": {
+          "inventory": "c1f1ab04f28bb7237330edd9da484f2b5f8a90ae66a9ddb20e1a83cdbb7380fb",
+          "details": "61c151a1d43a4afe1d8efafbe3611a2ec3ab644180d431887b3cf04601025059",
+          "appearance": "15232d50957cf1f86555672d47157c27ef43e7890c732ccf437570ed8a6a5117"
+        }
+      },
+      {
+        "source": 85088,
+        "category": 19,
+        "local": 218,
+        "level": 0,
+        "phase": "timed_swap",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 86400000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.timed_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.timed_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.timed_swap.appearance.hex",
+        "hashes": {
+          "inventory": "f6ee130adece3f7a9188984b901bc415a8ac569ab22e76944de48446c2cb67e4",
+          "details": "61c151a1d43a4afe1d8efafbe3611a2ec3ab644180d431887b3cf04601025059",
+          "appearance": "0b3709ef6d1e77249e191d5a5e70bb2387f770ceb6abd745692065587c781534"
+        }
+      },
+      {
+        "source": 85088,
+        "category": 19,
+        "local": 218,
+        "level": 0,
+        "phase": "expired",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 86400000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.expired.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.expired.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.expired.appearance.hex",
+        "hashes": {
+          "inventory": "c87fb57537c294ab6b1aa1ae6978be3c865f290a7f716686a5ac16af19106be6",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "f0df86137987aff6f813f255bbeb073aa24707053763fbcfd2fce57b7f838944"
+        }
+      },
+      {
+        "source": 85088,
+        "category": 19,
+        "local": 218,
+        "level": 0,
+        "phase": "expired_relogged",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 86400000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.expired_relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.expired_relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.expired_relogged.appearance.hex",
+        "hashes": {
+          "inventory": "c87fb57537c294ab6b1aa1ae6978be3c865f290a7f716686a5ac16af19106be6",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "f0df86137987aff6f813f255bbeb073aa24707053763fbcfd2fce57b7f838944"
+        }
+      },
+      {
+        "source": 85088,
+        "category": 19,
+        "local": 218,
+        "level": 0,
+        "phase": "bag_expiry_ready",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 86400000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.bag_expiry_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.bag_expiry_ready.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.bag_expiry_ready.appearance.hex",
+        "hashes": {
+          "inventory": "5732b6fb8afe7a4ea11c640d2ee919be958541d34f4a299139e48b8f573dc85b",
+          "details": "61c151a1d43a4afe1d8efafbe3611a2ec3ab644180d431887b3cf04601025059",
+          "appearance": "3fed8983a86b82516ad1a6b4f05191439c501c66f784d8c9b156cc7fa814222f"
+        }
+      },
+      {
+        "source": 85088,
+        "category": 19,
+        "local": 218,
+        "level": 0,
+        "phase": "bag_expired",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 86400000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.bag_expired.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.bag_expired.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.1.bag_expired.appearance.hex",
+        "hashes": {
+          "inventory": "c87fb57537c294ab6b1aa1ae6978be3c865f290a7f716686a5ac16af19106be6",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "921c6c7a8ef27191d07d6e99124e4088990a0a7d7fb023b784ef175c252439f9"
+        }
+      },
+      {
+        "source": 85092,
+        "category": 19,
+        "local": 219,
+        "level": 0,
+        "phase": "bag",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 864000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.bag.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.bag.appearance.hex",
+        "hashes": {
+          "inventory": "00259278f278a4b8b13e9919962d5cc5a07413dfc5e886cd80d86e051d6b250a",
+          "details": "1799413d9cb337e1813c53198a793e66bcc00f0ab9ea30d2b558b790645f62ae",
+          "appearance": "26b68cf94b70a5c8a5680aa9fe3b6448e397f8c0325b316f29fe7a2b4c5efa71"
+        }
+      },
+      {
+        "source": 85092,
+        "category": 19,
+        "local": 219,
+        "level": 0,
+        "phase": "equipped",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 864000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.equipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.equipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.equipped.appearance.hex",
+        "hashes": {
+          "inventory": "da6e01a7431b9045841d3e803ba320fce57b457bbc9cbdc9d60aa5f83d7824c6",
+          "details": "1799413d9cb337e1813c53198a793e66bcc00f0ab9ea30d2b558b790645f62ae",
+          "appearance": "d8715c6a4d1f9ddcb65ed2484c29573bf42baa282c7a7dae95012cec2a3cfd0b"
+        }
+      },
+      {
+        "source": 85092,
+        "category": 19,
+        "local": 219,
+        "level": 0,
+        "phase": "relogged",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 864000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.relogged.appearance.hex",
+        "hashes": {
+          "inventory": "da6e01a7431b9045841d3e803ba320fce57b457bbc9cbdc9d60aa5f83d7824c6",
+          "details": "1799413d9cb337e1813c53198a793e66bcc00f0ab9ea30d2b558b790645f62ae",
+          "appearance": "d8715c6a4d1f9ddcb65ed2484c29573bf42baa282c7a7dae95012cec2a3cfd0b"
+        }
+      },
+      {
+        "source": 85092,
+        "category": 19,
+        "local": 219,
+        "level": 0,
+        "phase": "unequipped",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 864000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.unequipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.unequipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "6b56326c527aeaa8471f2457c10b41e3f218a9925a402dd8445b8372a04035e2",
+          "details": "1799413d9cb337e1813c53198a793e66bcc00f0ab9ea30d2b558b790645f62ae",
+          "appearance": "f415ae2fb932b5e8032b09ed1d6c72aa20bdd8682cc38e585800787e2d53dc77"
+        }
+      },
+      {
+        "source": 85092,
+        "category": 19,
+        "local": 219,
+        "level": 0,
+        "phase": "rerolled",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 864000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.rerolled.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.rerolled.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.rerolled.appearance.hex",
+        "hashes": {
+          "inventory": "1993d3d86394ed74c752a436e37c366c2d074100a28f7faa10d10f03d0680f60",
+          "details": "1799413d9cb337e1813c53198a793e66bcc00f0ab9ea30d2b558b790645f62ae",
+          "appearance": "fb51ae7cd7eba35383c0d3d7103b482580c868152059a09e145de5e827ca8437"
+        }
+      },
+      {
+        "source": 85092,
+        "category": 19,
+        "local": 219,
+        "level": 0,
+        "phase": "permanent_swap",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 864000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.permanent_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.permanent_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.permanent_swap.appearance.hex",
+        "hashes": {
+          "inventory": "1ac44442109749eef4e0e6a4042ed34732428c0f5d0cb02d31bb1e7c088c7083",
+          "details": "1799413d9cb337e1813c53198a793e66bcc00f0ab9ea30d2b558b790645f62ae",
+          "appearance": "15232d50957cf1f86555672d47157c27ef43e7890c732ccf437570ed8a6a5117"
+        }
+      },
+      {
+        "source": 85092,
+        "category": 19,
+        "local": 219,
+        "level": 0,
+        "phase": "timed_swap",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 864000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.timed_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.timed_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.timed_swap.appearance.hex",
+        "hashes": {
+          "inventory": "fedc3e48c3c73e5d8c10d913991e29b77dcf5dd0e8aa51d3c5dbc14c025cd732",
+          "details": "1799413d9cb337e1813c53198a793e66bcc00f0ab9ea30d2b558b790645f62ae",
+          "appearance": "0b3709ef6d1e77249e191d5a5e70bb2387f770ceb6abd745692065587c781534"
+        }
+      },
+      {
+        "source": 85092,
+        "category": 19,
+        "local": 219,
+        "level": 0,
+        "phase": "expired",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 864000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.expired.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.expired.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.expired.appearance.hex",
+        "hashes": {
+          "inventory": "a263da07f17489ec1f9027567d5f809a4a53b6c930e1f56f2f92876ff47ba5c6",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "f0df86137987aff6f813f255bbeb073aa24707053763fbcfd2fce57b7f838944"
+        }
+      },
+      {
+        "source": 85092,
+        "category": 19,
+        "local": 219,
+        "level": 0,
+        "phase": "expired_relogged",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 864000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.expired_relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.expired_relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.expired_relogged.appearance.hex",
+        "hashes": {
+          "inventory": "a263da07f17489ec1f9027567d5f809a4a53b6c930e1f56f2f92876ff47ba5c6",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "f0df86137987aff6f813f255bbeb073aa24707053763fbcfd2fce57b7f838944"
+        }
+      },
+      {
+        "source": 85092,
+        "category": 19,
+        "local": 219,
+        "level": 0,
+        "phase": "bag_expiry_ready",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 864000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.bag_expiry_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.bag_expiry_ready.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.bag_expiry_ready.appearance.hex",
+        "hashes": {
+          "inventory": "b57a5d94abdb93b570ec843362a6b802d86e577b2d4b9084769d7aa45ecc5a24",
+          "details": "1799413d9cb337e1813c53198a793e66bcc00f0ab9ea30d2b558b790645f62ae",
+          "appearance": "3fed8983a86b82516ad1a6b4f05191439c501c66f784d8c9b156cc7fa814222f"
+        }
+      },
+      {
+        "source": 85092,
+        "category": 19,
+        "local": 219,
+        "level": 0,
+        "phase": "bag_expired",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 864000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.bag_expired.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.bag_expired.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.2.bag_expired.appearance.hex",
+        "hashes": {
+          "inventory": "a263da07f17489ec1f9027567d5f809a4a53b6c930e1f56f2f92876ff47ba5c6",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "921c6c7a8ef27191d07d6e99124e4088990a0a7d7fb023b784ef175c252439f9"
+        }
+      },
+      {
+        "source": 85096,
+        "category": 19,
+        "local": 220,
+        "level": 0,
+        "phase": "bag",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 2160000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.bag.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.bag.appearance.hex",
+        "hashes": {
+          "inventory": "36b102e4e6403a4f82677799332837591f211ea209f9f18c7186ebf367c8a3f4",
+          "details": "025331bc3e89d2a70d06acea9798ca6cd5dd78ed3e385411f2dd4f36169e54d4",
+          "appearance": "26b68cf94b70a5c8a5680aa9fe3b6448e397f8c0325b316f29fe7a2b4c5efa71"
+        }
+      },
+      {
+        "source": 85096,
+        "category": 19,
+        "local": 220,
+        "level": 0,
+        "phase": "equipped",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 2160000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.equipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.equipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.equipped.appearance.hex",
+        "hashes": {
+          "inventory": "1b985c10e25faf5e4e004713418444e63c7de21fa9ba876b7af03cf18180a2dc",
+          "details": "025331bc3e89d2a70d06acea9798ca6cd5dd78ed3e385411f2dd4f36169e54d4",
+          "appearance": "d8715c6a4d1f9ddcb65ed2484c29573bf42baa282c7a7dae95012cec2a3cfd0b"
+        }
+      },
+      {
+        "source": 85096,
+        "category": 19,
+        "local": 220,
+        "level": 0,
+        "phase": "relogged",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 2160000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.relogged.appearance.hex",
+        "hashes": {
+          "inventory": "1b985c10e25faf5e4e004713418444e63c7de21fa9ba876b7af03cf18180a2dc",
+          "details": "025331bc3e89d2a70d06acea9798ca6cd5dd78ed3e385411f2dd4f36169e54d4",
+          "appearance": "d8715c6a4d1f9ddcb65ed2484c29573bf42baa282c7a7dae95012cec2a3cfd0b"
+        }
+      },
+      {
+        "source": 85096,
+        "category": 19,
+        "local": 220,
+        "level": 0,
+        "phase": "unequipped",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 2160000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.unequipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.unequipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "22b092c3100ea32af04ff7d0cb2cf0cd13dda118ae751f9e248957da436c24c1",
+          "details": "025331bc3e89d2a70d06acea9798ca6cd5dd78ed3e385411f2dd4f36169e54d4",
+          "appearance": "f415ae2fb932b5e8032b09ed1d6c72aa20bdd8682cc38e585800787e2d53dc77"
+        }
+      },
+      {
+        "source": 85096,
+        "category": 19,
+        "local": 220,
+        "level": 0,
+        "phase": "rerolled",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 2160000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.rerolled.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.rerolled.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.rerolled.appearance.hex",
+        "hashes": {
+          "inventory": "7c7440b13457c9bae9c7f0b2572f29dc149d532f13db796070c38abbf72a1c8f",
+          "details": "025331bc3e89d2a70d06acea9798ca6cd5dd78ed3e385411f2dd4f36169e54d4",
+          "appearance": "fb51ae7cd7eba35383c0d3d7103b482580c868152059a09e145de5e827ca8437"
+        }
+      },
+      {
+        "source": 85096,
+        "category": 19,
+        "local": 220,
+        "level": 0,
+        "phase": "permanent_swap",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 2160000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.permanent_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.permanent_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.permanent_swap.appearance.hex",
+        "hashes": {
+          "inventory": "7ba969e641d5afeb836cd2f46707f0ee0009d619a32a4b7f71ff3492aaafd898",
+          "details": "025331bc3e89d2a70d06acea9798ca6cd5dd78ed3e385411f2dd4f36169e54d4",
+          "appearance": "15232d50957cf1f86555672d47157c27ef43e7890c732ccf437570ed8a6a5117"
+        }
+      },
+      {
+        "source": 85096,
+        "category": 19,
+        "local": 220,
+        "level": 0,
+        "phase": "timed_swap",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 2160000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.timed_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.timed_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.timed_swap.appearance.hex",
+        "hashes": {
+          "inventory": "f38feed2c8e0bd6eb27286134dc12fb0ec37186ac8c2f32eaa783ae376a6d45f",
+          "details": "025331bc3e89d2a70d06acea9798ca6cd5dd78ed3e385411f2dd4f36169e54d4",
+          "appearance": "0b3709ef6d1e77249e191d5a5e70bb2387f770ceb6abd745692065587c781534"
+        }
+      },
+      {
+        "source": 85096,
+        "category": 19,
+        "local": 220,
+        "level": 0,
+        "phase": "expired",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 2160000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.expired.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.expired.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.expired.appearance.hex",
+        "hashes": {
+          "inventory": "d12db1cc5a81ea8779419fc41911821f9cf0517c08cd2a3c1920f9803784491c",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "f0df86137987aff6f813f255bbeb073aa24707053763fbcfd2fce57b7f838944"
+        }
+      },
+      {
+        "source": 85096,
+        "category": 19,
+        "local": 220,
+        "level": 0,
+        "phase": "expired_relogged",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 2160000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.expired_relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.expired_relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.expired_relogged.appearance.hex",
+        "hashes": {
+          "inventory": "d12db1cc5a81ea8779419fc41911821f9cf0517c08cd2a3c1920f9803784491c",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "f0df86137987aff6f813f255bbeb073aa24707053763fbcfd2fce57b7f838944"
+        }
+      },
+      {
+        "source": 85096,
+        "category": 19,
+        "local": 220,
+        "level": 0,
+        "phase": "bag_expiry_ready",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 2160000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.bag_expiry_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.bag_expiry_ready.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.bag_expiry_ready.appearance.hex",
+        "hashes": {
+          "inventory": "fa972e9c1d298cef7ad88f14b345d2b3a406533773ec0c37b550ce8449267bca",
+          "details": "025331bc3e89d2a70d06acea9798ca6cd5dd78ed3e385411f2dd4f36169e54d4",
+          "appearance": "3fed8983a86b82516ad1a6b4f05191439c501c66f784d8c9b156cc7fa814222f"
+        }
+      },
+      {
+        "source": 85096,
+        "category": 19,
+        "local": 220,
+        "level": 0,
+        "phase": "bag_expired",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 2160000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.bag_expired.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.bag_expired.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.3.bag_expired.appearance.hex",
+        "hashes": {
+          "inventory": "d12db1cc5a81ea8779419fc41911821f9cf0517c08cd2a3c1920f9803784491c",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "921c6c7a8ef27191d07d6e99124e4088990a0a7d7fb023b784ef175c252439f9"
+        }
+      },
+      {
+        "source": 85100,
+        "category": 19,
+        "local": 221,
+        "level": 0,
+        "phase": "bag",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 31536000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.bag.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.bag.appearance.hex",
+        "hashes": {
+          "inventory": "faab40f322bcc61df07208786497102c8b14f4ff0dcad49f70c41f2d2254ccd7",
+          "details": "27b0fabaebc7cebc715b1fa85a761df5d7a3ed9af6969cff3ec5c415305e7369",
+          "appearance": "26b68cf94b70a5c8a5680aa9fe3b6448e397f8c0325b316f29fe7a2b4c5efa71"
+        }
+      },
+      {
+        "source": 85100,
+        "category": 19,
+        "local": 221,
+        "level": 0,
+        "phase": "equipped",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 31536000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.equipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.equipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.equipped.appearance.hex",
+        "hashes": {
+          "inventory": "d791f932500c732ccfcab44ff9a023fb1f8df7ec7b0c023fa04e2b0a7ff79b41",
+          "details": "27b0fabaebc7cebc715b1fa85a761df5d7a3ed9af6969cff3ec5c415305e7369",
+          "appearance": "d8715c6a4d1f9ddcb65ed2484c29573bf42baa282c7a7dae95012cec2a3cfd0b"
+        }
+      },
+      {
+        "source": 85100,
+        "category": 19,
+        "local": 221,
+        "level": 0,
+        "phase": "relogged",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 31536000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.relogged.appearance.hex",
+        "hashes": {
+          "inventory": "d791f932500c732ccfcab44ff9a023fb1f8df7ec7b0c023fa04e2b0a7ff79b41",
+          "details": "27b0fabaebc7cebc715b1fa85a761df5d7a3ed9af6969cff3ec5c415305e7369",
+          "appearance": "d8715c6a4d1f9ddcb65ed2484c29573bf42baa282c7a7dae95012cec2a3cfd0b"
+        }
+      },
+      {
+        "source": 85100,
+        "category": 19,
+        "local": 221,
+        "level": 0,
+        "phase": "unequipped",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 31536000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.unequipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.unequipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "461244aa82b7f4b1537dab581537474c320343adfe2ca17b543342cfd98a3c05",
+          "details": "27b0fabaebc7cebc715b1fa85a761df5d7a3ed9af6969cff3ec5c415305e7369",
+          "appearance": "f415ae2fb932b5e8032b09ed1d6c72aa20bdd8682cc38e585800787e2d53dc77"
+        }
+      },
+      {
+        "source": 85100,
+        "category": 19,
+        "local": 221,
+        "level": 0,
+        "phase": "rerolled",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 31536000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.rerolled.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.rerolled.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.rerolled.appearance.hex",
+        "hashes": {
+          "inventory": "dc4c90e301ca0a4f28167132493bacb6ee3a18b26cac6c2029814fecda772f2c",
+          "details": "27b0fabaebc7cebc715b1fa85a761df5d7a3ed9af6969cff3ec5c415305e7369",
+          "appearance": "fb51ae7cd7eba35383c0d3d7103b482580c868152059a09e145de5e827ca8437"
+        }
+      },
+      {
+        "source": 85100,
+        "category": 19,
+        "local": 221,
+        "level": 0,
+        "phase": "permanent_swap",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 31536000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.permanent_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.permanent_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.permanent_swap.appearance.hex",
+        "hashes": {
+          "inventory": "7e1aa3e4cc8073b1f4a81269743a514e2bb709485fb915f1099773ecea78b2c4",
+          "details": "27b0fabaebc7cebc715b1fa85a761df5d7a3ed9af6969cff3ec5c415305e7369",
+          "appearance": "15232d50957cf1f86555672d47157c27ef43e7890c732ccf437570ed8a6a5117"
+        }
+      },
+      {
+        "source": 85100,
+        "category": 19,
+        "local": 221,
+        "level": 0,
+        "phase": "timed_swap",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 31536000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.timed_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.timed_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.timed_swap.appearance.hex",
+        "hashes": {
+          "inventory": "26370df2517ecc8e4c483baa43a88c322ffc0be1d4932443f95501bdd1326582",
+          "details": "27b0fabaebc7cebc715b1fa85a761df5d7a3ed9af6969cff3ec5c415305e7369",
+          "appearance": "0b3709ef6d1e77249e191d5a5e70bb2387f770ceb6abd745692065587c781534"
+        }
+      },
+      {
+        "source": 85100,
+        "category": 19,
+        "local": 221,
+        "level": 0,
+        "phase": "expired",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 31536000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.expired.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.expired.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.expired.appearance.hex",
+        "hashes": {
+          "inventory": "ea85dd111736bc64a74879ae11f0cff546ef08a24e2afd17a0cb20177db5dc41",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "f0df86137987aff6f813f255bbeb073aa24707053763fbcfd2fce57b7f838944"
+        }
+      },
+      {
+        "source": 85100,
+        "category": 19,
+        "local": 221,
+        "level": 0,
+        "phase": "expired_relogged",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 31536000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.expired_relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.expired_relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.expired_relogged.appearance.hex",
+        "hashes": {
+          "inventory": "ea85dd111736bc64a74879ae11f0cff546ef08a24e2afd17a0cb20177db5dc41",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "f0df86137987aff6f813f255bbeb073aa24707053763fbcfd2fce57b7f838944"
+        }
+      },
+      {
+        "source": 85100,
+        "category": 19,
+        "local": 221,
+        "level": 0,
+        "phase": "bag_expiry_ready",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 31536000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.bag_expiry_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.bag_expiry_ready.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.bag_expiry_ready.appearance.hex",
+        "hashes": {
+          "inventory": "f4b79c690f174f0e2efaf69fef3ccc38c9aafef7c42c5fedb2ada38aaffd07d8",
+          "details": "27b0fabaebc7cebc715b1fa85a761df5d7a3ed9af6969cff3ec5c415305e7369",
+          "appearance": "3fed8983a86b82516ad1a6b4f05191439c501c66f784d8c9b156cc7fa814222f"
+        }
+      },
+      {
+        "source": 85100,
+        "category": 19,
+        "local": 221,
+        "level": 0,
+        "phase": "bag_expired",
+        "icon": "icon/item/48201.tga",
+        "model": "Metin2SashEffect/effect/ridack_shadow/ridack_wing",
+        "clock": 3,
+        "duration": 31536000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.bag_expired.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.bag_expired.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.4.bag_expired.appearance.hex",
+        "hashes": {
+          "inventory": "ea85dd111736bc64a74879ae11f0cff546ef08a24e2afd17a0cb20177db5dc41",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "921c6c7a8ef27191d07d6e99124e4088990a0a7d7fb023b784ef175c252439f9"
+        }
+      },
+      {
+        "source": 85104,
+        "category": 19,
+        "local": 222,
+        "level": 0,
+        "phase": "bag",
+        "icon": "icon/item/085104.tga",
+        "model": "Metin2SashEffect/effect/ridack_greentoxic/ridack_winggreen",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.5.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.5.bag.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.5.bag.appearance.hex",
+        "hashes": {
+          "inventory": "a1b05e12f4892cc7f1a3ba1a5e17e19fbd0f464a3ccacf15c299ea04b850b2de",
+          "details": "aa325da4aa2dc96ce96bfe380a5980555343fe7307bd296f9c5f9d253f791ad7",
+          "appearance": "26b68cf94b70a5c8a5680aa9fe3b6448e397f8c0325b316f29fe7a2b4c5efa71"
+        }
+      },
+      {
+        "source": 85104,
+        "category": 19,
+        "local": 222,
+        "level": 0,
+        "phase": "equipped",
+        "icon": "icon/item/085104.tga",
+        "model": "Metin2SashEffect/effect/ridack_greentoxic/ridack_winggreen",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.5.equipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.5.equipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.5.equipped.appearance.hex",
+        "hashes": {
+          "inventory": "15e2093cb18aaf16ef7e8466f64b784e3ac0436ab65c0811e38f6079ec84691f",
+          "details": "aa325da4aa2dc96ce96bfe380a5980555343fe7307bd296f9c5f9d253f791ad7",
+          "appearance": "d7b7346c953d1208aa3de34550c6803ed49a6c8b377c022e991844992d643f38"
+        }
+      },
+      {
+        "source": 85104,
+        "category": 19,
+        "local": 222,
+        "level": 0,
+        "phase": "relogged",
+        "icon": "icon/item/085104.tga",
+        "model": "Metin2SashEffect/effect/ridack_greentoxic/ridack_winggreen",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.5.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.5.relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.5.relogged.appearance.hex",
+        "hashes": {
+          "inventory": "15e2093cb18aaf16ef7e8466f64b784e3ac0436ab65c0811e38f6079ec84691f",
+          "details": "aa325da4aa2dc96ce96bfe380a5980555343fe7307bd296f9c5f9d253f791ad7",
+          "appearance": "d7b7346c953d1208aa3de34550c6803ed49a6c8b377c022e991844992d643f38"
+        }
+      },
+      {
+        "source": 85104,
+        "category": 19,
+        "local": 222,
+        "level": 0,
+        "phase": "unequipped",
+        "icon": "icon/item/085104.tga",
+        "model": "Metin2SashEffect/effect/ridack_greentoxic/ridack_winggreen",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.5.unequipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.5.unequipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.5.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "a1b05e12f4892cc7f1a3ba1a5e17e19fbd0f464a3ccacf15c299ea04b850b2de",
+          "details": "aa325da4aa2dc96ce96bfe380a5980555343fe7307bd296f9c5f9d253f791ad7",
+          "appearance": "f415ae2fb932b5e8032b09ed1d6c72aa20bdd8682cc38e585800787e2d53dc77"
+        }
+      },
+      {
+        "source": 85104,
+        "category": 19,
+        "local": 222,
+        "level": 0,
+        "phase": "rerolled",
+        "icon": "icon/item/085104.tga",
+        "model": "Metin2SashEffect/effect/ridack_greentoxic/ridack_winggreen",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.5.rerolled.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.5.rerolled.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.5.rerolled.appearance.hex",
+        "hashes": {
+          "inventory": "b22440ce1a0ef6e8deefba9afa56d3b6630be091be9704ec2deec6fe655d38ea",
+          "details": "aa325da4aa2dc96ce96bfe380a5980555343fe7307bd296f9c5f9d253f791ad7",
+          "appearance": "fb51ae7cd7eba35383c0d3d7103b482580c868152059a09e145de5e827ca8437"
+        }
+      },
+      {
+        "source": 85104,
+        "category": 19,
+        "local": 222,
+        "level": 0,
+        "phase": "permanent_swap",
+        "icon": "icon/item/085104.tga",
+        "model": "Metin2SashEffect/effect/ridack_greentoxic/ridack_winggreen",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.5.permanent_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.5.permanent_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.5.permanent_swap.appearance.hex",
+        "hashes": {
+          "inventory": "02c9961f9362ff3d4e73b5b6e31d19b2865d3cc5fb74626fdeb29c42af6a10d2",
+          "details": "aa325da4aa2dc96ce96bfe380a5980555343fe7307bd296f9c5f9d253f791ad7",
+          "appearance": "15232d50957cf1f86555672d47157c27ef43e7890c732ccf437570ed8a6a5117"
+        }
+      },
+      {
+        "source": 85104,
+        "category": 19,
+        "local": 222,
+        "level": 0,
+        "phase": "timed_swap",
+        "icon": "icon/item/085104.tga",
+        "model": "Metin2SashEffect/effect/ridack_greentoxic/ridack_winggreen",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.5.timed_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.5.timed_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.5.timed_swap.appearance.hex",
+        "hashes": {
+          "inventory": "de5244beca675479ddad59040e3db160f51e0c3c97af539bdfd294b011747ee4",
+          "details": "aa325da4aa2dc96ce96bfe380a5980555343fe7307bd296f9c5f9d253f791ad7",
+          "appearance": "0b6f7be0d25a2369dc26327dce68c71f3aaa5ab408346cd9fac70db2051adfa9"
+        }
+      },
+      {
+        "source": 85108,
+        "category": 19,
+        "local": 223,
+        "level": 0,
+        "phase": "bag",
+        "icon": "icon/item/085108.tga",
+        "model": "Metin2SashEffect/effect/ridack_deathset/ridack_wing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.6.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.6.bag.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.6.bag.appearance.hex",
+        "hashes": {
+          "inventory": "608990f2a9fb1eabbd434ebdbf1832cf2d76429f41e478016d97dadf9fa75175",
+          "details": "1ba9c16412755bbf2748d148b352143c30afdfc5a756c02c7922a088c2e3e6b1",
+          "appearance": "26b68cf94b70a5c8a5680aa9fe3b6448e397f8c0325b316f29fe7a2b4c5efa71"
+        }
+      },
+      {
+        "source": 85108,
+        "category": 19,
+        "local": 223,
+        "level": 0,
+        "phase": "equipped",
+        "icon": "icon/item/085108.tga",
+        "model": "Metin2SashEffect/effect/ridack_deathset/ridack_wing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.6.equipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.6.equipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.6.equipped.appearance.hex",
+        "hashes": {
+          "inventory": "2340a1b5162c5ef7b148423221fb13885d7c56d5db7f287ee837e3bf708b61ee",
+          "details": "1ba9c16412755bbf2748d148b352143c30afdfc5a756c02c7922a088c2e3e6b1",
+          "appearance": "c51c06a0775ffc2fcf39cf42484e2d4e0e4fcfbcb3cf0054ba241d0f32fa99d9"
+        }
+      },
+      {
+        "source": 85108,
+        "category": 19,
+        "local": 223,
+        "level": 0,
+        "phase": "relogged",
+        "icon": "icon/item/085108.tga",
+        "model": "Metin2SashEffect/effect/ridack_deathset/ridack_wing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.6.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.6.relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.6.relogged.appearance.hex",
+        "hashes": {
+          "inventory": "2340a1b5162c5ef7b148423221fb13885d7c56d5db7f287ee837e3bf708b61ee",
+          "details": "1ba9c16412755bbf2748d148b352143c30afdfc5a756c02c7922a088c2e3e6b1",
+          "appearance": "c51c06a0775ffc2fcf39cf42484e2d4e0e4fcfbcb3cf0054ba241d0f32fa99d9"
+        }
+      },
+      {
+        "source": 85108,
+        "category": 19,
+        "local": 223,
+        "level": 0,
+        "phase": "unequipped",
+        "icon": "icon/item/085108.tga",
+        "model": "Metin2SashEffect/effect/ridack_deathset/ridack_wing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.6.unequipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.6.unequipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.6.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "608990f2a9fb1eabbd434ebdbf1832cf2d76429f41e478016d97dadf9fa75175",
+          "details": "1ba9c16412755bbf2748d148b352143c30afdfc5a756c02c7922a088c2e3e6b1",
+          "appearance": "f415ae2fb932b5e8032b09ed1d6c72aa20bdd8682cc38e585800787e2d53dc77"
+        }
+      },
+      {
+        "source": 85108,
+        "category": 19,
+        "local": 223,
+        "level": 0,
+        "phase": "rerolled",
+        "icon": "icon/item/085108.tga",
+        "model": "Metin2SashEffect/effect/ridack_deathset/ridack_wing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.6.rerolled.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.6.rerolled.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.6.rerolled.appearance.hex",
+        "hashes": {
+          "inventory": "15309b2d44859be3053ae82d6214327d57c75f681b578250b490b61af4b95810",
+          "details": "1ba9c16412755bbf2748d148b352143c30afdfc5a756c02c7922a088c2e3e6b1",
+          "appearance": "fb51ae7cd7eba35383c0d3d7103b482580c868152059a09e145de5e827ca8437"
+        }
+      },
+      {
+        "source": 85108,
+        "category": 19,
+        "local": 223,
+        "level": 0,
+        "phase": "permanent_swap",
+        "icon": "icon/item/085108.tga",
+        "model": "Metin2SashEffect/effect/ridack_deathset/ridack_wing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.6.permanent_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.6.permanent_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.6.permanent_swap.appearance.hex",
+        "hashes": {
+          "inventory": "5c0c3f257bdfa547aa2f23abb632eed3ef7d20610b2b65e59aeed9ce3c29e917",
+          "details": "1ba9c16412755bbf2748d148b352143c30afdfc5a756c02c7922a088c2e3e6b1",
+          "appearance": "15232d50957cf1f86555672d47157c27ef43e7890c732ccf437570ed8a6a5117"
+        }
+      },
+      {
+        "source": 85108,
+        "category": 19,
+        "local": 223,
+        "level": 0,
+        "phase": "timed_swap",
+        "icon": "icon/item/085108.tga",
+        "model": "Metin2SashEffect/effect/ridack_deathset/ridack_wing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.6.timed_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.6.timed_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.6.timed_swap.appearance.hex",
+        "hashes": {
+          "inventory": "a48d94a3037b172fd4d69e7c1199f33a866d5c7bdfb45864e20f74f3fe745dcb",
+          "details": "1ba9c16412755bbf2748d148b352143c30afdfc5a756c02c7922a088c2e3e6b1",
+          "appearance": "1d3a2852f82f78a4a208bdba5e672b72e84f2deaef476f29ab7f070bacfe6f73"
+        }
+      },
+      {
+        "source": 85116,
+        "category": 19,
+        "local": 224,
+        "level": 0,
+        "phase": "bag",
+        "icon": "icon/item/85116.tga",
+        "model": "Metin2SashEffect/effect/wing/ridack_knightwing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.7.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.7.bag.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.7.bag.appearance.hex",
+        "hashes": {
+          "inventory": "49c38f062dce8e418393262e29e668ffe8050333519df32f7a8dc2200375fa93",
+          "details": "1060c8c2ecf2b42aac83d9b129faf31dffc870d732e4427e24dfec1b2bb03a13",
+          "appearance": "26b68cf94b70a5c8a5680aa9fe3b6448e397f8c0325b316f29fe7a2b4c5efa71"
+        }
+      },
+      {
+        "source": 85116,
+        "category": 19,
+        "local": 224,
+        "level": 0,
+        "phase": "equipped",
+        "icon": "icon/item/85116.tga",
+        "model": "Metin2SashEffect/effect/wing/ridack_knightwing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.7.equipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.7.equipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.7.equipped.appearance.hex",
+        "hashes": {
+          "inventory": "1e064ea53a7a7d1f2759ed552d3b0c83ff78c29fe2834f759146720e80efe638",
+          "details": "1060c8c2ecf2b42aac83d9b129faf31dffc870d732e4427e24dfec1b2bb03a13",
+          "appearance": "6fd82dca17a565653195027419ea63beb76c31dcb4fdae996db56c152d8eddba"
+        }
+      },
+      {
+        "source": 85116,
+        "category": 19,
+        "local": 224,
+        "level": 0,
+        "phase": "relogged",
+        "icon": "icon/item/85116.tga",
+        "model": "Metin2SashEffect/effect/wing/ridack_knightwing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.7.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.7.relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.7.relogged.appearance.hex",
+        "hashes": {
+          "inventory": "1e064ea53a7a7d1f2759ed552d3b0c83ff78c29fe2834f759146720e80efe638",
+          "details": "1060c8c2ecf2b42aac83d9b129faf31dffc870d732e4427e24dfec1b2bb03a13",
+          "appearance": "6fd82dca17a565653195027419ea63beb76c31dcb4fdae996db56c152d8eddba"
+        }
+      },
+      {
+        "source": 85116,
+        "category": 19,
+        "local": 224,
+        "level": 0,
+        "phase": "unequipped",
+        "icon": "icon/item/85116.tga",
+        "model": "Metin2SashEffect/effect/wing/ridack_knightwing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.7.unequipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.7.unequipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.7.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "49c38f062dce8e418393262e29e668ffe8050333519df32f7a8dc2200375fa93",
+          "details": "1060c8c2ecf2b42aac83d9b129faf31dffc870d732e4427e24dfec1b2bb03a13",
+          "appearance": "f415ae2fb932b5e8032b09ed1d6c72aa20bdd8682cc38e585800787e2d53dc77"
+        }
+      },
+      {
+        "source": 85116,
+        "category": 19,
+        "local": 224,
+        "level": 0,
+        "phase": "rerolled",
+        "icon": "icon/item/85116.tga",
+        "model": "Metin2SashEffect/effect/wing/ridack_knightwing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.7.rerolled.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.7.rerolled.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.7.rerolled.appearance.hex",
+        "hashes": {
+          "inventory": "8a2581a3a0cee7b2c5aac13b57cefd8e9ebab9169f12aefa12b9d816247a4694",
+          "details": "1060c8c2ecf2b42aac83d9b129faf31dffc870d732e4427e24dfec1b2bb03a13",
+          "appearance": "fb51ae7cd7eba35383c0d3d7103b482580c868152059a09e145de5e827ca8437"
+        }
+      },
+      {
+        "source": 85116,
+        "category": 19,
+        "local": 224,
+        "level": 0,
+        "phase": "permanent_swap",
+        "icon": "icon/item/85116.tga",
+        "model": "Metin2SashEffect/effect/wing/ridack_knightwing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.7.permanent_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.7.permanent_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.7.permanent_swap.appearance.hex",
+        "hashes": {
+          "inventory": "93a3a47b3c40996d71fadfac755aed324eb3c20e20bd88cb89e1a43857e35835",
+          "details": "1060c8c2ecf2b42aac83d9b129faf31dffc870d732e4427e24dfec1b2bb03a13",
+          "appearance": "15232d50957cf1f86555672d47157c27ef43e7890c732ccf437570ed8a6a5117"
+        }
+      },
+      {
+        "source": 85116,
+        "category": 19,
+        "local": 224,
+        "level": 0,
+        "phase": "timed_swap",
+        "icon": "icon/item/85116.tga",
+        "model": "Metin2SashEffect/effect/wing/ridack_knightwing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.7.timed_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.7.timed_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.7.timed_swap.appearance.hex",
+        "hashes": {
+          "inventory": "e74ac3e4e411360cb773118d1531ed44ef69ec4aea4f8732a5d0dacbd2efba56",
+          "details": "1060c8c2ecf2b42aac83d9b129faf31dffc870d732e4427e24dfec1b2bb03a13",
+          "appearance": "4d12aed2bbee31f2367a5775397f51931fe40f1820bf243cbc0778eb27a6c2ec"
+        }
+      },
+      {
+        "source": 85128,
+        "category": 19,
+        "local": 225,
+        "level": 0,
+        "phase": "bag",
+        "icon": "icon/item/085124.tga",
+        "model": "Metin2Sash/item/wing/085124.gr2",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.bag.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.bag.appearance.hex",
+        "hashes": {
+          "inventory": "3035bc875a0a520b65413aca953423ef06e006116a3914edb3ded43bac192fe5",
+          "details": "920483122bec69ed79d1cf5958521c08cd853757c82eab673f15ce877465fb15",
+          "appearance": "26b68cf94b70a5c8a5680aa9fe3b6448e397f8c0325b316f29fe7a2b4c5efa71"
+        }
+      },
+      {
+        "source": 85128,
+        "category": 19,
+        "local": 225,
+        "level": 0,
+        "phase": "equipped",
+        "icon": "icon/item/085124.tga",
+        "model": "Metin2Sash/item/wing/085124.gr2",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.equipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.equipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.equipped.appearance.hex",
+        "hashes": {
+          "inventory": "9128e0cb182e70d1fb7c3daa8c6efe92907f175a28fadd8fdaf26c9ca0d39e40",
+          "details": "920483122bec69ed79d1cf5958521c08cd853757c82eab673f15ce877465fb15",
+          "appearance": "8603c1fe9ef7b89386d1d0961966e63a04446425053a48edb7484f1ab7da7856"
+        }
+      },
+      {
+        "source": 85128,
+        "category": 19,
+        "local": 225,
+        "level": 0,
+        "phase": "relogged",
+        "icon": "icon/item/085124.tga",
+        "model": "Metin2Sash/item/wing/085124.gr2",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.relogged.appearance.hex",
+        "hashes": {
+          "inventory": "9128e0cb182e70d1fb7c3daa8c6efe92907f175a28fadd8fdaf26c9ca0d39e40",
+          "details": "920483122bec69ed79d1cf5958521c08cd853757c82eab673f15ce877465fb15",
+          "appearance": "8603c1fe9ef7b89386d1d0961966e63a04446425053a48edb7484f1ab7da7856"
+        }
+      },
+      {
+        "source": 85128,
+        "category": 19,
+        "local": 225,
+        "level": 0,
+        "phase": "unequipped",
+        "icon": "icon/item/085124.tga",
+        "model": "Metin2Sash/item/wing/085124.gr2",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.unequipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.unequipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "3035bc875a0a520b65413aca953423ef06e006116a3914edb3ded43bac192fe5",
+          "details": "920483122bec69ed79d1cf5958521c08cd853757c82eab673f15ce877465fb15",
+          "appearance": "f415ae2fb932b5e8032b09ed1d6c72aa20bdd8682cc38e585800787e2d53dc77"
+        }
+      },
+      {
+        "source": 85128,
+        "category": 19,
+        "local": 225,
+        "level": 0,
+        "phase": "rerolled",
+        "icon": "icon/item/085124.tga",
+        "model": "Metin2Sash/item/wing/085124.gr2",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.rerolled.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.rerolled.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.rerolled.appearance.hex",
+        "hashes": {
+          "inventory": "fbf512ad4643c415dfb7bd569450286728b1ca04cb74a5a8f5af3b07436bf21f",
+          "details": "920483122bec69ed79d1cf5958521c08cd853757c82eab673f15ce877465fb15",
+          "appearance": "fb51ae7cd7eba35383c0d3d7103b482580c868152059a09e145de5e827ca8437"
+        }
+      },
+      {
+        "source": 85128,
+        "category": 19,
+        "local": 225,
+        "level": 0,
+        "phase": "permanent_swap",
+        "icon": "icon/item/085124.tga",
+        "model": "Metin2Sash/item/wing/085124.gr2",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.permanent_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.permanent_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.permanent_swap.appearance.hex",
+        "hashes": {
+          "inventory": "6f5aee11105e4a5896e25492f4f984fcc77f431b474a6e37f292bdba1dfccea6",
+          "details": "920483122bec69ed79d1cf5958521c08cd853757c82eab673f15ce877465fb15",
+          "appearance": "15232d50957cf1f86555672d47157c27ef43e7890c732ccf437570ed8a6a5117"
+        }
+      },
+      {
+        "source": 85128,
+        "category": 19,
+        "local": 225,
+        "level": 0,
+        "phase": "timed_swap",
+        "icon": "icon/item/085124.tga",
+        "model": "Metin2Sash/item/wing/085124.gr2",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.timed_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.timed_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.timed_swap.appearance.hex",
+        "hashes": {
+          "inventory": "65270861d34e332b5529672968ea42153617858f4e3948cfd0094e426ef63175",
+          "details": "920483122bec69ed79d1cf5958521c08cd853757c82eab673f15ce877465fb15",
+          "appearance": "bf9ecd07ee95575efaec804d6b1edbc6414b4d3064c84e9faa8f750622809893"
+        }
+      },
+      {
+        "source": 85128,
+        "category": 19,
+        "local": 225,
+        "level": 0,
+        "phase": "expired",
+        "icon": "icon/item/085124.tga",
+        "model": "Metin2Sash/item/wing/085124.gr2",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.expired.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.expired.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.expired.appearance.hex",
+        "hashes": {
+          "inventory": "216b1d1b47f8abccd16e9fcc9b1399bbf16a4bb178dd00fcf63628d2a35ddc1a",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "f0df86137987aff6f813f255bbeb073aa24707053763fbcfd2fce57b7f838944"
+        }
+      },
+      {
+        "source": 85128,
+        "category": 19,
+        "local": 225,
+        "level": 0,
+        "phase": "expired_relogged",
+        "icon": "icon/item/085124.tga",
+        "model": "Metin2Sash/item/wing/085124.gr2",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.expired_relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.expired_relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.expired_relogged.appearance.hex",
+        "hashes": {
+          "inventory": "216b1d1b47f8abccd16e9fcc9b1399bbf16a4bb178dd00fcf63628d2a35ddc1a",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "f0df86137987aff6f813f255bbeb073aa24707053763fbcfd2fce57b7f838944"
+        }
+      },
+      {
+        "source": 85128,
+        "category": 19,
+        "local": 225,
+        "level": 0,
+        "phase": "bag_expiry_ready",
+        "icon": "icon/item/085124.tga",
+        "model": "Metin2Sash/item/wing/085124.gr2",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.bag_expiry_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.bag_expiry_ready.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.bag_expiry_ready.appearance.hex",
+        "hashes": {
+          "inventory": "6f065d72b5e0b02a739fdf3a06b864d2064944d8a92da2e31e968e7553e5e491",
+          "details": "920483122bec69ed79d1cf5958521c08cd853757c82eab673f15ce877465fb15",
+          "appearance": "cc6dc2bc2ae925969316e5315225179dd2b7873cb3aef8d263f539f9cd6fa7fa"
+        }
+      },
+      {
+        "source": 85128,
+        "category": 19,
+        "local": 225,
+        "level": 0,
+        "phase": "bag_expired",
+        "icon": "icon/item/085124.tga",
+        "model": "Metin2Sash/item/wing/085124.gr2",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.bag_expired.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.bag_expired.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.8.bag_expired.appearance.hex",
+        "hashes": {
+          "inventory": "216b1d1b47f8abccd16e9fcc9b1399bbf16a4bb178dd00fcf63628d2a35ddc1a",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "2ef47c223027da685e169493226baceead15aa7673265a32f67a63cdad1d5f7e"
+        }
+      },
+      {
+        "source": 85136,
+        "category": 19,
+        "local": 226,
+        "level": 0,
+        "phase": "bag",
+        "icon": "icon/item/085132.tga",
+        "model": "Metin2SashEffect/effect/stola/ridack_yellowsash",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.bag.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.bag.appearance.hex",
+        "hashes": {
+          "inventory": "9890a85ea7e9c608678d907cae41a736d75a5d601189714c797e0306713a7c31",
+          "details": "43f02031d052b615015ba3a4d0b0f2f4bf5dc35092a5fe78c87d8b2b9b36737a",
+          "appearance": "26b68cf94b70a5c8a5680aa9fe3b6448e397f8c0325b316f29fe7a2b4c5efa71"
+        }
+      },
+      {
+        "source": 85136,
+        "category": 19,
+        "local": 226,
+        "level": 0,
+        "phase": "equipped",
+        "icon": "icon/item/085132.tga",
+        "model": "Metin2SashEffect/effect/stola/ridack_yellowsash",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.equipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.equipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.equipped.appearance.hex",
+        "hashes": {
+          "inventory": "4cc7489418527a1f5890d4b2f66754097b90b11b98d92751dd7414a5b8612af5",
+          "details": "43f02031d052b615015ba3a4d0b0f2f4bf5dc35092a5fe78c87d8b2b9b36737a",
+          "appearance": "ca1175f0cbba58ee67dac06e8916dbcf4587558b7dc8ba3162fba2ec504224ee"
+        }
+      },
+      {
+        "source": 85136,
+        "category": 19,
+        "local": 226,
+        "level": 0,
+        "phase": "relogged",
+        "icon": "icon/item/085132.tga",
+        "model": "Metin2SashEffect/effect/stola/ridack_yellowsash",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.relogged.appearance.hex",
+        "hashes": {
+          "inventory": "4cc7489418527a1f5890d4b2f66754097b90b11b98d92751dd7414a5b8612af5",
+          "details": "43f02031d052b615015ba3a4d0b0f2f4bf5dc35092a5fe78c87d8b2b9b36737a",
+          "appearance": "ca1175f0cbba58ee67dac06e8916dbcf4587558b7dc8ba3162fba2ec504224ee"
+        }
+      },
+      {
+        "source": 85136,
+        "category": 19,
+        "local": 226,
+        "level": 0,
+        "phase": "unequipped",
+        "icon": "icon/item/085132.tga",
+        "model": "Metin2SashEffect/effect/stola/ridack_yellowsash",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.unequipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.unequipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "9890a85ea7e9c608678d907cae41a736d75a5d601189714c797e0306713a7c31",
+          "details": "43f02031d052b615015ba3a4d0b0f2f4bf5dc35092a5fe78c87d8b2b9b36737a",
+          "appearance": "f415ae2fb932b5e8032b09ed1d6c72aa20bdd8682cc38e585800787e2d53dc77"
+        }
+      },
+      {
+        "source": 85136,
+        "category": 19,
+        "local": 226,
+        "level": 0,
+        "phase": "rerolled",
+        "icon": "icon/item/085132.tga",
+        "model": "Metin2SashEffect/effect/stola/ridack_yellowsash",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.rerolled.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.rerolled.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.rerolled.appearance.hex",
+        "hashes": {
+          "inventory": "90a5f12357b4af5a150babf97ac7ccd941ca9cd15148ecb29a0014d0dc8f2515",
+          "details": "43f02031d052b615015ba3a4d0b0f2f4bf5dc35092a5fe78c87d8b2b9b36737a",
+          "appearance": "fb51ae7cd7eba35383c0d3d7103b482580c868152059a09e145de5e827ca8437"
+        }
+      },
+      {
+        "source": 85136,
+        "category": 19,
+        "local": 226,
+        "level": 0,
+        "phase": "permanent_swap",
+        "icon": "icon/item/085132.tga",
+        "model": "Metin2SashEffect/effect/stola/ridack_yellowsash",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.permanent_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.permanent_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.permanent_swap.appearance.hex",
+        "hashes": {
+          "inventory": "09596986d23c2ae078719158cac24be10b76d8d0343f212352109148b057968e",
+          "details": "43f02031d052b615015ba3a4d0b0f2f4bf5dc35092a5fe78c87d8b2b9b36737a",
+          "appearance": "15232d50957cf1f86555672d47157c27ef43e7890c732ccf437570ed8a6a5117"
+        }
+      },
+      {
+        "source": 85136,
+        "category": 19,
+        "local": 226,
+        "level": 0,
+        "phase": "timed_swap",
+        "icon": "icon/item/085132.tga",
+        "model": "Metin2SashEffect/effect/stola/ridack_yellowsash",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.timed_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.timed_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.timed_swap.appearance.hex",
+        "hashes": {
+          "inventory": "8be6b17a23501ef3a78c0ddc3e22698c6fe1370695bd8a637850a79fa7f5fa00",
+          "details": "43f02031d052b615015ba3a4d0b0f2f4bf5dc35092a5fe78c87d8b2b9b36737a",
+          "appearance": "9e49cb0a2dcfc6a4ae7d3fc039c6634ae0efcd6a38a79a7db94f5d1b444275d4"
+        }
+      },
+      {
+        "source": 85136,
+        "category": 19,
+        "local": 226,
+        "level": 0,
+        "phase": "expired",
+        "icon": "icon/item/085132.tga",
+        "model": "Metin2SashEffect/effect/stola/ridack_yellowsash",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.expired.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.expired.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.expired.appearance.hex",
+        "hashes": {
+          "inventory": "b934391f68b172d0d1d754b95ecdd6fbc51d40ca2162aa1ff9f06c4175c246d9",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "f0df86137987aff6f813f255bbeb073aa24707053763fbcfd2fce57b7f838944"
+        }
+      },
+      {
+        "source": 85136,
+        "category": 19,
+        "local": 226,
+        "level": 0,
+        "phase": "expired_relogged",
+        "icon": "icon/item/085132.tga",
+        "model": "Metin2SashEffect/effect/stola/ridack_yellowsash",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.expired_relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.expired_relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.expired_relogged.appearance.hex",
+        "hashes": {
+          "inventory": "b934391f68b172d0d1d754b95ecdd6fbc51d40ca2162aa1ff9f06c4175c246d9",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "f0df86137987aff6f813f255bbeb073aa24707053763fbcfd2fce57b7f838944"
+        }
+      },
+      {
+        "source": 85136,
+        "category": 19,
+        "local": 226,
+        "level": 0,
+        "phase": "bag_expiry_ready",
+        "icon": "icon/item/085132.tga",
+        "model": "Metin2SashEffect/effect/stola/ridack_yellowsash",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.bag_expiry_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.bag_expiry_ready.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.bag_expiry_ready.appearance.hex",
+        "hashes": {
+          "inventory": "1bf25547352f7eabd0029b85c4a9cb0c2816fcdb29437900289340c9f5d69aad",
+          "details": "43f02031d052b615015ba3a4d0b0f2f4bf5dc35092a5fe78c87d8b2b9b36737a",
+          "appearance": "cc6dc2bc2ae925969316e5315225179dd2b7873cb3aef8d263f539f9cd6fa7fa"
+        }
+      },
+      {
+        "source": 85136,
+        "category": 19,
+        "local": 226,
+        "level": 0,
+        "phase": "bag_expired",
+        "icon": "icon/item/085132.tga",
+        "model": "Metin2SashEffect/effect/stola/ridack_yellowsash",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.bag_expired.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.bag_expired.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.9.bag_expired.appearance.hex",
+        "hashes": {
+          "inventory": "b934391f68b172d0d1d754b95ecdd6fbc51d40ca2162aa1ff9f06c4175c246d9",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "2ef47c223027da685e169493226baceead15aa7673265a32f67a63cdad1d5f7e"
+        }
+      },
+      {
+        "source": 85140,
+        "category": 19,
+        "local": 227,
+        "level": 0,
+        "phase": "bag",
+        "icon": "icon/item/085140.tga",
+        "model": "Metin2SashEffect/effect/plechito/wings/1/wing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.10.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.10.bag.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.10.bag.appearance.hex",
+        "hashes": {
+          "inventory": "9e79df7acd729311b435008e1d9edebf9bab41b6f5088ab05452d7e40a584438",
+          "details": "20f945a33fc28f5c7e1b6157cfe1924da1fc6987ac8ca4eadd63764b37941694",
+          "appearance": "26b68cf94b70a5c8a5680aa9fe3b6448e397f8c0325b316f29fe7a2b4c5efa71"
+        }
+      },
+      {
+        "source": 85140,
+        "category": 19,
+        "local": 227,
+        "level": 0,
+        "phase": "equipped",
+        "icon": "icon/item/085140.tga",
+        "model": "Metin2SashEffect/effect/plechito/wings/1/wing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.10.equipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.10.equipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.10.equipped.appearance.hex",
+        "hashes": {
+          "inventory": "348b79451103c33afff2df05183ba3edb638ca1749f0ba8a1b70d4f8fc56ed75",
+          "details": "20f945a33fc28f5c7e1b6157cfe1924da1fc6987ac8ca4eadd63764b37941694",
+          "appearance": "7ac2539d98e6fdfcda060c88cfa49e68961f8fb487a5a30bb6c4aa59b77a9686"
+        }
+      },
+      {
+        "source": 85140,
+        "category": 19,
+        "local": 227,
+        "level": 0,
+        "phase": "relogged",
+        "icon": "icon/item/085140.tga",
+        "model": "Metin2SashEffect/effect/plechito/wings/1/wing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.10.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.10.relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.10.relogged.appearance.hex",
+        "hashes": {
+          "inventory": "348b79451103c33afff2df05183ba3edb638ca1749f0ba8a1b70d4f8fc56ed75",
+          "details": "20f945a33fc28f5c7e1b6157cfe1924da1fc6987ac8ca4eadd63764b37941694",
+          "appearance": "7ac2539d98e6fdfcda060c88cfa49e68961f8fb487a5a30bb6c4aa59b77a9686"
+        }
+      },
+      {
+        "source": 85140,
+        "category": 19,
+        "local": 227,
+        "level": 0,
+        "phase": "unequipped",
+        "icon": "icon/item/085140.tga",
+        "model": "Metin2SashEffect/effect/plechito/wings/1/wing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.10.unequipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.10.unequipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.10.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "9e79df7acd729311b435008e1d9edebf9bab41b6f5088ab05452d7e40a584438",
+          "details": "20f945a33fc28f5c7e1b6157cfe1924da1fc6987ac8ca4eadd63764b37941694",
+          "appearance": "f415ae2fb932b5e8032b09ed1d6c72aa20bdd8682cc38e585800787e2d53dc77"
+        }
+      },
+      {
+        "source": 85140,
+        "category": 19,
+        "local": 227,
+        "level": 0,
+        "phase": "rerolled",
+        "icon": "icon/item/085140.tga",
+        "model": "Metin2SashEffect/effect/plechito/wings/1/wing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.10.rerolled.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.10.rerolled.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.10.rerolled.appearance.hex",
+        "hashes": {
+          "inventory": "fe9b70c27c4429f1701d12e947f3ee7c6cf93a84167f8a4b0785b7b90e57af3f",
+          "details": "20f945a33fc28f5c7e1b6157cfe1924da1fc6987ac8ca4eadd63764b37941694",
+          "appearance": "fb51ae7cd7eba35383c0d3d7103b482580c868152059a09e145de5e827ca8437"
+        }
+      },
+      {
+        "source": 85140,
+        "category": 19,
+        "local": 227,
+        "level": 0,
+        "phase": "permanent_swap",
+        "icon": "icon/item/085140.tga",
+        "model": "Metin2SashEffect/effect/plechito/wings/1/wing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.10.permanent_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.10.permanent_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.10.permanent_swap.appearance.hex",
+        "hashes": {
+          "inventory": "51695fee2a43dcb04f855727b7531af3e85a5601810fcf80bceedba8375a9fa0",
+          "details": "20f945a33fc28f5c7e1b6157cfe1924da1fc6987ac8ca4eadd63764b37941694",
+          "appearance": "15232d50957cf1f86555672d47157c27ef43e7890c732ccf437570ed8a6a5117"
+        }
+      },
+      {
+        "source": 85140,
+        "category": 19,
+        "local": 227,
+        "level": 0,
+        "phase": "timed_swap",
+        "icon": "icon/item/085140.tga",
+        "model": "Metin2SashEffect/effect/plechito/wings/1/wing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.10.timed_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.10.timed_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.10.timed_swap.appearance.hex",
+        "hashes": {
+          "inventory": "98f66cb184f32bbe8948c26b2cbac093b3349669b09e617c0f56a8e2cdb9e64b",
+          "details": "20f945a33fc28f5c7e1b6157cfe1924da1fc6987ac8ca4eadd63764b37941694",
+          "appearance": "2ee4c7d6699a9e637b8f06927af6286e9c73e77455244d0683430a27da47dcc8"
+        }
+      },
+      {
+        "source": 85144,
+        "category": 19,
+        "local": 228,
+        "level": 0,
+        "phase": "bag",
+        "icon": "icon/item/085140.tga",
+        "model": "Metin2SashEffect/effect/plechito/wings/1/wing",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.bag.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.bag.appearance.hex",
+        "hashes": {
+          "inventory": "e53e98db79fb9129422564d52e1bab9f6db55c2125513ccd0dc29f2336c5d359",
+          "details": "43779badee929e610dc121e2455f5a34f795f8e02391998a52b38d61ff778d94",
+          "appearance": "26b68cf94b70a5c8a5680aa9fe3b6448e397f8c0325b316f29fe7a2b4c5efa71"
+        }
+      },
+      {
+        "source": 85144,
+        "category": 19,
+        "local": 228,
+        "level": 0,
+        "phase": "equipped",
+        "icon": "icon/item/085140.tga",
+        "model": "Metin2SashEffect/effect/plechito/wings/1/wing",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.equipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.equipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.equipped.appearance.hex",
+        "hashes": {
+          "inventory": "6f229706c97cafe60ff26cb10251e35823bf77238118a963caa259e568f9a04e",
+          "details": "43779badee929e610dc121e2455f5a34f795f8e02391998a52b38d61ff778d94",
+          "appearance": "7ac2539d98e6fdfcda060c88cfa49e68961f8fb487a5a30bb6c4aa59b77a9686"
+        }
+      },
+      {
+        "source": 85144,
+        "category": 19,
+        "local": 228,
+        "level": 0,
+        "phase": "relogged",
+        "icon": "icon/item/085140.tga",
+        "model": "Metin2SashEffect/effect/plechito/wings/1/wing",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.relogged.appearance.hex",
+        "hashes": {
+          "inventory": "6f229706c97cafe60ff26cb10251e35823bf77238118a963caa259e568f9a04e",
+          "details": "43779badee929e610dc121e2455f5a34f795f8e02391998a52b38d61ff778d94",
+          "appearance": "7ac2539d98e6fdfcda060c88cfa49e68961f8fb487a5a30bb6c4aa59b77a9686"
+        }
+      },
+      {
+        "source": 85144,
+        "category": 19,
+        "local": 228,
+        "level": 0,
+        "phase": "unequipped",
+        "icon": "icon/item/085140.tga",
+        "model": "Metin2SashEffect/effect/plechito/wings/1/wing",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.unequipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.unequipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "e53e98db79fb9129422564d52e1bab9f6db55c2125513ccd0dc29f2336c5d359",
+          "details": "43779badee929e610dc121e2455f5a34f795f8e02391998a52b38d61ff778d94",
+          "appearance": "f415ae2fb932b5e8032b09ed1d6c72aa20bdd8682cc38e585800787e2d53dc77"
+        }
+      },
+      {
+        "source": 85144,
+        "category": 19,
+        "local": 228,
+        "level": 0,
+        "phase": "rerolled",
+        "icon": "icon/item/085140.tga",
+        "model": "Metin2SashEffect/effect/plechito/wings/1/wing",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.rerolled.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.rerolled.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.rerolled.appearance.hex",
+        "hashes": {
+          "inventory": "5778d14886b0df00b6e2aa34f6bf9215bd67c844891a2fcc3f4fad80d38cfa51",
+          "details": "43779badee929e610dc121e2455f5a34f795f8e02391998a52b38d61ff778d94",
+          "appearance": "fb51ae7cd7eba35383c0d3d7103b482580c868152059a09e145de5e827ca8437"
+        }
+      },
+      {
+        "source": 85144,
+        "category": 19,
+        "local": 228,
+        "level": 0,
+        "phase": "permanent_swap",
+        "icon": "icon/item/085140.tga",
+        "model": "Metin2SashEffect/effect/plechito/wings/1/wing",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.permanent_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.permanent_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.permanent_swap.appearance.hex",
+        "hashes": {
+          "inventory": "8fafa1e897234f2a5330aaf37d4abfe7cfa60e6804df8d35ce5036f6cd17e7d4",
+          "details": "43779badee929e610dc121e2455f5a34f795f8e02391998a52b38d61ff778d94",
+          "appearance": "15232d50957cf1f86555672d47157c27ef43e7890c732ccf437570ed8a6a5117"
+        }
+      },
+      {
+        "source": 85144,
+        "category": 19,
+        "local": 228,
+        "level": 0,
+        "phase": "timed_swap",
+        "icon": "icon/item/085140.tga",
+        "model": "Metin2SashEffect/effect/plechito/wings/1/wing",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.timed_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.timed_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.timed_swap.appearance.hex",
+        "hashes": {
+          "inventory": "0e1b0fb86a0387ad38a78db7b36dfb97587f8266352625532ee070a97c113f89",
+          "details": "43779badee929e610dc121e2455f5a34f795f8e02391998a52b38d61ff778d94",
+          "appearance": "2ee4c7d6699a9e637b8f06927af6286e9c73e77455244d0683430a27da47dcc8"
+        }
+      },
+      {
+        "source": 85144,
+        "category": 19,
+        "local": 228,
+        "level": 0,
+        "phase": "expired",
+        "icon": "icon/item/085140.tga",
+        "model": "Metin2SashEffect/effect/plechito/wings/1/wing",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.expired.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.expired.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.expired.appearance.hex",
+        "hashes": {
+          "inventory": "3407912931f06a31c551614c766c09e319ff53885ba5f91dfaa5fa7c4930d884",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "f0df86137987aff6f813f255bbeb073aa24707053763fbcfd2fce57b7f838944"
+        }
+      },
+      {
+        "source": 85144,
+        "category": 19,
+        "local": 228,
+        "level": 0,
+        "phase": "expired_relogged",
+        "icon": "icon/item/085140.tga",
+        "model": "Metin2SashEffect/effect/plechito/wings/1/wing",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.expired_relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.expired_relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.expired_relogged.appearance.hex",
+        "hashes": {
+          "inventory": "3407912931f06a31c551614c766c09e319ff53885ba5f91dfaa5fa7c4930d884",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "f0df86137987aff6f813f255bbeb073aa24707053763fbcfd2fce57b7f838944"
+        }
+      },
+      {
+        "source": 85144,
+        "category": 19,
+        "local": 228,
+        "level": 0,
+        "phase": "bag_expiry_ready",
+        "icon": "icon/item/085140.tga",
+        "model": "Metin2SashEffect/effect/plechito/wings/1/wing",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.bag_expiry_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.bag_expiry_ready.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.bag_expiry_ready.appearance.hex",
+        "hashes": {
+          "inventory": "5ccb6f89bbfe584bbfdbd9be5643a07420eea45ada80a2c5f3bd7ae0b52480ae",
+          "details": "43779badee929e610dc121e2455f5a34f795f8e02391998a52b38d61ff778d94",
+          "appearance": "cc6dc2bc2ae925969316e5315225179dd2b7873cb3aef8d263f539f9cd6fa7fa"
+        }
+      },
+      {
+        "source": 85144,
+        "category": 19,
+        "local": 228,
+        "level": 0,
+        "phase": "bag_expired",
+        "icon": "icon/item/085140.tga",
+        "model": "Metin2SashEffect/effect/plechito/wings/1/wing",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.bag_expired.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.bag_expired.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.11.bag_expired.appearance.hex",
+        "hashes": {
+          "inventory": "3407912931f06a31c551614c766c09e319ff53885ba5f91dfaa5fa7c4930d884",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "2ef47c223027da685e169493226baceead15aa7673265a32f67a63cdad1d5f7e"
+        }
+      },
+      {
+        "source": 85148,
+        "category": 19,
+        "local": 229,
+        "level": 0,
+        "phase": "bag",
+        "icon": "icon/item/085148.tga",
+        "model": "Metin2SashEffect/effect/wings/1/wing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.12.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.12.bag.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.12.bag.appearance.hex",
+        "hashes": {
+          "inventory": "2dacf38c3ce82768473c72463139e298d05fc195cdb8bf6ad4e6144166c78a6f",
+          "details": "dce7febe1021aa31273c4a17b2f0404957cf97eb6a086e51823c64a2077d0f18",
+          "appearance": "26b68cf94b70a5c8a5680aa9fe3b6448e397f8c0325b316f29fe7a2b4c5efa71"
+        }
+      },
+      {
+        "source": 85148,
+        "category": 19,
+        "local": 229,
+        "level": 0,
+        "phase": "equipped",
+        "icon": "icon/item/085148.tga",
+        "model": "Metin2SashEffect/effect/wings/1/wing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.12.equipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.12.equipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.12.equipped.appearance.hex",
+        "hashes": {
+          "inventory": "d86f620b6508177b71c65e16a36254638cf0552b1c944214f6272cbda43efd5b",
+          "details": "dce7febe1021aa31273c4a17b2f0404957cf97eb6a086e51823c64a2077d0f18",
+          "appearance": "2950841dd633e4f3a164ead8a91602650b6017b9e5116cb40257a5e57d8e1829"
+        }
+      },
+      {
+        "source": 85148,
+        "category": 19,
+        "local": 229,
+        "level": 0,
+        "phase": "relogged",
+        "icon": "icon/item/085148.tga",
+        "model": "Metin2SashEffect/effect/wings/1/wing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.12.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.12.relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.12.relogged.appearance.hex",
+        "hashes": {
+          "inventory": "d86f620b6508177b71c65e16a36254638cf0552b1c944214f6272cbda43efd5b",
+          "details": "dce7febe1021aa31273c4a17b2f0404957cf97eb6a086e51823c64a2077d0f18",
+          "appearance": "2950841dd633e4f3a164ead8a91602650b6017b9e5116cb40257a5e57d8e1829"
+        }
+      },
+      {
+        "source": 85148,
+        "category": 19,
+        "local": 229,
+        "level": 0,
+        "phase": "unequipped",
+        "icon": "icon/item/085148.tga",
+        "model": "Metin2SashEffect/effect/wings/1/wing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.12.unequipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.12.unequipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.12.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "2dacf38c3ce82768473c72463139e298d05fc195cdb8bf6ad4e6144166c78a6f",
+          "details": "dce7febe1021aa31273c4a17b2f0404957cf97eb6a086e51823c64a2077d0f18",
+          "appearance": "f415ae2fb932b5e8032b09ed1d6c72aa20bdd8682cc38e585800787e2d53dc77"
+        }
+      },
+      {
+        "source": 85148,
+        "category": 19,
+        "local": 229,
+        "level": 0,
+        "phase": "rerolled",
+        "icon": "icon/item/085148.tga",
+        "model": "Metin2SashEffect/effect/wings/1/wing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.12.rerolled.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.12.rerolled.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.12.rerolled.appearance.hex",
+        "hashes": {
+          "inventory": "78f2180c138f1c3607aae6e930a1e9dcae2025814158c77f3a0e8cff0a6518bb",
+          "details": "dce7febe1021aa31273c4a17b2f0404957cf97eb6a086e51823c64a2077d0f18",
+          "appearance": "fb51ae7cd7eba35383c0d3d7103b482580c868152059a09e145de5e827ca8437"
+        }
+      },
+      {
+        "source": 85148,
+        "category": 19,
+        "local": 229,
+        "level": 0,
+        "phase": "permanent_swap",
+        "icon": "icon/item/085148.tga",
+        "model": "Metin2SashEffect/effect/wings/1/wing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.12.permanent_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.12.permanent_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.12.permanent_swap.appearance.hex",
+        "hashes": {
+          "inventory": "a6ca284c640b8fe44f410afee10554e28bee560e9b4a56a0794914de2cf0c9ac",
+          "details": "dce7febe1021aa31273c4a17b2f0404957cf97eb6a086e51823c64a2077d0f18",
+          "appearance": "15232d50957cf1f86555672d47157c27ef43e7890c732ccf437570ed8a6a5117"
+        }
+      },
+      {
+        "source": 85148,
+        "category": 19,
+        "local": 229,
+        "level": 0,
+        "phase": "timed_swap",
+        "icon": "icon/item/085148.tga",
+        "model": "Metin2SashEffect/effect/wings/1/wing",
+        "clock": 1,
+        "duration": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.12.timed_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.12.timed_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.12.timed_swap.appearance.hex",
+        "hashes": {
+          "inventory": "d48493be30be3de815f3d365870ebdea742ccd772a8b5b5a9780137fa30da770",
+          "details": "dce7febe1021aa31273c4a17b2f0404957cf97eb6a086e51823c64a2077d0f18",
+          "appearance": "191d01a224a0337cc163130b6e042f82070293651f38a9a8ee335c43c8d5bde7"
+        }
+      },
+      {
+        "source": 85152,
+        "category": 19,
+        "local": 230,
+        "level": 0,
+        "phase": "bag",
+        "icon": "icon/item/085148.tga",
+        "model": "Metin2SashEffect/effect/wings/1/wing",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.bag.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.bag.appearance.hex",
+        "hashes": {
+          "inventory": "50b0383168d214a2607a728a845ea8b2058569f0cd2294327ecb3acdfd6e0e1d",
+          "details": "8e206e8347b1539a428b90561ac8b66f222f528472c55ac455b8ee384de6b03c",
+          "appearance": "26b68cf94b70a5c8a5680aa9fe3b6448e397f8c0325b316f29fe7a2b4c5efa71"
+        }
+      },
+      {
+        "source": 85152,
+        "category": 19,
+        "local": 230,
+        "level": 0,
+        "phase": "equipped",
+        "icon": "icon/item/085148.tga",
+        "model": "Metin2SashEffect/effect/wings/1/wing",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.equipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.equipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.equipped.appearance.hex",
+        "hashes": {
+          "inventory": "465b4bb8565e2cd66129d745d9512fe7feafdfc9884c56eff8c6786661870b69",
+          "details": "8e206e8347b1539a428b90561ac8b66f222f528472c55ac455b8ee384de6b03c",
+          "appearance": "2950841dd633e4f3a164ead8a91602650b6017b9e5116cb40257a5e57d8e1829"
+        }
+      },
+      {
+        "source": 85152,
+        "category": 19,
+        "local": 230,
+        "level": 0,
+        "phase": "relogged",
+        "icon": "icon/item/085148.tga",
+        "model": "Metin2SashEffect/effect/wings/1/wing",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.relogged.appearance.hex",
+        "hashes": {
+          "inventory": "465b4bb8565e2cd66129d745d9512fe7feafdfc9884c56eff8c6786661870b69",
+          "details": "8e206e8347b1539a428b90561ac8b66f222f528472c55ac455b8ee384de6b03c",
+          "appearance": "2950841dd633e4f3a164ead8a91602650b6017b9e5116cb40257a5e57d8e1829"
+        }
+      },
+      {
+        "source": 85152,
+        "category": 19,
+        "local": 230,
+        "level": 0,
+        "phase": "unequipped",
+        "icon": "icon/item/085148.tga",
+        "model": "Metin2SashEffect/effect/wings/1/wing",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.unequipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.unequipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "50b0383168d214a2607a728a845ea8b2058569f0cd2294327ecb3acdfd6e0e1d",
+          "details": "8e206e8347b1539a428b90561ac8b66f222f528472c55ac455b8ee384de6b03c",
+          "appearance": "f415ae2fb932b5e8032b09ed1d6c72aa20bdd8682cc38e585800787e2d53dc77"
+        }
+      },
+      {
+        "source": 85152,
+        "category": 19,
+        "local": 230,
+        "level": 0,
+        "phase": "rerolled",
+        "icon": "icon/item/085148.tga",
+        "model": "Metin2SashEffect/effect/wings/1/wing",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.rerolled.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.rerolled.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.rerolled.appearance.hex",
+        "hashes": {
+          "inventory": "856450d220720c8ad050a6495e4bf073f5a868166d96fdaab8bf70b60fc5544a",
+          "details": "8e206e8347b1539a428b90561ac8b66f222f528472c55ac455b8ee384de6b03c",
+          "appearance": "fb51ae7cd7eba35383c0d3d7103b482580c868152059a09e145de5e827ca8437"
+        }
+      },
+      {
+        "source": 85152,
+        "category": 19,
+        "local": 230,
+        "level": 0,
+        "phase": "permanent_swap",
+        "icon": "icon/item/085148.tga",
+        "model": "Metin2SashEffect/effect/wings/1/wing",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.permanent_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.permanent_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.permanent_swap.appearance.hex",
+        "hashes": {
+          "inventory": "a772ab6fb009b75013a1773f54b117b5499bc47903c831b5b66d37a2330d3c95",
+          "details": "8e206e8347b1539a428b90561ac8b66f222f528472c55ac455b8ee384de6b03c",
+          "appearance": "15232d50957cf1f86555672d47157c27ef43e7890c732ccf437570ed8a6a5117"
+        }
+      },
+      {
+        "source": 85152,
+        "category": 19,
+        "local": 230,
+        "level": 0,
+        "phase": "timed_swap",
+        "icon": "icon/item/085148.tga",
+        "model": "Metin2SashEffect/effect/wings/1/wing",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.timed_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.timed_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.timed_swap.appearance.hex",
+        "hashes": {
+          "inventory": "e5159fa55cc0cc56a79ebcf713ea4c1d54b072b5ca70421112f21820ab6282eb",
+          "details": "8e206e8347b1539a428b90561ac8b66f222f528472c55ac455b8ee384de6b03c",
+          "appearance": "191d01a224a0337cc163130b6e042f82070293651f38a9a8ee335c43c8d5bde7"
+        }
+      },
+      {
+        "source": 85152,
+        "category": 19,
+        "local": 230,
+        "level": 0,
+        "phase": "expired",
+        "icon": "icon/item/085148.tga",
+        "model": "Metin2SashEffect/effect/wings/1/wing",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.expired.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.expired.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.expired.appearance.hex",
+        "hashes": {
+          "inventory": "1c704caa2644fe8f5b52062e15d1804b513adb6aa0f10efae33c8174bcda5dfc",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "f0df86137987aff6f813f255bbeb073aa24707053763fbcfd2fce57b7f838944"
+        }
+      },
+      {
+        "source": 85152,
+        "category": 19,
+        "local": 230,
+        "level": 0,
+        "phase": "expired_relogged",
+        "icon": "icon/item/085148.tga",
+        "model": "Metin2SashEffect/effect/wings/1/wing",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.expired_relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.expired_relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.expired_relogged.appearance.hex",
+        "hashes": {
+          "inventory": "1c704caa2644fe8f5b52062e15d1804b513adb6aa0f10efae33c8174bcda5dfc",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "f0df86137987aff6f813f255bbeb073aa24707053763fbcfd2fce57b7f838944"
+        }
+      },
+      {
+        "source": 85152,
+        "category": 19,
+        "local": 230,
+        "level": 0,
+        "phase": "bag_expiry_ready",
+        "icon": "icon/item/085148.tga",
+        "model": "Metin2SashEffect/effect/wings/1/wing",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.bag_expiry_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.bag_expiry_ready.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.bag_expiry_ready.appearance.hex",
+        "hashes": {
+          "inventory": "75a64e9645de0d70cd70759cc98906604ef91d9aef2257c4ba1e421393e68202",
+          "details": "8e206e8347b1539a428b90561ac8b66f222f528472c55ac455b8ee384de6b03c",
+          "appearance": "cc6dc2bc2ae925969316e5315225179dd2b7873cb3aef8d263f539f9cd6fa7fa"
+        }
+      },
+      {
+        "source": 85152,
+        "category": 19,
+        "local": 230,
+        "level": 0,
+        "phase": "bag_expired",
+        "icon": "icon/item/085148.tga",
+        "model": "Metin2SashEffect/effect/wings/1/wing",
+        "clock": 2,
+        "duration": 604800000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.bag_expired.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.bag_expired.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.13.bag_expired.appearance.hex",
+        "hashes": {
+          "inventory": "1c704caa2644fe8f5b52062e15d1804b513adb6aa0f10efae33c8174bcda5dfc",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "2ef47c223027da685e169493226baceead15aa7673265a32f67a63cdad1d5f7e"
+        }
+      },
+      {
+        "source": 85154,
+        "category": 19,
+        "local": 231,
+        "level": 0,
+        "phase": "bag",
+        "icon": "icon/item/valszarny.png",
+        "model": "Metin2Sash/item/wing/me_w/wing_love_2022.gr2",
+        "clock": 2,
+        "duration": 864000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.bag.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.bag.appearance.hex",
+        "hashes": {
+          "inventory": "46ad8d410839cf013383537af7f4a3a0984688ba599a3212c3a61aa438a66e08",
+          "details": "631b3c0fd3b7581cff85b5478041c6fcce66977d1ae0ce96d7126e64f429eab7",
+          "appearance": "26b68cf94b70a5c8a5680aa9fe3b6448e397f8c0325b316f29fe7a2b4c5efa71"
+        }
+      },
+      {
+        "source": 85154,
+        "category": 19,
+        "local": 231,
+        "level": 0,
+        "phase": "equipped",
+        "icon": "icon/item/valszarny.png",
+        "model": "Metin2Sash/item/wing/me_w/wing_love_2022.gr2",
+        "clock": 2,
+        "duration": 864000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.equipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.equipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.equipped.appearance.hex",
+        "hashes": {
+          "inventory": "788194066ebc4c1637030fb26e6d43b609e482320fb1e7b2885bbe7f9ed151b6",
+          "details": "631b3c0fd3b7581cff85b5478041c6fcce66977d1ae0ce96d7126e64f429eab7",
+          "appearance": "9819cff67c67b5e2cbcd565143de0ae98c110108f282d4292795139254022a7c"
+        }
+      },
+      {
+        "source": 85154,
+        "category": 19,
+        "local": 231,
+        "level": 0,
+        "phase": "relogged",
+        "icon": "icon/item/valszarny.png",
+        "model": "Metin2Sash/item/wing/me_w/wing_love_2022.gr2",
+        "clock": 2,
+        "duration": 864000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.relogged.appearance.hex",
+        "hashes": {
+          "inventory": "788194066ebc4c1637030fb26e6d43b609e482320fb1e7b2885bbe7f9ed151b6",
+          "details": "631b3c0fd3b7581cff85b5478041c6fcce66977d1ae0ce96d7126e64f429eab7",
+          "appearance": "9819cff67c67b5e2cbcd565143de0ae98c110108f282d4292795139254022a7c"
+        }
+      },
+      {
+        "source": 85154,
+        "category": 19,
+        "local": 231,
+        "level": 0,
+        "phase": "unequipped",
+        "icon": "icon/item/valszarny.png",
+        "model": "Metin2Sash/item/wing/me_w/wing_love_2022.gr2",
+        "clock": 2,
+        "duration": 864000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.unequipped.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.unequipped.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "46ad8d410839cf013383537af7f4a3a0984688ba599a3212c3a61aa438a66e08",
+          "details": "631b3c0fd3b7581cff85b5478041c6fcce66977d1ae0ce96d7126e64f429eab7",
+          "appearance": "f415ae2fb932b5e8032b09ed1d6c72aa20bdd8682cc38e585800787e2d53dc77"
+        }
+      },
+      {
+        "source": 85154,
+        "category": 19,
+        "local": 231,
+        "level": 0,
+        "phase": "rerolled",
+        "icon": "icon/item/valszarny.png",
+        "model": "Metin2Sash/item/wing/me_w/wing_love_2022.gr2",
+        "clock": 2,
+        "duration": 864000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.rerolled.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.rerolled.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.rerolled.appearance.hex",
+        "hashes": {
+          "inventory": "1591df941169eb3603d26629b826ab9c3c1cb20eed226022e6a07684b5a085bf",
+          "details": "631b3c0fd3b7581cff85b5478041c6fcce66977d1ae0ce96d7126e64f429eab7",
+          "appearance": "fb51ae7cd7eba35383c0d3d7103b482580c868152059a09e145de5e827ca8437"
+        }
+      },
+      {
+        "source": 85154,
+        "category": 19,
+        "local": 231,
+        "level": 0,
+        "phase": "permanent_swap",
+        "icon": "icon/item/valszarny.png",
+        "model": "Metin2Sash/item/wing/me_w/wing_love_2022.gr2",
+        "clock": 2,
+        "duration": 864000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.permanent_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.permanent_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.permanent_swap.appearance.hex",
+        "hashes": {
+          "inventory": "ece6c45f4f617fe03529f1f9371fe9f9bfe02f0a33bb3835bcdeace980b764af",
+          "details": "631b3c0fd3b7581cff85b5478041c6fcce66977d1ae0ce96d7126e64f429eab7",
+          "appearance": "15232d50957cf1f86555672d47157c27ef43e7890c732ccf437570ed8a6a5117"
+        }
+      },
+      {
+        "source": 85154,
+        "category": 19,
+        "local": 231,
+        "level": 0,
+        "phase": "timed_swap",
+        "icon": "icon/item/valszarny.png",
+        "model": "Metin2Sash/item/wing/me_w/wing_love_2022.gr2",
+        "clock": 2,
+        "duration": 864000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.timed_swap.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.timed_swap.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.timed_swap.appearance.hex",
+        "hashes": {
+          "inventory": "d25966fef5fb6ae697f63dfbb30e08a71fd4a13812712ae6fbb39b86eed993c9",
+          "details": "631b3c0fd3b7581cff85b5478041c6fcce66977d1ae0ce96d7126e64f429eab7",
+          "appearance": "aeaa1a312ab81dfbb3b32d5adbb65ca8a7f7c8302db45d0aeb7f3ef258a3263e"
+        }
+      },
+      {
+        "source": 85154,
+        "category": 19,
+        "local": 231,
+        "level": 0,
+        "phase": "expired",
+        "icon": "icon/item/valszarny.png",
+        "model": "Metin2Sash/item/wing/me_w/wing_love_2022.gr2",
+        "clock": 2,
+        "duration": 864000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.expired.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.expired.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.expired.appearance.hex",
+        "hashes": {
+          "inventory": "a440f3a31863eda78dfd35e931b7c33c9cf8a7e3b428dc7c2e0e8153a13a523e",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "f0df86137987aff6f813f255bbeb073aa24707053763fbcfd2fce57b7f838944"
+        }
+      },
+      {
+        "source": 85154,
+        "category": 19,
+        "local": 231,
+        "level": 0,
+        "phase": "expired_relogged",
+        "icon": "icon/item/valszarny.png",
+        "model": "Metin2Sash/item/wing/me_w/wing_love_2022.gr2",
+        "clock": 2,
+        "duration": 864000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.expired_relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.expired_relogged.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.expired_relogged.appearance.hex",
+        "hashes": {
+          "inventory": "a440f3a31863eda78dfd35e931b7c33c9cf8a7e3b428dc7c2e0e8153a13a523e",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "f0df86137987aff6f813f255bbeb073aa24707053763fbcfd2fce57b7f838944"
+        }
+      },
+      {
+        "source": 85154,
+        "category": 19,
+        "local": 231,
+        "level": 0,
+        "phase": "bag_expiry_ready",
+        "icon": "icon/item/valszarny.png",
+        "model": "Metin2Sash/item/wing/me_w/wing_love_2022.gr2",
+        "clock": 2,
+        "duration": 864000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.bag_expiry_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.bag_expiry_ready.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.bag_expiry_ready.appearance.hex",
+        "hashes": {
+          "inventory": "eb2b1047d80e9da0caf2eea9a8526e065da5b4c97ef91f03e1222b770ad24695",
+          "details": "631b3c0fd3b7581cff85b5478041c6fcce66977d1ae0ce96d7126e64f429eab7",
+          "appearance": "cc6dc2bc2ae925969316e5315225179dd2b7873cb3aef8d263f539f9cd6fa7fa"
+        }
+      },
+      {
+        "source": 85154,
+        "category": 19,
+        "local": 231,
+        "level": 0,
+        "phase": "bag_expired",
+        "icon": "icon/item/valszarny.png",
+        "model": "Metin2Sash/item/wing/me_w/wing_love_2022.gr2",
+        "clock": 2,
+        "duration": 864000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.bag_expired.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.bag_expired.details.hex",
+        "appearance": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\stoles-v40-final\\source-stole-runtime.14.bag_expired.appearance.hex",
+        "hashes": {
+          "inventory": "a440f3a31863eda78dfd35e931b7c33c9cf8a7e3b428dc7c2e0e8153a13a523e",
+          "details": "476c0cd28f53cee761940957a0c60c627c4e1a7fd5b5a3daf212c8cf6168e020",
+          "appearance": "2ef47c223027da685e169493226baceead15aa7673265a32f67a63cdad1d5f7e"
+        }
+      }
+    ],
+    "actual_game_item_worker": true,
+    "full_actor_world_test": false,
+    "installed_to_game": false
+  },
+  "stage": {
+    "candidate_sha256": "f7feda757c49aca045114b0904dc583b4ea9f7a9b2289799adafe15483ac8211",
+    "catalog_hash": "1e411ba667a397e5ec3bb1fefade386d009911b2145aaf7f37b0acbf02860516",
+    "installed_to_game": false,
+    "migrations": {
+      "000_protos_database.sql": "44e6b1bbdb9f926649f8a15bba6eb9aff369fe59fad65fb939356d6576fd9826",
+      "001_category_registry.sql": "4da11171651ec5a26c762351f74988f8967d63bc87db982fcb93a8b981d7836c",
+      "002_category_seed.sql": "1eebf2af98e9e1ae54f80b0c8feeedc90ce660e68e194f8a5cc933b956db0ac2",
+      "003_equipment_profiles.sql": "ec826265269310e15b6648cd7aa14239dceee6cbbc62b8f6f4d60d61c088e442",
+      "004_refinement_profiles.sql": "79945357254c52e9ac9ac7999966b2fd5d4120688199027c5261d690573fd947",
+      "005_weapon_armor_catalog.sql": "0ccd92c62cbe9ef9f3ecc5f0340ad185468d26422c080d86507a018f320a0b98",
+      "006_bonus_profiles.sql": "d3454aa044f8b86e071be074a252491a48f7fb3c0596598bd6c62deefe8b6970",
+      "007_bonus_registry_seed.sql": "6d56218006149cb38fb6f0eafbf1f6d50580729d6f7083595f7add0533828e5d",
+      "008_accessory_material_catalog.sql": "8e93b1885e5a5bbd59239737720c023bdd044e93ee67e9d76d49ef5872ad42bd",
+      "009_accessory_socket_profiles.sql": "3a76f6e9c3e713716cad7a8f72efdcb1cee61e5edb0cd1beb47de0a9757aca7c",
+      "010_recovery_consumables.sql": "856eafa864ed52dfb6fd2a0016ec7d95c38c3f04240359c6128f1843f8abc674",
+      "011_catalog_format.sql": "e352b70ca5c92ef0a5235dac47961b41934fc31f910cc11eb017b99eb04b5a4b",
+      "012_containers.sql": "a0cc203aa491ab7145584d510a894603190776266e296e477f496f6f9910bb1c",
+      "013_currency_tokens.sql": "2402bdd4e26fef92eb1d5f68196eca92c3961107048c85cf76b09338ae436712",
+      "014_timed_consumables.sql": "009a9f4119ea503f44f8eba6d4138046012727c0d6634afcb69140fd158458c0",
+      "015_automatic_recovery.sql": "0a0cd5b5dcb0d0d7eb3cb35a84a03cfb65ae97810c4474dc8e99c8b63e79429d",
+      "016_toggle_effects.sql": "eb12412346fd0957da193eee3252bc39747f8c108fe23664a284c842cfa60a09",
+      "017_skill_books.sql": "a624678c3c6f93fabdb9de53476e3578c742347b55c05801e719f1e8c32118f2",
+      "018_refinement_recipes.sql": "e4a57d30f5b8104d9cd4c87b30a3a1b4d6c8c56871895b935fe7370d756a215a",
+      "019_quest_items.sql": "b4c7c320afab3f83f379cddc0b9f5b89e3433c1f6bea700f4e80e56b7f0ec3c3",
+      "020_socket_stones.sql": "5e3bcbe46fe09baaafdd07b232ec953e7bb2e942cc19c520589af505e612df6e",
+      "021_costumes.sql": "a9b843e10e3a5d0eb4b00b2f765a109ac4f684a51a945fba950001780b6becf9",
+      "022_gathering_items.sql": "2f25ad4984b8f75c995dcb9332e994e1bcd13e615104cf50c53dc0edf9f340af",
+      "023_polymorph_items.sql": "83a65b40c10e076da833080dae4638bc9af3cd549a595552a96ec02385f7edaa",
+      "024_soul_items.sql": "bd0038ff59bbade14ddf0e0d460d3dc88ba5610bc243c39aaea64d26f4c0b75a",
+      "025_companion_items.sql": "4c549bf5d1819b876c6bffc71fdf075335dc37fc7f46161df9998f241cd401f0",
+      "026_growth_pet_progression.sql": "95c6c1fc434382b79225bc1b9d76cf7d1218f678754363b25261f7871ecc226a",
+      "027_pet_care.sql": "239a9634ac1e769ae824e4f3c3e6d10be649c7825cf88f0a0fbd021c56dcf7e5",
+      "028_pet_lifecycle.sql": "da16016ee0565f08f7e31caef65329f392494c975c6916c4980e5beda98709a9",
+      "029_socket_services.sql": "8cbc2dca7a78c1b453388d12bcfb6b704145476a62ab0557362413a0c3fd8792",
+      "030_instance_attributes.sql": "f7996a4f109af589b6940048ac35b396e01d62118c804b9dfa7e21a0ca44cb03",
+      "031_mob_drops.sql": "65873fc78552ee340e674e73be98f80a00c9c10e04721aed0180c98b9b3a5fd7",
+      "032_book_aids.sql": "98a7123d2e89d0f9db8348cf6b5abb0a2e3a6656c78a88384f773900a657b9e0",
+      "033_companion_flight.sql": "fe86daee3c6d7748953d6a4d2edb1b2d99a0155006cb2a7d149709028c6c1214",
+      "034_regalia_special_bonuses.sql": "6ae899f639fef3de7d006dce43ac6073fb67135a99c633bbfa984862ae06db97",
+      "035_ammunition.sql": "a075c209662590920043458ad82b2ca771c4c5373e0b35e2a55ada9188508b6e",
+      "036_forge_aids.sql": "2fea2a3ee8fecee5fea25359d51d8fa87c5c8efc6206c17702467dabaac12fd3",
+      "037_equipment_conversion.sql": "a0400c5dbbd669174ab29a4df5d4e971d924d4a427f718d695a2f3da517dfa09",
+      "038_empty_loot_draw.sql": "7ec3878fc3ea0f4f186b04744e554e7613ffd444d8e5240d2387f3a4b2d4b1b5",
+      "039_additional_equipment_slots.sql": "25a03f9b2036bba26908473185c6916cd4588671da240de1790f156a4d916e56",
+      "040_item_definition_rules.sql": "630eb8dbc9f9541ce447868c3b7e4a6c4e58c78b4b2c7be12eedaeea9d878dc1",
+      "041_refined_loot_rewards.sql": "aa6e33bfff8a6ecd0b493e1f7ea0ad73003f9755bae627b64db93131e599d685",
+      "042_attribute_reroll_rules.sql": "b2e9c31e82ccf2b28cdc70d17ea102a1242ed9e3ab420565da7bce8ce3610845",
+      "043_tool_transitions.sql": "662e2a4e072c66bc4216ec72661e742dd1a0c15b2bf77ea925fad471883fc819",
+      "044_companion_costumes.sql": "75cef298e258337c18c8d74144975b5d4b2771e9bb0e268f9ae00964c1cf8e92",
+      "045_body_costume_effects.sql": "9f1d264aa94b7f89e908ad815e2a2688f1fb1fb08667c95987b908957961859e",
+      "046_weapon_costume_effects.sql": "1ce525cdb4c5f39f2c4952dc9d65e6bf982a10e53964a30ac6b5331013543b46",
+      "047_permanent_toggle_effects.sql": "e4900b3b63649971ffa1937c6a7ca49211ed07a9bb29f9534495957513ecdaea",
+      "048_soul_transitions_bonus_choices.sql": "a033679569b5d412be780367ec5986643e01ee739e79add332ac06ff3516dc85"
+    },
+    "tables": {
+      "accessory_socket_grade": 100,
+      "accessory_socket_material": 65,
+      "accessory_socket_profile": 25,
+      "attribute_candidate": 1102,
+      "attribute_group": 113,
+      "attribute_profile": 42,
+      "attribute_service_profile": 51,
+      "attribute_tier_chance": 117,
+      "attribute_value": 4787,
+      "automatic_recovery_profile": 18,
+      "bonus_definition": 143,
+      "bonus_profile": 6348,
+      "bonus_profile_entry": 14630,
+      "bonus_tool_choice": 10,
+      "book_aid_profile": 4,
+      "catalog_format": 1,
+      "companion_form": 436,
+      "consumable_cooldown_profile": 1,
+      "forge_aid_level": 2816,
+      "growth_pet_level": 39,
+      "growth_pet_profile": 13,
+      "growth_pet_stage": 14,
+      "instant_recovery_profile": 26,
+      "item_accessory": 743,
+      "item_ammo": 20,
+      "item_ammo_policy": 3,
+      "item_appearance_profile": 795,
+      "item_armor": 1386,
+      "item_attack_profile": 2,
+      "item_attribute_binding": 3261,
+      "item_base": 6806,
+      "item_bonus_tool": 38,
+      "item_category": 22,
+      "item_companion": 496,
+      "item_consumable": 322,
+      "item_container": 68,
+      "item_container_key": 5,
+      "item_costume": 976,
+      "item_costume_visual": 2788,
+      "item_currency_token": 19,
+      "item_definition_rules": 9724,
+      "item_fishing": 67,
+      "item_forge_aid": 43,
+      "item_material": 614,
+      "item_polymorph": 12,
+      "item_quest": 783,
+      "item_regalia": 117,
+      "item_resistance_profile": 1,
+      "item_skill_book": 94,
+      "item_socket_stone": 145,
+      "item_soul": 33,
+      "item_special": 42,
+      "item_tool": 45,
+      "item_trade_policy": 7,
+      "item_use_policy": 16,
+      "item_weapon": 738,
+      "loot_entry": 1015,
+      "loot_profile": 84,
+      "mob_drop_entry": 0,
+      "mob_drop_group": 0,
+      "periodic_recovery_profile": 4,
+      "pet_age_tier": 21,
+      "pet_enchant_rule": 4,
+      "pet_extension_rule": 4,
+      "pet_feed_rule": 3,
+      "pet_hatch_profile": 13,
+      "pet_skill_definition": 164,
+      "pet_skill_rank": 171,
+      "pet_skin_rule": 4,
+      "pet_slot_rule": 44,
+      "pet_study_rule": 22,
+      "pet_supply_profile": 42,
+      "pet_training_profile": 11,
+      "polymorph_form": 3,
+      "polymorph_mastery_rule": 8,
+      "polymorph_profile": 12,
+      "polymorph_skill_rule": 492,
+      "recovery_profile": 62,
+      "refinement_ingredient": 14806,
+      "refinement_level": 10794,
+      "refinement_profile": 6806,
+      "refinement_recipe": 5390,
+      "regalia_bonus_rule": 2170,
+      "reserve_recovery_profile": 14,
+      "skill_book_profile": 94,
+      "skill_book_step": 956,
+      "skill_book_target": 93,
+      "socket_service_profile": 4,
+      "soul_level": 42,
+      "soul_profile": 26,
+      "special_bonus_tier": 23,
+      "timed_effect_group": 40,
+      "timed_effect_profile": 114,
+      "toggle_effect_group": 35,
+      "toggle_effect_profile": 77,
+      "tool_level": 75,
+      "tool_profile": 45
+    },
+    "validated": true
+  },
+  "unity": {
+    "editor": "6000.3.27f1",
+    "success": true,
+    "suites": {
+      "TYPED_COMPANION_WIRE": 700,
+      "TYPED_ITEM_INTEGRATION": 14005,
+      "TYPED_EQUIPMENT_INTEGRATION": 2447,
+      "TYPED_COSTUME_OFFLINE": 397,
+      "TYPED_SPECIAL_BONUS_OFFLINE": 8003,
+      "TYPED_SOUL_OFFLINE": 1252,
+      "TYPED_FORGE_OFFLINE": 6993,
+      "TYPED_STORAGE_OFFLINE": 4667,
+      "TYPED_MISSION_OFFLINE": 3236,
+      "TYPED_AMMO_OFFLINE": 1340,
+      "NEXORIA_UI": 346,
+      "SOURCE_STOLE_UI": 6768
+    },
+    "extra_sash_asset_suite": true,
+    "actual_worker_packets": 141,
+    "actual_actor_skeletons": 30
+  },
+  "live_local": {
+    "verified_at": "2026-11-15T17:56:08.550360+00:00",
+    "empty_player_state_tables": 94,
+    "catalog_definitions": 1574
+  },
+  "fingerprints": {
+    "SRC/Tools/ItemCatalogBuilder/full_catalog_stoles.py": "766ecf4457fe5e1c99b94e8e7744c750f9fe03964ab756d968c2dfc00717a9fe",
+    "SRC/Tools/ItemCatalogBuilder/convert_full_catalog.py": "02c9e24364110d87343005f4d07c37b9fdfc13eb8931e291c45b9156f52dab72",
+    "SRC/Server/common/item/Costumes.hpp": "ed45f8a518f001b216fc1547e1285f13299be45e4eb3379b840e55f1fa91a336",
+    "SRC/Server/common/item/TypedInventoryWire.hpp": "1ce9c08dd7897b3dfb2d150db7f9a721b91ab6c610d9ff5d99ff878921bef70a",
+    "SRC/ItemDomain/Costumes.cpp": "f63ca6965b6ef7288357d95569aaa0fc0b5182ace5240e38458d7b8240febbd7",
+    "SRC/ItemDomain/CostumePersistence.cpp": "cbd9fd64dec7b64cb6416189d54c4f978385f41d6cddbe9494a4635ddb3a5b7e",
+    "SRC/ItemDomain/PersistentItems.cpp": "d6511afa9ccf2856ddaf3db15abebfb204fda663a442056e7ff94619031f0615",
+    "SRC/ItemDomain/ItemBenchTool.cpp": "aacf7153a306eab7a35695e736466b6134295b11a68921e0fefcdf7fb58b1535",
+    "SRC/ItemDomain/SpecialBonusRuntime.cpp": "e6b5ace82faf323895dc7c249a971a7322a036272da303a3a7c38522b4f111b9",
+    "SRC/ItemDomain/TypedInventoryWire.cpp": "53e06abad1034cfb4a7e20271b4c1e7e5eceddb7550696a24822cd0c49cc110a",
+    "SRC/Server/GameServer/item/TypedCostumes.cpp": "80e9ff0507dda000f82464dc6a2f2f7dca49f45a7c0c4929e23d0d4e870c4626",
+    "db/migrations/item_instance/030_stole_lifetime.sql": "549d7518ddf9b1b8831804f5da0575f9f231fba3b01421c9050c22b0ada8b1ca",
+    "tests/server/FullCatalogConversionTests.py": "ad3b8177180a9b3e9ea2ecd019ea9749413b252057c62435da6b5c5c8d443613",
+    "tests/server/SourceStoleCatalogTests.py": "e105d64049685a7205140bdb907c9f6cbd0bb68be134373c1800590baa3435df",
+    "tests/server/SourceStoleWorker.hpp": "f5d5cd4fa5be43eb1b075f51fe45c738d784b32455fc7e9a9210b8550179d52c",
+    "tests/server/ItemCatalogRuntimeTests.cpp": "e1d96022f798da95245f8fd69a8c52ac68f67c5777329b6a58915b87fff058b2",
+    "tests/server/SpecialBonusTests.cpp": "190ec394c66d355de1b72ab27927f1eb15a19539c0b032a0f01fe338dff15c43",
+    "tests/server/TypedInventoryWireTests.cpp": "28c47c9b546b84f9f8f48292c9a74f845f51f21d42b39391f07008604ce52b87",
+    "build/timed-stoles-build.log": "9dd07984293c02ddea432a31ac8c8aec77fa9c0c72eab49c548ef4b02f31de61",
+    "build/stoles-final-worker-build.log": "b3cf485c01339032be39ce00bc98804c5ac42e2d1c4bfab6517914ef1a60d059",
+    "build/stoles-regression-build.log": "5f2887433420f3c10e97fd70b54f24f60d2cbaaa0f85f78711cc0098e3ef3629",
+    "build/stoles-final-converter-tests.log": "6375288193b41f4f2f0dec756e1f1c47e54a779865b6ad2a743935c9ec1f7a8d",
+    "build/stoles-regression-tests.log": "24fab5c6903d93fbb939e23690e7a5b28a719549472c8ba50a13e9f45eb7d320",
+    "build/stoles-unity-final-success.log": "1986db15b31b99f06feb939a4f54e51193a79fb7387f58e80149687b061722ac",
+    "build/stoles-live-reset-verification.log": "e2543e9aea4b74523c4f635fd2641852888b39ff3afc5dee904debd042f8e41f"
+  },
+  "unity_fingerprints": {
+    "Runtime/Network/Metin2TypedInventoryCodec.cs": "e0b552869e4c889a89bfafecd5a28675f9cdc9288b53b0309ef29c4759b267a3",
+    "Runtime/Network/Metin2TypedInventoryCodec.Special.cs": "ae7a4888b3b1c5095c5dde7ac4066fe36475bceaee7d2c27c6bf5c6b4abc1daf",
+    "Runtime/Network/Metin2TypedInventoryWindow.cs": "c35386868a9767096b4954c6e58d247782d3bb7f82208a2c7f4c892df17e72b8",
+    "Runtime/Network/Metin2SashAppearance.cs": "f227605b690bd55b523dd4709a0073c535b2d5044cf53eda864ad4401c3b636b",
+    "Editor/Metin2SourceStoleValidator.cs": "1fd5e65890751d7c73520dc40ca7b64fa337bcb96e55331a61c727d042d09ec3",
+    "Editor/Metin2SourceStoleValidator.cs.meta": "742b5763b97b8f7bcfe3f2a91e41101137c8ea39cd06b52f80c5d22b03b9d6a4",
+    "Editor/Metin2TypedShopValidationBridge.cs": "a191001c87a48ea222d227e2989776d7ae86ac1de95fb3b4a8d9227e7ccc11f1"
+  },
+  "not_tested": [
+    "Full login/auth/TLS/ECS world flow with this candidate",
+    "Addressables player-content build",
+    "Remaining 771 blocked rows; existing random birth policies, including chest 50082"
+  ]
+}

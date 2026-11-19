@@ -2,6 +2,7 @@
 #include <item/ItemWireCodec.hpp>
 #include <algorithm>
 #include <set>
+#include <tuple>
 
 namespace auriga::item
 {
@@ -23,6 +24,15 @@ void Result(ItemCommit& commit,bool buy,std::uint64_t amount,std::uint32_t units
     for(unsigned i=0;i<4;++i)commit.result.push_back(static_cast<std::uint8_t>(units>>(8*i)));
 }
 }
+std::expected<std::uint64_t,E> NpcBuyBundlePrice(const ItemCatalog& c,const NpcShopOffer& offer)
+{
+    if(offer.bundleGold) {
+        if(*offer.bundleGold>INT64_MAX)return std::unexpected(E::Invalid);return *offer.bundleGold;
+    }
+    const auto unit=c.LevelPolicy(offer.grant.key,offer.grant.refinementLevel).buyAmount;
+    if(!unit || !offer.grant.count || unit>std::uint64_t(INT64_MAX)/offer.grant.count)return std::unexpected(E::Invalid);
+    return unit*offer.grant.count;
+}
 std::expected<void,E> ValidateNpcShops(const ItemCatalog& c,std::span<const NpcShop> shops)
 {
     if(shops.size()>MaxNpcShops)return std::unexpected(E::Invalid);
@@ -36,10 +46,16 @@ std::expected<void,E> ValidateNpcShops(const ItemCatalog& c,std::span<const NpcS
         for(const auto& offer:shop.offers)
         {
             const auto* entry=c.Find(offer.grant.key);
-            if(!offer.id || !ids.insert(offer.id).second || !entry || entry->base.retired || !entry->base.buyAmount ||
+            const auto price=NpcBuyBundlePrice(c,offer);
+            if(!offer.id || !ids.insert(offer.id).second || !entry || entry->base.retired || !price ||
                !SupportsPersistentGrant(c,*entry) || !c.RefinedBaseStats(offer.grant.key,offer.grant.refinementLevel) ||
-               !offer.grant.count || offer.grant.count>entry->base.maxStack ||
-               entry->base.buyAmount>std::uint64_t(INT64_MAX)/offer.grant.count)return std::unexpected(E::Invalid);
+               !offer.grant.count || offer.grant.count>entry->base.maxStack || offer.costs.size()>5)return std::unexpected(E::Invalid);
+            std::set<std::pair<ItemKey,std::uint16_t>> unique;
+            for(const auto& cost:offer.costs) {
+                const auto* material=c.Find(cost.key);
+                if(!cost.count || !material || !SupportsPersistentItem(c,*material) || !c.RefinedBaseStats(cost.key,cost.level) ||
+                   !unique.emplace(cost.key,cost.level).second)return std::unexpected(E::Invalid);
+            }
         }
     }
     return {};
@@ -50,15 +66,44 @@ std::expected<ItemCommit,E> MakeNpcBuyCommit(const ItemCatalog& c,std::array<std
 {
     const auto* entry=c.Find(offer.grant.key);const auto* wallet=Gold(wallets,fence.owner);
     const auto units=std::uint64_t{offer.grant.count}*quantity;
+    const auto price=NpcBuyBundlePrice(c,offer);
     if(!quantity || quantity>MaxShopQuantity || !offer.grant.count || !units || units>UINT32_MAX || !wallet || !entry ||
-       entry->base.retired || !entry->base.buyAmount || entry->base.buyAmount>std::uint64_t(INT64_MAX)/units)return std::unexpected(E::Invalid);
-    const auto cost=units*entry->base.buyAmount;
+       entry->base.retired || !price || *price>std::uint64_t(INT64_MAX)/quantity || offer.costs.size()>5)return std::unexpected(E::Invalid);
+    const auto cost=quantity * *price;
     if(wallet->balance<cost)return std::unexpected(E::NoMoney);
+    std::vector<PersistentItem> working(items.begin(),items.end());
+    std::vector<std::size_t> eligible;for(std::size_t i=0;i<working.size();++i)if(PlainInventoryItem(working[i],fence.owner))eligible.push_back(i);
+    std::ranges::sort(eligible,{},[&](auto i){return std::tuple{working[i].placement->storageId,working[i].placement->anchor,working[i].id};});
+    std::set<std::pair<ItemKey,std::uint16_t>> unique;
+    for(const auto& material:offer.costs) {
+        const auto* definition=c.Find(material.key);
+        if(!material.count || !definition || !SupportsPersistentItem(c,*definition) || !c.RefinedBaseStats(material.key,material.level) ||
+           !unique.emplace(material.key,material.level).second)return std::unexpected(E::Invalid);
+        std::uint64_t left=std::uint64_t(material.count)*quantity;
+        for(auto index:eligible) {
+            auto& item=working[index];if(!left)break;if(item.key!=material.key || item.refinementLevel!=material.level)continue;
+            const auto spent=static_cast<std::uint32_t>(std::min(left,std::uint64_t(item.count)));item.count-=spent;left-=spent;
+            if(!item.count){item.destroyed=true;item.placement.reset();}
+        }
+        if(left)return std::unexpected(E::NoMaterials);
+    }
     auto grant=offer.grant;grant.count=static_cast<std::uint32_t>(units);grant.createdAtUtcMs=nowUtcMs;
-    auto commit=MakeGrantCommit(c,op,fence,storages,items,grant,ids);
+    auto commit=MakeGrantCommit(c,op,fence,storages,working,grant,ids);
     if(!commit)return std::unexpected(commit.error()==ItemPersistenceError::InvalidPlacement ? E::NoRoom : E::Unavailable);
-    auto after=*wallet;after.balance-=cost;++after.revision;
-    commit->wallets.push_back({*wallet,after});Result(*commit,true,cost,grant.count);
+    for(const auto& change:commit->items) {
+        if(change.before)*std::ranges::find(working,change.after.id,&PersistentItem::id)=change.after;
+        else working.push_back(change.after);
+    }
+    commit->items.clear();commit->storages.clear();
+    for(std::size_t i=0;i<items.size();++i)if(working[i]!=items[i]) {working[i].revision=items[i].revision+1;commit->items.push_back({items[i],working[i]});}
+    for(std::size_t i=items.size();i<working.size();++i)commit->items.push_back({{},working[i]});
+    for(const auto& change:commit->items)for(const auto* item:{change.before ? &*change.before : nullptr,&change.after})if(item && item->placement) {
+        const ItemStorage storage{item->owner,item->placement->kind,item->placement->storageId};
+        if(std::ranges::find(commit->storages,storage,&ItemStorageLayout::storage)!=commit->storages.end())continue;
+        const auto layout=std::ranges::find(storages,storage,&ItemStorageLayout::storage);if(layout==storages.end())return std::unexpected(E::Invalid);commit->storages.push_back(*layout);
+    }
+    if(cost){auto after=*wallet;after.balance-=cost;++after.revision;commit->wallets.push_back({*wallet,after});}
+    Result(*commit,true,cost,grant.count);
     if(!ValidateItemCommit(c,*commit))return std::unexpected(E::Invalid);
     return std::move(*commit);
 }
@@ -67,7 +112,7 @@ std::uint64_t NpcSellUnitPrice(const ItemCatalog& c,const PersistentItem& item)
     const auto* entry=c.Find(item.key);
     const auto* policy=entry ? c.FindTradePolicy(entry->base.tradePolicy) : nullptr;
     return !item.destroyed && item.placement && item.placement->kind==ItemStorageKind::Inventory && policy && policy->allowSell
-        ? entry->base.sellAmount : 0;
+        ? c.LevelPolicy(item.key,item.refinementLevel).sellAmount : 0;
 }
 std::expected<ItemCommit,E> MakeNpcSellCommit(const ItemCatalog& c,std::array<std::uint8_t,16> op,ItemOwnerFence fence,
     std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> items,std::span<const ItemWallet> wallets,
@@ -90,7 +135,8 @@ std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeNpcShop(cons
 {
     std::vector<std::byte> bytes;
     const auto put=[&](std::uint64_t value,unsigned n){for(unsigned i=0;i<n;++i)bytes.push_back(std::byte((value>>(8*i))&255));};
-    put(228,1);put(0,4);put(1,1);put(static_cast<unsigned>(status),1);put(npc,4);put(session,8);put(request,8);
+    const bool extended=shop && std::ranges::any_of(shop->offers,[](const auto& offer){return offer.bundleGold || !offer.costs.empty();});
+    put(228,1);put(0,4);put(extended ? 2 : 1,1);put(static_cast<unsigned>(status),1);put(npc,4);put(session,8);put(request,8);
     const std::string_view name=shop ? std::string_view(shop->name) : std::string_view{};put(name.size(),2);for(unsigned char b:name)put(b,1);
     std::vector<ItemGrant> extra;
     put(shop ? shop->offers.size() : 0,2);
@@ -98,7 +144,12 @@ std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeNpcShop(cons
     {
         const auto* entry=c.Find(offer.grant.key);if(!entry)return std::unexpected(TypedInventoryWireError::MissingCatalogItem);
         put(offer.id,4);for(auto b:EncodeItemKey(offer.grant.key))put(std::to_integer<unsigned char>(b),1);
-        put(offer.grant.refinementLevel,2);put(offer.grant.count,4);put(entry->base.buyAmount,8);extra.push_back(offer.grant);
+        put(offer.grant.refinementLevel,2);put(offer.grant.count,4);put(c.LevelPolicy(offer.grant.key,offer.grant.refinementLevel).buyAmount,8);extra.push_back(offer.grant);
+        if(extended) {
+            const auto price=NpcBuyBundlePrice(c,offer);if(!price || offer.costs.size()>5)return std::unexpected(TypedInventoryWireError::BadValue);
+            put(*price,8);put(offer.costs.size(),1);
+            for(const auto& cost:offer.costs) {for(auto b:EncodeItemKey(cost.key))put(std::to_integer<unsigned char>(b),1);put(cost.level,2);put(cost.count,4);extra.push_back({cost.key,cost.level,cost.count});}
+        }
     }
     std::vector<std::pair<std::uint64_t,std::uint64_t>> sales;
     if(shop)for(const auto& item:items)if(const auto price=NpcSellUnitPrice(c,item))sales.emplace_back(item.id.Value(),price);

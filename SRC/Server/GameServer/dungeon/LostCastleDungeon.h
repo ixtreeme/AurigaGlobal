@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cstdint>
+#include <item/DungeonItems.hpp>
 
 #include <entt/entt.hpp>
 
@@ -22,6 +23,7 @@
 class CLostCastleDungeon
 {
 public:
+    bool OnUseTypedItem(entt::entity,const auriga::item::PersistentItem&,const auriga::item::ItemCatalog&);
     static CLostCastleDungeon& instance();
 
     // Helper: used from char_battle.cpp to allow LostCastle clones (fake players)

@@ -1,0 +1,38 @@
+{
+  "source_ids": [
+    50023,
+    50024,
+    50025,
+    50031,
+    50032,
+    50062,
+    70009
+  ],
+  "candidate_sha256": "1dd0e0baf0b9a561fb2a666ddfc49cdd737e15acb12e03b0d042e3fc8a1ef579",
+  "all_original_rows_preserved": true,
+  "converted_count_unchanged": 9807,
+  "retired_count_unchanged": 491,
+  "reward_group_audit": "build\\remaining-seasonal-special-group-audit.json",
+  "reward_group_audit_sha256": "b559d2ae438d7bd5f8d9be0dbe9c0198cd7d7ac23432428ed44ff4baa1c93367",
+  "source_hashes": {
+    "SRC\\Server\\GameServer\\ecs\\systems\\ItemSystem_LegacyBridge.cpp": "55669ab4242253088400f4a4c2e931209ef00327bca6b6645e4f5aa344ab5068",
+    "F:\\SF_V3_5\\SOURCE_SERVER_9999\\Server\\game\\src\\char_item.cpp": "bae9fdc4cfb394f2bda07f4c9b1a77577e76a35da8cab2ed6d89a2d6231980d0"
+  },
+  "horse_book_scan": [
+    {
+      "root": "SRC/Server/GameServer",
+      "horse_book_50062_references": []
+    },
+    {
+      "root": "F:/SF_V3_5/SOURCE_SERVER_9999/Server/game/src",
+      "horse_book_50062_references": []
+    },
+    {
+      "root": "D:/AurigaGlobal/Server2-Local/data/quest",
+      "horse_book_50062_references": []
+    }
+  ],
+  "merge_deferred": 629,
+  "remaining_valid_behavior": 59,
+  "reason": "User explicitly deferred missing/broken originals until teammate merge; no invented rewards, alternate horse skills or inert usable objects"
+}

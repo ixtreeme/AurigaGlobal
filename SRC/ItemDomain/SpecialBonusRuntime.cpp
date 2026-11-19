@@ -32,10 +32,12 @@ std::expected<std::vector<ItemChange>,E> Plan(const ItemCatalog& c,std::span<con
         return std::vector<ItemChange>{{*source,src}};
     }
     const auto* tool=std::get_if<ItemBonusToolRow>(&c.Find(src.key)->category);
+    // Transfer has three participants and its own authenticated quote/writer.
+    if(tool && tool->operation==SpecialBonusOperation::CostumeTransfer)return std::unexpected(E::InvalidChange);
     const auto target=std::ranges::find(items,d.target,[](const auto& i){return i.id.Value();});
     if(!tool || !Bag(src) || !Admitted(c,src,d.actor) || src.count<tool->units || target==items.end() || target==source || target->owner!=src.owner || !ValidatePersistentItem(c,*target) || target->destroyed || (target->boundTo && target->boundTo!=src.owner))return std::unexpected(E::RequirementNotMet);
     auto dst=*target;++dst.revision;const auto* regalia=std::get_if<ItemRegaliaRow>(&c.Find(dst.key)->category);const bool costume=std::holds_alternative<ItemCostumeRow>(c.Find(dst.key)->category);
-    if(costume){const auto lifetime=AdvanceCostumeLifetime(std::get<ItemCostumeRow>(c.Find(dst.key)->category),*dst.costume,{d.actor.nowUtcMs,0,false,false});if(!lifetime || lifetime->removeItem)return std::unexpected(E::RequirementNotMet);}
+    if(dst.costume){const auto clock=FindWearableClock(c,dst.key);if(!clock)return std::unexpected(E::InvalidItem);const auto lifetime=AdvanceItemClock(*clock,*dst.costume,{d.actor.nowUtcMs,0,false,false});if(!lifetime || lifetime->removeItem)return std::unexpected(E::RequirementNotMet);}
     if(tool->operation!=SpecialBonusOperation::RuneCharge && (!Bag(dst) || d.elapsed))return std::unexpected(E::InvalidPlacement);
     if(tool->operation!=SpecialBonusOperation::CostumeRemove && d.selection)return std::unexpected(E::InvalidChange);
     std::uint16_t debit=tool->units;
@@ -71,11 +73,11 @@ std::expected<std::vector<ItemChange>,E> Plan(const ItemCatalog& c,std::span<con
         }break;}
     case SpecialBonusOperation::PairedAddon: {
         if(dst.key.Category()!=ItemCategory::Weapon)return std::unexpected(E::RequirementNotMet);
-        for(unsigned j=0;j<5;++j)if(dst.attributes.slots[j] && (dst.attributes.slots[j]->bonus==BonusId::NormalOutgoing || dst.attributes.slots[j]->bonus==BonusId::SkillOutgoing)) {if(dst.attributes.lockedSlot==j)return std::unexpected(E::RequirementNotMet);dst.attributes.slots[j].reset();}
+        for(unsigned j=0;j<5;++j)if(dst.attributes.slots[j] && (dst.attributes.slots[j]->bonus==BonusId::NormalDamagePercent || dst.attributes.slots[j]->bonus==BonusId::SkillDamagePercent)) {if(dst.attributes.lockedSlot==j)return std::unexpected(E::RequirementNotMet);dst.attributes.slots[j].reset();}
         const auto first=draw(UINT32_MAX),second=draw(UINT32_MAX);if(!first || !second)return std::unexpected(E::InvalidChange);
         const double u=(double(*first)+.5)/4294967296.,v=(double(*second)+.5)/4294967296.;const int skill=std::clamp(static_cast<int>(std::sqrt(-2*std::log(u))*std::cos(6.2831853071795864769*v)*5+.5),-30,30);
         int hit=-2*skill;if(std::abs(skill)<=20){const auto a=draw(16),b=draw(16),tail=draw(3);if(!a || !b || !tail)return std::unexpected(E::InvalidChange);hit+=std::abs(int(*a)+int(*b)-16)+int(*tail)+1;}else{const auto tail=draw(4);if(!tail)return std::unexpected(E::InvalidChange);hit+=int(*tail)+1;}
-        for(const auto b:{BonusEntry{BonusId::NormalOutgoing,hit*100LL},BonusEntry{BonusId::SkillOutgoing,skill*100LL}})if(b.valueScaled){auto slot=std::ranges::find_if(dst.attributes.slots.begin(),dst.attributes.slots.begin()+5,[](const auto& e){return !e;});if(slot==dst.attributes.slots.begin()+5)return std::unexpected(E::RequirementNotMet);*slot=b;}break;}
+        for(const auto b:{BonusEntry{BonusId::NormalDamagePercent,hit*100LL},BonusEntry{BonusId::SkillDamagePercent,skill*100LL}})if(b.valueScaled){auto slot=std::ranges::find_if(dst.attributes.slots.begin(),dst.attributes.slots.begin()+5,[](const auto& e){return !e;});if(slot==dst.attributes.slots.begin()+5)return std::unexpected(E::RequirementNotMet);*slot=b;}break;}
     }
     if(!recorded && read!=d.rolls.size())return std::unexpected(E::InvalidChange);
     if(!ValidateInstanceAttributes(c,dst.key,dst.attributes))return std::unexpected(E::InvalidItem);

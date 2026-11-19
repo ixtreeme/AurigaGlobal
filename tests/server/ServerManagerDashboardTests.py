@@ -172,7 +172,7 @@ class DashboardTests(unittest.TestCase):
 
     def test_tools_are_reachable_at_minimum_window_size(self):
         w = self.window
-        w.resize(1100, 760)
+        w.resize(1024, 720)
         self.app.processEvents()
         self.assertFalse(w.maintenance_panel.isVisible())
         w.overview.ensureWidgetVisible(w.maintenance_toggle)

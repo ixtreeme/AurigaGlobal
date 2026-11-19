@@ -200,6 +200,14 @@ void Persistence()
         const auto id=ItemInstanceId::Create(100).value();const std::array ids{id};
         const auto grant=MakeGrantCommit(*c,{1,1},fence,layouts,{},ItemGrant{Key(),10,1,{},{},{},1000},ids);
         Check(grant.has_value(),"all costume kinds/clocks grant durable state");auto costume=grant->items[0].after;
+        if(clock==3) {
+            auto birth=*grant;birth.kind=ItemOperationKind::Service;birth.outcomeCode=0x1201;birth.result={'B',1};
+            birth.items[0].after.placement=ItemPlacement{ItemStorageKind::Equipment,1,kind+7};birth.storages={layouts[1]};
+            Check(!ValidateItemCommit(*c,birth),"born-worn first-use costume cannot retain an unlimited unstarted clock");
+            birth.items[0].after.costume=AdvanceItemClock(*FindWearableClock(*c,Key()),*costume.costume,{1000,0,false,true})->after;
+            Check(ValidateItemCommit(*c,birth).has_value(),"born-worn starter costume has a checked first-use deadline");
+            birth.items[0].after.costume->remainingMs=1;Check(!ValidateItemCommit(*c,birth),"born-worn first-use clock rejects malformed state");
+        }
         Check(DecodeCostumeLifetime(EncodeCostumeLifetime(*costume.costume))==costume.costume,"versioned costume clock roundtrip");
         EquipContext who{50,0,0,2000};std::vector<PersistentItem> items{costume};
         auto denied=who;denied.characterClass=4;Check(!MakeEquipCommit(*c,{2,9},fence,layouts,items,id,denied),"unadmitted character cannot start or change a costume clock");
@@ -235,12 +243,104 @@ void Persistence()
         compound.items.back().after.refinementLevel=1;Check(!ValidateItemCommit(*c,compound),"ancillary debit cannot conceal accessory refinement");
     }
 }
+void CompanionSkins()
+{
+    for(auto kind:{CostumeKind::PetSkin,CostumeKind::MountSkin})for(unsigned clock=1;clock<=4;++clock) {
+        auto source=Fixture();auto& row=source.costumes[0];row.kind=kind;row.weapon.reset();row.companionForm=1;
+        row.clock=static_cast<CostumeClock>(clock);row.durationMs=clock==1 ? 0 : 10000;
+        source.costumeVisuals.clear();source.companionForms.push_back({1,"companion.skin",34106,"Metin2RacePrefabs/34106"});
+        const auto c=BuildItemCatalog(source).value();const ItemOwner owner{ItemOwnerKind::Character,7};const ItemOwnerFence fence{owner,1,1};
+        const std::vector<ItemStorageLayout> layouts{{{owner,ItemStorageKind::Inventory,1},5,9,2},{{owner,ItemStorageKind::Equipment,1},EquipmentSlotCount,1,1}};
+        const auto id=ItemInstanceId::Create(100).value();const std::array ids{id};
+        auto grant=MakeGrantCommit(*c,{5,1},fence,layouts,{},ItemGrant{Key(),10,1,{},{},{},1000},ids).value();
+        std::vector<PersistentItem> items{grant.items[0].after};
+        Check(!WornCompanionCostumeForm(*c,items,kind),"bag skin never overrides a companion");
+        auto equip=MakeEquipCommit(*c,{5,2},fence,layouts,items,id,EquipContext{50,0,0,2000});
+        Check(equip && ValidateItemCommit(*c,*equip),"skin equips without a weapon or active pet");items[0]=equip->items[0].after;
+        Check(items[0].placement->anchor==CostumeSlot(kind)-1 && CostumeSlot(kind)>=25,"skin has a distinct appended slot");
+        Check(WornCompanionCostumeForm(*c,items,kind)==1,"only the matching worn skin supplies a form");
+        Check(!WornCompanionCostumeForm(*c,items,kind==CostumeKind::PetSkin ? CostumeKind::MountSkin : CostumeKind::PetSkin),"pet skin cannot override a mount and vice versa");
+        Check(BuildEquipmentStats(*c,owner,items)->Bonus(BonusId::CritChance)==100,"skin grants its own bonuses without a summon");
+        const auto bytes=EncodeTypedInventory(*c,layouts,{},items).value();const auto decoded=DecodeTypedInventory(bytes,owner);
+        Check(std::to_integer<unsigned>(bytes[5])==19 && decoded && decoded->costumeRules.at(id).companionForm==1,"v19 roundtrip preserves form and slot");
+        for(std::size_t size=0;size<bytes.size();++size)Check(!DecodeTypedInventory(std::span(bytes).first(size),owner),"truncated v19 rejected");
+        auto bad=source;bad.costumes[0].companionForm=999;Check(!BuildItemCatalog(bad),"missing skin form rejected");
+        bad=source;bad.costumeVisuals.push_back({Key(),1,1,"models/wrong.model"});Check(!BuildItemCatalog(bad),"skin cannot replace character geometry");
+        const auto expired=MakeCostumeClockCommit(*c,{5,3},fence,layouts,items,id,500000,clock==4 ? 10000 : 0);
+        if(clock!=1){Check(expired && ValidateItemCommit(*c,*expired),"skin expiry is a validated durable operation");items[0]=expired->items[0].after;Check(!WornCompanionCostumeForm(*c,items,kind) && BuildEquipmentStats(*c,owner,items)->Bonus(BonusId::CritChance)==0,"expiry removes form and bonuses together");}
+    }
+}
+void BodyEffects()
+{
+    for(unsigned clock=1;clock<=4;++clock) {
+        auto source=Fixture();auto& row=source.costumes[0];row.kind=CostumeKind::BodyEffect;row.weapon.reset();row.bodyEffect=794;
+        row.clock=static_cast<CostumeClock>(clock);row.durationMs=clock==1 ? 0 : 10000;source.costumeVisuals.clear();
+        const auto bodyKey=ItemKey::Create(ItemCategory::Costume,2).value();auto bodyBase=source.items.back();bodyBase.key=bodyKey;bodyBase.contentCode="costume.body";bodyBase.nameKey="item.body.name";bodyBase.descriptionKey="item.body.description";source.items.push_back(bodyBase);
+        source.costumes.push_back({bodyKey,CostumeKind::Body,{},CostumeClock::Permanent,0});
+        for(std::uint8_t cc=1;cc<=4;++cc)for(std::uint8_t sex=1;sex<=2;++sex)source.costumeVisuals.push_back({bodyKey,cc,sex,"models/body.model"});
+        const auto c=BuildItemCatalog(source).value();const ItemOwner owner{ItemOwnerKind::Character,7};const ItemOwnerFence fence{owner,1,1};
+        const std::vector<ItemStorageLayout> layouts{{{owner,ItemStorageKind::Inventory,1},5,9,2},{{owner,ItemStorageKind::Equipment,1},EquipmentSlotCount,1,1}};
+        const auto id=ItemInstanceId::Create(100).value();const std::array ids{id};
+        const auto grant=MakeGrantCommit(*c,{6,1},fence,layouts,{},ItemGrant{Key(),10,1,{},{},{},1000},ids).value();
+        std::vector<PersistentItem> items{grant.items[0].after};Check(!WornBodyCostumeEffect(*c,items),"bag effect is invisible");
+        const auto equipped=MakeEquipCommit(*c,{6,2},fence,layouts,items,id,{50,0,0,2000}).value();items[0]=equipped.items[0].after;
+        Check(ValidateItemCommit(*c,equipped) && items[0].placement->anchor==26,"effect uses appended slot 27");
+        Check(!WornBodyCostumeEffect(*c,items) && BuildEquipmentStats(*c,owner,items)->Bonus(BonusId::CritChance)==100,"visual needs armor; intrinsic bonuses do not");
+        PersistentItem armor{ItemInstanceId::Create(101).value(),f::Armor(),owner};armor.placement=ItemPlacement{ItemStorageKind::Equipment,1,1};items.push_back(armor);
+        Check(WornBodyCostumeEffect(*c,items)==794,"body armor enables the exact authored effect");
+        items.pop_back();PersistentItem body{ItemInstanceId::Create(102).value(),bodyKey,owner};body.costume=CostumeLifetimeState{};body.placement=ItemPlacement{ItemStorageKind::Equipment,1,8};items.push_back(body);
+        Check(WornBodyCostumeEffect(*c,items)==794,"body costume alone also enables the effect");items.back().costume->expired=true;Check(!WornBodyCostumeEffect(*c,items),"expired body costume cannot anchor an effect");items.back()=armor;
+        const auto bytes=EncodeTypedInventory(*c,layouts,{},items).value();const auto decoded=DecodeTypedInventory(bytes,owner);
+        Check(std::to_integer<unsigned>(bytes[5])==20 && decoded && decoded->costumeRules.at(id).bodyEffect==794,"v20 preserves effect and lifetime");
+        for(std::size_t cut=0;cut<bytes.size();++cut)Check(!DecodeTypedInventory(std::span(bytes).first(cut),owner),"truncated v20 rejected");
+        auto bad=source;bad.costumes[0].bodyEffect=0;Check(!BuildItemCatalog(bad),"effect ID is mandatory");
+        bad=source;bad.costumes[0].kind=CostumeKind::Body;Check(!BuildItemCatalog(bad),"ordinary costume cannot smuggle an effect ID");
+        const auto expired=MakeCostumeClockCommit(*c,{6,3},fence,layouts,items,id,500000,clock==4 ? 10000 : 0);
+        if(clock!=1){Check(expired && ValidateItemCommit(*c,*expired),"effect expiry is durable");items[0]=expired->items[0].after;Check(!WornBodyCostumeEffect(*c,items),"expiry clears effect even while armor remains worn");}
+    }
+    CostumeAppearance p{77,1};p.bodyEffect=794;
+    const auto v3=EncodeCostumeAppearance(p,3).value();Check(v3[5]==3 && v3.size()==35 && v3[33]==26 && v3[34]==3,"shared GC241 v3 encoder appends little endian effect ID");
+    Check(EncodeCostumeAppearance(p,1)->size()==30 && EncodeCostumeAppearance(p,2)->size()==33,"old observer formats remain available");
+    p.models[0]="../escape";Check(!EncodeCostumeAppearance(p),"appearance rejects unsafe asset paths");
+    p.models[0]="";p.models[4]="Metin2Equipment/w10";Check(!EncodeCostumeAppearance(p),"weapon costume requires a real weapon");
+}
+void WeaponEffects()
+{
+    for(unsigned subtype=1;subtype<=7;++subtype)for(unsigned clock=1;clock<=4;++clock) {
+        auto source=Fixture();auto& row=source.costumes[0];row.kind=CostumeKind::WeaponEffect;row.weapon.reset();row.weaponEffects={11,12,13,14,15,16,112,116};
+        row.clock=static_cast<CostumeClock>(clock);row.durationMs=clock==1 ? 0 : 10000;source.costumeVisuals.clear();
+        source.weapons[0].subtype=static_cast<WeaponSubtype>(subtype);if(subtype==3)source.weapons[0].ammoPolicy=2;
+        ItemDefinitionRules variant{f::Sword()};variant.level=1;variant.weaponEffectAlternate=subtype==2 || subtype==6;source.definitionRules.push_back(variant);
+        const auto c=BuildItemCatalog(source).value();const ItemOwner owner{ItemOwnerKind::Character,7};const ItemOwnerFence fence{owner,1,1};
+        const std::vector<ItemStorageLayout> layouts{{{owner,ItemStorageKind::Inventory,1},5,9,2},{{owner,ItemStorageKind::Equipment,1},EquipmentSlotCount,1,1}};
+        const auto id=ItemInstanceId::Create(100).value();const std::array ids{id};
+        auto grant=MakeGrantCommit(*c,{7,1},fence,layouts,{},ItemGrant{Key(),10,1,{},{},{},1000},ids).value();std::vector<PersistentItem> items{grant.items[0].after};
+        const auto equipped=MakeEquipCommit(*c,{7,2},fence,layouts,items,id,{50,0,0,2000}).value();items[0]=equipped.items[0].after;
+        Check(ValidateItemCommit(*c,equipped) && items[0].placement->anchor==27,"weapon effect equips in slot 28 without requiring a real weapon");
+        Check(!WornWeaponCostumeEffect(*c,items),"weaponless actor has no weapon effect");
+        PersistentItem weapon{ItemInstanceId::Create(101).value(),f::Sword(),owner};weapon.placement=ItemPlacement{ItemStorageKind::Equipment,1,0};items.push_back(weapon);
+        Check(WornWeaponCostumeEffect(*c,items)==(subtype<=6 ? subtype+10 : 0),"explicit subtype selects exact normal effect; mount spear has none");
+        items.back().refinementLevel=1;
+        Check(WornWeaponCostumeEffect(*c,items)==(subtype==2 ? 112 : subtype==6 ? 116 : subtype<=6 ? subtype+10 : 0),"alternate shape is an exact per-level native policy");
+        const auto bytes=EncodeTypedInventory(*c,layouts,{},items).value();const auto decoded=DecodeTypedInventory(bytes,owner);
+        Check(std::to_integer<unsigned>(bytes[5])==21 && decoded && decoded->costumeRules.at(id).weaponEffects==row.weaponEffects,"v21 preserves all normal and alternate effect choices");
+        for(std::size_t cut=0;cut<bytes.size();++cut)Check(!DecodeTypedInventory(std::span(bytes).first(cut),owner),"truncated v21 rejected");
+        auto bad=source;bad.costumes[0].weaponEffects[6]=0;Check(!BuildItemCatalog(bad),"incomplete alternate effect set cannot publish");
+        bad=source;bad.costumes[0].kind=CostumeKind::Body;Check(!BuildItemCatalog(bad),"other costumes cannot carry hidden weapon effects");
+        const auto expired=MakeCostumeClockCommit(*c,{7,3},fence,layouts,items,id,500000,clock==4 ? 10000 : 0);
+        if(clock!=1){Check(expired && ValidateItemCommit(*c,*expired),"weapon effect expiry is durable");items[0]=expired->items[0].after;Check(!WornWeaponCostumeEffect(*c,items),"expiry clears the effect while real weapon remains");}
+    }
+    auto bad=Fixture();ItemDefinitionRules rule{f::Sword()};rule.weaponEffectAlternate=true;bad.definitionRules.push_back(rule);Check(!BuildItemCatalog(bad),"alternate policy is forbidden on non-dagger/fan weapons");
+    CostumeAppearance p{77,1};p.weapon=2;p.weaponEffect=579;const auto wire=EncodeCostumeAppearance(p,4).value();
+    Check(wire[5]==4 && wire.size()==37 && wire[35]==67 && wire[36]==2,"GC241 v4 carries the exact weapon effect");p.weapon=0;Check(!EncodeCostumeAppearance(p),"weaponless appearance cannot carry a weapon effect");
+}
+#include "UniqueLifetimeCases.hpp"
 int main(int argc,char** argv)
 {
     try
     {
         if(argc==2 && std::string_view(argv[1])=="--hash-fixture"){std::cout<<Hex(BuildItemCatalog(Fixture()).value()->ContentHash())<<'\n';return 0;}
-        Lifetime();Equip();Publication();Persistence();std::cout<<checks<<" costume checks passed\n";return 0;
+        Lifetime();Equip();Publication();Persistence();CompanionSkins();BodyEffects();WeaponEffects();UniqueLifetimes();std::cout<<checks<<" costume checks passed\n";return 0;
     }
     catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}
 }

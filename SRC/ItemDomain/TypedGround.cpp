@@ -48,12 +48,12 @@ GroundPickup DecideGroundPickup(const GroundLoot& loot, std::int64_t nowMs, std:
 
 std::expected<std::vector<std::byte>, TypedGroundWireError> EncodeTypedGround(const TypedGroundView& view)
 {
-	if (!view.vid || !view.count || !CodeValid(view.code)) return std::unexpected(E::BadValue);
+	if (!view.vid || !view.count || !CodeValid(view.code) || (view.goldAmount && (view.goldAmount>INT64_MAX || view.key.Category()!=ItemCategory::CurrencyToken || view.level || view.count!=1))) return std::unexpected(E::BadValue);
 	std::vector<std::byte> out;
 	out.reserve(FixedSize + view.code.size());
 	Put(out, TypedGroundHeader, 1);
-	Put(out, FixedSize + view.code.size(), 4);
-	Put(out, TypedGroundVersion, 1);
+	Put(out, FixedSize + view.code.size() + (view.goldAmount ? 8 : 0), 4);
+	Put(out, view.goldAmount ? 2 : TypedGroundVersion, 1);
 	Put(out, view.vid, 4);
 	Put(out, static_cast<std::uint32_t>(view.x), 4);
 	Put(out, static_cast<std::uint32_t>(view.y), 4);
@@ -64,6 +64,7 @@ std::expected<std::vector<std::byte>, TypedGroundWireError> EncodeTypedGround(co
 	Put(out, view.count, 4);
 	Put(out, view.code.size(), 1);
 	for (const char c : view.code) out.push_back(static_cast<std::byte>(c));
+    if(view.goldAmount)Put(out,view.goldAmount,8);
 	return out;
 }
 
@@ -72,9 +73,9 @@ std::expected<TypedGroundView, TypedGroundWireError> DecodeTypedGround(std::span
 	if (in.size() < FixedSize) return std::unexpected(E::Truncated);
 	if (Get(in, 0, 1) != TypedGroundHeader) return std::unexpected(E::BadHeader);
 	const auto size = Get(in, 1, 4);
-	if (Get(in, 5, 1) != TypedGroundVersion) return std::unexpected(E::BadVersion);
+	const auto version=Get(in,5,1);if(version<1 || version>2)return std::unexpected(E::BadVersion);
 	const auto length = Get(in, FixedSize - 1, 1);
-	if (size != FixedSize + length) return std::unexpected(E::BadSize);
+	if (size != FixedSize + length + (version==2 ? 8 : 0)) return std::unexpected(E::BadSize);
 	if (in.size() < size) return std::unexpected(E::Truncated);
 	if (in.size() > size) return std::unexpected(E::TrailingBytes);
 	const auto key = DecodeItemKey(in.subspan(22, ItemKeyWireSize));
@@ -83,7 +84,8 @@ std::expected<TypedGroundView, TypedGroundWireError> DecodeTypedGround(std::span
 	TypedGroundView view { static_cast<std::uint32_t>(Get(in, 6, 4)), coordinate(10), coordinate(14), coordinate(18), *key,
 		static_cast<std::uint16_t>(Get(in, 28, 2)), static_cast<std::uint32_t>(Get(in, 30, 4)), {} };
 	for (std::size_t i = 0; i < length; ++i) view.code.push_back(static_cast<char>(in[FixedSize + i]));
-	if (!view.vid || !view.count || !CodeValid(view.code)) return std::unexpected(E::BadValue);
+    if(version==2){view.goldAmount=Get(in,FixedSize+length,8);if(!view.goldAmount)return std::unexpected(E::BadValue);}
+	if (!view.vid || !view.count || !CodeValid(view.code) || (view.goldAmount && (view.goldAmount>INT64_MAX || view.key.Category()!=ItemCategory::CurrencyToken || view.level || view.count!=1))) return std::unexpected(E::BadValue);
 	return view;
 }
 } // namespace auriga::item

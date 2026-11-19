@@ -1,4 +1,6 @@
+#include "../item/TypedBooks.hpp"
 #include "stdafx.h"
+#include "../combat/DeathRecapEvents.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
@@ -648,6 +650,7 @@ ACMD(do_restart)
 
 	ecs::PlayerRuntime::GetDesc(character)->SetPhase(PHASE_GAME);
 	ecs::PlayerRuntime::SetPosition(character, POS_STANDING);
+    DeathRecap::Events::Clear(character);
 	ecs::PlayerRuntime::StartRecoveryEvent(character);
 
 
@@ -1319,11 +1322,15 @@ ACMD(do_restart)
 
 ACMD(do_stat_reset)
 {
+    const std::string savedArgument=argument ? argument : "";
+    if(DeferTypedBookMutation(character,[character,savedArgument,cmd,subcmd]{do_stat_reset(character,savedArgument.c_str(),cmd,subcmd);}))return;
 	ecs::PointSystem::Change(character, POINT_STAT_RESET_COUNT, 12 - ecs::PointSystem::Get(character, POINT_STAT_RESET_COUNT));
 }
 
 ACMD(do_stat_minus)
 {
+    const std::string savedArgument=argument ? argument : "";
+    if(DeferTypedBookMutation(character,[character,savedArgument,cmd,subcmd]{do_stat_minus(character,savedArgument.c_str(),cmd,subcmd);}))return;
 	if (!ecs::PlayerRuntime::IsPC(character))
 		return;
 	if (ecs::PlayerRuntime::GetJob(character) >= JOB_MAX_NUM)
@@ -1873,103 +1880,6 @@ ACMD(do_skillup)
 
 //
 //
-ACMD(do_safebox_close)
-{
-	ecs::SessionSystem::CloseSafebox(character);
-}
-
-//
-//
-ACMD(do_safebox_password)
-{
-	char arg1[256];
-	one_argument(argument, arg1, sizeof(arg1));
-	ecs::SessionSystem::ReqSafeboxLoad(character, arg1);
-}
-
-ACMD(do_safebox_change_password)
-{
-	char arg1[256];
-	char arg2[256];
-
-	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
-
-	if (!*arg1 || strlen(arg1)>6)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 188, "");
-#endif
-		return;
-	}
-
-	if (!*arg2 || strlen(arg2)>6)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 188, "");
-#endif
-		return;
-	}
-
-	TSafeboxChangePasswordPacket p;
-
-	p.dwID = ecs::PlayerRuntime::GetDesc(character)->GetAccountTable().id;
-	strlcpy(p.szOldPassword, arg1, sizeof(p.szOldPassword));
-	strlcpy(p.szNewPassword, arg2, sizeof(p.szNewPassword));
-
-	db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_CHANGE_PASSWORD, ecs::PlayerRuntime::GetDesc(character)->GetHandle(), &p, sizeof(p));
-}
-
-ACMD(do_mall_password)
-{
-	char arg1[256];
-	one_argument(argument, arg1, sizeof(arg1));
-
-	if (!*arg1 || strlen(arg1) > 6)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 188, "");
-#endif
-		return;
-	}
-
-	int iPulse = thecore_pulse();
-
-	if (ecs::SessionSystem::GetMall(character) != entt::null)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 189, "");
-#endif
-		return;
-	}
-
-	if (iPulse - ecs::SessionSystem::GetMallLoadTime(character) < passes_per_sec * 10)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 190, "");
-#endif
-		return;
-	}
-
-	ecs::SessionSystem::SetMallLoadTime(character, iPulse);
-
-	TSafeboxLoadPacket p;
-	p.dwID = ecs::PlayerRuntime::GetDesc(character)->GetAccountTable().id;
-	strlcpy(p.szLogin, ecs::PlayerRuntime::GetDesc(character)->GetAccountTable().login, sizeof(p.szLogin));
-	strlcpy(p.szPassword, arg1, sizeof(p.szPassword));
-
-	db_clientdesc->DBPacket(HEADER_GD_MALL_LOAD, ecs::PlayerRuntime::GetDesc(character)->GetHandle(), &p, sizeof(p));
-}
-
-ACMD(do_mall_close)
-{
-	if (ecs::SessionSystem::GetMall(character) != entt::null)
-	{
-		ecs::SessionSystem::SetMallLoadTime(character, thecore_pulse());
-		ecs::SessionSystem::CloseMall(character);
-		ecs::SessionSystem::Save(character);
-	}
-}
-
 ACMD(do_ungroup)
 {
 	if (!ecs::PlayerRuntime::IsPC(character))

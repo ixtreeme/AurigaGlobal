@@ -35,10 +35,48 @@
 #include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/EntityFactory.hpp"
+#include "../ecs/ResourceAdmission.hpp"
+#include "../ecs/SpatialHelpers.hpp"
+#include "../ecs/components/quest_components.hpp"
+#include "../item/TypedDungeonItems.hpp"
+#include "../item/TypedDungeonEntry.hpp"
+#include "../item/TypedDrops.hpp"
+#include "../item/TypedLoot.hpp"
+#include "../item/TypedGathering.hpp"
+#include "../item/TypedFishProcessing.hpp"
+#include "../item/TypedTools.hpp"
+#include "../item/TypedRecovery.hpp"
+#include "../item/TypedInventorySync.hpp"
+#include "../item/ItemCatalogRuntime.hpp"
+#include "../item/ItemStore.hpp"
+#include "../quest/questpc.h"
+#include <openssl/rand.h>
+#include <cmath>
 
 
 namespace
 {
+    struct RuneKeyPending {};
+    struct RuneKeyGuard {
+        entt::entity dungeon=entt::null;bool completed=false;
+        ~RuneKeyGuard(){if(g_registry.valid(dungeon))g_registry.remove<RuneKeyPending>(dungeon);}
+    };
+    std::uint64_t NativeRuneCount(entt::entity e,std::string_view code){
+        namespace item=auriga::item;const auto catalog=item::runtime::CurrentCatalog();const auto* typed=g_registry.try_get<ecs::TypedItems>(e);
+        const auto key=catalog ? item::DungeonItemKey(*catalog,code) : std::nullopt;if(!key || !typed)return 0;
+        auto count=item::CountMissionItems(typed->state.items,typed->state.fence.owner,*key,0);
+        if(const auto* queue=g_registry.try_get<ecs::TypedGrantQueue>(e))for(const auto& grant:queue->pending)if(grant.key==*key)count+=grant.count;
+        return count;
+    }
+    void GiveRuneFragment(entt::entity e,std::uint32_t legacyFragment,std::uint32_t legacyKey){
+        namespace item=auriga::item;
+        if(g_registry.all_of<ecs::TypedItems>(e)){
+            const auto c=item::runtime::CurrentCatalog();const auto key=c ? item::DungeonItemKey(*c,item::RuneFragmentCode) : std::nullopt;
+            if(key && NativeRuneCount(e,item::RuneFragmentCode)<10 && !NativeRuneCount(e,item::RuneFloorKeyCode))QueueTypedItemGrant(e,{*key,0,1});
+            return;
+        }
+        if(ItemSystem::CountItem(e,legacyFragment)<10 && ItemSystem::CountItem(e,legacyKey)<1)ItemSystem::AutoGiveItemEcs(e,legacyFragment,1);
+    }
     // ---------- CONFIG ----------
     constexpr int32_t kRuneOriginalMap = 218;
     constexpr int32_t kPrivateMin = 2180000;
@@ -83,6 +121,9 @@ namespace
 
     // Items
     constexpr uint32_t kRequiredItem = 89101; // entry ticket
+    constexpr std::string_view kNativeEntryCode="catalog.10.ticket_of_the_runes_8546eaf0058e";
+    std::uint64_t EntryTicketCount(entt::entity e){return HasTypedDungeonInventory(e)?TypedDungeonTicketCount(e,kNativeEntryCode):ItemSystem::CountItem(e,kRequiredItem);}
+    void ConsumeEntryTicket(entt::entity e){if(!HasTypedDungeonInventory(e))ItemSystem::RemoveSpecifyItemEcs(e,kRequiredItem,1);}
     constexpr uint32_t kRemoveAllItem = 89107; // remove-all item (as in Lua)
     constexpr uint32_t kKeyFragment = 89102; // fragments (10 -> key)
     constexpr uint32_t kFloorKey = 89103; // completion key / offering key
@@ -196,6 +237,10 @@ namespace
         ForEachPcOnMap(mapIndex, [vnum](entt::entity pc){
             if (!ecs::PlayerRuntime::IsValid(pc))
                 return;
+            if(g_registry.all_of<ecs::TypedItems>(pc)){
+                if(vnum==kFloorKey)QueueTypedDungeonCleanup(pc,auriga::item::RuneFloorKeyCode);
+                return;
+            }
             const int32_t cnt = ItemSystem::CountItem(pc, vnum);
             if (cnt > 0)
                 ItemSystem::RemoveSpecifyItemEcs(pc, vnum, cnt);
@@ -206,6 +251,11 @@ namespace
     {
         if (!ecs::PlayerRuntime::IsValid(victimEntity))
             return;
+        if(g_registry.valid(owner) && g_registry.all_of<ecs::TypedItems>(owner)){
+            const auto c=auriga::item::runtime::CurrentCatalog();const auto key=c && vnum==kFloorKey ? auriga::item::DungeonItemKey(*c,auriga::item::RuneFloorKeyCode) : std::nullopt;
+            if(key)DropTypedLoot({*key,0,count},ecs::PlayerRuntime::GetMapIndex(victimEntity),ecs::PlayerRuntime::GetX(victimEntity)+number(-200,200),ecs::PlayerRuntime::GetY(victimEntity)+number(-200,200),ecs::PlayerRuntime::GetZ(victimEntity),owner,180000);
+            return;
+        }
 
         const entt::entity item = ITEM_MANAGER::instance().CreateItem(vnum, count);
         if (!ItemSystem::IsValidItem(item))
@@ -1017,15 +1067,13 @@ void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             const entt::entity party = ecs::SocialSystem::GetParty(killer);
             if (party == entt::null)
             {
-                if (ItemSystem::CountItem(killer, kKeyFragment) < 10 && ItemSystem::CountItem(killer, kFloorKey) < 1)
-                    ItemSystem::AutoGiveItemEcs(killer, kKeyFragment, 1);
+                GiveRuneFragment(killer,kKeyFragment,kFloorKey);
             }
             else
             {
                 if (PartySystem::GetLeaderPID(party) == ecs::PlayerRuntime::GetPlayerID(killer))
                 {
-                    if (ItemSystem::CountItem(killer, kKeyFragment) < 10 && ItemSystem::CountItem(killer, kFloorKey) < 1)
-                        ItemSystem::AutoGiveItemEcs(killer, kKeyFragment, 1);
+                    GiveRuneFragment(killer,kKeyFragment,kFloorKey);
                 }
             }
         }
@@ -1210,6 +1258,7 @@ bool CRuneDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt::enti
 
 bool CRuneDungeon::OnClickNpc(entt::entity character)
 {
+    if(TypedDungeonEntryPending(character))return true;
     if (!ecs::PlayerRuntime::IsPC(character))
         return false;
 
@@ -1272,9 +1321,11 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
             return;
 
         // Entry item (1x)
-        ItemSystem::RemoveSpecifyItemEcs(pc, kRequiredItem, 1);
+        ConsumeEntryTicket(pc);
 
         // Leftovers (Lua: d.remove_item / pc.remove_item)
+        if(!HasTypedDungeonInventory(pc))QueueTypedDungeonCleanup(pc,auriga::item::RuneFragmentCode);
+        if(!HasTypedDungeonInventory(pc))QueueTypedDungeonCleanup(pc,auriga::item::RuneFloorKeyCode);
         const int32_t c = ItemSystem::CountItem(pc, kRemoveAllItem);
         if (c > 0)
             ItemSystem::RemoveSpecifyItemEcs(pc, kRemoveAllItem, c);
@@ -1321,7 +1372,7 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
                 return;
             }
 
-            if (ItemSystem::CountItem(pc, kRequiredItem) < 1)
+            if (EntryTicketCount(pc) < 1)
             {
                 ok = false;
                 badName = ecs::PlayerRuntime::GetName(pc).data();
@@ -1349,7 +1400,7 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
             return false;
         }
 
-        if (ItemSystem::CountItem(character, kRequiredItem) < 1)
+        if (EntryTicketCount(character) < 1)
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You need the entry item.");
             return false;
@@ -1357,15 +1408,18 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
     }
 
     // Create dungeon instance
+    auto prepare = [=]() -> std::optional<TypedDungeonEntryPlan> {
     const entt::entity d = CDungeonManager::instance().Create(kRuneOriginalMap);
     if (d == entt::null)
-        return false;
+        return std::nullopt;
 
     DungeonSystem::SetFlag(d, kFlagFloor, 0);
     DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
 
     const int32_t dungeonMapIdx = DungeonSystem::GetMapIndex(d);
 
+        TypedDungeonEntryPlan plan;plan.dungeon=d;plan.cancel=[d]{CancelTypedDungeonPreflight(d);};
+        plan.publish=[=]{
     auto setupMember = [&](entt::entity pc){
             if (!ecs::PlayerRuntime::IsPC(pc))
                 return;
@@ -1398,7 +1452,67 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
         DungeonSystem::Join_Coords(d, character, kEnterFloor1X, kEnterFloor1Y, ecs::PlayerRuntime::GetMapIndex(character));
     }
 
+        };
+        return plan;
+    };
+    if(HasTypedDungeonInventory(character)){
+        if(!BeginTypedDungeonEntry(character,"dungeon.rune.entry",kNativeEntryCode,1,[character](entt::entity pc){const auto level=ecs::PointSystem::GetLevel(pc);return level>=kMinLevel && level<=kMaxLevel && (pc!=character || ecs::QuestSystem::GetFlag(pc,kQfCooldown)<=get_global_time());},prepare))
+            ecs::ChatSystem::Send(character,CHAT_TYPE_INFO,"A teljes csapatnak készen kell állnia, és a belépőnek a hátizsákban kell lennie.");
+        return true;
+    }
+    if(auto plan=prepare())plan->publish();
     return true;
+}
+
+bool CRuneDungeon::OnUseTypedKey(entt::entity character,const auriga::item::PersistentItem& source,const auriga::item::ItemCatalog& catalog)
+{
+    namespace item=auriga::item;namespace P=ecs::PlayerRuntime;
+    const auto refuse=[&]{ecs::ChatSystem::Send(character,CHAT_TYPE_INFO,"A kulcs itt nem használható. A töredékhez10 darab kell; az ötödik szinten állj egy rúnaoltár mellé.");return false;};
+    if(!P::IsPC(character) || !g_registry.all_of<ecs::TypedItems,ecs::TypedItemLogin>(character))return false;
+    const auto map=P::GetMapIndex(character);const auto dungeon=CDungeonManager::instance().FindByMapIndex(map);
+    if(!IsRuneDungeonMap(map) || !g_registry.valid(dungeon) || g_registry.all_of<RuneKeyPending>(dungeon))return refuse();
+    const auto floor=DungeonSystem::GetFlag(dungeon,kFlagFloor),type=DungeonSystem::GetFlag(dungeon,kFlagType);
+    item::RuneKeyFacts facts;const auto admission=TypedRecoveryAdmission(character,{},source.count);
+    facts.dungeon=true;facts.floor=static_cast<std::uint8_t>(floor);facts.type=static_cast<std::uint8_t>(type);facts.level=admission.level;facts.characterClass=admission.classIndex;facts.sex=admission.sexIndex;facts.inCombat=admission.inCombat;
+    const auto party=ecs::SocialSystem::GetParty(character);facts.leader=party==entt::null || PartySystem::GetLeaderPID(party)==P::GetPlayerID(character);
+    const auto* quest=g_registry.try_get<ecs::QuestPCState>(character);auto* desc=P::GetDesc(character);
+    facts.admitted=desc && desc->IsPhase(PHASE_GAME) && !CombatSystem::IsDead(character) && !P::IsWarping(character) && TypedGatheringAdmitted(character) && !TypedGatheringActive(character) && !g_registry.all_of<ecs::TypedItemBusy>(character) && quest && quest->pc && !quest->pc->IsRunning();
+    entt::entity pedestal=entt::null;std::pair<double,std::uint32_t> nearest{501.0,UINT32_MAX};
+    if(floor==5 && type==6)if(auto* world=ecs::GetMap(map)){
+        auto find=[&](entt::entity npc){if(!ecs::IsCharacter(npc) || P::GetRaceNum(npc)!=kKeyNpcVnum || CombatSystem::IsDead(npc))return;
+            const auto distance=std::hypot(double(P::GetX(npc))-P::GetX(character),double(P::GetY(npc))-P::GetY(character));const auto candidate=std::pair{distance,P::GetPacketVID(npc)};
+            if(distance<=500 && candidate<nearest){nearest=candidate;pedestal=npc;}};world->for_each(find);
+    }
+    facts.pedestal=pedestal!=entt::null;
+    const auto& state=g_registry.get<ecs::TypedItems>(character).state;const auto quote=item::QuoteRuneKey(catalog,source,state.fence.owner,facts);if(!quote)return refuse();
+    auto permit=ecs::resource_admission::Enter({character},auriga::resource_admission::Operation::ItemUse);if(!permit || !permit->Current())return refuse();
+    std::array<std::uint8_t,16> operation{};if(RAND_bytes(operation.data(),operation.size())!=1)return refuse();
+    auto ids=item::runtime::PeekInstanceIds(1);auto commit=item::MakeRuneKeyCommit(catalog,operation,state.fence,state.storages,state.items,source.id,facts,ids,TypedItemEffectNow());if(!commit)return refuse();
+    const auto created=static_cast<std::size_t>(std::ranges::count_if(commit->items,[](const auto& change){return !change.before;}));
+    auto guard=std::make_shared<RuneKeyGuard>();guard->dungeon=dungeon;g_registry.emplace<RuneKeyPending>(dungeon);
+    auto held=std::make_shared<auriga::resource_admission::Permit>(std::move(*permit));const auto pid=P::GetPlayerID(character);const auto token=g_registry.get<ecs::TypedItemLogin>(character).token;
+    g_registry.emplace_or_replace<ecs::TypedItemBusy>(character);
+    const bool queued=item::runtime::RequestCommit(state.fence.owner,state.fence.sessionGeneration,std::move(*commit),[pid,token,guard,held,map,floor,type,pedestal,action=*quote](item::runtime::CommitOutcome out){
+        // The first confirmed write advances this exact ephemeral dungeon even
+        // when the actor logs out or the SQL COMMIT needed reconciliation.
+        if(out.write && !guard->completed){guard->completed=true;
+            const auto d=guard->dungeon;
+            if(g_registry.valid(d) && CDungeonManager::instance().FindByMapIndex(map)==d && DungeonSystem::GetFlag(d,kFlagFloor)==floor && DungeonSystem::GetFlag(d,kFlagType)==type){
+                if(action==item::RuneKeyAction::Advance)s_rune.CreateRandomFloor(map);
+                else if(action==item::RuneKeyAction::Offer && g_registry.valid(pedestal) && P::GetMapIndex(pedestal)==map && P::GetRaceNum(pedestal)==kKeyNpcVnum){
+                    CHARACTER_MANAGER::instance().DestroyCharacter(pedestal);const auto opened=DungeonSystem::GetFlag(d,kFlagOpened)+1;DungeonSystem::SetFlag(d,kFlagOpened,opened);
+                    if(opened>=5){DungeonSystem::SetFlag(d,kFlagType,7);RemoveAllItemOnMap(map,kFloorKey);DungeonSystem::ClearRegen(d);
+                        if(!SetVidInvincible(static_cast<std::uint32_t>(DungeonSystem::GetFlag(d,kFlagBossVid)),false)){DungeonSystem::Notice(d,983,"",true);s_rune.ClearDungeon(map);}
+                        else DungeonSystem::Notice(d,967,"",true);
+                    }
+                }
+            }
+        }
+        const auto ch=CHARACTER_MANAGER::instance().FindEntityByPID(pid);const auto* login=g_registry.valid(ch) ? g_registry.try_get<ecs::TypedItemLogin>(ch) : nullptr;if(!login || login->token!=token)return;
+        g_registry.remove<ecs::TypedItemBusy>(ch);if(out.state)g_registry.emplace_or_replace<ecs::TypedItems>(ch,std::move(*out.state));
+        if(!out.write)ecs::ChatSystem::Send(ch,CHAT_TYPE_INFO,"A kulcs mentése nem sikerült.");SendTypedInventory(ch);PumpTypedItemGrants(ch);
+    });
+    if(!queued){g_registry.remove<ecs::TypedItemBusy>(character);return refuse();}item::runtime::SpendInstanceIds(created);return true;
 }
 
 bool CRuneDungeon::OnUseItem89103(entt::entity character)

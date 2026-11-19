@@ -1,0 +1,641 @@
+{
+  "timestamp": "2026-11-16T11:57:15.547433+00:00",
+  "scope": "owned loopback Server2-Local only",
+  "package": "D:\\AurigaGlobal\\Server2-Local",
+  "server_branch": "20261103",
+  "unity_branch": "/main/unity63-integration-20261103",
+  "unity_editor": "6000.3.27f1",
+  "host": "127.0.0.1",
+  "auth_port": 30052,
+  "game_port": 30078,
+  "service_names": [
+    "database",
+    "ch1-core1",
+    "ch1-core2",
+    "ch99-core99",
+    "login"
+  ],
+  "catalog_schema": 55,
+  "catalog_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+  "catalog_tables": 106,
+  "definitions": 6935,
+  "converted_source_rows": 9853,
+  "retired_source_rows": 496,
+  "merge_deferred_source_rows": 637,
+  "drop_groups": 183,
+  "drop_entries": 9027,
+  "excluded_drop_entries": {
+    "merge_deferred": 298,
+    "retired": 96,
+    "zero_chance": 4
+  },
+  "starter_profiles": 16,
+  "legacy_item_rows": 0,
+  "instance_migration": "040_gaya_wallet.sql",
+  "files": {
+    "bin/GameServer.exe": "05dee82553b510b0bf5ebb8e8c1b55125cee83364a52347e38bd4188cd3c570f",
+    "bin/Database.exe": "3445a8acca819f1dc91244f19ab685e2c11b37bef812a48b2e26b246de0eb76d",
+    "bin/LoginServer.exe": "10ab9f858c590add248fd0a8c5fbdae9aae80b5322887f1c1aca94db47255e71",
+    "bin/ServerPackageCheck.exe": "60349f6e3b77308aeff4804dca15237ff47a3903dce22bb780fa9cba5a0fa926",
+    "manager/_internal/validators/ItemBenchTool.exe": "1ba795011212a04398c3e505d95956e19e57977f1d05e37bcaaf1894061bd20b",
+    "manager/_internal/validators/CatalogEditorTool.exe": "278173b8b3a84e14bfd3253d7d4718d7ccd7c887935cb392d7885bd87e2357c8",
+    "data/typed_shops.json": "104828eb7a0e68f424cdf0f66703cb75d36cb9f57153723997dece0d0f5a1687",
+    "data/typed_crafting.json": "7bcb7d0a6deb0a13e98d5728753fd8552b75c12e555f4fa94f5a81c24a3b691a",
+    "data/typed_character_creation.json": "baf564fb3eaba3ab76dc755be9b501a95619da0e8324219af51b03a9b55ab23d",
+    "manager/_internal/migrations/040_gaya_wallet.sql": "a5acf42f1ae28a250940d5cc8f696956c64a5491efa4d5340fd2ed05d5f25449"
+  },
+  "validation": {
+    "ctest": 85,
+    "converter_tests": 14,
+    "unity_live_checks": 29,
+    "fresh_characters": 2,
+    "live_operations": [
+      "TLS login",
+      "normal character creation",
+      "automatic native inventory and starter provisioning",
+      "potion use",
+      "inventory move",
+      "equip/swap",
+      "unequip",
+      "split ground drop",
+      "pickup",
+      "relogin/persistent identity and counts",
+      "original NPC stock purchase with all five item currencies",
+      "source-instance selection through inventory",
+      "original Gaya equipment recipe and native bonus/socket preservation",
+      "duplicate and insufficient-currency rejection",
+      "normal NPC services menu opens native workshop"
+    ],
+    "original_shop_live_checks": 22,
+    "original_craft_live_checks": 26,
+    "npc_menu_live_checks": 8,
+    "unity_craft_offline_checks": 17958
+  },
+  "unity_markers": [
+    "METIN2_TYPED_SHOP_INTEGRATION=SUCCESS checks=4044",
+    "METIN2_TYPED_SHOP_INTEGRATION=SUCCESS checks=4044",
+    "METIN2_TYPED_SHOP_INTEGRATION=SUCCESS checks=4044",
+    "METIN2_TYPED_SHOP_INTEGRATION=SUCCESS checks=17983",
+    "METIN2_ORIGINAL_SHOP_LIVE=SUCCESS checks=22 npc=20016 offer=300 price=10000000 costs=5 ui_confirmations=1 replay=1 insufficient=1 relog=1",
+    "METIN2_TYPED_SHOP_INTEGRATION=SUCCESS checks=17983",
+    "METIN2_TYPED_SHOP_INTEGRATION=SUCCESS checks=17983",
+    "METIN2_ORIGINAL_CRAFT_LIVE=SUCCESS checks=26 npc=20094 recipe=99 source_selection=1 ui_confirmations=1 replay=1 no_gaya=1 foreign_source=1 relog=1",
+    "METIN2_TYPED_CRAFT_INTEGRATION=SUCCESS checks=17958",
+    "METIN2_TYPED_SHOP_INTEGRATION=SUCCESS checks=17983",
+    "METIN2_ORIGINAL_CRAFT_ENTRY_LIVE=SUCCESS checks=8 npc_menu=1 native_workshop=1",
+    "METIN2_ORIGINAL_CRAFT_ENTRY_LIVE=SUCCESS checks=8 npc_menu=1 native_workshop=1"
+  ],
+  "untested": [
+    "Full visual Play-mode/Addressables player build",
+    "Actual monster-kill loot flow and full dungeon playthrough",
+    "Rebuild and end-to-end use of the older frozen graphical manager"
+  ],
+  "backups": [
+    "D:\\AurigaGlobal\\Server2-Local\\run\\deployments\\local-native-v55-c61",
+    "D:\\AurigaGlobal\\Server2-Local\\run\\deployments\\local-native-runtime-c66",
+    "D:\\AurigaGlobal\\Server2-Local\\run\\deployments\\local-original-shops-c79",
+    "D:\\AurigaGlobal\\Server2-Local\\run\\deployments\\local-native-crafting-c86",
+    "D:\\AurigaGlobal\\Server2-Local\\run\\deployments\\local-native-crafting-c91"
+  ],
+  "checkpoint": "C92",
+  "current_crafting_fixture": {
+    "pid": 5,
+    "consumed_source": 4298690131,
+    "retained_source": 4298690130,
+    "reward_count": 1,
+    "wallets": [
+      [
+        "1",
+        "81000000"
+      ],
+      [
+        "3",
+        "0"
+      ]
+    ]
+  },
+  "world_trading": {
+    "active_source_offers": 712,
+    "authored_routes": 57,
+    "barter_offers": 205,
+    "crafting": {
+      "converted_source_recipes": 173,
+      "copy_recipes": 60,
+      "excluded": [
+        {
+          "reason": "merge_deferred:78105",
+          "recipe": 45
+        },
+        {
+          "reason": "merge_deferred:78105",
+          "recipe": 46
+        },
+        {
+          "reason": "merge_deferred:78106",
+          "recipe": 47
+        },
+        {
+          "reason": "merge_deferred:78106",
+          "recipe": 48
+        },
+        {
+          "reason": "merge_deferred:78003",
+          "recipe": 52
+        },
+        {
+          "reason": "merge_deferred:78007",
+          "recipe": 53
+        },
+        {
+          "reason": "merge_deferred:78011",
+          "recipe": 54
+        }
+      ],
+      "gaya_recipes": 70,
+      "ignored_original_copy": [
+        {
+          "recipe": 14,
+          "source_id": 49102
+        },
+        {
+          "recipe": 55,
+          "source_id": 53025
+        },
+        {
+          "recipe": 56,
+          "source_id": 53025
+        },
+        {
+          "recipe": 57,
+          "source_id": 53025
+        },
+        {
+          "recipe": 58,
+          "source_id": 53025
+        },
+        {
+          "recipe": 59,
+          "source_id": 53025
+        },
+        {
+          "recipe": 60,
+          "source_id": 53025
+        },
+        {
+          "recipe": 61,
+          "source_id": 53025
+        },
+        {
+          "recipe": 62,
+          "source_id": 53025
+        },
+        {
+          "recipe": 63,
+          "source_id": 53025
+        },
+        {
+          "recipe": 64,
+          "source_id": 53025
+        },
+        {
+          "recipe": 65,
+          "source_id": 53025
+        },
+        {
+          "recipe": 66,
+          "source_id": 53025
+        },
+        {
+          "recipe": 67,
+          "source_id": 53025
+        },
+        {
+          "recipe": 68,
+          "source_id": 53025
+        },
+        {
+          "recipe": 69,
+          "source_id": 53025
+        },
+        {
+          "recipe": 70,
+          "source_id": 53025
+        },
+        {
+          "recipe": 71,
+          "source_id": 53025
+        },
+        {
+          "recipe": 72,
+          "source_id": 53025
+        },
+        {
+          "recipe": 73,
+          "source_id": 53025
+        },
+        {
+          "recipe": 74,
+          "source_id": 53025
+        },
+        {
+          "recipe": 75,
+          "source_id": 53025
+        },
+        {
+          "recipe": 76,
+          "source_id": 53025
+        },
+        {
+          "recipe": 77,
+          "source_id": 53025
+        },
+        {
+          "recipe": 78,
+          "source_id": 53025
+        },
+        {
+          "recipe": 79,
+          "source_id": 53025
+        },
+        {
+          "recipe": 80,
+          "source_id": 53025
+        },
+        {
+          "recipe": 81,
+          "source_id": 53290
+        },
+        {
+          "recipe": 82,
+          "source_id": 53291
+        },
+        {
+          "recipe": 83,
+          "source_id": 53293
+        },
+        {
+          "recipe": 84,
+          "source_id": 53294
+        },
+        {
+          "recipe": 85,
+          "source_id": 53295
+        },
+        {
+          "recipe": 89,
+          "source_id": 18109
+        },
+        {
+          "recipe": 90,
+          "source_id": 18029
+        },
+        {
+          "recipe": 91,
+          "source_id": 18059
+        }
+      ],
+      "routed_recipes": 173,
+      "workshops": 13
+    },
+    "excluded": [
+      {
+        "reason": "merge_deferred:72013",
+        "shop": 2,
+        "source_id": 72013
+      },
+      {
+        "reason": "merge_deferred:2873",
+        "shop": 5,
+        "source_id": 71171
+      },
+      {
+        "reason": "merge_deferred:2872",
+        "shop": 5,
+        "source_id": 611517
+      },
+      {
+        "reason": "merge_deferred:2871",
+        "shop": 5,
+        "source_id": 611521
+      },
+      {
+        "reason": "merge_deferred:2877",
+        "shop": 5,
+        "source_id": 611556
+      },
+      {
+        "reason": "merge_deferred:2878",
+        "shop": 5,
+        "source_id": 611558
+      },
+      {
+        "reason": "merge_deferred:2875",
+        "shop": 5,
+        "source_id": 611573
+      },
+      {
+        "reason": "merge_deferred:2876",
+        "shop": 5,
+        "source_id": 611577
+      },
+      {
+        "reason": "merge_deferred:2874",
+        "shop": 5,
+        "source_id": 611591
+      },
+      {
+        "reason": "merge_deferred:2879",
+        "shop": 5,
+        "source_id": 611597
+      },
+      {
+        "reason": "merge_deferred:2873",
+        "shop": 5,
+        "source_id": 611598
+      },
+      {
+        "reason": "merge_deferred:2876",
+        "shop": 5,
+        "source_id": 611602
+      },
+      {
+        "reason": "merge_deferred:2877",
+        "shop": 5,
+        "source_id": 611608
+      },
+      {
+        "reason": "merge_deferred:2875",
+        "shop": 5,
+        "source_id": 611623
+      },
+      {
+        "reason": "merge_deferred:2873",
+        "shop": 5,
+        "source_id": 611631
+      },
+      {
+        "reason": "merge_deferred:2873",
+        "shop": 5,
+        "source_id": 611637
+      },
+      {
+        "reason": "merge_deferred:2875",
+        "shop": 5,
+        "source_id": 611638
+      },
+      {
+        "reason": "merge_deferred:2878",
+        "shop": 5,
+        "source_id": 611641
+      },
+      {
+        "reason": "merge_deferred:2873",
+        "shop": 5,
+        "source_id": 611666
+      },
+      {
+        "reason": "retired:50011",
+        "shop": 8,
+        "source_id": 8885
+      },
+      {
+        "reason": "retired:50201",
+        "shop": 9,
+        "source_id": 50201
+      },
+      {
+        "reason": "merge_deferred:78001",
+        "shop": 53,
+        "source_id": 78001
+      },
+      {
+        "reason": "retired:72320",
+        "shop": 55,
+        "source_id": 72320
+      },
+      {
+        "reason": "retired:46003",
+        "shop": 56,
+        "source_id": 46003
+      },
+      {
+        "reason": "retired:46004",
+        "shop": 56,
+        "source_id": 46004
+      },
+      {
+        "reason": "retired:46005",
+        "shop": 56,
+        "source_id": 46005
+      },
+      {
+        "reason": "retired:46006",
+        "shop": 56,
+        "source_id": 46006
+      },
+      {
+        "reason": "retired:46007",
+        "shop": 56,
+        "source_id": 46007
+      },
+      {
+        "reason": "retired:46008",
+        "shop": 56,
+        "source_id": 46008
+      },
+      {
+        "reason": "retired:46303",
+        "shop": 56,
+        "source_id": 46303
+      },
+      {
+        "reason": "retired:46304",
+        "shop": 56,
+        "source_id": 46304
+      },
+      {
+        "reason": "retired:46307",
+        "shop": 56,
+        "source_id": 46307
+      },
+      {
+        "reason": "retired:46308",
+        "shop": 56,
+        "source_id": 46308
+      },
+      {
+        "reason": "retired:46601",
+        "shop": 56,
+        "source_id": 46601
+      },
+      {
+        "reason": "retired:46602",
+        "shop": 56,
+        "source_id": 46602
+      },
+      {
+        "reason": "retired:46603",
+        "shop": 56,
+        "source_id": 46603
+      },
+      {
+        "reason": "retired:46604",
+        "shop": 56,
+        "source_id": 46604
+      },
+      {
+        "reason": "retired:46605",
+        "shop": 56,
+        "source_id": 46605
+      },
+      {
+        "reason": "retired:46606",
+        "shop": 56,
+        "source_id": 46606
+      },
+      {
+        "reason": "retired:88001",
+        "shop": 56,
+        "source_id": 88001
+      },
+      {
+        "reason": "retired:88005",
+        "shop": 56,
+        "source_id": 88005
+      },
+      {
+        "reason": "retired:88009",
+        "shop": 56,
+        "source_id": 88009
+      },
+      {
+        "reason": "retired:88035",
+        "shop": 56,
+        "source_id": 88035
+      },
+      {
+        "reason": "retired:88039",
+        "shop": 56,
+        "source_id": 88039
+      }
+    ],
+    "free_offers": 364,
+    "inputs": {
+      "config\\item_combat\\full_proto_converted_catalog.json": "9ab3dac7f81d2898ab89aeeca641bffc4f59b28ac5f7683d080282ea9913babd",
+      "config\\item_combat\\original_cube.source.json": "ddd8442dc5c809ee2368a00491ab8c2f13a3f40049233a69d887fd7d22eb6b09",
+      "config\\item_combat\\original_cube_prototypes.source.json": "7236eb9ef0584610305b91bd180ffb1c360503818ee3f280e2821aa1ca54309c",
+      "config\\item_combat\\original_npc_shops.source.json": "85ffb7876b86caf7df6a4830789b5478cdd3b52fbf9c7b5adbda95197ee487cf"
+    },
+    "missing_quest_shops": [
+      73
+    ],
+    "npc_shops": 46,
+    "orphan_rows": [
+      {
+        "shop": 1030,
+        "source_id": 11256
+      },
+      {
+        "shop": 1030,
+        "source_id": 11456
+      },
+      {
+        "shop": 1030,
+        "source_id": 11656
+      },
+      {
+        "shop": 1030,
+        "source_id": 11856
+      },
+      {
+        "shop": 1030,
+        "source_id": 27102
+      },
+      {
+        "shop": 1030,
+        "source_id": 27105
+      },
+      {
+        "shop": 1030,
+        "source_id": 50052
+      },
+      {
+        "shop": 1030,
+        "source_id": 50053
+      },
+      {
+        "shop": 1030,
+        "source_id": 70038
+      },
+      {
+        "shop": 1030,
+        "source_id": 71095
+      },
+      {
+        "shop": 1040,
+        "source_id": 11256
+      },
+      {
+        "shop": 1040,
+        "source_id": 11456
+      },
+      {
+        "shop": 1040,
+        "source_id": 11656
+      },
+      {
+        "shop": 1040,
+        "source_id": 11856
+      },
+      {
+        "shop": 1040,
+        "source_id": 27102
+      },
+      {
+        "shop": 1040,
+        "source_id": 27105
+      },
+      {
+        "shop": 1040,
+        "source_id": 50052
+      },
+      {
+        "shop": 1040,
+        "source_id": 50053
+      },
+      {
+        "shop": 1040,
+        "source_id": 70038
+      },
+      {
+        "shop": 1040,
+        "source_id": 71095
+      },
+      {
+        "shop": 3169,
+        "source_id": 50053
+      }
+    ],
+    "unbound_shops": [
+      54,
+      1002,
+      1003,
+      1004,
+      1005,
+      1006,
+      1008,
+      1009,
+      1010,
+      1011,
+      1012,
+      1013,
+      1014,
+      1015,
+      1016,
+      1017,
+      1018,
+      1019
+    ]
+  },
+  "old_gaya_character_files_removed": 1384
+}

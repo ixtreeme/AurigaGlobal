@@ -1,5 +1,7 @@
 #include "CatalogSnapshotFixture.hpp"
 #include <item/SkillBooks.hpp>
+#include <item/PersistentItems.hpp>
+#include <set>
 #include <algorithm>
 #include <functional>
 #include <iostream>
@@ -179,9 +181,26 @@ void ForgetAndHorse()
     a.horse=BookHorseState{0,0,0};a.characterLevel=49;
     Check(PrepareSkillBookUse(*c,Book(),a).error()==SkillBookError::LevelDenied,"horse level minimum enforced");
 }
+void BoundBookFactory(){
+    auto source=Source();source.skillBookProfiles[0].targetMode=SkillBookTargetMode::InstanceBound;source.skillBookProfiles[0].targets.push_back({16,SkillPointPool::None,0});
+    const auto c=BuildItemCatalog(source).value();const ItemOwner owner{ItemOwnerKind::Character,842};const ItemOwnerFence fence{owner,1,1};const std::array bags{ItemStorageLayout{{owner,ItemStorageKind::Inventory,1},5,9,1}};std::set<unsigned> reached;
+    for(unsigned n=0;n<256;++n){
+        const std::array<std::uint8_t,16> op{0xEE,static_cast<std::uint8_t>(n)};const std::array ids{ItemInstanceId::Create(4000+n).value()};ItemGrant spec{Book(),0,3};
+        const auto granted=MakeGrantCommit(*c,op,fence,bags,{},spec,ids);Check(granted && granted->items.size()==1,"default bound book factory grants one counted stack");const auto& item=granted->items[0].after;
+        Check(item.count==3 && item.bookSkill && (*item.bookSkill==1 || *item.bookSkill==16),"one allowed skill belongs to the whole issued stack");reached.insert(*item.bookSkill);
+        Check(MakeGrantCommit(*c,op,fence,bags,{},spec,ids)->items[0].after==item,"same grant identity produces the same bound stack");
+        auto bad=item;bad.bookSkill=2;Check(!ValidatePersistentItem(*c,bad),"unpublished bound skill cannot enter the instance store");
+        const std::array inventory{item};auto moved=MakeMoveCommit(*c,{0xEF},fence,bags,inventory,item.id,{ItemStorageKind::Inventory,1,1}).value();
+        Check(moved.items[0].after.bookSkill==item.bookSkill,"moving preserves the issued book skill");moved.items[0].after.bookSkill=*item.bookSkill==1 ? 16 : 1;
+        Check(!ValidateItemCommit(*c,moved),"even another allowed skill cannot replace an existing instance binding");
+        spec.bookSkill=16;Check(MakeGrantCommit(*c,op,fence,bags,{},spec,ids)->items[0].after.bookSkill==16,"explicit permitted server-issued binding remains supported");
+    }
+    Check(reached==std::set<unsigned>{1,16},"uniform factory reaches all authored targets");
+}
+
 }
 int main()
 {
-    try{CatalogValidation();LearningAndDecisions();AdmissionRejections();ForgetAndHorse();std::cout<<checks<<" skill book checks passed\n";return 0;}
+    try{CatalogValidation();LearningAndDecisions();AdmissionRejections();ForgetAndHorse();BoundBookFactory();std::cout<<checks<<" skill book checks passed\n";return 0;}
     catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
 }

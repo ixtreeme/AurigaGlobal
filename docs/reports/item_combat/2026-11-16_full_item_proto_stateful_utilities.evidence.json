@@ -1,0 +1,198 @@
+{
+  "candidate": "build\\full-proto-stateful-utilities-v50-final.json",
+  "sha256": "052da0f9c38f333b0e715b4f0cefabc24a1ee9176c8aa0f64523168e7e55d856",
+  "catalog_hash": "8c47a3c8162e502f8e9488f7973384b07da9baa0bbb93395ac8cef6383e2d845",
+  "schema": 50,
+  "summary": {
+    "blocked_reasons": {
+      "invalid_chest_lock": 2,
+      "invalid_inventory_height": 6,
+      "invalid_mount_definition": 10,
+      "invalid_timed_effect_duration": 6,
+      "invalid_toggle_effect_definition": 18,
+      "invalid_weapon_costume_effect_attachment:163": 1,
+      "missing_equipment_asset": 49,
+      "missing_secondary_skill_definition:123": 3,
+      "missing_source_container_reward_group": 236,
+      "missing_source_icon": 171,
+      "missing_stole_model": 1,
+      "missing_unity_asset_reference": 12,
+      "missing_weapon_costume_effect_mapping:1297": 1,
+      "missing_weapon_costume_effect_mapping:1326": 2,
+      "missing_weapon_costume_effect_mapping:1335": 2,
+      "missing_weapon_costume_effect_mapping:1344": 2,
+      "semantic_converter_required:11:0": 1,
+      "semantic_converter_required:16:10": 4,
+      "semantic_converter_required:27:0": 7,
+      "semantic_converter_required:36:0": 1,
+      "semantic_converter_required:37:0": 12,
+      "semantic_converter_required:38:0": 1,
+      "semantic_converter_required:3:1": 2,
+      "semantic_converter_required:3:10": 59,
+      "semantic_converter_required:3:15": 1,
+      "semantic_converter_required:3:23": 6,
+      "semantic_converter_required:3:29": 2,
+      "semantic_converter_required:9:0": 1,
+      "skill_selected_on_instance_not_in_prototype": 3,
+      "source_bonus_out_of_native_bounds:31": 1,
+      "source_fish_has_no_effect": 1,
+      "source_reward_rare_field_out_of_range": 2,
+      "source_stone_has_no_equipment_target": 3,
+      "unported_apply:125": 3,
+      "unported_apply:126": 1,
+      "unported_apply:127": 1,
+      "unresolved_container_reward:2871": 4,
+      "unresolved_container_reward:2872": 1,
+      "unresolved_container_reward:2875": 3,
+      "unresolved_container_reward:2876": 3,
+      "unresolved_container_reward:2877": 1,
+      "unresolved_container_reward:2878": 1,
+      "unresolved_container_reward:2879": 1,
+      "unresolved_container_reward:48611": 1,
+      "unresolved_container_reward:55003": 1,
+      "unresolved_container_reward:55010": 1,
+      "unresolved_container_reward:70065": 1,
+      "unresolved_container_reward:71035": 1,
+      "unresolved_container_reward:72044": 5,
+      "unresolved_container_reward:72320": 4,
+      "unresolved_fishing_result:27847": 1,
+      "unresolved_fishing_result:27877": 1,
+      "unsupported_ability_effect": 1
+    },
+    "blocked_source_rows": 665,
+    "converted_source_rows": 9830,
+    "new_native_definitions": 7,
+    "retired_source_rows": 491,
+    "source_rows": 10986
+  },
+  "native_definitions": 6912,
+  "new_sources": [
+    {
+      "item": {
+        "category_id": 10,
+        "local_id": 1589
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "requires_native_recall_component": true,
+      "semantics": "original_stateful_recall_scroll",
+      "source_extra": null,
+      "source_id": 22000,
+      "source_level_issues": [],
+      "source_row_hash": "0710e252021d871f660a6bf49e54d59f5dced5d8514362791a1d636d7b2b2c34",
+      "source_summon_gates": true
+    },
+    {
+      "item": {
+        "category_id": 10,
+        "local_id": 1590
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "requires_native_recall_component": true,
+      "semantics": "original_stateful_recall_scroll",
+      "source_extra": null,
+      "source_id": 22010,
+      "source_level_issues": [],
+      "source_row_hash": "f2fc8e4aec0be85d543aa2c26ec4804a639cd67be0116dc861e7bc7a667e40ed",
+      "source_summon_gates": true
+    },
+    {
+      "item": {
+        "category_id": 10,
+        "local_id": 1591
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "requires_native_recall_component": true,
+      "semantics": "original_stateful_recall_scroll",
+      "source_distance_branch_repaired": "use_saved_memory_destination_instead_of_always_zero_distance",
+      "source_extra": null,
+      "source_id": 22011,
+      "source_level_issues": [],
+      "source_row_hash": "ee00ece32320fe3fbf31d976a8eb3e542802ea3bd3b585da7869a021c69d6744",
+      "source_summon_gates": true
+    },
+    {
+      "item": {
+        "category_id": 10,
+        "local_id": 1592
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "original_stateful_campfire",
+      "source_creature": 12000,
+      "source_extra": null,
+      "source_id": 27600,
+      "source_level_issues": [],
+      "source_lifetime_seconds": 40,
+      "source_reuse_utc_ms": 60000,
+      "source_row_hash": "4665cfaa92bd14f32096aab56cab9073caec4df990e569a77632b6bdb80df860"
+    },
+    {
+      "item": {
+        "category_id": 11,
+        "local_id": 80
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "original_stone_detector",
+      "source_extra": null,
+      "source_id": 27989,
+      "source_level_issues": [],
+      "source_row_hash": "f4a7df170141cf8e107d962bade8f3c23e69866eed6c23b9354a3714adc7dc7a",
+      "source_use_capacity": 6
+    },
+    {
+      "item": {
+        "category_id": 10,
+        "local_id": 1593
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "requires_native_recall_component": true,
+      "semantics": "original_stateful_recall_scroll",
+      "source_extra": null,
+      "source_id": 39043,
+      "source_level_issues": [],
+      "source_row_hash": "a3adbe7d712473503f344de5686e6db47f2de2be596300e5ad7cf2f3e15ff1dc",
+      "source_summon_gates": false
+    },
+    {
+      "item": {
+        "category_id": 11,
+        "local_id": 81
+      },
+      "native_stack_policy": "unique_instance_per_unit",
+      "refinement_level": 0,
+      "semantics": "original_stone_detector",
+      "source_extra": null,
+      "source_id": 76006,
+      "source_level_issues": [],
+      "source_row_hash": "57ea755677baf9263d31952ae9cd443ce2ff8399c7c48d827c0c18d025b16293",
+      "source_use_capacity": 6
+    }
+  ],
+  "native_checks": 237,
+  "converter_tests": 88,
+  "sql": {
+    "checks": 259,
+    "packets": 33,
+    "result": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-stateful-utilities-v50-nonstack\\source-stateful-utility-worker-result.json"
+  },
+  "unity": {
+    "checks": 465,
+    "buttons": 22
+  },
+  "ctest": 67,
+  "deferred": 633,
+  "remaining": 32,
+  "reproduced_byte_identical": true,
+  "installed_to_game": false,
+  "untested": [
+    "Full TLS login / ECS world gameplay",
+    "Actual cross-core recall and reconnect interruption",
+    "Campfire world spawn and grilling lifetime",
+    "Addressables player build"
+  ]
+}

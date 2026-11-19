@@ -1,5 +1,6 @@
 """Typed stole/rune rules and special bonus tools; no player-state editing."""
-from PySide6.QtWidgets import QWidget,QVBoxLayout,QFormLayout,QHBoxLayout,QLabel,QComboBox,QSpinBox,QLineEdit,QPushButton
+import json
+from PySide6.QtWidgets import QWidget,QVBoxLayout,QFormLayout,QHBoxLayout,QLabel,QComboBox,QSpinBox,QLineEdit,QPushButton,QPlainTextEdit,QCheckBox
 from pet_lifecycle_editor import table,cell,text
 from growth_pet_editor import number
 from attribute_editor import UNITS
@@ -10,9 +11,10 @@ class SpecialBonusPanel(QWidget):
     def __init__(self,changed,tools=False):
         super().__init__();self.changed=changed;self.tools=tools;self.loading=True;self.definitions=[]
         layout=QVBoxLayout(self);form=QFormLayout();layout.addLayout(form)
-        self.kind=QComboBox();choices=['Stóla hat bónuszának cseréje','Rúnatöltés','Jelmezreset (három normál bónusz)','Jelmez ritka bónuszának adása','Jelmez kiválasztott ritka bónuszának törlése','Kapcsolt normál/skill bónusz'] if tools else ['Hat bónuszos stóla','Töltéses rúna']
+        self.kind=QComboBox();choices=['Stóla hat bónuszának cseréje','Rúnatöltés','Jelmezreset (három normál bónusz)','Jelmez ritka bónuszának adása','Jelmez kiválasztott ritka bónuszának törlése','Kapcsolt normál/skill bónusz','Abszorpciós vállpánt bónuszának törlése','Kosztümbónusz átvitele (három tárgy)'] if tools else ['Hat bónuszos stóla','Töltéses rúna']
         for i,label in enumerate(choices,1):self.kind.addItem(label,str(i))
         form.addRow('Működés',self.kind)
+        self.transfer=QCheckBox('Bónuszátvitelben fogadó és átadó lehet');self.transfer.setVisible(not tools);form.addRow(self.transfer);self.transfer.toggled.connect(self.notify)
         self.first=QSpinBox();self.second=QSpinBox();self.first.setRange(1,65535 if tools else 7);self.second.setRange(1,4)
         form.addRow('Felhasznált darab' if tools else 'Rúna helye (1–7)',self.first)
         if not tools:form.addRow('Stóla fokozata',self.second)
@@ -25,6 +27,7 @@ class SpecialBonusPanel(QWidget):
         add.clicked.connect(lambda:self.append());remove.clicked.connect(self.remove)
         self.seed=QPushButton('Szerkeszthető mintatáblázat betöltése');layout.addWidget(self.seed);self.seed.clicked.connect(self.seed_rows)
         hint=QLabel('A már kiadott bónusz és töltés megmarad. Stólához hat külön bónusz és négy értékváltozat kell. Rúnához két bónusz töltési fokozatai kellenek; a hetedik hely készletfeltételes és nem fogyaszt töltést.' if not tools else 'A reset három dobásának esélye külön adható meg; mindhárom összege 100%. A bónuszadó és a részben használható töltő tárgy nem halmozható. A művelet csak a megerősítés után fogyaszt anyagot.');hint.setWordWrap(True);layout.addWidget(hint)
+        self.choices=QPlainTextEdit();self.choices.setMaximumHeight(160);self.choices.setPlaceholderText('Bónuszválaszték JSON: choice_no, bonus_id, value_scaled');layout.addWidget(self.choices);self.choices.textChanged.connect(self.notify)
         self.kind.currentIndexChanged.connect(self.controls);self.rows.itemChanged.connect(self.notify);self.first.valueChanged.connect(self.controls);self.second.valueChanged.connect(self.notify);self.capacity.textEdited.connect(self.notify);self.initial.textEdited.connect(self.notify);self.value.textEdited.connect(self.notify);self.bonus.currentIndexChanged.connect(self.notify);self.loading=False;self.controls()
     def notify(self,*_):
         if not self.loading:self.changed()
@@ -43,6 +46,9 @@ class SpecialBonusPanel(QWidget):
         self.notify()
     def controls(self,*_):
         kind=self.kind.currentData()
+        self.transfer.setEnabled(not self.tools and kind=='1')
+        if not self.transfer.isEnabled():self.transfer.setChecked(False)
+        if hasattr(self,'choices'):self.choices.setVisible(self.tools and kind=='4')
         if self.tools:self.capacity.setEnabled(kind=='2');self.bonus.setEnabled(kind=='4');self.value.setEnabled(kind=='4');self.rows.setVisible(kind=='3');self.seed.setVisible(kind=='3')
         else:self.first.setEnabled(kind=='2');self.second.setEnabled(kind=='1');self.capacity.setEnabled(kind=='2' and self.first.value()<7);self.initial.setEnabled(self.capacity.isEnabled())
         self.notify()
@@ -63,20 +69,25 @@ class SpecialBonusPanel(QWidget):
         for row in sorted({i.row() for i in self.rows.selectedIndexes()},reverse=True):self.rows.removeRow(row)
         self.notify()
     def load(self,document,definitions):
+        self.loading=True;self.transfer.setChecked(bool(document.get('costume_transfer_allowed',False)))
         self.loading=True;self.definitions=[d for d in definitions if int(d['sources'])&8];child=document['child'];self.kind.setCurrentIndex(self.kind.findData(child['operation_kind' if self.tools else 'regalia_kind']));self.first.setValue(int(child['units' if self.tools else 'rune_slot']) or 1);self.second.setValue(int(child.get('stole_grade') or 1));self.capacity.setText(catalog.display(child['parameter' if self.tools else 'capacity_ms'],100 if self.tools else 1000));self.initial.setText(catalog.display(child.get('initial_ms','0')))
         if self.tools:
             from item_page import BONUS_LABELS
             self.bonus.clear()
             for d in self.definitions:self.bonus.addItem(BONUS_LABELS.get(d['code'],d['code']),str(d['id']))
             self.bonus.setCurrentIndex(max(0,self.bonus.findData(str(child.get('bonus_id') or 29))));definition=next(d for d in self.definitions if str(d['id'])==str(self.bonus.currentData()));self.value.setText(catalog.display(child.get('value_scaled') or '1',UNITS[int(definition['unit'])][0]))
-        self.rows.setRowCount(0)
+        self.choices.setPlainText(json.dumps(document.get('bonus_choices',[]),ensure_ascii=False,indent=2));self.rows.setRowCount(0)
         for row in document['special_tiers' if self.tools else 'regalia_rules']:self.append(row)
         self.controls();self.loading=False
     def collect(self,document):
         c=document['child'];kind=self.kind.currentData()
+        if not self.tools:document['costume_transfer_allowed']=self.transfer.isChecked() if kind=='1' else False
         if self.tools:
             c.update(operation_kind=kind,units=str(self.first.value()),parameter=str(catalog.scaled(self.capacity.text(),100)) if kind=='2' else '0',bonus_id=None,value_scaled=None)
-            if kind=='4':
+            try:document['bonus_choices']=json.loads(self.choices.toPlainText() or '[]') if kind=='4' else []
+            except ValueError:raise api.EditorError('A bónuszválaszték nem érvényes JSON.')
+            if not isinstance(document['bonus_choices'],list):raise api.EditorError('A bónuszválaszték lista legyen.')
+            if kind=='4' and not document['bonus_choices']:
                 c['bonus_id']=self.bonus.currentData();definition=next(d for d in self.definitions if str(d['id'])==c['bonus_id']);c['value_scaled']=str(catalog.scaled(self.value.text(),UNITS[int(definition['unit'])][0]))
             if kind in ('2','4'):document['base']['max_stack']='1'
             document['special_tiers']=[dict(draw_no=str(int(number(text(self.rows,r,0),'Dobás',1,3))-1),tier=number(text(self.rows,r,1),'Értékszint',1,16),chance_bp=str(catalog.scaled(text(self.rows,r,2),100))) for r in range(self.rows.rowCount())] if kind=='3' else []

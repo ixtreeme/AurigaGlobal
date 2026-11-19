@@ -2,6 +2,67 @@
 #include <algorithm>
 namespace auriga::item
 {
+std::expected<CharacterServicePlan,SkillBookError> PrepareCharacterService(const ItemCatalog& c,const PersistentItem& source,const BookCharacter& live,const SkillBookAdmission& a)
+{
+    using E=SkillBookError;const auto* entry=c.Find(source.key);const auto* p=c.FindCharacterService(source.key);
+    if(!entry || !p)return std::unexpected(E::MissingItem);
+    if(entry->base.retired)return std::unexpected(E::RetiredItem);
+    if(!ValidBookCharacter(live) || (p->kind==CharacterServiceKind::Alignment ? !live.alignment : p->kind==CharacterServiceKind::HairDye ? !live.hair || !live.progression : !live.statResetCredits) || !ValidatePersistentItem(c,source) || a.classIndex>3 || a.sexIndex>1)return std::unexpected(E::InvalidState);
+    if(!a.targetAllowedByRules)return std::unexpected(E::RuleDenied);
+    if(!a.alive)return std::unexpected(E::DeadCharacter);
+    if(a.polymorphed)return std::unexpected(E::Polymorphed);
+    const auto* policy=c.FindUsePolicy(entry->base.usePolicy);
+    if(a.inCombat && !policy->useDuringCombat)return std::unexpected(E::CombatDenied);
+    if(a.characterLevel<c.LevelPolicy(source.key,source.refinementLevel).minimumLevel)return std::unexpected(E::LevelDenied);
+    if(!(policy->allowedClasses&(1u<<a.classIndex)))return std::unexpected(E::ClassDenied);
+    if(!(policy->allowedSexes&(1u<<a.sexIndex)))return std::unexpected(E::SexDenied);
+    if(source.count<p->units)return std::unexpected(E::InsufficientUnits);
+    if(p->kind==CharacterServiceKind::HairDye){
+        const auto& h=*live.hair;const auto level=live.progression->level;
+        if(a.characterLevel!=level || h.part>=1001 || a.hairCostumeEquipped)return std::unexpected(E::RuleDenied);
+        if(p->amount!=1 && h.lastDyeLevel && unsigned(h.lastDyeLevel)+3>level)return std::unexpected(E::OnCooldown);
+        return CharacterServicePlan{h.part,p->amount-1,p->amount,h.lastDyeLevel,static_cast<std::uint16_t>(p->amount==1 ? 0 : level),level};
+    }
+    const std::uint32_t current=p->kind==CharacterServiceKind::Alignment ? *live.alignment : *live.statResetCredits;
+    if(current<p->minimum || current>=p->maximum)return std::unexpected(E::PointLimit);
+    const auto amount=std::min(p->amount,p->maximum-current);return CharacterServicePlan{current,current+amount,amount};
+}
+std::expected<CharacterServiceWrite,SkillBookError> MakeCharacterServiceCommit(const ItemCatalog& c,std::array<std::uint8_t,16> operation,ItemOwnerFence fence,
+    std::span<const ItemStorageLayout> layouts,std::span<const PersistentItem> items,const BookLearning& before,const BookCharacter& live,ItemInstanceId id,const SkillBookAdmission& facts)
+{
+    const auto it=std::ranges::find(items,id,&PersistentItem::id);if(it==items.end() || !PlainInventoryItem(*it,fence.owner) || fence.owner.kind!=ItemOwnerKind::Character)return std::unexpected(SkillBookError::MissingItem);
+    if(!ValidBookLearning(before) || before.revision==UINT64_MAX)return std::unexpected(SkillBookError::InvalidState);
+    auto result=PrepareCharacterService(c,*it,live,facts);if(!result)return std::unexpected(result.error());
+    auto commit=MakeConsumeCommit(c,operation,fence,layouts,items,id,c.FindCharacterService(it->key)->units);if(!commit)return std::unexpected(SkillBookError::InvalidState);
+    auto after=before;++after.revision;after.character=live;
+    if(c.FindCharacterService(it->key)->kind==CharacterServiceKind::Alignment)after.character.alignment=result->after;
+    else if(c.FindCharacterService(it->key)->kind==CharacterServiceKind::HairDye)after.character.hair=CharacterHairState{result->after,result->nextDyeLevel};
+    else after.character.statResetCredits=static_cast<std::uint16_t>(result->after);
+    commit->learning=ItemLearningChange{fence.owner,before,std::move(after)};commit->outcomeCode=CharacterServiceOutcome;commit->result={'C','H','R',static_cast<std::uint8_t>(c.FindCharacterService(it->key)->kind==CharacterServiceKind::HairDye ? 2 : 1)};
+    for(auto value:{result->before,result->after,result->granted})for(unsigned j=0;j<4;++j)commit->result.push_back(static_cast<std::uint8_t>(value>>(j*8)));
+    if(c.FindCharacterService(it->key)->kind==CharacterServiceKind::HairDye)for(auto value:{result->previousDyeLevel,result->nextDyeLevel,result->characterLevel})for(unsigned j=0;j<2;++j)commit->result.push_back(static_cast<std::uint8_t>(value>>(j*8)));
+    if(!ValidateItemCommit(c,*commit))return std::unexpected(SkillBookError::InvalidState);return CharacterServiceWrite{std::move(*commit),*result};
+}
+bool ValidCharacterServiceWrite(const ItemCatalog& c,const ItemCommit& r)
+{
+    if(r.kind!=ItemOperationKind::Consume || r.items.size()!=1 || r.owners.size()!=1 || !r.wallets.empty() || r.recovery || r.ground || !r.learning || (r.result.size()!=16 && r.result.size()!=22) || !std::equal(r.result.begin(),r.result.begin()+3,std::array<std::uint8_t,3>{'C','H','R'}.begin()))return false;
+    const auto& change=r.items[0];if(!change.before || !PlainInventoryItem(*change.before,r.owners[0].owner))return false;const auto* p=c.FindCharacterService(change.before->key);if(!p)return false;
+    const auto read=[&](unsigned at){std::uint32_t v=0;for(unsigned j=0;j<4;++j)v|=std::uint32_t(r.result[at+j])<<(j*8);return v;};const auto old=read(4),next=read(8),amount=read(12);
+    const auto& character=r.learning->after.character;
+    if(p->kind==CharacterServiceKind::HairDye){
+        if(r.result.size()!=22 || r.result[3]!=2 || !character.hair || !character.progression)return false;
+        const auto word=[&](unsigned at){return unsigned(r.result[at])+(unsigned(r.result[at+1])<<8);};
+        const auto previous=word(16),last=word(18),level=word(20);
+        if(!level || level>255 || level!=character.progression->level || previous>255 || old>=1001 || next!=p->amount-1 || amount!=p->amount || last!=(p->amount==1 ? 0 : level) || (p->amount!=1 && previous && previous+3>level) || *character.hair!=CharacterHairState{next,static_cast<std::uint16_t>(last)})return false;
+        if(previous!=(r.learning->before.character.hair ? r.learning->before.character.hair->lastDyeLevel : 0))return false;
+    }else{
+    if(r.result.size()!=16 || r.result[3]!=1)return false;
+    const bool matches=p->kind==CharacterServiceKind::Alignment ? character.alignment==next : character.statResetCredits==next;
+    if(old<p->minimum || old>=p->maximum || amount!=std::min(p->amount,p->maximum-old) || next!=old+amount || !matches)return false;
+    }
+    if(r.learning->owner!=r.owners[0].owner || r.learning->after.chanceTokens!=r.learning->before.chanceTokens || r.learning->after.bypassTokens!=r.learning->before.bypassTokens || r.learning->after.progress!=r.learning->before.progress)return false;
+    auto expected=*change.before;if(expected.count<p->units)return false;++expected.revision;expected.count-=p->units;if(!expected.count){expected.destroyed=true;expected.placement.reset();}return expected==change.after;
+}
 const BookAidProfile* BookAidItemProfile(const ItemCatalog& c,ItemKey key)
 {const auto* e=c.Find(key);const auto* row=e ? std::get_if<ItemConsumableRow>(&e->category) : nullptr;return row && row->bookAidProfile ? c.FindBookAid(*row->bookAidProfile) : nullptr;}
 std::expected<BookAidPlan,SkillBookError> PrepareBookAidUse(const ItemCatalog& c,const PersistentItem& source,const BookLearning& before,const BookCharacter& live,const SkillBookAdmission& a)

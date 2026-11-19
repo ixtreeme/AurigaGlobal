@@ -10,7 +10,7 @@ from growth_pet_editor import number
 EFFECTS=[(1,'Maximum HP (pont)'),(2,'Maximum HP (%)'),(3,'Szörny elleni sebzés'),(4,'Normál PvE sebzés'),
  (5,'Szörnyellenállás'),(6,'Emberellenállás'),(7,'Harcosellenállás'),(8,'Suraellenállás'),(9,'Ninjaellenállás'),
  (10,'Sámánellenállás'),(11,'Boss elleni sebzés'),(12,'Metin elleni sebzés'),(13,'PvE kritikus esély'),
- (14,'Tapasztalatbónusz'),(15,'Yangdrop-bónusz'),(16,'Támadóbónusz'),(17,'Blokkolási esély'),(18,'Nyílelkerülés')]
+ (14,'Tapasztalatbónusz'),(15,'Yangdrop-bónusz'),(16,'Támadóbónusz'),(17,'Blokkolási esély'),(18,'Nyílelkerülés'),(19,'Karakter: Harcosellenállás'),(20,'Karakter: Suraellenállás'),(21,'Karakter: Nindzsaellenállás'),(22,'Karakter: Sámánellenállás'),(23,'Karakter: PvM kritikus esély'),(24,'Karakter: Metin elleni erő'),(25,'Karakter: Boss elleni erő'),(26,'Karakter: Prémium EXP'),(27,'Karakter: Prémium Yangmennyiség'),(28,'Karakter: Támadási bónusz'),(29,'Karakter: Közelharci kivédés'),(30,'Karakter: Közelharci visszaverés')]
 SUPPLIES=[(1,'Petképesség-könyv'),(2,'Egy petképesség törlése'),(3,'Összes petképesség törlése'),
  (4,'Életidő növelése'),(5,'Korlátlan életidő'),(6,'Születési tulajdonság növelése'),(7,'Petszállító doboz'),(8,'Pet megjelenési tárgy')]
 

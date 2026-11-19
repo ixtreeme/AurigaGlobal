@@ -179,6 +179,24 @@ namespace quest
 			return HandleEvent(pc, QUEST_ITEM_USE_EVENT);
 	}
 
+	bool NPC::OnTypedItemUse(PC& pc, TypedItemUseSource source)
+	{
+		auto& manager = CQuestManager::instance();
+		RuntimeScope scope(manager, manager.CurrentRuntime(), true);
+		for (const auto& [questIndex, states] : m_mapOwnQuest[QUEST_TYPED_ITEM_USE_EVENT])
+		{
+			const auto progress = pc.quest_find(questIndex);
+			const auto state = progress == pc.quest_end() ? QUEST_START_STATE_INDEX : progress->second.st;
+			const auto script = states.find(state);
+			if (script == states.end() || (progress == pc.quest_end() && !manager.CanStartQuest(questIndex, pc)))
+				continue;
+			manager.ExecuteQuestScript(pc, manager.GetQuestNameByIndex(questIndex), state,
+				script->second.GetCode(), script->second.GetSize(), nullptr, true, source);
+			return true;
+		}
+		return false;
+	}
+
 	bool NPC::OnSIGUse(PC& pc, bool bReceiveAll)
 	{
         auto& runtimeManager = CQuestManager::instance();

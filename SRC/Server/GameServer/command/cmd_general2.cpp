@@ -1,4 +1,7 @@
 #include "stdafx.h"
+#include "../dungeon/DungeonUi.hpp"
+#include "../combat/DeathRecap.hpp"
+#include "../social/SocialActions.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/MountSystem.hpp"
 #include "../ecs/systems/SkillSystem.hpp"
@@ -18,6 +21,7 @@
 #include "skill.h"
 #include "config.h"
 #include "sectree_manager.h"
+#include "../world/AtlasActions.hpp"
 #include "db.h"
 #ifdef ENABLE_CHOOSE_DOCTRINE_GUI
 #include "horsename_manager.h"
@@ -511,54 +515,13 @@ ACMD(do_change_biologist) {
 
 ACMD(do_gotoxy)
 {
-	char arg1[256], arg2[256];
-	int x = 0, y = 0, z = 0;
-	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
-
-	if (!*arg1 && !*arg2) {
-		return;
-	}
-	else if (!isnhdigit(*arg1) || !isnhdigit(*arg2)) {
-		return;
-	}
-
-	int iPulse = thecore_pulse();
-	if (iPulse - ecs::PlayerRuntime::GetGoToXYTime(character) < PASSES_PER_SEC(10)) {
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 1285, "");
-#endif
-		return;
-	}
-
-	if (!ecs::PlayerRuntime::CanWarp(character) || ecs::PlayerRuntime::IsObserverMode(character) || CombatSystem::IsDead(character) || CombatSystem::IsStun(character) || ecs::PlayerRuntime::GetMapIndex(character) >= 10000) {
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 528, "");
-#endif
-		return;
-	}
-
-	str_to_number(x, arg1);
-	str_to_number(y, arg2);
-	PIXEL_POSITION p;
-	if (!SECTREE_MANAGER::instance().GetMapBasePosition(ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), p))
-		return;
-
-	if (ecs::PointSystem::GetGold(character) < 1000000) {
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 232, "");
-#endif
-		return;
-	} else {
-		ecs::PointSystem::Change(character, POINT_GOLD, -1000000);
-		x += p.x / 100;
-		y += p.y / 100;
-		x *= 100;
-		y *= 100;
-		ecs::MovementSystem::Show(character, ecs::PlayerRuntime::GetMapIndex(character), x, y, z);
-		ecs::MovementSystem::Stop(character);
-		ecs::PlayerRuntime::SetGoToXYTime(character);
-	}
+    RequestAtlasTeleport(character,argument);
 }
+
+ACMD(do_atlasinfo) { SendAtlasInfo(character); }
+ACMD(do_social) { HandleSocialCommand(character,argument); }
+ACMD(do_dungeon_ui) { DungeonUi::Handle(character,argument); }
+ACMD(do_death_ui) { DeathRecap::Handle(character,argument); }
 
 #ifdef ENABLE_SAVEPOINT_SYSTEM
 ACMD(do_open_savepoint) {

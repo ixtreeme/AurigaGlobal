@@ -77,6 +77,8 @@ class DBManager : public singleton<DBManager>
 		// through the binary protocol, so no escaping/quoting is needed.
 		void			QueryPrepared(const char * c_pszSql, const SqlParams & params);
 		SQLMsg *		DirectQueryPrepared(const char * c_pszSql, const SqlParams & params);
+		// One prepared transaction on the direct connection (e.g. the Dragon Coin wallet).
+		SQLMsg *		DirectTransactionPrepared(SqlTransaction transaction);
 		void			ReturnQueryPrepared(int iType, uint32_t dwIdent, void * pvData, const char * c_pszSql, const SqlParams & params);
 
 		void			Process();

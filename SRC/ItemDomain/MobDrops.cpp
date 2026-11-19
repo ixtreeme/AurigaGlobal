@@ -1,11 +1,20 @@
 #include <item/MobDrops.hpp>
 #include <item/ItemCatalog.hpp>
+#include <item/PersistentItems.hpp>
 #include "ContentValidation.hpp"
 #include <algorithm>
 #include <limits>
 
 namespace auriga::item
 {
+ItemGrant MakeMobDropGrant(const MobDrop& drop)
+{
+    ItemGrant grant{drop.item,drop.refinementLevel,drop.amount};
+    grant.tryMagic=true;
+    if(drop.rareAttributeChanceBp)grant.magicChanceBp=drop.rareAttributeChanceBp;
+    return grant;
+}
+
 namespace
 {
 using E = MobDropGroupError;

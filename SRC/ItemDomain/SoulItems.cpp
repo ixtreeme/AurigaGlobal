@@ -91,7 +91,11 @@ std::expected<SoulPlan,SoulError> PlanSoul(const ItemCatalog& catalog,const Soul
     if(r.action==SoulAction::Refine)
     {
         if(r.state.active)return std::unexpected(E::AlreadyActive);
-        if(std::size_t(r.refinementLevel)+1==profile->levels.size())return std::unexpected(E::AtMaximum);
+        if(std::size_t(r.refinementLevel)+1==profile->levels.size() && !row->nextCore)return std::unexpected(E::AtMaximum);
+        if(std::size_t(r.refinementLevel)+1==profile->levels.size()) {
+            const auto* next=catalog.Find(*row->nextCore);const auto* use=catalog.FindUsePolicy(next->base.usePolicy);const auto* rules=catalog.FindDefinitionRules(next->base.key,0);
+            if(next->base.retired || (rules && !rules->available) || r.characterLevel<next->base.minimumLevel || !(use->allowedClasses&(1u<<(r.characterClass-1))) || !(use->allowedSexes&(1u<<(r.sex-1))) || (r.inCombat && !use->useDuringCombat))return std::unexpected(E::Forbidden);
+        }
         if(!r.scroll)return std::unexpected(E::MissingScroll);
         const auto& scroll=*r.scroll;const auto* target=catalog.Find(scroll.key);
         const auto* definition=target ? std::get_if<ItemSoulRow>(&target->category) : nullptr;
@@ -105,7 +109,12 @@ std::expected<SoulPlan,SoulError> PlanSoul(const ItemCatalog& catalog,const Soul
         if(chance==0 || chance==10000){if(r.recordedRoll)return std::unexpected(E::InvalidDecision);plan.success=chance==10000;}
         else {if(!r.recordedRoll || r.recordedRoll>10000)return std::unexpected(E::InvalidDecision);plan.success=r.recordedRoll<=chance;}
         plan.consumeScrollUnits=1;
-        if(plan.success){++plan.afterLevel;plan.after=Initial(profile->levels[plan.afterLevel]);}
+        if(plan.success){
+            if(std::size_t(r.refinementLevel)+1==profile->levels.size()) {
+                const auto* next=catalog.Find(*row->nextCore);const auto& core=std::get<ItemSoulRow>(next->category);
+                plan.resultKey=next->base.key;plan.afterLevel=0;plan.after=Initial(catalog.FindSoulProfile(*core.profile)->levels[0]);
+            } else {++plan.afterLevel;plan.after=Initial(profile->levels[plan.afterLevel]);}
+        }
         return plan;
     }
     if(!r.state.active)return std::unexpected(E::NotActive);

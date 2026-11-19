@@ -1,0 +1,632 @@
+{
+  "generated_at": "2026-11-14T18:34:07.167620+00:00",
+  "summary": {
+    "blocked_reasons": {
+      "invalid_chest_lock": 2,
+      "invalid_inventory_height": 6,
+      "invalid_mount_definition": 10,
+      "invalid_timed_effect_duration": 7,
+      "invalid_toggle_effect_definition": 37,
+      "missing_equipment_asset": 154,
+      "missing_source_container_reward_group": 236,
+      "missing_source_icon": 293,
+      "missing_stole_effect_asset": 6,
+      "missing_stole_model": 1,
+      "missing_tool_model:item/etc/canna_2.gr2": 20,
+      "missing_unity_asset_reference": 12,
+      "non_bonus_affect_requires_dedicated_behavior": 4,
+      "seed_moon_bottle_cooldown_policy_required": 2,
+      "semantic_converter_required:11:0": 1,
+      "semantic_converter_required:15:0": 1,
+      "semantic_converter_required:16:10": 4,
+      "semantic_converter_required:19:0": 1,
+      "semantic_converter_required:22:0": 1,
+      "semantic_converter_required:27:0": 7,
+      "semantic_converter_required:28:3": 28,
+      "semantic_converter_required:28:8": 33,
+      "semantic_converter_required:28:9": 33,
+      "semantic_converter_required:35:0": 5,
+      "semantic_converter_required:35:1": 5,
+      "semantic_converter_required:36:0": 1,
+      "semantic_converter_required:37:0": 12,
+      "semantic_converter_required:38:0": 1,
+      "semantic_converter_required:3:1": 9,
+      "semantic_converter_required:3:10": 121,
+      "semantic_converter_required:3:12": 1,
+      "semantic_converter_required:3:13": 1,
+      "semantic_converter_required:3:15": 1,
+      "semantic_converter_required:3:23": 6,
+      "semantic_converter_required:3:29": 2,
+      "semantic_converter_required:3:32": 1,
+      "semantic_converter_required:3:39": 1,
+      "semantic_converter_required:3:40": 1,
+      "semantic_converter_required:3:45": 1,
+      "semantic_converter_required:3:9": 1,
+      "semantic_converter_required:9:0": 1,
+      "skill_selected_on_instance_not_in_prototype": 4,
+      "source_bonus_out_of_native_bounds:31": 1,
+      "source_fish_has_no_effect": 1,
+      "source_reward_rare_field_out_of_range": 1,
+      "source_stone_has_no_equipment_target": 3,
+      "timed_stole_definition_requires_clock": 9,
+      "unmapped_behavior_value": 1,
+      "unported_apply:125": 3,
+      "unported_apply:126": 1,
+      "unported_apply:127": 1,
+      "unported_apply:51": 16,
+      "unresolved_container_reward:2875": 3,
+      "unresolved_container_reward:30617": 17,
+      "unresolved_container_reward:30618": 1,
+      "unresolved_container_reward:48611": 1,
+      "unresolved_container_reward:55003": 1,
+      "unresolved_container_reward:55010": 1,
+      "unresolved_container_reward:70065": 1,
+      "unresolved_container_reward:70102": 7,
+      "unresolved_container_reward:70402": 2,
+      "unresolved_container_reward:70403": 1,
+      "unresolved_container_reward:71035": 1,
+      "unresolved_container_reward:72044": 5,
+      "unresolved_container_reward:72320": 4,
+      "unresolved_container_reward:88214": 1,
+      "unresolved_container_reward:88230": 1,
+      "unresolved_container_reward:88246": 2,
+      "unresolved_fishing_result:27847": 1,
+      "unresolved_fishing_result:27877": 1,
+      "unsupported_ability_effect": 5
+    },
+    "blocked_source_rows": 1167,
+    "converted_source_rows": 9328,
+    "new_native_definitions": 4836,
+    "retired_source_rows": 491,
+    "source_rows": 10986
+  },
+  "catalog_schema": 36,
+  "catalog_hash": "c68a2b9529d35257cfce2529cdf601b6da0618c38a269486df46a326704e4a35",
+  "native_definitions": 6410,
+  "candidate": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-companion-skins-v36-final.json",
+  "candidate_sha256": "05851977be8d305cb7d2e022630f464e270c923d18be7914cb7112d70dd84ab1",
+  "newly_converted_ids": [
+    60101,
+    60103,
+    88010,
+    88011,
+    88012,
+    88013,
+    88014,
+    88015,
+    88016,
+    88017,
+    88018,
+    88019,
+    88020,
+    88021,
+    88022,
+    88023,
+    88024,
+    88025,
+    88026,
+    88027,
+    88028,
+    88029,
+    88030,
+    88031,
+    88110,
+    88111,
+    88112,
+    88113,
+    88114,
+    88115,
+    88116,
+    88117
+  ],
+  "preserved_definitions": 1574,
+  "preserved_rows": 29204,
+  "remaining_groups": {
+    "behavior": 288,
+    "assets": 486,
+    "source_or_policy": 107,
+    "loot": 286
+  },
+  "installed_to_game": false,
+  "source_inputs": {
+    "fishing": "63d90dfd96df7a2cdd27bfb2c7a1fb075510fbb49c233aa50a09ebf05d38efef",
+    "groups": "6097c3f65ec0af169d0a931133f98919e9a277676696296a0224f6db6ea7fda7",
+    "helper": "b12e9d2a10a91a877414f68ea4a5e2fa2536c7c0230d145fe290d910d86083df",
+    "known": [
+      "50e34c168aec7763c1d7abb50411c5b496b0903d8d8ebf7f61e666ea6188af0b"
+    ],
+    "preserved": "e13271550bc5ba20645046251db8a98189e14e6b393f6e584c38b68dac051234",
+    "source": "51d9ba3130ccb9c3b07f23c380445a882ba4e1357cb8bad0f5ac6cbc2ff7a9c1",
+    "unity_item_catalog": "3b8a05edba2e6f3216fd9e0abcd90fe05ca7595b5324bd79a7b95118dcf96abb"
+  },
+  "source_rules": {
+    "GameServer/core/constants.cpp": "a9ae06f91cf5ac925e342ae32ebae32b85fddbfd409015cdedb808e9f4950a67",
+    "GameServer/ecs/EntityFactory.cpp": "baee7b08de923e225d56bcf18aba92cddf31d64d06b62151c4110fe0069c498e",
+    "GameServer/ecs/components/item_components.hpp": "7a5e71dcb76c7e4bb5f93dbcf9c009169a4b823c5503c9fe595342706f40d96b",
+    "GameServer/ecs/systems/ItemAttributeSystem.cpp": "6bbe087212c8d735fd7a761e913bf7c4c0bd9ffba8a6a2924f66f296183d7720",
+    "GameServer/ecs/systems/ItemSystem.cpp": "eeda85ec6aaa1784cb0c113f9b8e17a29facdbc30598217552834312ea4a48fe",
+    "GameServer/ecs/systems/ItemSystem_LegacyBridge.cpp": "55669ab4242253088400f4a4c2e931209ef00327bca6b6645e4f5aa344ab5068",
+    "GameServer/ecs/systems/SkillSystem.cpp": "de8eca2479cd55daf9af8e95f8551c2ed3f23f719a10178b659d595a396a66da",
+    "GameServer/item/item_manager.cpp": "ec35b205cd8a1bcb36f1f1f8bb74b726708956bb264bd3dcd3d9389905b5ae2c",
+    "GameServer/world/fishing.cpp": "dfd1392dcb7e91cbdb29a2fcd47ccab93662433a9f1a02927e48c287bb1f0e6d",
+    "GameServer/world/mining.cpp": "3235423e8188b89d3ed03a65fd1e59789256798ec6cffe52bd3156052a162f28",
+    "common/CommonDefines.h": "9c1acbf251fb1deda41d35bc98fb2b91ba159c5b2035e6f1278b22024516b63a",
+    "common/rune_length.h": "d775403a785e93196da42a037c55c1b347e113a25518b2dc882ae323eb80e810",
+    "common/service.h": "03970b3ad758b40dc531d51bcdde7aebf87f554e51f5a7fc4874684852fc6d93"
+  },
+  "ctest_latest_status": {
+    "catalog_editor_mariadb": "Passed",
+    "item_bench_mariadb": "Passed",
+    "catalog_editor": "Passed",
+    "item_category_generator": "Passed",
+    "item_combat_schema_foundation": "Passed",
+    "catalog_sql_mariadb": "Passed",
+    "item_bonus_generator": "Passed",
+    "item_catalog_digest": "Passed",
+    "plain_material_migration": "Passed",
+    "full_catalog_conversion": "Passed",
+    "quest_token_migration": "Passed",
+    "legacy_item_migration": "Passed",
+    "legacy_equipment_migration": "Passed",
+    "legacy_remaining_migration": "Passed",
+    "consumables": "Passed",
+    "automatic_recovery": "Passed",
+    "accessory_runtime": "Passed",
+    "socket_insertion": "Passed",
+    "npc_shops": "Passed",
+    "timed_effects": "Passed",
+    "socket_maintenance": "Passed",
+    "accessory_sockets": "Passed",
+    "ammo_runtime": "Passed",
+    "skill_books": "Passed",
+    "containers": "Passed",
+    "automatic_runtime": "Passed",
+    "soul_runtime": "Passed",
+    "currency_tokens": "Passed",
+    "item_key": "Passed",
+    "forge_runtime": "Passed",
+    "special_bonuses": "Passed",
+    "storage_runtime": "Passed",
+    "attribute_runtime": "Passed",
+    "toggle_effects": "Passed",
+    "bonus_profiles": "Passed",
+    "container_opening": "Passed",
+    "catalog_sql_snapshot": "Passed",
+    "token_redemption": "Passed",
+    "instance_attributes": "Passed",
+    "costumes": "Passed",
+    "companion_items": "Passed",
+    "gathering_items": "Passed",
+    "refinement_recipes": "Passed",
+    "socket_stones": "Passed",
+    "mob_drops": "Passed",
+    "socket_services": "Passed",
+    "growth_pet_progression": "Passed",
+    "pet_care": "Passed",
+    "quest_items": "Passed",
+    "refinement_profiles": "Passed",
+    "polymorph_items": "Passed",
+    "pet_lifecycle": "Passed",
+    "soul_items": "Passed",
+    "typed_ground": "Passed",
+    "persistent_items": "Passed",
+    "catalog_sql_completion": "Passed",
+    "item_catalog": "Passed",
+    "item_persistence_completion": "Passed",
+    "typed_inventory_wire": "Passed",
+    "item_persistence_mariadb": "Passed",
+    "tool_runtime": "Passed",
+    "resource_gathering": "Passed",
+    "gathering_rules": "Passed",
+    "item_catalog_runtime_mariadb": "Passed"
+  },
+  "converter_tests": 45,
+  "editor_tests": {
+    "suite_total": 72,
+    "suite_passed": 71,
+    "suite_skipped": 1,
+    "additional_skin_form_test": true
+  },
+  "worker": {
+    "success": true,
+    "candidate_sha256": "05851977be8d305cb7d2e022630f464e270c923d18be7914cb7112d70dd84ab1",
+    "catalog_hash": "c68a2b9529d35257cfce2529cdf601b6da0618c38a269486df46a326704e4a35",
+    "native_keys": [
+      {
+        "category_id": 4,
+        "local_id": 1830
+      },
+      {
+        "category_id": 4,
+        "local_id": 1831
+      },
+      {
+        "category_id": 4,
+        "local_id": 1842
+      },
+      {
+        "category_id": 4,
+        "local_id": 1843
+      }
+    ],
+    "variants": [
+      {
+        "source": 88020,
+        "kind": 4,
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-skins-worker-sql-final\\source-skin-runtime.0.details.hex",
+        "sha256": "30c84fc71dcb3875b5bd6c199908297bc024713e1862ced69325bd71afca5f85"
+      },
+      {
+        "source": 88021,
+        "kind": 4,
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-skins-worker-sql-final\\source-skin-runtime.1.details.hex",
+        "sha256": "d7aed6afdfeb3d1b9f4f8c4e780e146e213ee7b188bf569b5b008274b19df806"
+      },
+      {
+        "source": 88110,
+        "kind": 5,
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-skins-worker-sql-final\\source-skin-runtime.2.details.hex",
+        "sha256": "66651cb4a7dd65c7323c45220769e698d027829fbeb9c51fe7f04b7f6c4803e3"
+      },
+      {
+        "source": 88111,
+        "kind": 5,
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-skins-worker-sql-final\\source-skin-runtime.3.details.hex",
+        "sha256": "2afb1c035f59906c29071ada96caed567b049d033c361f12918d5fd3dd916d7f"
+      }
+    ],
+    "packets": [
+      {
+        "variant": 0,
+        "phase": "bag",
+        "path": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-skins-worker-sql-final\\source-skin-runtime.0.bag.hex",
+        "sha256": "b7f9e16212403bd078a7cb662741068a31002a410df440024c77fc5877976f9e"
+      },
+      {
+        "variant": 0,
+        "phase": "worn",
+        "path": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-skins-worker-sql-final\\source-skin-runtime.0.worn.hex",
+        "sha256": "0e5915bed8a8140f6ae1b1fa0f609130d1f6bdfceef9f14c90a31161f5d65c1a"
+      },
+      {
+        "variant": 0,
+        "phase": "unequipped",
+        "path": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-skins-worker-sql-final\\source-skin-runtime.0.unequipped.hex",
+        "sha256": "a13c232239fd1b3006eef1bc39fc8aef4a89262991e270418ae4f00b44ecca62"
+      },
+      {
+        "variant": 0,
+        "phase": "expired",
+        "path": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-skins-worker-sql-final\\source-skin-runtime.0.expired.hex",
+        "sha256": "57ff0214bbbc868d2c32394e31a601538ef32113e01bd43226cfaead750a9eb3"
+      },
+      {
+        "variant": 1,
+        "phase": "bag",
+        "path": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-skins-worker-sql-final\\source-skin-runtime.1.bag.hex",
+        "sha256": "f6651d7435c588964a0cf7c59c0e5ffb45f2cfc16cc70c1a57163c3cd72d148d"
+      },
+      {
+        "variant": 1,
+        "phase": "worn",
+        "path": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-skins-worker-sql-final\\source-skin-runtime.1.worn.hex",
+        "sha256": "8b116bc29ec9c9408574ce16d28f873a681a2a5ea382c20075e8c45a9807d9c7"
+      },
+      {
+        "variant": 1,
+        "phase": "unequipped",
+        "path": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-skins-worker-sql-final\\source-skin-runtime.1.unequipped.hex",
+        "sha256": "f6651d7435c588964a0cf7c59c0e5ffb45f2cfc16cc70c1a57163c3cd72d148d"
+      },
+      {
+        "variant": 2,
+        "phase": "bag",
+        "path": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-skins-worker-sql-final\\source-skin-runtime.2.bag.hex",
+        "sha256": "35747faa943cb29bc8930f19a1228918c612a82b63b723e84f0e83d172506061"
+      },
+      {
+        "variant": 2,
+        "phase": "worn",
+        "path": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-skins-worker-sql-final\\source-skin-runtime.2.worn.hex",
+        "sha256": "bf7f1dc27ee4650f9a5aa900283b1278ebe32f91443f721713815cc6d8bd93e7"
+      },
+      {
+        "variant": 2,
+        "phase": "unequipped",
+        "path": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-skins-worker-sql-final\\source-skin-runtime.2.unequipped.hex",
+        "sha256": "26409e8022336ced6fc750670686b998422a56a376cc18a6f33a15e6fc3e30b6"
+      },
+      {
+        "variant": 2,
+        "phase": "expired",
+        "path": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-skins-worker-sql-final\\source-skin-runtime.2.expired.hex",
+        "sha256": "57ff0214bbbc868d2c32394e31a601538ef32113e01bd43226cfaead750a9eb3"
+      },
+      {
+        "variant": 3,
+        "phase": "bag",
+        "path": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-skins-worker-sql-final\\source-skin-runtime.3.bag.hex",
+        "sha256": "a3b97eaa2fa232206ca86bd1b630501f158adba24fc8f9776f4e58f0ad0266e1"
+      },
+      {
+        "variant": 3,
+        "phase": "worn",
+        "path": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-skins-worker-sql-final\\source-skin-runtime.3.worn.hex",
+        "sha256": "7fc32cd1c3010bfd9463f67a178469f73b105b08cd6a5f6ad32713d3643334aa"
+      },
+      {
+        "variant": 3,
+        "phase": "unequipped",
+        "path": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-skins-worker-sql-final\\source-skin-runtime.3.unequipped.hex",
+        "sha256": "a3b97eaa2fa232206ca86bd1b630501f158adba24fc8f9776f4e58f0ad0266e1"
+      }
+    ],
+    "models": [
+      {
+        "source": 60101,
+        "form": 100,
+        "race": 34118,
+        "address": "Metin2RacePrefabs/34118"
+      },
+      {
+        "source": 60103,
+        "form": 101,
+        "race": 34119,
+        "address": "Metin2RacePrefabs/34119"
+      },
+      {
+        "source": 88010,
+        "form": 114,
+        "race": 34111,
+        "address": "Metin2RacePrefabs/34111"
+      },
+      {
+        "source": 88011,
+        "form": 114,
+        "race": 34111,
+        "address": "Metin2RacePrefabs/34111"
+      },
+      {
+        "source": 88012,
+        "form": 115,
+        "race": 34110,
+        "address": "Metin2RacePrefabs/34110"
+      },
+      {
+        "source": 88013,
+        "form": 115,
+        "race": 34110,
+        "address": "Metin2RacePrefabs/34110"
+      },
+      {
+        "source": 88014,
+        "form": 116,
+        "race": 34109,
+        "address": "Metin2RacePrefabs/34109"
+      },
+      {
+        "source": 88015,
+        "form": 116,
+        "race": 34109,
+        "address": "Metin2RacePrefabs/34109"
+      },
+      {
+        "source": 88016,
+        "form": 117,
+        "race": 34108,
+        "address": "Metin2RacePrefabs/34108"
+      },
+      {
+        "source": 88017,
+        "form": 117,
+        "race": 34108,
+        "address": "Metin2RacePrefabs/34108"
+      },
+      {
+        "source": 88018,
+        "form": 118,
+        "race": 34107,
+        "address": "Metin2RacePrefabs/34107"
+      },
+      {
+        "source": 88019,
+        "form": 118,
+        "race": 34107,
+        "address": "Metin2RacePrefabs/34107"
+      },
+      {
+        "source": 88020,
+        "form": 119,
+        "race": 34106,
+        "address": "Metin2RacePrefabs/34106"
+      },
+      {
+        "source": 88021,
+        "form": 119,
+        "race": 34106,
+        "address": "Metin2RacePrefabs/34106"
+      },
+      {
+        "source": 88022,
+        "form": 120,
+        "race": 34105,
+        "address": "Metin2RacePrefabs/34105"
+      },
+      {
+        "source": 88023,
+        "form": 120,
+        "race": 34105,
+        "address": "Metin2RacePrefabs/34105"
+      },
+      {
+        "source": 88024,
+        "form": 121,
+        "race": 34104,
+        "address": "Metin2RacePrefabs/34104"
+      },
+      {
+        "source": 88025,
+        "form": 121,
+        "race": 34104,
+        "address": "Metin2RacePrefabs/34104"
+      },
+      {
+        "source": 88026,
+        "form": 122,
+        "race": 34103,
+        "address": "Metin2RacePrefabs/34103"
+      },
+      {
+        "source": 88027,
+        "form": 122,
+        "race": 34103,
+        "address": "Metin2RacePrefabs/34103"
+      },
+      {
+        "source": 88028,
+        "form": 123,
+        "race": 34102,
+        "address": "Metin2RacePrefabs/34102"
+      },
+      {
+        "source": 88029,
+        "form": 123,
+        "race": 34102,
+        "address": "Metin2RacePrefabs/34102"
+      },
+      {
+        "source": 88030,
+        "form": 124,
+        "race": 34101,
+        "address": "Metin2RacePrefabs/34101"
+      },
+      {
+        "source": 88031,
+        "form": 124,
+        "race": 34101,
+        "address": "Metin2RacePrefabs/34101"
+      },
+      {
+        "source": 88110,
+        "form": 125,
+        "race": 20244,
+        "address": "Metin2RacePrefabs/20244"
+      },
+      {
+        "source": 88111,
+        "form": 125,
+        "race": 20244,
+        "address": "Metin2RacePrefabs/20244"
+      },
+      {
+        "source": 88112,
+        "form": 126,
+        "race": 20245,
+        "address": "Metin2RacePrefabs/20245"
+      },
+      {
+        "source": 88113,
+        "form": 126,
+        "race": 20245,
+        "address": "Metin2RacePrefabs/20245"
+      },
+      {
+        "source": 88114,
+        "form": 127,
+        "race": 20246,
+        "address": "Metin2RacePrefabs/20246"
+      },
+      {
+        "source": 88115,
+        "form": 127,
+        "race": 20246,
+        "address": "Metin2RacePrefabs/20246"
+      },
+      {
+        "source": 88116,
+        "form": 128,
+        "race": 20247,
+        "address": "Metin2RacePrefabs/20247"
+      },
+      {
+        "source": 88117,
+        "form": 128,
+        "race": 20247,
+        "address": "Metin2RacePrefabs/20247"
+      }
+    ],
+    "realms_modified": false,
+    "actual_game_item_worker": true,
+    "full_actor_world_test": false
+  },
+  "unity": {
+    "editor": "6000.3.27f1",
+    "success": true,
+    "suites": {
+      "TYPED_COMPANION_WIRE": 700,
+      "TYPED_ITEM_INTEGRATION": 14005,
+      "TYPED_EQUIPMENT_INTEGRATION": 2447,
+      "TYPED_COSTUME_OFFLINE": 397,
+      "TYPED_SPECIAL_BONUS_OFFLINE": 8003,
+      "TYPED_SOUL_OFFLINE": 1252,
+      "TYPED_FORGE_OFFLINE": 6993,
+      "TYPED_STORAGE_OFFLINE": 4667,
+      "TYPED_MISSION_OFFLINE": 3236,
+      "TYPED_AMMO_OFFLINE": 1340,
+      "NEXORIA_UI": 346
+    },
+    "actual_source_worker_ui": true,
+    "actual_network_race_models": 17,
+    "result_mtime": 1794681031.7685993
+  },
+  "live_local": {
+    "accounts": 0,
+    "characters": 0,
+    "legacy_items": 0,
+    "native_instances": 0,
+    "empty_player_state_tables": 94,
+    "catalog_definitions": 1574
+  },
+  "fingerprints": {
+    "SRC/Tools/ItemCatalogBuilder/convert_full_catalog.py": "f265bf75977add9273da8393e8ff565665b67ed51d332926e404b7845995417b",
+    "SRC/Tools/ItemCatalogBuilder/upgrade_exported_catalog.py": "0ee70bacabea3b0a72cd5b2879110c03c742a1b10422d2f19d7a0095fe6aac9a",
+    "SRC/Tools/ServerManager/costume_editor.py": "c2745ac5959a4fcfa9c71765a0be196234c776f4f74cc3ea17e7c233676f7b46",
+    "SRC/Tools/ServerManager/item_catalog.py": "ebb10624fb94865e51f556d0792f67eb9fa19c9cf072a8e5982f19b548128e8b",
+    "SRC/Server/common/item/Costumes.hpp": "4535b411003d0b882e44c772da48e6135c7f12c4d902b764756aeebe7e3fba2c",
+    "SRC/Server/common/item/ItemCatalog.hpp": "b8996e1e09bd76aa66fc4f091c501833a6d7cf2051f83bbaaf69f2956c6e0d83",
+    "SRC/ItemDomain/Costumes.cpp": "dde750eacfdab72ff26cfcd9e3d58bbeb8311799a4a2f5df74474a3be62bcefb",
+    "SRC/ItemDomain/CostumePersistence.cpp": "b010de029d15f144fea3725fecb0aa75a915a68718dd92176c1bb39b04377e3a",
+    "SRC/ItemDomain/TypedInventoryWire.cpp": "cdc9e53d27070e9ea0a50c4283c334c2106890e96dcff10d793a3d0a860ceae8",
+    "SRC/Server/GameServer/item/TypedCompanions.cpp": "c944b873999c6ec8145b0f9e6e8f03c09e508e1d71b74cb49be5c06f91b7c032",
+    "SRC/Server/GameServer/item/TypedCostumes.cpp": "00b5d18a34b2893316426fbd4dc32c0e8d8723a44e194575e0f5cffa7491449e",
+    "db/migrations/item_combat/044_companion_costumes.sql": "75cef298e258337c18c8d74144975b5d4b2771e9bb0e268f9ae00964c1cf8e92",
+    "db/migrations/item_instance/027_companion_costume_slots.sql": "f572f4ad3bce1f0b9a711fe8f513af3b0ab38ffb54c653121dd4a1745f04fca8",
+    "tests/server/SourceSkinCatalogTests.py": "682d3647033c0c68650c079ae0445af46c5ee66a1773354bd7cefc9c9b6fca74",
+    "tests/server/ItemCatalogRuntimeTests.cpp": "21a136495c962ae2f48d4f1b692ccf823e2ba911dbbf23007a1aae79911b576c",
+    "tests/server/CostumeTests.cpp": "5aaa2d9024c5cb356a5e1ee52bf87fd4330d5ef521e37766f64ec692e062ac76",
+    "tests/server/FullCatalogConversionTests.py": "b0d6c22b9507c6988ff3292268e13e176afb49513095aca4e0aa9699ec88fee8",
+    "tests/server/CatalogEditorTests.py": "55a4588531db9d6a016ef6f4af00171c1a7d28f8ea4f544aa4a447d83a78f4b0",
+    "build/c26b-game-native/SRC/Server/GameServer/GameServer.exe": "ac1561c2e4529f46f41d409c705dc9742bbb31e7d97d45211f2d83877451d32b",
+    "build/skins-final-server-build.log": "db9a02adfd16d4956610cb1767eea41b8e362b6b08650784b87946bf9a0ab2ab",
+    "build/skins-converter-tests.log": "9e140136f705b49ae15059acbbe61d3e37fd3a89b91d4d67517a8b2a78920397",
+    "build/skins-editor-tests.log": "8eef000a2379c3be24a4e8ebd3661f2de6080f7533a60d19a0f530455278093a",
+    "build/skins-editor-skin-test.log": "20a57bcc650795875d3241639239bbe40529f2c17ef7cc60ddabd6fba823a028",
+    "build/skins-unity-final-success.log": "4d50753bfbd8b06d278d3470d7fd942bf861c1d5decc9df8d1aef92d84ab1ee6",
+    "build/skins-metadata-update.json": "6fcd4aa1500b62472241d3fab9759d8770d76d5dd10a0970684cc72890b119b4",
+    "build/skins-regression-tests.log": "c825abaff9bf96f436f55625924b5e2176c83fb6f65bc81e1eb14f0b964cea9d",
+    "build/skins-targeted-tests.log": "8b5e3458a0220122ca3acdf6333c5e2f9ecca16dbeb6561710ab13ba4f4170db"
+  },
+  "unity_fingerprints": {
+    "Runtime/Network/Metin2TypedInventoryCodec.cs": "b098f3280dd13327e116e6f2cb6085337cbf7b445e579e57c52e79415abe334b",
+    "Runtime/Network/Metin2TypedInventoryState.cs": "a1aeadddd32f4192c20cabac36b1b442eb3b60cbf63db4b6e40cc96e3f37b9de",
+    "Runtime/Network/Metin2TypedInventoryWindow.cs": "6c72aaf3c9b2449e5d1268486f6863d980509256c1dac83e27992f1cea9ed305",
+    "Runtime/Network/Metin2TypedItemDetails.cs": "2c8bcb83edd742875102efde3da56bf6042ac8ff63ae3f2b1d9b3016adb1b062",
+    "Editor/Metin2SourceSkinValidator.cs": "1f990375ca469fd17658cd5b6ab566f5b015f73d144c62232606f6edac6754fb",
+    "Editor/Metin2TypedShopValidationBridge.cs": "57583296b2d62991b75c591556c0ced7ba67ac2fbac46c059a91775e8269142b"
+  },
+  "not_tested": [
+    "Full login/auth/TLS/ECS world flow and observer replication with this catalog",
+    "In-world riding, flying, pet follow and live skin swaps on all 32 source prototypes",
+    "Remaining 1167 blocked source rows"
+  ]
+}

@@ -117,7 +117,7 @@ entt::entity CShopManager::GetByNPCVnum(uint32_t dwVnum)
 // Start shopping.
 bool CShopManager::StartShopping(entt::entity pkChr, entt::entity pkChrShopKeeper, int iShopVnum)
 {
-    if (TryOpenTypedShop(pkChr, pkChrShopKeeper)) return true;
+    if (TryOpenTypedShop(pkChr, pkChrShopKeeper,static_cast<std::uint32_t>(iShopVnum))) return true;
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
 	if (ecs::PlayerRuntime::GetGMLevel(pkChr) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(pkChr) < GM_IMPLEMENTOR) {
 		return false;

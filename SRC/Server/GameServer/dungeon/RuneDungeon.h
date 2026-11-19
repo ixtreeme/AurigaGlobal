@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include <entt/entt.hpp>
+#include <item/PersistentItems.hpp>
 
 
 /*
@@ -25,6 +26,7 @@ public:
     bool OnUseItem89103(entt::entity character); // floor key
     bool OnUseItem89102(entt::entity character); // fragment -> key
     bool OnUseItem89100(entt::entity character); // cooldown reset
+    bool OnUseTypedKey(entt::entity,const auriga::item::PersistentItem&,const auriga::item::ItemCatalog&);
 
     // NPC "give item" handler (called from ItemSystem::ReceiveItemEcs)
     bool OnNpcTakeItem(entt::entity from, entt::entity npc, entt::entity item);

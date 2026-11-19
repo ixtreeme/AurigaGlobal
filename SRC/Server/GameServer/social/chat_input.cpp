@@ -1,8 +1,11 @@
 #include "stdafx.h"
+#include "SocialActions.hpp"
+#include "SocialHistory.hpp"
 #include <Core/Logging.hpp>
 #include "input.h"
 #include "../ecs/Registry.hpp"
 #include "../ecs/components/dirty_components.hpp"
+#include "../ecs/components/social_components.hpp"
 #include "../ecs/systems/ActivitySystem.hpp"
 #include "../ecs/systems/ChatSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
@@ -319,6 +322,11 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 		return (iExtraLen);
 	}
 
+	if(pinfo->szNameTo[CHARACTER_NAME_MAX_LEN]!='\0')return iExtraLen;
+	if(SocialBlocked(std::string(ecs::PlayerRuntime::GetName(character)),pinfo->szNameTo)){
+		TPacketGCWhisper blocked{};blocked.bHeader=HEADER_GC_WHISPER;blocked.bType=WHISPER_TYPE_TARGET_BLOCKED;blocked.wSize=sizeof(blocked);strlcpy(blocked.szNameFrom,pinfo->szNameTo,sizeof(blocked.szNameFrom));
+		if(auto* desc=ecs::PlayerRuntime::GetDesc(character))desc->Packet(&blocked,sizeof(blocked));return iExtraLen;
+	}
 	entt::entity chr = CHARACTER_MANAGER::instance().FindPCEntity(pinfo->szNameTo);
 	if (!ecs::IsCharacter(chr))
 		chr = entt::null;
@@ -412,7 +420,9 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 
 				if (buflen > 0)
 				{
-					ecs::ChatSystem::SendOfflineMessage(character, pinfo->szNameTo, buf);
+					if(!SavePrivateHistory(character,pinfo->szNameTo,std::string(buf,buflen)))return iExtraLen;
+					if(SocialHistoryEnabled())g_registry.get_or_emplace<ecs::OfflineMessageState>(character).lastSentTime=get_dword_time();
+					else ecs::ChatSystem::SendOfflineMessage(character, pinfo->szNameTo, buf);
 					snprintf(msg, sizeof(msg), "An offline message has been sent.");
 				}
 				else
@@ -496,6 +506,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 
 			CBanwordManager::instance().ConvertString(buf, buflen);
 
+			const std::string historyBody(buf,buflen);
 			if (g_bEmpireWhisper)
 				if (!ItemSystem::IsEquipUniqueGroup(character, UNIQUE_GROUP_RING_OF_LANGUAGE))
 					if (!ItemSystem::IsEquipUniqueGroup(chr, UNIQUE_GROUP_RING_OF_LANGUAGE))
@@ -543,6 +554,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 
 			if (buflen > 0)
 			{
+				if(!SavePrivateHistory(character,pinfo->szNameTo,historyBody)){pkDesc->SetRelay("");return iExtraLen;}
 				TPacketGCWhisper pack;
 
 				pack.bHeader = HEADER_GC_WHISPER;
@@ -559,7 +571,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 				// @warme006
 				// LOG_INFO(0, "WHISPER: %s -> %s : %s", ecs::PlayerRuntime::GetName(character).data(), pinfo->szNameTo, buf);
 #ifdef ENABLE_CHAT_LOGGING
-				if (ecs::PlayerRuntime::IsGM(character))
+				if (!SocialHistoryEnabled()&&ecs::PlayerRuntime::IsGM(character))
 				{
 					LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), buf, buflen);
 					LogManager::instance().EscapeString(__escape_string2, sizeof(__escape_string2), pinfo->szNameTo, sizeof(pack.szNameFrom));
@@ -1029,9 +1041,10 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 		case CHAT_TYPE_GUILD:
 			{
 				if (ecs::SocialSystem::GetGuild(character)) {
+					if(!SaveGuildHistory(character,std::string(ecs::PlayerRuntime::GetName(character))+" : "+buf))return iExtraLen;
 					ecs::SocialSystem::GetGuild(character)->Chat(chatbuf);
 #ifdef ENABLE_CHAT_LOGGING
-					if (ecs::PlayerRuntime::IsGM(character))
+					if (!SocialHistoryEnabled()&&ecs::PlayerRuntime::IsGM(character))
 					{
 						LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), chatbuf, len);
 						LogManager::instance().ChatLog(ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetPlayerID(character), ecs::PlayerRuntime::GetName(character).data(), ecs::SocialSystem::GetGuild(character)->GetID(), ecs::SocialSystem::GetGuild(character)->GetName(), "GUILD", __escape_string, ecs::PlayerRuntime::GetDesc(character) ? ecs::PlayerRuntime::GetDesc(character)->GetHostName() : "");

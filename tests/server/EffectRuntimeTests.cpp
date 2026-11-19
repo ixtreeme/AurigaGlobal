@@ -6,7 +6,10 @@
 #include <stdexcept>
 using namespace auriga::item;namespace f=effect_runtime_fixture;namespace pf=persistent_item_fixture;
 static int checks=0;void Check(bool v,const char* m){++checks;if(!v)throw std::runtime_error(m);}
+#include "TimedUtilityCases.hpp"
+#include "MultiEffectCases.hpp"
 int main(int argc,char** argv){try{
+ TimedUtilities();MultiEffects();
  const auto c=BuildItemCatalog(f::Catalog()).value();auto facts=f::Facts();ItemOwnerFence fence{pf::Character(),7,1};const std::array layouts{pf::Inventory()};RecoverySchedule state;std::vector<PersistentItem> items;for(unsigned i=0;i<10;++i)items.push_back(f::Item(*c,i,70+i));
  const auto use=[&](unsigned index,std::uint64_t elapsed,std::uint64_t now,std::uint64_t effect){return MakeItemEffectUse(*c,{21,static_cast<std::uint8_t>(fence.revision)},fence,layouts,items,state,items[index].id,facts,elapsed,now,effect);};
  const auto apply=[&](const ItemCommit& commit){for(const auto& change:commit.items){auto found=std::ranges::find(items,change.after.id,&PersistentItem::id);Check(found!=items.end(),"fixture change identifies original");*found=change.after;}state=commit.recovery->after;++fence.revision;};

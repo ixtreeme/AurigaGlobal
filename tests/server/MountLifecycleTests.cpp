@@ -257,6 +257,7 @@ bool IsValid(entt::entity e) { return e != entt::null && g_registry.valid(e); }
 LPDESC GetDesc(entt::entity) { return nullptr; }
 uint32_t GetPacketVID(entt::entity e) { return State(e).vid; }
 std::string_view GetName(entt::entity e) { return State(e).name; }
+void SetName(entt::entity e, std::string_view name) { State(e).name = name; }
 int32_t GetX(entt::entity e) { return State(e).x; }
 int32_t GetY(entt::entity e) { return State(e).y; }
 int32_t GetZ(entt::entity e) { return State(e).z; }
@@ -331,6 +332,9 @@ void SummonHorse(entt::entity, bool, bool, uint32_t, const char*) { throw std::r
 uint32_t GetMountVnum(entt::entity e) { return State(e).mount; }
 void SetMountVnum(entt::entity e, uint32_t vnum) { State(e).mount = vnum; }
 }
+std::optional<bool> TypedMountFlightPermission(entt::entity) { return std::nullopt; }
+void ReplayTypedCostumeAppearances(entt::entity) {}
+
 namespace CombatSystem {
 bool IsDead(entt::entity e) { return State(e).dead; }
 void SetLastAttacked(entt::entity e, uint32_t) { State(e); }

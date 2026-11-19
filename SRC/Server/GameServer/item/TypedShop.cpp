@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "TypedRecovery.hpp"
 #include "TypedShop.hpp"
+#include "TypedPrivateShops.hpp"
 #include "TypedItemOps.hpp"
 #include "TypedDrops.hpp"
 #include "../social/shop.h"
@@ -19,7 +20,9 @@
 #include "../entity/char_manager.h"
 #include "../network/desc.h"
 #include "../core/packet.h"
+#include "../core/config.h"
 #include <item/NpcShops.hpp>
+#include <item/NpcShopConfig.hpp>
 #include <Core/Logging.hpp>
 #include <Core/shop_limits.h>
 #include <nlohmann/json.hpp>
@@ -34,6 +37,7 @@ namespace
 namespace items=auriga::item;
 using Status=items::NpcShopStatus;
 std::map<std::uint32_t,items::NpcShop> shops;
+std::map<std::pair<std::uint32_t,std::uint32_t>,items::NpcShop> routedShops;
 struct Session
 {
     entt::entity npc=entt::null;
@@ -41,7 +45,25 @@ struct Session
     std::uint64_t token=0,lastRequest=0;
     Status lastStatus=Status::Ready;
     std::uint8_t lastAction=0; std::uint64_t lastSubject=0; std::uint32_t lastCount=0;
+    std::uint32_t route=0;
 };
+const items::NpcShop* Stock(std::uint32_t race,std::uint32_t route)
+{
+    if(route){const auto it=routedShops.find({race,route});return it==routedShops.end()?nullptr:&it->second;}
+    const auto it=shops.find(race);return it==shops.end()?nullptr:&it->second;
+}
+std::optional<items::NpcShop> QuotedStock(entt::entity character,const Session& session)
+{
+    const auto* raw=Stock(session.race,session.route);const auto catalog=items::runtime::CurrentCatalog();
+    if(!raw || !catalog || !g_registry.valid(session.npc))return {};
+    auto quoted=*raw;
+    if(!g_bEmpireShopPriceTripleDisable && ecs::PlayerRuntime::GetEmpire(character)!=ecs::PlayerRuntime::GetEmpire(session.npc))
+        for(auto& offer:quoted.offers) {
+            const auto price=items::NpcBuyBundlePrice(*catalog,offer);if(!price || *price>std::uint64_t(INT64_MAX)/3)return {};
+            offer.bundleGold=*price*3;
+        }
+    return quoted;
+}
 std::array<std::uint8_t,16> Operation()
 {
     static std::mt19937_64 random{std::random_device{}()};
@@ -75,8 +97,8 @@ void Reply(entt::entity e,Status status,std::uint64_t request=0)
     auto* desc=ecs::PlayerRuntime::GetDesc(e);const auto catalog=items::runtime::CurrentCatalog();
     const auto* state=g_registry.try_get<ecs::TypedItems>(e);const auto* session=g_registry.try_get<Session>(e);
     if(!desc || !desc->IsPhase(PHASE_GAME) || !catalog || !state)return;
-    const auto found=session ? shops.find(session->race) : shops.end();
-    const auto packet=items::EncodeNpcShop(*catalog,found==shops.end() ? nullptr : &found->second,session ? session->vid : 0,
+    const auto found=session ? QuotedStock(e,*session) : std::nullopt;
+    const auto packet=items::EncodeNpcShop(*catalog,found ? &*found : nullptr,session ? session->vid : 0,
         session ? session->token : 0,request,status,state->state.items);
     SendTypedInventory(e);
     if(packet)desc->LargePacket(packet->data(),static_cast<int>(packet->size()));
@@ -88,6 +110,7 @@ Status Refusal(items::NpcShopError e)
     {
     case items::NpcShopError::Denied:return Status::Denied;
     case items::NpcShopError::NoMoney:return Status::NoMoney;
+    case items::NpcShopError::NoMaterials:return Status::NoMaterials;
     case items::NpcShopError::NoRoom:return Status::NoRoom;
     case items::NpcShopError::WalletFull:return Status::WalletFull;
     case items::NpcShopError::Unavailable:return Status::Failed;
@@ -98,47 +121,25 @@ Status Refusal(items::NpcShopError e)
 
 std::expected<void,std::string> LoadTypedShops(const std::string& file)
 {
-    try
-    {
-        std::map<std::uint32_t,items::NpcShop> next;
-        if(!std::filesystem::exists(file)){shops.clear();return {};}
+    try {
+        if(!std::filesystem::exists(file)){shops.clear();routedShops.clear();return {};}
         if(std::filesystem::file_size(file)>(1u<<20))return std::unexpected("typed_shops.json exceeds 1 MiB");
-        std::ifstream stream(file);const auto json=nlohmann::json::parse(stream);
-        if(!json.is_object() || json.size()!=2 || json.at("version")!=1 || !json.at("shops").is_array() ||
-           json.at("shops").size()>items::MaxNpcShops)return std::unexpected("invalid typed shop document");
-        const auto readNumber=[](const nlohmann::json& row,const char* key,std::uint64_t max)->std::uint32_t {
-            const auto& value=row.at(key);
-            if(!value.is_number_unsigned() || value.get<std::uint64_t>()>max)throw std::runtime_error("invalid shop integer");
-            return value.get<std::uint32_t>();
-        };
-        std::vector<items::NpcShop> definitions;
-        for(const auto& row:json.at("shops"))
-        {
-            if(!row.is_object() || row.size()!=3 || !row.at("offers").is_array() || row.at("offers").size()>items::MaxNpcShopOffers)
-                return std::unexpected("invalid typed shop listing");
-            items::NpcShop shop{readNumber(row,"npc_race",UINT32_MAX),row.at("name").get<std::string>(),{}};
-            for(const auto& offer:row.at("offers"))
-            {
-                if(!offer.is_object() || offer.size()!=5)return std::unexpected("invalid typed shop offer");
-                const auto key=items::ItemKey::Create(readNumber(offer,"category",UINT16_MAX),readNumber(offer,"local",UINT32_MAX));
-                if(!key)return std::unexpected("invalid typed shop ItemKey");
-                shop.offers.push_back({readNumber(offer,"id",UINT32_MAX),{*key,static_cast<std::uint16_t>(readNumber(offer,"level",UINT16_MAX)),readNumber(offer,"count",UINT32_MAX)}});
-            }
-            definitions.push_back(std::move(shop));
-        }
-        const auto catalog=items::runtime::CurrentCatalog();
-        if(!catalog || !items::ValidateNpcShops(*catalog,definitions))return std::unexpected("typed shop listing does not match the item catalog");
-        for(auto& shop:definitions)next.emplace(shop.npcRace,std::move(shop));
-        shops=std::move(next);LOG_INFO("TypedShop: {} NPC listings loaded",shops.size());return {};
-    }
-    catch(const std::exception&){return std::unexpected("cannot parse typed_shops.json");}
+        std::ifstream stream(file);const std::string text{std::istreambuf_iterator<char>(stream),{}};
+        const auto catalog=items::runtime::CurrentCatalog();if(!catalog)return std::unexpected("Native shop catalog unavailable");
+        auto parsed=items::ParseNpcShopManifest(text,*catalog);if(!parsed)return std::unexpected(parsed.error());
+        std::map<std::uint32_t,items::NpcShop> next;std::map<std::pair<std::uint32_t,std::uint32_t>,items::NpcShop> routes;
+        for(auto& shop:parsed->shops)next.emplace(shop.npcRace,std::move(shop));
+        for(auto& route:parsed->routes)routes.emplace(std::pair{route.stock.npcRace,route.source},std::move(route.stock));
+        shops=std::move(next);routedShops=std::move(routes);LOG_INFO("TypedShop: {} NPC listings, {} authored routes loaded",shops.size(),routedShops.size());return {};
+    }catch(const std::exception& error){return std::unexpected(error.what());}
 }
-bool TryOpenTypedShop(entt::entity character,entt::entity npc)
+bool TryOpenTypedShop(entt::entity character,entt::entity npc,std::uint32_t authoredRoute)
 {
     if(!g_registry.valid(character) || !g_registry.valid(npc) || !g_registry.all_of<ecs::TypedItems>(character))return false;
+    if(TryOpenTypedPrivateShop(character,npc))return true;
     const auto race=ecs::PlayerRuntime::GetRaceNum(npc);
     // A native owner must not enter a legacy shop when this NPC has no native stock.
-    if(!shops.contains(race)){Reply(character,Status::Denied);return true;}
+    if(!Stock(race,authoredRoute)){Reply(character,Status::Denied);return true;}
     if(!Admitted(character,false) || !InRange(character,npc) || g_registry.all_of<ecs::TypedItemBusy>(character))
     {Reply(character,Status::Denied);return true;}
     const auto permission=ecs::resource_admission::Enter({character},auriga::resource_admission::Operation::Shop);
@@ -147,6 +148,7 @@ bool TryOpenTypedShop(entt::entity character,entt::entity npc)
     if(!permission->Current() || !Admitted(character,false) || !InRange(character,npc))return true;
     auto op=Operation();std::uint64_t token=0;for(unsigned i=0;i<8;++i)token|=std::uint64_t{op[i]}<<(8*i);
     g_registry.emplace<Session>(character,npc,ecs::PlayerRuntime::GetPacketVID(npc),race,token);
+    g_registry.get<Session>(character).route=authoredRoute;
     ecs::SocialSystem::SetShopOwner(character,npc);
     Reply(character,Status::Ready);return true;
 }
@@ -199,7 +201,8 @@ bool HandleTypedShopPacket(entt::entity character,const char* data)
     std::expected<items::ItemCommit,items::NpcShopError> commit=std::unexpected(items::NpcShopError::Invalid);
     if(request.action==2)
     {
-        const auto& offers=shops.at(session->race).offers;
+        const auto stock=QuotedStock(character,*session);if(!stock){Reply(character,Status::Stale,request.request);return true;}
+        const auto& offers=stock->offers;
         const auto offer=std::ranges::find(offers,request.subject,[](const auto& o){return std::uint64_t{o.id};});
         if(offer!=offers.end())commit=items::MakeNpcBuyCommit(*catalog,Operation(),state.fence,state.storages,state.items,state.wallets,*offer,request.count,items::runtime::PeekInstanceIds(items::MaxItemCommitItems),TypedItemEffectNow());
     }

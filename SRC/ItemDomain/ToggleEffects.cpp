@@ -13,7 +13,7 @@ bool ValidToggleEffectGroup(const ToggleEffectGroup& p) noexcept
 bool ValidToggleEffectProfile(const ToggleEffectProfile& p) noexcept
 {
     return p.id && detail::ContentCode(p.code) && p.group && p.bonusProfile && p.variant &&
-        p.durationMs && p.durationMs <= INT64_MAX && p.requirements <= 3 &&
+        p.durationMs <= INT64_MAX && p.requirements <= 3 &&
         p.allowedContexts && p.allowedContexts <= 15 && p.cooldownProfile != 0;
 }
 namespace
@@ -31,7 +31,7 @@ std::expected<const ToggleEffectProfile*, E> Profile(const ItemCatalog& c, ItemK
 bool Valid(const ToggleEffectProfile& p, ItemInstanceId id, const ToggleEffectAdmission& a) noexcept
 {
     return id.Value() && a.availableUnits == 1 && a.classIndex <= 3 && a.sexIndex <= 1 &&
-        a.state.remainingMs <= p.durationMs && (!a.state.active || a.state.remainingMs) &&
+        a.state.remainingMs <= p.durationMs && (!p.durationMs || !a.state.active || a.state.remainingMs) &&
         a.cooldownRemainingMs <= INT64_MAX && (p.cooldownProfile || !a.cooldownRemainingMs) &&
         (a.context == RecoveryContext::World || a.context == RecoveryContext::Duel ||
          a.context == RecoveryContext::Arena || a.context == RecoveryContext::GuildWar);
@@ -76,7 +76,7 @@ std::expected<ToggleEffectPlan, E> PlanToggleEffectUse(const ItemCatalog& c, Ite
     for (const auto& other : active)
     {
         const auto op = Profile(c, other.key);
-        if (!op || !other.item.Value() || !other.remainingMs || other.remainingMs > (*op)->durationMs ||
+        if (!op || !other.item.Value() || ((*op)->durationMs && !other.remainingMs) || other.remainingMs > (*op)->durationMs ||
             !ids.insert(other.item.Value()).second || !groups.insert((*op)->group).second)
             return std::unexpected(E::InvalidState);
         if (other.item == id)
@@ -96,7 +96,7 @@ std::expected<ToggleEffectPlan, E> PlanToggleEffectUse(const ItemCatalog& c, Ite
         return plan;
     }
     if (const auto error = Access(c, key, **p, a, true)) return std::unexpected(*error);
-    if (!a.state.remainingMs) return std::unexpected(E::Exhausted);
+    if ((*p)->durationMs && !a.state.remainingMs) return std::unexpected(E::Exhausted);
     if (conflict && conflictProfile->variant == (*p)->variant) return std::unexpected(E::AlreadyActive);
     if (!conflict && groups.size() == MaxActiveToggleEffects) return std::unexpected(E::ActiveLimit);
     plan.step = ToggleEffectStep::Activate;
@@ -119,7 +119,7 @@ std::expected<ToggleEffectPlan, E> PlanToggleEffectAdvance(const ItemCatalog& c,
     // death/rule changes. Owner calls at every transition, not after a long stale snapshot.
     plan.next.remainingMs -= std::min(plan.next.remainingMs, elapsedMs);
     plan.step = ToggleEffectStep::Advance;
-    if (!plan.next.remainingMs)
+    if ((*p)->durationMs && !plan.next.remainingMs)
     {
         plan.next.active = false;
         plan.step = ToggleEffectStep::Expire;

@@ -1,0 +1,170 @@
+{
+  "checked_utc": "2026-11-13T22:48:18.783896+00:00",
+  "scope": "Three original dungeon PSD windows with native server and Unity actions; Kazamata leaderboard page only",
+  "workspaces": {
+    "server": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal",
+    "server_branch": "20261103",
+    "unity": "D:\\Auriga-Unity6\\SRC\\AurigaUnity-20261103",
+    "unity_branch": "/main/unity63-integration-20261103",
+    "editor": "6000.3.27f1"
+  },
+  "sources": [
+    {
+      "key": "dungeon_info",
+      "path": "D:/Nexoria UI/Kazamata/Nexoria_Kazamata.psd",
+      "sha256": "f59249cd260f5349836e18d2f2a6d4cdced77ffdc0483a0cc4802639d8b617c5",
+      "assets": 22,
+      "native_photoshop": true
+    },
+    {
+      "key": "dungeon_result",
+      "path": "D:/Nexoria UI/Kazamata_Eredmeny/Nexoria_Kazamata_Eredmeny.psd",
+      "sha256": "bd4f76b1d30f01992b61c6db0109ef5cfa51e43a5348ecf2db42a22893c0f21e",
+      "assets": 21,
+      "native_photoshop": true
+    },
+    {
+      "key": "dungeon_rank",
+      "path": "D:/Nexoria UI/Kazamata_Ranglista/Nexoria_Kazamata_Ranglista.psd",
+      "sha256": "89a62db3fdb167e3d6552c03c0dfc7e71ad9506c05e58d5ff5cea63a60329a96",
+      "assets": 5,
+      "native_photoshop": true
+    }
+  ],
+  "implementation": {
+    "information": "Live Lua catalog (19 dungeons), level/team/duration/cooldown/entry item information, personal completion/best time/max hit, server clock countdown, available filter, scrollable selection, confirmed server-resolved entrance teleport",
+    "recruitment": "Current-core online eligible leaders/solo applicants; 32 advertised players, five-minute TTL; real native party invitation/request with recipient consent",
+    "leaderboard": "Only Kazamata page. Per dungeon UTC Monday weekly ranking by completed runs, fastest elapsed or highest real hit; top 100 and own placement; deterministic ties, GM/blocked account exclusion; no difficulty or point currency",
+    "result": "Production quest/native controller completion hooks. Server-owned elapsed, deaths, kills, actual HP damage/healing/taken, accepted XP, net Yang balance change, confirmed typed loot, personal record and visual grade. Team/member and loot paging; clipboard share, exit and leader-validated same-party return to entrance",
+    "persistence": "Transactional InnoDB run/member/loot tables, UTC DATETIME(3), participant-owned result reads, parameterized queries, 64-bit metrics, late asynchronous loot attribution by captured random server run ID",
+    "layout": "Original native Photoshop artwork. Right-docked compact proportional layout, desktop/touch readable type floors, scrolling for overflow, minimum click areas, reachable header/floating close controls",
+    "routing": "Private instances stay on their hosting core. Dungeon entrance/retry prefers the current core when that map is locally loaded, preserving real party membership; normal routing remains available otherwise",
+    "entrypoint": "ESC or bottom-right gear -> Kazamaták. Reuses the PSD menu button released by combining system/game settings. No separate dungeon hotkey."
+  },
+  "schema_migrations": [
+    "db/migrations/dungeon/001_dungeon_ui.sql"
+  ],
+  "native_server_sha256": "75f3f28fa1797862698f90b9da556ef9ff583a38ba409368788b0d04ae4e9b61",
+  "checks": {
+    "native_build": "GameServer and relevant native test executables built successfully with the existing local C26B toolchain",
+    "native_ctest": [
+      "typed_inventory_wire",
+      "persistent_items",
+      "dungeon_ui_rules",
+      "social_history_crypto",
+      "server_config",
+      "lua_sources",
+      "dungeon_lifecycle",
+      "spatial_lifecycle",
+      "point_calculation",
+      "combat_state"
+    ],
+    "isolated_sql": "Passed UTC Monday microsecond boundaries, session timezone independence, 64-bit metrics, participant scopes, loot foreign keys and rollback",
+    "unity": "Compiled and ran in the pinned open Unity Editor using isolated additive validation scenes; original scene restored",
+    "live": "Three fresh owned TLS accounts. Real party advertisement/invite/accept, real private map 66 transfer and party replay, real attack/kill, production d.complete, two actual result PSDs, all three weekly metrics, outsider result/warp denial, non-leader retry denial, leader button transfers the same party to the entrance and membership is replayed",
+    "live_fixture_boundary": "PID-guarded temporary quest starts a real private Demon Tower instance and invokes production d.complete after the real kill. This is a controlled integration flow, not a full 13-floor boss walkthrough",
+    "live_sql": "Passed: two participants, actual damage/monster/accepted XP, no outsider member, exact native wallet balance delta",
+    "restart": "Full selected game stack restart; both participants read their persisted two-member result successfully",
+    "offline": "Three authored surfaces, real command bindings, atomic malformed-page rejection, authenticated result ownership, 64-bit values, team invite controls, clipboard restoration, logout clearing and nine strict capture audits",
+    "broad_regression": "nexoria-offline passed catalog/gallery/remaining windows, authored settings/items/storage and C47 controls; social-history-offline passed 61 social checks and archive paging/replay/integrity/reset. Broader pre-existing non-dungeon readability warnings remain outside this change",
+    "fixture_cleanup": "Original quest_list and exact unchanged baseline immutable source snapshot restored; all 76 existing quest IDs preserved; no persisted temporary quest flags; temporary quest removed",
+    "success_markers": [
+      "METIN2_NEXORIA_CATALOG=SUCCESS windows=130",
+      "METIN2_NEXORIA_UI=SUCCESS checks=346",
+      "METIN2_NEXORIA_REMAINING_GALLERY=SUCCESS windows=90",
+      "METIN2_NEXORIA_REMAINING=SUCCESS checks=455",
+      "METIN2_NEXORIA_AUTHORED_SETTINGS=SUCCESS checks=222 rows=45 bound=20 nativeAuxiliaryGrids=0",
+      "METIN2_NEXORIA_AUTHORED_ITEMS=SUCCESS checks=89 documents=3 localOnly=true",
+      "METIN2_NEXORIA_INVENTORY_STORAGE=SUCCESS checks=39 documents=2 localOnly=true",
+      "NEXORIA_C47_WINDOWS=SUCCESS checks=92",
+      "METIN2_NEXORIA_REMAINING=SUCCESS checks=498",
+      "METIN2_NEXORIA_REMAINING=SUCCESS checks=499",
+      "METIN2_NEXORIA_REMAINING=SUCCESS checks=527",
+      "METIN2_SOCIAL=SUCCESS checks=27",
+      "METIN2_SOCIAL=SUCCESS checks=29",
+      "METIN2_SOCIAL=SUCCESS checks=30",
+      "METIN2_SOCIAL=SUCCESS checks=32",
+      "METIN2_SOCIAL=SUCCESS checks=41",
+      "METIN2_SOCIAL=SUCCESS checks=61",
+      "METIN2_SOCIAL_HISTORY=SUCCESS index paging timestamps chunks replay malformed integrity unread reset",
+      "METIN2_NEXORIA_DUNGEON=SUCCESS authored_psds=3 native_controls atomic_pages authorization numeric_bounds responsive_captures",
+      "METIN2_DUNGEON_LIVE=SUCCESS phase=write_party_instance_combat_retry authoritative_catalog party_finder warp real_combat result weekly_rank outsider_denied",
+      "METIN2_DUNGEON_LIVE=SUCCESS phase=after_restart authoritative_catalog party_finder warp real_combat result weekly_rank outsider_denied"
+    ],
+    "menu_entry": "Pinned Unity Editor: real HandleEscape -> authored current game menu -> Kazamaták button -> existing OpenSystemScreen bootstrap route -> authored/bound dungeon information window. Menu closes; 1280x720 strict text audit small=0 overlap=0. Original nine dungeon captures and controls passed again.",
+    "menu_regression": "nexoria-offline passed again after adding the menu entry and widening the channel caption/value spacing"
+  },
+  "captures": [
+    {
+      "name": "dungeon-info-1920",
+      "audit": "texts=39 small=0 legacy=0 overlap=0 min=13,6px",
+      "sha256": "9119c8a758e97ef877413e932f58150f3649d8f672193f0b29ac9c341e235562"
+    },
+    {
+      "name": "dungeon-info-1280",
+      "audit": "texts=37 small=0 legacy=0 overlap=0 min=13,8px",
+      "sha256": "32c8c9740b2ecb7691cd2562a310c442eb098bb74f192f216f101b7a96718dda"
+    },
+    {
+      "name": "dungeon-info-phone",
+      "audit": "texts=37 small=0 legacy=0 overlap=0 min=20,2px",
+      "sha256": "06b1f89145064be7d966b81142ee4c5faafab361f0add192986381c1a8d38546"
+    },
+    {
+      "name": "dungeon-ranking-1920",
+      "audit": "texts=47 small=0 legacy=0 overlap=0 min=14,9px",
+      "sha256": "d5b752429fc38699c7a7790d4d70b62b6f712639066050cabb530fe06d7122b4"
+    },
+    {
+      "name": "dungeon-ranking-1280",
+      "audit": "texts=47 small=0 legacy=0 overlap=0 min=13,6px",
+      "sha256": "61e7491818a135184e2bf9068bdbf1127628a4be06061dc55ae45efa1caeff7c"
+    },
+    {
+      "name": "dungeon-ranking-phone",
+      "audit": "texts=47 small=0 legacy=0 overlap=0 min=20,8px",
+      "sha256": "ba8cf502f3e4aee21a7be0bfe6529e8d6e9627f4f0a055e795237f177ea472f9"
+    },
+    {
+      "name": "dungeon-result-1920",
+      "audit": "texts=51 small=0 legacy=0 overlap=0 min=14,3px",
+      "sha256": "3d8ded2f5cac1bab79dde519bcdf8518dc69aa83f549ccde9bfe1a7605fcaaaa"
+    },
+    {
+      "name": "dungeon-result-1280",
+      "audit": "texts=51 small=0 legacy=0 overlap=0 min=14,3px",
+      "sha256": "c88d5618f5047ccb25ff6a19b40575445503a8c0b811369c48ac195356009df6"
+    },
+    {
+      "name": "dungeon-result-phone",
+      "audit": "texts=51 small=0 legacy=0 overlap=0 min=20,2px",
+      "sha256": "e16398183640a9d2fd99d7dfd6b0be11faf6c93352dfb204f419c6bbcd919f30"
+    },
+    {
+      "name": "dungeon-menu-1280",
+      "audit": "texts=12 small=0 legacy=0 overlap=0 min=15,5px",
+      "sha256": "a81525323d0c9b28a6d94c991ab5348ee71bc6bbf597751301d60bf0925232d0"
+    }
+  ],
+  "preview_note": "Preview images use explicit deterministic validation data; the separate live integration assertions use actual server combat and persisted results",
+  "local_server": {
+    "status": "Selected local Database, CH1 core1/core2, CH99 core99 and login listening; owned local MariaDB running",
+    "ch99_allowed_maps": 24,
+    "change": "Added existing catalog dungeon/entrance maps to the local CH99 map allow list; backup retained in run/deployments",
+    "test_accounts": "Three isolated owned test accounts and their run archive retained; no existing player wallet/items overwritten"
+  },
+  "fixture_test_doubles": "Existing isolated CombatState/SpatialLifecycle fixtures needed inactive typed-service doubles to link pending earlier typed-item changes. Those inactive typed services are not exercised by these fixture tests",
+  "untested": [
+    "Full encounter/boss/NPC pass entry walkthrough for every one of the 19 catalog dungeons",
+    "Physical mobile devices and standalone Unity player builds",
+    "Production deployment and concurrent production load"
+  ],
+  "behavior_limits": [
+    "Entrance travel uses existing NPC/quest entry rules; the UI does not consume passes or mint rewards",
+    "Recruitment lists current-core eligible online players, not a cross-core queue",
+    "Weekly result history begins with recorded completions after enabling this archive; older weekly runs are not fabricated",
+    "Yang in the result is the actual net balance change, including spending; grade is display-only"
+  ],
+  "version_control": "Local changes only; no commit, Unity check-in or push. Existing unrelated pending work preserved",
+  "menu_entry_checked_utc": "2026-11-13T22:48:03.034727+00:00"
+}

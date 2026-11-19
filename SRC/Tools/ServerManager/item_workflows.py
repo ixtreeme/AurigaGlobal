@@ -5,7 +5,7 @@ import unicodedata
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QComboBox, QDialog, QDialogButtonBox, QFormLayout,
-    QHBoxLayout, QLabel, QLineEdit, QSpinBox, QVBoxLayout)
+    QHBoxLayout, QLabel, QLineEdit, QSpinBox, QToolButton, QVBoxLayout)
 
 import item_catalog as catalog
 import backend as api
@@ -62,12 +62,8 @@ SUBTYPES = {
 
 
 def readable_name(base):
-    """A label derived from the code; never pretend it is a localized name."""
-    code = base.get('content_code') or ''
-    tail = code.split('.', 1)[-1].replace('.', ' ').replace('_', ' ').strip()
-    if re.fullmatch(r'new item \d+', tail) and base.get('category_id'):
-        return '%s #%s' % (catalog.CATEGORIES.get(int(base['category_id']), 'Tárgy'), base.get('local_id', '?'))
-    return (tail[:1].upper() + tail[1:]) if tail else 'Névtelen tárgy'
+    from content_names import item_name
+    return item_name(base)
 
 
 def summary_lines(document):
@@ -136,6 +132,11 @@ class NewItemDialog(QDialog):
         self.code_edited = False
         self.code.textEdited.connect(lambda _: setattr(self, 'code_edited', True))
         form.addRow('Egyedi tartalomkód', self.code)
+        self.advanced = QToolButton(); self.advanced.setText('Haladó: belső tartalomkód')
+        self.advanced.setCheckable(True); self.advanced.setObjectName('Disclosure')
+        form.addRow('', self.advanced)
+        form.setRowVisible(self.code, False)
+        self.advanced.toggled.connect(lambda shown: form.setRowVisible(self.code, shown))
         self.level = QSpinBox(); self.level.setRange(0, 65535)
         self.level.setValue(int(source['base']['min_level']) if source else 0)
         form.addRow('Szükséges karakterszint', self.level)
@@ -177,7 +178,7 @@ class NewItemDialog(QDialog):
 
     def update_preview(self):
         self.preview.setText('%s · %s. szinttől\n%s\nA létrehozás szerkeszthető piszkozatot nyit. Az adatbázisba a Mentés gomb ír.' %
-                             (catalog.CATEGORIES[self.category.currentData()], self.level.value(), self.code.text() or 'Adj meg egy belső elnevezést.'))
+                             (catalog.CATEGORIES[self.category.currentData()], self.level.value(), self.name.text().strip() or 'Adj meg egy elnevezést.'))
         self.error.clear()
         self.error.hide()
 

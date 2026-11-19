@@ -8,11 +8,16 @@ struct ItemEffectFacts
     InstantRecoveryAdmission actor;
     bool alive=false,married=false,partyLeader=false,allowed=false;
     bool polymorphAllowed=true;
+    std::uint8_t existingUtilityMask=0; // Server-observed legacy/non-item utility effects.
+    std::vector<BonusId> existingFishBonuses; // Authoritative legacy fish point effects, translated to native identities.
+    std::uint8_t existingFoodFamilyMask=0; // Winter drink / festival candy legacy affects.
 };
 struct ItemEffectError { std::uint8_t code=255; };
 const TimedEffectProfile* TimedItemProfile(const ItemCatalog&,ItemKey);
 const ToggleEffectProfile* ToggleItemProfile(const ItemCatalog&,ItemKey);
 std::uint64_t TimedItemRemaining(const TimedItemEffect&,std::uint64_t now);
+// The caller projects online elapsed time first; UTC only applies to wall clocks.
+std::optional<std::uint64_t> FindTimedUtility(const ItemCatalog&,const RecoverySchedule&,TimedEffectUtility,std::uint64_t now);
 void NormalizeTimedItems(const ItemCatalog&,RecoverySchedule&,std::uint64_t now,const ItemEffectFacts* facts=nullptr);
 bool HasDeathItemEffects(const ItemCatalog&,const RecoverySchedule&,std::span<const PersistentItem>);
 std::expected<std::vector<PersistentItem>,ItemPersistenceError> ProjectToggleItems(const ItemCatalog&,std::span<const PersistentItem>,std::uint64_t elapsed,const ItemEffectFacts&);

@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "policy": "Preserve the current fully unlocked native inventory:8 main pages and6 types with8 special pages each.",
+  "decision_basis": "Agent default stated in chat: retain current typed capacity; optional user clarification was unanswered at preparation. Reversible source-definition policy only, not deployed to player data.",
+  "review_if_user_prefers_locked_inventory": true,
+  "items": [
+    {
+      "source_id": 72320,
+      "source_row_hash": "6b5a35bb8e619ed677e02411d9899c46806dfc8d3c01889ee0302f5976c2b7da",
+      "reason": "superseded_by_fully_unlocked_typed_inventory",
+      "name": "Leltárbővítő",
+      "scope": "obsolete_inventory_expansion_key"
+    },
+    {
+      "source_id": 50011,
+      "source_row_hash": "6b45e685c6f7a59160130470989264f2334460f014b78dea289fcd3c71517dc4",
+      "reason": "superseded_by_fully_unlocked_typed_inventory",
+      "name": "Holdfény Kincsesláda",
+      "scope": "obsolete_original_chest_requiring_inventory_expansion_key"
+    },
+    {
+      "source_id": 50033,
+      "source_row_hash": "11a9d0f1357d7388f1cf5023aac52201cc9614eecc75b0cacbbb01f2cbb5e408",
+      "reason": "superseded_by_fully_unlocked_typed_inventory",
+      "name": "Szellem láda",
+      "scope": "obsolete_original_chest_requiring_inventory_expansion_key"
+    },
+    {
+      "source_id": 50070,
+      "source_row_hash": "c584d6925e68472436196daa31982e475c65b886da6cad7239e7c190933fc7b8",
+      "reason": "superseded_by_fully_unlocked_typed_inventory",
+      "name": "Főork Ládája",
+      "scope": "obsolete_original_chest_requiring_inventory_expansion_key"
+    },
+    {
+      "source_id": 50254,
+      "source_row_hash": "302bdf0bce34259ac01c94d822b12989baff8c966fa93d0bd8d191682f65d115",
+      "reason": "superseded_by_fully_unlocked_typed_inventory",
+      "name": "Sötétség ládája",
+      "scope": "obsolete_original_chest_requiring_inventory_expansion_key"
+    }
+  ]
+}

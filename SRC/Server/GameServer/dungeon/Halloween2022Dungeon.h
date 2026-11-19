@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <item/DungeonItems.hpp>
 
 #include <entt/entt.hpp>
 
@@ -21,6 +22,7 @@
 class CHalloween2022Dungeon
 {
 public:
+    bool OnUseTypedItem(entt::entity,const auriga::item::PersistentItem&,const auriga::item::ItemCatalog&);
     static CHalloween2022Dungeon& instance();
 
     void OnPlayerDisconnect(entt::entity character);

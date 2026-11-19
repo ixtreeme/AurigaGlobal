@@ -1,0 +1,262 @@
+{
+  "checkpoint": "original_creature_summon_world_rewards",
+  "candidate": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-world-rewards-v43-final.json",
+  "candidate_sha256": "d6a39fb02a3e11bb647c0ccd3d9ab361ad098812555f0af97c0b1e42bea1797f",
+  "catalog_hash": "f64f35c96d11f35ef6bde3cf86edb0eb1ff8568e7ad2b90f9b0cf2b175c400f6",
+  "schema": 43,
+  "counts": {
+    "blocked_reasons": {
+      "invalid_chest_lock": 2,
+      "invalid_inventory_height": 6,
+      "invalid_mount_definition": 10,
+      "invalid_timed_effect_duration": 6,
+      "invalid_toggle_effect_definition": 18,
+      "invalid_weapon_costume_effect_attachment:163": 1,
+      "missing_equipment_asset": 49,
+      "missing_secondary_skill_definition:123": 3,
+      "missing_source_container_reward_group": 236,
+      "missing_source_icon": 168,
+      "missing_stole_model": 1,
+      "missing_unity_asset_reference": 12,
+      "missing_weapon_costume_effect_mapping:1297": 1,
+      "missing_weapon_costume_effect_mapping:1326": 2,
+      "missing_weapon_costume_effect_mapping:1335": 2,
+      "missing_weapon_costume_effect_mapping:1344": 2,
+      "non_bonus_affect_requires_dedicated_behavior": 2,
+      "semantic_converter_required:11:0": 1,
+      "semantic_converter_required:15:0": 1,
+      "semantic_converter_required:16:10": 4,
+      "semantic_converter_required:19:0": 1,
+      "semantic_converter_required:27:0": 7,
+      "semantic_converter_required:28:3": 28,
+      "semantic_converter_required:36:0": 1,
+      "semantic_converter_required:37:0": 12,
+      "semantic_converter_required:38:0": 1,
+      "semantic_converter_required:3:1": 9,
+      "semantic_converter_required:3:10": 75,
+      "semantic_converter_required:3:15": 1,
+      "semantic_converter_required:3:23": 6,
+      "semantic_converter_required:3:29": 2,
+      "semantic_converter_required:3:45": 1,
+      "semantic_converter_required:9:0": 1,
+      "skill_selected_on_instance_not_in_prototype": 3,
+      "source_bonus_out_of_native_bounds:31": 1,
+      "source_fish_has_no_effect": 1,
+      "source_reward_rare_field_out_of_range": 2,
+      "source_stone_has_no_equipment_target": 3,
+      "unmapped_behavior_value": 1,
+      "unported_apply:125": 3,
+      "unported_apply:126": 1,
+      "unported_apply:127": 1,
+      "unresolved_container_reward:2871": 4,
+      "unresolved_container_reward:2872": 1,
+      "unresolved_container_reward:2875": 3,
+      "unresolved_container_reward:2876": 3,
+      "unresolved_container_reward:2877": 1,
+      "unresolved_container_reward:2878": 1,
+      "unresolved_container_reward:2879": 1,
+      "unresolved_container_reward:48611": 1,
+      "unresolved_container_reward:55003": 1,
+      "unresolved_container_reward:55010": 1,
+      "unresolved_container_reward:70065": 1,
+      "unresolved_container_reward:71035": 1,
+      "unresolved_container_reward:72044": 5,
+      "unresolved_container_reward:72320": 4,
+      "unresolved_fishing_result:27847": 1,
+      "unresolved_fishing_result:27877": 1,
+      "unsupported_ability_effect": 1
+    },
+    "blocked_source_rows": 719,
+    "converted_source_rows": 9776,
+    "new_native_definitions": 0,
+    "retired_source_rows": 491,
+    "source_rows": 10986
+  },
+  "source_summons": 17,
+  "usable_summons": 13,
+  "runtime_deferred_native": [
+    {
+      "source_id": 71261,
+      "source_row_hash": "0747ae242b83a6c87a9c823ef538775de1ff72b92b9ed9de53b389ddeaa4061b",
+      "item": {
+        "category_id": 8,
+        "local_id": 402
+      },
+      "reason": "missing_original_world_creature_asset",
+      "missing_creature_assets": [
+        1055
+      ],
+      "available": false
+    },
+    {
+      "source_id": 71262,
+      "source_row_hash": "7c70a6f7cfb02faf71918d5fa9f7664fb6b1a1488c2ded9e06b45b30d50dbc7b",
+      "item": {
+        "category_id": 8,
+        "local_id": 403
+      },
+      "reason": "missing_original_world_creature_asset",
+      "missing_creature_assets": [
+        1055
+      ],
+      "available": false
+    },
+    {
+      "source_id": 71268,
+      "source_row_hash": "eb8a4e521617d85999e620c2eec64d3718da48fc98a0060b937d8f25056ea169",
+      "item": {
+        "category_id": 8,
+        "local_id": 409
+      },
+      "reason": "missing_original_world_creature_asset",
+      "missing_creature_assets": [
+        710
+      ],
+      "available": false
+    },
+    {
+      "source_id": 71273,
+      "source_row_hash": "c6f84f0fe41b087eec8e72b8ea4fc2bc8f5fac769199ae9724189c9217a99059",
+      "item": {
+        "category_id": 8,
+        "local_id": 414
+      },
+      "reason": "missing_original_world_creature_asset",
+      "missing_creature_assets": [
+        4001,
+        4011
+      ],
+      "available": false
+    }
+  ],
+  "exact_native_table_changes": {
+    "definition_availability_only": [
+      [
+        "8",
+        "402",
+        "0"
+      ],
+      [
+        "8",
+        "403",
+        "0"
+      ],
+      [
+        "8",
+        "409",
+        "0"
+      ],
+      [
+        "8",
+        "414",
+        "0"
+      ]
+    ]
+  },
+  "worker_checks": 343,
+  "container_unit_checks": 54,
+  "native_regression": {
+    "passed": 64,
+    "total": 64,
+    "log": "build/source-world-rewards-final-full-tests.log"
+  },
+  "unity": {
+    "editor": "6000.3.27f1",
+    "checks": 25749,
+    "packet_sets": 39,
+    "real_confirmations": 13,
+    "creature_prefab_meshes": 24,
+    "log": "build/source-world-rewards-unity-verified-success.log"
+  },
+  "actual_game_item_worker": true,
+  "actual_shared_post_write_dispatcher": true,
+  "full_actor_world_test": false,
+  "installed_to_game": false,
+  "addressables_player_build_test": false,
+  "exact_reproduction": true,
+  "blocked_merge_deferred": 566,
+  "total_merge_deferred_sources": 570,
+  "remaining_behavior_or_policy": 153,
+  "available_converted_source_states": 9772,
+  "world_runtime": {
+    "authoring_race_catalog_sha256": "9e27061f34f8acf7c2d0e114fe94978733c328288d613ddb83731bec074d2726",
+    "checked": 17,
+    "deferred": [
+      {
+        "available": false,
+        "item": {
+          "category_id": 8,
+          "local_id": 402
+        },
+        "missing_creature_assets": [
+          1055
+        ],
+        "reason": "missing_original_world_creature_asset",
+        "source_ids": [
+          71261
+        ]
+      },
+      {
+        "available": false,
+        "item": {
+          "category_id": 8,
+          "local_id": 403
+        },
+        "missing_creature_assets": [
+          1055
+        ],
+        "reason": "missing_original_world_creature_asset",
+        "source_ids": [
+          71262
+        ]
+      },
+      {
+        "available": false,
+        "item": {
+          "category_id": 8,
+          "local_id": 409
+        },
+        "missing_creature_assets": [
+          710
+        ],
+        "reason": "missing_original_world_creature_asset",
+        "source_ids": [
+          71268
+        ]
+      },
+      {
+        "available": false,
+        "item": {
+          "category_id": 8,
+          "local_id": 414
+        },
+        "missing_creature_assets": [
+          4001,
+          4011
+        ],
+        "reason": "missing_original_world_creature_asset",
+        "source_ids": [
+          71273
+        ]
+      }
+    ],
+    "groups_sha256": "63ec337d1a7ea6e22fc6b729a9fb6104e50d3c56343d46a19d89d08c1f6a1cb9",
+    "per_race_assets": {
+      "2832": "b28878b976676025f40477210b14f5e566710adabc22a022006c8add11b1161b",
+      "4158": "f33b4979920c2d2627590c7cc7b0c2276a76420953d3de54b6617b9b400dfc91",
+      "4203": "6d8afae6cfd9e691de2d3af39792aac9d74a7adde4d1fc05e230a6a2db533a02",
+      "6192": "fb16ab3363f29ead9204d481a372e9ba872cc315e4240b3a460110a4d4454247",
+      "719": "3a105f2f87198bbd0d052b47ce6a7e64ccfeaeffa13d9a6744d0c5c4b9d39701",
+      "768": "e62d73c786943575b1c13adf8016267f5a8e696759d38f1567a9c3ff01b5d486"
+    },
+    "runtime_prefab_index_sha256": "f3989ad8ae8ac90f9c8f073cf196c2951fb53b042acc2c99ca2c0a2d6bb2e6cf",
+    "usable": 13
+  },
+  "local_reset_proof": "build/source-world-rewards-local-reset-verification.log",
+  "files": {
+    "SRC/Server/common/item/ContainerOpening.hpp": "3eeaed29e4f440821b5c9fe1a0deb57b9eab83a665ace3f799ca205a4729643f",
+    "SRC/ItemDomain/ContainerOpening.cpp": "578f7dfc3e3da348aba93c442d0cb6070346b4767de4ad46d52d0cb1a13f7b8d",
+    "SRC/Server/GameServer/item/TypedContainerOpening.cpp": "f1b3a26e353b4f44390ebfe31a187c23cfdb28507720ec62b0e1c2350f06850d",
+    "SRC/Tools/ItemCatalogBuilder/full_catalog_world_rewards.py": "32c2960350016dcd8743e3d240f63dce5ff1056df09bb15a2de2ca6fa535359d"
+  }
+}

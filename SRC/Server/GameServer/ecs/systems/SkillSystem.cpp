@@ -1,6 +1,8 @@
 #include "../../item/TypedBooks.hpp"
 #include "../../item/ItemStore.hpp"
 #include "../../core/stdafx.h"
+#include "../../dungeon/DungeonUiEvents.hpp"
+#include "../../combat/DeathRecapEvents.hpp"
 #include "MovementSystem.hpp"
 #include "../../raid/EclipseRaidSystem.hpp"
 #include <Core/Logging.hpp>
@@ -2841,6 +2843,8 @@ EVENTFUNC(skill_gwihwan_event)
 
 int SkillSystem::ComputeSkillAtPosition(entt::entity e, uint32_t dwVnum, const PIXEL_POSITION& posTarget, uint8_t bSkillLevel)
 {
+    DeathRecap::Events::SkillScope recapSkill(dwVnum);
+    DungeonUi::Events::HealingScope healingSource(e);
 	if (!ecs::IsCharacter(e))
 		return BATTLE_NONE;
 
@@ -3251,6 +3255,8 @@ int SkillSystem::ComputeGyeongGongSkill(entt::entity e, uint32_t dwVnum, entt::e
 
 int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel)
 {
+    DeathRecap::Events::SkillScope recapSkill(dwVnum);
+    DungeonUi::Events::HealingScope healingSource(e);
 	if (!ecs::IsCharacter(e))
 		return BATTLE_NONE;
 
@@ -4193,6 +4199,7 @@ struct FHealerParty
 		const int64_t maxHP = static_cast<int64_t>(ecs::PointSystem::GetMaxHP(target));
 		const int64_t iHP = (maxHP >= curHP + iRevive) ? (curHP + iRevive) : maxHP;
 		ecs::PlayerRuntime::SetHP(target, static_cast<uint64_t>(iHP));
+		if (iHP>curHP) DungeonUi::Events::Healing(m_healer,target,static_cast<std::uint64_t>(iHP-curHP));
 		NetworkSyncSystem::BroadcastEffect(g_registry, target, SE_EFFECT_HEALER);
 		LOG_INFO("FHealerParty: {} (entity: {}) heal the HP of {} (entity: {}) with {} (new HP: {}).", ecs::PlayerRuntime::GetName(m_healer).data(), static_cast<uint32_t>(m_healer), ecs::PlayerRuntime::GetName(target).data(), static_cast<uint32_t>(target), iRevive, ecs::PlayerRuntime::GetHP(target));
 	}

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "attr_transfer.h"
+#include "TypedCostumeTransfer.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/components/inventory_components.hpp"
 #include "../ecs/components/social_components.hpp"
@@ -128,6 +129,7 @@ bool AttrTransfer_is_open(entt::entity character)
 
 void AttrTransfer_open(entt::entity character)
 {
+    if(OpenTypedCostumeTransfer(character))return;
     if (!CanUse(character))
         return;
     if (const auto* window = WindowOf(character); window && window->busy)
@@ -154,6 +156,7 @@ void AttrTransfer_clean_item(entt::entity character)
 
 void AttrTransfer_close(entt::entity character)
 {
+    if(CloseTypedCostumeTransfer(character))return;
     auto* window = WindowOf(character);
     if (!window || window->busy)
         return;

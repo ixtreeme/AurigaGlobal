@@ -79,7 +79,7 @@ bool CLIENT_DESC::RequestPlayerCacheDrain(LPDESC target, auriga::player_session:
     auriga::player_cache_snapshot::Snapshot snapshot;
     snapshot.account = key->account;
     ecs::SessionSystem::CreatePlayerProto(entity, snapshot.player);
-    if (!stillCurrent() || !ITEM_MANAGER::instance().BuildPlayerCacheSnapshot(entity, snapshot.items))
+    if (!stillCurrent())
         return false;
     const auto batch = auriga::player_cache_snapshot::Batch(*key, challenge, handle, snapshot);
     if (!batch || !pause->Current() || !IsConnected() || !m_playerCacheReady ||

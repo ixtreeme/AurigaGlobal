@@ -295,6 +295,13 @@ std::vector<entt::entity> CPIDRegistry::Snapshot() const { Unexpected(); }
 int g_nPortalLimitTime = 10;
 uint8_t g_bChannel = 1;
 uint16_t mother_port = 13000;
+char g_szPublicIP[16]="127.0.0.1";
+// Durable typed appearance/flight services are inactive in this spatial fixture.
+std::optional<bool> TypedMountFlightPermission(entt::entity){return std::nullopt;}
+void ReplayTypedCostumeAppearances(entt::entity){}
+int ItemSystem::GetItemValue(entt::entity,unsigned){Unexpected();}
+bool AffectSystem::IsLoaded(entt::entity){return false;}
+bool ecs::PlayerRuntime::IsObserverMode(entt::entity e){const auto* flags=g_registry.try_get<ecs::StatusFlags>(e);return flags&&flags->isObserverMode;}
 bool map_allow_find(int) { Unexpected(); }
 int number_ex(int, int, const char*, int) { Unexpected(); }
 bool InventorySystem::CanHandleItems(entt::entity, bool, bool) { Unexpected(); }

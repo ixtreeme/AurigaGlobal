@@ -60,6 +60,14 @@ void Profiles()
     auto bounded = item_catalog_fixture::SocketProfile();
     bounded.grades[3].durationMs = INT64_MAX;
     Check(ValidateAccessorySocketProfile(std::move(bounded)).has_value(), "full allowed duration bound retained");
+    auto imported=item_catalog_fixture::SocketProfile();
+    imported.unlockMaterials.clear();imported.chargeMaterials.clear();imported.permanentChargeMaterials.clear();
+    for(auto& grade:imported.grades){grade.unlockChanceBp=grade.chargeChanceBp=0;grade.truncateBonus=true;}
+    const auto readOnly=ValidateAccessorySocketProfile(imported);
+    Check(readOnly.has_value(),"imported existing charges need no invented material recipe");
+    Check(ValidateAccessorySocketState(*readOnly,{3,3,0,true}).has_value(),"imported permanent charge survives without an authorable charging service");
+    imported.grades[0].chargeChanceBp=1;
+    Check(!ValidateAccessorySocketProfile(imported),"missing materials cannot enable new charging");
 }
 void PlansAndAdmission()
 {
@@ -165,6 +173,12 @@ void InvalidStateAndCatalogOwnership()
 }
 void PermanentCharges()
 {
+    auto permanentOnly=item_catalog_fixture::SocketProfile();
+    permanentOnly.permanentChargeMaterials=permanentOnly.chargeMaterials;permanentOnly.chargeMaterials.clear();
+    const auto only=ValidateAccessorySocketProfile(permanentOnly);
+    Check(only.has_value(),"permanent-only material family needs no invented temporary ore");
+    const auto charged=PlanAccessorySocketCharge(*only,{1,0,0},permanentOnly.permanentChargeMaterials.front(),SocketAttemptOutcome::Succeeded);
+    Check(charged && charged->state.permanent && !charged->state.remainingMs,"permanent-only charge retains permanent lifetime semantics");
     // Profile validation checks structural keys; the catalog additionally checks
     // the referenced material row and requires Jewel kind for both charge modes.
     const auto permanentJewel = item_catalog_fixture::Leather();

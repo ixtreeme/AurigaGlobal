@@ -6,6 +6,21 @@ namespace auriga::item
 std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeBookRuntime(const ItemCatalog& c,const BookRuntimeView& v)
 {
     using E=TypedInventoryWireError;if(!v.learning || !ValidBookLearning(*v.learning) || !ValidBookCharacter(v.character) || !v.control || v.status>8 || (v.error!=255 && v.error>21) || v.now>INT64_MAX || v.skillName.size()>1024 || (v.source ? !v.preview : v.preview!=0))return std::unexpected(E::BadValue);
+    if(const auto* service=v.source ? c.FindCharacterService(v.source->key) : nullptr){
+        const bool hair=service->kind==CharacterServiceKind::HairDye;
+        const auto current=hair ? v.character.hair ? std::optional<std::uint32_t>{v.character.hair->part} : std::nullopt : service->kind==CharacterServiceKind::Alignment ? v.character.alignment : v.character.statResetCredits ? std::optional<std::uint32_t>{*v.character.statResetCredits} : std::nullopt;
+        if(!current || !ValidatePersistentItem(c,*v.source))return std::unexpected(E::BadValue);
+        const auto prepared=PrepareCharacterService(c,*v.source,v.character,v.actor);const CharacterServicePlan plan=v.characterResult ? *v.characterResult : prepared.value_or(CharacterServicePlan{*current,*current,0,static_cast<std::uint16_t>(v.character.hair ? v.character.hair->lastDyeLevel : 0),static_cast<std::uint16_t>(v.character.hair ? v.character.hair->lastDyeLevel : 0),v.actor.characterLevel});
+        if(!hair && (plan.before>50000000 || plan.after>50000000 || plan.before+plan.granted!=plan.after || (v.characterResult && (!plan.granted || plan.before<service->minimum || plan.before>=service->maximum || plan.granted!=std::min(service->amount,service->maximum-plan.before)))))return std::unexpected(E::BadValue);
+        if(hair && (!v.character.hair || !v.character.progression || plan.previousDyeLevel>255 || plan.nextDyeLevel>255 || !plan.characterLevel || plan.characterLevel>255 ||
+            (plan.granted ? plan.granted!=service->amount || plan.before>=1001 || plan.after!=service->amount-1 || plan.nextDyeLevel!=(service->amount==1 ? 0 : plan.characterLevel) || (service->amount!=1 && plan.previousDyeLevel && unsigned(plan.previousDyeLevel)+3>plan.characterLevel) : plan.before!=plan.after || v.characterResult)))return std::unexpected(E::BadValue);
+        const auto details=EncodeTypedItemDetails(c,std::span(v.source,1),false);if(!details)return std::unexpected(details.error());
+        std::vector<std::byte> out;const auto put=[&](std::uint64_t n,unsigned size){for(unsigned i=0;i<size;++i)out.push_back(std::byte(n>>(8*i)));};
+        put(244,1);put(0,4);put(hair ? 5 : service->kind==CharacterServiceKind::Alignment ? 3 : 4,1);put(v.status,1);put(v.error,1);put(v.control,8);put(v.preview,8);put(v.source->id.Value(),8);put(5,2);put(v.source->key.LocalId(),4);put(v.learning->revision,8);put(v.now,8);
+        put(static_cast<unsigned>(service->kind),1);put(service->units,2);for(auto value:{service->amount,service->minimum,service->maximum,*current,plan.before,plan.after,plan.granted})put(value,4);put(v.characterResult!=nullptr,1);
+        if(hair){put(v.character.hair->lastDyeLevel,2);put(plan.previousDyeLevel,2);put(plan.nextDyeLevel,2);put(plan.characterLevel,2);}
+        put(details->size(),4);out.insert(out.end(),details->begin(),details->end());if(out.size()>1u<<20)return std::unexpected(E::TooLarge);for(unsigned i=0;i<4;++i)out[1+i]=std::byte(out.size()>>(i*8));return out;
+    }
     const auto* p=v.source ? BookItemProfile(c,v.source->key) : nullptr;const auto* aid=v.source ? BookAidItemProfile(c,v.source->key) : nullptr;if(v.source && !p && !aid)return std::unexpected(E::BadValue);
     std::uint16_t target=p ? (p->targetMode==SkillBookTargetMode::Fixed ? p->targets.front().skillId : v.source->bookSkill.value_or(0)) : 0;
     const auto level=p && p->operation==SkillBookOperation::HorsePoint ? v.character.points[2] : v.character.skills[target].level;

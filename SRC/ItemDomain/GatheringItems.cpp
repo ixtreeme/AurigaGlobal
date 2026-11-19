@@ -11,13 +11,16 @@ bool ValidToolProfile(const ToolProfile& p) noexcept
     for(std::size_t i=0;i<p.levels.size();++i)
     {
         const auto& s=p.levels[i];
+        if((s.successItem && s.successItem->Category()!=ItemCategory::Tool) || (s.failureItem && s.failureItem->Category()!=ItemCategory::Tool) ||
+           (!s.successItem && s.successLevel) || s.successLevel>255 || (s.displayGrade!=65535 && s.displayGrade>255) ||
+           (s.failureItem && (s.failure!=ToolFailure::ResetAtLevel || !s.failureLevel)))return false;
         if(s.level!=i || s.power>INT32_MAX || s.gatherBonusBp>10000 || !s.practiceDenominator ||
            s.practiceNumerator>s.practiceDenominator || s.refineChanceBp>10000 || s.failureLossBp>10000 ||
            s.failure<ToolFailure::LosePoints || s.failure>ToolFailure::ResetAtLevel)return false;
         if(s.failure==ToolFailure::ResetAtLevel)
-        {if(!s.failureLevel || *s.failureLevel>s.level || s.failureLossBp)return false;}
+        {if(!s.failureLevel || (!s.failureItem && *s.failureLevel>s.level) || *s.failureLevel>255 || s.failureLossBp)return false;}
         else if(s.failureLevel)return false;
-        if(i+1==p.levels.size())
+        if(i+1==p.levels.size() && !s.successItem)
         {
             if(s.requiredPoints || s.practiceNumerator || s.practiceDenominator!=1 || s.refineChanceBp ||
                s.failure!=ToolFailure::LosePoints || s.failureLossBp)return false;
@@ -69,7 +72,7 @@ std::expected<ToolActionPlan,GatheringError> PlanToolAction(const ItemCatalog& c
     const auto& level=levels[r.tool.refinementLevel];
     if(r.trainingPoints>level.requiredPoints)return std::unexpected(E::InvalidState);
     ToolActionPlan plan{r,Pin(c),r.tool.refinementLevel,r.trainingPoints,false};
-    const bool maximum=std::size_t(r.tool.refinementLevel)+1==levels.size();
+    const bool maximum=std::size_t(r.tool.refinementLevel)+1==levels.size() && !level.successItem;
     if(r.action==ToolAction::Practice)
     {
         if(maximum || r.trainingPoints==level.requiredPoints)
@@ -84,8 +87,8 @@ std::expected<ToolActionPlan,GatheringError> PlanToolAction(const ItemCatalog& c
         if(r.trainingPoints<level.requiredPoints)return std::unexpected(E::NotReady);
         auto decision=Decision(level.refineChanceBp,10000,r.recordedRoll);if(!decision)return std::unexpected(decision.error());
         plan.success=*decision;
-        if(plan.success){++plan.afterLevel;plan.afterPoints=0;}
-        else if(level.failure==ToolFailure::ResetAtLevel){plan.afterLevel=*level.failureLevel;plan.afterPoints=0;}
+        if(plan.success){plan.afterLevel=level.successItem ? level.successLevel : plan.afterLevel+1;plan.afterItem=level.successItem;plan.afterPoints=0;}
+        else if(level.failure==ToolFailure::ResetAtLevel){plan.afterLevel=*level.failureLevel;plan.afterItem=level.failureItem;plan.afterPoints=0;}
         else plan.afterPoints-=static_cast<std::uint32_t>((std::uint64_t{r.trainingPoints}*level.failureLossBp)/10000);
     }
     return plan;

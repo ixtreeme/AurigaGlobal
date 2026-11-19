@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'SRC/Tools/ItemCatalogBuilder'))
 import legacy_item_migration as migration
 import upgrade_exported_catalog as upgrade
+from convert_passive_catalog import ledger
 
 
 def proto(old_id, level=0, next_id=0, name='Iron Sword', kind=1, subtype=0):
@@ -69,6 +70,36 @@ class MappingTests(unittest.TestCase):
         self.assertEqual(plan['summary']['preserved_catalog_items'], 1)
         self.assertEqual(plan['next_local_ids']['1'], 9)
         self.assertNotIn(dict(category_id=1,local_id=1), [r['target'] for r in plan['mapping']])
+
+    def test_all_current_native_categories_and_sequences_are_reserved(self):
+        data=source()
+        for category in (19,20,21,22):
+            data['protos.item_base'].append(dict(category_id=category,local_id=12,content_code=f'existing.item_{category}'))
+            data['protos.item_local_id_sequence'].append(dict(category_id=category,next_local_id=30))
+        plan=self.plan(data)
+        for category in (19,20,21,22):self.assertEqual(plan['next_local_ids'][str(category)],30)
+
+    def test_native_instance_collision_is_remapped_without_reusing_identity(self):
+        data=source();data['player.item_instance']=[dict(instance_id=500),dict(instance_id=900)]
+        data['player.account_mount_inventory']=[dict(id=500,account_id=9,slot=4,vnum=10,count=1)]
+        plan=self.plan(data)
+        self.assertEqual([(r['source_store'],r['source_instance_id'],r['instance_id']) for r in plan['instances']],
+                         [('player.item',500,902),('player.item',501,501),('player.account_mount_inventory',500,901)])
+        self.assertEqual(plan['summary']['preserved_native_instances'],2)
+        self.assertEqual(plan['summary']['diagnostics']['preserved_instance_id_collision'],1)
+        self.assertEqual(plan['summary']['source_total_quantity'],11)
+        for rows in data.values():rows.reverse()
+        self.assertEqual(self.plan(data),plan)
+
+    def test_duplicate_legacy_identity_is_still_rejected_on_native_collision(self):
+        data=source();data['player.item_instance']=[dict(instance_id=500)]
+        data['player.item'].append(copy.deepcopy(data['player.item'][0]))
+        with self.assertRaises(migration.MigrationError):self.plan(data)
+
+    def test_current_semantic_categories_are_explicit_not_vnum_arithmetic(self):
+        for kind,subtype,category in ((1,6,21),(3,2,22),(28,2,15),(28,3,19),(28,5,19),(28,10,19),(28,16,19),(3,43,17),(3,44,17),(3,46,20),(36,0,20)):
+            with self.subTest(kind=kind,subtype=subtype):
+                self.assertEqual(migration.classification(proto(921234,kind=kind,subtype=subtype))[:2],(category,'candidate'))
 
     def test_input_permutation_has_identical_complete_output(self):
         expected = self.plan()
@@ -299,6 +330,36 @@ class MappingTests(unittest.TestCase):
         self.assertNotEqual(a['recipes'][0]['source_row_hash'],b['recipes'][0]['source_row_hash'])
 
 
+class CompleteLedgerTests(unittest.TestCase):
+    def fixture(self):
+        data=source();plan=migration.analyze(data,'a'*64)
+        ref=next(r for r in plan['mapping'] if r['source_id']==200)
+        accepted=[dict(source_id=200,item=ref['target'],source_row_hash=migration.value_hash(data['player.item_proto'][-1]))]
+        return data,plan,accepted
+
+    def test_complete_prototype_and_owner_accounting_does_not_claim_instance_conversion(self):
+        data,plan,accepted=self.fixture();protos,owners=ledger(data,plan,accepted,[])
+        self.assertEqual(len(protos),4);self.assertEqual(sum(r['compiled'] for r in protos),1)
+        self.assertEqual(owners,[dict(owner_kind='player',owner_id=7,instances=2,units=10,missing_prototypes=[87],state_conversion_complete=False)])
+
+    def test_tampered_compiled_source_hash_or_key_rejects(self):
+        for field,value in [('source_row_hash','b'*64),('item',dict(category_id=6,local_id=999))]:
+            data,plan,accepted=self.fixture();accepted[0][field]=value
+            with self.assertRaises(migration.MigrationError):ledger(data,plan,accepted,[])
+
+    def test_auxiliary_store_uses_exact_source_level_not_every_family_member(self):
+        data,plan,accepted=self.fixture()
+        data['player.guild_renewal_storage']=[dict(guild_id=42,slot=2,vnum=87,count=3)]
+        plan=migration.analyze(data,'a'*64);_,owners=ledger(data,plan,accepted,[])
+        guild=next(r for r in owners if r['owner_kind']=='guild')
+        self.assertEqual(guild['missing_prototypes'],[87]);self.assertEqual(guild['units'],3)
+
+    def test_native_instance_collision_does_not_break_source_state_resolution(self):
+        data,_,accepted=self.fixture();data['player.item_instance']=[dict(instance_id=500)]
+        plan=migration.analyze(data,'a'*64);_,owners=ledger(data,plan,accepted,[])
+        self.assertEqual(owners[0]['missing_prototypes'],[87]);self.assertEqual(owners[0]['instances'],2)
+
+
 class DecoderTests(unittest.TestCase):
     def test_unicode_null_signed_int_and_binary_are_lossless(self):
         packet=dict(columns=[dict(name='name',encoding='utf8-hex',data_type='varchar'),
@@ -357,6 +418,14 @@ class CatalogUpgradeTests(unittest.TestCase):
         with self.assertRaises(migration.MigrationError):upgrade.upgrade(tables,blank)
         tables,blank=self.fixture();tables['protos.unknown_profile']=[dict(value=7)]
         with self.assertRaises(migration.MigrationError):upgrade.upgrade(tables,blank)
+
+    def test_current_schema_content_and_issued_counters_are_preserved(self):
+        tables,blank=self.fixture()
+        tables['protos.catalog_format']=[dict(singleton=1,schema_version=12,canonical_domain='auriga.item_catalog.v12')]
+        packet,counts=upgrade.upgrade(tables,blank)
+        self.assertEqual(packet['tables']['item_base'],[['1','1','weapon.user_item']])
+        self.assertEqual(packet['sequences']['1'],'10')
+        self.assertEqual(counts['item_base'],1)
 
     def test_bonus_reinterpretation_or_source_revocation_rejects(self):
         for field,value in [('code','different.meaning'),('allowed_sources','1')]:

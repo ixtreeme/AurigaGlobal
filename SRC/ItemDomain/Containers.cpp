@@ -19,7 +19,8 @@ bool ValidAmount(const LootEntry& entry) noexcept
     case LootRewardKind::SpawnMonsterGroup: return entry.amount >= 1 && entry.amount <= std::numeric_limits<std::uint32_t>::max();
     case LootRewardKind::Slow:
     case LootRewardKind::DrainHp: return entry.amount >= 1 && entry.amount <= LootChanceScaleBp;
-    case LootRewardKind::Poison: return entry.amount == 0;
+    case LootRewardKind::Poison:
+    case LootRewardKind::Nothing: return entry.amount == 0;
     }
     return false;
 }
@@ -38,10 +39,12 @@ std::expected<ValidatedLootProfile, LootProfileError> ValidateLootProfile(LootPr
     {
         const auto& entry = source.entries[i];
         if (entry.entry != i + 1) return std::unexpected(LootProfileError::InvalidEntryOrder);
-        if (entry.kind < LootRewardKind::Item || entry.kind > LootRewardKind::Poison ||
+        if (entry.kind < LootRewardKind::Item || entry.kind > LootRewardKind::Nothing ||
             (entry.kind == LootRewardKind::Item) != entry.item.has_value())
             return std::unexpected(LootProfileError::InvalidReward);
         if (!ValidAmount(entry)) return std::unexpected(LootProfileError::InvalidAmount);
+        if (entry.refinementLevel>255 || (entry.kind!=LootRewardKind::Item && entry.refinementLevel))
+            return std::unexpected(LootProfileError::InvalidRefinementLevel);
         if (!entry.weight || (source.mode == LootPickMode::IndependentChance && entry.weight > LootChanceScaleBp))
             return std::unexpected(LootProfileError::InvalidWeight);
         if (entry.rareAttributeChanceBp > LootChanceScaleBp || (entry.kind != LootRewardKind::Item && entry.rareAttributeChanceBp))

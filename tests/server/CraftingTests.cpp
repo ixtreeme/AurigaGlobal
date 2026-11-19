@@ -1,5 +1,6 @@
 #include "PersistentItemFixture.hpp"
 #include <item/Crafting.hpp>
+#include <item/CraftConfig.hpp>
 #include <algorithm>
 #include <fstream>
 #include <iomanip>
@@ -55,10 +56,34 @@ std::vector<std::byte> Run()
     invalid=shop;invalid.name=std::string(129,'x');Check(!ValidateCraftWorkshops(c,std::span(&invalid,1)),"name size bound");
     auto spacious=bag;spacious.pages=4;auto many=material;many.count=32;auto bulk=recipe;bulk.chance=10000;bulk.ingredients[0].count=1;
     std::vector<ItemInstanceId> reserved;for(unsigned i=0;i<32;++i)reserved.push_back(ItemInstanceId::Create(1000+i).value());std::vector<std::uint16_t> batch(32,0);
-    Check(MakeCraftCommit(c,op,owner,std::span(&spacious,1),std::span(&many,1),std::span(&wallet,1),bulk,32,batch,reserved).error()==CraftError::Limit,"input and output together respect 32-change transaction bound");
+    Check(MakeCraftCommit(c,op,owner,std::span(&spacious,1),std::span(&many,1),std::span(&wallet,1),bulk,32,batch,reserved).has_value(),"expanded 128-change transaction supports 32 outputs");
     Check(MakeCraftCommit(c,op,owner,std::span(&spacious,1),std::span(&many,1),std::span(&wallet,1),bulk,31,std::span(batch).first(31),reserved).has_value(),"largest fitting weapon batch plus input commits together");
     many.count=33;batch.push_back(0);
-    Check(MakeCraftCommit(c,op,owner,std::span(&spacious,1),std::span(&many,1),std::span(&wallet,1),bulk,33,batch,reserved).error()==CraftError::Limit,"oversized output reports transaction limit rather than inventory space");
+    Check(MakeCraftCommit(c,op,owner,std::span(&spacious,1),std::span(&many,1),std::span(&wallet,1),bulk,33,batch,reserved).error()==CraftError::Unavailable,"insufficient reserved identities refuses whole request");
+    auto upgrade=recipe;upgrade.id=8;upgrade.result={f::LongSword(),0,1};upgrade.chance=10000;upgrade.gaya=7;
+    const auto source=f::Sword();upgrade.copySource=CraftIngredient{source.key,source.refinementLevel,1};upgrade.ingredients.push_back(*upgrade.copySource);
+    auto fuel=material;fuel.placement->anchor=4;std::vector<PersistentItem> decorated{source,fuel};
+    const ItemWallet gaya{owner.owner,WalletCurrency::Gaya,1,20};std::vector<ItemWallet> budget{wallet,gaya};std::vector<std::uint16_t> one{0};
+    auto copied=MakeCraftCommit(c,op,owner,std::span(&bag,1),decorated,budget,upgrade,1,one,ids,0,source.id.Value());
+    Check(copied.has_value(),"Gaya upgrade with selected decorated source");
+    const auto& output=copied->commit.items.back().after;
+    Check(output.attributes==source.attributes && output.stones==source.stones && output.key==f::LongSword(),"bonuses, lock and all sockets survive native cube upgrade");
+    Check(copied->commit.wallets.size()==2 && copied->commit.wallets[0].after.balance==975 && copied->commit.wallets[1].after.balance==13,"both currencies debit in the item transaction");
+    auto duplicate=source;duplicate.id=ItemInstanceId::Create(55).value();duplicate.placement->anchor=20;decorated.push_back(duplicate);
+    Check(MakeCraftCommit(c,op,owner,std::span(&bag,1),decorated,budget,upgrade,1,one,ids).error()==CraftError::SelectSource,"ambiguous decorated inputs require an explicit instance");
+    Check(MakeCraftCommit(c,op,owner,std::span(&bag,1),decorated,budget,upgrade,1,one,ids,0,55).has_value(),"concrete selection cannot consume other matching equipment");
+    Check(MakeCraftCommit(c,op,owner,std::span(&bag,1),decorated,budget,upgrade,1,one,ids,0,56).error()==CraftError::NoMaterials,"foreign or stale source ID denied");
+    budget[1].balance=6;Check(MakeCraftCommit(c,op,owner,std::span(&bag,1),decorated,budget,upgrade,1,one,ids,0,55).error()==CraftError::NoGaya,"insufficient Gaya never consumes decorated source");budget[1]=gaya;
+    auto boundSource=source;boundSource.boundTo=owner.owner;decorated={boundSource,fuel};
+    copied=MakeCraftCommit(c,op,owner,std::span(&bag,1),decorated,budget,upgrade,1,one,ids);
+    Check(copied && copied->commit.items.back().after.boundTo==boundSource.boundTo,"upgrade cannot unbind equipment");
+    upgrade.chance=0;copied=MakeCraftCommit(c,op,owner,std::span(&bag,1),decorated,budget,upgrade,1,one,{});
+    Check(copied && copied->successes==0 && copied->commit.items.size()==2 && copied->commit.wallets.size()==2,"authored failure consumes exactly source, materials and both currencies");
+    upgrade.chance=10000;CraftWorkshop extended{20016,"Native workshop",{upgrade}};
+    const auto v2=EncodeCraftWorkshop(c,&extended,12345,0x0123456789abcdefULL,1,CraftStatus::Ready,0,0,0,source.id.Value());
+    Check(v2 && (*v2)[5]==std::byte{2},"versioned source selection and Gaya quote");
+    if(const char* path=std::getenv("AURIGA_CRAFT_V2_GOLDEN")){std::ofstream file(path);for(auto b:*v2)file<<std::hex<<std::setfill('0')<<std::setw(2)<<std::to_integer<unsigned>(b);file<<'\n';}
+    Check(!ParseCraftWorkshops(R"({"version":2,"workshops":[{"npc_race":20016,"name":"Native","recipes":[]}]})",c),"empty workshop configuration denied");
     const auto wire=EncodeCraftWorkshop(c,&shop,12345,0x0123456789abcdefULL,3,CraftStatus::Crafted,7,3,2);
     Check(wire && std::to_integer<unsigned>((*wire)[0])==230,"native golden wire");
     const auto closed=EncodeCraftWorkshop(c,nullptr,0,0,0,CraftStatus::Closed);Check(closed && closed->size()==47,"terminal wire");return *wire;

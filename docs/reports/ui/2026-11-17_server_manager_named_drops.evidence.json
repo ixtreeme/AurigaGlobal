@@ -1,0 +1,95 @@
+{
+  "coverage": {
+    "result": "SUCCESS",
+    "groups": 183,
+    "entries": 9027,
+    "named_drop_items": 757,
+    "missing_drop_items": 0,
+    "missing_mob_names": 0,
+    "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+    "live_drop_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85"
+  },
+  "deployment": {
+    "result": "SUCCESS",
+    "package": "D:\\AurigaGlobal\\Server2-Local",
+    "backup": "D:\\AurigaGlobal\\Server2-Local\\run\\deployments\\named-manager-20261117T142039Z",
+    "files": 247,
+    "manager_exe_sha256": "f36b8fb2ff2f496efdedf810b1556c15b33aa2887c4eb12b625a7dc80fc20998",
+    "server_processes_before": [
+      [
+        "Database.exe",
+        36616
+      ],
+      [
+        "GameServer.exe",
+        20336
+      ],
+      [
+        "GameServer.exe",
+        23348
+      ],
+      [
+        "GameServer.exe",
+        36584
+      ],
+      [
+        "LoginServer.exe",
+        33768
+      ]
+    ],
+    "server_processes_after": [
+      [
+        "Database.exe",
+        36616
+      ],
+      [
+        "GameServer.exe",
+        20336
+      ],
+      [
+        "GameServer.exe",
+        23348
+      ],
+      [
+        "GameServer.exe",
+        36584
+      ],
+      [
+        "LoginServer.exe",
+        33768
+      ]
+    ],
+    "server_binary_hashes": {
+      "GameServer.exe": "9329ff415d375018eae7b58d6e8bf7b080175bca773af2a8204375d106b101d8",
+      "Database.exe": "681acf59e173fe610ff85c33c39bb14836d4664ead1a432f23c414fe3031946d",
+      "LoginServer.exe": "ff1118d350b72d61b1ffc21a25abcc47e4e1cb299520ddf978886654cb12ed77"
+    }
+  },
+  "source_catalog_sha256": "9ab3dac7f81d2898ab89aeeca641bffc4f59b28ac5f7683d080282ea9913babd",
+  "tests": [
+    {
+      "count": 87,
+      "log": "build/named-manager-final-tests.log"
+    },
+    {
+      "count": 6,
+      "log": "build/named-manager-clarity-tests.log"
+    },
+    {
+      "count": 12,
+      "log": "build/named-manager-workflow-tests.log"
+    }
+  ],
+  "final_drop_tests": "build/named-manager-drop-final-tests.log",
+  "preview_log": "build/named-manager-final-preview.log",
+  "build_log": "build/named-manager-final-build.log",
+  "display_only": true,
+  "deferred_items_unchanged": 637,
+  "notes": [
+    "All 757 unique active drop items have localized names.",
+    "All 183 drop targets have localized names or rank labels.",
+    "Existing drop dialog round-trip is identical to stored source data.",
+    "Untranslated prototypes display a missing-name label, never a generated content code.",
+    "No SQL writes, game binary changes or server restarts were performed."
+  ]
+}

@@ -61,6 +61,7 @@ entt::dispatcher g_dispatcher;
 // This fixture tests affect state; the paired live pet test checks the actual
 // final equipment snapshot after delayed login affects have been restored.
 void SendTypedEquipment(entt::entity) {}
+void ResumeTypedCompanionSummon(entt::entity) {}
 namespace A = AffectSystem;
 namespace {
 int checks = 0, computes = 0, packets = 0;
@@ -909,3 +910,6 @@ int main() {
     }
     catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }
+
+// This fixture has no active typed mount backend.
+std::optional<bool> TypedMountFlightPermission(entt::entity){return std::nullopt;}

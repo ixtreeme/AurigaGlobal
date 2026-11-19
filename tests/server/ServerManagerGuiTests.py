@@ -49,6 +49,8 @@ class ServerManagerGuiTests(unittest.TestCase):
 
     def setUp(self):
         self.window = ui.MainWindow(self.root)
+        from ReviewFixture import approve_fixture
+        approve_fixture(self,self.window)
         self.errors = []
         self.window.error = self.errors.append
         self.window.show()

@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "../item/TypedDungeonEntry.hpp"
+#include "../item/TypedDungeonActions.hpp"
 #include "../mission_pass/MissionPassEvents.hpp"
 #include "../ecs/systems/InventorySystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
@@ -57,6 +59,8 @@ namespace
     constexpr int32_t  kMaxLevel = 160;
 
     constexpr uint32_t kEntryItemVnum  = 30930;
+    constexpr std::string_view kNativeEntryCode="catalog.10.ampoule_with_blood_e3d2daf02c11";
+    std::uint64_t EntryTicketCount(entt::entity e){return HasTypedDungeonInventory(e)?TypedDungeonTicketCount(e,kNativeEntryCode):ItemSystem::CountItem(e,kEntryItemVnum);}
     constexpr int32_t  kEntryItemCount = 1;
     constexpr bool     kEveryMemberNeedsTicket = true; // custom: every entering party member must have ticket
 
@@ -639,6 +643,7 @@ void CHalloween2022Dungeon::OnPlayerLogin(entt::entity character)
 
 bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
 {
+    if(TypedDungeonEntryPending(character))return true;
     if (!ecs::PlayerRuntime::IsPC(character) || !ecs::PlayerRuntime::IsValid(npc))
         return false;
 
@@ -786,7 +791,7 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
             return;
         }
 
-        if (ItemSystem::CountItem(m, kEntryItemVnum) < kEntryItemCount)
+        if (EntryTicketCount(m) < kEntryItemCount)
         {
             ok = false;
             bad = BAD_ITEM;
@@ -824,15 +829,17 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
         return true;
     }
 
+    auto prepare=[=]() -> std::optional<TypedDungeonEntryPlan> {
     const entt::entity d = CDungeonManager::instance().Create(kOriginalMap);
     if (d == entt::null)
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Failed to create dungeon instance.");
-        return true;
+        return std::nullopt;
     }
 
     const int32_t dungeonMapIdx = DungeonSystem::GetMapIndex(d);
 
+        TypedDungeonEntryPlan plan;plan.dungeon=d;plan.cancel=[d]{CancelTypedDungeonPreflight(d);};plan.publish=[=]{
     auto prepareMember = [&](entt::entity m){
         if (!ecs::PlayerRuntime::IsPC(m))
             return;
@@ -844,7 +851,7 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
         ecs::QuestSystem::SetFlag(m, kQfIdx, dungeonMapIdx);
         ecs::QuestSystem::SetFlag(m, kQfCh, (int32_t)g_bChannel);
         SetCooldown(m);
-        ItemSystem::RemoveSpecifyItemEcs(m, kEntryItemVnum, kEntryItemCount);
+        if(!HasTypedDungeonInventory(m))ItemSystem::RemoveSpecifyItemEcs(m, kEntryItemVnum, kEntryItemCount);
     };
 
     if (party == entt::null)
@@ -861,6 +868,14 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
         DungeonSystem::Join_Coords(d, character, kEnterGlobalX, kEnterGlobalY, kOriginalMap);
 
     BigNoticeMap(dungeonMapIdx, "<Bloody cathedral> You have 30 minutes to complete the dungeon.");
+        };return plan;
+    };
+    if(HasTypedDungeonInventory(character)){
+        if(!BeginTypedDungeonEntry(character,"dungeon.halloween.entry",kNativeEntryCode,1,[](entt::entity pc){const auto level=ecs::PointSystem::GetLevel(pc);return level>=kMinLevel && level<=kMaxLevel && CooldownRemain(pc)==0;},prepare))
+            ecs::ChatSystem::Send(character,CHAT_TYPE_INFO,"A teljes csapatnak készen kell állnia, és a belépőnek a hátizsákban kell lennie.");
+        return true;
+    }
+    if(auto plan=prepare())plan->publish();
     return true;
 }
 
@@ -1070,33 +1085,14 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
     }
 }
 
-bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt::entity item)
-{
-    if (!ecs::PlayerRuntime::IsValid(from) || !ecs::PlayerRuntime::IsValid(npc) ||
-        ecs::PlayerRuntime::GetMapIndex(from) != ecs::PlayerRuntime::GetMapIndex(npc))
-        return false;
-
-    if (!ecs::PlayerRuntime::IsPC(from) || !ecs::PlayerRuntime::IsValid(npc) || !ItemSystem::CanConsumeOwnedItem(from, item))
-        return false;
-
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(from);
-    if (!IsHalloweenDungeonMap(idx))
-        return false;
-
-    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (d == entt::null)
-        return false;
-
-    const int32_t floor = DungeonSystem::GetFlag(d, kFlagFloor);
-    const uint32_t npcVnum = ecs::PlayerRuntime::GetRaceNum(npc);
-    const uint32_t itemVnum = ItemSystem::GetItemVnum(item);
-
-    // Angel statue
-    if (floor == 1 && npcVnum == kAngelStatueNpc && DungeonSystem::GetFlag(d, kFlagCanDestroyStatue) == 1 && itemVnum == kStatueItemVnum)
-    {
-        if (!RemoveOneGivenItem(from, item))
-            return true;
-        DungeonSystem::SetFlag(d, kFlagCanDestroyStatue, 0);
+static std::optional<TypedDungeonAction> PlanCathedralAction(entt::entity from,entt::entity npc,auriga::item::DungeonUseRole role){
+ namespace P=ecs::PlayerRuntime;using R=auriga::item::DungeonUseRole;
+ if(!P::IsPC(from)||!P::IsValid(npc)||P::GetMapIndex(from)!=P::GetMapIndex(npc))return {};
+ const auto idx=P::GetMapIndex(from);if(!CHalloween2022Dungeon::instance().IsHalloweenDungeonMap(idx))return {};
+ const auto d=CDungeonManager::instance().FindByMapIndex(idx);if(!g_registry.valid(d))return {};
+ const auto floor=DungeonSystem::GetFlag(d,kFlagFloor);const auto npcVnum=P::GetRaceNum(npc);
+if(floor == 1 && npcVnum == kAngelStatueNpc && DungeonSystem::GetFlag(d, kFlagCanDestroyStatue) == 1 && role == R::CathedralCross){return TypedDungeonAction{1000+static_cast<std::uint64_t>(DungeonSystem::GetFlag(d,kFlagAngelStatueCount)), [=]()mutable{
+DungeonSystem::SetFlag(d, kFlagCanDestroyStatue, 0);
         DungeonSystem::SetFlag(d, kFlagAngelStatueCount, DungeonSystem::GetFlag(d, kFlagAngelStatueCount) + 1);
         CHARACTER_MANAGER::instance().DestroyCharacter(npc);
 
@@ -1118,44 +1114,26 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, e
             ItemSystem::AutoGiveItemEcs(from, kActivateItemVnum, 1);
             NoticeMap(idx, "<Bloody cathedral> Use the item on the first seal.");
         }
-        return true;
-    }
-
-    // Small seal -> starts wave 1
-    if (floor == 1 && npcVnum == kSealSmallNpc && DungeonSystem::GetFlag(d, kFlagCanActivateSeal) == 1 && itemVnum == kActivateItemVnum)
-    {
-        if (!RemoveOneGivenItem(from, item))
-            return true;
-        DungeonSystem::SetFlag(d, kFlagCanActivateSeal, 0);
+}};}
+if(floor == 1 && npcVnum == kSealSmallNpc && DungeonSystem::GetFlag(d, kFlagCanActivateSeal) == 1 && role == R::CathedralSeal){return TypedDungeonAction{2000+static_cast<std::uint64_t>(DungeonSystem::GetFlag(d,kFlagSealState)), [=]()mutable{
+DungeonSystem::SetFlag(d, kFlagCanActivateSeal, 0);
         DungeonSystem::SetFlag(d, kFlagSealState, DungeonSystem::GetFlag(d, kFlagSealState) + 1);
         DungeonSystem::SetFlag(d, kFlagFloor1Monsters, 1);
         DungeonSystem::SpawnMob(d, kSealMiddleNpc, kSealPos.x, kSealPos.y, kSealPos.dir);
         CHARACTER_MANAGER::instance().DestroyCharacter(npc);
         DungeonSystem::SpawnRegen(d, kFloor1Monsters1Regen);
         NoticeMap(idx, "<Bloody cathedral> The first wave has begun.");
-        return true;
-    }
-
-    // Middle seal -> spawn boss again
-    if (floor == 1 && npcVnum == kSealMiddleNpc && DungeonSystem::GetFlag(d, kFlagCanActivateSeal) == 1 && itemVnum == kActivateItemVnum)
-    {
-        if (!RemoveOneGivenItem(from, item))
-            return true;
-        DungeonSystem::SetFlag(d, kFlagCanActivateSeal, 0);
+}};}
+if(floor == 1 && npcVnum == kSealMiddleNpc && DungeonSystem::GetFlag(d, kFlagCanActivateSeal) == 1 && role == R::CathedralSeal){return TypedDungeonAction{3000+static_cast<std::uint64_t>(DungeonSystem::GetFlag(d,kFlagSealState)), [=]()mutable{
+DungeonSystem::SetFlag(d, kFlagCanActivateSeal, 0);
         DungeonSystem::SetFlag(d, kFlagSealState, DungeonSystem::GetFlag(d, kFlagSealState) + 1);
         DungeonSystem::SetFlag(d, kFlagKillFirstBoss, 1);
         DungeonSystem::SpawnMob(d, kSealFullNpc, kSealPos.x, kSealPos.y, kSealPos.dir);
         CHARACTER_MANAGER::instance().DestroyCharacter(npc);
         DungeonSystem::SpawnMob(d, kFirstBossVnum, kFirstBossPos.x, kFirstBossPos.y);
-        return true;
-    }
-
-    // Full seal -> transition to floor 2
-    if (floor == 1 && npcVnum == kSealFullNpc && DungeonSystem::GetFlag(d, kFlagCanActivateSeal) == 1 && itemVnum == kActivateItemVnum)
-    {
-        if (!RemoveOneGivenItem(from, item))
-            return true;
-        DungeonSystem::SetFlag(d, kFlagCanActivateSeal, 0);
+}};}
+if(floor == 1 && npcVnum == kSealFullNpc && DungeonSystem::GetFlag(d, kFlagCanActivateSeal) == 1 && role == R::CathedralSeal){return TypedDungeonAction{4000+static_cast<std::uint64_t>(DungeonSystem::GetFlag(d,kFlagSealState)), [=]()mutable{
+DungeonSystem::SetFlag(d, kFlagCanActivateSeal, 0);
         DungeonSystem::SetFlag(d, kFlagFloor, 2);
         DungeonSystem::KillAll(d);
         DungeonSystem::ClearRegen(d);
@@ -1176,15 +1154,9 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, e
 
         NoticeMap(idx, "<Bloody cathedral> Fill all calyxes with blood to summon the final enemy.");
         //NoticeMap(idx, "<Bloody cathedral> Note: the original Lua quest text mentions an order, but the provided script does not actually enforce any order.");
-        return true;
-    }
-
-    // Empty calyx -> floor 2 progression
-    if (floor == 2 && npcVnum == kCalyxEmptyNpc && DungeonSystem::GetFlag(d, kFlagCanFillCalyx) == 1 && itemVnum == kSecondFloorItem)
-    {
-        if (!RemoveOneGivenItem(from, item))
-            return true;
-        DungeonSystem::SetFlag(d, kFlagCanFillCalyx, 0);
+}};}
+if(floor == 2 && npcVnum == kCalyxEmptyNpc && DungeonSystem::GetFlag(d, kFlagCanFillCalyx) == 1 && role == R::CathedralBlood){return TypedDungeonAction{5000+static_cast<std::uint64_t>(DungeonSystem::GetFlag(d,kFlagCalyxFilled)), [=]()mutable{
+DungeonSystem::SetFlag(d, kFlagCanFillCalyx, 0);
         DungeonSystem::SetFlag(d, kFlagCalyxFilled, DungeonSystem::GetFlag(d, kFlagCalyxFilled) + 1);
         ReplaceUniqueCalyx(d, npc);
 
@@ -1218,8 +1190,15 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, e
             NoticeMap(idx, "<Bloody cathedral> You filled all calyxes. The final boss is coming!");
             s_hw22.ScheduleFinalBoss(idx, kFinalBossSpawnDelaySec);
         }
-        return true;
-    }
-
-    return false;
+}};}
+ return {};
+}
+bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from,entt::entity npc,entt::entity item){
+ if(!ItemSystem::CanConsumeOwnedItem(from,item))return false;
+ const auto d=CDungeonManager::instance().FindByMapIndex(ecs::PlayerRuntime::GetMapIndex(from));if(TypedDungeonActionPending(d))return true;
+ using R=auriga::item::DungeonUseRole;const auto v=ItemSystem::GetItemVnum(item);const auto role=v==kStatueItemVnum?R::CathedralCross:v==kActivateItemVnum?R::CathedralSeal:v==kSecondFloorItem?R::CathedralBlood:R::None;
+ auto plan=PlanCathedralAction(from,npc,role);if(!plan)return false;if(RemoveOneGivenItem(from,item))plan->publish();return true;
+}
+bool CHalloween2022Dungeon::OnUseTypedItem(entt::entity e,const auriga::item::PersistentItem& item,const auriga::item::ItemCatalog& catalog){
+ const auto role=auriga::item::DungeonItemUseRole(catalog,item.key);return UseTypedDungeonAction(e,item,catalog,[role](auto pc,auto npc){return PlanCathedralAction(pc,npc,role);});
 }

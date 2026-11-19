@@ -139,7 +139,7 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& reader) {
     Execute(admin,"UPDATE protos.item_weapon SET ammo_policy_id=1 WHERE category_id=1 AND local_id=1");
     Execute(admin,"ALTER TABLE protos.catalog_format ENGINE=MyISAM");Reject(reader,E::FormatMismatch);
     Execute(admin,"ALTER TABLE protos.catalog_format ENGINE=InnoDB");
-    Execute(admin,"INSERT INTO protos.item_use_policy SELECT 10000+seq,CONCAT('use.test_',seq),15,3,0 FROM seq_1_to_4097");
+    Execute(admin,"INSERT INTO protos.item_use_policy SELECT 10000+seq,CONCAT('use.test_',seq),15,3,0 FROM seq_1_to_"+std::to_string(db::Tables()[static_cast<unsigned>(db::Table::UsePolicies)].maximumRows+1));
     Reject(reader,E::ByteBudget);
     Execute(admin,"DELETE FROM protos.item_use_policy WHERE policy_id>=10000");
     Load(reader,reference->ContentHash());

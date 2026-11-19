@@ -120,6 +120,11 @@ SQLMsg * DBManager::DirectQueryPrepared(const char * c_pszSql, const SqlParams &
 	return m_sql_direct.DirectQueryPrepared(c_pszSql, params);
 }
 
+SQLMsg * DBManager::DirectTransactionPrepared(SqlTransaction transaction)
+{
+	return m_sql_direct.DirectTransactionPrepared(std::move(transaction));
+}
+
 void DBManager::ReturnQueryPrepared(int iType, uint32_t dwIdent, void * pvData, const char * c_pszSql, const SqlParams & params)
 {
 	CReturnQueryInfo * p = new CReturnQueryInfo;
@@ -213,56 +218,6 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 	switch (qi->iType)
 	{
-		case QID_MOUNT_INVENTORY_LOAD:
-		{
-			auto* request = static_cast<MountInventoryLoadRequest*>(qi->pvData);
-			const entt::entity ch = request ? request->character : entt::null;
-			const entt::entity current = CHARACTER_MANAGER::instance().FindEntityByPID(qi->dwIdent);
-			if (request && ch == current && ecs::IsCharacter(ch) &&
-				ecs::PlayerRuntime::GetAccountID(ch) == request->accountId)
-			{
-				SQLResult* res = pMsg->Get();
-				const auto columnCount = mysql_num_fields(res->pSQLResult);
-				std::vector<TMountInventoryItemTable> items;
-				items.reserve(res->uiNumRows);
-
-				for (uint64_t i = 0; i < res->uiNumRows; ++i)
-				{
-					MYSQL_ROW row = res->FetchRow();
-					if (!row)
-						continue;
-
-					TMountInventoryItemTable entry{};
-					str_to_number(entry.id, row[0]);
-					str_to_number(entry.slot, row[1]);
-					str_to_number(entry.vnum, row[2]);
-					str_to_number(entry.count, row[3]);
-					str_to_number(entry.alSockets[0], row[4]);
-					str_to_number(entry.alSockets[1], row[5]);
-					str_to_number(entry.alSockets[2], row[6]);
-
-					for (int j = 0; j < ITEM_ATTRIBUTE_MAX_NUM; ++j)
-					{
-						int typeIndex = 7 + j * 2;
-						int valueIndex = typeIndex + 1;
-						if (valueIndex >= static_cast<int>(columnCount))
-							break;
-						str_to_number(entry.aAttr[j].bType, row[typeIndex]);
-						str_to_number(entry.aAttr[j].sValue, row[valueIndex]);
-					}
-
-					items.push_back(entry);
-				}
-
-				MountSystem::LoadMountInventory(ch, request->accountId,
-					request->requestId, items);
-			}
-			if (request)
-				delete request;
-		}
-		break;
-
-
 		case QID_SAFEBOX_SIZE:
 			{
 				const entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(qi->dwIdent);

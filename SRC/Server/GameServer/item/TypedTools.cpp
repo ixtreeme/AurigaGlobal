@@ -29,7 +29,7 @@ struct TypedToolsSession
     std::uint64_t nonce=0,ownerSession=0,catalogRevision=0;item::ItemCatalogDigest catalog{};std::array<std::uint8_t,16> operation{};
     std::optional<item::PersistentItem> source,tool;item::ToolRuntimeAction action{};
     entt::entity npc=entt::null;std::uint32_t npcVid=0,roll=0;std::uint8_t outcome=0,error=255;
-    std::uint16_t afterLevel=0;item::ToolInstanceState after;Status status=Status::Ready;bool pending=false,attempted=false;
+    std::uint16_t afterLevel=0;item::ToolInstanceState after;std::optional<item::ItemKey> afterItem;Status status=Status::Ready;bool pending=false,attempted=false;
 };
 std::uint64_t Nonce(){std::uint64_t n=0;while(!n)if(RAND_bytes(reinterpret_cast<unsigned char*>(&n),8)!=1)return 0;return n;}
 std::optional<std::uint32_t> Roll(std::uint32_t bound)
@@ -52,7 +52,7 @@ void Reply(entt::entity e,Status status,std::uint8_t error=255)
 {
     const auto c=store::CurrentCatalog();if(!g_registry.valid(e) || !c)return;auto* s=g_registry.try_get<TypedToolsSession>(e);if(s){s->status=status;s->error=error;}
     const bool applied=status==Status::Applied;
-    const auto packet=item::EncodeToolRuntime(*c,{static_cast<std::uint8_t>(status),error,applied && s ? s->outcome : std::uint8_t{},s ? s->nonce : 0,s && s->source ? &*s->source : nullptr,s && s->tool ? &*s->tool : nullptr,s ? s->action : item::ToolRuntimeAction{},s ? s->npcVid : 0,applied && s ? s->roll : 0,applied && s ? s->afterLevel : std::uint16_t{},applied && s ? s->after : item::ToolInstanceState{}});
+    const auto packet=item::EncodeToolRuntime(*c,{static_cast<std::uint8_t>(status),error,applied && s ? s->outcome : std::uint8_t{},s ? s->nonce : 0,s && s->source ? &*s->source : nullptr,s && s->tool ? &*s->tool : nullptr,s ? s->action : item::ToolRuntimeAction{},s ? s->npcVid : 0,applied && s ? s->roll : 0,applied && s ? s->afterLevel : std::uint16_t{},applied && s ? s->after : item::ToolInstanceState{},applied && s ? s->afterItem : std::nullopt});
     SendTypedInventory(e);auto* d=ecs::PlayerRuntime::GetDesc(e);if(packet && d && d->IsPhase(PHASE_GAME))d->LargePacket(packet->data(),static_cast<int>(packet->size()));
 }
 entt::entity Current(std::uint32_t pid,std::uint64_t token)
@@ -108,7 +108,7 @@ bool HandleTypedToolsPacket(entt::entity e,const char* bytes)
     auto permit=ecs::resource_admission::Enter({e},auriga::resource_admission::Operation::ItemUse);if(!permit || !permit->Current()){Reply(e,Status::Denied);return true;}
     auto plan=item::MakeToolRuntimeCommit(*c,s->operation,state.fence,state.storages,state.items,request);if(!plan){Reply(e,Status::Denied,static_cast<std::uint8_t>(plan.error()));return true;}
     const auto owner=state.fence;const auto pid=ecs::PlayerRuntime::GetPlayerID(e);const auto token=g_registry.get<ecs::TypedItemLogin>(e).token;auto held=std::make_shared<auriga::resource_admission::Permit>(std::move(*permit));
-    s->outcome=plan->outcome;s->afterLevel=plan->level;s->after=plan->state;s->pending=true;g_registry.emplace_or_replace<ecs::TypedItemBusy>(e);
+    s->outcome=plan->outcome;s->afterLevel=plan->level;s->after=plan->state;s->afterItem=plan->afterItem;s->pending=true;g_registry.emplace_or_replace<ecs::TypedItemBusy>(e);
     const bool queued=store::RequestCommit(owner.owner,owner.sessionGeneration,std::move(plan->commit),[pid,token,held](store::CommitOutcome out)
     {
         const auto e=Current(pid,token);if(e==entt::null)return;if(!out.state){LOG_ERROR("TypedTools: authoritative reload failed pid {}",pid);if(auto* d=ecs::PlayerRuntime::GetDesc(e))d->SetPhase(PHASE_CLOSE);return;}

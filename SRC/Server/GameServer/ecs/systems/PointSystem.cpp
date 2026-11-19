@@ -1,11 +1,14 @@
 #include "../../item/TypedBooks.hpp"
 #include "../../core/stdafx.h"
+#include "../../dungeon/DungeonUiEvents.hpp"
+#include "../../combat/DeathRecapEvents.hpp"
 #include "../../raid/EclipseRaidSystem.hpp"
 #include "SessionSystem.hpp"
 #include "ViewSystem.hpp"
 
 #include "PointSystem.hpp"
 #include "../../item/TypedEquipment.hpp"
+#include "../../item/ItemStore.hpp"
 #include "PointRouter.hpp"
 #include "QuestSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
@@ -297,7 +300,7 @@ int32_t GetLevel(entt::entity e)
 
 bool Set(entt::entity e, uint8_t type, int64_t value)
 {
-    if((type==POINT_EXP || type==POINT_SKILL || type==POINT_SUB_SKILL || type==POINT_HORSE_SKILL || type==POINT_LEVEL || type==POINT_LEVEL_STEP || type==POINT_STAT || type==POINT_ST || type==POINT_HT || type==POINT_DX || type==POINT_IQ) && DeferTypedBookMutation(e,[=]{Set(e,type,value);}))return true;
+    if((type==POINT_EXP || type==POINT_SKILL || type==POINT_SUB_SKILL || type==POINT_HORSE_SKILL || type==POINT_LEVEL || type==POINT_LEVEL_STEP || type==POINT_STAT || type==POINT_STAT_RESET_COUNT || type==POINT_ST || type==POINT_HT || type==POINT_DX || type==POINT_IQ) && DeferTypedBookMutation(e,[=]{Set(e,type,value);}))return true;
     if (type >= POINT_MAX_NUM || !IsReadableEntity(e)) return false;
     g_registry.get_or_emplace<ecs::CharacterStatsComponent>(e).points[type] = value;
     g_registry.emplace_or_replace<ecs::DirtyTag>(e);
@@ -312,7 +315,7 @@ bool Set(entt::entity e, uint8_t type, int64_t value)
 
 bool SetReal(entt::entity e, uint8_t type, int64_t value)
 {
-    if((type==POINT_EXP || type==POINT_SKILL || type==POINT_SUB_SKILL || type==POINT_HORSE_SKILL || type==POINT_LEVEL || type==POINT_LEVEL_STEP || type==POINT_STAT || type==POINT_ST || type==POINT_HT || type==POINT_DX || type==POINT_IQ) && DeferTypedBookMutation(e,[=]{SetReal(e,type,value);}))return true;
+    if((type==POINT_EXP || type==POINT_SKILL || type==POINT_SUB_SKILL || type==POINT_HORSE_SKILL || type==POINT_LEVEL || type==POINT_LEVEL_STEP || type==POINT_STAT || type==POINT_STAT_RESET_COUNT || type==POINT_ST || type==POINT_HT || type==POINT_DX || type==POINT_IQ) && DeferTypedBookMutation(e,[=]{SetReal(e,type,value);}))return true;
     if (type >= POINT_MAX_NUM || !IsReadableEntity(e)) return false;
     g_registry.get_or_emplace<ecs::CharacterPoints>(e).base.points[type] = value;
     g_registry.emplace_or_replace<ecs::DirtyTag>(e);
@@ -360,6 +363,11 @@ int GetGaya(entt::entity e)
 {
 	if (!IsReadableEntity(e))
 		return 0;
+	if(const auto* native=g_registry.try_get<ecs::TypedItems>(e)) {
+		for(const auto& wallet:native->state.wallets)if(wallet.currency==auriga::item::WalletCurrency::Gaya)
+			return static_cast<int>(std::min<std::uint64_t>(wallet.balance,GAYA_MAX-1));
+		return 0;
+	}
 	const auto* points = g_registry.try_get<ecs::CharacterPoints>(e);
 	return points ? points->base.gaya : 0;
 }
@@ -368,6 +376,7 @@ void SetGaya(entt::entity e, int value)
 {
 	if (!IsReadableEntity(e))
 		return;
+	if(g_registry.all_of<ecs::TypedItems>(e)){LOG_ERROR("Native Gaya must use the authoritative wallet writer");return;}
 	g_registry.get_or_emplace<ecs::CharacterPoints>(e).base.gaya = value;
 	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
@@ -558,7 +567,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 #endif
 )
 {
-    if((type==POINT_EXP || type==POINT_SKILL || type==POINT_SUB_SKILL || type==POINT_HORSE_SKILL || type==POINT_LEVEL || type==POINT_LEVEL_STEP || type==POINT_STAT || type==POINT_ST || type==POINT_HT || type==POINT_DX || type==POINT_IQ) && DeferTypedBookMutation(e,[=]{Change(e,type,amount,bAmount,bBroadcast
+    if((type==POINT_EXP || type==POINT_SKILL || type==POINT_SUB_SKILL || type==POINT_HORSE_SKILL || type==POINT_LEVEL || type==POINT_LEVEL_STEP || type==POINT_STAT || type==POINT_STAT_RESET_COUNT || type==POINT_ST || type==POINT_HT || type==POINT_DX || type==POINT_IQ) && DeferTypedBookMutation(e,[=]{Change(e,type,amount,bAmount,bBroadcast
 #ifdef __ENABLE_BLOCK_EXP__
         ,bForceExp
 #endif
@@ -647,6 +656,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 
 	case POINT_EXP:
 	{
+		DungeonUi::Events::ExperienceScope experienceScope;
 		uint32_t exp = ecs::PlayerRuntime::GetExp(e);
 		uint32_t next_exp = ecs::PlayerRuntime::GetNextExp(e);
 
@@ -677,6 +687,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 			//						CHAT_TYPE_INFO
 			//#endif
 			//						, 2, "%s", s.c_str());
+			if (experienceScope.outer && amount>0) DungeonUi::Events::Experience(e,static_cast<std::uint64_t>(amount));
 			uint32_t iExpBalance = 0;
 
 			if (exp + amount >= next_exp)
@@ -807,6 +818,8 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		amount = std::min(static_cast<int64_t>(GetMaxHP(e)) - Get(e, POINT_HP), amount);
 		ecs::PlayerRuntime::SetHP(e, static_cast<uint64_t>(std::max<int64_t>(0, Get(e, POINT_HP) + amount)));
 		val = Get(e, POINT_HP);
+		if(prev_hp>val)DeathRecap::Events::Loss(e,static_cast<std::uint64_t>(prev_hp),static_cast<std::uint64_t>(val),static_cast<std::uint64_t>(GetMaxHP(e)));
+		if (val>prev_hp) DungeonUi::Events::Healing(DungeonUi::Events::healer==entt::null?e:DungeonUi::Events::healer,e,static_cast<std::uint64_t>(val-prev_hp));
 
 		CombatSystem::BroadcastTargetPacket(e);
 		if (!IsReadableEntity(e)) return;
@@ -859,7 +872,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		Set(e, type, ReadInstantArray(e, type) + amount);
 
 		const int64_t base = GetReal(e, POINT_MAX_HP);              // 20-30k
-		const int64_t flat = ReadInstantArray(e, POINT_MAX_HP);
+		const int64_t flat = EquipmentPointValue(e,POINT_MAX_HP,ReadInstantArray(e, POINT_MAX_HP));
 		const int64_t party = Get(e, POINT_PARTY_TANKER_BONUS);
 		const int64_t pct = Get(e, POINT_MAX_HP_PCT);              // +20
 
@@ -889,7 +902,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		//ecs::PlayerRuntime::SetMaxSP(e, GetMaxSP(e) + amount);
 		int64_t sp = GetReal(e, POINT_MAX_SP);
 		int64_t add_sp = std::min((int64_t)800, sp * Get(e, POINT_MAX_SP_PCT) / 100);
-		add_sp += ReadInstantArray(e, POINT_MAX_SP);
+		add_sp += EquipmentPointValue(e,POINT_MAX_SP,ReadInstantArray(e, POINT_MAX_SP));
 		add_sp += Get(e, POINT_PARTY_SKILL_MASTER_BONUS);
 
         auto maximum=sp+add_sp;
@@ -960,6 +973,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 #ifdef ENABLE_GAYA_SYSTEM
 	case POINT_GAYA:
 	{
+		if(g_registry.all_of<ecs::TypedItems>(e)){LOG_ERROR("Native Gaya changes require the confirmed native wallet transaction");return;}
 		const int64_t nTotalGaya = static_cast<int64_t>(GetGaya(e)) + static_cast<int64_t>(amount);
 
 		if (GAYA_MAX <= nTotalGaya)
@@ -1485,7 +1499,7 @@ void ComputeBattlePoints(entt::entity e)
 		// DEF = LEV + CON + ARMOR
 		int iShowDef = GetLevel(e) + Get(e, POINT_HT);
 		int iDef = GetLevel(e) + (int)(Get(e, POINT_HT) / 1.25); // For Other
-		int iArmor = 0;
+		int iArmor = EquipmentLegacyInt(TypedEquipmentBonus(e,auriga::item::BonusId::ArmorPhysicalDefense)/auriga::item::ItemStatRawPerPoint);
 
 		for (int i = 0; i < WEAR_MAX_NUM; ++i)
 		{

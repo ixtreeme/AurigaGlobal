@@ -8,10 +8,34 @@ endif()
 find_package(EnTT CONFIG REQUIRED)
 
 auriga_add_server_executable(GameServer LIBS LUA)
+# Historical item-award adapters remain available to migration tests only.
+get_target_property(_game_sources GameServer SOURCES)
+list(FILTER _game_sources EXCLUDE REGEX "/mission/Mission(ItemAwards|ResourceEffects)\\.cpp$")
+set_property(TARGET GameServer PROPERTY SOURCES ${_game_sources})
 target_link_libraries(GameServer PRIVATE EnTT::EnTT)
 # Typed item catalog (item system F4): read and validated at boot when enabled.
 target_link_libraries(GameServer PRIVATE AurigaItemCatalogSql AurigaItemPersistenceSql)
-target_sources(GameServer PRIVATE item/TypedItemMissions.cpp mission/ItemDelivery.cpp item/TypedContainerOpening.cpp item/TypedTokenRedemption.cpp item/TypedSocketMaintenance.cpp item/TypedAccessoryClock.cpp item/TypedAttributes.cpp item/TypedPetSkins.cpp item/TypedCompanionClocks.cpp item/TypedCostumes.cpp item/TypedSpecialBonuses.cpp item/TypedSouls.cpp item/TypedSoulClock.cpp item/TypedForge.cpp item/TypedStorage.cpp)
+target_sources(GameServer PRIVATE world/AtlasActions.cpp item/TypedWorldUtilities.cpp item/TypedDungeonItems.cpp item/TypedCostumeTransfer.cpp)
+target_sources(GameServer PRIVATE social/SocialActions.cpp)
+target_sources(GameServer PRIVATE social/SocialHistory.cpp social/SocialHistoryCrypto.cpp)
+target_sources(GameServer PRIVATE dungeon/DungeonUi.cpp)
+target_sources(GameServer PRIVATE combat/DeathRecap.cpp)
+add_executable(LegacyItemBoundaryTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/LegacyItemBoundaryTests.cpp)
+target_link_libraries(LegacyItemBoundaryTests PRIVATE EnTT::EnTT)
+add_test(NAME legacy_item_boundary COMMAND LegacyItemBoundaryTests)
+add_executable(DeathRecapTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/DeathRecapTests.cpp)
+target_link_libraries(DeathRecapTests PRIVATE EnTT::EnTT)
+add_test(NAME death_recap COMMAND DeathRecapTests)
+add_executable(DungeonUiRulesTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/DungeonUiRulesTests.cpp)
+add_test(NAME dungeon_ui_rules COMMAND DungeonUiRulesTests)
+add_executable(SocialHistoryCryptoTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/SocialHistoryCryptoTests.cpp social/SocialHistoryCrypto.cpp)
+target_link_libraries(SocialHistoryCryptoTests PRIVATE OpenSSL::Crypto)
+add_test(NAME social_history_crypto COMMAND SocialHistoryCryptoTests)
+add_executable(SocialRulesTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/SocialRulesTests.cpp)
+add_test(NAME social_rules COMMAND SocialRulesTests)
+add_executable(AtlasTeleportRulesTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/AtlasTeleportRulesTests.cpp)
+add_test(NAME atlas_teleport_rules COMMAND AtlasTeleportRulesTests)
+target_sources(GameServer PRIVATE item/TypedItemMissions.cpp mission/ItemDelivery.cpp item/TypedContainerOpening.cpp item/TypedTokenRedemption.cpp item/TypedMoney.cpp item/TypedSocketMaintenance.cpp item/TypedAccessoryClock.cpp item/TypedAttributes.cpp item/TypedPetSkins.cpp item/TypedCompanionClocks.cpp item/TypedCostumes.cpp item/TypedSpecialBonuses.cpp item/TypedSouls.cpp item/TypedSoulClock.cpp item/TypedForge.cpp item/TypedStorage.cpp)
 
 add_executable(WoodcuttingRulesTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/WoodcuttingRulesTests.cpp)
@@ -226,6 +250,8 @@ endif()
 
 find_package(Python3 COMPONENTS Interpreter QUIET)
 if(Python3_Interpreter_FOUND)
+    add_test(NAME legacy_item_retirement COMMAND ${Python3_EXECUTABLE} -B
+        ${CMAKE_SOURCE_DIR}/tests/server/LegacyItemRetirementTests.py)
     add_test(NAME mission_database_tools COMMAND ${Python3_EXECUTABLE} -B
         ${CMAKE_SOURCE_DIR}/tests/server/MissionDatabaseToolsTests.py)
     add_test(NAME mission_package_tools COMMAND ${Python3_EXECUTABLE} -B
@@ -296,7 +322,7 @@ add_executable(QuestRuntimeTests EXCLUDE_FROM_ALL
     world/event_queue.cpp
     core/utils.cpp
 )
-target_link_libraries(QuestRuntimeTests PRIVATE SERVER EnTT::EnTT LUA S_Core S_Poly)
+target_link_libraries(QuestRuntimeTests PRIVATE SERVER EnTT::EnTT LUA S_Core S_Poly AurigaItemDomain)
 if(MSVC)
     target_compile_options(QuestRuntimeTests PRIVATE /Gy)
     target_link_options(QuestRuntimeTests PRIVATE /OPT:REF /OPT:NOICF)
@@ -741,7 +767,7 @@ add_executable(ShopLifecycleTests EXCLUDE_FROM_ALL
     world/event.cpp
     world/event_queue.cpp
 )
-target_link_libraries(ShopLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
+target_link_libraries(ShopLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core AurigaItemCatalog)
 add_test(NAME shop_lifecycle COMMAND ShopLifecycleTests)
 
 add_executable(MountLifecycleTests EXCLUDE_FROM_ALL
@@ -749,7 +775,7 @@ add_executable(MountLifecycleTests EXCLUDE_FROM_ALL
     pet/PetSystem.cpp
     pet/New_PetSystem.cpp
 )
-target_link_libraries(MountLifecycleTests PRIVATE SERVER EnTT::EnTT)
+target_link_libraries(MountLifecycleTests PRIVATE SERVER EnTT::EnTT AurigaItemCatalog)
 add_test(NAME mount_lifecycle COMMAND MountLifecycleTests)
 
 add_executable(SocialRelationTests EXCLUDE_FROM_ALL
@@ -782,7 +808,8 @@ add_executable(ItemManagerLifecycleTests EXCLUDE_FROM_ALL
     item/safebox.cpp
     ../Base/grid.cpp
 )
-target_link_libraries(ItemManagerLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
+target_link_libraries(ItemManagerLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core AurigaItemCatalog)
+target_compile_definitions(ItemManagerLifecycleTests PRIVATE AURIGA_LEGACY_ITEM_TESTS=1)
 add_test(NAME item_manager_lifecycle COMMAND ItemManagerLifecycleTests)
 
 add_executable(ItemRuntimeTests EXCLUDE_FROM_ALL
@@ -790,7 +817,8 @@ add_executable(ItemRuntimeTests EXCLUDE_FROM_ALL
     ecs/systems/ItemSystem.cpp
     ecs/ItemRegistry.cpp
 )
-target_link_libraries(ItemRuntimeTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
+target_link_libraries(ItemRuntimeTests PRIVATE SERVER EnTT::EnTT LUA S_Core AurigaItemCatalog)
+target_compile_definitions(ItemRuntimeTests PRIVATE AURIGA_LEGACY_ITEM_TESTS=1)
 if(MSVC)
     target_compile_options(ItemRuntimeTests PRIVATE /Gy)
     target_link_options(ItemRuntimeTests PRIVATE /OPT:REF /OPT:NOICF)
@@ -874,6 +902,7 @@ add_test(NAME point_calculation COMMAND PointCalculationTests)
 
 add_executable(CombatStateTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/CombatStateTests.cpp
+    ${CMAKE_SOURCE_DIR}/tests/server/NoActiveTypedCombat.cpp
     ecs/systems/CombatSystem.cpp
     combat/battle.cpp
 )

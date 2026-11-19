@@ -89,10 +89,23 @@ void Rejections()
     s=Fixture();s.soulProfiles[0].levels[11].initialStrikes=499;Check(BuildItemCatalog(s).value()->ContentHash()!=c->ContentHash(),"initial state is covered by digest");
     Check(!ValidateRefinementRecipe({1,"soul.bypass",Key(1),10,Key(1),11,0,10000,RefinementFailure::Keep,{},{}},*c),"ordinary recipe cannot lose Soul state");
 }
+void CrossKey()
+{
+    auto s=Fixture();auto base=s.items[s.items.size()-3];base.key=Key(4);base.contentCode="soul.next";s.items.push_back(base);
+    s.soulItems.push_back({Key(4),SoulKind::Core,SoulChannel::NormalAttack,1,0});s.soulItems[0].nextCore=Key(4);
+    const auto c=BuildItemCatalog(s).value();auto r=Request();r.action=SoulAction::Refine;r.inputDamageRaw=0;r.state.active=false;r.refinementLevel=30;r.recordedRoll=7500;r.scroll=SoulScrollSnapshot{Key(3),20,8,7,10,false};
+    const auto p=PlanSoul(*c,r);Check(p && p->success && p->resultKey==Key(4) && p->afterLevel==0 && p->after==SoulState{0,500,0,false},"last local level advances explicit prototype and initializes next profile");
+    r.recordedRoll=7501;const auto miss=PlanSoul(*c,r);Check(miss && !miss->success && !miss->resultKey && miss->afterLevel==30 && miss->after==r.state && miss->consumeScrollUnits==1,"cross-key failure retains key level and state");
+    Check(db::DecodeSnapshot(catalog_snapshot_fixture::Snapshot(s),{1,c->ContentHash()}).has_value(),"next prototype roundtrips SQL snapshot");
+    auto bad=[&](auto edit){auto x=s;edit(x);Check(!BuildItemCatalog(x),"invalid next-core graph rejected");};
+    bad([](auto& x){x.soulItems[0].nextCore=Key(1);});bad([](auto& x){x.soulItems[0].nextCore=Key(2);});bad([](auto& x){x.soulItems[0].nextCore=Key(3);});bad([](auto& x){x.soulItems.back().nextCore=Key(1);});
+    s.items.back().minimumLevel=200;auto restricted=BuildItemCatalog(s).value();Check(PlanSoul(*restricted,r).error()==SoulError::Forbidden,"next prototype gate is enforced even on a failed roll");
+    s.items.back().minimumLevel=0;s.items.back().retired=true;restricted=BuildItemCatalog(s).value();Check(PlanSoul(*restricted,r).error()==SoulError::Forbidden,"retired target cannot consume a scroll");
+}
 }
 int main(int argc,char** argv)
 {
     try{if(argc==2 && std::string_view(argv[1])=="--hash-fixture"){const auto c=BuildItemCatalog(Fixture()).value();for(auto b:c->ContentHash())std::cout<<std::hex<<std::setw(2)<<std::setfill('0')<<unsigned(b);std::cout<<'\n';return 0;}
-        Actions();Rejections();std::cout<<checks<<" Soul checks passed\n";return 0;
+        Actions();Rejections();CrossKey();std::cout<<checks<<" Soul checks passed\n";return 0;
     }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
 }

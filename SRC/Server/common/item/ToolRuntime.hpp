@@ -14,7 +14,7 @@ struct ToolRuntimeRequest
     ItemInstanceId source;std::optional<ItemInstanceId> target;
     ToolRuntimeAction action{};ToolRuntimeActor actor;std::uint32_t roll=0;
 };
-struct ToolRuntimePlan { ItemCommit commit;std::uint8_t outcome=0;std::uint16_t level=0;ToolInstanceState state; };
+struct ToolRuntimePlan { ItemCommit commit;std::uint8_t outcome=0;std::uint16_t level=0;ToolInstanceState state;std::optional<ItemKey> afterItem; };
 std::expected<void,GatheringError> CheckToolRuntime(const ItemCatalog&,ItemOwner,std::span<const PersistentItem>,ToolRuntimeRequest);
 std::expected<ToolRuntimePlan,GatheringError> MakeToolRuntimeCommit(const ItemCatalog&,std::array<std::uint8_t,16>,ItemOwnerFence,
     std::span<const ItemStorageLayout>,std::span<const PersistentItem>,ToolRuntimeRequest);
@@ -25,6 +25,10 @@ struct ToolRuntimeView
     std::uint8_t status=0,error=255,outcome=0;std::uint64_t session=0;
     const PersistentItem* source=nullptr;const PersistentItem* tool=nullptr;ToolRuntimeAction action{};
     std::uint32_t serviceVid=0,roll=0;std::uint16_t afterLevel=0;ToolInstanceState after;
+    std::optional<ItemKey> afterItem;
 };
+// GC254 v5 extends v2 (v3/v4 belong to gathering; old tool v3 remains decode-only) with displayGrade:u16, allWaterPools:u8,
+// success:key?,successLevel:u16,failure:key?,after:key?. Source snapshots stay
+// unchanged; the result identifies the replacement and includes its metadata.
 std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeToolRuntime(const ItemCatalog&,const ToolRuntimeView&);
 }

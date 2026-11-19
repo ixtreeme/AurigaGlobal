@@ -1,0 +1,845 @@
+{
+  "generated_at": "2026-11-14T19:20:39.105468+00:00",
+  "summary": {
+    "blocked_reasons": {
+      "invalid_chest_lock": 2,
+      "invalid_inventory_height": 6,
+      "invalid_mount_definition": 10,
+      "invalid_timed_effect_duration": 7,
+      "invalid_toggle_effect_definition": 37,
+      "missing_equipment_asset": 154,
+      "missing_source_container_reward_group": 236,
+      "missing_source_icon": 293,
+      "missing_stole_effect_asset": 6,
+      "missing_stole_model": 1,
+      "missing_tool_model:item/etc/canna_2.gr2": 20,
+      "missing_unity_asset_reference": 12,
+      "non_bonus_affect_requires_dedicated_behavior": 4,
+      "seed_moon_bottle_cooldown_policy_required": 2,
+      "semantic_converter_required:11:0": 1,
+      "semantic_converter_required:15:0": 1,
+      "semantic_converter_required:16:10": 4,
+      "semantic_converter_required:19:0": 1,
+      "semantic_converter_required:22:0": 1,
+      "semantic_converter_required:27:0": 7,
+      "semantic_converter_required:28:3": 28,
+      "semantic_converter_required:28:9": 33,
+      "semantic_converter_required:35:0": 5,
+      "semantic_converter_required:35:1": 5,
+      "semantic_converter_required:36:0": 1,
+      "semantic_converter_required:37:0": 12,
+      "semantic_converter_required:38:0": 1,
+      "semantic_converter_required:3:1": 9,
+      "semantic_converter_required:3:10": 121,
+      "semantic_converter_required:3:12": 1,
+      "semantic_converter_required:3:13": 1,
+      "semantic_converter_required:3:15": 1,
+      "semantic_converter_required:3:23": 6,
+      "semantic_converter_required:3:29": 2,
+      "semantic_converter_required:3:32": 1,
+      "semantic_converter_required:3:39": 1,
+      "semantic_converter_required:3:40": 1,
+      "semantic_converter_required:3:45": 1,
+      "semantic_converter_required:3:9": 1,
+      "semantic_converter_required:9:0": 1,
+      "skill_selected_on_instance_not_in_prototype": 4,
+      "source_bonus_out_of_native_bounds:31": 1,
+      "source_fish_has_no_effect": 1,
+      "source_reward_rare_field_out_of_range": 1,
+      "source_stone_has_no_equipment_target": 3,
+      "timed_stole_definition_requires_clock": 9,
+      "unmapped_behavior_value": 1,
+      "unported_apply:125": 3,
+      "unported_apply:126": 1,
+      "unported_apply:127": 1,
+      "unported_apply:51": 16,
+      "unresolved_container_reward:2875": 3,
+      "unresolved_container_reward:30617": 17,
+      "unresolved_container_reward:30618": 1,
+      "unresolved_container_reward:48611": 1,
+      "unresolved_container_reward:55003": 1,
+      "unresolved_container_reward:55010": 1,
+      "unresolved_container_reward:70065": 1,
+      "unresolved_container_reward:70102": 7,
+      "unresolved_container_reward:70402": 2,
+      "unresolved_container_reward:70403": 1,
+      "unresolved_container_reward:71035": 1,
+      "unresolved_container_reward:72044": 5,
+      "unresolved_container_reward:72320": 4,
+      "unresolved_container_reward:88214": 1,
+      "unresolved_container_reward:88230": 1,
+      "unresolved_container_reward:88246": 2,
+      "unresolved_fishing_result:27847": 1,
+      "unresolved_fishing_result:27877": 1,
+      "unsupported_ability_effect": 5
+    },
+    "blocked_source_rows": 1134,
+    "converted_source_rows": 9361,
+    "new_native_definitions": 4869,
+    "retired_source_rows": 491,
+    "source_rows": 10986
+  },
+  "catalog_schema": 37,
+  "catalog_hash": "175710f263e915a350c55bc1e27aead8dcba16ebe4f687716d762fcefceaedae",
+  "native_definitions": 6443,
+  "candidate": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-v37-final.json",
+  "candidate_sha256": "edffa11dc7dcf16bfce1ce1996a53aa0b3865434d934eb5474d3256a9de560da",
+  "newly_converted_ids": [
+    78002,
+    78005,
+    78006,
+    78009,
+    78010,
+    78013,
+    78014,
+    88212,
+    88213,
+    88216,
+    88217,
+    88220,
+    88221,
+    88224,
+    88225,
+    88228,
+    88229,
+    88232,
+    88233,
+    88236,
+    88237,
+    88240,
+    88241,
+    88244,
+    88245,
+    88248,
+    88249,
+    88252,
+    88253,
+    88256,
+    88257,
+    88259,
+    88261
+  ],
+  "preserved_definitions": 1574,
+  "preserved_rows": 29204,
+  "remaining_groups": {
+    "behavior": 255,
+    "assets": 486,
+    "source_or_policy": 107,
+    "loot": 286
+  },
+  "installed_to_game": false,
+  "source_inputs": {
+    "fishing": "63d90dfd96df7a2cdd27bfb2c7a1fb075510fbb49c233aa50a09ebf05d38efef",
+    "groups": "6097c3f65ec0af169d0a931133f98919e9a277676696296a0224f6db6ea7fda7",
+    "helper": "f7c5c2b18cea3f2344302b6153dfa7cc9c5df5a4380c6a98b30c7a8dc1adf33a",
+    "known": [
+      "50e34c168aec7763c1d7abb50411c5b496b0903d8d8ebf7f61e666ea6188af0b"
+    ],
+    "preserved": "e13271550bc5ba20645046251db8a98189e14e6b393f6e584c38b68dac051234",
+    "source": "51d9ba3130ccb9c3b07f23c380445a882ba4e1357cb8bad0f5ac6cbc2ff7a9c1",
+    "unity_item_catalog": "3b8a05edba2e6f3216fd9e0abcd90fe05ca7595b5324bd79a7b95118dcf96abb"
+  },
+  "source_rules": {
+    "GameServer/core/constants.cpp": "a9ae06f91cf5ac925e342ae32ebae32b85fddbfd409015cdedb808e9f4950a67",
+    "GameServer/ecs/EntityFactory.cpp": "baee7b08de923e225d56bcf18aba92cddf31d64d06b62151c4110fe0069c498e",
+    "GameServer/ecs/components/item_components.hpp": "7a5e71dcb76c7e4bb5f93dbcf9c009169a4b823c5503c9fe595342706f40d96b",
+    "GameServer/ecs/systems/InventorySystem.cpp": "6c150c440d436604945305d80eaf0dd4b41fcd6ef26d06c2fb62913ced3ddf77",
+    "GameServer/ecs/systems/ItemAttributeSystem.cpp": "6bbe087212c8d735fd7a761e913bf7c4c0bd9ffba8a6a2924f66f296183d7720",
+    "GameServer/ecs/systems/ItemSystem.cpp": "eeda85ec6aaa1784cb0c113f9b8e17a29facdbc30598217552834312ea4a48fe",
+    "GameServer/ecs/systems/ItemSystem_LegacyBridge.cpp": "55669ab4242253088400f4a4c2e931209ef00327bca6b6645e4f5aa344ab5068",
+    "GameServer/ecs/systems/SkillSystem.cpp": "de8eca2479cd55daf9af8e95f8551c2ed3f23f719a10178b659d595a396a66da",
+    "GameServer/item/item_manager.cpp": "ec35b205cd8a1bcb36f1f1f8bb74b726708956bb264bd3dcd3d9389905b5ae2c",
+    "GameServer/world/fishing.cpp": "dfd1392dcb7e91cbdb29a2fcd47ccab93662433a9f1a02927e48c287bb1f0e6d",
+    "GameServer/world/mining.cpp": "3235423e8188b89d3ed03a65fd1e59789256798ec6cffe52bd3156052a162f28",
+    "common/CommonDefines.h": "9c1acbf251fb1deda41d35bc98fb2b91ba159c5b2035e6f1278b22024516b63a",
+    "common/rune_length.h": "d775403a785e93196da42a037c55c1b347e113a25518b2dc882ae323eb80e810",
+    "common/service.h": "03970b3ad758b40dc531d51bcdde7aebf87f554e51f5a7fc4874684852fc6d93"
+  },
+  "ctest_latest_status": {
+    "catalog_editor_mariadb": "Passed",
+    "item_bench_mariadb": "Passed",
+    "catalog_editor": "Passed",
+    "item_combat_schema_foundation": "Passed",
+    "item_persistence_mariadb": "Passed",
+    "catalog_sql_mariadb": "Passed",
+    "item_category_generator": "Passed",
+    "item_bonus_generator": "Passed",
+    "full_catalog_conversion": "Passed",
+    "plain_material_migration": "Passed",
+    "item_catalog_digest": "Passed",
+    "quest_token_migration": "Passed",
+    "legacy_remaining_migration": "Passed",
+    "legacy_item_migration": "Passed",
+    "consumables": "Passed",
+    "automatic_recovery": "Passed",
+    "legacy_equipment_migration": "Passed",
+    "npc_shops": "Passed",
+    "timed_effects": "Passed",
+    "socket_insertion": "Passed",
+    "accessory_runtime": "Passed",
+    "containers": "Passed",
+    "socket_maintenance": "Passed",
+    "accessory_sockets": "Passed",
+    "skill_books": "Passed",
+    "automatic_runtime": "Passed",
+    "ammo_runtime": "Passed",
+    "forge_runtime": "Passed",
+    "special_bonuses": "Passed",
+    "soul_runtime": "Passed",
+    "currency_tokens": "Passed",
+    "attribute_runtime": "Passed",
+    "storage_runtime": "Passed",
+    "token_redemption": "Passed",
+    "toggle_effects": "Passed",
+    "container_opening": "Passed",
+    "catalog_sql_snapshot": "Passed",
+    "item_key": "Passed",
+    "bonus_profiles": "Passed",
+    "polymorph_items": "Passed",
+    "costumes": "Passed",
+    "refinement_profiles": "Passed",
+    "instance_attributes": "Passed",
+    "companion_items": "Passed",
+    "refinement_recipes": "Passed",
+    "socket_services": "Passed",
+    "gathering_items": "Passed",
+    "socket_stones": "Passed",
+    "mob_drops": "Passed",
+    "pet_lifecycle": "Passed",
+    "pet_care": "Passed",
+    "persistent_items": "Passed",
+    "quest_items": "Passed",
+    "growth_pet_progression": "Passed",
+    "soul_items": "Passed",
+    "typed_ground": "Passed",
+    "catalog_sql_completion": "Passed",
+    "item_catalog": "Passed",
+    "typed_inventory_wire": "Passed",
+    "item_persistence_completion": "Passed",
+    "tool_runtime": "Passed",
+    "resource_gathering": "Passed",
+    "gathering_rules": "Passed",
+    "item_catalog_runtime_mariadb": "Passed"
+  },
+  "converter_tests": 49,
+  "editor_tests": {
+    "total": 74,
+    "passed": 73,
+    "skipped": 1
+  },
+  "worker": {
+    "success": true,
+    "validation_kind": "body_effects",
+    "candidate_sha256": "edffa11dc7dcf16bfce1ce1996a53aa0b3865434d934eb5474d3256a9de560da",
+    "catalog_hash": "175710f263e915a350c55bc1e27aead8dcba16ebe4f687716d762fcefceaedae",
+    "native_keys": [
+      {
+        "category_id": 4,
+        "local_id": 1820
+      },
+      {
+        "category_id": 4,
+        "local_id": 1822
+      },
+      {
+        "category_id": 4,
+        "local_id": 1857
+      }
+    ],
+    "packets": [
+      {
+        "variant": 0,
+        "source": 78002,
+        "phase": "bag",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.0.bag.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.0.bag.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.0.bag.appearance.hex",
+        "hashes": {
+          "inventory": "27f9e3c608d3b02b393ad6b736fd7ebb1812f6732248fcfbb9a926b06a648122",
+          "details": "39de34549dc15a1579063e6813c7de65269a9776a22774f2952c89f53b3d5c9d",
+          "appearance": "951f2dac412e300084104a03f0de1b78a8478b59fcb5c9145329d6ae465ff629"
+        }
+      },
+      {
+        "variant": 0,
+        "source": 78002,
+        "phase": "unarmored",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.0.unarmored.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.0.unarmored.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.0.unarmored.appearance.hex",
+        "hashes": {
+          "inventory": "8edcebf0d74a054bb29f199a106de5a8b3e99365d3bb475125016d4d36e8e7e9",
+          "details": "39de34549dc15a1579063e6813c7de65269a9776a22774f2952c89f53b3d5c9d",
+          "appearance": "9a4b7cff739500f2a83cb91ae14b9ce35c811f054793f6d70da6d3e73d79fc7b"
+        }
+      },
+      {
+        "variant": 0,
+        "source": 78002,
+        "phase": "worn",
+        "expected_effect": 794,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.0.worn.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.0.worn.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.0.worn.appearance.hex",
+        "hashes": {
+          "inventory": "2c255c35722de62c49ff9ba792744e254ddbfdf268934f0412274b8c5367e252",
+          "details": "39de34549dc15a1579063e6813c7de65269a9776a22774f2952c89f53b3d5c9d",
+          "appearance": "5089f888b42345cc425887e3694076c41f589b8e3c0cbc312d35cd4e4f9ab7db"
+        }
+      },
+      {
+        "variant": 0,
+        "source": 78002,
+        "phase": "armor_off",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.0.armor_off.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.0.armor_off.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.0.armor_off.appearance.hex",
+        "hashes": {
+          "inventory": "3565457e5ac475c7319d7e1e275424b84711d6be8cf034217e4522e70c9a4ad1",
+          "details": "39de34549dc15a1579063e6813c7de65269a9776a22774f2952c89f53b3d5c9d",
+          "appearance": "8e0e1cc8dc40320e5c80a954674481afbba93e0d1f36c9b57e5163aa2ef20cec"
+        }
+      },
+      {
+        "variant": 0,
+        "source": 78002,
+        "phase": "unequipped",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.0.unequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.0.unequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.0.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "c10ca8a5365de0b513db08c218383624f288881653b3e7ad1a6f331b17427aaa",
+          "details": "39de34549dc15a1579063e6813c7de65269a9776a22774f2952c89f53b3d5c9d",
+          "appearance": "0149df50d6ff24a6faa0923c1a0d412147f132c6739a00a62e7c9c5a27d05bed"
+        }
+      },
+      {
+        "variant": 0,
+        "source": 78002,
+        "phase": "reequipped",
+        "expected_effect": 794,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.0.reequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.0.reequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.0.reequipped.appearance.hex",
+        "hashes": {
+          "inventory": "2c255c35722de62c49ff9ba792744e254ddbfdf268934f0412274b8c5367e252",
+          "details": "39de34549dc15a1579063e6813c7de65269a9776a22774f2952c89f53b3d5c9d",
+          "appearance": "e0807a94924cf84563ea1a049ede9d32b46439c94954281caaa98a4b8349a896"
+        }
+      },
+      {
+        "variant": 1,
+        "source": 78006,
+        "phase": "bag",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.1.bag.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.1.bag.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.1.bag.appearance.hex",
+        "hashes": {
+          "inventory": "638be920badf34e33bae24bb1d2792fdb6b82443d91297e58c4ff5be0ed1d721",
+          "details": "0577ecced2b9c1f6672e6acc485fbf61386346e4fc839b0a6a0535aade70ba75",
+          "appearance": "951f2dac412e300084104a03f0de1b78a8478b59fcb5c9145329d6ae465ff629"
+        }
+      },
+      {
+        "variant": 1,
+        "source": 78006,
+        "phase": "unarmored",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.1.unarmored.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.1.unarmored.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.1.unarmored.appearance.hex",
+        "hashes": {
+          "inventory": "cc33a39653b6fda7477af00dae55a786b98b73bc089e7553cbcbf4d4921fa852",
+          "details": "0577ecced2b9c1f6672e6acc485fbf61386346e4fc839b0a6a0535aade70ba75",
+          "appearance": "9a4b7cff739500f2a83cb91ae14b9ce35c811f054793f6d70da6d3e73d79fc7b"
+        }
+      },
+      {
+        "variant": 1,
+        "source": 78006,
+        "phase": "worn",
+        "expected_effect": 823,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.1.worn.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.1.worn.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.1.worn.appearance.hex",
+        "hashes": {
+          "inventory": "35618620a556c00869ec2a8fd862abd6fa1a1fb13762cbb296ad6c0961667e39",
+          "details": "0577ecced2b9c1f6672e6acc485fbf61386346e4fc839b0a6a0535aade70ba75",
+          "appearance": "4beee0b5d6705bc74b998c2d4577ddb4b14cb099ca5d42008f9a18d2b32cc169"
+        }
+      },
+      {
+        "variant": 1,
+        "source": 78006,
+        "phase": "armor_off",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.1.armor_off.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.1.armor_off.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.1.armor_off.appearance.hex",
+        "hashes": {
+          "inventory": "621f3c4ec0da70291b233e691c2d41a4bce8ef37e3a1cad9f55c18d7aee036d5",
+          "details": "0577ecced2b9c1f6672e6acc485fbf61386346e4fc839b0a6a0535aade70ba75",
+          "appearance": "8e0e1cc8dc40320e5c80a954674481afbba93e0d1f36c9b57e5163aa2ef20cec"
+        }
+      },
+      {
+        "variant": 1,
+        "source": 78006,
+        "phase": "unequipped",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.1.unequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.1.unequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.1.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "567e3fd63b368710703f9dfd6ccab3cdfaa84b828297fe4aece5f0afe902e7af",
+          "details": "0577ecced2b9c1f6672e6acc485fbf61386346e4fc839b0a6a0535aade70ba75",
+          "appearance": "0149df50d6ff24a6faa0923c1a0d412147f132c6739a00a62e7c9c5a27d05bed"
+        }
+      },
+      {
+        "variant": 1,
+        "source": 78006,
+        "phase": "reequipped",
+        "expected_effect": 823,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.1.reequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.1.reequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.1.reequipped.appearance.hex",
+        "hashes": {
+          "inventory": "35618620a556c00869ec2a8fd862abd6fa1a1fb13762cbb296ad6c0961667e39",
+          "details": "0577ecced2b9c1f6672e6acc485fbf61386346e4fc839b0a6a0535aade70ba75",
+          "appearance": "3c5fdd04fae3da0640f8004e3ee64244a88b3273de29af019b0ca684fdd10ded"
+        }
+      },
+      {
+        "variant": 1,
+        "source": 78006,
+        "phase": "expired",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.1.expired.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.1.expired.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.1.expired.appearance.hex",
+        "hashes": {
+          "inventory": "968ffce03fc080c647d20c317c220d10ee8bd3165818e5a2dcbae2342b2c22df",
+          "details": "434f24c011875947dff82edbfb2d560f9f9e6c1918a04cd393f09b3df6a9cbfc",
+          "appearance": "37d0c39a69e2ab846c9ef88aebc5bb30dc89f949aed754f1032876047e631256"
+        }
+      },
+      {
+        "variant": 2,
+        "source": 88212,
+        "phase": "bag",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.2.bag.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.2.bag.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.2.bag.appearance.hex",
+        "hashes": {
+          "inventory": "a37e81aaae5bac9d90f3880a22171154471d1367e6e34d194569165bfa0dac62",
+          "details": "6fa2bb26ba06fd02a3ec13dab73d82a027f08d842e63801a154cb063d244dca7",
+          "appearance": "951f2dac412e300084104a03f0de1b78a8478b59fcb5c9145329d6ae465ff629"
+        }
+      },
+      {
+        "variant": 2,
+        "source": 88212,
+        "phase": "unarmored",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.2.unarmored.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.2.unarmored.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.2.unarmored.appearance.hex",
+        "hashes": {
+          "inventory": "3c2f4f2e8320543ee6ff6d007ebf086001aa05090fdf3623b21b0a124d41f795",
+          "details": "6fa2bb26ba06fd02a3ec13dab73d82a027f08d842e63801a154cb063d244dca7",
+          "appearance": "9a4b7cff739500f2a83cb91ae14b9ce35c811f054793f6d70da6d3e73d79fc7b"
+        }
+      },
+      {
+        "variant": 2,
+        "source": 88212,
+        "phase": "worn",
+        "expected_effect": 76,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.2.worn.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.2.worn.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.2.worn.appearance.hex",
+        "hashes": {
+          "inventory": "65f47e6e633be7dcd96e8ef00c6b5fd06240453e21b30ad5f65e195a864e38cb",
+          "details": "6fa2bb26ba06fd02a3ec13dab73d82a027f08d842e63801a154cb063d244dca7",
+          "appearance": "adea5dfb6b496fba822b52b2f66d3349c968c68df278fba82c8e05641d645567"
+        }
+      },
+      {
+        "variant": 2,
+        "source": 88212,
+        "phase": "armor_off",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.2.armor_off.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.2.armor_off.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.2.armor_off.appearance.hex",
+        "hashes": {
+          "inventory": "1b51719ff632bb935d8d7d7bfb00d8ea994fea7a00034f26f48aedfc83a0eab7",
+          "details": "6fa2bb26ba06fd02a3ec13dab73d82a027f08d842e63801a154cb063d244dca7",
+          "appearance": "8e0e1cc8dc40320e5c80a954674481afbba93e0d1f36c9b57e5163aa2ef20cec"
+        }
+      },
+      {
+        "variant": 2,
+        "source": 88212,
+        "phase": "unequipped",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.2.unequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.2.unequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.2.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "9c2aff48ae2dd621121beaab8f048f3fb3ea44bb1e783d06ef05e3c0bf6f4017",
+          "details": "6fa2bb26ba06fd02a3ec13dab73d82a027f08d842e63801a154cb063d244dca7",
+          "appearance": "0149df50d6ff24a6faa0923c1a0d412147f132c6739a00a62e7c9c5a27d05bed"
+        }
+      },
+      {
+        "variant": 2,
+        "source": 88212,
+        "phase": "reequipped",
+        "expected_effect": 76,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.2.reequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.2.reequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.2.reequipped.appearance.hex",
+        "hashes": {
+          "inventory": "65f47e6e633be7dcd96e8ef00c6b5fd06240453e21b30ad5f65e195a864e38cb",
+          "details": "6fa2bb26ba06fd02a3ec13dab73d82a027f08d842e63801a154cb063d244dca7",
+          "appearance": "e060a00b34711468548c4b292369cda3568f85a808cc13fb6272d9f02888250b"
+        }
+      },
+      {
+        "variant": 2,
+        "source": 88212,
+        "phase": "expired",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.2.expired.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.2.expired.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-body-effects-worker-sql\\source-body-effect-runtime.2.expired.appearance.hex",
+        "hashes": {
+          "inventory": "0a1a5fe653b89d839d6f170a90b06bc35b0b49473cf66a09ab781ebbfb85dde5",
+          "details": "434f24c011875947dff82edbfb2d560f9f9e6c1918a04cd393f09b3df6a9cbfc",
+          "appearance": "37d0c39a69e2ab846c9ef88aebc5bb30dc89f949aed754f1032876047e631256"
+        }
+      }
+    ],
+    "effects": [
+      {
+        "source": 78002,
+        "id": 794,
+        "path": "effect/shining13/ridack_armor_d.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/078002.tga"
+      },
+      {
+        "source": 78005,
+        "id": 823,
+        "path": "effect/new_shinings/ridack_effect_blue/ridack_armorblue.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/078005.tga"
+      },
+      {
+        "source": 78006,
+        "id": 823,
+        "path": "effect/new_shinings/ridack_effect_blue/ridack_armorblue.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/078005.tga"
+      },
+      {
+        "source": 78009,
+        "id": 832,
+        "path": "effect/new_shinings/ridack_effect_green/ridack_armorgreen.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/078009.tga"
+      },
+      {
+        "source": 78010,
+        "id": 832,
+        "path": "effect/new_shinings/ridack_effect_green/ridack_armorgreen.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/078009.tga"
+      },
+      {
+        "source": 78013,
+        "id": 841,
+        "path": "effect/new_shinings/ridack_effect_red/ridack_armorred.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/078013.tga"
+      },
+      {
+        "source": 78014,
+        "id": 841,
+        "path": "effect/new_shinings/ridack_effect_red/ridack_armorred.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/078013.tga"
+      },
+      {
+        "source": 88212,
+        "id": 76,
+        "path": "effect/shining/nero/ridack_armor_black.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88212.tga"
+      },
+      {
+        "source": 88213,
+        "id": 76,
+        "path": "effect/shining/nero/ridack_armor_black.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88213.tga"
+      },
+      {
+        "source": 88216,
+        "id": 131,
+        "path": "effect/shining/viola/ridack_armor_fushiia.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88216.tga"
+      },
+      {
+        "source": 88217,
+        "id": 131,
+        "path": "effect/shining/viola/ridack_armor_fushiia.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88217.tga"
+      },
+      {
+        "source": 88220,
+        "id": 139,
+        "path": "effect/shining/orange/ridack_armor_orange.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88220.tga"
+      },
+      {
+        "source": 88221,
+        "id": 139,
+        "path": "effect/shining/orange/ridack_armor_orange.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88221.tga"
+      },
+      {
+        "source": 88224,
+        "id": 147,
+        "path": "effect/shining/verdino/ridack_armor_jade.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88224.tga"
+      },
+      {
+        "source": 88225,
+        "id": 147,
+        "path": "effect/shining/verdino/ridack_armor_jade.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88225.tga"
+      },
+      {
+        "source": 88228,
+        "id": 155,
+        "path": "effect/shining1/viola/ridack_armor_purple2.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88228.tga"
+      },
+      {
+        "source": 88229,
+        "id": 155,
+        "path": "effect/shining1/viola/ridack_armor_purple2.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88229.tga"
+      },
+      {
+        "source": 88232,
+        "id": 163,
+        "path": "effect/shining1/blu/ridack_armor_blue2.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88232.tga"
+      },
+      {
+        "source": 88233,
+        "id": 163,
+        "path": "effect/shining1/blu/ridack_armor_blue2.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88233.tga"
+      },
+      {
+        "source": 88236,
+        "id": 171,
+        "path": "effect/shining1/rosa/ridack_armor_pink2.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88236.tga"
+      },
+      {
+        "source": 88237,
+        "id": 171,
+        "path": "effect/shining1/rosa/ridack_armor_pink2.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88237.tga"
+      },
+      {
+        "source": 88240,
+        "id": 179,
+        "path": "effect/shining1/bianco/ridack_armor_white2.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88240.tga"
+      },
+      {
+        "source": 88241,
+        "id": 179,
+        "path": "effect/shining1/bianco/ridack_armor_white2.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88241.tga"
+      },
+      {
+        "source": 88244,
+        "id": 187,
+        "path": "effect/shining2/verde/ridack_armor_green.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88244.tga"
+      },
+      {
+        "source": 88245,
+        "id": 187,
+        "path": "effect/shining2/verde/ridack_armor_green.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88245.tga"
+      },
+      {
+        "source": 88248,
+        "id": 195,
+        "path": "effect/shining2/rosso/ridack_armor_red.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88248.tga"
+      },
+      {
+        "source": 88249,
+        "id": 195,
+        "path": "effect/shining2/rosso/ridack_armor_red.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88249.tga"
+      },
+      {
+        "source": 88252,
+        "id": 203,
+        "path": "effect/shining2/blu/ridack_armor_blue.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88252.tga"
+      },
+      {
+        "source": 88253,
+        "id": 203,
+        "path": "effect/shining2/blu/ridack_armor_blue.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88253.tga"
+      },
+      {
+        "source": 88256,
+        "id": 211,
+        "path": "effect/shining2/giallo/ridack_armor_yellow.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88256.tga"
+      },
+      {
+        "source": 88257,
+        "id": 211,
+        "path": "effect/shining2/giallo/ridack_armor_yellow.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/88257.tga"
+      },
+      {
+        "source": 88259,
+        "id": 851,
+        "path": "effect/armor_6/shining_1.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/armor effect purple moon.tga"
+      },
+      {
+        "source": 88261,
+        "id": 864,
+        "path": "item/weapon/halloween_2022/armor.mse",
+        "bone": "Bip01",
+        "icon": "icon/item/lvlreset.tga"
+      }
+    ],
+    "realms_modified": false,
+    "actual_game_item_worker": true,
+    "full_actor_world_test": false
+  },
+  "unity": {
+    "editor": "6000.3.27f1",
+    "success": true,
+    "suites": {
+      "TYPED_COMPANION_WIRE": 700,
+      "TYPED_ITEM_INTEGRATION": 14005,
+      "TYPED_EQUIPMENT_INTEGRATION": 2447,
+      "TYPED_COSTUME_OFFLINE": 397,
+      "TYPED_SPECIAL_BONUS_OFFLINE": 8003,
+      "TYPED_SOUL_OFFLINE": 1252,
+      "TYPED_FORGE_OFFLINE": 6993,
+      "TYPED_STORAGE_OFFLINE": 4667,
+      "TYPED_MISSION_OFFLINE": 3236,
+      "TYPED_AMMO_OFFLINE": 1340,
+      "NEXORIA_UI": 346
+    },
+    "real_player_skeleton": true,
+    "actual_authored_effects": 18,
+    "actual_source_icons": 33,
+    "result_mtime": 1794683971.1783662
+  },
+  "live_local": {
+    "accounts": 0,
+    "characters": 0,
+    "legacy_items": 0,
+    "native_instances": 0,
+    "empty_player_state_tables": 94,
+    "catalog_definitions": 1574
+  },
+  "fingerprints": {
+    "SRC/Tools/ItemCatalogBuilder/convert_full_catalog.py": "13510f753921bbfd229d76188b8c4a3c3668e23fb881671522e157034b9ded59",
+    "SRC/Tools/ItemCatalogBuilder/upgrade_exported_catalog.py": "96ae25628037787824cc28ac540d6d0a1fbc9901c4a5d4ec9c190d5871188ad1",
+    "SRC/Tools/ServerManager/costume_editor.py": "0db7cf5dfdf7b5ee34505d30e760acc94d1a4564d89ef0cc5be06b785179cd48",
+    "SRC/Tools/ServerManager/item_catalog.py": "f53a017bb6d9f3a3a3ff2c9de63ee4e552447717dea3c3e1d32798ce991dc219",
+    "SRC/Server/common/item/Costumes.hpp": "31fcbea90229711324aa820e19b13ed63fb8e1a08b50031ea4b328b8ecd070a9",
+    "SRC/Server/common/item/ItemCatalog.hpp": "407561dd7691c078cb7ed10e9495ba1fa14466b101613fe791b0d95e19af55c2",
+    "SRC/ItemDomain/ContentValidation.hpp": "d73f461fd790432035c1a3a86ae3909a7e38a93fc7c4675754e97e8433a92dce",
+    "SRC/ItemDomain/Costumes.cpp": "5f50fe008bd729dc65795d93b076bfc60b7df38127b3d162b2e1a072bdd1abcb",
+    "SRC/ItemDomain/CostumePersistence.cpp": "500fb21e47f3c2a6dfac87408de4209b9a63746afd62e2dbf9768b9f74e3f365",
+    "SRC/ItemDomain/TypedInventoryWire.cpp": "d81fb16d8c46d814e9c2d3ec0c7a11861ddc186bdca66270df100867e2c1a9f9",
+    "SRC/Server/GameServer/item/TypedCostumes.cpp": "1e0b34ece5a99df16ffb37e790f45ae7b4bded5474b60d1496c5669b070fc04a",
+    "SRC/Server/GameServer/ecs/systems/MountFlightSystem.hpp": "f079926ba09d4354793ab0fb925f3c3a78175aaeb7e311671d56ba0fbc342d49",
+    "db/migrations/item_combat/045_body_costume_effects.sql": "9f1d264aa94b7f89e908ad815e2a2688f1fb1fb08667c95987b908957961859e",
+    "db/migrations/item_instance/028_body_costume_effect_slot.sql": "2155401fb70f9fca6f44b1f17396ff323e57925d10d4b5424bc1163ee412ff78",
+    "tests/server/SourceBodyEffectCatalogTests.py": "3a43004a9c032d81a550f2f9444aaab47e05877cb0290eed8c04b40363c48b79",
+    "tests/server/ItemCatalogRuntimeTests.cpp": "bae8a3a7e0696276544ac0a060af853686925433f93c7f38acf08b6a8a0e81a0",
+    "tests/server/CostumeTests.cpp": "26d91f878b73a90c6ddc9bfc9f8d9b555cbe894d7c7bdfd0666447613e8398bb",
+    "tests/server/ItemCatalogTests.cpp": "0ed4244135cdc6771664d02cc63674ce37b9d604137fcd8d4db5b23fb819f7f6",
+    "tests/server/FullCatalogConversionTests.py": "e4deb42ac038950fca7734496c636d8ae398f05a764648bdfdc596eb62d8057a",
+    "tests/server/CatalogEditorTests.py": "abd42860070019901427dd008f7b0fb7c651825db93a56f2bb7820002144ccd5",
+    "build/c26b-game-native/SRC/Server/GameServer/GameServer.exe": "b049c68c9faea7d97e7f9d42525beaaf9eca83a6af5c56abf57e38512148efb3",
+    "build/body-effects-final-build.log": "2f2657b3af8d6a5c357237b9bfd996fed834db22890af22bf2bd199fc4ebfbaf",
+    "build/body-effects-final-converter-tests.log": "7d7c1d3af43b229bf2a4cf65e53d02e7f36443595ff80386ad5a079a9b38c970",
+    "build/body-effects-final-editor-tests.log": "27a46baf565afa539652624e5f9b6a3c1dfbf41137cf2cf82874c535ea43236b",
+    "build/body-effects-unity-final-success.log": "37677a2b3694abccacb016eae425914428d4ae36cb37632ae051905bd2f0dc6a",
+    "build/body-effects-metadata-update.json": "6fcd4aa1500b62472241d3fab9759d8770d76d5dd10a0970684cc72890b119b4",
+    "build/body-effects-final-regression-tests.log": "819696f21de57369358fe2e687ac6acedd6e2f3ecb5c7acc69782aea9601867d",
+    "build/body-effects-final-targeted-tests.log": "c88b7e7495ad1a6b7e00f6dfcd00c6ccfd40473336e26fa36840b763262f816f"
+  },
+  "unity_fingerprints": {
+    "Runtime/Network/Metin2TypedInventoryCodec.cs": "9810711658286e4c0cdda5be09b330f6b68ac91356e1863d10088b58850b9c10",
+    "Runtime/Network/Metin2TypedInventoryState.cs": "a85d50b7492a99e853f0cc12fcede3224da4fdd9102c2d18c2e68df2aa5fad32",
+    "Runtime/Network/Metin2TypedInventoryWindow.cs": "e74951e3cd33e839223d4196315da68311a5d52501b235f23871f04b2a139e98",
+    "Runtime/Network/Metin2TypedItemDetails.cs": "361c458e5d2ed5a81788be3ace4cfa24d0df8e3d737cc60b2b84613c8d588210",
+    "Runtime/Network/Metin2TypedAppearanceCodec.cs": "3f765b5efeb9750e404cdae33377fe76f4174e51b244ae9209ac629732cbd749",
+    "Runtime/Network/Metin2EquipmentRuntimeBinder.cs": "778f3341595c7a211215999806686969de4d25e944477ca1ec16ead089a7b20d",
+    "Runtime/Network/Metin2CostumeEffectAppearance.cs": "bedbea934afb26e75b85f663a42b066cec46543a8caad35c1212084224803242",
+    "Runtime/Network/Metin2NetworkEntityWorld.cs": "9db1e809afd1e0c9444e55402acf80cfde5a2f584fb6c197c9dbe0ef3451a195",
+    "Runtime/Network/Metin2ClientBootstrap.cs": "606d36532507726a905faa889855e86f6b7035af3d217bacf73fdc7b48fecd28",
+    "Editor/Metin2SourceBodyEffectValidator.cs": "7bd559ae041756f81cdf8ae39786bef74a9d31ddcb2c1ebc1020de8c50d06e2f",
+    "Editor/Metin2TypedShopValidationBridge.cs": "a48d660f98dc67f4f2868643f615ea678f03000e3a26fc1c82fb02abb0600c85"
+  },
+  "not_tested": [
+    "Full login/auth/TLS/ECS world flow with this catalog",
+    "Observer delivery, combat and all eight player races with these new typed effects in a running realm",
+    "Remaining 1134 blocked source rows"
+  ]
+}

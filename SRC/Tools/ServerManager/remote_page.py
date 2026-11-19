@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QComboBox, QFileDia
     QTableWidgetItem, QVBoxLayout, QWidget)
 
 from backend import EditorError
+import change_review as review
 import ssh_connection as ssh
 import ssh_password
 from remote_work_page import RemoteWork
@@ -29,6 +30,7 @@ class RemotePage(QWidget):
         self.profiles, self.current_id = [], None
         self.probe_process = self.tunnel_process = None
         self.probe_session = self.tunnel_session = None
+        self.probe_stage = None
         self.probe_output, self.tunnel_output = '', ''
         self.probe_failure, self.tunnel_failure = '', ''
         self.loading, self.dirty = True, False
@@ -381,10 +383,26 @@ class RemotePage(QWidget):
             profile = self.current()
             updated = [p for p in self.profiles if p['id'] != profile['id']] + [profile]
             previous = next((p for p in self.profiles if p['id'] == profile['id']), None)
-            self.store.save(updated, transaction=ssh_password.saved_preferences(profile, previous))
-            self.profiles = updated
+            rows=review.dict_rows(profile['name'],previous or {},profile)
+            password_fingerprints={}
+            for role in ('target','jump'):
+                password=getattr(self,role)['password'].text()
+                if password:
+                    password_fingerprints[role]=review.digest(password.encode('utf-8'))
+                    rows.append((profile['name'],'SSH-jelszó · '+('Célgép' if role=='target' else 'Ugrógép'),'Korábbi állapot','Új, rejtett jelszó'))
+            stage=review.request(self.owner,'SSH-profil mentése','ssh_profile',dict(profile=profile,previous=previous,updated=updated,password_fingerprints=password_fingerprints),rows)
+            if stage is None:
+                if review.queued(self.owner):self.dirty=False;self.save_button.setText('Profil mentése');self.status.setText('Profil ideiglenesen mentve. Feltöltés a Függő módosítások oldalon hagyható jóvá.')
+                return
+            def write(data):
+                for role,expected in data['password_fingerprints'].items():
+                    if review.digest(getattr(self,role)['password'].text().encode('utf-8'))!=expected:raise EditorError('Az SSH-jelszó az összesítő óta megváltozott.')
+                self.store.save(data['updated'],transaction=ssh_password.saved_preferences(data['profile'],previous))
+                return data
+            approved=review.publish(stage,self.owner,write)
+            self.profiles = approved['updated']
             self.refill()
-            self.load(profile)
+            self.load(approved['profile'])
             self.status.setText('Profil mentve. Kapcsolódáshoz használd a Kapcsolat ellenőrzése vagy a felső Újracsatlakozás gombot.')
             self.notify_profiles()
         except (EditorError, OSError, UnicodeError) as error:
@@ -393,19 +411,21 @@ class RemotePage(QWidget):
     def remove(self):
         if self.active() or not any(p['id'] == self.current_id for p in self.profiles):
             return
-        if QMessageBox.question(self, 'SSH-profil', 'Törlöd ezt az SSH-profilt? A kulcsfájlok megmaradnak.') != QMessageBox.StandardButton.Yes:
-            return
         selected = getattr(self.owner, 'remote_profile', None)
-        if selected and selected['id'] == self.current_id and not self.owner.set_local():
-            return
         try:
             removed_id = self.current_id
             removed_profile = next(p for p in self.profiles if p['id'] == removed_id)
             updated = [p for p in self.profiles if p['id'] != self.current_id]
-            self.store.save(updated, transaction=ssh_password.saved_preferences(previous=removed_profile))
-            self.profiles = updated
+            stage=review.request(self.owner,'SSH-profil törlése','ssh_profile_delete',dict(updated=updated,removed=removed_profile),
+                review.dict_rows(removed_profile['name'],removed_profile,{}))
+            if stage is None:return
+            def write(data):
+                if selected and selected['id']==data['removed']['id'] and not self.owner.set_local():raise EditorError('A profil törlése elmaradt: a célváltás megszakadt.')
+                self.store.save(data['updated'],transaction=ssh_password.saved_preferences(previous=data['removed']))
+                return data['updated']
+            self.profiles = review.publish(stage,self.owner,write)
             self.refill()
-            self.load(updated[0] if updated else ssh.new_profile())
+            self.load(self.profiles[0] if self.profiles else ssh.new_profile())
             ssh_password.forget(removed_id)
             self.notify_profiles()
         except (EditorError, OSError) as error:
@@ -504,8 +524,12 @@ class RemotePage(QWidget):
             root = profile['remote_root']
             if not root:
                 raise EditorError('Add meg a távoli szervercsomag mappáját az SSH-profilban.')
-            session = ssh.Session(profile, parent=self)
             action = 'apply-quests' if offline else 'reload-quests'
+            stage=review.request(self.owner,'Távoli questcsomag aktiválása','remote_quest_activation',dict(root=root,action=action),
+                [(profile['name'],'Mentett questforrások','Jelenlegi questcsomag','Fordítás és következő induláshoz aktiválás' if offline else 'Fordítás és élő újratöltés minden futó core-on')])
+            if stage is None:return
+            self.probe_stage=stage;approved=stage.begin(self.owner);root=approved['root'];action=approved['action']
+            session = ssh.Session(profile, parent=self)
             command = session.ssh(shlex.join(['python3', '-B', root.rstrip('/') + '/manage.py', action]))
             self.probe_action = action
             self.output.setPlainText('A következő indulás questcsomagjának ellenőrzése…' if offline else
@@ -513,6 +537,7 @@ class RemotePage(QWidget):
             self.launch('probe', session, command)
             self.probe_timer.start(150000)
         except (EditorError, OSError) as error:
+            if self.probe_stage:self.probe_stage.finish(False);self.probe_stage=None
             if session:
                 session.close()
             self.owner.error(str(error))
@@ -560,6 +585,7 @@ class RemotePage(QWidget):
         failure = getattr(self, role + '_failure')
         if role == 'probe' and getattr(self, 'probe_action', 'check') in ('reload-quests', 'apply-quests'):
             ok = not failure and code == 0 and exit_status == QProcess.ExitStatus.NormalExit
+            if self.probe_stage:self.probe_stage.finish(ok);self.probe_stage=None
             self.output.appendPlainText(('A következő indulás questcsomagja elkészült.' if self.probe_action == 'apply-quests' else 'A távoli questek frissítése kész.') if ok else
                 (failure or 'A frissítés nem fejeződött be. A napló mutatja, hogy elutasítás vagy függő aktiválás történt; függő aktiválásnál indítsd újra ezt a műveletet.'))
         elif role == 'probe':
@@ -613,6 +639,7 @@ class RemotePage(QWidget):
             self.tunnel_process.kill()
 
     def shutdown(self):
+        if self.probe_stage:self.probe_stage.finish(False);self.probe_stage=None
         self.work.shutdown()
         self.probe_timer.stop()
         self.tunnel_timer.stop()

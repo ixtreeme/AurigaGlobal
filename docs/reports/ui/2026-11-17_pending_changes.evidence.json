@@ -1,0 +1,84 @@
+{
+  "date": "2026-11-17",
+  "checked_utc": "2026-11-17T19:08:28.136656+00:00",
+  "result": "SUCCESS",
+  "feature": "durable_pending_changes_and_combined_approval",
+  "package": "D:\\AurigaGlobal\\Server2-Local",
+  "manager_files_verified": 248,
+  "manager_exe_sha256": "c6a3fab3bfb7792b5e9c81db9eefeae4c1a4587de425c491ec6c50521ecf9208",
+  "manager_backup": "D:\\AurigaGlobal\\Server2-Local\\run\\deployments\\pending-changes-manager-20261117T190638Z",
+  "server_processes_before": [
+    [
+      "Database.exe",
+      31428
+    ],
+    [
+      "GameServer.exe",
+      10880
+    ],
+    [
+      "GameServer.exe",
+      20684
+    ],
+    [
+      "GameServer.exe",
+      34024
+    ],
+    [
+      "LoginServer.exe",
+      24644
+    ]
+  ],
+  "server_processes_after": [
+    [
+      "Database.exe",
+      31428
+    ],
+    [
+      "GameServer.exe",
+      10880
+    ],
+    [
+      "GameServer.exe",
+      20684
+    ],
+    [
+      "GameServer.exe",
+      34024
+    ],
+    [
+      "LoginServer.exe",
+      24644
+    ]
+  ],
+  "server_restart": false,
+  "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+  "live_hash": "162ef5115b58d6b833aa303550d0eef430a266fbe42296ca63d490c116c6d95a",
+  "live_release": "ae3c6e6e6242e5cbe7ba744b881b17f6",
+  "existing_chest_overrides_preserved": 1,
+  "live_data_published": false,
+  "quest_list_unchanged": true,
+  "deferred_merge_items": 637,
+  "deferred_source_sha256": "9ab3dac7f81d2898ab89aeeca641bffc4f59b28ac5f7683d080282ea9913babd",
+  "preview_drafts": 7,
+  "preview_rows": 29,
+  "preview_targets": 6,
+  "tests": {
+    "pending_changes": 23,
+    "change_review": 21,
+    "live_rewards_mariadb": 13,
+    "local_gui_native_backend": 46,
+    "target_rpc_gui": 23,
+    "backup": 15,
+    "ssh_gui": 25,
+    "clarity": 7,
+    "remote_work": 54,
+    "remote_work_skipped": 2
+  },
+  "native_catalog_tool_updated": true,
+  "installed_pending_page_observed": true,
+  "installed_legacy_drafts_dialog_observed": true,
+  "game_server_or_unity_protocol_changed": false,
+  "unity_checks_run": false,
+  "external_freebsd_publication_run": false
+}

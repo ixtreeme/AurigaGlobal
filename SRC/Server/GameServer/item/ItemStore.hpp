@@ -6,6 +6,7 @@
 // work and applies completions in Drain(); it never waits on SQL. Runs only
 // when the typed catalog is loaded (items.catalog = "required").
 #include <ItemPersistenceSql.hpp>
+#include "ItemBackendState.hpp"
 
 #include <chrono>
 #include <condition_variable>
@@ -97,6 +98,8 @@ struct LoginLoad
 	std::expected<persistence::LoadedItemOwner, ItemPersistenceError> loaded;
 };
 bool RequestLoginLoad(std::uint32_t pid, std::function<void(LoginLoad)> done);
+bool RequestPlayerLoginLoad(std::uint32_t pid, std::function<void(LoginLoad)> done);
+std::expected<void,std::string> LoadNativeCharacterBirth(const std::string& file);
 
 // One typed-item operation of the current login: the prepared commit, then a
 // fresh reload of the owner in the same job, so the game thread always gets
@@ -121,14 +124,7 @@ bool RequestCommitMany(std::vector<OwnerRead>, ItemCommit, std::function<void(Mu
 
 namespace ecs
 {
-// The login the pending typed load belongs to; a completion for an older
-// login (relog, logout) finds a different token and is dropped.
-struct TypedItemLogin
-{
-	std::uint64_t token = 0;
-};
-// The character's typed items as loaded at login (read-only shadow while the
-// legacy item runtime is still authoritative).
+// Authoritative persisted state of a native character's items.
 struct TypedItems
 {
 	auriga::item::persistence::LoadedItemOwner state;

@@ -99,6 +99,8 @@ std::expected<ItemCommit,E> MakeGroundPickupCommit(const ItemCatalog& c,std::arr
         return std::unexpected(E::UnsupportedState);
     if(source->boundTo && source->boundTo!=receiver.owner)return std::unexpected(E::TransferDenied);
     const auto* entry=c.Find(source->key);if(!entry)return std::unexpected(E::MissingItem);
+    if(const auto* rules=c.FindDefinitionRules(source->key,source->refinementLevel);rules && !rules->allowAcquire)
+        return std::unexpected(E::TransferDenied);
     const auto* policy=c.FindTradePolicy(entry->base.tradePolicy);
     if(sourceOwner.owner!=receiver.owner && (!policy || !policy->allowTrade))return std::unexpected(E::TransferDenied);
     auto picked=*source;picked.owner=receiver.owner;picked.placement=target;picked.revision++;

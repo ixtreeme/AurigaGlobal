@@ -27,7 +27,10 @@ def main():
     parser.add_argument('--catalog-tool', type=Path, required=True)
     parser.add_argument('--work-dir', type=Path, required=True)
     args = parser.parse_args()
-    sandbox = Sandbox(args.work_dir / uuid.uuid4().hex, args.mariadb_bin)
+    # A caller may put disposable SQL data on a roomier local volume while
+    # preserving the same owned-sandbox and exact-process checks.
+    work_root=Path(os.environ.get('AURIGA_ITEM_SQL_TEST_ROOT',str(args.work_dir)))
+    sandbox = Sandbox(work_root / uuid.uuid4().hex, args.mariadb_bin)
     proxy = None
     try:
         sandbox.start(); sandbox.verify()
@@ -40,8 +43,10 @@ def main():
         sandbox.client.query("GRANT SELECT ON player.* TO 'game_reader'@'localhost'")
         sandbox.client.query("CREATE TABLE player.player(id INT UNSIGNED PRIMARY KEY) ENGINE=InnoDB")
         sandbox.client.query("CREATE TABLE player.player_deleted LIKE player.player")
-        for name in ('001_item_persistence.sql' , '002_instance_id_allocator.sql', '003_owned_ground.sql', '004_recovery_schedule.sql', '005_automatic_recovery.sql', '006_item_effects.sql', '007_book_learning.sql', '008_polymorph.sql', '009_gathering_tools.sql', '010_companion_seals.sql', '011_growth_pet_birth.sql', '012_pet_study_cooldown.sql', '013_pet_supplies.sql', '014_mount_riding.sql', '015_companion_lifetime.sql', '016_costume_lifetime.sql', '017_regalia_special_bonuses.sql'):
-            for statement in statements((ROOT / 'db/migrations/item_instance' / name).read_text(encoding='utf-8-sig')):
+        instance_paths = sorted((ROOT / 'db/migrations/item_instance').glob('[0-9][0-9][0-9]_*.sql'))
+        assert [int(path.name[:3]) for path in instance_paths] == list(range(1,45))
+        for path in instance_paths:
+            for statement in statements(path.read_text(encoding='utf-8-sig')):
                 sandbox.client.query(statement)
         # The game account may claim sessions; only the importer (root here) provisions.
         sandbox.client.query("GRANT UPDATE ON player.item_owner_fence TO 'game_reader'@'localhost'")
@@ -51,6 +56,7 @@ def main():
             sandbox.client.query("GRANT INSERT,UPDATE,DELETE ON player." + table + " TO 'game_reader'@'localhost'")
         # ...and reserve instance ID blocks for the items it creates (C7a).
         sandbox.client.query("GRANT UPDATE ON player.item_instance_id_allocator TO 'game_reader'@'localhost'")
+        sandbox.client.query("GRANT INSERT ON player.item_mission_event TO 'game_reader'@'localhost'")
         admin = dict(port=sandbox.port, user='root', password=sandbox.password)
         packet = catalog.run_tool(dict(action='read', connection=admin), executable=args.catalog_tool)
         document = catalog.Catalog(packet).new(1)
@@ -83,16 +89,43 @@ def main():
         tables = editor.apply(document, (1, 1))
         catalog.run_tool(dict(action='commit', connection=admin, tables=tables, expected_hash=packet['hash']), packet['columns'], args.catalog_tool)
         packet = catalog.run_tool(dict(action='read', connection=admin), executable=args.catalog_tool)
+        editor=catalog.Catalog(packet)
+        document=editor.new(8)
+        document['base'].update(content_code='container.runtime_refined_reward')
+        document['loot']=dict(pick_mode='1',entries=[dict(entry_no='1',reward_kind='1',item_category_id='1',item_local_id='1',amount='1',weight='1',rare_attribute_chance_bp='0',refinement_level='2')])
+        catalog.run_tool(dict(action='commit',connection=admin,tables=editor.apply(document),expected_hash=packet['hash']),packet['columns'],args.catalog_tool)
+        packet=catalog.run_tool(dict(action='read',connection=admin),executable=args.catalog_tool)
+        # A source-compatible paired weapon and a dedicated switcher. No live
+        # database or historical player rows are involved in this owned sandbox.
+        editor=catalog.Catalog(packet);document=editor.item((1,1))
+        document.update(editor.attribute_defaults());document['attribute_profile']=dict(allow_lock='1')
+        for identity in (99,100):
+            document['attribute_candidates'].append(dict(pool_kind='1',bonus_id=str(identity),weight='0'))
+            document['attribute_values'].append(dict(pool_kind='1',bonus_id=str(identity),tier='1',value_scaled='100'))
+        editor.apply(document,(1,1))
+        editor.tables['item_definition_rules'].append(dict(category_id='1',local_id='1',refinement_level='0',display_refinement_offset='0',rarity='0',clock_kind='1',duration_ms='0',allow_account_storage='1',allow_acquire='1',allow_unequip='1',allowed_empires='7',minimum_grant_count='1',birth_magic_chance_bp='0',birth_socket_chance_bp='0',birth_addon='1',unique_group='',available='1',attribute_reroll_group='2',weapon_effect_alternate='0',birth_open_stone_sockets='0',birth_attribute_profile_id=None))
+        document=editor.new(5);document['base']['content_code']='consumable.runtime_zodiac_switcher';document['recovery']=document['effect']=None
+        document.update(editor.attribute_service_defaults());document['attribute_service'].update(operation_kind='2',minimum_count='1',maximum_count='5',add_count='0',target_reroll_group='2')
+        catalog.run_tool(dict(action='commit',connection=admin,tables=editor.apply(document),expected_hash=packet['hash']),packet['columns'],args.catalog_tool)
+        packet=catalog.run_tool(dict(action='read',connection=admin),executable=args.catalog_tool)
         if len(packet['hash']) != 64 or any(c not in '0123456789abcdef' for c in packet['hash']): raise SystemExit('unexpected hash')
-        sandbox.client.query("INSERT INTO player.item_persistence_format VALUES(1,1,1,UNHEX('" + packet['hash'] + "'))")
+        sandbox.client.query("INSERT INTO player.item_persistence_format(singleton,schema_version,catalog_revision,catalog_sha256) VALUES(1,1,1,UNHEX('" + packet['hash'] + "'))")
         # The final store test uses this connection: ID reservation and receipt
         # lookup succeed; lose the real write COMMIT and its first receipt-read
         # acknowledgement to exercise both reconciliation and delayed retries.
         proxy = CommitResponseProxy(sandbox.port, drop_count=2, skip_commits=2)
-        stdin = '\n'.join([str(sandbox.port), sandbox.password, str(len(packet['tables']['item_base'])), packet['hash'], str(proxy.port)]) + '\n'
+        runtime_packet=sandbox.work/'refined-container-runtime.hex'
+        stdin = '\n'.join([str(sandbox.port), sandbox.password, str(len(packet['tables']['item_base'])), packet['hash'], str(proxy.port),str(runtime_packet.resolve())]) + '\n'
         environment = dict(os.environ, MARIADB_TLS_DISABLE_PEER_VERIFICATION='1')
         result = subprocess.run([str(args.test_executable.resolve()), '--owned-sandbox'], input=stdin, text=True, capture_output=True, timeout=120, env=environment)
         output = (result.stdout + result.stderr).replace(sandbox.password, '[redacted]')
+        if result.returncode==0:
+            encoded=runtime_packet.read_text(encoding='ascii');wire=bytes.fromhex(encoded)
+            if wire[0]!=233 or int.from_bytes(wire[1:5],'little')!=len(wire) or wire[5]!=2:raise RuntimeError('Invalid item-worker container result envelope')
+            (args.work_dir/'refined-container-runtime.hex').write_text(encoded,encoding='ascii')
+            encoded=Path(str(runtime_packet)+'.attribute.hex').read_text(encoding='ascii');wire=bytes.fromhex(encoded)
+            if wire[0]!=236 or int.from_bytes(wire[1:5],'little')!=len(wire) or wire[5]!=2:raise RuntimeError('Invalid paired attribute worker result')
+            (args.work_dir/'paired-attribute-runtime.hex').write_text(encoded,encoding='ascii')
         (sandbox.work / 'native-test.log').write_text(output, encoding='utf-8')
         print(output, end='')
         if result.returncode: raise SystemExit('native catalog runtime tests failed')

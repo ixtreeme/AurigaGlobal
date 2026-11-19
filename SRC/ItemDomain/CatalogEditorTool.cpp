@@ -2,10 +2,15 @@
 // SQL values use the existing prepared engine; no SQL is accepted from the UI.
 // Messages stay ASCII; the manager turns the structured "detail" into UI text.
 #include "CatalogSqlReader.hpp"
+#include "LiveMobDropsSql.hpp"
+#include <openssl/rand.h>
 #include <item/ResourceGathering.hpp>
 #include <SQL/AsyncSQL.h>
 #include <Core/Logging.hpp>
 #include <nlohmann/json.hpp>
+#include <item/PersistentItems.hpp>
+#include <item/NpcShopConfig.hpp>
+#include <item/CraftConfig.hpp>
 #include <algorithm>
 #include <iostream>
 #include <map>
@@ -98,6 +103,17 @@ Json Encode(const db::Snapshot& snapshot) {
     }
     return output;
 }
+db::Rows RewardRows(const Json& rows,std::size_t width,std::size_t maximum)
+{
+    Require(rows.is_array() && rows.size()<=maximum,"Tul sok elojutalom-sor.");
+    db::Rows result;std::size_t bytes=0;
+    for(const auto& row:rows){Require(row.is_array() && row.size()==width,"Hibas elojutalom-oszlopszam.");db::Row cells;
+        for(const auto& value:row){Require(value.is_null() || value.is_string(),"A jutalomcella string vagy null legyen.");
+            db::Cell cell=value.is_null()?db::Cell{}:db::Cell{value.get<std::string>()};
+            bytes+=db::CellBudgetOverhead+(cell?cell->size():0);Require(bytes<=db::CapturedByteBudget && (!cell || cell->size()<=192),"Tul nagy jutalomadat.");cells.push_back(std::move(cell));}
+        result.push_back(std::move(cells));}
+    return result;
+}
 db::Snapshot Decode(const Json& document) {
     Require(document.is_object() && document.size()==db::TableCount,"Hibas katalogus alak.");
     db::Snapshot result;std::size_t budget=0;
@@ -129,11 +145,14 @@ unsigned KeyColumns(T table) {
     case T::Items:case T::Weapons:case T::Armors:case T::Accessories:case T::Materials:case T::Consumables:
     case T::BonusEntries:case T::RefinementLevels:case T::SocketGrades:case T::BookTargets:case T::BookSteps:case T::SkillBooks:
     case T::LootEntries:case T::Containers:case T::ContainerKeys:case T::CurrencyTokens:case T::QuestItems:case T::SocketStones:case T::Costumes:case T::Tools:case T::FishingItems:case T::ToolLevels:case T::PolymorphSkills:case T::PolymorphMasteries:case T::PolymorphItems:case T::SoulLevels:case T::SoulItems:case T::Companions:case T::GrowthPetLevels:case T::GrowthPetStages:return 2;
-    case T::PetFeedRules:case T::PetSkillRanks:case T::AttributeCandidates:return 3;
+    case T::BonusToolChoices:case T::PetFeedRules:case T::PetSkillRanks:case T::AttributeCandidates:return 3;
     case T::AttributeValues:return 4;
     case T::AttributeGroups:case T::AttributeBindings:case T::AttributeTiers:case T::PetAgeTiers:case T::PetSlotRules:case T::PetSkillDefinitions:case T::PetSupplies:return 2;
     case T::CostumeVisuals:case T::SpecialBonusTiers:return 4;
-    case T::ForgeAids:case T::Ammunition:case T::Regalia:case T::BonusTools:return 2;
+    case T::SashProfiles:case T::CharacterServices:case T::ForgeAids:case T::Ammunition:case T::Regalia:case T::BonusTools:return 2;
+    case T::SashDonors:case T::AttributeBirthTiers:case T::DefinitionRules:return 3;
+    case T::SashDonorComponents:return 4;
+    case T::CostumeTransferTargets:case T::EnergyCrystalTiers:case T::CurrencyTokenPolicies:return 2;
     case T::RegaliaRules:return 5;
     case T::ForgeLevels:return 3;
     case T::SocketMaterials:case T::RefinementIngredients:return 4;
@@ -178,8 +197,17 @@ Json Packet(const db::Snapshot& rows,const ItemCatalog& catalog,Json sequences) 
 Json Result(CAsyncSQL& sql,const db::CapturedCatalog& current) {
     Json sequences=Json::object();auto message=Query(sql,"SELECT category_id,next_local_id FROM protos.item_local_id_sequence");
     while(auto row=message->Get()->FetchRow()) {Require(row[0] && row[1],"Hibas azonosito-szamlalo.");sequences[row[0]]=row[1];}
-    return Packet(current.rows,*current.catalog,std::move(sequences));
+    auto out=Packet(current.rows,*current.catalog,std::move(sequences));
+    auto live=db::ReadLiveMobDrops(sql,current.catalog);Require(live.has_value(),live?"":live.error());
+    Require(live->has_value(),"Missing live drop snapshot");const auto& state=**live;
+    const auto encode=[](const db::Rows& rows){Json result=Json::array();for(const auto& row:rows){Json cells=Json::array();for(const auto& c:row)cells.push_back(c?Json(*c):Json(nullptr));result.push_back(std::move(cells));}return result;};
+    out["live_drops"]={{"supported",state.supported},{"release",state.release},{"base_hash",state.baseHash},{"hash",state.hash},
+        {"containers_supported",state.containersSupported},{"container_groups",encode(state.containerGroups)},{"container_entries",encode(state.containerEntries)},
+        {"tables",{{"mob_drop_group",encode(state.release.empty()?current.rows[T::MobDropGroups]:state.groups)},
+                   {"mob_drop_entry",encode(state.release.empty()?current.rows[T::MobDropEntries]:state.entries)}}}};
+    return out;
 }
+std::string ReleaseId(){std::array<unsigned char,16> bytes{};Require(RAND_bytes(bytes.data(),static_cast<int>(bytes.size()))==1,"Drop release entropy unavailable");std::string id;for(auto b:bytes){id+="0123456789abcdef"[b>>4];id+="0123456789abcdef"[b&15];}return id;}
 // A bounded batch is one bound value, not one transaction step per cell/row.
 // JSON is transport only; the destination remains the typed SQL columns.
 // This keeps a +255 curve with distinct level bonuses within the existing
@@ -218,13 +246,13 @@ void AddBatches(SqlTransaction& plan,const db::TableSpec& spec,const db::Rows& r
         plan.push_back({std::move(query),{SqlParam::Text(payload.dump())},payload.size(),{}});
     }
 }
-void Commit(CAsyncSQL& sql,const db::CapturedCatalog& before,const db::Snapshot& after) {
+void Commit(CAsyncSQL& sql,const db::CapturedCatalog& before,const db::Snapshot& after,const Json* liveRequest=nullptr) {
     // Parents before children. Deletes use the reverse order. The UI edits
     // profile contents without changing their category/delivery discriminator.
     constexpr T order[]={T::UsePolicies,T::TradePolicies,T::Appearances,T::Attacks,T::AmmoPolicies,T::Resistances,
-        T::CompanionForms,T::PetTrainingProfiles,T::PetAgeTiers,T::PetSlotRules,T::PetSkillDefinitions,T::PetSkillRanks,T::PetSupplyProfiles,T::PetStudyRules,T::PetExtensionRules,T::PetEnchantRules,T::PetSkinRules,T::GrowthPetProfiles,T::GrowthPetLevels,T::GrowthPetStages,T::SoulProfiles,T::SoulLevels,T::PolymorphForms,T::PolymorphProfiles,T::PolymorphSkills,T::PolymorphMasteries,T::ToolProfiles,T::ToolLevels,T::BookProfiles,T::BookTargets,T::BookSteps,T::BonusProfiles,T::BonusEntries,T::Refinements,T::RefinementLevels,T::SocketProfiles,T::SocketGrades,
-        T::BookAids,T::AttributeProfiles,T::AttributeGroups,T::AttributeCandidates,T::AttributeValues,T::AttributeServices,T::AttributeTiers,T::SocketServices,T::Cooldowns,T::TimedEffectGroups,T::TimedEffects,T::ToggleEffectGroups,T::ToggleEffects,T::Recoveries,T::Instant,T::Reserve,T::Periodic,T::Automatic,T::LootProfiles,T::Items,T::PetHatchProfiles,T::Weapons,T::Armors,T::Materials,
-        T::AttributeBindings,T::Accessories,T::Consumables,T::SkillBooks,T::Containers,T::ContainerKeys,T::CurrencyTokens,T::QuestItems,T::SocketStones,T::Costumes,T::CostumeVisuals,T::Tools,T::FishingItems,T::PolymorphItems,T::SoulItems,T::Companions,T::PetSupplies,T::PetFeedRules,T::LootEntries,T::SocketMaterials,T::RefinementRecipes,T::RefinementIngredients,T::MobDropGroups,T::MobDropEntries,T::Regalia,T::RegaliaRules,T::BonusTools,T::SpecialBonusTiers,T::Ammunition,T::ForgeAids,T::ForgeLevels};
+        T::CompanionForms,T::PetTrainingProfiles,T::PetAgeTiers,T::PetSlotRules,T::PetSkillDefinitions,T::PetSkillRanks,T::PetSupplyProfiles,T::PetStudyRules,T::PetExtensionRules,T::PetEnchantRules,T::PetSkinRules,T::GrowthPetProfiles,T::GrowthPetLevels,T::GrowthPetStages,T::SoulProfiles,T::SoulLevels,T::PolymorphForms,T::PolymorphProfiles,T::PolymorphSkills,T::PolymorphMasteries,T::ToolProfiles,T::BookProfiles,T::BookTargets,T::BookSteps,T::BonusProfiles,T::BonusEntries,T::Refinements,T::RefinementLevels,T::SocketProfiles,T::SocketGrades,
+        T::BookAids,T::AttributeBirthProfiles,T::AttributeBirthTiers,T::AttributeProfiles,T::AttributeGroups,T::AttributeCandidates,T::AttributeValues,T::AttributeServices,T::AttributeTiers,T::SocketServices,T::Cooldowns,T::TimedEffectGroups,T::TimedEffects,T::ToggleEffectGroups,T::ToggleEffects,T::Recoveries,T::Instant,T::Reserve,T::Periodic,T::Automatic,T::LootProfiles,T::Items,T::PetHatchProfiles,T::Weapons,T::Armors,T::Materials,
+        T::AttributeBindings,T::Accessories,T::Consumables,T::SkillBooks,T::Containers,T::ContainerKeys,T::CurrencyTokens,T::QuestItems,T::SocketStones,T::Costumes,T::CostumeVisuals,T::Tools,T::FishingItems,T::PolymorphItems,T::SoulItems,T::Companions,T::PetSupplies,T::PetFeedRules,T::LootEntries,T::SocketMaterials,T::RefinementRecipes,T::RefinementIngredients,T::MobDropGroups,T::MobDropEntries,T::Regalia,T::RegaliaRules,T::BonusTools,T::BonusToolChoices,T::SpecialBonusTiers,T::Ammunition,T::ForgeAids,T::ForgeLevels,T::DefinitionRules,T::ToolLevels,T::CharacterServices,T::SashProfiles,T::SashDonors,T::SashDonorComponents,T::CostumeTransferTargets,T::EnergyCrystalTiers,T::CurrencyTokenPolicies};
     static_assert(std::size(order)==db::TableCount-3,"every editable table needs a commit position");
     for(T table:{T::Format,T::Categories,T::BonusDefinitions})Require(before.rows[table]==after[table],"A rendszerregiszter nem szerkesztheto.");
     // Published group IDs own common conflict/lifecycle rules. Item edits may
@@ -271,7 +299,27 @@ void Commit(CAsyncSQL& sql,const db::CapturedCatalog& before,const db::Snapshot&
         }
         AddBatches(plan,spec,removed,'D');
     }
-    if(plan.empty())return;
+    if(plan.empty() && !liveRequest)return;
+    // A stopped item-definition edit rebases the independent drop list in the
+    // same transaction, retaining all live edits and rejecting invalidated keys.
+    auto live=db::ReadLiveMobDrops(sql,before.catalog);Require(live.has_value(),live?"":live.error());
+    if(liveRequest){
+        Require(live->has_value() && (**live).supported,"Apply migration 043 before publishing a combined catalog batch.");
+        const auto& state=**live;
+        Require(liveRequest->at("expected_release").get<std::string>()==state.release && liveRequest->at("expected_drop_hash").get<std::string>()==state.hash,
+            "The live rewards changed; review a new batch before saving.");
+        auto groups=liveRequest->contains("container_groups")?RewardRows(liveRequest->at("container_groups"),3,4096):state.containerGroups;
+        auto entries=liveRequest->contains("container_entries")?RewardRows(liveRequest->at("container_entries"),10,4096*MaxLootEntries):state.containerEntries;
+        auto next=db::PrepareLiveDropWrite(Validate(after),after[T::MobDropGroups],after[T::MobDropEntries],state.release,
+            liveRequest->at("release_id").get<std::string>(),std::move(groups),std::move(entries),state.containersSupported);
+        Require(next.has_value(),next?"":next.error());
+        for(auto& step:next->steps)plan.push_back(std::move(step));
+    }else if(*live && !(**live).release.empty()){
+        auto rebase=db::PrepareLiveDropWrite(Validate(after),(**live).groups,(**live).entries,(**live).release,ReleaseId(),
+            (**live).containerGroups,(**live).containerEntries,(**live).containersSupported);
+        Require(rebase.has_value(),rebase?"":rebase.error());
+        for(auto& step:rebase->steps)plan.push_back(std::move(step));
+    }
     Require(plan.size()<=SqlTransactionLimits::Steps,"Tul sok valtozas egy menteshez.");
     Message result(sql.DirectTransactionPrepared(std::move(plan)));
     Require(result && !result->uiSQLErrno && result->transactionOutcome==SqlTransactionOutcome::Committed,
@@ -279,8 +327,21 @@ void Commit(CAsyncSQL& sql,const db::CapturedCatalog& before,const db::Snapshot&
 }
 Json Run(const Json& request) {
     const auto action=request.at("action").get<std::string>();
-    Require(action=="read" || action=="commit" || action=="validate" || action=="blank" || action=="validate_gathering","Ismeretlen muvelet.");
+    Require(action=="read" || action=="commit" || action=="commit_catalog_batch" || action=="commit_drops" || action=="validate" || action=="blank" || action=="validate_gathering" || action=="runtime_support" || action=="validate_shops" || action=="validate_crafting","Ismeretlen muvelet.");
     // Offline actions: no connection, no lock, no write.
+    if(action=="validate_crafting") {
+        const auto catalog=Validate(Decode(request.at("tables")));const auto parsed=ParseCraftWorkshops(request.at("rules_json").get<std::string>(),*catalog);
+        if(!parsed)throw std::runtime_error(parsed.error());std::size_t recipes=0;for(const auto& w:*parsed)recipes+=w.recipes.size();return {{"workshops",parsed->size()},{"recipes",recipes},{"catalog_hash",Hash(catalog->ContentHash())}};
+    }
+    if(action=="validate_shops") {
+        const auto catalog=Validate(Decode(request.at("tables")));const auto parsed=ParseNpcShopManifest(request.at("rules_json").get<std::string>(),*catalog);
+        if(!parsed)throw std::runtime_error(parsed.error());return {{"shops",parsed->shops.size()},{"routes",parsed->routes.size()},{"catalog_hash",Hash(catalog->ContentHash())}};
+    }
+    if(action=="runtime_support") {
+        const auto catalog=Validate(Decode(request.at("tables")));Json rows=Json::array();
+        for(const auto& [key,entry]:catalog->Entries())rows.push_back({{"category",static_cast<unsigned>(key.Category())},{"local",key.LocalId()},{"grant",SupportsPersistentGrant(*catalog,entry)},{"persist",SupportsPersistentItem(*catalog,entry)}});
+        return {{"items",rows},{"catalog_hash",Hash(catalog->ContentHash())}};
+    }
     if(action=="validate_gathering"){
         const auto catalog=Validate(Decode(request.at("tables")));const auto sites=ParseGatheringSites(request.at("rules_json").get<std::string>(),*catalog);
         if(!sites)throw std::runtime_error(sites.error());return {{"sites",sites->size()},{"catalog_hash",Hash(catalog->ContentHash())}};
@@ -302,9 +363,18 @@ Json Run(const Json& request) {
     // Closing this dedicated connection releases the advisory lock on every path.
     const auto current=Capture(sql);auto next=Decode(request.at("tables"));
     const auto validated=Validate(next);
-    if(Hash(current.catalog->ContentHash())==Hash(validated->ContentHash()))return Result(sql,current);
+    if(action=="commit_drops"){
+        Require(request.at("expected_hash").get<std::string>()==Hash(current.catalog->ContentHash()),"The item catalog changed; refresh before saving drops.");
+        for(const auto& spec:db::Tables())if(spec.table!=T::MobDropGroups && spec.table!=T::MobDropEntries){auto old=current.rows[spec.table],fresh=next[spec.table];std::ranges::sort(old);std::ranges::sort(fresh);Require(old==fresh,"Live drop save cannot change item definitions.");}
+        auto saved=db::PublishLiveMobDrops(sql,current.catalog,next[T::MobDropGroups],next[T::MobDropEntries],
+            request.at("expected_release").get<std::string>(),request.at("expected_drop_hash").get<std::string>(),request.at("release_id").get<std::string>(),
+            request.contains("container_groups")?std::optional(std::pair{RewardRows(request.at("container_groups"),3,4096),RewardRows(request.at("container_entries"),10,4096*MaxLootEntries)}):std::nullopt);
+        Require(saved.has_value(),saved?"":saved.error());
+        return Result(sql,current);
+    }
+    if(action!="commit_catalog_batch" && Hash(current.catalog->ContentHash())==Hash(validated->ContentHash()))return Result(sql,current);
     Require(request.at("expected_hash").get<std::string>()==Hash(current.catalog->ContentHash()),"Az adatokat masik szerkeszto modositotta. Frissitsd a listat.");
-    Commit(sql,current,next);
+    Commit(sql,current,next,action=="commit_catalog_batch"?&request:nullptr);
     auto saved=Capture(sql);
     Require(saved.catalog->ContentHash()==validated->ContentHash(),"A visszaolvasott allapot elter. Frissites szukseges.");
     return Result(sql,saved);

@@ -20,6 +20,8 @@ bool HandleTypedItemMovePacket(entt::entity character, const char* data);
 void RequestTypedItemUse(entt::entity character, std::uint64_t itemId);
 // CG_TYPED_ITEM_USE (226) payload.
 bool HandleTypedItemUsePacket(entt::entity character, const char* data);
+// Existing quest dialog answers, bound to the native item instance/session.
+bool HandleTypedQuestAnswer(entt::entity character, std::uint8_t answer);
 // Refines one typed inventory item with one catalog recipe at a normal smith
 // (F4 C6). recipeId 0 picks the only recipe of the item's state. The store
 // commits the item, the materials and the Gold wallet in one transaction.

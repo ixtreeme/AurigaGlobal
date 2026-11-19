@@ -54,13 +54,14 @@ void ProfileRules()
             for (const auto value : {definition.minimum, std::int64_t{0}, definition.maximum})
             {
                 BonusProfile profile{1, "bonus.boundary", kind, {{static_cast<BonusId>(definition.id), value}}};
-                Check(ValidateBonusProfile(std::move(profile)).has_value(), "exact individual boundaries accepted");
+                const auto result=ValidateBonusProfile(std::move(profile));
+                Check(AllowsBonusSource(definition,kind) ? result.has_value() : !result && result.error()==BonusProfileError::SourceNotAllowed, "individual boundaries respect explicit registry source admission");
             }
         }
         for (const auto value : {definition.minimum - 1, definition.maximum + 1})
         {
             BonusProfile profile{1, "bonus.boundary", BonusSource::ItemBase, {{static_cast<BonusId>(definition.id), value}}};
-            Check(ValidateBonusProfile(std::move(profile)).error() == BonusProfileError::ValueOutOfRange, "boundary violation never clamps");
+            Check(ValidateBonusProfile(std::move(profile)).error() == (AllowsBonusSource(definition,BonusSource::ItemBase) ? BonusProfileError::ValueOutOfRange : BonusProfileError::SourceNotAllowed), "boundary violation never clamps or bypasses source admission");
         }
     }
 }

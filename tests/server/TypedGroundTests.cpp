@@ -79,7 +79,7 @@ int main(int argc, char** argv)
 		Check(DecodeTypedGround(longer).error() == TypedGroundWireError::TrailingBytes, "trailing byte");
 		auto header = b; header[0] = std::byte { 225 };
 		Check(DecodeTypedGround(header).error() == TypedGroundWireError::BadHeader, "wrong header");
-		auto version = b; version[5] = std::byte { 2 };
+		auto version = b; version[5] = std::byte { 3 };
 		Check(DecodeTypedGround(version).error() == TypedGroundWireError::BadVersion, "unknown version");
 		auto sized = b; sized[1] = std::byte { 99 };
 		Check(DecodeTypedGround(sized).error() == TypedGroundWireError::BadSize, "size disagrees with the code length");

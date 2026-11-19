@@ -19,6 +19,7 @@ def main():
     p.add_argument('--package', type=Path, required=True)
     p.add_argument('--template', type=Path, required=True)
     p.add_argument('--fixture', type=Path, required=True)
+    p.add_argument('--legacy-owner', action='store_true', help='First new character keeps one legacy item and has no native owner; second is native')
     a = p.parse_args()
     root, manager, _, auth = item_bench.connection(a.package.resolve())
     destination = a.fixture.resolve()
@@ -43,6 +44,8 @@ def main():
                   Pin=connection['Tls']['PinnedCertificateSha256'], Version=connection['ClientVersion'],
                   AuthPort=connection['AuthPort'], GamePort=30078, MapIndex=41, X=986600, Y=269100,
                   Labels=['Ixtre', 'Razor'], Accounts=[], **keys)
+    if a.legacy_owner:
+        config.update(NexoriaBasic=True, LegacyOwner=True, PetLocal=1, MountLocal=2)
     destination.parent.mkdir(parents=True, exist_ok=True)
     def save():
         destination.write_text(json.dumps(config, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
@@ -54,6 +57,13 @@ def main():
             template = source['Accounts'][0]
             assert db.query('SELECT account_id,name FROM player.player WHERE id=' + str(int(template['Pid']))) == [[str(template['AccountId']), template['Name']]]
             columns = [r[0] for r in db.query('SHOW COLUMNS FROM player.player') if r[0] != 'id' and 'GENERATED' not in r[5]]
+            # Old dumps contain orphan quest/affect rows above MAX(player.id).
+            # Never let a newly created fixture inherit those characters' state.
+            next_pid=1+max(int(db.query(sql)[0][0]) for sql in (
+                'SELECT COALESCE(MAX(id),0) FROM player.player',
+                'SELECT COALESCE(MAX(dwPID),0) FROM player.affect',
+                'SELECT COALESCE(MAX(dwPID),0) FROM player.quest',
+                "SELECT COALESCE(MAX(owner_id),0) FROM player.item WHERE `window` IN ('INVENTORY','EQUIPMENT','EXTRA_INVENTORY')"))
             for side in range(2):
                 login = 'codexitem' + token + str(side)
                 password = secrets.token_hex(8)
@@ -67,11 +77,24 @@ def main():
                               y=str(config['Y']), z='0', typed_book_revision='0', horse_level='0', horse_riding='0')
                 projection = ['REPEAT(CHAR(0),OCTET_LENGTH(`' + k + '`))' if k in ('skill_level', 'quickslot')
                               else literal(values[k]) if k in values else '`' + k + '`' for k in columns]
-                db.query('INSERT INTO player.player(' + ','.join('`' + k + '`' for k in columns) + ') SELECT ' + ','.join(projection) + ' FROM player.player WHERE id=' + str(int(template['Pid'])))
-                pid = int(db.query('SELECT LAST_INSERT_ID()')[0][0])
+                while db.query('SELECT owner_id FROM player.item_owner_fence WHERE owner_kind=1 AND owner_id='+str(next_pid)):
+                    next_pid+=1
+                assert 0<next_pid<1<<32
+                pid=next_pid;next_pid+=1
+                db.query('INSERT INTO player.player(id,' + ','.join('`' + k + '`' for k in columns) + ') SELECT '+str(pid)+',' + ','.join(projection) + ' FROM player.player WHERE id=' + str(int(template['Pid'])))
                 db.query(f'INSERT INTO player.player_index(id,pid1,empire) VALUES({aid},{pid},1)')
                 config['Accounts'].append(dict(Login=login, Password=password, Name=name, Pid=pid, AccountId=aid))
                 save()  # Keep exact identities recoverable even if a later native grant fails.
+                if a.legacy_owner and side == 0:
+                    assert db.query('SELECT type,subtype FROM player.item_proto WHERE vnum=30006') == [['5','0']]
+                    identity=int(db.query('SELECT COALESCE(MAX(id),0)+1 FROM player.item')[0][0])
+                    assert 0 < identity < 1<<32
+                    item_columns=[r[0] for r in db.query('SHOW COLUMNS FROM player.item')]
+                    values=dict(id=identity,owner_id=pid,window='INVENTORY',pos=0,count=7,vnum=30006)
+                    db.query('INSERT INTO player.item('+','.join('`'+k+'`' for k in item_columns)+') VALUES ('+','.join(literal(values.get(k,0)) for k in item_columns)+')')
+                    config['LegacyItemId']=identity;config['LegacyItemCount']=7;save()
+                    assert not db.query(f'SELECT owner_id FROM player.item_owner_fence WHERE owner_kind=1 AND owner_id={pid}')
+                    continue
                 item_bench.run_tool(dict(action='setup', owner=pid, gold=1000 if side == 0 else 500, connection=auth), bench)
                 for category, field, count in ((1, 'WeaponLocal', 1), (5, 'FlaskLocal', 3), (6, 'MaterialLocal', 10)):
                     item_bench.run_tool(dict(action='grant', owner=pid, category=category, local=keys[field], count=count, connection=auth), bench)

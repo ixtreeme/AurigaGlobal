@@ -1,0 +1,61 @@
+{
+  "local_only": true,
+  "original_character": "szabika",
+  "original_pid": 3,
+  "items": 76,
+  "units": 593,
+  "full_source_state_archived": true,
+  "all_instance_fingerprints_exact_after_relog": true,
+  "active_automatic_bottles": 2,
+  "spent_charge_never_refilled": true,
+  "original_gold_preserved": 649173,
+  "original_account_coins_preserved": 847950,
+  "legacy_automatic_affects_transferred": 2,
+  "other_legacy_affects_preserved": true,
+  "all_other_legacy_rows_preserved": true,
+  "previous_native_items_wallets_learning_preserved": true,
+  "receipt_replay_after_relog": true,
+  "settings_preserved": 10,
+  "unity_source_files_verified": 276,
+  "catalog_items": 1496,
+  "catalog_hash": "79bf3d17cb8e9d352a01228a5955b11eb4cca3484b29262c4640540b02215ceb",
+  "new_source_prototypes": 70,
+  "new_recipes": 91,
+  "remaining_recipe_blockers": [
+    {
+      "source_id": 28442,
+      "reason": "missing_recipe_or_target"
+    }
+  ],
+  "git_head_unchanged": true,
+  "no_push": true,
+  "no_unity_checkin": true,
+  "validation": {
+    "native_ctest": 11,
+    "python_conversion_tests": 4,
+    "mariadb_schema_tests": 41,
+    "unity_offline_validators": 37,
+    "clone_live_checks": 3058,
+    "original_live_checks": 982,
+    "service_live_checks": 1243,
+    "real_logins": 6,
+    "wire_checks_per_live_run": 700,
+    "full_backup_restore": true,
+    "sql_failure_rollback": true,
+    "altered_replay_rejected": true,
+    "active_unity_runtime_and_editor_compilation": true
+  },
+  "boundaries": [
+    "Remaining legacy catalog and world references are not all converted",
+    "One imported stone refinement target is explicitly blocked",
+    "Teleport menu/cancel tested; all travel destinations not individually visited",
+    "All reward references resolved; all 48 books not individually read",
+    "No full-world visual or mobile-device test",
+    "No Windows Android or iOS build export in C44",
+    "VPS unchanged"
+  ],
+  "reports": [
+    "2026-11-10_legacy_full_inventory_conversion.md"
+  ],
+  "source_review": "config/item_combat/legacy_remaining_review.json"
+}

@@ -1,0 +1,33 @@
+{
+  "result": "SUCCESS",
+  "checked_utc": "2026-11-17T21:04:45.281929+00:00",
+  "feature": "reusable_local_item_groups",
+  "group_tests": 12,
+  "ctest_suites": 7,
+  "preview": {
+    "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+    "live_hash": "162ef5115b58d6b833aa303550d0eef430a266fbe42296ca63d490c116c6d95a",
+    "live_release": "ae3c6e6e6242e5cbe7ba744b881b17f6",
+    "chest_overrides": 1,
+    "catalog_items": 6935,
+    "group_items": 3,
+    "mob_dialog_seconds": 0.595422399987001,
+    "chest_dialog_seconds": 1.0446677000145428,
+    "data_published": false,
+    "test_templates_temporary": true,
+    "deferred_source_sha256": "9ab3dac7f81d2898ab89aeeca641bffc4f59b28ac5f7683d080282ea9913babd"
+  },
+  "manager_files_verified": 249,
+  "backup": "D:\\AurigaGlobal\\Server2-Local\\run\\deployments\\reward-group-manager-20261117T210156Z",
+  "server_processes_unchanged": 5,
+  "server_restarted": false,
+  "data_published": false,
+  "existing_pending_edits_preserved": 2,
+  "deferred_637_unchanged": true,
+  "installed_group_drag_observed": true,
+  "installed_group_edit_save_observed": true,
+  "installed_test_cancelled_without_drop_save": true,
+  "installed_gui_used_isolated_local_store": true,
+  "gameplay_or_protocol_changed": false,
+  "new_unity_or_gameplay_checks_run": false
+}

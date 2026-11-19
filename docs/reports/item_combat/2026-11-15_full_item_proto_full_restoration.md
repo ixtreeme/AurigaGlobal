@@ -1,0 +1,11 @@
+# Teljes visszatöltő ételek – ellenőrzött konverziós részállapot
+
+Az 50020, 50021 és 50022 forrásprotó tényleges eredeti kezelője külön-külön az életerőt, a manát és az állóképességet tölti teljesre. Ezek a natív fordított utility-útvonalhoz kapcsolódnak; nem kaptak kitalált bónuszt vagy hamis italprofilt. Az eredeti ágak telített állapotban is fogyasztanak egy tárgyat, és nem halmozhatóak. A szerver a sikeres, nem újrajátszott SQL-fogyasztás után az aktuális maximális és aktuális érték különbségét írja jóvá.
+
+A GameServer és Database, valamint a natív célok lefordultak; 64/64 regressziós teszt sikeres. A quest/utility egységteszt 216 ellenőrzése és a három valódi forrás SQL-munkafolyamatának 115 ellenőrzése sikeres. A tényleges kiadás, használat, receipt-újrapróbálás, visszatöltés, második friss példány használata és üres visszabelépés ellenőrzött. Unity 6000.3.27f1 alatt 15 valódi csomagpár, három valódi használati gomb és pontos CG226-kódolás: 310 célzott ellenőrzés sikeres; a meglévő visszatöltés-validátor 3212 ellenőrzése is sikeres. A jelölt bájtpontosan reprodukálható.
+
+Állapot: 9776 konvertált, 491 korábban kivezetett és 719 blokkolt forrássor; 6858 natív definíció. A felhasználó kérésére 566 sor a merge utánra halasztott, 153 további sor és a hiányzó működések feldolgozása még hátravan. A hat eredeti kezelés nélküli 39037–39042 elixír külön bizonyítékfájllal halasztva marad.
+
+A jelölt nem települt az aktív helyi játékszerverre. A 94 ellenőrzött játékosállapot-tábla továbbra is üres, az aktív katalógus 1574 definíciós. A teljes bejelentkezéses ECS-világban a tényleges élet-/mana-/állóképesség-változást ebben a részben nem teszteltem; a hozzá vezető szerverkód fordított, az SQL-fogyasztás és a kliens használati kérése ellenőrzött. Addressables játékosbuild nem futott.
+
+A Unity tárhelyfigyelmeztetését a kizárólag generált, 11,67 GB-os natív buildmappa C: gyorsítótárba mozgatásával oldottam meg. Az eredeti buildútvonal könyvtárhivatkozásként megmaradt; a buildleírás és két futtatható állomány SHA-256 értéke változatlan. A régi útvonalról a fordító, a 216 ellenőrzéses questteszt és a 197618 ellenőrzéses itemkulcsteszt is sikeresen futott. A részletes bizonyíték a build/native-build-cache-relocation.json fájlban van.

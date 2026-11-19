@@ -91,9 +91,10 @@ class MissionDatabaseTests(unittest.TestCase):
         self.assertIn("SET SESSION sql_mode='NO_BACKSLASH_ESCAPES'", grants)
         self.assertIn("'mission''writer'@'127.0.0.1'", grants)
         self.assertIn("'back\\slash''password'", grants)
-        self.assertIn('GRANT SELECT,INSERT ON `player`.`item_award`', grants)
+        self.assertNotIn('`.`item_award`', grants)
+        self.assertIn('item_native_award', grants)
         self.assertIn('GRANT SELECT,UPDATE ON `player`.`player`', grants)
-        self.assertIn('GRANT SELECT,INSERT,UPDATE,DELETE ON `player`.`item`', grants)
+        self.assertNotIn('`.`item`', grants)
         self.assertIn('GRANT SELECT ON `account`.`account`', grants)
 
     def test_grants_use_the_effective_account_schema(self):
@@ -107,7 +108,8 @@ class MissionDatabaseTests(unittest.TestCase):
         account = dict(player, host='192.0.2.15', database='remote_accounts')
         grants = mission.local_grants(target, player, account)
         self.assertNotIn('remote_accounts', grants)
-        self.assertIn('GRANT SELECT,INSERT ON `player`.`item_award`', grants)
+        self.assertNotIn('`.`item_award`', grants)
+        self.assertIn('item_native_award', grants)
 
     def install(self, response='0\n', error=False):
         temp = tempfile.TemporaryDirectory(prefix='auriga-mission-install-')
@@ -166,7 +168,7 @@ class OwnedBootstrapTests(unittest.TestCase):
             root = Path(directory)
             (root / '.auriga-package.json').write_text('{}')
             (root / 'db').mkdir()
-            for name in ('schema.sql', 'seed_core.sql', 'check_ready.sql', 'mission_schema.sql'):
+            for name in ('schema.sql', 'seed_core.sql', 'check_ready.sql', 'mission_schema.sql', 'retired_item_tables.json'):
                 shutil.copy2(ROOT / 'db' / name, root / 'db' / name)
             shutil.copytree(ROOT / 'db/migrations', root / 'db/migrations')
             cfg = json.loads((ROOT / 'config/server.json.example').read_text(encoding='utf-8'))
@@ -181,6 +183,10 @@ class OwnedBootstrapTests(unittest.TestCase):
             try:
                 manage.init_db(BINARIES)
                 manage.start_db()
+                retired=json.loads((ROOT/'db/retired_item_tables.json').read_text())
+                names=','.join("'"+name+"'" for name in retired)
+                self.assertEqual(manage.sql("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN ("+names+");").strip(),'0')
+                self.assertEqual(manage.sql('SELECT COUNT(*) FROM player.item_proto;').strip(),'0')
                 self.assertEqual(manage.sql('SELECT schema_version FROM mission.mission_engine_schema;').strip(), '5')
                 self.assertEqual(manage.sql("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='mission';").strip(), '12')
                 manage.sql('INSERT INTO mission.mission_engine_characters(character_id) VALUES(7);')

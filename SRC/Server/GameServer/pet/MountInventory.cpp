@@ -153,63 +153,9 @@ uint32_t AccountId(const Inventory& inventory)
     return inventory.accountId;
 }
 
-void SaveItem(const Inventory& inventory, uint32_t pos, entt::entity itemEntity)
-{
-    if (!ItemSystem::IsValidItem(itemEntity) || AccountId(inventory) == 0)
-        return;
-
-    // The attribute column list is built from ITEM_ATTRIBUTE_MAX_NUM. The old
-    // hardcoded attrtype0..5 dropped the last slot (6, and now 7) on save.
-    char query[2048];
-    size_t len = 0;
-    std::array<int32_t, ITEM_SOCKET_MAX_NUM> sockets {};
-    std::array<TPlayerItemAttribute, ITEM_ATTRIBUTE_MAX_NUM> attrs {};
-    for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-        sockets[i] = ItemSystem::GetItemSocket(itemEntity, i);
-    for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-        attrs[i] = ItemSystem::GetItemAttribute(itemEntity, i);
-
-    len += static_cast<size_t>(snprintf(query + len, sizeof(query) - len,
-        "REPLACE INTO account_mount_inventory (id, account_id, slot, vnum, count, "
-        "socket0, socket1, socket2"));
-
-    for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-        len += static_cast<size_t>(snprintf(query + len, sizeof(query) - len,
-            ", attrtype%d, attrvalue%d", i, i));
-
-    len += static_cast<size_t>(snprintf(query + len, sizeof(query) - len,
-		") VALUES(%u, %u, %u, %u, %u, %d, %d, %d",
-        ItemSystem::GetItemID(itemEntity),
-        AccountId(inventory),
-        pos,
-        ItemSystem::GetItemVnum(itemEntity),
-        ItemSystem::GetItemCount(itemEntity),
-        sockets[0], sockets[1], sockets[2]));
-
-    for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-        len += static_cast<size_t>(snprintf(query + len, sizeof(query) - len,
-            ", %d, %d", attrs[i].bType, attrs[i].sValue));
-
-    snprintf(query + len, sizeof(query) - len, ")");
-
-    DBManager::instance().Query("%s", query);
-}
-
-void DeleteItem(const Inventory& inventory, uint32_t pos, uint32_t id)
-{
-    if (AccountId(inventory) == 0)
-        return;
-
-    DBManager::instance().Query(
-        "DELETE FROM account_mount_inventory WHERE account_id=%u AND slot=%u",
-        AccountId(inventory), pos);
-
-    if (id != 0)
-    {
-        DBManager::instance().Query(
-            "DELETE FROM account_mount_inventory WHERE id=%u", id);
-    }
-}
+// Legacy mount storage is retired. Native account storage uses the item writer.
+void SaveItem(const Inventory&, uint32_t, entt::entity) {}
+void DeleteItem(const Inventory&, uint32_t, uint32_t) {}
 
 bool AddToInventory(Inventory& inventory, entt::entity owner, uint32_t pos,
     entt::entity itemEntity, bool skipSave)
@@ -521,34 +467,6 @@ bool MoveMountInventoryItem(entt::entity rider, uint32_t from, uint32_t to)
     SaveItem(*inventory, to, item);
     DeleteItem(*inventory, from, 0);
     return true;
-}
-
-void CollectMountInventoryItems(entt::entity rider,
-    std::vector<TMountInventoryItemTable>& out)
-{
-    out.clear();
-    const auto* inventory = FindInventoryForOwner(rider, false);
-    if (!inventory)
-        return;
-
-    out.reserve(inventory->items.size());
-    for (uint32_t pos = 0; pos < inventory->items.size(); ++pos)
-    {
-        const entt::entity item = inventory->items[pos];
-        if (!ItemSystem::IsValidItem(item))
-            continue;
-
-        TMountInventoryItemTable entry{};
-        entry.id = ItemSystem::GetItemID(item);
-        entry.slot = pos;
-        entry.vnum = ItemSystem::GetItemVnum(item);
-        entry.count = ItemSystem::GetItemCount(item);
-        for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-            entry.alSockets[i] = ItemSystem::GetItemSocket(item, i);
-        for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-            entry.aAttr[i] = ItemSystem::GetItemAttribute(item, i);
-        out.push_back(entry);
-    }
 }
 
 } // namespace MountSystem

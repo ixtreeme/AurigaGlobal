@@ -1,0 +1,230 @@
+{
+  "direct": [
+    2871,
+    2872,
+    2873,
+    2874,
+    2875,
+    2876,
+    2877,
+    2878,
+    2879
+  ],
+  "dependency": [
+    8882,
+    30300,
+    30934,
+    33017,
+    48706,
+    50073,
+    50074,
+    50076,
+    50079,
+    50097,
+    50099,
+    50101,
+    50138,
+    50285
+  ],
+  "references": [
+    {
+      "path": "SRC\\Server\\GameServer\\item\\item_manager.cpp",
+      "line": 1834,
+      "text": "\tcase 2871:"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\item\\item_manager.cpp",
+      "line": 1835,
+      "text": "\tcase 2872:"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\item\\item_manager.cpp",
+      "line": 1836,
+      "text": "\tcase 2873:"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\item\\item_manager.cpp",
+      "line": 1837,
+      "text": "\tcase 2874:"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\item\\item_manager.cpp",
+      "line": 1838,
+      "text": "\tcase 2875:"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\item\\item_manager.cpp",
+      "line": 1839,
+      "text": "\tcase 2876:"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\item\\item_manager.cpp",
+      "line": 1840,
+      "text": "\tcase 2877:"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\item\\item_manager.cpp",
+      "line": 1841,
+      "text": "\tcase 2878:"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\world\\fishing.cpp",
+      "line": 832,
+      "text": "\t\t\t\t\t\t\t\t\t2871,"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\world\\fishing.cpp",
+      "line": 833,
+      "text": "\t\t\t\t\t\t\t\t\t2873,"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\world\\fishing.cpp",
+      "line": 862,
+      "text": "\t\t\t\t\t\t\t\t\t2872,"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\world\\fishing.cpp",
+      "line": 863,
+      "text": "\t\t\t\t\t\t\t\t\t2874,"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\world\\fishing.cpp",
+      "line": 907,
+      "text": "\t\t\t\t\t\t\t\t\t2875,"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\world\\fishing.cpp",
+      "line": 908,
+      "text": "\t\t\t\t\t\t\t\t\t2876,"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\world\\fishing.cpp",
+      "line": 950,
+      "text": "\t\t\t\t\t\t\t\t\t2877,"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\world\\fishing.cpp",
+      "line": 951,
+      "text": "\t\t\t\t\t\t\t\t\t2878,"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\ecs\\systems\\ActivitySystem.cpp",
+      "line": 350,
+      "text": "        case 2871:"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\ecs\\systems\\ActivitySystem.cpp",
+      "line": 351,
+      "text": "        case 2873:"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\ecs\\systems\\ActivitySystem.cpp",
+      "line": 366,
+      "text": "        case 2872:"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\ecs\\systems\\ActivitySystem.cpp",
+      "line": 367,
+      "text": "        case 2874:"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\ecs\\systems\\ActivitySystem.cpp",
+      "line": 382,
+      "text": "        case 2875:"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\ecs\\systems\\ActivitySystem.cpp",
+      "line": 383,
+      "text": "        case 2876:"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\ecs\\systems\\ActivitySystem.cpp",
+      "line": 406,
+      "text": "        case 2877:"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\ecs\\systems\\ActivitySystem.cpp",
+      "line": 407,
+      "text": "        case 2878:"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\ecs\\systems\\ItemSystem.cpp",
+      "line": 1089,
+      "text": "    case 30251: case 30252: case 2870: case 2871: case 2872: case 2873: case 2874:"
+    },
+    {
+      "path": "SRC\\Server\\GameServer\\ecs\\systems\\ItemSystem.cpp",
+      "line": 1090,
+      "text": "    case 2875: case 2876: case 2877: case 2878:"
+    },
+    {
+      "path": "D:\\AurigaGlobal\\Server2-Local\\data\\quest\\Quest\\events\\miki_event.lua",
+      "line": 76,
+      "text": "                {2871,5},  -- Ork runa 5x"
+    },
+    {
+      "path": "D:\\AurigaGlobal\\Server2-Local\\data\\quest\\Quest\\events\\miki_event.lua",
+      "line": 77,
+      "text": "                {2871,10}, -- Ork runa 10x"
+    },
+    {
+      "path": "D:\\AurigaGlobal\\Server2-Local\\data\\quest\\Quest\\events\\miki_event.lua",
+      "line": 78,
+      "text": "                {2872,5},  -- Nefrit runa 5x"
+    },
+    {
+      "path": "D:\\AurigaGlobal\\Server2-Local\\data\\quest\\Quest\\events\\miki_event.lua",
+      "line": 79,
+      "text": "                {2872,10}, -- Nefrit runa 10x"
+    },
+    {
+      "path": "D:\\AurigaGlobal\\Server2-Local\\data\\quest\\Quest\\events\\miki_event.lua",
+      "line": 80,
+      "text": "                {2873,5},  -- J�g birodalom runa 5x"
+    },
+    {
+      "path": "D:\\AurigaGlobal\\Server2-Local\\data\\quest\\Quest\\events\\miki_event.lua",
+      "line": 81,
+      "text": "                {2873,10}, -- J�g birodalom runa 10x"
+    },
+    {
+      "path": "D:\\AurigaGlobal\\Server2-Local\\data\\quest\\Quest\\events\\miki_event.lua",
+      "line": 82,
+      "text": "                {2874,15}, -- Sivatagi runa 15x"
+    },
+    {
+      "path": "D:\\AurigaGlobal\\Server2-Local\\data\\quest\\Quest\\events\\miki_event.lua",
+      "line": 83,
+      "text": "                {2875,5},  -- R�m�lom runa 5x"
+    },
+    {
+      "path": "D:\\AurigaGlobal\\Server2-Local\\data\\quest\\Quest\\events\\miki_event.lua",
+      "line": 84,
+      "text": "                {2875,10}, -- R�m�lom runa 10x"
+    },
+    {
+      "path": "D:\\AurigaGlobal\\Server2-Local\\data\\quest\\Quest\\events\\miki_event.lua",
+      "line": 85,
+      "text": "                {2876,5},  -- S�t�t erdo runa 5x"
+    },
+    {
+      "path": "D:\\AurigaGlobal\\Server2-Local\\data\\quest\\Quest\\events\\miki_event.lua",
+      "line": 86,
+      "text": "                {2877,5},  -- Tuz runa 5x"
+    },
+    {
+      "path": "D:\\AurigaGlobal\\Server2-Local\\data\\quest\\Quest\\events\\miki_event.lua",
+      "line": 87,
+      "text": "                {2878,5},  -- SD5 runa 5x"
+    },
+    {
+      "path": "D:\\AurigaGlobal\\Server2-Local\\data\\quest\\Quest\\events\\tanaka.lua",
+      "line": 18,
+      "text": "\t\t\t\t\t2870,2871,2872,2873,2874,2875,2876,2877,2878,"
+    }
+  ],
+  "no_original_consumer": true,
+  "no_refinement_ingredient": true,
+  "not_converted_to_inert_tokens": true,
+  "not_retired": true
+}

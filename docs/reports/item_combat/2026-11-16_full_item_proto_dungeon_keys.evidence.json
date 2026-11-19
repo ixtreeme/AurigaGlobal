@@ -1,0 +1,131 @@
+{
+  "candidate": "build\\full-proto-rune-keys-v51-final.json",
+  "sha256": "b8ff93885eddb7a116d6d376ffc56a9abfc9c33ccb639ef407b8e99b4eb12803",
+  "catalog_hash": "f6836bf70a5b186cc3ac382b85be1cbba699a45d93460c7993015c796e4cb3a9",
+  "schema": 51,
+  "summary": {
+    "blocked_reasons": {
+      "invalid_chest_lock": 2,
+      "invalid_inventory_height": 6,
+      "invalid_mount_definition": 10,
+      "invalid_timed_effect_duration": 6,
+      "invalid_toggle_effect_definition": 18,
+      "invalid_weapon_costume_effect_attachment:163": 1,
+      "missing_equipment_asset": 49,
+      "missing_secondary_skill_definition:123": 3,
+      "missing_source_container_reward_group": 236,
+      "missing_source_icon": 171,
+      "missing_stole_model": 1,
+      "missing_unity_asset_reference": 12,
+      "missing_weapon_costume_effect_mapping:1297": 1,
+      "missing_weapon_costume_effect_mapping:1326": 2,
+      "missing_weapon_costume_effect_mapping:1335": 2,
+      "missing_weapon_costume_effect_mapping:1344": 2,
+      "semantic_converter_required:11:0": 1,
+      "semantic_converter_required:16:10": 4,
+      "semantic_converter_required:27:0": 7,
+      "semantic_converter_required:36:0": 1,
+      "semantic_converter_required:38:0": 1,
+      "semantic_converter_required:3:1": 2,
+      "semantic_converter_required:3:10": 56,
+      "semantic_converter_required:3:15": 1,
+      "semantic_converter_required:3:23": 6,
+      "semantic_converter_required:3:29": 2,
+      "semantic_converter_required:9:0": 1,
+      "skill_selected_on_instance_not_in_prototype": 3,
+      "source_bonus_out_of_native_bounds:31": 1,
+      "source_fish_has_no_effect": 1,
+      "source_reward_rare_field_out_of_range": 2,
+      "source_stone_has_no_equipment_target": 3,
+      "unported_apply:125": 3,
+      "unported_apply:126": 1,
+      "unported_apply:127": 1,
+      "unresolved_container_reward:2871": 4,
+      "unresolved_container_reward:2872": 1,
+      "unresolved_container_reward:2875": 3,
+      "unresolved_container_reward:2876": 3,
+      "unresolved_container_reward:2877": 1,
+      "unresolved_container_reward:2878": 1,
+      "unresolved_container_reward:2879": 1,
+      "unresolved_container_reward:48611": 1,
+      "unresolved_container_reward:55003": 1,
+      "unresolved_container_reward:70065": 1,
+      "unresolved_container_reward:71035": 1,
+      "unresolved_container_reward:72044": 5,
+      "unresolved_container_reward:72320": 4,
+      "unresolved_fishing_result:27847": 1,
+      "unresolved_fishing_result:27877": 1,
+      "unsupported_ability_effect": 1
+    },
+    "blocked_source_rows": 649,
+    "converted_source_rows": 9846,
+    "new_native_definitions": 3,
+    "retired_source_rows": 491,
+    "source_rows": 10986
+  },
+  "native_definitions": 6928,
+  "new_sources": [
+    {
+      "item": {
+        "category_id": 10,
+        "local_id": 1594
+      },
+      "native_dungeon_role": "dungeon.rune.fragment",
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "original_rune_key_fragment",
+      "source_extra": null,
+      "source_id": 89102,
+      "source_level_issues": [],
+      "source_row_hash": "733808c2dd07e7cd83f8cbc0da16a7da1b4b9e57f56c9b8744ce28d45b9094b2"
+    },
+    {
+      "item": {
+        "category_id": 10,
+        "local_id": 1595
+      },
+      "native_dungeon_role": "dungeon.rune.floor_key",
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "original_rune_floor_key",
+      "source_extra": null,
+      "source_id": 89103,
+      "source_level_issues": [],
+      "source_row_hash": "8634342bcae98d9079d44f13a0343f15591d8e60c5f6cc1250d225787df7462a"
+    },
+    {
+      "item": {
+        "category_id": 10,
+        "local_id": 1596
+      },
+      "native_dungeon_role": "dungeon.orcs.key",
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "original_passive_dungeon_key",
+      "source_extra": null,
+      "source_id": 89104,
+      "source_level_issues": [],
+      "source_row_hash": "0537e37e2751c41cfa8b549f6a32937a8429e167e11c3bd4b47342306d3d7c58"
+    }
+  ],
+  "native_checks": 225,
+  "converter_tests": 93,
+  "sql": {
+    "checks": 84,
+    "packets": 14,
+    "result": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-rune-keys-v51-ids\\source-dungeon-key-worker-result.json"
+  },
+  "unity": {
+    "checks": 309,
+    "buttons": 2
+  },
+  "ctest": 68,
+  "deferred": 633,
+  "remaining": 16,
+  "reproduced_byte_identical": true,
+  "installed_to_game": false,
+  "untested": [
+    "Full TLS/ECS rune progression and actual ground claim",
+    "Addressables player build"
+  ]
+}

@@ -1,0 +1,329 @@
+{
+  "retired_state_tables": [
+    "item",
+    "safebox",
+    "item_award",
+    "myshop_pricelist",
+    "account_mount_inventory",
+    "new_petsystem",
+    "offlineshop_shops",
+    "offlineshop_shop_items",
+    "offlineshop_offers",
+    "offlineshop_auctions",
+    "offlineshop_auction_offers",
+    "offlineshop_safebox_items",
+    "offlineshop_safebox_valutes",
+    "offlineshop_logs",
+    "item_legacy_archive",
+    "item_legacy_import",
+    "item_legacy_owner_state"
+  ],
+  "remaining_retired_state_tables": [],
+  "native_runtime_version": "1",
+  "native_award": {
+    "queued": 1,
+    "claimed": 1,
+    "live_character_units": 1
+  },
+  "full_converted_catalog_sha256": "9ab3dac7f81d2898ab89aeeca641bffc4f59b28ac5f7683d080282ea9913babd",
+  "deferred_merge_items": 637,
+  "services": [
+    {
+      "name": "database",
+      "running": true
+    },
+    {
+      "name": "ch1-core1",
+      "running": true
+    },
+    {
+      "name": "ch1-core2",
+      "running": true
+    },
+    {
+      "name": "ch2-core1",
+      "running": false
+    },
+    {
+      "name": "ch2-core2",
+      "running": false
+    },
+    {
+      "name": "ch3-core1",
+      "running": false
+    },
+    {
+      "name": "ch3-core2",
+      "running": false
+    },
+    {
+      "name": "ch4-core1",
+      "running": false
+    },
+    {
+      "name": "ch4-core2",
+      "running": false
+    },
+    {
+      "name": "ch5-core1",
+      "running": false
+    },
+    {
+      "name": "ch5-core2",
+      "running": false
+    },
+    {
+      "name": "ch6-core1",
+      "running": false
+    },
+    {
+      "name": "ch6-core2",
+      "running": false
+    },
+    {
+      "name": "ch99-core99",
+      "running": true
+    },
+    {
+      "name": "login",
+      "running": true
+    }
+  ],
+  "date": "2026-11-16",
+  "server_branch": "20261103",
+  "unity_branch": "/main/unity63-integration-20261103",
+  "unity_editor": "6000.3.27f1",
+  "runtime_cutover_complete": true,
+  "full_legacy_source_removal_complete": false,
+  "production_legacy_item_factory_symbol_count": 0,
+  "remote_deployed": false,
+  "committed": false,
+  "merge_deferred_unchanged": true,
+  "checks": {
+    "item-retirement-last-regression.log": {
+      "path": "build/item-retirement-last-regression.log",
+      "sha256": "c9e8d08eb6048d98e13de5949278cc436f1ef7641e6ef3c84ba5bd10f99934dc"
+    },
+    "item-retirement-awards-final-tests.log": {
+      "path": "build/item-retirement-awards-final-tests.log",
+      "sha256": "ab1925126706bd69d88ddd6359c90c7b41f80e3e89d9d3623baacac6bfad5e2d"
+    },
+    "item-retirement-helpers-final-tests.log": {
+      "path": "build/item-retirement-helpers-final-tests.log",
+      "sha256": "bdfb952de2a2409c24b58c9a8b32968c7d1d4895f915b63895575891fe4a14bb"
+    },
+    "item-retirement-converter-tests.log": {
+      "path": "build/item-retirement-converter-tests.log",
+      "sha256": "5efbc750e58851fe59245507080928f5a1eb0d0b023f71c2a6678d3232becb0e"
+    },
+    "item-retirement-bootstrap-tests.log": {
+      "path": "build/item-retirement-bootstrap-tests.log",
+      "sha256": "1b98e830f9ab1aebda311ce87780df7195dd9cc5acade4f9398ba06008f12624"
+    },
+    "item-retirement-package-tools-final-tests.log": {
+      "path": "build/item-retirement-package-tools-final-tests.log",
+      "sha256": "a2ec4b7d69a7c14ea1f904b751d323924f1767edea63da1fcd95e4a9a921c31b"
+    },
+    "item-retirement-last-unity-offline.log": {
+      "path": "build/item-retirement-last-unity-offline.log",
+      "sha256": "56aef02019f5d330b51ffe5d734d3080623693f57a2e31839e9bc441c9f39b8a"
+    },
+    "item-retirement-last-unity-live.log": {
+      "path": "build/item-retirement-last-unity-live.log",
+      "sha256": "bb26ef6fe8af98c18493e99496df42d701adecea3146d2df48e506dd23cc9e31"
+    },
+    "item-retirement-award-live.log": {
+      "path": "build/item-retirement-award-live.log",
+      "sha256": "bf8118b2c2912504ca74e84736a3d307fff3704e72f65e00065bc31b98e2220d"
+    },
+    "item-retirement-last-sql-proof.log": {
+      "path": "build/item-retirement-last-sql-proof.log",
+      "sha256": "f115e6c953d9a555a1d17f1edfeb6b531a2ca3033e9a43448928a720e0c461dd"
+    }
+  },
+  "deployment": {
+    "folder": "D:\\AurigaGlobal\\Server2-Local\\run\\deployments\\native-item-retirement-20261116-220148",
+    "files": {
+      "bin/GameServer.exe": "743614e1ac49c9a2ab5d2ed4bfd11a4053ba2d682e591ee06a1e2e84408b0817",
+      "bin/Database.exe": "681acf59e173fe610ff85c33c39bb14836d4664ead1a432f23c414fe3031946d",
+      "bin/LoginServer.exe": "ff1118d350b72d61b1ffc21a25abcc47e4e1cb299520ddf978886654cb12ed77",
+      "bin/ServerPackageCheck.exe": "2a25db8183e4bf0442d9f55d5203ef65750e16a06b5da80b734463b5225ffd74",
+      "manager/_internal/validators/ItemBenchTool.exe": "1be64d794849af02b8f3377688eedc23e41fd35dbabb11285038f27f3f6be500",
+      "manager/_internal/validators/CatalogEditorTool.exe": "a75473c1364e4ed7820733647bdd740186fabd89c1ea2e5777834d12da30f269",
+      "manager/_internal/migrations/041_native_runtime.sql": "ee7b4b2158541279922f36d0574510a7766322925ec8357a3e2266c355d9ca45",
+      "manager/_internal/migrations/042_native_item_awards.sql": "d880ed4a5b895f1c3c2937fa5f9b5354ce8253ace005a5af20d6a5dfe3be4663",
+      "data/quest/Quest/gilda/guild_rank_manager.lua": "57bc4969d9a02e10f5eddef5c3fc0156aec01fdcffcdec09f297ac9067d325d1",
+      "db/retired_item_tables.json": "acbe81d4017f2a1ded3aa26e03feffe9313b92eae1d52fb234e5997995bf131f",
+      "db/check_ready.sql": "a9b663bcf705528ed7b3fd1a64fe9459bf756bfee67b87235de2b38580ee594f",
+      "manage.py": "e612024632ef0aeea36bbba6890656afc02aa935ac802ebee149c833ef766676",
+      "mission_database.py": "01fdd047f393cbcdbfedaefeee990dc496c5ad15371315a9a2ae7e8407f521da"
+    },
+    "native_runtime_version": 1,
+    "deferred_merge_items": 637
+  },
+  "native_state_at_final_retirement": {
+    "legacy_tables": {
+      "item_legacy_archive": 0,
+      "item_legacy_import": 0
+    },
+    "native_tables": {
+      "item_ammo_shot_event": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "item_attr": {
+        "rows": 66,
+        "sha256": "2ffa47bc40e89bf28970d74a225b56138743c71c27e2bf556dc2b5ac1a10f198"
+      },
+      "item_attr_rare": {
+        "rows": 15,
+        "sha256": "11feadbada796f33e9a85f4b33ca4e79beeecfd76d6d0694a4be28be9f729130"
+      },
+      "item_attr_rare_8": {
+        "rows": 7,
+        "sha256": "2bb48e435328dc9154777808662f3b6d4b6ee630d24fac9359d347f1809606cd"
+      },
+      "item_book_learning": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "item_currency_award": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "item_currency_ground": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "item_dungeon_entry": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "item_extra_proto": {
+        "rows": 312,
+        "sha256": "217eca27c848814223d8b68b4ae1b0ffa4051461596f982732f71e136f0315de"
+      },
+      "item_ground_core": {
+        "rows": 13,
+        "sha256": "57cf2d3b0b36567fe6e7bedf24c259bfd10baac7c77b9ae7a2b625fd61d19e65"
+      },
+      "item_ground_entry": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "item_instance": {
+        "rows": 144,
+        "sha256": "f9432723f33869150de066a310a8777bba675d33a79a68a1393a77ed802fb35f"
+      },
+      "item_instance_attribute": {
+        "rows": 263,
+        "sha256": "e8cd96b745f3a8d2a0e619504ca91654f0c435cc905756304141df06452b3b22"
+      },
+      "item_instance_id_allocator": {
+        "rows": 1,
+        "sha256": "9d8903dd47807d79a9779cd28e5c64553575a0f4954483982af1cb3e74799bb1"
+      },
+      "item_instance_socket": {
+        "rows": 432,
+        "sha256": "6c591bc042c38ddb5b408629bdab691183771217b956454c5ad975e6c3be91c6"
+      },
+      "item_mission_event": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "item_mission_watch": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "item_native_award": {
+        "rows": 1,
+        "sha256": "262efdd137ebc24452a6333a1cb730e7a1263cb8961112b3cafc34a40204fbbf"
+      },
+      "item_occupied_cell": {
+        "rows": 167,
+        "sha256": "5d98b4829940f333173dacd1e1ca526e41c6f8a29499b47607e9e7e18f9bc8d9"
+      },
+      "item_operation_receipt": {
+        "rows": 64,
+        "sha256": "e5fb7606e839d93a73a8b8c16aa2a7ce7dd37ef5143211254eefb91e5f746c8e"
+      },
+      "item_owner_fence": {
+        "rows": 11,
+        "sha256": "a9da279d121546cc04c7372f8470a29bb1a97b9e9daee35e77cd961200feec94"
+      },
+      "item_pet_study_cooldown": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "item_private_shop": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "item_private_shop_price": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "item_proto": {
+        "rows": 10986,
+        "sha256": "6f4606c6a654b97cc4c4c4e7731c5de9797e2101f4036a1a26d596c9ba9b0431"
+      },
+      "item_recovery_schedule": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "item_shared_storage_gate": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "item_soul_strike_event": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "item_storage": {
+        "rows": 46,
+        "sha256": "8347d1352a4a1e539c4fcc380ca68431a0518d5201abe004c497770f9b1ed25f"
+      },
+      "item_wallet": {
+        "rows": 14,
+        "sha256": "5145b13734f26c946f72f0563f2615ecf4644ba94cc6a7c88e999af5a8598f89"
+      },
+      "item_wallet_legacy_sweep": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    },
+    "applied": true,
+    "native_state_unchanged": true,
+    "package": "D:\\AurigaGlobal\\Server2-Local",
+    "deferred_merge_items": 637
+  },
+  "untested": [
+    "FreeBSD",
+    "standalone/mobile builds",
+    "full world/load regression",
+    "every original Lua quest",
+    "complete multi-guild GM ranking timer"
+  ],
+  "remaining_source_cleanup": [
+    "old ECS item components/helpers",
+    "ItemSystem_LegacyBridge",
+    "remaining vnum/APPLY/Lua item references"
+  ],
+  "package_tool_cases": 38,
+  "bootstrap_tool_cases": 13,
+  "conversion_cases": 106,
+  "distinct_ctest_names": [
+    "server_config",
+    "legacy_item_boundary",
+    "player_session",
+    "player_cache_snapshot",
+    "player_cache_drain",
+    "player_cache_protocol",
+    "player_cache_drain_mariadb",
+    "item_catalog_runtime_mariadb",
+    "item_persistence_completion",
+    "item_persistence_mariadb",
+    "legacy_item_retirement",
+    "item_runtime"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "candidate": "build\\full-proto-reusable-rare-v47-final.json",
+  "candidate_sha256": "6d17a84e37387791986447e9e7e4126765e90e6377ddc0592fd37203d7944b7e",
+  "source_id": 50050,
+  "source_row_hash": "d4ac31a246c7766d98954e8dfae431ebd5a693c6902b5bfa9248294660f852c7",
+  "scans": [
+    {
+      "root": "SRC/Server",
+      "only_api_example_comments": [
+        "SRC/Server\\GameServer\\quest\\questlua_game.cpp:123:\t\t// Syntax: game.drop_item(50050, 1)"
+      ]
+    },
+    {
+      "root": "F:/SF_V3_5/SOURCE_SERVER_9999/Server/game/src",
+      "only_api_example_comments": [
+        "F:/SF_V3_5/SOURCE_SERVER_9999/Server/game/src\\questlua_game.cpp:121:\t\t// Syntax: game.drop_item(50050, 1)"
+      ]
+    },
+    {
+      "root": "D:/AurigaGlobal/Server2-Local/data/quest",
+      "only_api_example_comments": []
+    }
+  ],
+  "merge_deferred": 630,
+  "remaining_valid_behavior_at_c47": 54,
+  "converted_count_unchanged": 9811,
+  "retired_count_unchanged": 491
+}

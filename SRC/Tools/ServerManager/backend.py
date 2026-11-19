@@ -332,7 +332,8 @@ def describe(root):
                 reload_supported=(root / 'quest_reload.py').is_file() and hasattr(manager, 'apply_quests'),
                 core_control_supported=hasattr(manager, 'control_cores'),
                 core_control=bool(supervisor_live and hasattr(manager, 'control_cores') and state.get('core_control_version') == 1),
-                hotreload=bool(running and hasattr(manager, 'quest_reload_status') and manager.quest_reload_status()['available']))
+                hotreload=bool(running and hasattr(manager, 'quest_reload_status') and manager.quest_reload_status()['available']),
+                drop_reload=manager.drop_reload_status() if hasattr(manager,'drop_reload_status') else dict(available=False,cores=[]))
 
 
 def file_list(root, quests=False):
@@ -481,7 +482,16 @@ def save_document(root, relative, payload, expected_hash):
         if state['running'] and not (live and state.get('hotreload') and hotreload_file(document.relative)):
             raise EditorError('Ez a fájl csak leállított szervernél menthető. Futás közben a hotreloadot támogató core-ok questforrásai szerkeszthetők.')
         if document.relative == 'server.json' and state.get('database_kind', 'managed') == 'managed' and state['database_running']:
-            raise EditorError('A konfiguráció mentése előtt a helyi MariaDB-t is állítsd le.')
+            proposed = strict_json(payload.decode(document.encoding))
+            # A stopped game topology can change while the package's SQL stays
+            # running. Shared SQL/ownership settings retain the stricter guard.
+            same_shared = (isinstance(document.value, dict) and isinstance(proposed, dict)
+                and isinstance(proposed.get('game_servers'), dict)
+                and proposed['game_servers'] != document.value.get('game_servers') and {
+                key: value for key, value in proposed.items() if key != 'game_servers'
+            } == {key: value for key, value in document.value.items() if key != 'game_servers'})
+            if not same_shared:
+                raise EditorError('A közös konfiguráció mentése előtt a helyi MariaDB-t is állítsd le. A CH/core-módosításhoz elég a játékszerver leállítása.')
         candidate = document.path.with_name('.' + document.path.name + '.edit-' + secrets.token_hex(6))
         descriptor = os.open(candidate, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         try:

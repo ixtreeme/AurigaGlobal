@@ -1,6 +1,7 @@
 """Draft bonus registry: semantic validation, generated contract drift, fail-closed output."""
 import copy
 import json
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -13,18 +14,25 @@ import generate_bonus_registry as generator
 
 
 class BonusRegistryTests(unittest.TestCase):
+    def test_unity_instance_bounds_cover_the_full_native_registry(self):
+        import generate_equipment_properties as equipment
+        text=equipment.unity_source();actual={}
+        for cases,minimum,maximum in re.findall(r'((?:case \d+: )+)return value>=(-?\d+)L && value<=(-?\d+)L;',text):
+            for identity in re.findall(r'case (\d+):',cases):actual[int(identity)]=(int(minimum),int(maximum))
+        expected={r['id']:(r['minimum'],r['maximum']) for r in self.doc['bonuses'] if 'Instance' in r['allowed_sources']}
+        self.assertEqual(actual,expected);self.assertIn('if(value==0)return false;',text)
     def setUp(self):
         self.doc = json.loads((ROOT / 'config/item_combat/bonus_registry.json').read_text(encoding='utf-8'))
 
     def test_current_contract_and_order(self):
-        self.assertEqual(len(generator.validate(self.doc)), 34)
+        self.assertEqual(len(generator.validate(self.doc)), 144)
         header, sql = generator.render(self.doc), generator.render_sql(self.doc)
         self.assertEqual(header, (ROOT / 'SRC/Server/common/item/BonusRegistry.hpp').read_bytes())
         self.assertEqual(sql, (ROOT / 'db/migrations/item_combat/007_bonus_registry_seed.sql').read_bytes())
         self.doc['bonuses'].reverse()
         self.assertEqual(header, generator.render(self.doc))
         self.assertEqual(sql, generator.render_sql(self.doc))
-        self.doc['bonuses'] = self.doc['bonuses'][:1] + self.doc['bonuses'][-1:]
+        self.doc['bonuses'] = [r for r in self.doc['bonuses'] if r['id'] in (1,34)]
         self.assertIn(b'GlobalOutgoing = 34,', generator.render(self.doc))
         self.assertIn(b'PhysicalAttackFlat = 1,', generator.render(self.doc))
 

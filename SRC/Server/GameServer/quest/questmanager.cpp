@@ -30,6 +30,7 @@
 #include "party.h"
 #include "locale_service.h"
 #include "dungeon.h"
+#include "../item/TypedInventorySync.hpp"
 #include "../ecs/VIDRegistry.hpp"
 
 
@@ -128,6 +129,7 @@ namespace quest
 		m_mapEventName.insert(TEventNameMap::value_type("in", QUEST_ATTR_IN_EVENT));
 		m_mapEventName.insert(TEventNameMap::value_type("out", QUEST_ATTR_OUT_EVENT));
 		m_mapEventName.insert(TEventNameMap::value_type("use", QUEST_ITEM_USE_EVENT));
+		m_mapEventName.emplace("typed_use", QUEST_TYPED_ITEM_USE_EVENT);
 		m_mapEventName.insert(TEventNameMap::value_type("server_timer", QUEST_SERVER_TIMER_EVENT));
 		m_mapEventName.insert(TEventNameMap::value_type("enter", QUEST_ENTER_STATE_EVENT));
 		m_mapEventName.insert(TEventNameMap::value_type("leave", QUEST_LEAVE_STATE_EVENT));
@@ -166,6 +168,10 @@ namespace quest
 		}
 		// Scripts without an NPC always retain their reserved runtime entry.
 		m_mapNPC[0].Set(0, "notarget");
+		for (const auto& definition : m_questSources)
+			for (const auto& handler : definition.handlers)
+				if (handler.event == "typed_use" && m_typedItemUses.try_emplace(handler.target).second)
+					m_typedItemUses.at(handler.target).Set(0, handler.target);
 
         if (!m_currentRuntime->staging) {
             SetEventFlag("guild_withdraw_delay", 1);
@@ -740,6 +746,25 @@ namespace quest
 			LOG_ERROR("QUEST USE_ITEM_EVENT no such pc id : {}", pc);
 			return false;
 		}
+	}
+
+	bool CQuestManager::UseTypedQuestItem(entt::entity character, std::string_view contentCode, TypedItemUseSource source)
+	{
+		auto* pc = GetPC(character);
+		if (!CheckQuestLoaded(pc) || pc->IsRunning())
+			return false;
+		const auto handler = m_typedItemUses.find(contentCode);
+		if (handler == m_typedItemUses.end())
+			return false;
+		SetCurrentItem(entt::null);
+		return handler->second.OnTypedItemUse(*pc, source);
+	}
+
+	void CQuestManager::RefreshTypedQuestItemActions()
+	{
+		for (const auto character : SnapshotQuestPlayers())
+			if (g_registry.valid(character))
+				SendTypedInventory(character);
 	}
 
 	bool CQuestManager::UseItem(unsigned int pc, entt::entity item, bool bReceiveAll)
@@ -1587,9 +1612,10 @@ namespace quest
 		return ExecuteQuestScript(pc, CQuestManager::instance().GetQuestNameByIndex(quest_index), state, code, code_size, pChatScripts, bUseCache);
 	}
 
-	bool CQuestManager::ExecuteQuestScript(PC& pc, const std::string& quest_name, const int state, const char* code, const int code_size, std::vector<AArgScript*>* pChatScripts, bool bUseCache)
+	bool CQuestManager::ExecuteQuestScript(PC& pc, const std::string& quest_name, const int state, const char* code, const int code_size, std::vector<AArgScript*>* pChatScripts, bool bUseCache, TypedItemUseSource typedItemUse)
 	{
 		QuestState qs = CQuestManager::instance().OpenState(quest_name, state);
+		qs.typedItemUse = typedItemUse;
 		if (pChatScripts)
 			qs.chat_scripts.swap(*pChatScripts);
 

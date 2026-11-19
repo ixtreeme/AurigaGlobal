@@ -8,6 +8,7 @@
 #include "InstanceAttributes.hpp"
 #include "Costumes.hpp"
 #include "SpecialBonuses.hpp"
+#include "AbsorptionSashes.hpp"
 #include "GatheringItems.hpp"
 #include "PolymorphItems.hpp"
 #include "SoulItems.hpp"
@@ -21,6 +22,7 @@
 #include "ToggleEffects.hpp"
 #include "SkillBooks.hpp"
 #include "BookAids.hpp"
+#include "CharacterServices.hpp"
 #include "ForgeAids.hpp"
 #include "Containers.hpp"
 #include "CurrencyTokens.hpp"
@@ -33,6 +35,8 @@
 #include <optional>
 #include <string>
 #include <variant>
+#include "EnergyCrystals.hpp"
+#include "NativeMoney.hpp"
 #include <vector>
 
 namespace auriga::item
@@ -43,11 +47,18 @@ enum class EquipmentSlot : std::uint8_t
 {
     Weapon = 1, Body = 2, Head = 3, Shield = 4, Feet = 5, Wrist = 6, Neck = 7, Ear = 8,
     CostumeBody=9, CostumeHair=10, CostumeWeapon=11, Ammo=20,
+    Pendant=21, Belt=22, Unique=23, UniqueAlternate=24, CostumePetSkin=25, CostumeMountSkin=26, CostumeBodyEffect=27, CostumeWeaponEffect=28, AbsorptionSash=29,
 };
+inline constexpr std::uint16_t EquipmentSlotCount=29;
+constexpr bool FitsEquipmentSlot(EquipmentSlot slot,std::uint32_t cell) noexcept
+{
+    return cell+1==static_cast<unsigned>(slot) ||
+        (slot==EquipmentSlot::Unique && cell+1==static_cast<unsigned>(EquipmentSlot::UniqueAlternate));
+}
 enum class AmmoKind : std::uint8_t { None = 1, ConsumeStack = 2 };
 // Plain crafting inputs. Soul-refinement catalysts/resources need their own
 // typed behavior and are deliberately not accepted as these ordinary materials.
-enum class MaterialKind : std::uint8_t { Leather = 1, Blood = 2, Root = 3, Needle = 4, Jewel = 5 };
+enum class MaterialKind : std::uint8_t { Leather = 1, Blood = 2, Root = 3, Needle = 4, Jewel = 5, Component = 6 };
 
 struct ItemUsePolicy
 {
@@ -110,6 +121,27 @@ struct ItemBaseRow
     std::uint64_t buyAmount = 0, sellAmount = 0;
     bool retired = false;
 };
+// Optional native definition rules. Absence preserves the established native
+// defaults. No source item numbers, APPLY IDs or legacy dispatch data live here.
+struct ItemDefinitionRules
+{
+    ItemKey key;
+    std::uint16_t level=0;
+    std::uint16_t displayRefinementOffset=0;
+    std::uint8_t rarity=0,allowedEmpires=7;
+    CostumeClock clock=CostumeClock::Permanent;
+    std::uint64_t durationMs=0;
+    bool allowAccountStorage=true,allowAcquire=true,allowUnequip=true;
+    std::uint32_t minimumGrantCount=1;
+    std::uint16_t birthMagicChanceBp=0,birthSocketChanceBp=0;
+    std::uint8_t birthAddon=0;
+    std::string uniqueGroup;
+    bool available=true;
+    std::uint8_t attributeRerollGroup=1; // Explicit native policy; no source-ID dispatch.
+    bool weaponEffectAlternate=false;
+    std::uint8_t birthOpenStoneSockets=0; // Fixed source count; old chance metadata is not used for this.
+    std::optional<std::uint32_t> birthAttributeProfile;
+};
 struct ItemWeaponRow
 {
     ItemKey key;
@@ -151,6 +183,7 @@ struct ItemConsumableRow
     std::optional<std::uint32_t> socketServiceProfile;
     std::optional<std::uint32_t> attributeServiceProfile;
     std::optional<std::uint32_t> bookAidProfile;
+    bool characterService=false;
 };
 struct ItemContainerRow
 {
@@ -180,9 +213,10 @@ using ItemCategoryRow = std::variant<ItemWeaponRow, ItemArmorRow, ItemAccessoryR
                                      ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow, ItemSocketStoneRow, ItemCostumeRow, ItemToolRow, ItemFishingRow, ItemPolymorphRow, ItemSoulRow, ItemCompanionRow, ItemPetSupplyRow, ItemRegaliaRow, ItemBonusToolRow, ItemAmmoRow, ItemForgeAidRow>;
 struct ItemCatalogSource
 {
-    std::uint32_t schemaVersion = 30;
+    std::uint32_t schemaVersion = 55;
     std::uint64_t revision = 0;
     std::vector<ItemBaseRow> items;
+    std::vector<ItemDefinitionRules> definitionRules;
     std::vector<ItemWeaponRow> weapons;
     std::vector<ItemArmorRow> armors;
     std::vector<ItemAccessoryRow> accessories;
@@ -203,23 +237,30 @@ struct ItemCatalogSource
     std::vector<ItemContainerRow> containers;
     std::vector<ItemContainerKeyRow> containerKeys;
     std::vector<ItemCurrencyTokenRow> currencyTokens;
+    std::vector<CurrencyTokenPolicy> currencyTokenPolicies;
     std::vector<TimedEffectGroup> timedEffectGroups;
     std::vector<TimedEffectProfile> timedEffects;
+    std::vector<EnergyCrystalTier> energyCrystalTiers;
     std::vector<ToggleEffectGroup> toggleEffectGroups;
     std::vector<ToggleEffectProfile> toggleEffects;
     std::vector<SkillBookProfile> skillBookProfiles;
     std::vector<BookAidProfile> bookAidProfiles;
+    std::vector<ItemCharacterServiceRow> characterServices;
     std::vector<ItemSkillBookRow> skillBooks;
     std::vector<RefinementRecipe> refinementRecipes;
     std::vector<ItemQuestRow> questItems;
     std::vector<ItemSocketStoneRow> socketStones;
     std::vector<ItemCostumeRow> costumes;
+    std::vector<ItemKey> costumeTransferTargets;
     std::vector<ItemRegaliaRow> regalia;
+    std::vector<AbsorptionSashProfile> absorptionSashes;
+    std::vector<SashDonorProfile> sashDonors;
     std::vector<ItemBonusToolRow> bonusTools;
     std::vector<ItemAmmoRow> ammunition;
     std::vector<ItemForgeAidRow> forgeAids;
     std::vector<CostumeVisualRow> costumeVisuals;
     std::vector<AttributeProfile> attributeProfiles;
+    std::vector<AttributeBirthProfile> attributeBirthProfiles;
     std::vector<AttributeServiceProfile> attributeServices;
     std::vector<ItemAttributeBinding> attributeBindings;
     std::vector<SocketServiceProfile> socketServiceProfiles;
@@ -243,7 +284,7 @@ struct ItemCatalogSource
 };
 struct ItemCatalogLimits
 {
-    static constexpr std::size_t Items = 100'000, ProfilesPerKind = 4096;
+    static constexpr std::size_t Items = 100'000, ProfilesPerKind = MaxBonusProfiles;
     static constexpr std::size_t TextBytes = 64 * 1024 * 1024;
 };
 enum class ItemCatalogErrorCode
@@ -271,6 +312,7 @@ struct ItemCatalogEntry
 {
     ItemBaseRow base;
     ItemCategoryRow category;
+    std::optional<ItemDefinitionRules> rules;
 };
 enum class ItemCatalogLookupError { MissingItem, InvalidRefinementLevel };
 using ItemCatalogDigest = std::array<std::uint8_t, 32>;
@@ -280,6 +322,7 @@ struct ItemBonusProfiles
     const ValidatedBonusProfile* base = nullptr;
     const ValidatedBonusProfile* refinement = nullptr;
 };
+struct ItemLevelPolicy {std::uint16_t minimumLevel=0;std::uint64_t buyAmount=0,sellAmount=0;};
 
 class ItemCatalog;
 std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCatalog(ItemCatalogSource source);
@@ -296,12 +339,21 @@ public:
     std::uint64_t Revision() const noexcept { return source_.revision; }
     std::size_t Size() const noexcept { return items_.size(); }
     const ItemCatalogDigest& ContentHash() const noexcept { return digest_; }
+    // A validated drop-only view. Never replaces the persistence catalog.
+    std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> WithMobDrops(std::vector<MobDropGroup>) const;
+    std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> WithRewards(
+        std::vector<MobDropGroup>, std::vector<ContainerLootOverride>) const;
     const ItemCatalogEntry* Find(ItemKey key) const noexcept;
     const CostumeVisualRow* FindCostumeVisual(ItemKey key, std::uint8_t characterClass, std::uint8_t sex) const noexcept;
     const ValidatedRefinementProfile* FindRefinement(std::uint32_t id) const noexcept;
+    ItemLevelPolicy LevelPolicy(ItemKey key,std::uint16_t level) const noexcept;
     const AttributeProfile* FindItemAttributes(ItemKey) const noexcept;
+    const ItemCharacterServiceRow* FindCharacterService(ItemKey) const noexcept;
+    const AbsorptionSashProfile* FindAbsorptionSash(ItemKey) const noexcept;
+    const SashDonorProfile* FindSashDonor(ItemKey,std::uint16_t refinement) const noexcept;
     const BookAidProfile* FindBookAid(std::uint32_t id) const noexcept;
     const AttributeServiceProfile* FindAttributeService(std::uint32_t) const noexcept;
+    const AttributeBirthProfile* FindAttributeBirthProfile(std::uint32_t) const noexcept;
     const SocketServiceProfile* FindSocketService(std::uint32_t id) const noexcept;
     const PetHatchProfile* FindPetHatchProfile(std::uint32_t id) const noexcept;
     const PetFeedRule* FindPetFeedRule(ItemKey key,PetFeedingService service) const noexcept;
@@ -311,9 +363,11 @@ public:
     const PetSupplyProfile* FindPetSupplyProfile(std::uint32_t id) const noexcept;
     const SoulProfile* FindSoulProfile(std::uint32_t id) const noexcept;
     const PolymorphForm* FindPolymorphForm(std::uint32_t id) const noexcept;
+    const PolymorphForm* FindOriginalPolymorphForm(std::uint32_t mob) const noexcept;
     const PolymorphProfile* FindPolymorphProfile(std::uint32_t id) const noexcept;
     const ToolProfile* FindToolProfile(std::uint32_t id) const noexcept;
     const ItemUsePolicy* FindUsePolicy(std::uint32_t id) const noexcept;
+    const ItemDefinitionRules* FindDefinitionRules(ItemKey,std::uint16_t level=0) const noexcept;
     const ItemTradePolicy* FindTradePolicy(std::uint32_t id) const noexcept;
     const ItemAppearanceProfile* FindAppearance(std::uint32_t id) const noexcept;
     const ItemAttackProfile* FindAttack(std::uint32_t id) const noexcept;
@@ -323,9 +377,13 @@ public:
     const ValidatedAccessorySocketProfile* FindAccessorySocket(std::uint32_t id) const noexcept;
     const ValidatedRecoveryProfile* FindRecovery(std::uint32_t id) const noexcept;
     const ConsumableCooldownProfile* FindConsumableCooldown(std::uint32_t id) const noexcept;
+    const ConsumableCooldownProfile* FindConsumableCooldownByCode(std::string_view code) const noexcept;
     const ValidatedLootProfile* FindLoot(std::uint32_t id) const noexcept;
     const TimedEffectGroup* FindTimedEffectGroup(std::uint32_t id) const noexcept;
     const TimedEffectProfile* FindTimedEffect(std::uint32_t id) const noexcept;
+    std::span<const EnergyCrystalTier> EnergyTiers(ItemKey) const noexcept;
+    CurrencyTokenMode CurrencyMode(ItemKey) const noexcept;
+    std::optional<ItemKey> CurrencyKey(CurrencyTokenMode) const noexcept;
     const ToggleEffectGroup* FindToggleEffectGroup(std::uint32_t id) const noexcept;
     const ToggleEffectProfile* FindToggleEffect(std::uint32_t id) const noexcept;
     const SkillBookProfile* FindSkillBook(std::uint32_t id) const noexcept;
@@ -340,6 +398,7 @@ public:
     // Exactly the current level's cumulative bonus profile, never a sum of
     // profiles from all preceding refinement steps. This does not apply stats.
     std::expected<ItemBonusProfiles, ItemCatalogLookupError> BonusProfilesAt(ItemKey key, std::uint16_t level) const noexcept;
+    bool CostumeTransferAllowed(ItemKey) const noexcept;
     const std::map<ItemKey, ItemCatalogEntry>& Entries() const noexcept { return items_; }
     ItemCatalog(const ItemCatalog&) = delete;
     ItemCatalog& operator=(const ItemCatalog&) = delete;

@@ -56,7 +56,7 @@ void Profiles()
     RejectProfile(0, [](auto& p) { p.entries[1].entry = 1; }, LootProfileError::InvalidEntryOrder);
     RejectProfile(0, [](auto& p) { p.entries[0].item.reset(); }, LootProfileError::InvalidReward);
     RejectProfile(0, [](auto& p) { p.entries[1].item = f::Leather(); }, LootProfileError::InvalidReward);
-    RejectProfile(0, [](auto& p) { p.entries[1].kind = static_cast<LootRewardKind>(9); }, LootProfileError::InvalidReward);
+    RejectProfile(0, [](auto& p) { p.entries[1].kind = static_cast<LootRewardKind>(10); }, LootProfileError::InvalidReward);
     RejectProfile(0, [](auto& p) { p.entries[0].amount = 0; }, LootProfileError::InvalidAmount);
     RejectProfile(0, [](auto& p) { p.entries[1].amount = MaxLootCurrency + 1; }, LootProfileError::InvalidAmount);
     RejectProfile(1, [](auto& p) { p.entries[3].amount = 1; }, LootProfileError::InvalidAmount);
@@ -66,6 +66,8 @@ void Profiles()
     RejectProfile(0, [](auto& p) { p.entries[2].rareAttributeChanceBp = 10001; }, LootProfileError::InvalidRareChance);
     RejectProfile(0, [](auto& p) { p.entries[1].rareAttributeChanceBp = 1; }, LootProfileError::InvalidRareChance);
     RejectProfile(0, [](auto& p) { p.entries[0].weight = UINT32_MAX; }, LootProfileError::WeightOverflow);
+    RejectProfile(0, [](auto& p) { p.entries[0].refinementLevel = 256; }, LootProfileError::InvalidRefinementLevel);
+    RejectProfile(0, [](auto& p) { p.entries[1].refinementLevel = 1; }, LootProfileError::InvalidRefinementLevel);
 }
 void Picking()
 {
@@ -180,12 +182,24 @@ void StackGuards()
           ContainerOpenError::InvalidStack, "oversized key stack is rejected before RNG");
     Check(unused.bounds.empty(), "invalid stack consumed a loot decision");
 }
+void EmptyWeightedDraw()
+{
+    auto source=f::Catalog();
+    source.lootProfiles[0].entries[1]={2,LootRewardKind::Nothing,{},0,20,0};
+    const auto catalog=BuildItemCatalog(source).value();
+    for(const auto roll:{70u,89u}){
+        Script draw{{roll}};const auto plan=PlanContainerOpen(*catalog,{f::GiftBox(),{},1,0},draw.Draw()).value();
+        Check(plan.containerUnitsToConsume==1 && plan.rewards.size()==1 && plan.rewards[0].kind==LootRewardKind::Nothing && plan.rewards[0].amount==0,"empty weighted outcome records a failed draw without a fake reward");
+    }
+    source.lootProfiles[0].entries[1].amount=1;
+    Check(!BuildItemCatalog(source),"empty reward cannot smuggle currency");
+}
 }
 int main()
 {
     try
     {
-        Profiles(); Picking(); Opening(); CatalogRules(); StackGuards();
+        Profiles(); Picking(); Opening(); CatalogRules(); StackGuards(); EmptyWeightedDraw();
         std::cout << "Container checks passed: " << checks << '\n'; return 0;
     }
     catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

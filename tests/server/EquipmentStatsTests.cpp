@@ -47,6 +47,7 @@ std::vector<std::byte> Run()
     source.weapons[0].subtype=WeaponSubtype::Bow;source.weapons[0].ammoPolicy=2;const auto bow=BuildItemCatalog(source);
     Check(bow.has_value() && BuildEquipmentStats(**bow,f::Character(),std::span(&weapon,1))->weapon==WeaponSubtype::Bow,"typed bow stats are available independently of the ammunition gate");
     Check(ScaleEquipmentValue(1,5000)==1 && ScaleEquipmentValue(-1,5000)==-1,"signed half-away rounding");
+    Check(ScaleEquipmentValue(19,2000,10000,true)==3 && ScaleEquipmentValue(-19,2000,10000,true)==-3,"imported accessory percentages truncate toward zero");
     Check(ScaleEquipmentValue(1000000000000000LL,10000000)==1000000000000000000LL,"wide intermediate avoided by quotient/remainder scaling");
     Check(!ScaleEquipmentValue(INT64_MAX,20000) && !AddEquipmentValue(INT64_MAX,1),"overflow rejected");
     Check(ScaleEquipmentValue(0,0)==0 && ScaleEquipmentValue(1234,10000)==1234,"identity and zero factors");
@@ -65,6 +66,10 @@ std::vector<std::byte> Run()
     pet.petBonuses.bonuses.age[1]=500;pet.petBonuses.bonuses.traits[2]=300;
     pet.petBonuses.bonuses.total[1]+=500;pet.petBonuses.bonuses.total[2]=300;
     pet.petBonuses.bonuses.ageTierMinimumMs=86400000;
+    auto reflective=pet;reflective.petBonuses.bonuses.total[unsigned(PetEffect::CharacterMeleeReflection)]=1000;reflective.petBonuses.bonuses.skills[unsigned(PetEffect::CharacterMeleeReflection)]=1000;
+    const auto reflectWire=EncodeEquipmentStats(&reflective,12345,9,9,{});
+    Check(reflectWire[5]==std::byte{6},"appended original pet reflection selects GC231v6 with the complete growth-pet source groups");
+    Check(reflective.petBonuses.Bonus(PetEffect::CharacterMeleeReflection)==1000 && PetBonusValues{}.size()==31,"reflection has its own appended native pet property");
     const auto natural=EncodeEquipmentStats(&pet,12345,9,9,{});
     Check(natural[5]==std::byte{4} && natural.size()==petWire.size()+56,"v4 adds the tier and separate natural/skill groups to the total view");
     return wire;

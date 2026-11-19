@@ -1,6 +1,7 @@
 """Run the native catalog loader only inside a newly spawned private MariaDB."""
 from __future__ import annotations
 import argparse
+import os
 import json
 from pathlib import Path
 import subprocess
@@ -20,13 +21,13 @@ def main():
     parser.add_argument("--work-dir", type=Path, required=True)
     args = parser.parse_args()
     token = uuid.uuid4().hex
-    sandbox = Sandbox(args.work_dir / token, args.mariadb_bin)
+    sandbox = Sandbox((Path(os.environ['AURIGA_ITEM_SQL_TEST_ROOT']) / 'CatalogSqlReaderTests' if os.environ.get('AURIGA_ITEM_SQL_TEST_ROOT') else args.work_dir) / token, args.mariadb_bin)
     try:
         sandbox.start()
         sandbox.verify()
         migrations = sorted((ROOT / "db/migrations/item_combat").glob("[0-9][0-9][0-9]_*.sql"))
-        if [int(path.name[:3]) for path in migrations] != list(range(37)):
-            raise RuntimeError("the native fixture requires schema drafts 000 through 036")
+        if [int(path.name[:3]) for path in migrations] != list(range(64)):
+            raise RuntimeError("the native fixture requires schema drafts 000 through 057")
         fixtures = [ROOT / "tests/fixtures/item_combat" / name for name in
                     ("v5/recovery_consumables.sql", "v6/containers.sql", "v7/currency_tokens.sql", "v8/timed_consumables.sql", "v9/automatic_recovery.sql")]
         for path in [*migrations, *fixtures]:

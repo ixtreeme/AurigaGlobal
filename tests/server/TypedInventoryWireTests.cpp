@@ -86,8 +86,19 @@ int main(int argc, char** argv)
 		Check(DecodeTypedInventory(longer, f::Character()).error() == TypedInventoryWireError::TrailingBytes, "trailing byte");
 		auto header = b; header[0] = std::byte { 224 };
 		Check(DecodeTypedInventory(header, f::Character()).error() == TypedInventoryWireError::BadHeader, "wrong header");
-        auto version = b; version[5] = std::byte { 18 };
+        auto version = b; version[5] = std::byte { 32 };
 		Check(DecodeTypedInventory(version, f::Character()).error() == TypedInventoryWireError::BadVersion, "unknown version");
+		{   // C47: a special inventory storage raises the packet to v18 and round-trips; v17 cannot carry it.
+			auto special = storages; special.push_back({ { f::Character(), ItemStorageKind::SpecialInventory, 1 }, 9, 4, 48 });
+			// Plain persisted items only: the v10+ blocks validate every item (the synthetic ring above is not one).
+			std::vector<PersistentItem> stored { f::Sword(), f::Leather() }; stored[1].placement = ItemPlacement { ItemStorageKind::SpecialInventory, 1, 5 };
+			const auto v18 = EncodeTypedInventory(c, special, wallets, stored);
+			Check(v18.has_value() && std::to_integer<unsigned>((*v18)[5]) == 18, "special storage selects v18");
+			const auto back = DecodeTypedInventory(*v18, f::Character());
+			Check(back.has_value() && back->storages == special && back->items[1].placement == stored[1].placement, "special storage round trip");
+			auto older = *v18; older[5] = std::byte { 17 };
+			Check(!DecodeTypedInventory(older, f::Character()).has_value(), "v17 cannot carry a special storage");
+		}
 		Check(DecodeTypedInventory(std::span(b).first(3), f::Character()).error() == TypedInventoryWireError::Truncated, "short header");
 		PersistentItem unknown { ItemInstanceId::Create(9).value(), ItemKey::Create(1, 999).value(), f::Character() };
 		Check(EncodeTypedInventory(c, storages, wallets, std::span(&unknown, 1)).error() == TypedInventoryWireError::MissingCatalogItem, "unknown key");
@@ -203,6 +214,33 @@ int main(int argc, char** argv)
         const auto detailsPath=Golden().parent_path()/"typed_item_details_v1.hex";
         if(argc==2 && std::string(argv[1])=="--write-golden")std::ofstream(detailsPath,std::ios::binary)<<Hex(*details);
         else { std::ifstream input(detailsPath,std::ios::binary);std::stringstream stored;stored<<input.rdbuf();auto text=stored.str();std::erase(text,'\r');Check(text==Hex(*details),"details golden parity"); }
+        auto policies=f::Catalog();
+        policies.refinements[1].levels[9].minimumLevel=42;
+        policies.refinements[1].levels[9].buyAmount=0;
+        policies.refinements[1].levels[9].sellAmount=77;
+        const auto policyCatalog=BuildItemCatalog(policies).value();
+        const auto policyDetails=EncodeTypedItemDetails(*policyCatalog,items,true).value();
+        Check(policyDetails[5]==std::byte{5},"per-level policies negotiate v5 metadata");
+        const auto policyPath=Golden().parent_path()/"typed_item_details_v5.hex";
+        if(argc==2 && std::string(argv[1])=="--write-golden")std::ofstream(policyPath,std::ios::binary)<<Hex(policyDetails);
+        else {std::ifstream input(policyPath,std::ios::binary);std::stringstream stored;stored<<input.rdbuf();auto text=stored.str();std::erase(text,'\r');Check(text==Hex(policyDetails),"level policy metadata golden parity");}
+        auto exactSource=f::Catalog();exactSource.refinementRecipes.clear();
+        exactSource.refinements[1].kind=RefinementKind::ExactState;exactSource.refinements[1].maxLevel=200;
+        exactSource.refinements[1].levels={{200,{},{}}};
+        for(auto& profile:exactSource.lootProfiles)for(auto& reward:profile.entries)if(reward.item==item_catalog_fixture::Sword())reward.refinementLevel=200;
+        const auto exactCatalog=BuildItemCatalog(exactSource).value();auto exactItem=f::Sword();exactItem.refinementLevel=200;exactItem.stones={};
+        const std::vector<PersistentItem> exactItems{exactItem};
+        const auto exactDetails=EncodeTypedItemDetails(*exactCatalog,exactItems,true).value();
+        const auto exactPath=Golden().parent_path()/"typed_item_exact_state_v1.hex";
+        if(argc==2 && std::string(argv[1])=="--write-golden")std::ofstream(exactPath,std::ios::binary)<<Hex(exactDetails);
+        else {std::ifstream input(exactPath,std::ios::binary);std::stringstream stored;stored<<input.rdbuf();auto text=stored.str();std::erase(text,'\r');Check(text==Hex(exactDetails),"exact-state metadata golden parity");}
+        auto pendantSource=f::Catalog();pendantSource.refinementRecipes.clear();pendantSource.armors[0].slot=EquipmentSlot::Pendant;
+        const auto pendantCatalog=BuildItemCatalog(pendantSource).value();auto pendantItem=f::Sword();pendantItem.key=item_catalog_fixture::Armor();pendantItem.refinementLevel=0;pendantItem.stones={};pendantItem.attributes={};
+        const std::vector<PersistentItem> pendantItems{pendantItem};
+        const auto pendantDetails=EncodeTypedItemDetails(*pendantCatalog,pendantItems,true).value();
+        const auto pendantPath=Golden().parent_path()/"typed_item_pendant_v1.hex";
+        if(argc==2 && std::string(argv[1])=="--write-golden")std::ofstream(pendantPath,std::ios::binary)<<Hex(pendantDetails);
+        else {std::ifstream input(pendantPath,std::ios::binary);std::stringstream stored;stored<<input.rdbuf();auto text=stored.str();std::erase(text,'\r');Check(text==Hex(pendantDetails),"pendant metadata golden parity");}
 		const auto text = Hex(b);
 		if (argc == 2 && std::string(argv[1]) == "--write-golden")
 		{

@@ -2,6 +2,7 @@
 #include "BonusProfiles.hpp"
 #include "SocketServices.hpp"
 #include <span>
+#include <functional>
 
 namespace auriga::item
 {
@@ -11,6 +12,7 @@ struct AttributeValue { std::uint8_t tier=0;std::int64_t value=0; };
 struct AttributeCandidate
 {
     AttributePool pool{};BonusId bonus{};std::uint32_t weight=0;
+    // Zero weight admits a retained stored bonus without making it rollable.
     std::vector<AttributeValue> values;
 };
 struct AttributeProfile
@@ -22,14 +24,22 @@ struct AttributeProfile
 struct ItemAttributeBinding {ItemKey key;std::uint32_t profile=0;};
 enum class AttributeOperation : std::uint8_t { Add=1,Reroll=2,Lock=3,Relock=4,Unlock=5 };
 struct AttributeTierChance {std::uint8_t tier=0;std::uint16_t chanceBp=0;};
+struct AttributeBirthTier {std::uint8_t draw=0,tier=0;std::uint16_t chanceBp=0;};
+struct AttributeBirthProfile
+{
+    std::uint32_t id=0;std::string code;
+    std::uint16_t secondChanceBp=0,thirdChanceBp=0;
+    std::vector<AttributeBirthTier> tiers;
+};
 struct AttributeServiceProfile
 {
     std::uint32_t id=0;std::string code;AttributeOperation operation{};AttributePool pool{};
     std::uint16_t units=0,successBp=0;
-    std::uint8_t targetMask=0,minimumCount=0,maximumCount=0,addCount=0;
+    std::uint8_t targetMask=0,minimumCount=0,maximumCount=0,addCount=0; // weapon/armor/accessory/costume/pendant bits 0..4
     std::uint16_t maximumTargetLevel=0; // 0 = no minimum-level ceiling on the target prototype.
     bool consumeOnFailure=false;
     std::vector<AttributeTierChance> tiers;
+    std::uint8_t targetRerollGroup=0; // 0 unrestricted, 1 ordinary, 2 zodiac.
 };
 inline constexpr std::size_t AttributeSlots=8,MaxAttributeCandidates=128,MaxAttributeTiers=16;
 struct InstanceAttributes
@@ -40,6 +50,7 @@ struct InstanceAttributes
 };
 bool ValidAttributeProfile(const AttributeProfile&);
 bool ValidAttributeService(const AttributeServiceProfile&) noexcept;
+bool ValidAttributeBirthProfile(const AttributeBirthProfile&) noexcept;
 struct AttributeDraw {std::uint16_t tierRoll=0;std::uint32_t bonusRoll=0;};
 struct AttributeRequest
 {
@@ -48,6 +59,7 @@ struct AttributeRequest
     std::uint16_t successRoll=0;
     std::uint8_t lockRoll=0; // Inclusive 1..eligible occupied slots; 0 for non-lock operations.
     std::vector<AttributeDraw> draws;
+    std::vector<std::uint32_t> addonRolls; // Two Gaussian uniforms, two 0..16 hits, one tail.
 };
 struct AttributePlan
 {
@@ -65,6 +77,11 @@ enum class AttributeError
     NoCandidate,UnassignedTier,InsufficientUnits,TargetDenied,InvalidPayload,
 };
 class ItemCatalog;
+bool UsesPairedAttributeAddon(const ItemCatalog&,ItemKey,std::uint16_t,const AttributeServiceProfile&);
+std::expected<InstanceAttributes,AttributeError> AttributeRerollBase(const ItemCatalog&,ItemKey,const InstanceAttributes&,std::span<const std::uint32_t>,std::uint16_t level=0);
+using AttributeBirthRandom=std::function<std::optional<std::uint32_t>(std::uint32_t)>;
+std::expected<InstanceAttributes,AttributeError> RollBirthMagicAttributes(const ItemCatalog&,ItemKey,std::uint16_t,
+    const InstanceAttributes&,const AttributeBirthProfile&,std::uint16_t chanceBp,const AttributeBirthRandom&);
 std::expected<void,AttributeError> ValidateInstanceAttributes(const ItemCatalog&,ItemKey,const InstanceAttributes&);
 std::expected<AttributePlan,AttributeError> PlanAttributeService(const ItemCatalog&,const AttributeRequest&);
 // A complete source replacement, not summed/cached character stats. Retain the

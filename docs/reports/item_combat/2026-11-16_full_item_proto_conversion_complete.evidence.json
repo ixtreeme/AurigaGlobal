@@ -1,0 +1,136 @@
+{
+  "candidate": "config\\item_combat\\full_proto_converted_catalog.json",
+  "sha256": "9ab3dac7f81d2898ab89aeeca641bffc4f59b28ac5f7683d080282ea9913babd",
+  "catalog_hash": "8288c37a9a9516e843c97857cd1b2487f1e7885ed1eed5040d626391af57574d",
+  "schema": 55,
+  "instance_migration": 39,
+  "summary": {
+    "blocked_reasons": {
+      "invalid_chest_lock": 2,
+      "invalid_inventory_height": 6,
+      "invalid_mount_definition": 10,
+      "invalid_timed_effect_duration": 6,
+      "invalid_toggle_effect_definition": 18,
+      "invalid_weapon_costume_effect_attachment:163": 1,
+      "missing_equipment_asset": 49,
+      "missing_secondary_skill_definition:123": 3,
+      "missing_source_container_reward_group": 236,
+      "missing_source_icon": 171,
+      "missing_stole_model": 1,
+      "missing_unity_asset_reference": 12,
+      "missing_weapon_costume_effect_mapping:1297": 1,
+      "missing_weapon_costume_effect_mapping:1326": 2,
+      "missing_weapon_costume_effect_mapping:1335": 2,
+      "missing_weapon_costume_effect_mapping:1344": 2,
+      "semantic_converter_required:11:0": 1,
+      "semantic_converter_required:16:10": 3,
+      "semantic_converter_required:27:0": 6,
+      "semantic_converter_required:38:0": 1,
+      "semantic_converter_required:3:1": 2,
+      "semantic_converter_required:3:10": 53,
+      "semantic_converter_required:3:15": 1,
+      "semantic_converter_required:3:23": 6,
+      "semantic_converter_required:3:29": 2,
+      "skill_selected_on_instance_not_in_prototype": 3,
+      "source_bonus_out_of_native_bounds:31": 1,
+      "source_fish_has_no_effect": 1,
+      "source_reward_rare_field_out_of_range": 2,
+      "source_stone_has_no_equipment_target": 3,
+      "unported_apply:125": 3,
+      "unported_apply:126": 1,
+      "unported_apply:127": 1,
+      "unresolved_container_reward:2871": 4,
+      "unresolved_container_reward:2872": 1,
+      "unresolved_container_reward:2875": 3,
+      "unresolved_container_reward:2876": 3,
+      "unresolved_container_reward:2877": 1,
+      "unresolved_container_reward:2878": 1,
+      "unresolved_container_reward:2879": 1,
+      "unresolved_container_reward:48611": 1,
+      "unresolved_container_reward:55003": 1,
+      "unresolved_container_reward:71035": 1,
+      "unresolved_container_reward:72044": 5,
+      "unresolved_fishing_result:27847": 1,
+      "unresolved_fishing_result:27877": 1,
+      "unsupported_ability_effect": 1
+    },
+    "blocked_source_rows": 637,
+    "converted_source_rows": 9853,
+    "new_native_definitions": 2,
+    "retired_source_rows": 496,
+    "source_rows": 10986
+  },
+  "native_definitions": 6935,
+  "reproduced_byte_identical": true,
+  "catalog_packet_unchanged_from_private_shops_checkpoint": true,
+  "ctest": {
+    "passed": 80,
+    "failed": 0,
+    "log": "build/full-item-conversion-c60-regression.log"
+  },
+  "converter_tests": 106,
+  "editor": {
+    "tests": 83,
+    "skipped": 1,
+    "skip": "Optional standalone SQL editor test; actual SQL editor commit passed in CTest"
+  },
+  "native_checks": {
+    "entry": 40,
+    "dungeon_use": 393,
+    "money": 352,
+    "lua": 116
+  },
+  "sql": {
+    "entry": {
+      "result": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-dungeon-entry-c60-final\\source-dungeon-entry-worker-result.json",
+      "checks": 297,
+      "sources": 10,
+      "packets": 6,
+      "wallet_packets": 0
+    },
+    "use": {
+      "result": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-dungeon-use-c60-final\\source-dungeon-use-worker-result.json",
+      "checks": 304,
+      "sources": 12,
+      "packets": 48,
+      "wallet_packets": 5
+    }
+  },
+  "unity": {
+    "entry": {
+      "checks": 1195,
+      "buttons": 4,
+      "packets": 6
+    },
+    "use": {
+      "checks": 472,
+      "buttons": 12,
+      "packets": 48,
+      "wallet_packets": 5
+    }
+  },
+  "deferred": 637,
+  "remaining_outside_deferred": 0,
+  "installed_to_game": false,
+  "local_player_tables_empty": 94,
+  "active_local_catalog_definitions": 1574,
+  "server_branch": "20261103",
+  "unity_branch": "/main/unity63-integration-20261103",
+  "unity_editor": "6000.3.27f1",
+  "completed_integrations": [
+    "Ten original dungeon-entry NPC controllers use atomic native party ticket reservation/debit/recovery",
+    "Twelve original stage-item use roles and native metadata/client controls, with shared original legacy/native stage planners",
+    "Native quest gold reads and signed SQL writes suspend/resume the actual Lua continuation; failure aborts later quest rewards",
+    "Large dungeon cleanup preserves the remaining quota across50000-unit chunks"
+  ],
+  "missing_original_data": [
+    "No original51002 producer quest/craft recipe found in the available active quest data or current Unity assets; no invented producer or reward recipe added. The existing original energy effect and trusted issuance remain implemented."
+  ],
+  "untested": [
+    "Full TLS/ECS world entry and dungeon progression through a running game client",
+    "Disconnect or group change after confirmed item debit but before publishing transient dungeon/warp state retains the original consume-before-world limitation",
+    "Addressables player build",
+    "A sequential Lua quest payment and its later rewards do not become one atomic mission transaction; authored typed mission actions remain the atomic cost-and-reward route"
+  ],
+  "catalog_exported_tables": 106
+}

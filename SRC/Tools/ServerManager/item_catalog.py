@@ -26,7 +26,7 @@ CHILD_TABLES = {1: 'item_weapon', 2: 'item_armor', 3: 'item_accessory', 4: 'item
 CODE_PREFIX = {1: 'weapon', 2: 'armor', 3: 'accessory', 4: 'costume', 5: 'consumable', 6: 'material', 8: 'container', 9: 'skill_book', 10: 'quest', 11: 'tool', 12: 'fishing', 13: 'polymorph', 14: 'soul', 15: 'companion',
                7: 'socket_stone', 16: 'currency_token', 17: 'special', 18: 'container_key',19:'regalia',20:'bonus_tool',21:'ammo',22:'forge_aid'}
 STACKABLE = (5, 6, 7, 8, 9, 10, 12, 13, 14, 16, 17, 18, 20, 21, 22)
-LOOT_FIELDS = ['entry_no', 'reward_kind', 'item_category_id', 'item_local_id', 'amount', 'weight', 'rare_attribute_chance_bp']
+LOOT_FIELDS = ['entry_no', 'reward_kind', 'item_category_id', 'item_local_id', 'amount', 'weight', 'rare_attribute_chance_bp', 'refinement_level']
 REFINEMENT_KIND = {1: 2, 2: 3, 3: 4, 4: 6, 7: 5, 11: 7, 15: 9}
 EFFECT_TABLES = {1: 'instant_recovery_profile', 2: 'reserve_recovery_profile', 3: 'periodic_recovery_profile', 4: 'automatic_recovery_profile'}
 RESISTANCES = ['physical_bp','magical_bp','sword_bp','dagger_bp','bow_bp','two_handed_bp',
@@ -59,12 +59,13 @@ PROFILES = {
     'bonus_profile': ('profile_id', [('item_base', 'base_bonus_profile_id'), ('refinement_level', 'extra_bonus_profile_id'), ('timed_effect_profile', 'bonus_profile_id'), ('toggle_effect_profile', 'bonus_profile_id')], ['bonus_profile_entry']),
     'refinement_profile': ('profile_id', [('item_base', 'refinement_profile_id')], ['refinement_level']),
     'consumable_cooldown_profile': ('profile_id', [('recovery_profile', 'cooldown_profile_id'), ('timed_effect_profile', 'cooldown_profile_id'), ('toggle_effect_profile', 'cooldown_profile_id')], []),
+    'attribute_birth_profile': ('profile_id',[('item_definition_rules','birth_attribute_profile_id')],['attribute_birth_tier']),
     'attribute_profile': ('profile_id',[('item_attribute_binding','profile_id')],['attribute_value','attribute_candidate','attribute_group']),
     'attribute_service_profile': ('profile_id',[('item_consumable','attribute_service_profile_id')],['attribute_tier_chance']),
     'book_aid_profile': ('profile_id',[('item_consumable','book_aid_profile_id')],[]),
     'socket_service_profile': ('profile_id',[('item_consumable','socket_service_profile_id')],[]),
     'recovery_profile': ('profile_id', [('item_consumable', 'recovery_profile_id')], list(EFFECT_TABLES.values())),
-    'timed_effect_profile': ('profile_id', [('item_consumable', 'timed_effect_profile_id')], []),
+    'timed_effect_profile': ('profile_id', [('item_consumable', 'timed_effect_profile_id')], ['energy_crystal_tier']),
     'toggle_effect_profile': ('profile_id', [('item_consumable', 'toggle_effect_profile_id')], []),
     'skill_book_profile': ('profile_id', [('item_skill_book', 'profile_id')], ['skill_book_target', 'skill_book_step']),
     'loot_profile': ('profile_id', [('item_container', 'loot_profile_id'), ('item_fishing', 'use_loot_profile_id')], ['loot_entry']),
@@ -95,11 +96,23 @@ def text(value):
     return None if value is None else str(value)
 
 
+def copy_tables(tables):
+    """SQL cells are immutable strings/None; copy rows without a recursive walk."""
+    return {name: [list(row) for row in rows] for name, rows in tables.items()}
+
+
 class Catalog:
-    def __init__(self, packet):
-        self.packet = copy.deepcopy(packet)
+    def __init__(self, packet, live_drops=False):
+        self.packet = copy.deepcopy({key:value for key,value in packet.items() if key not in ('tables','live_drops') and not key.startswith('_pending_')})
+        self.packet['tables'] = copy_tables(packet['tables'])
+        if 'live_drops' in packet:
+            live=packet['live_drops']
+            self.packet['live_drops']=copy.deepcopy({key:value for key,value in live.items() if key!='tables'})
+            self.packet['live_drops']['tables']=copy_tables(live['tables'])
+        tables=dict(self.packet['tables'])
+        if live_drops and 'live_drops' in packet:tables.update(self.packet['live_drops']['tables'])
         self.tables = {name: [dict(zip(packet['columns'][name], row)) for row in rows]
-                       for name, rows in packet['tables'].items()}
+                       for name, rows in tables.items()}
 
     def row(self, table, value, column='profile_id'):
         if value is None: return None
@@ -113,7 +126,7 @@ class Catalog:
                 for r in self.tables['bonus_profile_entry'] if profile_id is not None and r['profile_id'] == str(profile_id)]
 
     def items(self):
-        return sorted(copy.deepcopy(self.tables['item_base']), key=lambda r: (int(r['category_id']), int(r['local_id'])))
+        return sorted((dict(row) for row in self.tables['item_base']), key=lambda r: (int(r['category_id']), int(r['local_id'])))
 
     def choices(self, table, column='profile_id'):
         return sorted(((r[column], r.get('code', r[column])) for r in self.tables[table]), key=lambda pair: int(pair[0]))
@@ -137,10 +150,14 @@ class Catalog:
         result.update(self.attribute_document(base))
         result['recipes'] = self.recipes_of(key)
         result['pet_food_rules']=[{k:v for k,v in r.items() if k not in ('category_id','local_id')} for r in sorted(self.tables['pet_feed_rule'],key=lambda r:int(r['service_kind'])) if (int(r['category_id']),int(r['local_id']))==tuple(key)]
+        if category==16:result['money_policy']=dict(mode_kind=next((r['mode_kind'] for r in self.tables['currency_token_policy'] if (int(r['category_id']),int(r['local_id']))==tuple(key)),'1'))
         if category==8:result['hatch']=self.linked('pet_hatch_profile',child,'hatch_profile_id')
         if category==22:result['forge_levels']=[{k:v for k,v in r.items() if k not in ('category_id','local_id')} for r in self.tables['forge_aid_level'] if (int(r['category_id']),int(r['local_id']))==tuple(key)]
         if category==19:result['regalia_rules']=[{k:v for k,v in r.items() if k not in ('category_id','local_id')} for r in self.tables['regalia_bonus_rule'] if (int(r['category_id']),int(r['local_id']))==tuple(key)]
+        if category==19:result['absorption_sash']=next(({k:v for k,v in r.items() if k not in ('category_id','local_id')} for r in self.tables.get('absorption_sash_profile',[]) if (int(r['category_id']),int(r['local_id']))==tuple(key)),None)
         if category==20:result['special_tiers']=[{k:v for k,v in r.items() if k not in ('category_id','local_id')} for r in self.tables['special_bonus_tier'] if (int(r['category_id']),int(r['local_id']))==tuple(key)]
+        if category==20:result['bonus_choices']=[{k:v for k,v in r.items() if k not in ('category_id','local_id')} for r in self.tables['bonus_tool_choice'] if (int(r['category_id']),int(r['local_id']))==tuple(key)]
+        if category in (4,19):result['costume_transfer_allowed']=any((int(r['category_id']),int(r['local_id']))==tuple(key) for r in self.tables.get('costume_transfer_target',[]))
         if category == 4:
             result['visuals'] = [{k: r[k] for k in ('character_class', 'sex', 'model_asset')} for r in self.tables['item_costume_visual']
                                  if r['category_id'] == base['category_id'] and r['local_id'] == base['local_id']]
@@ -150,7 +167,10 @@ class Catalog:
         if category in (2, 3): result['resistance'] = self.linked('item_resistance_profile', child, 'resistance_profile_id')
         if category == 5:
             result.update(book_aid=None,toggle=None, toggle_group=None, toggle_bonuses=[],socket_service=None,attribute_service=None,attribute_tiers=[])
-            if child.get('book_aid_profile_id') is not None:
+            service=next((r for r in self.tables.get('item_character_service',[]) if (int(r['category_id']),int(r['local_id']))==tuple(key)),None)
+            result['character_service']={k:v for k,v in service.items() if k not in ('category_id','local_id')} if service else None
+            if service:result.update(recovery=None,effect=None,timed=None,timed_group=None,timed_bonuses=[],cooldown=None)
+            elif child.get('book_aid_profile_id') is not None:
                 result.update(book_aid=self.linked('book_aid_profile',child,'book_aid_profile_id'),recovery=None,effect=None,timed=None,timed_group=None,timed_bonuses=[],cooldown=None)
             elif child.get('attribute_service_profile_id') is not None:
                 result.update(attribute_service=self.linked('attribute_service_profile',child,'attribute_service_profile_id'),attribute_tiers=[{k:v for k,v in r.items() if k!='profile_id'} for r in self.book_rows('attribute_tier_chance',child['attribute_service_profile_id'],'tier')],recovery=None,effect=None,timed=None,timed_group=None,timed_bonuses=[],cooldown=None)
@@ -164,6 +184,7 @@ class Catalog:
                               cooldown=self.linked('consumable_cooldown_profile', toggle, 'cooldown_profile_id'))
             elif child.get('timed_effect_profile_id') is not None:
                 timed = self.linked('timed_effect_profile', child, 'timed_effect_profile_id')
+                result['energy_tiers']=[{k:v for k,v in t.items() if k!='profile_id'} for t in self.tables['energy_crystal_tier'] if t['profile_id']==timed['profile_id']]
                 result.update(timed=timed, timed_group=self.linked('timed_effect_group', timed, 'group_id', 'group_id'),
                               timed_bonuses=self.entries(timed['bonus_profile_id']), recovery=None, effect=None,
                               cooldown=self.linked('consumable_cooldown_profile', timed, 'cooldown_profile_id'))
@@ -206,6 +227,8 @@ class Catalog:
             if loot is not None:
                 loot['entries'] = self.loot_entries(loot['profile_id'])
             result['loot'] = loot
+        if 'item_definition_rules' in self.tables:
+            result['definition_rules']=[copy.deepcopy(r) for r in self.tables['item_definition_rules'] if r['category_id']==base['category_id'] and r['local_id']==base['local_id']]
         return result
 
     def recipes_of(self, key):
@@ -310,7 +333,7 @@ class Catalog:
         if category == 2: item['child'].update(physical_defense_base_raw='0', magical_defense_base_raw='0')
         if category == 3: item['child']['socket_profile_id'] = None
         if category == 4:
-            item['child'].update(costume_kind='1', weapon_subtype=None, clock_kind='1', duration_ms='0')
+            item['child'].update(costume_kind='1', weapon_subtype=None, clock_kind='1', duration_ms='0', companion_form_id=None, body_effect_id='0',weapon_sword_effect_id='0',weapon_dagger_effect_id='0',weapon_bow_effect_id='0',weapon_two_handed_effect_id='0',weapon_bell_effect_id='0',weapon_fan_effect_id='0',weapon_dagger_alternate_effect_id='0',weapon_fan_alternate_effect_id='0')
             item['visuals'] = [dict(character_class=str(c), sex=str(s), model_asset='models/costume_body.model') for c in range(1,5) for s in range(1,3)]
         if category==19:
             item['child'].update(regalia_kind='1',rune_slot='0',stole_grade='1',capacity_ms='0',initial_ms='0')
@@ -322,7 +345,7 @@ class Catalog:
             item['child']['ammo_policy_id']=policies[0]['policy_id'] if policies else None
             item['ammo']=None if policies else dict(ammo_kind='2',units_per_hit='1')
         if category==20:
-            item['child'].update(operation_kind='1',units='1',parameter='0',bonus_id=None,value_scaled=None);item['special_tiers']=[]
+            item['child'].update(operation_kind='1',units='1',parameter='0',bonus_id=None,value_scaled=None);item['special_tiers']=[];item['bonus_choices']=[]
         item['pet_food_rules']=[]
         if category == 6: item['child']['material_kind'] = '1'
         if category == 7: item['child'].update(stone_kind='1', allowed_targets='1', minimum_socket_grade='1', primary_group='', secondary_group='')
@@ -335,11 +358,11 @@ class Catalog:
             item['child']['attribute_service_profile_id']=None
             item.update(timed=None, timed_group=None, timed_bonuses=[], toggle=None, toggle_group=None, toggle_bonuses=[])
         if category == 8:
-            # A usable placeholder box: one weighted gold entry until real contents are entered.
+            # New boxes stay empty until their contents are authored on Dropok.
             item['child'].update(container_kind='1', loot_profile_id=None, lock_id='0',hatch_profile_id=None)
             item['hatch']=None
-            item['loot'] = dict(pick_mode='1', entries=[dict(entry_no='1', reward_kind='2', item_category_id=None, item_local_id=None,
-                                                             amount='1', weight='1', rare_attribute_chance_bp='0')])
+            item['loot'] = dict(pick_mode='1', entries=[dict(entry_no='1', reward_kind='9', item_category_id=None, item_local_id=None,
+                                                             amount='0', weight='1', rare_attribute_chance_bp='0')])
         if category == 9:
             item['child']['profile_id'] = None
             item.update(self.book_defaults())
@@ -351,15 +374,16 @@ class Catalog:
             item.update(self.growth_defaults(),training=None)
             identity=self.allocate('companion_form','form_id')
             item.update(new_companion_form=None if forms else dict(code=f'companion.new_form_{identity}',mob_template_id='101',model_asset='models/companion.model'),new_riding_form=None,riding_same_form=False)
+        if category==16:item['money_policy']=dict(mode_kind='1')
         if category == 14:
-            item['base']['max_stack']='1';item['child'].update(soul_kind='1',damage_channel='1',profile_id=None,refine_chance_bp='0')
+            item['base']['max_stack']='1';item['child'].update(soul_kind='1',damage_channel='1',profile_id=None,refine_chance_bp='0',next_category_id=None,next_local_id=None)
             item['refinement']['profile_kind']='8';item['soul_levels']=[self.soul_level(0)]
         if category == 13:
             item['base']['max_stack']='1'
             item['child'].update(profile_id=None,fixed_form_id=None)
             item.update(self.polymorph_defaults(),new_poly_form=None)
         if category == 11:
-            item['child'].update(tool_kind='1',profile_id=None,fishing_pool='1')
+            item['child'].update(tool_kind='1',profile_id=None,fishing_pool='1',all_water_pools='0',maximum_uses='0')
             item.update(tool={},tool_levels=[self.tool_level(0,terminal=True)])
         if category == 12:
             item['child'].update(fishing_kind='3',use_loot_profile_id=None,grill_category_id=None,grill_local_id=None,bait_power='1')
@@ -392,7 +416,7 @@ class Catalog:
     def tool_level(level,terminal=False):
         return dict(level=str(level),power='0',gather_bonus_bp='0',required_points='0' if terminal else '1',
                     practice_numerator='0' if terminal else '1',practice_denominator='1',refine_chance_bp='0' if terminal else '10000',
-                    failure_kind='1',failure_level=None,failure_loss_bp='0')
+                    failure_kind='1',failure_level=None,failure_loss_bp='0',success_category_id=None,success_local_id=None,success_level='0',failure_category_id=None,failure_local_id=None,display_grade='65535')
 
     @staticmethod
     def book_defaults(template='master'):
@@ -435,8 +459,8 @@ class Catalog:
     @staticmethod
     def timed_defaults(local):
         return dict(timed=dict(group_id=None, bonus_profile_id=None, duration_ms='60000', units_per_use='1',
-                               allowed_contexts='15', allow_during_pvp='1', cooldown_profile_id=None),
-                    timed_group=dict(group_id=None, code=f'effect.item_{local}', reapply_kind='1', clock_kind='1', remove_on_death='1'),
+                               allowed_contexts='15', allow_during_pvp='1', cooldown_profile_id=None,utility_kind='0',conflict_bonus_id=None),
+                    timed_group=dict(group_id=None, code=f'effect.item_{local}', reapply_kind='1', clock_kind='1', remove_on_death='1',family_kind='0'),
                     timed_bonuses=[dict(bonus_id='26', value_scaled='1500')])
 
     # --- low-level table edits -------------------------------------------
@@ -495,7 +519,7 @@ class Catalog:
         order; a profile used by another box is copied, never edited in place."""
         if not loot: return None
         mode = str(loot['pick_mode'])
-        wanted = [{name: text(entry.get(name)) for name in LOOT_FIELDS} for entry in loot['entries']]
+        wanted = [{name: text(entry.get(name,'0' if name=='refinement_level' else None)) for name in LOOT_FIELDS} for entry in loot['entries']]
         for number, entry in enumerate(wanted, 1): entry['entry_no'] = str(number)
         old = self.row('loot_profile', old_id)
         if old and old['pick_mode'] == mode and self.loot_entries(old_id) == wanted: return old_id
@@ -530,7 +554,7 @@ class Catalog:
                 self.replace(table, {idcol: pid}, [])
 
     # --- document -> tables ------------------------------------------------
-    def apply(self, document, original_key=None):
+    def apply(self, document, original_key=None, *, encode_result=True):
         document = copy.deepcopy(document)
         base, child = document['base'], document['child']
         category = int(base['category_id'])
@@ -550,7 +574,9 @@ class Catalog:
             for field in ('use_policy_id', 'trade_policy_id', 'appearance_profile_id'): base[field] = None
             for field in ('attack_profile_id', 'ammo_policy_id', 'resistance_profile_id', 'hatch_profile_id'):
                 if field in child and not (category==21 and field=='ammo_policy_id'): child[field] = None
-        before = self.referenced()
+        # Adding a new identity cannot release another item's references.
+        # Avoid a full catalog reference scan on every offline batch addition.
+        before = self.referenced() if exists else set()
         base['use_policy_id'] = self.profile('item_use_policy', document['use'], base.get('use_policy_id'), idcol='policy_id')
         base['trade_policy_id'] = self.profile('item_trade_policy', document['trade'], base.get('trade_policy_id'), idcol='policy_id')
         appearance = document.get('appearance')
@@ -567,9 +593,13 @@ class Catalog:
             child['resistance_profile_id'] = self.profile('item_resistance_profile', document['resistance'], child.get('resistance_profile_id'))
         self.apply_attributes(document,key)
         if category == 5:
+            child['character_service']='1' if document.get('character_service') else '0'
             old_aid=child.get('book_aid_profile_id')
             child['book_aid_profile_id']=None
-            if document.get('book_aid') is not None:
+            self.replace('item_character_service',{'category_id':key[0],'local_id':key[1]},[dict(document['character_service'],category_id=str(key[0]),local_id=str(key[1]))] if document.get('character_service') else [])
+            if document.get('character_service') is not None:
+                child.update(recovery_profile_id=None,timed_effect_profile_id=None,toggle_effect_profile_id=None,socket_service_profile_id=None,attribute_service_profile_id=None,book_aid_profile_id=None)
+            elif document.get('book_aid') is not None:
                 identity=self.profile('book_aid_profile',document['book_aid'],old_aid if exists else None)
                 child.update(recovery_profile_id=None,timed_effect_profile_id=None,toggle_effect_profile_id=None,socket_service_profile_id=None,attribute_service_profile_id=None,book_aid_profile_id=identity)
             elif document.get('attribute_service') is not None:self.apply_attribute_service(document,child,key,exists)
@@ -582,6 +612,10 @@ class Catalog:
         if category == 9: self.apply_book(document, child, key)
         if category == 17:self.apply_pet_supply(document,child,key)
         if category == 15:self.apply_companion(document,child,key)
+        if category == 4 and document.get('new_companion_form'):
+            form=document['new_companion_form'];identity=self.allocate('companion_form','form_id')
+            self.replace('companion_form',{'form_id':identity},[dict(form,form_id=identity)])
+            child['companion_form_id']=identity
         if category == 14:self.apply_soul(document,child,key)
         if category == 13:self.apply_polymorph(document,child,key)
         if category == 11: self.apply_tool(document,child,key)
@@ -594,19 +628,32 @@ class Catalog:
                 raise api.EditorError('A pettojás keltetési beállításai hiányoznak.')
             child['hatch_profile_id']=self.profile('pet_hatch_profile',document.get('hatch'),child.get('hatch_profile_id')) if child['container_kind']=='4' else None
         self.replace('item_base', {'category_id': key[0], 'local_id': key[1]}, [base])
+        if 'costume_transfer_allowed' in document:
+            allowed=document['costume_transfer_allowed']
+            if not isinstance(allowed,bool) or (allowed and category not in (4,19)):raise api.EditorError('Érvénytelen kosztümbónusz-átviteli jogosultság.')
+            self.replace('costume_transfer_target',{'category_id':key[0],'local_id':key[1]},[dict(category_id=str(key[0]),local_id=str(key[1]))] if allowed else [])
+        if 'item_definition_rules' in self.tables and 'definition_rules' in document:
+            self.replace('item_definition_rules',{'category_id':key[0],'local_id':key[1]},
+                         [dict({'birth_attribute_profile_id':None,'birth_open_stone_sockets':'0','weapon_effect_alternate':'0',**r},category_id=str(key[0]),local_id=str(key[1])) for r in document['definition_rules']])
         if category == 4:
             self.replace('item_costume_visual', {'category_id': base['category_id'], 'local_id': base['local_id']},
                          [dict(v, category_id=base['category_id'], local_id=base['local_id']) for v in document['visuals']])
+        if category==16:
+            mode=str(document.get('money_policy',{}).get('mode_kind','1'))
+            if mode not in ('1','2','3'):raise api.EditorError('Érvénytelen pénztárgy-működés.')
+            self.replace('currency_token_policy',{'category_id':key[0],'local_id':key[1]},[dict(category_id=str(key[0]),local_id=str(key[1]),mode_kind=mode)] if mode!='1' else [])
         self.replace(CHILD_TABLES[category], {'category_id': key[0], 'local_id': key[1]}, [child])
         if category==22:self.replace('forge_aid_level',{'category_id':key[0],'local_id':key[1]},[dict(r,category_id=str(key[0]),local_id=str(key[1])) for r in document['forge_levels']])
         if category==19:self.replace('regalia_bonus_rule',{'category_id':key[0],'local_id':key[1]},[dict(r,category_id=str(key[0]),local_id=str(key[1])) for r in document['regalia_rules']])
+        if category==19:self.replace('absorption_sash_profile',{'category_id':key[0],'local_id':key[1]},[dict(document['absorption_sash'],category_id=str(key[0]),local_id=str(key[1]))] if document.get('absorption_sash') else [])
         if category==20:self.replace('special_bonus_tier',{'category_id':key[0],'local_id':key[1]},[dict(r,category_id=str(key[0]),local_id=str(key[1])) for r in document['special_tiers']])
+        if category==20:self.replace('bonus_tool_choice',{'category_id':key[0],'local_id':key[1]},[dict(r,category_id=str(key[0]),local_id=str(key[1])) for r in document.get('bonus_choices',[])])
         self.replace('pet_feed_rule',{'category_id':key[0],'local_id':key[1]},
                      [dict(r,category_id=key[0],local_id=key[1]) for r in document.get('pet_food_rules',[])])
         # A document without the section (older callers) leaves recipes alone.
         if 'recipes' in document or base.get('retired') == '1': self.apply_recipes(document, key, exists)
         self.prune(before)
-        return self.encode()
+        return self.encode() if encode_result else None
 
     @staticmethod
     def forge_defaults(preset='blessing'):
@@ -636,7 +683,7 @@ class Catalog:
 
     @staticmethod
     def attribute_service_defaults():
-        return dict(attribute_service=dict(operation_kind='1',pool_kind='1',units_per_use='1',success_bp='10000',target_mask='7',minimum_count='0',maximum_count='4',add_count='1',maximum_target_level='0',consume_on_failure='0'),attribute_tiers=[dict(tier='1',chance_bp='4000'),dict(tier='2',chance_bp='6000')])
+        return dict(attribute_service=dict(operation_kind='1',pool_kind='1',units_per_use='1',success_bp='10000',target_mask='7',minimum_count='0',maximum_count='4',add_count='1',maximum_target_level='0',consume_on_failure='0',target_reroll_group='0'),attribute_tiers=[dict(tier='1',chance_bp='4000'),dict(tier='2',chance_bp='6000')])
 
     def attribute_document(self,base):
         result=self.attribute_defaults()
@@ -677,6 +724,7 @@ class Catalog:
 
     def apply_refinement(self, document, base, key):
         refinement, old = document['refinement'], base.get('refinement_profile_id')
+        old_levels={r['level']:r for r in self.tables['refinement_level'] if r['profile_id']==old} if old else {}
         # The curve is part of the profile's content: a shared head is never
         # edited in place, even when only a level row changes.
         users = [row for _, row in self.references('refinement_profile', old)] if old else []
@@ -688,6 +736,11 @@ class Catalog:
         base['refinement_profile_id'] = profile
         levels = []
         for row in document['levels']:
+            row=dict(row)
+            # Older authoring forms do not expose imported per-level policies.
+            # Preserve them unless the document explicitly supplies a value/NULL.
+            for field in ('minimum_level','buy_amount','sell_amount'):
+                if field not in row and field in old_levels.get(str(row['level']),{}):row[field]=old_levels[str(row['level'])][field]
             row = dict(row, profile_id=profile)
             if 'bonuses' in row:
                 row['extra_bonus_profile_id'] = self.bonus(row.pop('bonuses'), row.get('extra_bonus_profile_id'), '2',
@@ -871,10 +924,10 @@ class Catalog:
         self.replace(table, {'profile_id': profile}, [dict(document['effect'], profile_id=profile, delivery_kind=recovery['delivery_kind'])])
 
     def apply_timed(self, document, child, key):
-        timed = document['timed']
-        group = document['timed_group']
+        timed = document['timed'];timed.setdefault('utility_kind','0');timed.setdefault('conflict_bonus_id',None)
+        group = document['timed_group'];group.setdefault('family_kind','0')
         old_group = self.row('timed_effect_group', group.get('group_id'), 'group_id')
-        fields = ('code', 'reapply_kind', 'clock_kind', 'remove_on_death')
+        fields = ('code', 'reapply_kind', 'clock_kind', 'remove_on_death','family_kind')
         if old_group:
             if any(str(group.get(f)) != old_group[f] for f in fields):
                 raise api.EditorError('Meglévő hatáscsoport szabályai nem módosíthatók tárgyszerkesztéssel. Válassz új csoportot.')
@@ -898,7 +951,15 @@ class Catalog:
         cooldown = document.get('cooldown')
         timed['cooldown_profile_id'] = self.profile('consumable_cooldown_profile', cooldown, timed.get('cooldown_profile_id'),
                                                    reuse=private) if cooldown else None
-        child.update(recovery_profile_id=None, toggle_effect_profile_id=None,socket_service_profile_id=None,attribute_service_profile_id=None, timed_effect_profile_id=self.profile('timed_effect_profile', timed, old if private else None))
+        tiers=document.get('energy_tiers',[])
+        if timed['utility_kind']!='3' and tiers:raise api.EditorError('Energiaerősségek csak energiakristályhoz adhatók.')
+        identity=self.profile('timed_effect_profile',timed,old if private else None)
+        existing=[{k:v for k,v in t.items() if k!='profile_id'} for t in self.tables['energy_crystal_tier'] if t['profile_id']==identity]
+        if existing!=tiers and any((int(r['category_id']),int(r['local_id']))!=key for r in self.tables['item_consumable'] if r.get('timed_effect_profile_id')==identity):
+            identity=self.allocate('timed_effect_profile')
+            self.replace('timed_effect_profile',{'profile_id':identity},[dict(timed,profile_id=identity,code='editor.energy.'+identity)])
+        self.replace('energy_crystal_tier',{'profile_id':identity},[dict(t,profile_id=identity) for t in tiers])
+        child.update(recovery_profile_id=None, toggle_effect_profile_id=None,socket_service_profile_id=None,attribute_service_profile_id=None, timed_effect_profile_id=identity)
 
     def apply_toggle(self, document, child, key):
         toggle = document['toggle']
@@ -1067,7 +1128,7 @@ LOOT_TEXT = {
     'InvalidReward': 'Tárgyjutalomhoz tárgyat kell választani, más jutalomhoz nem.',
     'InvalidAmount': 'A mennyiség kívül esik a tartományon (lassítás és HP-szívás legfeljebb 100%, mérgezésé 0).',
     'InvalidWeight': 'A súly legalább 1; soronkénti esélynél legfeljebb 100%.',
-    'InvalidRareChance': 'Ritka bónusz esélye csak tárgyjutalomnál adható, legfeljebb 100%.',
+    'InvalidRareChance': 'A bónusszal létrejövés esélye csak tárgyjutalomnál adható, legfeljebb 100%.',
     'WeightOverflow': 'A súlyok összege túl nagy.',
 }
 DROP_TEXT = {
@@ -1083,7 +1144,7 @@ DROP_TEXT = {
     'InvalidChance': 'az esély 0%-nál nagyobb és legfeljebb 100% legyen.',
     'InvalidWeight': 'súlyozott módban minden súly legalább 1.',
     'WeightOverflow': 'a súlyok összege túl nagy.',
-    'InvalidRareChance': 'a ritka bónusz esélye legfeljebb 100%.',
+    'InvalidRareChance': 'a bónusszal létrejövés esélye legfeljebb 100%.',
     'InvalidKillerLevels': 'a gyilkos szintablaka 1-től indul, és az alsó határ nem lehet nagyobb a felsőnél.',
 }
 BASE_TEXT = {
@@ -1200,7 +1261,7 @@ def validate(packet, document, original_key=None, executable=None):
     return run_tool(dict(action='validate', tables=tables), packet['columns'], executable)['hash']
 
 
-def request(root, tables=None, expected_hash=None, columns=None):
+def request(root, tables=None, expected_hash=None, columns=None, *, drop_publish=None,batch_publish=None):
     root = api.package_root(root); manager = api.load_manager(root)
     owner = manager.read_json(root / 'run/mariadb/owner.json')
     if not manager.owned(manager.read_json(root / 'run/mariadb/process.json')): raise api.EditorError('A helyi tesztadatbázis nem fut.')
@@ -1217,10 +1278,12 @@ def request(root, tables=None, expected_hash=None, columns=None):
         auth.update(user=private['client']['user'], password=private['client']['password'])
     payload = dict(action='commit' if mutation else 'read', connection=auth)
     if mutation: payload.update(tables=tables, expected_hash=expected_hash)
+    if drop_publish is not None: payload.update(drop_publish,action='commit_drops')
+    if batch_publish is not None:payload.update(batch_publish,action='commit_catalog_batch')
     return run_tool(payload, columns)
 
 
-def commit_tables(root, before, tables, record):
+def commit_tables(root, before, tables, record,*,batch_publish=None):
     """Write edited tables to the package's protos with a receipt folder
     (before, requested, result). `record` names what changed in result.json."""
     root = api.package_root(root)
@@ -1232,7 +1295,7 @@ def commit_tables(root, before, tables, record):
         folder = root / 'run/catalog-editor' / stamp; folder.mkdir(parents=True, exist_ok=False)
         (folder / 'before.json').write_text(json.dumps(before, ensure_ascii=True), encoding='utf-8')
         (folder / 'requested.json').write_text(json.dumps(dict(expected_hash=before['hash'], tables=tables), ensure_ascii=True), encoding='utf-8')
-        result = request(root, tables, before['hash'], before['columns'])
+        result = request(root, tables, before['hash'], before['columns'],batch_publish=batch_publish) if batch_publish is not None else request(root,tables,before['hash'],before['columns'])
         (folder / 'result.json').write_text(json.dumps(dict(record, hash=result['hash'])), encoding='utf-8')
         return result
 
@@ -1244,15 +1307,54 @@ def save(root, before, document, original_key=None):
 
 def validate_drops(packet, document, original_id=None, executable=None):
     """Offline check of one drop group with the game's catalog builder."""
-    tables = Catalog(packet).apply_drops(document, original_id)
+    tables = Catalog(packet,live_drops=True).apply_drops(document, original_id)
     return run_tool(dict(action='validate', tables=tables), packet['columns'], executable)['hash']
 
 
 def save_drops(root, before, document, original_id=None):
-    tables = Catalog(before).apply_drops(document, original_id)
-    return commit_tables(root, before, tables, dict(drop_group=text(original_id), drop_code=document['group']['code']))
+    tables = Catalog(before,live_drops=True).apply_drops(document, original_id)
+    return commit_drop_tables(root,before,tables,dict(drop_group=text(original_id),drop_code=document['group']['code']))
 
 
 def delete_drops(root, before, group_id):
-    tables = Catalog(before).delete_drop_group(group_id)
-    return commit_tables(root, before, tables, dict(deleted_drop_group=str(group_id)))
+    tables = Catalog(before,live_drops=True).delete_drop_group(group_id)
+    return commit_drop_tables(root,before,tables,dict(deleted_drop_group=str(group_id)))
+
+
+def commit_drop_tables(root,before,tables,record,*,containers=None):
+    root=api.package_root(root);manager=api.load_manager(root)
+    # This lock is independent of the supervisor's lifetime lock. The native
+    # helper additionally serializes catalog writers and compares release IDs.
+    with manager.named_lock('drop-publication'):
+        state=api.describe(root)
+        if state['running'] and not state.get('drop_reload',{}).get('available'):
+            raise api.EditorError('A futó core-ok élő dropfrissítése még nem érhető el. Frissítsd a szerver buildjét és a 043-as migrációt.')
+        live=before.get('live_drops',{})
+        if not live.get('supported'):raise api.EditorError('A dropok mentéséhez a 043_live_mob_drops.sql migráció szükséges.')
+        if containers is not None:
+            if not live.get('containers_supported'): raise api.EditorError('Az élő ládatartalomhoz a 044_live_container_loot.sql migráció szükséges.')
+            if state['running'] and not state.get('drop_reload',{}).get('containers_available'):
+                raise api.EditorError('Az élő ládatartalomhoz minden futó core-on az új szerververzió szükséges.')
+        release=secrets.token_hex(16);folder=root/'run/catalog-editor'/('drops-'+release);folder.mkdir(parents=True)
+        (folder/'before.json').write_text(json.dumps(before,ensure_ascii=True),encoding='utf-8')
+        publish=dict(expected_release=live.get('release',''),expected_drop_hash=live.get('hash',before['hash']),release_id=release)
+        if containers is not None: publish.update(containers)
+        (folder/'requested.json').write_text(json.dumps(dict(publish,tables=tables,expected_hash=before['hash']),ensure_ascii=True),encoding='utf-8')
+        result=request(root,tables,before['hash'],before['columns'],drop_publish=publish)
+        saved=result['live_drops']
+        (folder/'result.json').write_text(json.dumps(dict(record,hash=saved['hash'],release=saved['release'])),encoding='utf-8')
+        # Publication has already committed. A missing acknowledgement is pending,
+        # not a failed save and never a reason to submit the economic edit twice.
+        try:
+            result['drop_activation']=manager.wait_drop_reload(saved['hash'],saved['release']) if state['running'] else dict(activated=False,running=False,cores=[])
+        except (OSError,RuntimeError,ValueError) as error:
+            result['drop_activation']=dict(activated=False,running=state['running'],cores=[],error=str(error))
+        (folder/'activation.json').write_text(json.dumps(result['drop_activation']),encoding='utf-8')
+        return result
+
+
+def reload_drops(root):
+    root=api.package_root(root);result=request(root);live=result['live_drops'];manager=api.load_manager(root)
+    if not live['supported']:raise api.EditorError('A 043_live_mob_drops.sql migráció szükséges.')
+    result['drop_activation']=manager.wait_drop_reload(live['hash'],live['release'])
+    return result

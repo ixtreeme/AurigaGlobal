@@ -15,6 +15,8 @@
 #include "item.h"
 #include "polymorph.h"
 #include "item_manager.h"
+#include "../item/ItemCatalogRuntime.hpp"
+#include "../item/TypedPolymorph.hpp"
 
 CPolymorphUtils::CPolymorphUtils()
 {
@@ -146,6 +148,9 @@ bool CPolymorphUtils::GiveBook(entt::entity character, uint32_t dwMobVnum, uint3
 {
 	if (character == entt::null || !g_registry.valid(character))
 		return false;
+
+	if (auriga::item::runtime::CurrentCatalog())
+		return GiveTypedPolymorphBook(character,dwMobVnum,dwPracticeCount,BookLevel);
 
 	if (CMobManager::instance().Get(dwMobVnum) == nullptr)
 	{

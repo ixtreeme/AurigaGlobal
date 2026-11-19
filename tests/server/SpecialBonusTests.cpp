@@ -1,7 +1,9 @@
 #include "SpecialBonusFixture.hpp"
+#include "CatalogSnapshotFixture.hpp"
 #include <item/EquipmentStats.hpp>
 #include <item/TypedInventoryWire.hpp>
 #include <algorithm>
+#include <set>
 #include <iostream>
 #include <stdexcept>
 #include <source_location>
@@ -19,6 +21,11 @@ std::expected<ItemCommit,ItemPersistenceError> Service(const ItemCatalog& c,unsi
 void Run(){auto built=BuildItemCatalog(f::Catalog());Check(built.has_value(),"special catalog");const auto& c=**built;
     std::uint64_t next=1;const auto grant=[&](ItemKey key,unsigned count=1){ItemGrant g{key};g.count=count;g.createdAtUtcMs=1000;std::array ids{ItemInstanceId::Create(next).value()};auto result=MakeGrantCommit(c,{static_cast<std::uint8_t>(next)},fence,layouts,items,g,ids);Check(result.has_value(),"real grant");Apply(*result);return next++;};
     const auto stole=grant(f::Regalia(1)),enchant=grant(f::Tool(1),3),bottle=grant(f::Tool(2)),reset=grant(f::Tool(3),3),donor=grant(f::Tool(4)),remove=grant(f::Tool(5),3),addon=grant(f::Tool(6),3),costume=grant(f::Costume());
+    {   // A stole granted with any instance ID (not only the template placeholder 1) draws for that ID.
+        ItemGrant g{f::Regalia(1)};g.createdAtUtcMs=1000;const std::array ids{ItemInstanceId::Create(4242).value()};
+        const auto other=MakeGrantCommit(c,{99},fence,layouts,items,g,ids);
+        Check(other.has_value() && other->items.size()==1 && other->items[0].after.regalia==InitialRegalia(std::get<ItemRegaliaRow>(c.Find(f::Regalia(1))->category),other->operationId,4242),"stole drawn for its own instance id");
+    }
     unsigned randomCalls=0;
     const auto countedRandom=[&](std::uint32_t){++randomCalls;return std::optional<std::uint32_t>{0};};
     Check(!MakeSpecialBonusCommit(c,{91},fence,{},items,Item(enchant).id,Item(stole).id,SpecialBonusAction::Service,0,0,{120,0,0},countedRandom) && !randomCalls,"missing storage denies before RNG");
@@ -43,5 +50,52 @@ void Run(){auto built=BuildItemCatalog(f::Catalog());Check(built.has_value(),"sp
     if(!goldenDirectory.empty()){std::filesystem::create_directories(goldenDirectory);const auto save=[&](const char* name,const std::vector<std::byte>& data){std::ofstream out(goldenDirectory/name);for(auto b:data)out<<std::hex<<std::setfill('0')<<std::setw(2)<<std::to_integer<unsigned>(b);out<<'\n';Check(out.good(),"golden write");};save("typed_regalia_v14.hex",*wire);const auto details=EncodeTypedItemDetails(c,live,false);Check(details.has_value() && std::to_integer<unsigned>((*details)[5])==3,"v3 details");save("typed_special_details_v3.hex",*details);}
     for(unsigned n=0;n<wire->size();++n)Check(!DecodeTypedInventory(std::span(*wire).first(n),owner),"wire truncation");
 }
+void RandomGrantPool(){
+    auto s=f::Catalog();auto& tool=s.bonusTools[3];tool.payload.reset();
+    // Source costumes have a normal reroll profile, without random rare rows.
+    std::erase_if(s.attributeProfiles.back().groups,[](const auto& g){return g.pool==AttributePool::Rare;});
+    std::erase_if(s.attributeProfiles.back().candidates,[](const auto& c){return c.pool==AttributePool::Rare;});
+    for(unsigned i=1;i<=5;++i)tool.choices.push_back({static_cast<std::uint8_t>(i),{static_cast<BonusId>(28+i),static_cast<std::int64_t>(i)}});
+    Check(ValidBonusTool(tool),"explicit uniform costume pool validates");const auto c=BuildItemCatalog(s).value();
+    Check(auriga::item::sql::DecodeSnapshot(catalog_snapshot_fixture::Snapshot(s),{1,c->ContentHash()}).has_value(),"random choices survive SQL snapshot and digest");
+    const ItemOwner own{ItemOwnerKind::Character,88};const ItemOwnerFence fce{own,1,1};const std::array bag{ItemStorageLayout{{own,ItemStorageKind::Inventory,1},5,9,1}};
+    std::set<BonusId> reached;
+    for(unsigned i=1;i<=128;++i){const std::array<std::uint8_t,16> op{static_cast<std::uint8_t>(i)};const std::array ids{ItemInstanceId::Create(i+4000).value()};
+        const auto grant=MakeGrantCommit(*c,op,fce,bag,{},ItemGrant{tool.key},ids);Check(grant.has_value(),"random donor is granted through real factory");const auto state=grant->items[0].after.bonusTool.value();
+        Check(state==InitialBonusTool(tool,op,ids[0].Value()) && ValidBonusToolState(tool,state),"server operation and allocated instance determine saved payload");reached.insert(state.payload->bonus);
+        auto forged=*grant;forged.items[0].after.bonusTool->payload->valueScaled++;Check(!ValidateItemCommit(*c,forged),"birth proof refuses caller-selected payload");
+        const auto bytes=EncodeBonusToolState(state);Check(DecodeBonusToolState(bytes)==state,"persisted payload decodes without drawing again");
+    }
+    Check(reached.size()==5,"all five configured choices reachable");
+    InstanceAttributes donorOnly;donorOnly.slots[5]=tool.choices[0].payload;
+    Check(ValidateInstanceAttributes(*c,f::Costume(),donorOnly).has_value(),"explicit donor uses a rare slot without creating a random rare pool");
+    donorOnly.slots[6]=tool.choices[0].payload;Check(!ValidateInstanceAttributes(*c,f::Costume(),donorOnly),"donor-only slots still forbid duplicate bonus types");
+    auto changed=s;changed.bonusTools[3].choices[0].payload.valueScaled++;Check(BuildItemCatalog(changed).value()->ContentHash()!=c->ContentHash(),"pool values covered by catalog digest");
+    std::ranges::reverse(s.bonusTools[3].choices);Check(BuildItemCatalog(s).value()->ContentHash()==c->ContentHash(),"pool input order canonicalized");
+    auto bad=[&](auto edit){auto x=changed;edit(x.bonusTools[3]);Check(!BuildItemCatalog(x),"malformed random donor rejected");};
+    bad([](auto& t){t.payload=BonusEntry{BonusId::Strength,1};});bad([](auto& t){t.choices[1].payload=t.choices[0].payload;});bad([](auto& t){t.choices[0].choice=0;});bad([](auto& t){t.operation=SpecialBonusOperation::PairedAddon;});
 }
-int main(int argc,char** argv){try{if(argc==3 && std::string_view(argv[1])=="--write-golden")goldenDirectory=argv[2];Run();std::cout<<"SPECIAL_BONUS_TESTS=SUCCESS checks="<<checks<<'\n';return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+void TimedStoles(){
+    for(unsigned kind=2;kind<=4;++kind){
+        auto source=f::Catalog();ItemDefinitionRules rule{f::Regalia(1)};rule.clock=static_cast<CostumeClock>(kind);rule.durationMs=10000;source.definitionRules.push_back(rule);
+        const auto c=BuildItemCatalog(source).value();items.clear();fence={owner,1,1};
+        const auto id=ItemInstanceId::Create(9000+kind).value();const std::array ids{id};ItemGrant g{f::Regalia(1)};g.createdAtUtcMs=1000;
+        if(kind==2){auto missing=g;missing.createdAtUtcMs=0;Check(!MakeGrantCommit(*c,{77},fence,layouts,items,missing,ids),"creation-clock stole requires actual issuance UTC");}
+        Apply(MakeGrantCommit(*c,{78},fence,layouts,items,g,ids).value());
+        EquipContext actor{120,0,0,2000};Apply(MakeEquipCommit(*c,{79},fence,layouts,items,id,actor).value());
+        const auto saved=Item(id.Value()).costume.value();
+        const auto wire=EncodeTypedInventory(*c,layouts,{},items).value();Check(wire[5]==std::byte{24},"timed stole gets explicit inventory v24");
+        const auto decoded=DecodeTypedInventory(wire,owner).value();Check(decoded.items[0].costume==saved && decoded.stoleClocks.at(id).clock==rule.clock,"native stole lifetime rules and state roundtrip");
+        auto version=wire;version[5]=std::byte{23};Check(!DecodeTypedInventory(version,owner),"old decoder layout cannot consume a stole clock extension");
+        const std::array debt{CostumeElapsed{id.Value(),kind==4 ? 400u : 0u}};actor.costumeElapsed=debt;
+        Apply(MakeUnequipCommit(*c,{80},fence,layouts,items,id,{ItemStorageKind::Inventory,1,0},actor).value());
+        Check(Item(id.Value()).costume->remainingMs==(kind==4 ? 9600u : 0u),"wear-time stole settles exact server debt");
+        actor.costumeElapsed={};Apply(MakeEquipCommit(*c,{81},fence,layouts,items,id,actor).value());
+        const auto expiry=MakeCostumeClockCommit(*c,{82},fence,layouts,items,id,500000,kind==4 ? 9600 : 0).value();
+        Check(expiry.items[0].after.destroyed && expiry.items[0].after.costume->expired,"all finite stole clock modes destroy at expiry");
+        auto forged=expiry;forged.items[0].after.costume->expired=false;Check(!ValidateItemCommit(*c,forged),"clock expiry cannot be forged");
+    }
+}
+
+}
+int main(int argc,char** argv){try{if(argc==3 && std::string_view(argv[1])=="--write-golden")goldenDirectory=argv[2];Run();RandomGrantPool();TimedStoles();std::cout<<"SPECIAL_BONUS_TESTS=SUCCESS checks="<<checks<<'\n';return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

@@ -11,12 +11,10 @@
 
 namespace auriga::player_cache
 {
-inline constexpr size_t MaximumItems = 1024;
 // Borrowed only for the current main-thread call. No cache pointers survive Begin/Poll.
 struct View
 {
     CPlayerTableCache *player = nullptr;
-    std::span<CItemCache *const> items;
 };
 enum class Status
 {
@@ -62,16 +60,9 @@ class Drain final
     }
 
   private:
-    struct ItemStamp
-    {
-        uint32_t id;
-        CacheVersion version;
-        bool operator==(const ItemStamp &) const = default;
-    };
     struct Stamp
     {
         CacheVersion player;
-        std::vector<ItemStamp> items;
         bool operator==(const Stamp &) const = default;
     };
     static std::optional<Stamp> Inspect(View view, uint32_t character, bool requireClean);

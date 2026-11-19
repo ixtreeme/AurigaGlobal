@@ -17,6 +17,9 @@
 #include "cmd.h"
 #include "packet.h"
 #include "../ecs/quest_helpers.hpp"
+#include "../item/TypedGuildRewards.hpp"
+#include "../item/ItemCatalogRuntime.hpp"
+#include "../item/TypedLoot.hpp"
 
 #ifdef ADVANCED_GUILD_INFO
 	#include "guild_manager.h"
@@ -145,6 +148,42 @@ namespace quest
 			ItemSystem::DestroyItemEntityEcs(item, "QUEST_DROP_GROUND_FAILED");
 
 		return 0;
+	}
+
+	ALUA(game_drop_typed_item_with_ownership)
+	{
+		namespace item = auriga::item;
+		const auto integer = [L](int index, lua_Integer minimum, lua_Integer maximum) {
+			int valid = 0;
+			const auto value = lua_tointegerx(L, index, &valid);
+			return valid && value >= minimum && value <= maximum ? std::optional{value} : std::nullopt;
+		};
+		const auto category = integer(1, 1, UINT16_MAX);
+		const auto local = integer(2, 1, UINT32_MAX);
+		const auto level = integer(3, 0, 255);
+		const auto count = integer(4, 1, 50000);
+		const auto key = item::ItemKey::Create(static_cast<uint16_t>(category.value_or(0)),
+			static_cast<uint32_t>(local.value_or(0)));
+		const auto catalog = item::runtime::CurrentCatalog();
+		const auto* definition = catalog && key ? catalog->Find(*key) : nullptr;
+		const auto player = CQuestManager::instance().GetCurrentPCEntity();
+		bool placed = false;
+		if (player != entt::null && definition && level && count && *count <= definition->base.maxStack &&
+			!definition->base.retired && item::SupportsPersistentGrant(*catalog, *definition) &&
+			catalog->RefinedBaseStats(*key, *level) && catalog->CurrencyMode(*key) != item::CurrencyTokenMode::GroundGold)
+		{
+			const auto map = ecs::PlayerRuntime::GetMapIndex(player);
+			const auto x = ecs::PlayerRuntime::GetX(player);
+			const auto y = ecs::PlayerRuntime::GetY(player);
+			const item::ItemGrant grant{*key, static_cast<uint16_t>(*level), static_cast<uint32_t>(*count)};
+			// Preserve the old per-player claim time and ground lifetime for quest drops.
+			placed = DropTypedLoot(grant, map, x + number(-200, 200), y + number(-200, 200), 0, player, 10000) ||
+				DropTypedLoot(grant, map, x, y, 0, player, 10000);
+		}
+		if (!placed)
+			LOG_ERROR("QUEST {}: could not place a typed event reward", CQuestManager::instance().GetCurrentQuestName());
+		lua_pushboolean(L, placed);
+		return 1;
 	}
 
 	ALUA(game_drop_item_with_ownership)
@@ -317,18 +356,14 @@ namespace quest
 #ifdef ADVANCED_GUILD_INFO
 	ALUA(game_give_guild_reward)
 	{
-		// migrated from CHARACTER::GetGuild()->GiveReward
-		// DUAL-PATH: legacy only during migration window
-		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2))
-		{
-			sys_err("Wrong Input");
-			return 0;
-		}
-		int guild_id = (int)lua_tonumber(L, 1);
-		int item_reward = (int)lua_tonumber(L, 2);
-		CGuild * g = CGuildManager::instance().FindGuild(guild_id);
-		g->GiveReward(item_reward);
-		return 1;
+        const auto guild=luaL_checkinteger(L,1),category=luaL_checkinteger(L,2),local=luaL_checkinteger(L,3);
+        const auto level=luaL_checkinteger(L,4),count=luaL_checkinteger(L,5);
+        if(guild<=0 || guild>UINT32_MAX || category<=0 || category>UINT16_MAX || local<=0 || local>UINT32_MAX || level<0 || level>UINT16_MAX || count<=0 || count>UINT32_MAX)
+            return luaL_error(L,"Invalid native guild reward");
+        const auto key=auriga::item::ItemKey::Create(static_cast<std::uint16_t>(category),static_cast<std::uint32_t>(local));
+        if(!key || !QueueTypedGuildReward(static_cast<std::uint32_t>(guild),*key,static_cast<std::uint16_t>(level),static_cast<std::uint32_t>(count)))
+            return luaL_error(L,"Native guild reward unavailable");
+        lua_pushboolean(L,true);return 1;
 	}
 
 	ALUA(game_reset_guild_war_stats)
@@ -402,6 +437,7 @@ namespace quest
 			{ "set_event_flag",				game_set_event_flag				},
 			{ "drop_item",					game_drop_item					},
 			{ "drop_item_with_ownership",	game_drop_item_with_ownership	},
+			{ "drop_typed_item_with_ownership", game_drop_typed_item_with_ownership },
 #ifdef ADVANCED_GUILD_INFO
 			{ "give_guild_reward",			game_give_guild_reward			},
 			{ "mysql_query",				game_mysql_query 				},

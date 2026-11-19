@@ -1,0 +1,1131 @@
+{
+  "summary": {
+    "blocked_reasons": {
+      "invalid_chest_lock": 2,
+      "invalid_inventory_height": 6,
+      "invalid_mount_definition": 10,
+      "invalid_timed_effect_duration": 6,
+      "invalid_toggle_effect_definition": 18,
+      "invalid_weapon_costume_effect_attachment:163": 1,
+      "missing_equipment_asset": 49,
+      "missing_secondary_skill_definition:123": 3,
+      "missing_source_container_reward_group": 236,
+      "missing_source_icon": 167,
+      "missing_stole_model": 1,
+      "missing_unity_asset_reference": 12,
+      "missing_weapon_costume_effect_mapping:1297": 1,
+      "missing_weapon_costume_effect_mapping:1326": 2,
+      "missing_weapon_costume_effect_mapping:1335": 2,
+      "missing_weapon_costume_effect_mapping:1344": 2,
+      "non_bonus_affect_requires_dedicated_behavior": 2,
+      "semantic_converter_required:11:0": 1,
+      "semantic_converter_required:15:0": 1,
+      "semantic_converter_required:16:10": 4,
+      "semantic_converter_required:19:0": 1,
+      "semantic_converter_required:27:0": 7,
+      "semantic_converter_required:28:3": 28,
+      "semantic_converter_required:36:0": 1,
+      "semantic_converter_required:37:0": 12,
+      "semantic_converter_required:38:0": 1,
+      "semantic_converter_required:3:1": 9,
+      "semantic_converter_required:3:10": 87,
+      "semantic_converter_required:3:12": 1,
+      "semantic_converter_required:3:13": 1,
+      "semantic_converter_required:3:15": 1,
+      "semantic_converter_required:3:23": 6,
+      "semantic_converter_required:3:29": 2,
+      "semantic_converter_required:3:45": 1,
+      "semantic_converter_required:9:0": 1,
+      "skill_selected_on_instance_not_in_prototype": 3,
+      "source_bonus_out_of_native_bounds:31": 1,
+      "source_fish_has_no_effect": 1,
+      "source_reward_rare_field_out_of_range": 2,
+      "source_stone_has_no_equipment_target": 3,
+      "unmapped_behavior_value": 1,
+      "unported_apply:125": 3,
+      "unported_apply:126": 1,
+      "unported_apply:127": 1,
+      "unresolved_container_reward:2871": 4,
+      "unresolved_container_reward:2872": 1,
+      "unresolved_container_reward:2875": 3,
+      "unresolved_container_reward:2876": 3,
+      "unresolved_container_reward:2877": 1,
+      "unresolved_container_reward:2878": 1,
+      "unresolved_container_reward:2879": 1,
+      "unresolved_container_reward:48611": 1,
+      "unresolved_container_reward:55003": 1,
+      "unresolved_container_reward:55010": 1,
+      "unresolved_container_reward:70065": 1,
+      "unresolved_container_reward:71035": 1,
+      "unresolved_container_reward:72044": 5,
+      "unresolved_container_reward:72320": 4,
+      "unresolved_fishing_result:27847": 1,
+      "unresolved_fishing_result:27877": 1,
+      "unsupported_ability_effect": 1
+    },
+    "blocked_source_rows": 732,
+    "converted_source_rows": 9763,
+    "new_native_definitions": 1,
+    "retired_source_rows": 491,
+    "source_rows": 10986
+  },
+  "schema": 42,
+  "catalog_hash": "e0e4a83b013ccd10dc07dfb4d559e9cfa2c1ea89858f9251695032a22b53aef1",
+  "native_definitions": 6845,
+  "candidate": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-source-sockets-v42-final.json",
+  "candidate_sha256": "73d150f137a9688ba3cb8fcd3cc8bd35df4187771e74db669153e195ac4a7877",
+  "exact_reproduction": true,
+  "new_sources": [
+    {
+      "item": {
+        "category_id": 5,
+        "local_id": 791
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "extract_last_socket_stone",
+      "source_extra": null,
+      "source_id": 71109,
+      "source_level_issues": [],
+      "source_row_hash": "f3d1584a5733f91ca42d3376c91d70259cc6e148255c581646323afc0f3a2b0c"
+    }
+  ],
+  "preserved_rows": [
+    29204,
+    106214
+  ],
+  "ctest_latest": {
+    "item_persistence_mariadb": "Passed",
+    "catalog_editor_mariadb": "Passed",
+    "item_catalog_runtime_mariadb": "Passed",
+    "item_bench_mariadb": "Passed",
+    "catalog_editor": "Passed",
+    "item_combat_schema_foundation": "Passed",
+    "catalog_sql_mariadb": "Passed",
+    "full_catalog_conversion": "Passed",
+    "item_category_generator": "Passed",
+    "item_bonus_generator": "Passed",
+    "plain_material_migration": "Passed",
+    "quest_token_migration": "Passed",
+    "legacy_equipment_migration": "Passed",
+    "legacy_item_migration": "Passed",
+    "item_catalog_digest": "Passed",
+    "consumables": "Passed",
+    "automatic_recovery": "Passed",
+    "legacy_remaining_migration": "Passed",
+    "containers": "Passed",
+    "timed_effects": "Passed",
+    "mob_drops": "Passed",
+    "accessory_runtime": "Passed",
+    "ammo_runtime": "Passed",
+    "tool_runtime": "Passed",
+    "npc_shops": "Passed",
+    "socket_insertion": "Passed",
+    "socket_maintenance": "Passed",
+    "special_bonuses": "Passed",
+    "accessory_sockets": "Passed",
+    "toggle_effects": "Passed",
+    "automatic_runtime": "Passed",
+    "costumes": "Passed",
+    "gathering_rules": "Passed",
+    "forge_runtime": "Passed",
+    "currency_tokens": "Passed",
+    "gathering_items": "Passed",
+    "skill_books": "Passed",
+    "catalog_sql_snapshot": "Passed",
+    "container_opening": "Passed",
+    "soul_runtime": "Passed",
+    "pet_lifecycle": "Passed",
+    "typed_inventory_wire": "Passed",
+    "token_redemption": "Passed",
+    "attribute_runtime": "Passed",
+    "pet_care": "Passed",
+    "soul_items": "Passed",
+    "resource_gathering": "Passed",
+    "refinement_recipes": "Passed",
+    "polymorph_items": "Passed",
+    "growth_pet_progression": "Passed",
+    "socket_stones": "Passed",
+    "storage_runtime": "Passed",
+    "refinement_profiles": "Passed",
+    "quest_items": "Passed",
+    "socket_services": "Passed",
+    "companion_items": "Passed",
+    "bonus_profiles": "Passed",
+    "instance_attributes": "Passed",
+    "catalog_sql_completion": "Passed",
+    "item_catalog": "Passed",
+    "persistent_items": "Passed",
+    "typed_ground": "Passed",
+    "item_key": "Passed",
+    "item_persistence_completion": "Passed"
+  },
+  "converter_tests": 78,
+  "persistent_checks": 214,
+  "worker": {
+    "success": true,
+    "candidate_sha256": "73d150f137a9688ba3cb8fcd3cc8bd35df4187771e74db669153e195ac4a7877",
+    "catalog_hash": "e0e4a83b013ccd10dc07dfb4d559e9cfa2c1ea89858f9251695032a22b53aef1",
+    "sources": [
+      {
+        "item": {
+          "category_id": 5,
+          "local_id": 791
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "extract_last_socket_stone",
+        "source_extra": null,
+        "source_id": 71109,
+        "source_level_issues": [],
+        "source_row_hash": "f3d1584a5733f91ca42d3376c91d70259cc6e148255c581646323afc0f3a2b0c"
+      }
+    ],
+    "source_states": 2813,
+    "packets": [
+      {
+        "source": 10,
+        "category": 1,
+        "local": 58,
+        "level": 0,
+        "opened": 1,
+        "phase": "born",
+        "icon": "icon/item/00010.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.0.born.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.0.born.details.hex",
+        "hashes": {
+          "inventory": "0e30cf0ad733a85003a0d583de8dec7dbc6d6cfa02d4a76e73ac12ca3f8a0812",
+          "details": "ef6540bc76b2c34174d58a5d848b2d2edaf235265e19d0daaf24241c814de629"
+        }
+      },
+      {
+        "source": 10,
+        "category": 1,
+        "local": 58,
+        "level": 0,
+        "opened": 1,
+        "phase": "relogged",
+        "icon": "icon/item/00010.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.0.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.0.relogged.details.hex",
+        "hashes": {
+          "inventory": "0e30cf0ad733a85003a0d583de8dec7dbc6d6cfa02d4a76e73ac12ca3f8a0812",
+          "details": "ef6540bc76b2c34174d58a5d848b2d2edaf235265e19d0daaf24241c814de629"
+        }
+      },
+      {
+        "source": 60,
+        "category": 1,
+        "local": 63,
+        "level": 0,
+        "opened": 2,
+        "phase": "born",
+        "icon": "icon/item/00060.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.50.born.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.50.born.details.hex",
+        "hashes": {
+          "inventory": "23c29b76439f13baf5f345876966dd01822c35f77c5a12b18a341bd2026c091d",
+          "details": "114b381198d3b227bac63ed9494da9e8e04500deceb1aadcf35edad5a0d44990"
+        }
+      },
+      {
+        "source": 60,
+        "category": 1,
+        "local": 63,
+        "level": 0,
+        "opened": 2,
+        "phase": "relogged",
+        "icon": "icon/item/00060.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.50.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.50.relogged.details.hex",
+        "hashes": {
+          "inventory": "23c29b76439f13baf5f345876966dd01822c35f77c5a12b18a341bd2026c091d",
+          "details": "114b381198d3b227bac63ed9494da9e8e04500deceb1aadcf35edad5a0d44990"
+        }
+      },
+      {
+        "source": 60,
+        "category": 1,
+        "local": 63,
+        "level": 0,
+        "opened": 2,
+        "phase": "inserted",
+        "icon": "icon/item/00060.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.50.inserted.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.50.inserted.details.hex",
+        "hashes": {
+          "inventory": "7cfa6aeaf3dac09dc1f6f10c11a0c88b5c84d3c89a7ce146715a1c2b3639acb2",
+          "details": "bf415a90c347db891c0c701ee70f7779229da79cd82f6ba08c734db0299a4467"
+        }
+      },
+      {
+        "source": 60,
+        "category": 1,
+        "local": 63,
+        "level": 0,
+        "opened": 2,
+        "phase": "ready0",
+        "icon": "icon/item/00060.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.50.ready0.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.50.ready0.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.50.ready0.service.hex",
+        "hashes": {
+          "inventory": "6660263dc831d4d689cca22f3d4cef3af0b2af2837c489c49cdf2d3475000a2f",
+          "details": "7a793372921a450945d066472558005a851d842cf3f79e5a596853b81fd6de7f",
+          "service": "18abfe01e3970633ccd9f980ed02d993464d240215c91d2246a1f62d632107e2"
+        }
+      },
+      {
+        "source": 60,
+        "category": 1,
+        "local": 63,
+        "level": 0,
+        "opened": 2,
+        "phase": "extracted0",
+        "icon": "icon/item/00060.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.50.extracted0.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.50.extracted0.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.50.extracted0.service.hex",
+        "hashes": {
+          "inventory": "4b15e98e460caf6b36eedb2d34b582b7892232f254a849446fb76381daac150b",
+          "details": "bf415a90c347db891c0c701ee70f7779229da79cd82f6ba08c734db0299a4467",
+          "service": "87663997c51a1df38aafdb7a183d3fd9b0ffbcabcff07610c4f67dda20efb795"
+        }
+      },
+      {
+        "source": 60,
+        "category": 1,
+        "local": 63,
+        "level": 0,
+        "opened": 2,
+        "phase": "ready1",
+        "icon": "icon/item/00060.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.50.ready1.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.50.ready1.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.50.ready1.service.hex",
+        "hashes": {
+          "inventory": "26d6b73c37c43914f1c1af61de0857c8c384bdedded54511a114141a4221dd11",
+          "details": "7a793372921a450945d066472558005a851d842cf3f79e5a596853b81fd6de7f",
+          "service": "0cbecc117332399da9fef79d1bcde59d582cdf2cd354513c8d3a52de8c971b6d"
+        }
+      },
+      {
+        "source": 60,
+        "category": 1,
+        "local": 63,
+        "level": 0,
+        "opened": 2,
+        "phase": "extracted1",
+        "icon": "icon/item/00060.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.50.extracted1.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.50.extracted1.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.50.extracted1.service.hex",
+        "hashes": {
+          "inventory": "793c4fbdb29f2b2a453d56c21f456c78485ee680296931e525219df0222dc349",
+          "details": "bf415a90c347db891c0c701ee70f7779229da79cd82f6ba08c734db0299a4467",
+          "service": "f5c02f6356d8125a71999725e675f5cb48e628927913c51d3fb2a9ee746e0aa2"
+        }
+      },
+      {
+        "source": 60,
+        "category": 1,
+        "local": 63,
+        "level": 0,
+        "opened": 2,
+        "phase": "empty",
+        "icon": "icon/item/00060.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.50.empty.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.50.empty.details.hex",
+        "hashes": {
+          "inventory": "c477418ceb2359ff7afa3e45297a3e0750d822f16f4df453ecd00e8a8e3e161a",
+          "details": "7a793372921a450945d066472558005a851d842cf3f79e5a596853b81fd6de7f"
+        }
+      },
+      {
+        "source": 100,
+        "category": 1,
+        "local": 67,
+        "level": 0,
+        "opened": 3,
+        "phase": "born",
+        "icon": "icon/item/00100.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.90.born.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.90.born.details.hex",
+        "hashes": {
+          "inventory": "5bd737354f64ad5bddd5d2121447a30cae27f93444df70b746ed3a704a7126fc",
+          "details": "77a2f9d31f3186b23b27f1b3397e8a07cc99a287244bbe9ee446caca9f926469"
+        }
+      },
+      {
+        "source": 100,
+        "category": 1,
+        "local": 67,
+        "level": 0,
+        "opened": 3,
+        "phase": "relogged",
+        "icon": "icon/item/00100.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.90.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.90.relogged.details.hex",
+        "hashes": {
+          "inventory": "5bd737354f64ad5bddd5d2121447a30cae27f93444df70b746ed3a704a7126fc",
+          "details": "77a2f9d31f3186b23b27f1b3397e8a07cc99a287244bbe9ee446caca9f926469"
+        }
+      },
+      {
+        "source": 629,
+        "category": 1,
+        "local": 390,
+        "level": 9,
+        "opened": 3,
+        "phase": "born",
+        "icon": "icon/item/harag_blue.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.334.born.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.334.born.details.hex",
+        "hashes": {
+          "inventory": "107906675ae261e71d20ae19520035a56d118c1275f842b0b2ca3cacffa30137",
+          "details": "fefbc688b4dbf9febf11a3fd989fe1c34826dcaa55c65d1817d92d9271b59c5a"
+        }
+      },
+      {
+        "source": 629,
+        "category": 1,
+        "local": 390,
+        "level": 9,
+        "opened": 3,
+        "phase": "relogged",
+        "icon": "icon/item/harag_blue.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.334.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.334.relogged.details.hex",
+        "hashes": {
+          "inventory": "107906675ae261e71d20ae19520035a56d118c1275f842b0b2ca3cacffa30137",
+          "details": "fefbc688b4dbf9febf11a3fd989fe1c34826dcaa55c65d1817d92d9271b59c5a"
+        }
+      },
+      {
+        "source": 669,
+        "category": 1,
+        "local": 394,
+        "level": 9,
+        "opened": 3,
+        "phase": "born",
+        "icon": "icon/item/75ij_blue.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.338.born.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.338.born.details.hex",
+        "hashes": {
+          "inventory": "e528c2b551197623076a62f3c737650dbc08100c9a89a4398297b389c18cf5de",
+          "details": "d167e179e35c9a0c993de801e5f758650ffb605a9ed2c009500afdc0935448ce"
+        }
+      },
+      {
+        "source": 669,
+        "category": 1,
+        "local": 394,
+        "level": 9,
+        "opened": 3,
+        "phase": "relogged",
+        "icon": "icon/item/75ij_blue.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.338.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.338.relogged.details.hex",
+        "hashes": {
+          "inventory": "e528c2b551197623076a62f3c737650dbc08100c9a89a4398297b389c18cf5de",
+          "details": "d167e179e35c9a0c993de801e5f758650ffb605a9ed2c009500afdc0935448ce"
+        }
+      },
+      {
+        "source": 709,
+        "category": 1,
+        "local": 398,
+        "level": 9,
+        "opened": 3,
+        "phase": "born",
+        "icon": "icon/item/dwc_blue.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.342.born.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.342.born.details.hex",
+        "hashes": {
+          "inventory": "de7ee85a626fe159d026e48da81bf8cefeebe75fe9812b851cb2888b8bd2515b",
+          "details": "f7bc284ead22b66c9db4586059b6d6258e2900211e5d81a67ca21dc084c87bb9"
+        }
+      },
+      {
+        "source": 709,
+        "category": 1,
+        "local": 398,
+        "level": 9,
+        "opened": 3,
+        "phase": "relogged",
+        "icon": "icon/item/dwc_blue.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.342.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.342.relogged.details.hex",
+        "hashes": {
+          "inventory": "de7ee85a626fe159d026e48da81bf8cefeebe75fe9812b851cb2888b8bd2515b",
+          "details": "f7bc284ead22b66c9db4586059b6d6258e2900211e5d81a67ca21dc084c87bb9"
+        }
+      },
+      {
+        "source": 749,
+        "category": 1,
+        "local": 402,
+        "level": 9,
+        "opened": 3,
+        "phase": "born",
+        "icon": "icon/item/75_harang_blue.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.346.born.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.346.born.details.hex",
+        "hashes": {
+          "inventory": "014fc1e234263fff4a6ca5901dcfeb5770f80a655d6d64cdac2bac7f062db449",
+          "details": "958b442c9533d15e46c29ecc5abe74eabe4537ffcd98cb5c9d42ae3d84d53da4"
+        }
+      },
+      {
+        "source": 749,
+        "category": 1,
+        "local": 402,
+        "level": 9,
+        "opened": 3,
+        "phase": "relogged",
+        "icon": "icon/item/75_harang_blue.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.346.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.346.relogged.details.hex",
+        "hashes": {
+          "inventory": "014fc1e234263fff4a6ca5901dcfeb5770f80a655d6d64cdac2bac7f062db449",
+          "details": "958b442c9533d15e46c29ecc5abe74eabe4537ffcd98cb5c9d42ae3d84d53da4"
+        }
+      },
+      {
+        "source": 1000,
+        "category": 1,
+        "local": 121,
+        "level": 0,
+        "opened": 1,
+        "phase": "born",
+        "icon": "icon/item/01000.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.350.born.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.350.born.details.hex",
+        "hashes": {
+          "inventory": "222741cb06121e48817b8faad4f16565a85a4839e96e44282841297ce277c13f",
+          "details": "85170527a6570a5db71df0a853b7ba57dd4ce282840aebfb3651daaa2ec92f5b"
+        }
+      },
+      {
+        "source": 1000,
+        "category": 1,
+        "local": 121,
+        "level": 0,
+        "opened": 1,
+        "phase": "relogged",
+        "icon": "icon/item/01000.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.350.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.350.relogged.details.hex",
+        "hashes": {
+          "inventory": "222741cb06121e48817b8faad4f16565a85a4839e96e44282841297ce277c13f",
+          "details": "85170527a6570a5db71df0a853b7ba57dd4ce282840aebfb3651daaa2ec92f5b"
+        }
+      },
+      {
+        "source": 1030,
+        "category": 1,
+        "local": 124,
+        "level": 0,
+        "opened": 2,
+        "phase": "born",
+        "icon": "icon/item/01030.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.380.born.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.380.born.details.hex",
+        "hashes": {
+          "inventory": "8f7406acc95cf9402ce36213b1f1baefc2f2983d8e7986b7f64c1c7331502919",
+          "details": "7053cd33066201074f6cd00fa2ddcbea7129b695c166241c1d09183ae2c5e3ba"
+        }
+      },
+      {
+        "source": 1030,
+        "category": 1,
+        "local": 124,
+        "level": 0,
+        "opened": 2,
+        "phase": "relogged",
+        "icon": "icon/item/01030.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.380.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.380.relogged.details.hex",
+        "hashes": {
+          "inventory": "8f7406acc95cf9402ce36213b1f1baefc2f2983d8e7986b7f64c1c7331502919",
+          "details": "7053cd33066201074f6cd00fa2ddcbea7129b695c166241c1d09183ae2c5e3ba"
+        }
+      },
+      {
+        "source": 1660,
+        "category": 1,
+        "local": 149,
+        "level": 0,
+        "opened": 3,
+        "phase": "born",
+        "icon": "icon/item/fan22.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.580.born.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.580.born.details.hex",
+        "hashes": {
+          "inventory": "ef0f3d05dd06d196b735f734829c9a7b9379173e92ff3576d51a65af5b8bdc75",
+          "details": "23797ee3803620135afea7c4aa2e0a71fb03ed92deb2eba3710483da5a30f942"
+        }
+      },
+      {
+        "source": 1660,
+        "category": 1,
+        "local": 149,
+        "level": 0,
+        "opened": 3,
+        "phase": "relogged",
+        "icon": "icon/item/fan22.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.580.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.580.relogged.details.hex",
+        "hashes": {
+          "inventory": "ef0f3d05dd06d196b735f734829c9a7b9379173e92ff3576d51a65af5b8bdc75",
+          "details": "23797ee3803620135afea7c4aa2e0a71fb03ed92deb2eba3710483da5a30f942"
+        }
+      },
+      {
+        "source": 1840,
+        "category": 2,
+        "local": 436,
+        "level": 0,
+        "opened": 3,
+        "phase": "born",
+        "icon": "icon/item/male_gold_red.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.608.born.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.608.born.details.hex",
+        "hashes": {
+          "inventory": "8882b3c35b4e994d31333a11177c0e709b48176183b41a6b057c23e1d01811a3",
+          "details": "c951fb7cfe5525df6adea450b3a03f771ae73a2eaae3ab8ee48c35fb4071a876"
+        }
+      },
+      {
+        "source": 1840,
+        "category": 2,
+        "local": 436,
+        "level": 0,
+        "opened": 3,
+        "phase": "relogged",
+        "icon": "icon/item/male_gold_red.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.608.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.608.relogged.details.hex",
+        "hashes": {
+          "inventory": "8882b3c35b4e994d31333a11177c0e709b48176183b41a6b057c23e1d01811a3",
+          "details": "c951fb7cfe5525df6adea450b3a03f771ae73a2eaae3ab8ee48c35fb4071a876"
+        }
+      },
+      {
+        "source": 2000,
+        "category": 1,
+        "local": 462,
+        "level": 0,
+        "opened": 1,
+        "phase": "born",
+        "icon": "icon/item/02000.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.692.born.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.692.born.details.hex",
+        "hashes": {
+          "inventory": "3ee9e5d70f91cc1e6fa63ba57d4b3ff616e07ce80f2ab3fb2055aa0b40c8bb37",
+          "details": "4a3066d7565178d101727bcb5480351e201dcdb2170c2d64db4467e0bc3d3664"
+        }
+      },
+      {
+        "source": 2000,
+        "category": 1,
+        "local": 462,
+        "level": 0,
+        "opened": 1,
+        "phase": "relogged",
+        "icon": "icon/item/02000.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.692.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.692.relogged.details.hex",
+        "hashes": {
+          "inventory": "3ee9e5d70f91cc1e6fa63ba57d4b3ff616e07ce80f2ab3fb2055aa0b40c8bb37",
+          "details": "4a3066d7565178d101727bcb5480351e201dcdb2170c2d64db4467e0bc3d3664"
+        }
+      },
+      {
+        "source": 2050,
+        "category": 1,
+        "local": 512,
+        "level": 0,
+        "opened": 2,
+        "phase": "born",
+        "icon": "icon/item/02050.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.742.born.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.742.born.details.hex",
+        "hashes": {
+          "inventory": "e0fceb0fbfb76738b390724255c1f9a65a3302c38ad3784acbdf88c050a304c5",
+          "details": "6be5cf1c3e42c7af8f41ba4a87d5059780c422a3e71500f0e8b9383b929e58fd"
+        }
+      },
+      {
+        "source": 2050,
+        "category": 1,
+        "local": 512,
+        "level": 0,
+        "opened": 2,
+        "phase": "relogged",
+        "icon": "icon/item/02050.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.742.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.742.relogged.details.hex",
+        "hashes": {
+          "inventory": "e0fceb0fbfb76738b390724255c1f9a65a3302c38ad3784acbdf88c050a304c5",
+          "details": "6be5cf1c3e42c7af8f41ba4a87d5059780c422a3e71500f0e8b9383b929e58fd"
+        }
+      },
+      {
+        "source": 3000,
+        "category": 1,
+        "local": 180,
+        "level": 0,
+        "opened": 1,
+        "phase": "born",
+        "icon": "icon/item/03000.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.930.born.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.930.born.details.hex",
+        "hashes": {
+          "inventory": "6e3cd02f623439140e6be1c4144e3875893a4f1f038b10991beb3d32247f90f5",
+          "details": "988c0450eae8e0d4204718036898f988c22cc66af0cd536a296f931180e52357"
+        }
+      },
+      {
+        "source": 3000,
+        "category": 1,
+        "local": 180,
+        "level": 0,
+        "opened": 1,
+        "phase": "relogged",
+        "icon": "icon/item/03000.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.930.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.930.relogged.details.hex",
+        "hashes": {
+          "inventory": "6e3cd02f623439140e6be1c4144e3875893a4f1f038b10991beb3d32247f90f5",
+          "details": "988c0450eae8e0d4204718036898f988c22cc66af0cd536a296f931180e52357"
+        }
+      },
+      {
+        "source": 3050,
+        "category": 1,
+        "local": 185,
+        "level": 0,
+        "opened": 2,
+        "phase": "born",
+        "icon": "icon/item/03050.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.980.born.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.980.born.details.hex",
+        "hashes": {
+          "inventory": "0d675937215fe1130ec285bf083bb6c0053fbbdd4bc633a80f41d2f56c8924a8",
+          "details": "7dc64795d00895ee5b484b7a3b4ede15e0d6d1588dda2e63370ff9a4a0dcefcc"
+        }
+      },
+      {
+        "source": 3050,
+        "category": 1,
+        "local": 185,
+        "level": 0,
+        "opened": 2,
+        "phase": "relogged",
+        "icon": "icon/item/03050.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.980.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.980.relogged.details.hex",
+        "hashes": {
+          "inventory": "0d675937215fe1130ec285bf083bb6c0053fbbdd4bc633a80f41d2f56c8924a8",
+          "details": "7dc64795d00895ee5b484b7a3b4ede15e0d6d1588dda2e63370ff9a4a0dcefcc"
+        }
+      },
+      {
+        "source": 5000,
+        "category": 1,
+        "local": 213,
+        "level": 0,
+        "opened": 1,
+        "phase": "born",
+        "icon": "icon/item/05000.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.1198.born.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.1198.born.details.hex",
+        "hashes": {
+          "inventory": "4704f49014093a81f41f97a6338bbba8dde4e956b2bd58eedbb9ee3b59cd0b0b",
+          "details": "8cbd0c282a107303df3306ad81415d25c565a519746582776841e38ecf895486"
+        }
+      },
+      {
+        "source": 5000,
+        "category": 1,
+        "local": 213,
+        "level": 0,
+        "opened": 1,
+        "phase": "relogged",
+        "icon": "icon/item/05000.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.1198.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.1198.relogged.details.hex",
+        "hashes": {
+          "inventory": "4704f49014093a81f41f97a6338bbba8dde4e956b2bd58eedbb9ee3b59cd0b0b",
+          "details": "8cbd0c282a107303df3306ad81415d25c565a519746582776841e38ecf895486"
+        }
+      },
+      {
+        "source": 5030,
+        "category": 1,
+        "local": 216,
+        "level": 0,
+        "opened": 2,
+        "phase": "born",
+        "icon": "icon/item/05030.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.1228.born.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.1228.born.details.hex",
+        "hashes": {
+          "inventory": "406dd26cecce8f551d1b68e628997aa08f9a091801217ca897719fa4787f5c9c",
+          "details": "a92b732fd811e2289f99204f764117b4d4910c6a0c2a2eb32c7accd440055576"
+        }
+      },
+      {
+        "source": 5030,
+        "category": 1,
+        "local": 216,
+        "level": 0,
+        "opened": 2,
+        "phase": "relogged",
+        "icon": "icon/item/05030.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.1228.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.1228.relogged.details.hex",
+        "hashes": {
+          "inventory": "406dd26cecce8f551d1b68e628997aa08f9a091801217ca897719fa4787f5c9c",
+          "details": "a92b732fd811e2289f99204f764117b4d4910c6a0c2a2eb32c7accd440055576"
+        }
+      },
+      {
+        "source": 7000,
+        "category": 1,
+        "local": 249,
+        "level": 0,
+        "opened": 1,
+        "phase": "born",
+        "icon": "icon/item/07000.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.1406.born.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.1406.born.details.hex",
+        "hashes": {
+          "inventory": "c00fe5c71545195a74fae3f1658e68f8fcc3a5eb48ed8300927882df66c74a0b",
+          "details": "36d26d0adc9a9f6280ba4aeb5d6aeb4c5552582188abf6fded2827d8e67f9046"
+        }
+      },
+      {
+        "source": 7000,
+        "category": 1,
+        "local": 249,
+        "level": 0,
+        "opened": 1,
+        "phase": "relogged",
+        "icon": "icon/item/07000.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.1406.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.1406.relogged.details.hex",
+        "hashes": {
+          "inventory": "c00fe5c71545195a74fae3f1658e68f8fcc3a5eb48ed8300927882df66c74a0b",
+          "details": "36d26d0adc9a9f6280ba4aeb5d6aeb4c5552582188abf6fded2827d8e67f9046"
+        }
+      },
+      {
+        "source": 7050,
+        "category": 1,
+        "local": 254,
+        "level": 0,
+        "opened": 2,
+        "phase": "born",
+        "icon": "icon/item/07050.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.1456.born.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.1456.born.details.hex",
+        "hashes": {
+          "inventory": "79f763d4c593938391c6273f7614c721f454ea6579fc0cc624a7348fdd7db19a",
+          "details": "82e87e727ec5dba01400a832e56fbd62abf84ec5d8621bbe84ddfab068905db4"
+        }
+      },
+      {
+        "source": 7050,
+        "category": 1,
+        "local": 254,
+        "level": 0,
+        "opened": 2,
+        "phase": "relogged",
+        "icon": "icon/item/07050.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.1456.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.1456.relogged.details.hex",
+        "hashes": {
+          "inventory": "79f763d4c593938391c6273f7614c721f454ea6579fc0cc624a7348fdd7db19a",
+          "details": "82e87e727ec5dba01400a832e56fbd62abf84ec5d8621bbe84ddfab068905db4"
+        }
+      },
+      {
+        "source": 7200,
+        "category": 1,
+        "local": 269,
+        "level": 0,
+        "opened": 3,
+        "phase": "born",
+        "icon": "icon/item/03010.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.1586.born.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.1586.born.details.hex",
+        "hashes": {
+          "inventory": "81576e34d60266956a206aa6b5520c35c8a269179f5876fb46bb976b8fb0d8e2",
+          "details": "fcf6696cade4c4e3d0c767b1b350cb84ca967c124cf0ddebf89fc5d17b118411"
+        }
+      },
+      {
+        "source": 7200,
+        "category": 1,
+        "local": 269,
+        "level": 0,
+        "opened": 3,
+        "phase": "relogged",
+        "icon": "icon/item/03010.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.1586.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.1586.relogged.details.hex",
+        "hashes": {
+          "inventory": "81576e34d60266956a206aa6b5520c35c8a269179f5876fb46bb976b8fb0d8e2",
+          "details": "fcf6696cade4c4e3d0c767b1b350cb84ca967c124cf0ddebf89fc5d17b118411"
+        }
+      },
+      {
+        "source": 9001,
+        "category": 2,
+        "local": 487,
+        "level": 5,
+        "opened": 1,
+        "phase": "born",
+        "icon": "icon/item/11200.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.2008.born.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.2008.born.details.hex",
+        "hashes": {
+          "inventory": "2f62cdca1688715a5190f74fb2b92e92424ed5bb9b1e4e97ca8a98e6cfb96b9c",
+          "details": "ce357eb51739914cb4bc64f1ee5249f64824af5f468b4c320fefbdc4d04e6959"
+        }
+      },
+      {
+        "source": 9001,
+        "category": 2,
+        "local": 487,
+        "level": 5,
+        "opened": 1,
+        "phase": "relogged",
+        "icon": "icon/item/11200.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.2008.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.2008.relogged.details.hex",
+        "hashes": {
+          "inventory": "2f62cdca1688715a5190f74fb2b92e92424ed5bb9b1e4e97ca8a98e6cfb96b9c",
+          "details": "ce357eb51739914cb4bc64f1ee5249f64824af5f468b4c320fefbdc4d04e6959"
+        }
+      },
+      {
+        "source": 11230,
+        "category": 2,
+        "local": 126,
+        "level": 0,
+        "opened": 2,
+        "phase": "born",
+        "icon": "icon/item/11230.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.2047.born.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.2047.born.details.hex",
+        "hashes": {
+          "inventory": "8d6a2fa7ac330361eff3d342e551facad6617b8b6de1c47335f17966efeacf21",
+          "details": "97d3b4c08e3b04766069e3628335f0323c6ceb40fdfda44f3ed88a716d207d81"
+        }
+      },
+      {
+        "source": 11230,
+        "category": 2,
+        "local": 126,
+        "level": 0,
+        "opened": 2,
+        "phase": "relogged",
+        "icon": "icon/item/11230.tga",
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.2047.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\source-sockets-v42\\source-socket-birth-runtime.2047.relogged.details.hex",
+        "hashes": {
+          "inventory": "8d6a2fa7ac330361eff3d342e551facad6617b8b6de1c47335f17966efeacf21",
+          "details": "97d3b4c08e3b04766069e3628335f0323c6ceb40fdfda44f3ed88a716d207d81"
+        }
+      }
+    ],
+    "actual_game_item_worker": true,
+    "full_actor_world_test": false,
+    "installed_to_game": false
+  },
+  "stage": {
+    "candidate_sha256": "73d150f137a9688ba3cb8fcd3cc8bd35df4187771e74db669153e195ac4a7877",
+    "catalog_hash": "e0e4a83b013ccd10dc07dfb4d559e9cfa2c1ea89858f9251695032a22b53aef1",
+    "installed_to_game": false,
+    "migrations": {
+      "000_protos_database.sql": "44e6b1bbdb9f926649f8a15bba6eb9aff369fe59fad65fb939356d6576fd9826",
+      "001_category_registry.sql": "4da11171651ec5a26c762351f74988f8967d63bc87db982fcb93a8b981d7836c",
+      "002_category_seed.sql": "1eebf2af98e9e1ae54f80b0c8feeedc90ce660e68e194f8a5cc933b956db0ac2",
+      "003_equipment_profiles.sql": "ec826265269310e15b6648cd7aa14239dceee6cbbc62b8f6f4d60d61c088e442",
+      "004_refinement_profiles.sql": "79945357254c52e9ac9ac7999966b2fd5d4120688199027c5261d690573fd947",
+      "005_weapon_armor_catalog.sql": "0ccd92c62cbe9ef9f3ecc5f0340ad185468d26422c080d86507a018f320a0b98",
+      "006_bonus_profiles.sql": "d3454aa044f8b86e071be074a252491a48f7fb3c0596598bd6c62deefe8b6970",
+      "007_bonus_registry_seed.sql": "6d56218006149cb38fb6f0eafbf1f6d50580729d6f7083595f7add0533828e5d",
+      "008_accessory_material_catalog.sql": "8e93b1885e5a5bbd59239737720c023bdd044e93ee67e9d76d49ef5872ad42bd",
+      "009_accessory_socket_profiles.sql": "3a76f6e9c3e713716cad7a8f72efdcb1cee61e5edb0cd1beb47de0a9757aca7c",
+      "010_recovery_consumables.sql": "856eafa864ed52dfb6fd2a0016ec7d95c38c3f04240359c6128f1843f8abc674",
+      "011_catalog_format.sql": "e352b70ca5c92ef0a5235dac47961b41934fc31f910cc11eb017b99eb04b5a4b",
+      "012_containers.sql": "a0cc203aa491ab7145584d510a894603190776266e296e477f496f6f9910bb1c",
+      "013_currency_tokens.sql": "2402bdd4e26fef92eb1d5f68196eca92c3961107048c85cf76b09338ae436712",
+      "014_timed_consumables.sql": "009a9f4119ea503f44f8eba6d4138046012727c0d6634afcb69140fd158458c0",
+      "015_automatic_recovery.sql": "0a0cd5b5dcb0d0d7eb3cb35a84a03cfb65ae97810c4474dc8e99c8b63e79429d",
+      "016_toggle_effects.sql": "eb12412346fd0957da193eee3252bc39747f8c108fe23664a284c842cfa60a09",
+      "017_skill_books.sql": "a624678c3c6f93fabdb9de53476e3578c742347b55c05801e719f1e8c32118f2",
+      "018_refinement_recipes.sql": "e4a57d30f5b8104d9cd4c87b30a3a1b4d6c8c56871895b935fe7370d756a215a",
+      "019_quest_items.sql": "b4c7c320afab3f83f379cddc0b9f5b89e3433c1f6bea700f4e80e56b7f0ec3c3",
+      "020_socket_stones.sql": "5e3bcbe46fe09baaafdd07b232ec953e7bb2e942cc19c520589af505e612df6e",
+      "021_costumes.sql": "a9b843e10e3a5d0eb4b00b2f765a109ac4f684a51a945fba950001780b6becf9",
+      "022_gathering_items.sql": "2f25ad4984b8f75c995dcb9332e994e1bcd13e615104cf50c53dc0edf9f340af",
+      "023_polymorph_items.sql": "83a65b40c10e076da833080dae4638bc9af3cd549a595552a96ec02385f7edaa",
+      "024_soul_items.sql": "bd0038ff59bbade14ddf0e0d460d3dc88ba5610bc243c39aaea64d26f4c0b75a",
+      "025_companion_items.sql": "4c549bf5d1819b876c6bffc71fdf075335dc37fc7f46161df9998f241cd401f0",
+      "026_growth_pet_progression.sql": "95c6c1fc434382b79225bc1b9d76cf7d1218f678754363b25261f7871ecc226a",
+      "027_pet_care.sql": "239a9634ac1e769ae824e4f3c3e6d10be649c7825cf88f0a0fbd021c56dcf7e5",
+      "028_pet_lifecycle.sql": "da16016ee0565f08f7e31caef65329f392494c975c6916c4980e5beda98709a9",
+      "029_socket_services.sql": "8cbc2dca7a78c1b453388d12bcfb6b704145476a62ab0557362413a0c3fd8792",
+      "030_instance_attributes.sql": "f7996a4f109af589b6940048ac35b396e01d62118c804b9dfa7e21a0ca44cb03",
+      "031_mob_drops.sql": "65873fc78552ee340e674e73be98f80a00c9c10e04721aed0180c98b9b3a5fd7",
+      "032_book_aids.sql": "98a7123d2e89d0f9db8348cf6b5abb0a2e3a6656c78a88384f773900a657b9e0",
+      "033_companion_flight.sql": "fe86daee3c6d7748953d6a4d2edb1b2d99a0155006cb2a7d149709028c6c1214",
+      "034_regalia_special_bonuses.sql": "6ae899f639fef3de7d006dce43ac6073fb67135a99c633bbfa984862ae06db97",
+      "035_ammunition.sql": "a075c209662590920043458ad82b2ca771c4c5373e0b35e2a55ada9188508b6e",
+      "036_forge_aids.sql": "2fea2a3ee8fecee5fea25359d51d8fa87c5c8efc6206c17702467dabaac12fd3",
+      "037_equipment_conversion.sql": "a0400c5dbbd669174ab29a4df5d4e971d924d4a427f718d695a2f3da517dfa09",
+      "038_empty_loot_draw.sql": "7ec3878fc3ea0f4f186b04744e554e7613ffd444d8e5240d2387f3a4b2d4b1b5",
+      "039_additional_equipment_slots.sql": "25a03f9b2036bba26908473185c6916cd4588671da240de1790f156a4d916e56",
+      "040_item_definition_rules.sql": "630eb8dbc9f9541ce447868c3b7e4a6c4e58c78b4b2c7be12eedaeea9d878dc1",
+      "041_refined_loot_rewards.sql": "aa6e33bfff8a6ecd0b493e1f7ea0ad73003f9755bae627b64db93131e599d685",
+      "042_attribute_reroll_rules.sql": "b2e9c31e82ccf2b28cdc70d17ea102a1242ed9e3ab420565da7bce8ce3610845",
+      "043_tool_transitions.sql": "662e2a4e072c66bc4216ec72661e742dd1a0c15b2bf77ea925fad471883fc819",
+      "044_companion_costumes.sql": "75cef298e258337c18c8d74144975b5d4b2771e9bb0e268f9ae00964c1cf8e92",
+      "045_body_costume_effects.sql": "9f1d264aa94b7f89e908ad815e2a2688f1fb1fb08667c95987b908957961859e",
+      "046_weapon_costume_effects.sql": "1ce525cdb4c5f39f2c4952dc9d65e6bf982a10e53964a30ac6b5331013543b46",
+      "047_permanent_toggle_effects.sql": "e4900b3b63649971ffa1937c6a7ca49211ed07a9bb29f9534495957513ecdaea",
+      "048_soul_transitions_bonus_choices.sql": "a033679569b5d412be780367ec5986643e01ee739e79add332ac06ff3516dc85",
+      "049_character_services.sql": "121bf947a03f64cd1a9aaa40442b6f47f4b51665e505d377c6b3a70c20202af7",
+      "050_birth_stone_sockets.sql": "4da0d1093e770f85d14793bb0b3438de4d53a288862af55d4d6684b91ae7d8a2"
+    },
+    "tables": {
+      "accessory_socket_grade": 100,
+      "accessory_socket_material": 65,
+      "accessory_socket_profile": 25,
+      "attribute_candidate": 1102,
+      "attribute_group": 113,
+      "attribute_profile": 42,
+      "attribute_service_profile": 51,
+      "attribute_tier_chance": 117,
+      "attribute_value": 4787,
+      "automatic_recovery_profile": 18,
+      "bonus_definition": 143,
+      "bonus_profile": 6348,
+      "bonus_profile_entry": 14630,
+      "bonus_tool_choice": 10,
+      "book_aid_profile": 4,
+      "catalog_format": 1,
+      "companion_form": 436,
+      "consumable_cooldown_profile": 1,
+      "forge_aid_level": 2816,
+      "growth_pet_level": 39,
+      "growth_pet_profile": 13,
+      "growth_pet_stage": 14,
+      "instant_recovery_profile": 26,
+      "item_accessory": 743,
+      "item_ammo": 20,
+      "item_ammo_policy": 3,
+      "item_appearance_profile": 796,
+      "item_armor": 1386,
+      "item_attack_profile": 2,
+      "item_attribute_binding": 3261,
+      "item_base": 6845,
+      "item_bonus_tool": 38,
+      "item_category": 22,
+      "item_character_service": 6,
+      "item_companion": 496,
+      "item_consumable": 329,
+      "item_container": 78,
+      "item_container_key": 5,
+      "item_costume": 976,
+      "item_costume_visual": 2788,
+      "item_currency_token": 19,
+      "item_definition_rules": 9763,
+      "item_fishing": 67,
+      "item_forge_aid": 43,
+      "item_material": 614,
+      "item_polymorph": 12,
+      "item_quest": 783,
+      "item_regalia": 117,
+      "item_resistance_profile": 1,
+      "item_skill_book": 96,
+      "item_socket_stone": 145,
+      "item_soul": 33,
+      "item_special": 42,
+      "item_tool": 65,
+      "item_trade_policy": 7,
+      "item_use_policy": 16,
+      "item_weapon": 738,
+      "loot_entry": 1937,
+      "loot_profile": 94,
+      "mob_drop_entry": 0,
+      "mob_drop_group": 0,
+      "periodic_recovery_profile": 4,
+      "pet_age_tier": 21,
+      "pet_enchant_rule": 4,
+      "pet_extension_rule": 4,
+      "pet_feed_rule": 3,
+      "pet_hatch_profile": 13,
+      "pet_skill_definition": 164,
+      "pet_skill_rank": 171,
+      "pet_skin_rule": 4,
+      "pet_slot_rule": 44,
+      "pet_study_rule": 22,
+      "pet_supply_profile": 42,
+      "pet_training_profile": 11,
+      "polymorph_form": 3,
+      "polymorph_mastery_rule": 8,
+      "polymorph_profile": 12,
+      "polymorph_skill_rule": 492,
+      "recovery_profile": 62,
+      "refinement_ingredient": 14806,
+      "refinement_level": 10833,
+      "refinement_profile": 6845,
+      "refinement_recipe": 5390,
+      "regalia_bonus_rule": 2170,
+      "reserve_recovery_profile": 14,
+      "skill_book_profile": 96,
+      "skill_book_step": 985,
+      "skill_book_target": 189,
+      "socket_service_profile": 4,
+      "soul_level": 42,
+      "soul_profile": 26,
+      "special_bonus_tier": 23,
+      "timed_effect_group": 40,
+      "timed_effect_profile": 114,
+      "toggle_effect_group": 35,
+      "toggle_effect_profile": 77,
+      "tool_level": 95,
+      "tool_profile": 65
+    },
+    "validated": true
+  },
+  "worker_checks": 11499,
+  "source_socket_states": 2813,
+  "source_socket_distribution": {
+    "1": 413,
+    "2": 320,
+    "3": 2080
+  },
+  "sql_samples": 22,
+  "unity": {
+    "editor": "6000.3.27f1",
+    "source_checks": 14889,
+    "actual_worker_packet_sets": 50,
+    "actual_extractions": 2
+  },
+  "merge_deferred": 542,
+  "remaining_behavior_or_policy": 190,
+  "installed_to_game": false,
+  "full_login_tls_ecs_flow_tested": false,
+  "remaining_runtime_gaps": [
+    "93 timed unique accessory source states",
+    "Source initial magic/addon birth policies and rare container awards",
+    "Remaining valid unported behavior"
+  ]
+}

@@ -19,6 +19,7 @@
 #include "SocialSystem.hpp"
 
 #include "PlayerRuntimeSystem.hpp"
+#include <common/DragonCoinWallet.h>
 #include <Core/Time.h>
 #include "SkillSystem.hpp"
 #include "../EcsDiagnostics.hpp"
@@ -1466,40 +1467,19 @@ bool SetRankPoints(entt::entity e, int category, int64_t value)
 #endif
 
 #ifdef ENABLE_VOTE4BUFF
+// Vote coins are the same Sárkányérme balance (formerly account.coins).
 int64_t GetVoteCoin(entt::entity e)
 {
-	if (e == entt::null || !g_registry.valid(e))
-		return 0;
-
-	const auto* account = g_registry.try_get<ecs::AccountID>(e);
-	if (!account)
-		return 0;
-
-	std::unique_ptr<SQLMsg> message(DBManager::instance().DirectQuery(
-		"SELECT coins FROM account.account WHERE id = '%u';", account->aid));
-	if (!message || message->Get()->uiNumRows == 0)
-		return 0;
-
-	MYSQL_ROW row = message->Get()->FetchRow();
-	int64_t coins = 0;
-	if (row && row[0])
-		str_to_number(coins, row[0]);
-	return coins;
+	return GetDragonCoin(e);
 }
 
 bool SetVoteCoin(entt::entity e, int64_t amount)
 {
-	if (e == entt::null || !g_registry.valid(e))
+	if (e == entt::null || !g_registry.valid(e) || !GetDesc(e))
 		return false;
-
-	const auto* account = g_registry.try_get<ecs::AccountID>(e);
-	if (!account)
-		return false;
-
-	DBManager::instance().DirectQuery(
-		"UPDATE account.account SET coins = '%lld' WHERE id = '%u';",
-		static_cast<long long>(amount), account->aid);
-	return true;
+	if (amount < 0)
+		amount = 0;
+	return AddDragonCoin(e, amount - GetDragonCoin(e));
 }
 #endif
 
@@ -2006,28 +1986,40 @@ bool ecs::PlayerRuntime::IsGM(entt::entity e)
 #ifdef ENABLE_ITEMSHOP
 namespace ecs::PlayerRuntime {
 
+// Sárkányérme: the native account wallet (common/DragonCoinWallet.h). Reading it
+// first sweeps account.account.coins (legacy/external top-ups) into the wallet.
 int64_t GetDragonCoin(entt::entity e)
 {
     auto* desc = GetDesc(e);
     if (!desc || desc->GetAccountTable().id == 0)
         return 0;
-    std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("SELECT coins FROM account.account WHERE id = '%u';", desc->GetAccountTable().id));
-    if (!pMsg || !pMsg->Get() || pMsg->Get()->uiNumRows == 0 || !pMsg->Get()->pSQLResult)
-        return 0;
-    MYSQL_ROW row = pMsg->Get()->FetchRow();
-    if (!row || !row[0])
-        return 0;
-    int64_t dc = 0;
-    str_to_number(dc, row[0]);
-    return dc;
+    bool ok = false;
+    const auto balance = auriga::dragon_coin::SweepAndRead(DBManager::instance(), desc->GetAccountTable().id, ok);
+    return static_cast<int64_t>(std::min<std::uint64_t>(balance, auriga::dragon_coin::MaxBalance));
+}
+
+bool AddDragonCoin(entt::entity e, int64_t delta)
+{
+    auto* desc = GetDesc(e);
+    if (!desc || desc->GetAccountTable().id == 0)
+        return false;
+    if (delta == 0)
+        return true;
+    const auto account = desc->GetAccountTable().id;
+    const bool done = auriga::dragon_coin::Committed(DBManager::instance(), delta > 0
+        ? auriga::dragon_coin::Credit(account, static_cast<std::uint64_t>(delta))
+        : auriga::dragon_coin::Debit(account, static_cast<std::uint64_t>(-(delta + 1)) + 1));
+    if (!done)
+        LOG_ERROR("DragonCoin: account {} change {} refused by the wallet", account, delta);
+    return done;
 }
 
 void SetDragonCoin(entt::entity e, int64_t amount)
 {
-    auto* desc = GetDesc(e);
-    if (!desc || desc->GetAccountTable().id == 0)
-        return;
-    std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("UPDATE account.account SET coins = '%lld' WHERE id = '%u';", static_cast<long long>(amount), desc->GetAccountTable().id));
+    // Legacy absolute API: applied as the difference, so a concurrent change is kept.
+    if (amount < 0)
+        amount = 0;
+    AddDragonCoin(e, amount - GetDragonCoin(e));
 }
 
 void SetProtectTime(entt::entity e, std::string_view flag, int value)

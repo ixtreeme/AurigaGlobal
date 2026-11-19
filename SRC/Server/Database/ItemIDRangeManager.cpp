@@ -84,81 +84,13 @@ TItemIDRangeTable CItemIDRangeManager::GetRange()
 	return ret;
 }
 
-bool CItemIDRangeManager::BuildRange(uint32_t dwMin, uint32_t dwMax, TItemIDRangeTable& range)
+bool CItemIDRangeManager::BuildRange(uint32_t, uint32_t, TItemIDRangeTable& range)
 {
-	char szQuery[1024];
-	uint32_t dwItemMaxID = 0;
-	SQLMsg* pMsg = nullptr;
-	MYSQL_ROW row;
-
-	snprintf(szQuery, sizeof(szQuery), "SELECT MAX(id) FROM item%s WHERE id >= %u and id <= %u", GetTablePostfix(), dwMin, dwMax);
-
-	pMsg = CDBManager::instance().DirectQuery(szQuery);
-
-	if (pMsg != nullptr)
-	{
-		if (pMsg->Get()->uiNumRows > 0)
-		{
-			row = pMsg->Get()->FetchRow();
-			str_to_number(dwItemMaxID, row[0]);
-		}
-		delete pMsg;
-	}
-
-	if (dwItemMaxID == 0)
-		dwItemMaxID = dwMin;
-	else
-		dwItemMaxID++;
-
-	if ((dwMax < dwItemMaxID) || (dwMax - dwItemMaxID < cs_dwMinimumRemainCount))
-	{
-		LOG_INFO("ItemIDRange: Build {} ~ {} start: {}\tNOT USE remain count is below {}", dwMin, dwMax, dwItemMaxID, cs_dwMinimumRemainCount);
-	}
-	else
-	{
-		range.dwMin = dwMin;
-		range.dwMax = dwMax;
-		range.dwUsableItemIDMin = dwItemMaxID;
-
-		snprintf(szQuery, sizeof(szQuery), "SELECT COUNT(*) FROM item%s WHERE id >= %u AND id <= %u",
-				GetTablePostfix(), range.dwUsableItemIDMin, range.dwMax);
-
-		pMsg = CDBManager::instance().DirectQuery(szQuery);
-
-		if (pMsg != nullptr)
-		{
-			if (pMsg->Get()->uiNumRows > 0)
-			{
-				uint32_t count = 0;
-				row = pMsg->Get()->FetchRow();
-				str_to_number(count, row[0]);
-
-				if (count > 0)
-				{
-					LOG_ERROR("ItemIDRange: Build: {} ~ {}\thave a item", range.dwUsableItemIDMin, range.dwMax);
-					return false;
-				}
-				else
-				{
-					LOG_INFO("ItemIDRange: Build: {} ~ {} start:{}", range.dwMin, range.dwMax, range.dwUsableItemIDMin);
-					return true;
-				}
-			}
-
-			delete pMsg;
-		}
-	}
-
-	return false;
+    range = {};
+    return true;
 }
 
-void CItemIDRangeManager::UpdateRange(uint32_t dwMin, uint32_t dwMax)
+void CItemIDRangeManager::UpdateRange(uint32_t, uint32_t)
 {
-	TItemIDRangeTable range;
-
-	if (BuildRange(dwMin, dwMax, range) == true)
-	{
-		m_listData.push_back(range);
-	}
 }
 

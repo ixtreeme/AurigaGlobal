@@ -207,11 +207,12 @@ struct GameConfig
 	// drop tables instead and needs the catalog (F4 C7b-3, IC-035).
 	struct ItemsConfig
 	{
-		std::string	catalog { "off" };
+		std::string	catalog { "required" };
 		uint64_t	catalogRevision { 1 };
 		std::string	catalogSha256; // optional lowercase hex pin
-		std::string	drops { "legacy" };
+		std::string	drops { "typed" };
 	} items;
+	std::string socialHistoryKeyFile; // 32-byte secret outside database, repository and served client assets.
 
 	bool Load(const auriga::config::Section& input, std::string& error);
 };

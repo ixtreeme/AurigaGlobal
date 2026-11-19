@@ -1644,6 +1644,8 @@ enum
 	ITEMSHOP_BUY,
 	ITEMSHOP_DRAGONCOIN,
 	ITEMSHOP_RELOAD,
+	// Game core -> DB: a purchase already paid and delivered natively; log and count it.
+	ITEMSHOP_RECORD,
 };
 typedef struct SIShopData
 {

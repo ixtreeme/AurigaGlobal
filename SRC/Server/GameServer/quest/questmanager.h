@@ -81,6 +81,9 @@ namespace quest
 		bool		InitializeLua();
 		lua_State* GetLuaState() { return L; }
 		const source::Catalog& GetQuestSources() const { return m_questSources; }
+		bool HasTypedItemUse(std::string_view contentCode) const;
+		bool UseTypedQuestItem(entt::entity character, std::string_view contentCode, TypedItemUseSource source);
+		void RefreshTypedQuestItemActions();
 		void		AddLuaFunctionTable(const char* c_pszName, luaL_reg* preg, bool bCheckIfExists = false) const;
 		void		AddLuaFunctionSubTable(const char* c_pszName, const char* c_pszSubName, luaL_reg* preg) const;
 #ifdef ENABLE_NEWSTUFF
@@ -282,6 +285,7 @@ namespace quest
 
 		std::set<unsigned int>			m_registeredNPCVnum;
 		std::map<unsigned int, NPC>		m_mapNPC;
+		std::map<std::string, NPC, std::less<>> m_typedItemUses;
 		std::map<std::string, unsigned int>	m_mapNPCNameID;
 		std::map<std::string, unsigned int>	m_mapTimerID;
 		std::map<std::string, uint16_t> m_questCategories;
@@ -332,7 +336,7 @@ namespace quest
 		bool						m_bError;
 
 	public:
-		static bool ExecuteQuestScript(PC& pc, const std::string& quest_name, const int state, const char* code, const int code_size, std::vector<AArgScript*>* pChatScripts = nullptr, bool bUseCache = true);
+		static bool ExecuteQuestScript(PC& pc, const std::string& quest_name, const int state, const char* code, const int code_size, std::vector<AArgScript*>* pChatScripts = nullptr, bool bUseCache = true, TypedItemUseSource typedItemUse = {});
 		static bool ExecuteQuestScript(PC& pc, uint32_t quest_index, const int state, const char* code, const int code_size, std::vector<AArgScript*>* pChatScripts = nullptr, bool bUseCache = true);
 
 

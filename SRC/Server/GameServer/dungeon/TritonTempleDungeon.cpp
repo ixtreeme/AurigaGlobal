@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "../item/TypedDungeonItems.hpp"
+#include "../item/TypedDungeonEntry.hpp"
 #include "../mission_pass/MissionPassEvents.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/ItemSystem.hpp"
@@ -70,6 +72,9 @@ namespace
     constexpr int32_t kMinLevel = 60;
     constexpr int32_t kMaxLevel = 75;
     constexpr uint32_t kRequiredItem = 76019;
+    constexpr std::string_view kNativeEntryCode="catalog.10.triton_temple_key_b0da09c41c85";
+    std::uint64_t EntryTicketCount(entt::entity e){return HasTypedDungeonInventory(e)?TypedDungeonTicketCount(e,kNativeEntryCode):ItemSystem::CountItem(e,kRequiredItem);}
+    void ConsumeEntryTicket(entt::entity e){if(!HasTypedDungeonInventory(e))ItemSystem::RemoveSpecifyItemEcs(e,kRequiredItem,1);}
     constexpr uint32_t kRemoveAllItem = 89104;
 
     // Dungeon flags (stored in CDungeon)
@@ -587,6 +592,7 @@ void CTritonTempleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 }
 bool CTritonTempleDungeon::OnClickNpc(entt::entity character)
 {
+    if(TypedDungeonEntryPending(character))return true;
     if (!ecs::PlayerRuntime::IsPC(character))
         return false;
 
@@ -678,7 +684,7 @@ bool CTritonTempleDungeon::OnClickNpc(entt::entity character)
     // Check level + entry item for everyone who will enter (same map as leader)
     if (party == entt::null)
     {
-        if (ItemSystem::CountItem(character, kRequiredItem) < 1)
+        if (EntryTicketCount(character) < 1)
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Triton Temple: you don't have the entry item.");
             return true;
@@ -704,7 +710,7 @@ bool CTritonTempleDungeon::OnClickNpc(entt::entity character)
                 return;
             }
 
-            if (ItemSystem::CountItem(m, kRequiredItem) < 1)
+            if (EntryTicketCount(m) < 1)
             {
                 ok = false;
                 badName = ecs::PlayerRuntime::GetName(m).data();
@@ -724,11 +730,12 @@ bool CTritonTempleDungeon::OnClickNpc(entt::entity character)
         }
     }
 
+    auto prepare = [=]() -> std::optional<TypedDungeonEntryPlan> {
     const entt::entity d = CDungeonManager::instance().Create(kTritonOriginalMap);
     if (d == entt::null)
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Triton Temple: failed to create the dungeon.");
-        return true;
+        return std::nullopt;
     }
 
     // Initialize dungeon flags
@@ -737,12 +744,15 @@ bool CTritonTempleDungeon::OnClickNpc(entt::entity character)
     DungeonSystem::SetFlag(d, kFlagStep, 0);
     DungeonSystem::SetFlag(d, kFlagBossVid, 0);
 
+        TypedDungeonEntryPlan plan;plan.dungeon=d;plan.cancel=[d]{CancelTypedDungeonPreflight(d);};
+        plan.publish=[=]{
     auto applyMember = [&](entt::entity m){
             if (!ecs::PlayerRuntime::IsPC(m))
                 return;
 
-            ItemSystem::RemoveSpecifyItemEcs(m, kRequiredItem, 1);
+            ConsumeEntryTicket(m);
 
+            if(!HasTypedDungeonInventory(m))QueueTypedDungeonCleanup(m,auriga::item::OrcKeyCode);
             const int32_t rmAll = ItemSystem::CountItem(m, kRemoveAllItem);
             if (rmAll > 0)
                 ItemSystem::RemoveSpecifyItemEcs(m, kRemoveAllItem, rmAll);
@@ -769,6 +779,15 @@ DungeonSystem::JoinParty_Coords(d, party, kEnterX, kEnterY, ecs::PlayerRuntime::
     }
 
     // OnPlayerLogin starts preparation after the first member reaches GAME.
+        };
+        return plan;
+    };
+    if(HasTypedDungeonInventory(character)){
+        if(!BeginTypedDungeonEntry(character,"dungeon.triton.entry",kNativeEntryCode,1,[](entt::entity pc){const auto level=ecs::PointSystem::GetLevel(pc);return level>=kMinLevel && level<=kMaxLevel && ecs::QuestSystem::GetFlag(pc,kQfCooldown)<=get_global_time();},prepare))
+            ecs::ChatSystem::Send(character,CHAT_TYPE_INFO,"A teljes csapatnak készen kell állnia, és a belépőnek a hátizsákban kell lennie.");
+        return true;
+    }
+    if(auto plan=prepare())plan->publish();
     return true;
 }
 

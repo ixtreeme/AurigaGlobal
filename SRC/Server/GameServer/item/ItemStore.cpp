@@ -5,17 +5,61 @@
 #include "TypedAccessoryClock.hpp"
 #include "TypedCompanions.hpp"
 #include "TypedRecovery.hpp"
+#include "TypedDungeonEntry.hpp"
+#include <PrivateShopsSql.hpp>
+#include <DungeonEntrySql.hpp>
 #include "TypedSoulClock.hpp"
+#include "ItemCatalogRuntime.hpp"
 #include "../core/GameConfig.h"
 
 #include <SQL/AsyncSQL.h>
+#include <StoragePersistenceSql.hpp>
 #include <Core/Logging.hpp>
 
 #include <exception>
 #include <fmt/format.h>
+#include <nlohmann/json.hpp>
+#include <fstream>
+#include <filesystem>
+#include <set>
+#include <openssl/evp.h>
 
 namespace auriga::item::runtime
 {
+namespace { std::vector<persistence::CharacterBirthProfile> characterBirth; }
+std::expected<void,std::string> LoadNativeCharacterBirth(const std::string& file)
+{
+    characterBirth.clear();if(!std::filesystem::exists(file))return {};
+    try {
+        if(std::filesystem::file_size(file)>256*1024)return std::unexpected("native starter pack exceeds 256 KiB");
+        std::ifstream stream(file);const auto document=nlohmann::json::parse(stream);
+        if(document.at("version")!=1 || document.at("profiles").size()!=16)return std::unexpected("invalid native starter profiles");
+        std::set<std::pair<unsigned,unsigned>> seen;
+        for(const auto& row:document.at("profiles")) {
+            const auto race=row.at("race").get<unsigned>(),group=row.at("skill_group").get<unsigned>();
+            persistence::CharacterBirthProfile profile;profile.race=static_cast<std::uint8_t>(race);profile.skillGroup=static_cast<std::uint8_t>(group);profile.contract=row.at("contract");
+            if(race>7 || group<1 || group>2 || !seen.emplace(race,group).second ||
+               profile.contract.size()!=64 || profile.contract.find_first_not_of("0123456789abcdef")!=std::string::npos)return std::unexpected("invalid native starter contract");
+            auto content=row;content.erase("contract");const auto bytes=content.dump();ItemCatalogDigest digest{};unsigned length=0;
+            if(EVP_Digest(bytes.data(),bytes.size(),digest.data(),&length,EVP_sha256(),nullptr)!=1 || length!=digest.size())return std::unexpected("native starter contract hashing failed");
+            std::string hex;for(auto value:digest)hex+=fmt::format("{:02x}",value);if(hex!=profile.contract)return std::unexpected("native starter contract hash mismatch");
+            for(const auto& value:row.at("grants")) {
+                const auto key=ItemKey::Create(value.at("category").get<std::uint16_t>(),value.at("local").get<std::uint32_t>());
+                if(!key)return std::unexpected("invalid native starter key");
+                persistence::CharacterBirthGrant grant{{*key}};grant.item.refinementLevel=value.at("level");grant.item.count=value.at("count");grant.item.tryMagic=value.at("try_magic");
+                if(value.contains("equipped"))grant.equipped=static_cast<EquipmentSlot>(value.at("equipped").get<unsigned>());
+                if(value.contains("attributes")) {grant.attributes.emplace();std::size_t slot=0;for(const auto& a:value.at("attributes")) {if(slot>=5)return std::unexpected("too many native starter bonuses");grant.attributes->slots[slot++]=BonusEntry{static_cast<BonusId>(a.at("bonus").get<unsigned>()),a.at("value").get<std::int64_t>()};}}
+                const auto catalog=CurrentCatalog();const auto* entry=catalog ? catalog->Find(*key) : nullptr;
+                if(!entry || !SupportsPersistentGrant(*catalog,*entry) || !catalog->RefinedBaseStats(*key,grant.item.refinementLevel) ||
+                   !grant.item.count || grant.item.count>entry->base.maxStack || (grant.attributes && !ValidateInstanceAttributes(*catalog,*key,*grant.attributes)))return std::unexpected("native starter definition or bonuses are unavailable");
+                profile.grants.push_back(std::move(grant));
+            }
+            if(profile.grants.empty() || profile.grants.size()>32)return std::unexpected("invalid native starter grant count");
+            characterBirth.push_back(std::move(profile));
+        }
+        return {};
+    }catch(const std::exception& error){return std::unexpected(std::string("cannot load native starter pack: ")+error.what());}
+}
 ItemStore& ItemStore::Instance()
 {
 	static ItemStore store;
@@ -181,6 +225,20 @@ void ItemStore::Run(GameSqlConfig player, std::shared_ptr<std::promise<std::stri
 		catalog = catalog_;
 	}
 
+    std::unique_ptr<SQLMsg> format(connection.DirectQuery("SELECT native_runtime_version,(SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME='item_native_award' AND ENGINE='InnoDB') FROM player.item_persistence_format WHERE singleton=1"));
+    if (!format || format->uiSQLErrno || !format->Get() || format->Get()->uiNumRows != 1)
+    {
+        ready->set_value("native item runtime requires migrations 041_native_runtime.sql and 042_native_item_awards.sql");
+        return;
+    }
+    const auto row = format->Get()->FetchRow();
+    if (!row || !row[0] || !row[1] || std::string_view(row[0]) != "1" || std::string_view(row[1]) != "1")
+    {
+        ready->set_value("unsupported native item runtime format");
+        return;
+    }
+
+    if(const auto drops=LoadLiveDropCatalog(connection,catalog);!drops){ready->set_value(drops.error());return;}
     if(!groundCore.empty())
     {
         const auto run=persistence::BeginOwnedGroundRun(connection,*catalog,groundCore);
@@ -225,8 +283,23 @@ void ItemStore::Run(GameSqlConfig player, std::shared_ptr<std::promise<std::stri
 	}
 }
 
+bool RequestPlayerLoginLoad(std::uint32_t pid,std::function<void(LoginLoad)> done)
+{
+    return ItemStore::Instance().Submit([pid,done=std::move(done)](CAsyncSQL& sql,const ItemCatalog& catalog)->ItemStore::Completion{
+        auto ready=persistence::EnsureFreshCharacterOwner(sql,catalog,pid);
+        if(ready && *ready && !characterBirth.empty()) {
+            const auto now=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+            if(auto birth=persistence::IssueFreshCharacterItems(sql,catalog,pid,characterBirth,now);!birth)ready=std::unexpected(birth.error());
+        }
+        return [pid,done,ready]{
+            if(!ready){done(LoginLoad{{ItemOwnerKind::Character,pid},0,std::unexpected(ready.error())});return;}
+            if(!RequestLoginLoad(pid,done))done(LoginLoad{{ItemOwnerKind::Character,pid},0,std::unexpected(ItemPersistenceError::SqlFailure)});
+        };
+    });
+}
 bool RequestLoginLoad(std::uint32_t pid, std::function<void(LoginLoad)> done)
 {
+    if(DeferDungeonEntryLogin(pid,[pid,done]{RequestLoginLoad(pid,done);}))return true;
     if(DeferTypedBookLogin(pid,[pid,done]{RequestLoginLoad(pid,done);})){return true;}
     if(DeferRecoveryLogin(pid,[pid,done]{RequestLoginLoad(pid,done);})){TickTypedRecovery();return true;}
     if(DeferAccessoryLogin(pid,[pid,done]{RequestLoginLoad(pid,done);})){TickTypedAccessoryClocks();return true;}
@@ -244,7 +317,17 @@ bool RequestLoginLoad(std::uint32_t pid, std::function<void(LoginLoad)> done)
 		else
 		{
 			result.session = *session;
-            result.loaded = persistence::LoadItemOwner(sql, catalog, owner, *session);
+			// An already native owner receives storages added later (C47 special
+			// inventory); a missing owner stays missing (ClaimOwnerSession above).
+			if (const auto ensured = persistence::EnsureRuntimeStorageOwner(sql, catalog, owner); !ensured)
+				LOG_ERROR("TypedItems: pid {} storages could not be completed (error {})", owner.id, static_cast<int>(ensured.error()));
+            const auto released=persistence::RecoverDungeonEntries(sql,catalog,owner,*session);
+            if(!released && released.error()!=ItemPersistenceError::MissingOwner)result.loaded=std::unexpected(released.error());
+            else {
+                const auto recovered=persistence::RecoverPrivateShop(sql,catalog,owner,*session);
+                if(!recovered && recovered.error()!=ItemPersistenceError::MissingOwner)result.loaded=std::unexpected(recovered.error());
+                else result.loaded = persistence::LoadItemOwner(sql, catalog, owner, *session);
+            }
 		}
 		return [done = std::move(done), result = std::move(result)]() mutable { done(std::move(result)); };
 	});

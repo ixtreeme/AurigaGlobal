@@ -24,7 +24,7 @@ struct BonusProfile
     std::vector<BonusEntry> entries;
 };
 inline constexpr std::size_t MaxBonusEntriesPerProfile = 128;
-inline constexpr std::size_t MaxBonusProfiles = 4096;
+inline constexpr std::size_t MaxBonusProfiles = 16384;
 enum class BonusProfileError
 {
     InvalidIdentity, InvalidSource, EmptyProfile, TooManyEntries, UnknownBonus,

@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "../item/TypedDungeonItems.hpp"
+#include "../item/TypedDungeonEntry.hpp"
 #include "../mission_pass/MissionPassEvents.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/ItemSystem.hpp"
@@ -39,6 +41,8 @@ namespace
     constexpr int32_t kMinLevel = 72;
     constexpr int32_t kMaxLevel = 82;
     constexpr uint32_t kEntryItemVnum = 30798;
+    constexpr std::string_view kNativeEntryCode="catalog.10.ankh_cross_03e592942268";
+    std::uint64_t EntryTicketCount(entt::entity e){return HasTypedDungeonInventory(e)?TypedDungeonTicketCount(e,kNativeEntryCode):ItemSystem::CountItem(e,kEntryItemVnum);}
     constexpr uint32_t kRemoveAllItem = 89104; // removed in the quest's d.remove_item call
     constexpr int32_t kCooldownSeconds = 1200;
     constexpr int32_t kRejoinSeconds = 300;
@@ -274,7 +278,7 @@ namespace
             if (!ok || !ecs::PlayerRuntime::IsPC(mEntity))
                 return;
 
-            if (ItemSystem::CountItem(mEntity, kEntryItemVnum) < 1)
+            if (EntryTicketCount(mEntity) < 1)
             {
                 ok = false;
                 name = ecs::PlayerRuntime::GetName(mEntity).data();
@@ -289,9 +293,10 @@ namespace
             if (!ecs::PlayerRuntime::IsPC(mEntity))
                 return;
 
-            ItemSystem::RemoveSpecifyItemEcs(mEntity, kEntryItemVnum, 1);
+            if(!HasTypedDungeonInventory(mEntity))ItemSystem::RemoveSpecifyItemEcs(mEntity, kEntryItemVnum, 1);
 
             // remove "remove_all" item(s) if present (up to 255 as in quests)
+            if(!HasTypedDungeonInventory(mEntity))QueueTypedDungeonCleanup(mEntity,auriga::item::OrcKeyCode,255);
             const int32_t cnt = ItemSystem::CountItem(mEntity, kRemoveAllItem);
             if (cnt > 0)
                 ItemSystem::RemoveSpecifyItemEcs(mEntity, kRemoveAllItem, static_cast<uint32_t>(cnt > 255 ? 255 : cnt));
@@ -379,6 +384,7 @@ void CPyramidDungeonRazor93::OnPlayerLogin(entt::entity character)
 
 bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
 {
+    if(TypedDungeonEntryPending(character))return true;
     if (!ecs::PlayerRuntime::IsPC(character))
         return false;
 
@@ -498,7 +504,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
     // Entry item (must exist for everyone who will enter)
     if (party == entt::null)
     {
-        if (ItemSystem::CountItem(character, kEntryItemVnum) < 1)
+        if (EntryTicketCount(character) < 1)
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You don't have the entry item.");
             return true;
@@ -515,6 +521,60 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
         }
     }
 
+    if(HasTypedDungeonInventory(character)){
+        auto prepare=[=]() -> std::optional<TypedDungeonEntryPlan> {
+    // Create + join
+    const entt::entity d = CDungeonManager::instance().Create(kOriginalMap);
+    if (d == entt::null)
+    {
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Pyramid Dungeon: failed to create dungeon.");
+        return std::nullopt;
+    }
+
+    DungeonSystem::SetFlag(d, kFlagFloor, 0);
+    DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
+    DungeonSystem::SetFlag(d, kFlagBossSpawned, 0);
+    DungeonSystem::SetFlag(d, kFlagStep, 0);
+
+            TypedDungeonEntryPlan plan;plan.dungeon=d;plan.cancel=[d]{CancelTypedDungeonPreflight(d);};plan.publish=[=]{
+    // Passed checks: consume items + set cooldown (BEFORE warping)
+    if (party != entt::null)
+    {
+        FConsumeEntryItems f;
+        PartySystem::ForEachOnMapMember(party, f, ecs::PlayerRuntime::GetMapIndex(character));
+    }
+    else
+    {
+        FConsumeEntryItems f;
+        f(character);
+    }
+
+    // Reset rejoin flags for new run
+    if (party != entt::null)
+    {
+        struct FResetRejoin { void operator()(entt::entity m) { ResetRejoinFlags(m); } } f; PartySystem::ForEachOnMapMember(party, f, ecs::PlayerRuntime::GetMapIndex(character));
+    }
+    else
+        ResetRejoinFlags(character);
+
+    // Join party/solo at cords
+    if (party != entt::null)
+    {
+        DungeonSystem::JoinParty_Coords(d, party, kJoinX, kJoinY, ecs::PlayerRuntime::GetMapIndex(character));
+    }
+    else
+    {
+        DungeonSystem::Join_Coords(d, character, kJoinX, kJoinY, ecs::PlayerRuntime::GetMapIndex(character));
+    }
+
+    // OnPlayerLogin schedules preparation once the first member is in GAME.
+
+            };return plan;
+        };
+        if(!BeginTypedDungeonEntry(character,"dungeon.pyramid.entry",kNativeEntryCode,1,[](entt::entity pc){const auto level=ecs::PointSystem::GetLevel(pc);return level>=kMinLevel && level<=kMaxLevel && ecs::QuestSystem::GetFlag(pc,kQfCooldown)<=get_global_time();},prepare))
+            ecs::ChatSystem::Send(character,CHAT_TYPE_INFO,"A teljes csapatnak készen kell állnia, és a belépőnek a hátizsákban kell lennie.");
+        return true;
+    }
     // Passed checks: consume items + set cooldown (BEFORE warping)
     if (party != entt::null)
     {

@@ -342,7 +342,6 @@ void		Reset() { m_data.power = m_data.max_power; }
 		int		GetTrophies() const {return m_data.trophies;}
 		void	SaveTrophies();
 		void	ResetAllStats();
-		void	GiveReward(int reward);
 #endif
 		// END_OF_GUILD_JOIN_BUG_FIX
 

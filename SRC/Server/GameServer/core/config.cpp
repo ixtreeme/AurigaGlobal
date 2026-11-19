@@ -330,7 +330,7 @@ static void __ApplyConnectConfig(const GameConfig& cfg)
 
 	{
 		namespace items = auriga::item::runtime;
-		const items::CatalogBootSettings settings { cfg.items.catalog == "required" ? items::CatalogMode::Required : items::CatalogMode::Off,
+		const items::CatalogBootSettings settings { items::CatalogMode::Required,
 			cfg.items.catalogRevision, cfg.items.catalogSha256 };
 		const auto loaded = items::LoadCatalogAtBoot(settings, cfg.sql.player);
 		if (!loaded)
@@ -348,6 +348,8 @@ static void __ApplyConnectConfig(const GameConfig& cfg)
 				exit(1);
 			}
 			LOG_INFO("ItemStore: started");
+            if(const auto birth=items::LoadNativeCharacterBirth(LocaleService_GetBasePath()+"/typed_character_creation.json");!birth)
+            {LOG_ERROR("NativeCharacterBirth: {}",birth.error());exit(1);}
             if (const auto shops = LoadTypedShops(LocaleService_GetBasePath() + "/typed_shops.json"); !shops)
             { LOG_ERROR("TypedShop: {}", shops.error()); exit(1); }
             if (const auto crafting = LoadTypedCrafting(LocaleService_GetBasePath() + "/typed_crafting.json"); !crafting)
@@ -358,11 +360,9 @@ static void __ApplyConnectConfig(const GameConfig& cfg)
             { LOG_ERROR("TypedMission: {}", missions.error()); exit(1); }
             if (const auto gathering = LoadTypedGathering(LocaleService_GetBasePath() + "/typed_gathering.json"); !gathering)
             { LOG_ERROR("TypedGathering: {}", gathering.error()); exit(1); }
-			items::EnableTypedDrops(cfg.items.drops == "typed");
-			LOG_INFO("ItemDrops: {}", cfg.items.drops == "typed" ? "typed (catalog drop tables)" : "legacy drop tables");
+			LOG_INFO("ItemDrops: typed (catalog drop tables)");
 		}
-		else
-			LOG_INFO("ItemCatalog: off (legacy item_proto runtime)");
+
 	}
 
 	{

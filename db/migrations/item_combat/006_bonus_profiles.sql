@@ -13,7 +13,7 @@ CREATE TABLE protos.bonus_definition (
     aggregate_cap TINYINT UNSIGNED NOT NULL, allowed_sources TINYINT UNSIGNED NOT NULL,
     minimum_value BIGINT NOT NULL, maximum_value BIGINT NOT NULL,
     CHECK (bonus_id > 0), CHECK (CHAR_LENGTH(code) > 0), CHECK (CHAR_LENGTH(display_key) > 0),
-    CHECK (unit_kind BETWEEN 1 AND 3), CHECK (target_kind BETWEEN 1 AND 22),
+    CHECK (unit_kind BETWEEN 1 AND 3), CHECK (target_kind BETWEEN 1 AND 25),
     CHECK (stage_kind BETWEEN 1 AND 13), CHECK (channel_filter BETWEEN 1 AND 3),
     CHECK (action_filter BETWEEN 1 AND 3), CHECK (mode_filter BETWEEN 1 AND 3),
     CHECK (family_filter=0 AND rank_filter=0 AND element_filter=0),

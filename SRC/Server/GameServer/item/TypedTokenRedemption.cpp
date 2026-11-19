@@ -78,9 +78,9 @@ bool HandleTypedTokenRedemptionPacket(entt::entity e,const char* data)
         if(!token || !items::PlainInventoryItem(*item,typed->state.fence.owner)){g_registry.remove<TypedTokenRedemptionSession>(e);Reply(e,Status::Invalid);return true;}
         if(token->currency==items::WalletCurrency::DragonCoin){g_registry.remove<TypedTokenRedemptionSession>(e);Reply(e,Status::Closed);OpenTypedAccountWallet(e,r.item,r.units);return true;}
         TypedTokenRedemptionSession next;next.nonce=Nonce();if(!next.nonce || !Operation(next.operation)){g_registry.remove<TypedTokenRedemptionSession>(e);Reply(e,Status::Failed);return true;}
-        next.fence=typed->state.fence;next.item=*item;next.quote={item->count,r.units ? r.units : item->count,0,token->currency,token->amountPerUnit,0,0,token->currency==items::WalletCurrency::Gold ? std::uint64_t(INT64_MAX) : 0};
+        next.fence=typed->state.fence;next.item=*item;next.quote={item->count,r.units ? r.units : item->count,0,token->currency,items::CurrencyUnitAmount(*c,*item).value_or(0),0,0,token->currency==items::WalletCurrency::Gold ? std::uint64_t(GOLD_MAX) : 0};
         if(token->currency==items::WalletCurrency::Gold)for(const auto& wallet:typed->state.wallets)if(wallet.owner==next.fence.owner && wallet.currency==token->currency)next.quote.balance=wallet.balance;
-        const auto plan=items::MakeTokenRedemptionCommit(*c,next.operation,next.fence,typed->state.storages,typed->state.items,typed->state.wallets,*id,next.quote.requested,INT64_MAX,Actor(e));
+        const auto plan=items::MakeTokenRedemptionCommit(*c,next.operation,next.fence,typed->state.storages,typed->state.items,typed->state.wallets,*id,next.quote.requested,GOLD_MAX,Actor(e));
         next.status=plan ? Status::Ready : Refusal(plan.error());if(plan)next.quote=plan->quote;
         g_registry.emplace_or_replace<TypedTokenRedemptionSession>(e,std::move(next));if(auto* s=g_registry.try_get<TypedTokenRedemptionSession>(e))Reply(e,s->status);return true;
     }
@@ -95,7 +95,7 @@ bool HandleTypedTokenRedemptionPacket(entt::entity e,const char* data)
     if(g_registry.all_of<ecs::TypedItemBusy>(e)){s->status=Status::Busy;Reply(e,s->status);return true;}
     if(typed->state.fence!=s->fence)
     {if(!OnlyTypedAccessoryClockChanges(s->fence,typed->state.fence)){s->status=Status::Stale;Reply(e,s->status);return true;}s->fence=typed->state.fence;}
-    auto plan=items::MakeTokenRedemptionCommit(*c,s->operation,s->fence,typed->state.storages,typed->state.items,typed->state.wallets,s->item->id,s->quote.requested,INT64_MAX,Actor(e));
+    auto plan=items::MakeTokenRedemptionCommit(*c,s->operation,s->fence,typed->state.storages,typed->state.items,typed->state.wallets,s->item->id,s->quote.requested,GOLD_MAX,Actor(e));
     if(!plan){s->status=Refusal(plan.error());Reply(e,s->status);return true;}
     if(plan->quote!=s->quote){s->status=Status::Stale;Reply(e,s->status);return true;}
     const auto fence=s->fence;const auto pid=ecs::PlayerRuntime::GetPlayerID(e);const auto token=login->token;const auto nonce=s->nonce;

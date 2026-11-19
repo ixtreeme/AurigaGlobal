@@ -66,6 +66,9 @@ namespace HerbalismSystem { bool Start(entt::entity, entt::entity) { return fals
 // story admission; these seams let the real trigger reach ordinary quests.
 bool SpyQuest::Click(entt::entity, entt::entity) { return false; }
 bool CaravanQuest::Click(entt::entity, entt::entity) { return false; }
+void TypedMissionNpcInteracted(entt::entity, std::uint32_t) {}
+void SendTypedInventory(entt::entity) {}
+
 namespace quest {
 int npc_lock(lua_State*);
 int npc_unlock(lua_State*);
@@ -610,6 +613,7 @@ bool NPC::OnButton(PC&,uint32_t) {Unexpected();}
 bool NPC::OnInfo(PC&,uint32_t) {Unexpected();}
 bool NPC::OnItemInformer(PC&,uint32_t) {Unexpected();}
 bool NPC::OnUseItem(PC&,bool) {Unexpected();}
+bool NPC::OnTypedItemUse(PC&, TypedItemUseSource) {Unexpected();}
 bool NPC::OnSIGUse(PC&,bool) {Unexpected();}
 bool NPC::OnEnterState(PC&,uint32_t,int) {Unexpected();}
 bool NPC::OnLeaveState(PC&,uint32_t,int) {Unexpected();}

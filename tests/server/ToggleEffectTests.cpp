@@ -52,7 +52,7 @@ void CatalogAndSnapshot()
     Check(decoded && (*decoded)->ContentHash() == catalog->ContentHash(), "typed SQL snapshot round trip");
     for (auto change : std::vector<std::function<void(ItemCatalogSource&)>>{
         [](auto& s){s.toggleEffects[0].variant=0;}, [](auto& s){s.toggleEffects[0].requirements=4;},
-        [](auto& s){s.toggleEffects[0].durationMs=0;}, [](auto& s){s.toggleEffects[0].durationMs=UINT64_MAX;},
+        [](auto& s){s.toggleEffects[0].durationMs=UINT64_MAX;},
         [](auto& s){s.toggleEffects[0].group=99;}, [](auto& s){s.toggleEffects[0].bonusProfile=1;},
         [](auto& s){s.toggleEffects[0].cooldownProfile=0;}, [](auto& s){s.toggleEffects[0].cooldownProfile=99;},
         [](auto& s){s.toggleEffects[0].allowedContexts=0;}, [](auto& s){s.toggleEffects[0].allowedContexts=16;},
@@ -175,8 +175,22 @@ void CapacityAndIndependentGroups()
     Check(PlanToggleEffectUse(*c,f::TimedPotion(),Id(10),a,active).error()==ToggleEffectError::InvalidState,"duplicate item and group rejected");
 }
 }
+void PermanentState()
+{
+    auto source=Source();source.toggleEffects[0].durationMs=0;
+    const auto c=BuildItemCatalog(source).value();auto a=Admission();a.state={0,false};
+    Check(InitialToggleEffectState(*c,f::TimedPotion()).value()==ToggleEffectState{0,false},"permanent instance stores no finite time");
+    const auto on=PlanToggleEffectUse(*c,f::TimedPotion(),Id(10),a,{}).value();Check(on.next==ToggleEffectState{0,true},"permanent activates with explicit zero-time state");
+    a.state=on.next;const std::array active{ActiveToggleEffect{Id(10),f::TimedPotion(),0}};
+    const auto elapsed=PlanToggleEffectAdvance(*c,f::TimedPotion(),Id(10),a,1000000000000ULL).value();
+    Check(elapsed.next==on.next && !elapsed.destroyItem,"permanent never expires from elapsed time");
+    Check(!PlanToggleEffectUse(*c,f::TimedPotion(),Id(11),a,active),"active permanent group cannot be duplicated");
+    Check(!PlanToggleEffectUse(*c,f::TimedPotion(),Id(10),a,active)->next.active,"permanent can be explicitly disabled");
+    a.effectAllowedByRules=false;Check(!PlanToggleEffectAdvance(*c,f::TimedPotion(),Id(10),a,1)->next.active,"permanent loses active bonus when rules deny it");
+    a.state={1,true};Check(!PlanToggleEffectAdvance(*c,f::TimedPotion(),Id(10),a,1),"forged finite budget on permanent is rejected");
+}
 int main()
 {
-    try {CatalogAndSnapshot();UseAndConflicts();ClockAndCleanup();CapacityAndIndependentGroups();std::cout<<checks<<" toggle effect checks passed\n";return 0;}
+    try {CatalogAndSnapshot();UseAndConflicts();ClockAndCleanup();CapacityAndIndependentGroups();PermanentState();std::cout<<checks<<" toggle effect checks passed\n";return 0;}
     catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
 }

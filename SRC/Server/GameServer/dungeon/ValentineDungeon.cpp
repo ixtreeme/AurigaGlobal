@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../item/TypedDungeonEntry.hpp"
 #include "../mission_pass/MissionPassEvents.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/ItemSystem.hpp"
@@ -41,6 +42,8 @@ namespace
 
     // Entry item (1 db / player)
     constexpr uint32_t kEntryItemVnum = 78314;
+    constexpr std::string_view kNativeEntryCode="catalog.10.chocolate_heart_45049195b359";
+    std::uint64_t EntryTicketCount(entt::entity e){return HasTypedDungeonInventory(e)?TypedDungeonTicketCount(e,kNativeEntryCode):ItemSystem::CountItem(e,kEntryItemVnum);}
 
     // Gameplay
     constexpr uint32_t kFloor1StoneVnum = 171;  // stones
@@ -230,7 +233,7 @@ namespace
             if (!ecs::PlayerRuntime::IsPC(chEntity))
                 return;
 
-            if (ItemSystem::CountItem(chEntity, vnum) < 1 && ok)
+            if (EntryTicketCount(chEntity) < 1 && ok)
             {
                 ok = false;
                 name = ecs::PlayerRuntime::GetName(chEntity).data();
@@ -734,6 +737,7 @@ void CValentineDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 
 bool CValentineDungeon::OnClickNpc(entt::entity character)
 {
+    if(TypedDungeonEntryPending(character))return true;
     if (!ecs::PlayerRuntime::IsPC(character))
         return false;
 
@@ -861,7 +865,7 @@ if (!f.ok)
     // Entry item check (NAME not VNUM)
     if (party == entt::null)
     {
-        if (ItemSystem::CountItem(character, kEntryItemVnum) < 1)
+        if (EntryTicketCount(character) < 1)
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Valentine: required to enter: %s (x1).", entryItemName);
             return true;
@@ -884,11 +888,12 @@ if (!it.ok)
     }
 
     // Create dungeon instance
+    auto prepare=[=]() -> std::optional<TypedDungeonEntryPlan> {
     const entt::entity d = CDungeonManager::instance().Create(kValOriginalMap);
     if (d == entt::null)
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Valentine: failed to create the dungeon.");
-        return true;
+        return std::nullopt;
     }
 
     // Initialize dungeon flags
@@ -901,13 +906,14 @@ if (!it.ok)
     DungeonSystem::SetFlag(d, kFlagF2Retry, 0);
     DungeonSystem::SetFlag(d, kFlagF1ToF2, 0);
 
+        TypedDungeonEntryPlan plan;plan.dungeon=d;plan.cancel=[d]{CancelTypedDungeonPreflight(d);};plan.publish=[=]{
     // Set per-player rejoin flags + consume entry item
     auto applyMember = [&](entt::entity m){
             if (!ecs::PlayerRuntime::IsPC(m))
                 return;
 
             // Consume entry item (already checked above)
-            ItemSystem::RemoveSpecifyItemEcs(m, kEntryItemVnum, 1);
+            if(!HasTypedDungeonInventory(m))ItemSystem::RemoveSpecifyItemEcs(m, kEntryItemVnum, 1);
 
             ecs::QuestSystem::SetFlag(m, "valentine_dungeon.disconnect", 0);
             ecs::QuestSystem::SetFlag(m, "valentine_dungeon.idx", DungeonSystem::GetMapIndex(d));
@@ -935,6 +941,14 @@ if (!it.ok)
 
     // Start floor1 after short delay
     // OnPlayerLogin starts preparation after the first member reaches GAME.
+        };return plan;
+    };
+    if(HasTypedDungeonInventory(character)){
+        if(!BeginTypedDungeonEntry(character,"dungeon.valentine.entry",kNativeEntryCode,1,[](entt::entity pc){const auto level=ecs::PointSystem::GetLevel(pc);return (kMinLevel==0 || level>=kMinLevel) && (kMaxLevel==0 || level<=kMaxLevel) && ecs::QuestSystem::GetFlag(pc,"valentine_dungeon.cooldown")<=get_global_time();},prepare))
+            ecs::ChatSystem::Send(character,CHAT_TYPE_INFO,"A teljes csapatnak készen kell állnia, és a belépőnek a hátizsákban kell lennie.");
+        return true;
+    }
+    if(auto plan=prepare())plan->publish();
     return true;
 }
 

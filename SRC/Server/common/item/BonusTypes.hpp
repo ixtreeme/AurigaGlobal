@@ -19,6 +19,7 @@ enum class BonusTarget : std::uint8_t
     Resistance = 9, CritChance = 10, CritResistance = 11, CritMultiplierExtra = 12,
     BlockReduction = 13, Evasion = 14, MovementSpeed = 15, AttackSpeed = 16, CastSpeed = 17,
     Strength = 18, Dexterity = 19, Constitution = 20, Intelligence = 21, Experience = 22,
+    EquipmentPointRaw=23, EquipmentPointInteger=24, EquipmentPointPercent=25,
 };
 enum class BonusChannel : std::uint8_t { Any = 1, Physical = 2, Magical = 3 };
 enum class BonusAction : std::uint8_t { Any = 1, Normal = 2, Skill = 3 };

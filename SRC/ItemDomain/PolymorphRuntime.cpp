@@ -3,6 +3,17 @@
 #include <algorithm>
 namespace auriga::item
 {
+std::expected<ItemGrant,PolymorphError> OriginalPolymorphBookGrant(const ItemCatalog& c,std::uint32_t mob,std::uint32_t practice,std::uint16_t grade)
+{
+    const auto* form=c.FindOriginalPolymorphForm(mob);
+    if(!form)return std::unexpected(PolymorphError::MissingForm);
+    const auto it=std::ranges::find_if(c.Entries(),[](const auto& r){return r.second.base.contentCode=="polymorph.practice_book";});
+    if(it==c.Entries().end() || it->second.base.retired)return std::unexpected(PolymorphError::MissingItem);
+    const auto* row=std::get_if<ItemPolymorphRow>(&it->second.category);
+    const auto* profile=row ? c.FindPolymorphProfile(row->profile) : nullptr;
+    if(!profile || profile->kind!=PolymorphKind::PracticeBook || row->fixedForm || grade>profile->maxBookGrade)return std::unexpected(PolymorphError::InvalidState);
+    ItemGrant grant{it->first};grant.polymorph=PolymorphInstanceState{form->id,grade,practice};return grant;
+}
 const ItemPolymorphRow* PolymorphItem(const ItemCatalog& c,ItemKey key)
 {const auto* e=c.Find(key);return e ? std::get_if<ItemPolymorphRow>(&e->category) : nullptr;}
 namespace

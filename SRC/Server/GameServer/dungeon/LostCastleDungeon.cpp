@@ -1,5 +1,7 @@
 // LostCastleDungeon.cpp
 #include "stdafx.h"
+#include "../item/TypedDungeonEntry.hpp"
+#include "../item/TypedDungeonActions.hpp"
 #include "../ecs/systems/InventorySystem.hpp"
 #include "../ecs/systems/AISystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
@@ -53,6 +55,8 @@ namespace
 
     constexpr uint32_t kEntryNpcVnum = 20021;
     constexpr uint32_t kEntryItemVnum = 30000;
+    constexpr std::string_view kNativeEntryCode="material.arpa";
+    std::uint64_t EntryTicketCount(entt::entity e){return HasTypedDungeonInventory(e)?TypedDungeonTicketCount(e,kNativeEntryCode):ItemSystem::CountItem(e,kEntryItemVnum);}
 
     constexpr int32_t  kMinLevel = 40;
     constexpr int32_t  kMaxLevel = 140;
@@ -1447,6 +1451,7 @@ void CLostCastleDungeon::OnPlayerLogin(entt::entity character)
 
 bool CLostCastleDungeon::OnClickNpc(entt::entity character)
 {
+    if(TypedDungeonEntryPending(character))return true;
     if (!ecs::PlayerRuntime::IsPC(character))
         return false;
 
@@ -1482,7 +1487,7 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
                     ok = false;
                     return;
                 }
-                if (ItemSystem::CountItem(m, kEntryItemVnum) < 1)
+                if (EntryTicketCount(m) < 1)
                 {
                     ok = false;
                     return;
@@ -1504,7 +1509,7 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Csak lvl %d-%d kozott lephetsz be!", kMinLevel, kMaxLevel);
             return true;
         }
-        if (ItemSystem::CountItem(character, kEntryItemVnum) < 1)
+        if (EntryTicketCount(character) < 1)
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Szukseges belepo item: %u", kEntryItemVnum);
             return true;
@@ -1512,11 +1517,12 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
     }
 
     // Create + join (Pyramid style)
+    auto prepare=[=]() -> std::optional<TypedDungeonEntryPlan> {
     const entt::entity d = CDungeonManager::instance().Create(kOriginalMap);
     if (d == entt::null)
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Elveszett Kastely: nem sikerult letrehozni a dungeont.");
-        return true;
+        return std::nullopt;
     }
 
     DungeonSystem::SetFlag(d, kFlagFloor, 1);
@@ -1528,11 +1534,12 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
     DungeonSystem::SetFlag(d, kFlagTileStage, 0);
     DungeonSystem::SetFlag(d, kFlagClonesRemain, 0);
 
+        TypedDungeonEntryPlan plan;plan.dungeon=d;plan.cancel=[d]{CancelTypedDungeonPreflight(d);};plan.publish=[=]{
     auto applyMember = [&](entt::entity m){
             if (!ecs::PlayerRuntime::IsPC(m))
                 return;
 
-            ItemSystem::RemoveSpecifyItemEcs(m, kEntryItemVnum, 1);
+            if(!HasTypedDungeonInventory(m))ItemSystem::RemoveSpecifyItemEcs(m, kEntryItemVnum, 1);
 
             // rejoin flags reset
             ecs::QuestSystem::SetFlag(m, kQfDisconnect, 0);
@@ -1559,6 +1566,14 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
     }
 
     s_lc.StartFloor1(DungeonSystem::GetMapIndex(d));
+        };return plan;
+    };
+    if(HasTypedDungeonInventory(character)){
+        if(!BeginTypedDungeonEntry(character,"dungeon.lost_castle.entry",kNativeEntryCode,1,[character](entt::entity pc){const auto level=ecs::PointSystem::GetLevel(pc);if(level<kMinLevel || level>kMaxLevel)return false;bool together=true;const auto party=ecs::SocialSystem::GetParty(character);if(party!=entt::null){auto check=[&](entt::entity m){if(ecs::PlayerRuntime::IsPC(m) && ecs::PlayerRuntime::GetMapIndex(m)!=ecs::PlayerRuntime::GetMapIndex(character))together=false;};PartySystem::ForEachOnlineMember(party,check);}return together;},prepare))
+            ecs::ChatSystem::Send(character,CHAT_TYPE_INFO,"A teljes csapatnak készen kell állnia, és a belépőnek a hátizsákban kell lennie.");
+        return true;
+    }
+    if(auto plan=prepare())plan->publish();
     return true;
 }
 
@@ -1616,50 +1631,17 @@ void CLostCastleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
     }
 }
 
-bool CLostCastleDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt::entity itemEntity)
-{
-    if (!ecs::PlayerRuntime::IsValid(from) || !ecs::PlayerRuntime::IsValid(npc) ||
-        ecs::PlayerRuntime::GetMapIndex(from) != ecs::PlayerRuntime::GetMapIndex(npc))
-        return false;
-
-    if (!ecs::PlayerRuntime::IsPC(from) || !ecs::PlayerRuntime::IsValid(npc) || !ItemSystem::IsValidItem(itemEntity))
-        return false;
-
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(from);
-    if (!IsInRange(idx, kPrivateMin, kPrivateMax))
-        return false;
-
-    const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (d == entt::null)
-        return false;
-
-    const int32_t floor = DungeonSystem::GetFlag(d, kFlagFloor);
-
-    if (floor == 2)
-    {
-        const uint32_t statueVid = (uint32_t)DungeonSystem::GetFlag(d, kFlagStatueVid);
-	if (statueVid && ecs::PlayerRuntime::GetPacketVID(npc) != statueVid)
-            return false;
-
-        const uint32_t vnum = ItemSystem::GetItemVnum(itemEntity);
-        int keyIndex = -1;
-        for (int i = 0; i < 5; ++i)
-        {
-            if (kKeyItems[i] == vnum) { keyIndex = i; break; }
-        }
-        if (keyIndex < 0)
-            return false;
-
-        int32_t mask = DungeonSystem::GetFlag(d, kFlagKeyMask);
-        const int32_t bit = 1 << keyIndex;
-        if (mask & bit)
-        {
-            ecs::ChatSystem::Send(from, CHAT_TYPE_INFO, "Ez a kulcs mar be lett adva!");
-            return true;
-        }
-
-        ConsumeOneGivenItem(itemEntity, "LOSTCASTLE_KEY");
-        mask |= bit;
+static std::optional<TypedDungeonAction> PlanCastleAction(entt::entity from,entt::entity npc,auriga::item::DungeonUseRole role){
+ namespace P=ecs::PlayerRuntime;using R=auriga::item::DungeonUseRole;
+ if(!P::IsPC(from)||!P::IsValid(npc)||P::GetMapIndex(from)!=P::GetMapIndex(npc))return {};
+ const auto idx=P::GetMapIndex(from);if(!IsInRange(idx,kPrivateMin,kPrivateMax))return {};
+ const auto d=CDungeonManager::instance().FindByMapIndex(idx);if(!g_registry.valid(d))return {};
+ const auto floor=DungeonSystem::GetFlag(d,kFlagFloor);
+ if(floor==2&&role>=R::CastleKey1&&role<=R::CastleKey5){
+  const auto statueVid=static_cast<std::uint32_t>(DungeonSystem::GetFlag(d,kFlagStatueVid));if(!statueVid||P::GetPacketVID(npc)!=statueVid)return {};
+  const auto keyIndex=static_cast<unsigned>(role)-static_cast<unsigned>(R::CastleKey1);int32_t mask=DungeonSystem::GetFlag(d,kFlagKeyMask);const int32_t bit=1<<keyIndex;if(mask&bit)return {};
+return TypedDungeonAction{100+static_cast<std::uint64_t>(mask), [=]()mutable{
+mask |= bit;
         DungeonSystem::SetFlag(d, kFlagKeyMask, mask);
 
         BigNoticeMap(idx, "Elveszett Kastely: %s megtalalta az egyik kulcsot!", ecs::PlayerRuntime::GetName(from).data());
@@ -1670,38 +1652,31 @@ bool CLostCastleDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, entt
 
             ForEachPcOnMap(idx, [&](entt::entity pc){
                 if (!ecs::PlayerRuntime::IsValid(pc)) return;
-                for (uint32_t kv : kKeyItems)
-                {
-                    const int32_t c = ItemSystem::CountItem(pc, kv);
-                    if (c > 0)
-                        ItemSystem::RemoveSpecifyItemEcs(pc, kv, c);
-                }
+                if(HasTypedDungeonInventory(pc)){for(const auto& binding:auriga::item::DungeonUseBindings)if(binding.role>=auriga::item::DungeonUseRole::CastleKey1&&binding.role<=auriga::item::DungeonUseRole::CastleKey5)QueueTypedDungeonCleanup(pc,binding.code);}
+                else for(uint32_t kv:kKeyItems){const auto count=ItemSystem::CountItem(pc,kv);if(count>0)ItemSystem::RemoveSpecifyItemEcs(pc,kv,count);}
                 });
 
             s_lc.StartFloor3(idx);
         }
-
-        return true;
-    }
-
-    if (floor == 4)
-    {
-        const uint32_t totemVid = (uint32_t)DungeonSystem::GetFlag(d, kFlagTotemVid);
-	if (totemVid && ecs::PlayerRuntime::GetPacketVID(npc) != totemVid)
-            return false;
-
-        if (ItemSystem::GetItemVnum(itemEntity) != kTileItemVnum)
-            return false;
-
-        ConsumeOneGivenItem(itemEntity, "LOSTCASTLE_TILE");
-
-        if (!s_lc.UnlockNextTile(idx))
+}};
+ }
+ if(floor==4&&role==R::CastleTile){const auto vid=static_cast<std::uint32_t>(DungeonSystem::GetFlag(d,kFlagTotemVid));const auto stage=DungeonSystem::GetFlag(d,kFlagTileStage);
+  if(!vid||P::GetPacketVID(npc)!=vid||stage<0||stage>=kTileStages)return {};
+return TypedDungeonAction{1000+static_cast<std::uint64_t>(stage), [=]()mutable{
+if (!s_lc.UnlockNextTile(idx))
             ecs::ChatSystem::Send(from, CHAT_TYPE_INFO, "Mar minden csempe le van teve!");
-
-        return true;
-    }
-
-    return false;
+}};
+ }return {};
+}
+bool CLostCastleDungeon::OnNpcTakeItem(entt::entity from,entt::entity npc,entt::entity item){
+ if(!ItemSystem::CanConsumeOwnedItem(from,item))return false;
+ const auto d=CDungeonManager::instance().FindByMapIndex(ecs::PlayerRuntime::GetMapIndex(from));if(TypedDungeonActionPending(d))return true;
+ using R=auriga::item::DungeonUseRole;const auto v=ItemSystem::GetItemVnum(item);auto role=v==kTileItemVnum?R::CastleTile:R::None;
+ for(unsigned n=0;n<5;++n)if(v==kKeyItems[n])role=static_cast<R>(static_cast<unsigned>(R::CastleKey1)+n);
+ auto plan=PlanCastleAction(from,npc,role);if(!plan)return false;if(ConsumeOneGivenItem(item,"LOSTCASTLE_NATIVE_COMPAT"))plan->publish();return true;
+}
+bool CLostCastleDungeon::OnUseTypedItem(entt::entity e,const auriga::item::PersistentItem& item,const auriga::item::ItemCatalog& catalog){
+ const auto role=auriga::item::DungeonItemUseRole(catalog,item.key);return UseTypedDungeonAction(e,item,catalog,[role](auto pc,auto npc){return PlanCastleAction(pc,npc,role);});
 }
 
 bool CLostCastleDungeon::CheckCloneDamage(entt::entity attacker, entt::entity victim) const

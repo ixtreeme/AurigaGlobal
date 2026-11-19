@@ -8,13 +8,14 @@ namespace auriga::item
 {
 bool ValidTimedEffectGroup(const TimedEffectGroup& source) noexcept
 {
+    if(source.family>TimedEffectFamily::FestivalCandy || (source.family!=TimedEffectFamily::Generic && (source.reapply!=TimedEffectReapply::Reject || source.clock!=TimedEffectClock::OnlineTime || !source.removeOnDeath)))return false;
     return source.id && detail::ContentCode(source.code) &&
         (source.reapply == TimedEffectReapply::Reject || source.reapply == TimedEffectReapply::Replace) &&
         (source.clock == TimedEffectClock::OnlineTime || source.clock == TimedEffectClock::WallTime);
 }
 bool ValidTimedEffectProfile(const TimedEffectProfile& source) noexcept
 {
-    return source.id && detail::ContentCode(source.code) && source.group && source.bonusProfile &&
+    return source.id && detail::ContentCode(source.code) && source.group && source.utility<=TimedEffectUtility::Energy && ((source.utility==TimedEffectUtility::None)==(source.bonusProfile!=0)) &&
         source.durationMs && source.durationMs <= INT64_MAX && source.unitsPerUse &&
         source.allowedContexts && source.allowedContexts <= 15 && source.cooldownProfile != 0;
 }
@@ -55,7 +56,15 @@ std::expected<TimedEffectPlan, TimedEffectUseError> PlanTimedEffectUse(
         if (!effect.effectId || !catalog.FindTimedEffectGroup(effect.group) || effect.remainingMs > INT64_MAX ||
             !ids.insert(effect.effectId).second)
             return std::unexpected(E::InvalidState);
+        const auto* activeProfile=effect.profileId ? catalog.FindTimedEffect(effect.profileId) : nullptr;
+        if((effect.profileId && (!activeProfile || activeProfile->group!=effect.group)) || (catalog.FindTimedEffectGroup(effect.group)->family==TimedEffectFamily::Fish && !activeProfile))return std::unexpected(E::InvalidState);
         if (!effect.remainingMs) continue;
+        if(profile.conflictBonus && catalog.FindTimedEffectGroup(effect.group)->family==TimedEffectFamily::Fish){
+            const auto* bonuses=catalog.FindBonus(activeProfile->bonusProfile);
+            if(!bonuses)return std::unexpected(E::InvalidState);
+            if(std::ranges::any_of(bonuses->Data().entries,[&](const auto& b){return b.bonus==*profile.conflictBonus;}))return std::unexpected(E::AlreadyActive);
+        }
+
         if (!groups.insert(effect.group).second) return std::unexpected(E::InvalidState);
         if (effect.group == profile.group) replace = effect.effectId;
     }
@@ -63,7 +72,7 @@ std::expected<TimedEffectPlan, TimedEffectUseError> PlanTimedEffectUse(
     if (!replace && groups.size() == MaxActiveTimedEffects) return std::unexpected(E::ActiveLimit);
     TimedEffectPlan plan{profile.id, profile.group, profile.bonusProfile, profile.durationMs,
         group.clock, group.removeOnDeath, profile.unitsPerUse, replace, {},
-        catalog.FindBonus(profile.bonusProfile)->Data().entries};
+        profile.bonusProfile ? catalog.FindBonus(profile.bonusProfile)->Data().entries : std::vector<BonusEntry>{}};
     if (profile.cooldownProfile)
         plan.cooldown = ConsumableCooldownStart{*profile.cooldownProfile, catalog.FindConsumableCooldown(*profile.cooldownProfile)->durationMs};
     return plan;

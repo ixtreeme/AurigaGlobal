@@ -33,7 +33,7 @@ public:
         Integer<std::uint32_t>(static_cast<std::uint32_t>(value.size()));
         Bytes(value.data(), value.size());
     }
-    void Optional(std::optional<std::uint32_t> value)
+    template<typename T> void Optional(std::optional<T> value)
     {
         Boolean(value.has_value());
         if (value) Integer(*value);
@@ -68,7 +68,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     // Vectors and refinement levels are already validated and canonically sorted.
     // Revision is separate release identity; unchanged content retains its digest.
     Writer out;
-    out.Text("auriga.item_catalog.v30");
+    out.Text("auriga.item_catalog.v55");
     out.Integer(source.schemaVersion);
     out.Table(1, source.usePolicies.size());
     for (const auto& row : source.usePolicies)
@@ -109,6 +109,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
             out.Integer(step.level);
             for (auto value : step.gain.Values()) out.Integer(static_cast<std::uint64_t>(value));
             out.Optional(step.extraBonusProfile);
+            out.Optional(step.minimumLevel);out.Optional(step.buyAmount);out.Optional(step.sellAmount);
         }
     }
     out.Table(8, source.items.size());
@@ -182,6 +183,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
             out.Integer(static_cast<std::uint64_t>(grade.minimumRaw));
             out.Integer(static_cast<std::uint32_t>(grade.minimumBp)); out.Integer(static_cast<std::uint32_t>(grade.minimumInteger));
             out.Integer(grade.unlockChanceBp); out.Integer(grade.chargeChanceBp);
+            out.Boolean(grade.truncateBonus);
         }
         out.Integer<std::uint32_t>(static_cast<std::uint32_t>(row.unlockMaterials.size()));
         for (auto key : row.unlockMaterials) out.Key(key);
@@ -219,7 +221,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
         }, row.effect);
     }
     out.Table(18, source.consumables.size());
-    for (const auto& row : source.consumables) { out.Key(row.key); out.Optional(row.recoveryProfile ? std::optional{row.recoveryProfile} : std::nullopt); out.Optional(row.timedEffectProfile); out.Optional(row.toggleEffectProfile); out.Optional(row.socketServiceProfile);out.Optional(row.attributeServiceProfile);out.Optional(row.bookAidProfile); }
+    for (const auto& row : source.consumables) { out.Key(row.key); out.Optional(row.recoveryProfile ? std::optional{row.recoveryProfile} : std::nullopt); out.Optional(row.timedEffectProfile); out.Optional(row.toggleEffectProfile); out.Optional(row.socketServiceProfile);out.Optional(row.attributeServiceProfile);out.Optional(row.bookAidProfile);out.Boolean(row.characterService); }
     out.Table(19, source.lootProfiles.size());
     for (const auto& row : source.lootProfiles)
     {
@@ -230,7 +232,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
             out.Integer(entry.entry); out.Integer(static_cast<std::uint8_t>(entry.kind));
             out.Boolean(entry.item.has_value());
             if (entry.item) out.Key(*entry.item);
-            out.Integer(entry.amount); out.Integer(entry.weight); out.Integer(entry.rareAttributeChanceBp);
+            out.Integer(entry.amount); out.Integer(entry.weight); out.Integer(entry.rareAttributeChanceBp); out.Integer(entry.refinementLevel);
         }
     }
     out.Table(20, source.containers.size());
@@ -249,14 +251,14 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     for (const auto& row : source.timedEffectGroups)
     {
         out.Identity(row.id, row.code); out.Integer(static_cast<std::uint8_t>(row.reapply));
-        out.Integer(static_cast<std::uint8_t>(row.clock)); out.Boolean(row.removeOnDeath);
+        out.Integer(static_cast<std::uint8_t>(row.clock)); out.Boolean(row.removeOnDeath); out.Integer(static_cast<std::uint8_t>(row.family));
     }
     out.Table(24, source.timedEffects.size());
     for (const auto& row : source.timedEffects)
     {
         out.Identity(row.id, row.code); out.Integer(row.group); out.Integer(row.bonusProfile);
         out.Integer(row.durationMs); out.Integer(row.unitsPerUse); out.Integer(row.allowedContexts);
-        out.Boolean(row.allowDuringPvp); out.Optional(row.cooldownProfile);
+        out.Boolean(row.allowDuringPvp); out.Optional(row.cooldownProfile); out.Integer(static_cast<std::uint8_t>(row.utility)); out.Optional(row.conflictBonus ? std::optional{static_cast<std::uint32_t>(*row.conflictBonus)} : std::nullopt);
     }
     out.Table(25, source.toggleEffectGroups.size());
     for (const auto& r : source.toggleEffectGroups) { out.Identity(r.id, r.code); out.Boolean(r.removeOnDeath); }
@@ -299,17 +301,17 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     out.Table(31,source.socketStones.size());
     for(const auto& r:source.socketStones){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Integer(r.allowedTargets);out.Integer(r.minimumSocketGrade);out.Text(r.primaryGroup);out.Text(r.secondaryGroup);}
     out.Table(32,source.costumes.size());
-    for(const auto& r:source.costumes){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Boolean(r.weapon.has_value());if(r.weapon)out.Integer(static_cast<std::uint8_t>(*r.weapon));out.Integer(static_cast<std::uint8_t>(r.clock));out.Integer(r.durationMs);}
+    for(const auto& r:source.costumes){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Boolean(r.weapon.has_value());if(r.weapon)out.Integer(static_cast<std::uint8_t>(*r.weapon));out.Integer(static_cast<std::uint8_t>(r.clock));out.Integer(r.durationMs);out.Boolean(r.companionForm.has_value());if(r.companionForm)out.Integer(*r.companionForm);out.Integer(r.bodyEffect);for(auto effect:r.weaponEffects)out.Integer(effect);}
     out.Table(33,source.costumeVisuals.size());
     for(const auto& r:source.costumeVisuals){out.Key(r.key);out.Integer(r.characterClass);out.Integer(r.sex);out.Text(r.modelAsset);}
     out.Table(34,source.toolProfiles.size());
     for(const auto& p:source.toolProfiles)
     {
         out.Identity(p.id,p.code);out.Integer(static_cast<std::uint32_t>(p.levels.size()));
-        for(const auto& s:p.levels){out.Integer(s.level);out.Integer(s.power);out.Integer(s.gatherBonusBp);out.Integer(s.requiredPoints);out.Integer(s.practiceNumerator);out.Integer(s.practiceDenominator);out.Integer(s.refineChanceBp);out.Integer(static_cast<std::uint8_t>(s.failure));out.Boolean(s.failureLevel.has_value());if(s.failureLevel)out.Integer(*s.failureLevel);out.Integer(s.failureLossBp);}
+        for(const auto& s:p.levels){out.Integer(s.level);out.Integer(s.power);out.Integer(s.gatherBonusBp);out.Integer(s.requiredPoints);out.Integer(s.practiceNumerator);out.Integer(s.practiceDenominator);out.Integer(s.refineChanceBp);out.Integer(static_cast<std::uint8_t>(s.failure));out.Boolean(s.failureLevel.has_value());if(s.failureLevel)out.Integer(*s.failureLevel);out.Integer(s.failureLossBp);out.Boolean(s.successItem.has_value());if(s.successItem)out.Key(*s.successItem);out.Integer(s.successLevel);out.Boolean(s.failureItem.has_value());if(s.failureItem)out.Key(*s.failureItem);out.Integer(s.displayGrade);}
     }
     out.Table(35,source.tools.size());
-    for(const auto& r:source.tools){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Integer(r.profile);out.Integer(static_cast<std::uint8_t>(r.fishingPool));}
+    for(const auto& r:source.tools){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Integer(r.profile);out.Integer(static_cast<std::uint8_t>(r.fishingPool));out.Boolean(r.allWaterPools);out.Integer(r.maximumUses);}
     out.Table(36,source.fishingItems.size());
     for(const auto& r:source.fishingItems){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Optional(r.useLootProfile);out.Boolean(r.grillResult.has_value());if(r.grillResult)out.Key(*r.grillResult);out.Integer(r.baitPower);}
     out.Table(37,source.polymorphForms.size());
@@ -332,7 +334,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
         for(const auto& r:p.levels){out.Integer(r.level);out.Integer(r.chargeCapacity);out.Integer(r.cycleChargeCost);out.Integer(r.strikesPerCycle);out.Integer(r.initialCharge);out.Integer(r.initialStrikes);out.Integer(r.rechargeIntervalMs);out.Integer(r.firstMultiplierBp);out.Integer(r.secondMultiplierBp);out.Integer(r.thirdMultiplierBp);}
     }
     out.Table(41,source.soulItems.size());
-    for(const auto& r:source.soulItems){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Boolean(r.channel.has_value());if(r.channel)out.Integer(static_cast<std::uint8_t>(*r.channel));out.Optional(r.profile);out.Integer(r.refineChanceBp);}
+    for(const auto& r:source.soulItems){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Boolean(r.channel.has_value());if(r.channel)out.Integer(static_cast<std::uint8_t>(*r.channel));out.Optional(r.profile);out.Integer(r.refineChanceBp);out.Boolean(r.nextCore.has_value());if(r.nextCore)out.Key(*r.nextCore);}
     out.Table(42,source.companionForms.size());
     for(const auto& f:source.companionForms){out.Identity(f.id,f.code);out.Integer(f.mobTemplateId);out.Text(f.modelAsset);}
     out.Table(43,source.companions.size());
@@ -376,7 +378,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     out.Table(51,source.attributeProfiles.size());
     for(const auto& p:source.attributeProfiles){out.Identity(p.id,p.code);out.Boolean(p.allowLock);out.Integer(static_cast<std::uint32_t>(p.groups.size()));for(const auto& g:p.groups){out.Integer(static_cast<std::uint8_t>(g.pool));out.Integer(g.capacity);out.Boolean(g.excludeStatic);}out.Integer(static_cast<std::uint32_t>(p.candidates.size()));for(const auto& a:p.candidates){out.Integer(static_cast<std::uint8_t>(a.pool));out.Integer(static_cast<std::uint32_t>(a.bonus));out.Integer(a.weight);out.Integer(static_cast<std::uint32_t>(a.values.size()));for(const auto& v:a.values){out.Integer(v.tier);out.Integer(static_cast<std::uint64_t>(v.value));}}}
     out.Table(52,source.attributeServices.size());
-    for(const auto& p:source.attributeServices){out.Identity(p.id,p.code);out.Integer(static_cast<std::uint8_t>(p.operation));out.Integer(static_cast<std::uint8_t>(p.pool));out.Integer(p.units);out.Integer(p.successBp);out.Integer(p.targetMask);out.Integer(p.minimumCount);out.Integer(p.maximumCount);out.Integer(p.addCount);out.Integer(p.maximumTargetLevel);out.Boolean(p.consumeOnFailure);out.Integer(static_cast<std::uint32_t>(p.tiers.size()));for(const auto& t:p.tiers){out.Integer(t.tier);out.Integer(t.chanceBp);}}
+    for(const auto& p:source.attributeServices){out.Identity(p.id,p.code);out.Integer(static_cast<std::uint8_t>(p.operation));out.Integer(static_cast<std::uint8_t>(p.pool));out.Integer(p.units);out.Integer(p.successBp);out.Integer(p.targetMask);out.Integer(p.minimumCount);out.Integer(p.maximumCount);out.Integer(p.addCount);out.Integer(p.maximumTargetLevel);out.Boolean(p.consumeOnFailure);out.Integer(static_cast<std::uint32_t>(p.tiers.size()));for(const auto& t:p.tiers){out.Integer(t.tier);out.Integer(t.chanceBp);}out.Integer(p.targetRerollGroup);}
     out.Table(53,source.attributeBindings.size());for(const auto& b:source.attributeBindings){out.Key(b.key);out.Integer(b.profile);}
     // Monster drop tables (v25): group, then its entries in entry order.
     out.Table(54, source.mobDropGroups.size());
@@ -394,9 +396,18 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     out.Table(55,source.bookAidProfiles.size());
     for(const auto& p:source.bookAidProfiles){out.Identity(p.id,p.code);out.Integer(static_cast<std::uint8_t>(p.kind));out.Integer(p.unitsPerUse);out.Integer(p.chargesPerUse);out.Integer(p.maximumCharges);}
     out.Table(56,source.regalia.size());for(const auto& r:source.regalia){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Integer(r.slot);out.Integer(r.grade);out.Integer(r.capacityMs);out.Integer(r.initialMs);out.Integer(static_cast<std::uint32_t>(r.rules.size()));for(const auto& v:r.rules){out.Integer(v.index);out.Integer(v.variant);out.Integer(v.minimumChargeBp);out.Integer(static_cast<std::uint32_t>(v.bonus.bonus));out.Integer(static_cast<std::uint64_t>(v.bonus.valueScaled));}}
-    out.Table(57,source.bonusTools.size());for(const auto& r:source.bonusTools){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.operation));out.Integer(r.units);out.Integer(r.parameter);out.Boolean(r.payload.has_value());if(r.payload){out.Integer(static_cast<std::uint32_t>(r.payload->bonus));out.Integer(static_cast<std::uint64_t>(r.payload->valueScaled));}out.Integer(static_cast<std::uint32_t>(r.tiers.size()));for(const auto& t:r.tiers){out.Integer(t.draw);out.Integer(t.tier);out.Integer(t.chanceBp);}}
+    out.Table(57,source.bonusTools.size());for(const auto& r:source.bonusTools){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.operation));out.Integer(r.units);out.Integer(r.parameter);out.Boolean(r.payload.has_value());if(r.payload){out.Integer(static_cast<std::uint32_t>(r.payload->bonus));out.Integer(static_cast<std::uint64_t>(r.payload->valueScaled));}out.Integer(static_cast<std::uint32_t>(r.tiers.size()));for(const auto& t:r.tiers){out.Integer(t.draw);out.Integer(t.tier);out.Integer(t.chanceBp);}out.Integer(static_cast<std::uint32_t>(r.choices.size()));for(const auto& choice:r.choices){out.Integer(choice.choice);out.Integer(static_cast<std::uint32_t>(choice.payload.bonus));out.Integer(static_cast<std::uint64_t>(choice.payload.valueScaled));}}
     out.Table(58,source.ammunition.size());for(const auto& r:source.ammunition){out.Key(r.key);out.Integer(r.ammoPolicy);}
     out.Table(59,source.forgeAids.size());for(const auto& r:source.forgeAids){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Integer(r.units);out.Integer(r.targetMask);out.Integer(r.minimumLevel);out.Integer(r.maximumLevel);out.Integer(static_cast<std::uint8_t>(r.chanceMode));out.Integer(r.chanceBp);out.Integer(static_cast<std::uint8_t>(r.failure));out.Integer(r.boosterGroup);out.Integer(static_cast<std::uint32_t>(r.levels.size()));for(const auto& l:r.levels){out.Integer(l.level);out.Integer(l.chanceBp);}}
+    out.Table(60,source.definitionRules.size());
+    for(const auto& r:source.definitionRules){out.Key(r.key);out.Integer(r.level);out.Integer(r.displayRefinementOffset);out.Integer(r.rarity);out.Integer(r.allowedEmpires);out.Integer(static_cast<std::uint8_t>(r.clock));out.Integer(r.durationMs);out.Boolean(r.allowAccountStorage);out.Boolean(r.allowAcquire);out.Boolean(r.allowUnequip);out.Integer(r.minimumGrantCount);out.Integer(r.birthMagicChanceBp);out.Integer(r.birthSocketChanceBp);out.Integer(r.birthAddon);out.Text(r.uniqueGroup);out.Boolean(r.available);out.Integer(r.attributeRerollGroup);out.Boolean(r.weaponEffectAlternate);out.Integer(r.birthOpenStoneSockets);out.Optional(r.birthAttributeProfile);}
+    out.Table(61,source.characterServices.size());for(const auto& r:source.characterServices){out.Key(r.key);out.Integer(static_cast<std::uint8_t>(r.kind));out.Integer(r.units);out.Integer(r.amount);out.Integer(r.minimum);out.Integer(r.maximum);}
+    out.Table(62,source.attributeBirthProfiles.size());for(const auto& p:source.attributeBirthProfiles){out.Identity(p.id,p.code);out.Integer(p.secondChanceBp);out.Integer(p.thirdChanceBp);out.Integer(static_cast<std::uint32_t>(p.tiers.size()));for(const auto& t:p.tiers){out.Integer(t.draw);out.Integer(t.tier);out.Integer(t.chanceBp);}}
+    out.Table(63,source.absorptionSashes.size());for(const auto& p:source.absorptionSashes){out.Key(p.key);out.Key(p.next);out.Integer(p.grade);out.Integer(p.initialMinimum);out.Integer(p.initialMaximum);out.Integer(p.combineMinimum);out.Integer(p.combineMaximum);out.Integer(p.maximumPercent);out.Integer(p.successBp);out.Integer(p.goldCost);}
+    out.Table(64,source.sashDonors.size());for(const auto& p:source.sashDonors){out.Key(p.key);out.Integer(p.refinement);out.Integer(static_cast<std::uint64_t>(p.physicalMaximumRaw));out.Integer(static_cast<std::uint64_t>(p.magicalMaximumRaw));out.Boolean(p.physicalBasePositive);out.Boolean(p.magicalBasePositive);out.Integer(static_cast<std::uint32_t>(p.components.size()));for(const auto& b:p.components){out.Integer(static_cast<std::uint32_t>(b.bonus));out.Integer(static_cast<std::uint64_t>(b.valueScaled));}}
+    out.Table(65,source.costumeTransferTargets.size());for(const auto& key:source.costumeTransferTargets)out.Key(key);
+    out.Table(66,source.energyCrystalTiers.size());for(const auto& t:source.energyCrystalTiers){out.Integer(t.profile);out.Integer(t.percent);out.Integer(t.chanceBp);}
+    out.Table(67,source.currencyTokenPolicies.size());for(const auto& p:source.currencyTokenPolicies){out.Key(p.key);out.Integer(static_cast<std::uint8_t>(p.mode));}
     return out.Finish();
 }
 } // namespace auriga::item::detail

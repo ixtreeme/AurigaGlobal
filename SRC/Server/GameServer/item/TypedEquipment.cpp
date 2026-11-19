@@ -36,7 +36,7 @@ void RefreshTypedEquipment(entt::entity e)
     const auto facts=TypedItemEffectFacts(e);const auto toggles=auriga::item::ProjectToggleItems(*catalog,effective,TypedRecoveryElapsed(e),facts);if(toggles)effective=*toggles;
     auto schedule=auriga::item::AdvanceRecoverySchedule(*catalog,items->state.recovery,TypedRecoveryElapsed(e));if(schedule)auriga::item::NormalizeTimedItems(*catalog,*schedule,TypedItemEffectNow(),&facts);
     auto bonuses=schedule ? auriga::item::CollectItemEffectBonuses(*catalog,*schedule,effective) : std::expected<std::vector<auriga::item::BonusEntry>,auriga::item::ItemPersistenceError>{std::unexpected(auriga::item::ItemPersistenceError::InvalidStoredData)};
-    if(bonuses)bonuses->insert(bonuses->end(),companion.bonuses.begin(),companion.bonuses.end());
+    if(bonuses){bonuses->insert(bonuses->end(),companion.bonuses.begin(),companion.bonuses.end());const auto characterPet=auriga::item::CharacterPetBonuses(petBonuses.bonuses);bonuses->insert(bonuses->end(),characterPet.begin(),characterPet.end());}
     const auto built=time && toggles && bonuses ? auriga::item::BuildEquipmentStats(*catalog,items->state.fence.owner,effective,*bonuses) : std::expected<auriga::item::EquipmentStats,auriga::item::EquipmentStatsError>{std::unexpected(auriga::item::EquipmentStatsError::InvalidItem)};
     auto stats=built ? std::optional{*built} : std::optional<auriga::item::EquipmentStats>{};
     if(stats){stats->petBonuses=petBonuses;stats->fixedCompanion=companion;}

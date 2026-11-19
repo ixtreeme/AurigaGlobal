@@ -30,8 +30,10 @@
 // Real shop.cpp + shop_manager.cpp with entity-only fixtures. Descriptors,
 // items, points, sessions and the DB are doubles. NPC inventory commits are
 // a controlled boundary here; QuickslotTests runs the actual transaction.
-bool TryOpenTypedShop(entt::entity,entt::entity) { return false; }
+bool TryOpenTypedShop(entt::entity,entt::entity,std::uint32_t) { return false; }
 void CloseTypedShop(entt::entity) {}
+bool HasTypedPrivateShop(entt::entity) { return false; }
+bool TryOpenTypedPrivateShop(entt::entity,entt::entity) { return false; }
 entt::registry g_registry;
 int passes_per_sec = 25;
 int test_server = 0;
@@ -238,7 +240,6 @@ int GetEmptyExtraInventory(entt::entity, entt::entity) { return inventoryFull ? 
 int CountItem(entt::entity, uint32_t vnum) { return currencyItems[vnum]; }
 int CountTypeItem(entt::entity, uint8_t) { return 0; }
 bool RemoveSpecifyItemEcs(entt::entity, uint32_t, uint32_t, bool) { return false; }
-void RemoveSpecifyTypeItem(entt::entity, uint8_t, int) {}
 bool AddItemCountEcs(entt::entity item, int amount) { g_registry.get<TestItem>(item).count += amount; return true; }
 bool SetItemCountEcs(entt::entity item, uint32_t amount) { g_registry.get<TestItem>(item).count = amount; return true; }
 bool DestroyItemEntityEcs(entt::entity item, const char*) {

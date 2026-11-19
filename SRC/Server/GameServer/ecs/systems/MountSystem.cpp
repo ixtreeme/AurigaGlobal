@@ -60,12 +60,6 @@ EVENTFUNC(costume_mount_update_event);
 
 namespace
 {
-uint64_t NextMountInventoryRequestId()
-{
-    static uint64_t nextRequestId = 0;
-    return ++nextRequestId;
-}
-
 // Was SyncMountState, taking all six fields from CHARACTER members and copying
 // them in. Those members are gone - MountState is the only copy, and MountVnum
 // writes it directly - so every one of the fourteen calls had become the
@@ -362,126 +356,6 @@ EVENTFUNC(costume_mount_update_event)
     if (g_registry.valid(owner))
         g_dispatcher.trigger(ecs::EvMountSystemUpdate { owner });
     return PASSES_PER_SEC(1) / 4;
-}
-
-void MountSystem::QueryMountInventory(entt::entity e)
-{
-    if (MountSystem::GetMountInventory(e) != entt::null || !ecs::PlayerRuntime::GetDesc(e) ||
-        !g_registry.valid(e))
-        return;
-
-    const uint32_t accountId = ecs::PlayerRuntime::GetAccountID(e);
-    if (accountId == 0)
-        return;
-
-    if (const auto* pending = g_registry.try_get<ecs::MountInventoryLoadState>(e);
-        pending && pending->accountId == accountId)
-        return;
-
-    const uint64_t requestId = NextMountInventoryRequestId();
-    g_registry.emplace_or_replace<ecs::MountInventoryLoadState>(e, accountId, requestId);
-
-    auto* request = new MountInventoryLoadRequest;
-    request->character = e;
-    request->accountId = accountId;
-    request->requestId = requestId;
-
-    DBManager::instance().ReturnQuery(QID_MOUNT_INVENTORY_LOAD,
-        ecs::PlayerRuntime::GetPlayerID(e),
-        request,
-        "SELECT id, slot, vnum, count, socket0, socket1, socket2, "
-        "attrtype0, attrvalue0, attrtype1, attrvalue1, attrtype2, attrvalue2, "
-        "attrtype3, attrvalue3, attrtype4, attrvalue4, attrtype5, attrvalue5, "
-        "attrtype6, attrvalue6, attrtype7, attrvalue7 "
-        "FROM account_mount_inventory WHERE account_id=%u ORDER BY slot",
-        accountId);
-}
-
-void MountSystem::LoadMountInventory(entt::entity e, uint32_t accountId,
-    uint64_t requestId, const std::vector<TMountInventoryItemTable>& items)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return;
-
-    const auto* pending = g_registry.try_get<ecs::MountInventoryLoadState>(e);
-    if (accountId == 0 || !pending || pending->accountId != accountId ||
-        pending->requestId != requestId || ecs::PlayerRuntime::GetAccountID(e) != accountId)
-        return;
-
-    if (MountSystem::GetMountInventory(e) != entt::null)
-    {
-        g_registry.remove<ecs::MountInventoryLoadState>(e);
-        return;
-    }
-
-    const entt::entity inventory = MountSystem::CreateMountInventory(e, accountId, 16);
-    if (inventory == entt::null)
-    {
-        g_registry.remove<ecs::MountInventoryLoadState>(e);
-        return;
-    }
-
-    for (const auto& entry : items)
-    {
-        const entt::entity item = ITEM_MANAGER::instance().CreateItem(
-            entry.vnum, entry.count, entry.id);
-        if (!ItemSystem::IsValidItem(item))
-            continue;
-
-        ItemSystem::SetItemSkipSave(item, true);
-        for (int socket = 0; socket < ITEM_SOCKET_MAX_NUM; ++socket)
-            ItemSystem::SetItemSocketEcs(item, socket, entry.alSockets[socket]);
-        for (int attribute = 0; attribute < ITEM_ATTRIBUTE_MAX_NUM; ++attribute)
-            ItemSystem::SetItemForceAttributeEcs(
-                item, attribute, entry.aAttr[attribute].bType,
-                entry.aAttr[attribute].sValue);
-
-        if (!MountSystem::AddMountInventoryItem(e, entry.slot, item, true))
-            ItemSystem::DestroyItemEntityEcs(item, "MOUNT_INVENTORY_LOAD_ADD_FAILED");
-    }
-
-    g_registry.remove<ecs::MountInventoryLoadState>(e);
-    if (!g_registry.valid(e) || MountSystem::GetMountInventory(e) != inventory)
-        return;
-
-    MountSystem::SendMountInventory(e);
-    if (g_registry.valid(e))
-        ecs::PointSystem::Compute(e);
-}
-
-void MountSystem::SendMountInventory(entt::entity owner)
-{
-    if (!ecs::PlayerRuntime::GetDesc(owner))
-        return;
-    if (GetMountInventory(owner) == entt::null)
-        return;
-
-    std::vector<TMountInventoryItemTable> items;
-    CollectMountInventoryItems(owner, items);
-
-    TPacketGCMountInventory header{};
-    header.bHeader = HEADER_GC_MOUNT_INVENTORY;
-    header.size = sizeof(TPacketGCMountInventory) + static_cast<uint16_t>(items.size() * sizeof(TMountInventoryItemData));
-    header.bWidth = static_cast<uint8_t>(GetMountInventoryWidth(owner));
-    header.bHeight = static_cast<uint8_t>(GetMountInventorySize(owner));
-    header.wCount = static_cast<uint16_t>(items.size());
-
-    TEMP_BUFFER buf;
-    buf.write(&header, sizeof(header));
-
-    for (const auto& entry : items)
-    {
-        TMountInventoryItemData data{};
-        data.wSlot = entry.slot;
-        data.dwVnum = entry.vnum;
-        data.dwCount = entry.count;
-        memcpy(data.alSockets, entry.alSockets, sizeof(data.alSockets));
-        memcpy(data.aAttr, entry.aAttr, sizeof(data.aAttr));
-        buf.write(&data, sizeof(data));
-    }
-
-    if (auto* desc = ecs::PlayerRuntime::GetDesc(owner))
-        desc->Packet(buf.read_peek(), buf.size());
 }
 
 void MountSystem::UpdateMountCountOverheadToViewers(entt::entity owner)

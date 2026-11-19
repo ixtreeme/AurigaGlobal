@@ -46,7 +46,8 @@ def apply_known_dungeon_fixes(data, resources=None):
         if checksum(raw.replace(b'\r\n', b'\n')) == entry['fixed_sha256']:
             report['current'].append(relative)
         elif (checksum(raw) == entry['previous_sha256'] or
-              checksum(raw.replace(b'\r\n', b'\n')) == entry['previous_lf_sha256']):
+              checksum(raw.replace(b'\r\n', b'\n')) in
+              (entry['previous_lf_sha256'], entry.get('previous_fixed_sha256'))):
             pending.append((target, replacement))
             report['applied'].append(relative)
         else:

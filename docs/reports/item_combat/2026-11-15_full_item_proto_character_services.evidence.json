@@ -1,0 +1,2079 @@
+{
+  "summary": {
+    "blocked_reasons": {
+      "invalid_chest_lock": 2,
+      "invalid_inventory_height": 6,
+      "invalid_mount_definition": 10,
+      "invalid_timed_effect_duration": 6,
+      "invalid_toggle_effect_definition": 18,
+      "invalid_weapon_costume_effect_attachment:163": 1,
+      "missing_equipment_asset": 49,
+      "missing_secondary_skill_definition:123": 3,
+      "missing_source_container_reward_group": 236,
+      "missing_source_icon": 167,
+      "missing_stole_model": 1,
+      "missing_unity_asset_reference": 12,
+      "missing_weapon_costume_effect_mapping:1297": 1,
+      "missing_weapon_costume_effect_mapping:1326": 2,
+      "missing_weapon_costume_effect_mapping:1335": 2,
+      "missing_weapon_costume_effect_mapping:1344": 2,
+      "non_bonus_affect_requires_dedicated_behavior": 2,
+      "semantic_converter_required:11:0": 1,
+      "semantic_converter_required:15:0": 1,
+      "semantic_converter_required:16:10": 4,
+      "semantic_converter_required:19:0": 1,
+      "semantic_converter_required:27:0": 7,
+      "semantic_converter_required:28:3": 28,
+      "semantic_converter_required:36:0": 1,
+      "semantic_converter_required:37:0": 12,
+      "semantic_converter_required:38:0": 1,
+      "semantic_converter_required:3:1": 9,
+      "semantic_converter_required:3:10": 88,
+      "semantic_converter_required:3:12": 1,
+      "semantic_converter_required:3:13": 1,
+      "semantic_converter_required:3:15": 1,
+      "semantic_converter_required:3:23": 6,
+      "semantic_converter_required:3:29": 2,
+      "semantic_converter_required:3:45": 1,
+      "semantic_converter_required:9:0": 1,
+      "skill_selected_on_instance_not_in_prototype": 3,
+      "source_bonus_out_of_native_bounds:31": 1,
+      "source_fish_has_no_effect": 1,
+      "source_reward_rare_field_out_of_range": 2,
+      "source_stone_has_no_equipment_target": 3,
+      "unmapped_behavior_value": 1,
+      "unported_apply:125": 3,
+      "unported_apply:126": 1,
+      "unported_apply:127": 1,
+      "unresolved_container_reward:2871": 4,
+      "unresolved_container_reward:2872": 1,
+      "unresolved_container_reward:2875": 3,
+      "unresolved_container_reward:2876": 3,
+      "unresolved_container_reward:2877": 1,
+      "unresolved_container_reward:2878": 1,
+      "unresolved_container_reward:2879": 1,
+      "unresolved_container_reward:48611": 1,
+      "unresolved_container_reward:55003": 1,
+      "unresolved_container_reward:55010": 1,
+      "unresolved_container_reward:70065": 1,
+      "unresolved_container_reward:71035": 1,
+      "unresolved_container_reward:72044": 5,
+      "unresolved_container_reward:72320": 4,
+      "unresolved_fishing_result:27847": 1,
+      "unresolved_fishing_result:27877": 1,
+      "unsupported_ability_effect": 1
+    },
+    "blocked_source_rows": 733,
+    "converted_source_rows": 9762,
+    "new_native_definitions": 16,
+    "retired_source_rows": 491,
+    "source_rows": 10986
+  },
+  "schema": 41,
+  "catalog_hash": "af5266e1b8292a94708290dd580cf8787bdd3d7179c9ea5e245a6fe82192dbfb",
+  "native_definitions": 6844,
+  "candidate": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-character-services-v41-final.json",
+  "candidate_sha256": "953345279401b25e3029ed485366f6a4e234b412bfbb15a6347b714f53d8c6e2",
+  "exact_reproduction": true,
+  "new_sources": [
+    {
+      "item": {
+        "category_id": 5,
+        "local_id": 785
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "alignment_character_service",
+      "source_extra": null,
+      "source_id": 39032,
+      "source_level_issues": [],
+      "source_row_hash": "b77b9f79e032ae2ba6738e3b565a309d35fe55d511ca88ea201be96f49e77e10"
+    },
+    {
+      "item": {
+        "category_id": 5,
+        "local_id": 786
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "alignment_character_service",
+      "source_extra": null,
+      "source_id": 70100,
+      "source_level_issues": [],
+      "source_row_hash": "01d3e46533d3db00eef947f9fa1edc527cd8955d25ab48a6ebce657cbd735da9"
+    },
+    {
+      "item": {
+        "category_id": 5,
+        "local_id": 787
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "alignment_character_service",
+      "source_extra": null,
+      "source_id": 70102,
+      "source_level_issues": [],
+      "source_row_hash": "6d7924913f97f40c25c0d49c0e2c783afb77d2b8e4c913501d86982f1ff7d20e"
+    },
+    {
+      "item": {
+        "category_id": 5,
+        "local_id": 788
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "alignment_character_service",
+      "source_extra": null,
+      "source_id": 71107,
+      "source_level_issues": [],
+      "source_row_hash": "135bea6f7abb9c72eed6501fc2030049c8745a6712f3bdb8aa311a7dd5d97557"
+    },
+    {
+      "item": {
+        "category_id": 5,
+        "local_id": 789
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "alignment_character_service",
+      "source_extra": null,
+      "source_id": 72100,
+      "source_level_issues": [],
+      "source_row_hash": "31fe363879973816680af394df678b4b52f0bf01e150b34e5704ea9e522af9ba"
+    },
+    {
+      "item": {
+        "category_id": 5,
+        "local_id": 790
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "alignment_character_service",
+      "source_extra": null,
+      "source_id": 72101,
+      "source_level_issues": [],
+      "source_row_hash": "656c3c89edbb6fbbeee5b6987d694358ebfc92fe35aef12823f1af1307d4e096"
+    },
+    {
+      "item": {
+        "category_id": 8,
+        "local_id": 430
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "source_reward_container",
+      "source_extra": null,
+      "source_id": 30893,
+      "source_level_issues": [],
+      "source_row_hash": "22b37131ac30ebf2a7ed729e3177a64a5b95047909ede7acc6e222fd0bb253f8"
+    },
+    {
+      "item": {
+        "category_id": 8,
+        "local_id": 431
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "source_reward_container",
+      "source_extra": null,
+      "source_id": 38052,
+      "source_level_issues": [],
+      "source_row_hash": "ad6f839499a315dc42222e926c82b539dd8018d17c766faf123ec95526a07d11"
+    },
+    {
+      "item": {
+        "category_id": 8,
+        "local_id": 432
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "source_reward_container",
+      "source_extra": null,
+      "source_id": 38057,
+      "source_level_issues": [],
+      "source_row_hash": "855dfe4ead89524ba418e873e762697abcefcbe65738659ee3754b5712385a13"
+    },
+    {
+      "item": {
+        "category_id": 8,
+        "local_id": 433
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "source_reward_container",
+      "source_extra": null,
+      "source_id": 50063,
+      "source_level_issues": [],
+      "source_row_hash": "a0e18d7744242d5eaf63c0b564265d4b334b1f4bcd500c995c73364e6eba17bd"
+    },
+    {
+      "item": {
+        "category_id": 8,
+        "local_id": 434
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "source_reward_container",
+      "source_extra": null,
+      "source_id": 50098,
+      "source_level_issues": [],
+      "source_row_hash": "b70b6a89d9ceceea98ccf8c088d631c131cf6f8013b37576ba2d6053153cf107"
+    },
+    {
+      "item": {
+        "category_id": 8,
+        "local_id": 435
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "source_reward_container",
+      "source_extra": null,
+      "source_id": 50204,
+      "source_level_issues": [],
+      "source_row_hash": "8390788d7752d828e4e7269d9d96d26fba3444c666c5f261472495092451eff3"
+    },
+    {
+      "item": {
+        "category_id": 8,
+        "local_id": 436
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "source_reward_container",
+      "source_extra": null,
+      "source_id": 71150,
+      "source_level_issues": [],
+      "source_row_hash": "eb948b63f5f07a27629ebefdecb6e762952646acf7e5bf9a5d7afa030a21c9e7"
+    },
+    {
+      "item": {
+        "category_id": 8,
+        "local_id": 437
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "source_reward_container",
+      "source_extra": null,
+      "source_id": 71159,
+      "source_level_issues": [],
+      "source_row_hash": "02e2f0b0e78e146bff810c70fb2cb0c1da4e8ff3b44e5c98b1dcc1fc0191b888"
+    },
+    {
+      "item": {
+        "category_id": 8,
+        "local_id": 438
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "source_reward_container",
+      "source_extra": null,
+      "source_id": 71160,
+      "source_level_issues": [],
+      "source_row_hash": "978dd33213d95c33965914bc5142da1793949924216d8019e178699742c8ff9f"
+    },
+    {
+      "item": {
+        "category_id": 8,
+        "local_id": 439
+      },
+      "native_stack_policy": "source_stack_policy",
+      "refinement_level": 0,
+      "semantics": "source_reward_container",
+      "source_extra": null,
+      "source_id": 78315,
+      "source_level_issues": [],
+      "source_row_hash": "3498b811b8a6627ace49831ef7dc7379f8820000c2c60d72a81873cefc5f0ca3"
+    }
+  ],
+  "preserved_rows": [
+    29204,
+    105196
+  ],
+  "ctest_latest": {
+    "item_bench_mariadb": "Passed",
+    "item_persistence_mariadb": "Passed",
+    "catalog_editor": "Passed",
+    "catalog_editor_mariadb": "Passed",
+    "item_catalog_runtime_mariadb": "Passed",
+    "item_combat_schema_foundation": "Passed",
+    "catalog_sql_mariadb": "Passed",
+    "item_bonus_generator": "Passed",
+    "item_category_generator": "Passed",
+    "plain_material_migration": "Passed",
+    "quest_token_migration": "Passed",
+    "item_catalog_digest": "Passed",
+    "legacy_item_migration": "Passed",
+    "full_catalog_conversion": "Passed",
+    "legacy_remaining_migration": "Passed",
+    "consumables": "Passed",
+    "mob_drops": "Passed",
+    "automatic_recovery": "Passed",
+    "containers": "Passed",
+    "legacy_equipment_migration": "Passed",
+    "timed_effects": "Passed",
+    "accessory_runtime": "Passed",
+    "tool_runtime": "Passed",
+    "ammo_runtime": "Passed",
+    "npc_shops": "Passed",
+    "socket_insertion": "Passed",
+    "costumes": "Passed",
+    "special_bonuses": "Passed",
+    "toggle_effects": "Passed",
+    "typed_inventory_wire": "Passed",
+    "socket_maintenance": "Passed",
+    "gathering_rules": "Passed",
+    "accessory_sockets": "Passed",
+    "automatic_runtime": "Passed",
+    "forge_runtime": "Passed",
+    "container_opening": "Passed",
+    "pet_lifecycle": "Passed",
+    "currency_tokens": "Passed",
+    "catalog_sql_snapshot": "Passed",
+    "attribute_runtime": "Passed",
+    "quest_items": "Passed",
+    "pet_care": "Passed",
+    "soul_items": "Passed",
+    "resource_gathering": "Passed",
+    "companion_items": "Passed",
+    "polymorph_items": "Passed",
+    "socket_stones": "Passed",
+    "soul_runtime": "Passed",
+    "refinement_recipes": "Passed",
+    "storage_runtime": "Passed",
+    "growth_pet_progression": "Passed",
+    "gathering_items": "Passed",
+    "skill_books": "Passed",
+    "token_redemption": "Passed",
+    "refinement_profiles": "Passed",
+    "bonus_profiles": "Passed",
+    "instance_attributes": "Passed",
+    "item_catalog": "Passed",
+    "socket_services": "Passed",
+    "catalog_sql_completion": "Passed",
+    "persistent_items": "Passed",
+    "typed_ground": "Passed",
+    "item_persistence_completion": "Passed",
+    "item_key": "Passed"
+  },
+  "converter_tests": 76,
+  "book_runtime_checks": 5252,
+  "book_aid_checks": 280,
+  "worker": {
+    "success": true,
+    "candidate_sha256": "953345279401b25e3029ed485366f6a4e234b412bfbb15a6347b714f53d8c6e2",
+    "catalog_hash": "af5266e1b8292a94708290dd580cf8787bdd3d7179c9ea5e245a6fe82192dbfb",
+    "sources": [
+      {
+        "item": {
+          "category_id": 8,
+          "local_id": 430
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "source_reward_container",
+        "source_extra": null,
+        "source_id": 30893,
+        "source_level_issues": [],
+        "source_row_hash": "22b37131ac30ebf2a7ed729e3177a64a5b95047909ede7acc6e222fd0bb253f8"
+      },
+      {
+        "item": {
+          "category_id": 8,
+          "local_id": 431
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "source_reward_container",
+        "source_extra": null,
+        "source_id": 38052,
+        "source_level_issues": [],
+        "source_row_hash": "ad6f839499a315dc42222e926c82b539dd8018d17c766faf123ec95526a07d11"
+      },
+      {
+        "item": {
+          "category_id": 8,
+          "local_id": 432
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "source_reward_container",
+        "source_extra": null,
+        "source_id": 38057,
+        "source_level_issues": [],
+        "source_row_hash": "855dfe4ead89524ba418e873e762697abcefcbe65738659ee3754b5712385a13"
+      },
+      {
+        "item": {
+          "category_id": 5,
+          "local_id": 785
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "alignment_character_service",
+        "source_extra": null,
+        "source_id": 39032,
+        "source_level_issues": [],
+        "source_row_hash": "b77b9f79e032ae2ba6738e3b565a309d35fe55d511ca88ea201be96f49e77e10"
+      },
+      {
+        "item": {
+          "category_id": 8,
+          "local_id": 433
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "source_reward_container",
+        "source_extra": null,
+        "source_id": 50063,
+        "source_level_issues": [],
+        "source_row_hash": "a0e18d7744242d5eaf63c0b564265d4b334b1f4bcd500c995c73364e6eba17bd"
+      },
+      {
+        "item": {
+          "category_id": 8,
+          "local_id": 434
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "source_reward_container",
+        "source_extra": null,
+        "source_id": 50098,
+        "source_level_issues": [],
+        "source_row_hash": "b70b6a89d9ceceea98ccf8c088d631c131cf6f8013b37576ba2d6053153cf107"
+      },
+      {
+        "item": {
+          "category_id": 8,
+          "local_id": 435
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "source_reward_container",
+        "source_extra": null,
+        "source_id": 50204,
+        "source_level_issues": [],
+        "source_row_hash": "8390788d7752d828e4e7269d9d96d26fba3444c666c5f261472495092451eff3"
+      },
+      {
+        "item": {
+          "category_id": 5,
+          "local_id": 786
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "alignment_character_service",
+        "source_extra": null,
+        "source_id": 70100,
+        "source_level_issues": [],
+        "source_row_hash": "01d3e46533d3db00eef947f9fa1edc527cd8955d25ab48a6ebce657cbd735da9"
+      },
+      {
+        "item": {
+          "category_id": 5,
+          "local_id": 787
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "alignment_character_service",
+        "source_extra": null,
+        "source_id": 70102,
+        "source_level_issues": [],
+        "source_row_hash": "6d7924913f97f40c25c0d49c0e2c783afb77d2b8e4c913501d86982f1ff7d20e"
+      },
+      {
+        "item": {
+          "category_id": 5,
+          "local_id": 788
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "alignment_character_service",
+        "source_extra": null,
+        "source_id": 71107,
+        "source_level_issues": [],
+        "source_row_hash": "135bea6f7abb9c72eed6501fc2030049c8745a6712f3bdb8aa311a7dd5d97557"
+      },
+      {
+        "item": {
+          "category_id": 8,
+          "local_id": 436
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "source_reward_container",
+        "source_extra": null,
+        "source_id": 71150,
+        "source_level_issues": [],
+        "source_row_hash": "eb948b63f5f07a27629ebefdecb6e762952646acf7e5bf9a5d7afa030a21c9e7"
+      },
+      {
+        "item": {
+          "category_id": 8,
+          "local_id": 437
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "source_reward_container",
+        "source_extra": null,
+        "source_id": 71159,
+        "source_level_issues": [],
+        "source_row_hash": "02e2f0b0e78e146bff810c70fb2cb0c1da4e8ff3b44e5c98b1dcc1fc0191b888"
+      },
+      {
+        "item": {
+          "category_id": 8,
+          "local_id": 438
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "source_reward_container",
+        "source_extra": null,
+        "source_id": 71160,
+        "source_level_issues": [],
+        "source_row_hash": "978dd33213d95c33965914bc5142da1793949924216d8019e178699742c8ff9f"
+      },
+      {
+        "item": {
+          "category_id": 5,
+          "local_id": 789
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "alignment_character_service",
+        "source_extra": null,
+        "source_id": 72100,
+        "source_level_issues": [],
+        "source_row_hash": "31fe363879973816680af394df678b4b52f0bf01e150b34e5704ea9e522af9ba"
+      },
+      {
+        "item": {
+          "category_id": 5,
+          "local_id": 790
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "alignment_character_service",
+        "source_extra": null,
+        "source_id": 72101,
+        "source_level_issues": [],
+        "source_row_hash": "656c3c89edbb6fbbeee5b6987d694358ebfc92fe35aef12823f1af1307d4e096"
+      },
+      {
+        "item": {
+          "category_id": 8,
+          "local_id": 439
+        },
+        "native_stack_policy": "source_stack_policy",
+        "refinement_level": 0,
+        "semantics": "source_reward_container",
+        "source_extra": null,
+        "source_id": 78315,
+        "source_level_issues": [],
+        "source_row_hash": "3498b811b8a6627ace49831ef7dc7379f8820000c2c60d72a81873cefc5f0ca3"
+      }
+    ],
+    "packets": [
+      {
+        "source": 30893,
+        "category": 8,
+        "local": 430,
+        "phase": "bag",
+        "icon": "icon/item/078108.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.0.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.0.bag.details.hex",
+        "hashes": {
+          "inventory": "aa1c7a572e42df5c4bb0a5d6eed0570afafaaa376b23042f3336bb2cefa70e59",
+          "details": "49b26afc6c23ade6541dc17f7add0a25cc777d42863f6a41fab1b50f9f288aca"
+        }
+      },
+      {
+        "source": 30893,
+        "category": 8,
+        "local": 430,
+        "phase": "box_ready",
+        "icon": "icon/item/078108.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.0.box_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.0.box_ready.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.0.box_ready.service.hex",
+        "hashes": {
+          "inventory": "aa1c7a572e42df5c4bb0a5d6eed0570afafaaa376b23042f3336bb2cefa70e59",
+          "details": "49b26afc6c23ade6541dc17f7add0a25cc777d42863f6a41fab1b50f9f288aca",
+          "service": "43aee15c249e28f4593bcee5aed1dd8ae85be3cf16300f76023d28d1fc9bc289"
+        }
+      },
+      {
+        "source": 30893,
+        "category": 8,
+        "local": 430,
+        "phase": "opened",
+        "icon": "icon/item/078108.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.0.opened.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.0.opened.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.0.opened.service.hex",
+        "hashes": {
+          "inventory": "fc770eef9371de0fc7ca6ced8ebe46d9025ada5c0014abad9c43bc98b7b8e203",
+          "details": "5a3f4564466526abf43b33c72601d2caf19d274a4dcdafd890850c3aef41d972",
+          "service": "bc45a2b1aa6d4d17a5128d5b2f5521163a74905a64f3f5b50ecffff5938c527a"
+        }
+      },
+      {
+        "source": 30893,
+        "category": 8,
+        "local": 430,
+        "phase": "box_relogged",
+        "icon": "icon/item/078108.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.0.box_relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.0.box_relogged.details.hex",
+        "hashes": {
+          "inventory": "fc770eef9371de0fc7ca6ced8ebe46d9025ada5c0014abad9c43bc98b7b8e203",
+          "details": "5a3f4564466526abf43b33c72601d2caf19d274a4dcdafd890850c3aef41d972"
+        }
+      },
+      {
+        "source": 38052,
+        "category": 8,
+        "local": 431,
+        "phase": "bag",
+        "icon": "icon/item/50136.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.1.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.1.bag.details.hex",
+        "hashes": {
+          "inventory": "03cf5dcfa6160c8a3edbcae77d1ac8848e5b36c8b252857b4249a1c603a26017",
+          "details": "ca48e005b718cdda0005971a1f0a0b3c7224579e09a8d4077f9cc23a781860a5"
+        }
+      },
+      {
+        "source": 38052,
+        "category": 8,
+        "local": 431,
+        "phase": "box_ready",
+        "icon": "icon/item/50136.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.1.box_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.1.box_ready.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.1.box_ready.service.hex",
+        "hashes": {
+          "inventory": "03cf5dcfa6160c8a3edbcae77d1ac8848e5b36c8b252857b4249a1c603a26017",
+          "details": "ca48e005b718cdda0005971a1f0a0b3c7224579e09a8d4077f9cc23a781860a5",
+          "service": "98083aedba7d50bac390cc30c0925857129d4ed8553e5d8e61349d32dcc6f2d5"
+        }
+      },
+      {
+        "source": 38052,
+        "category": 8,
+        "local": 431,
+        "phase": "opened",
+        "icon": "icon/item/50136.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.1.opened.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.1.opened.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.1.opened.service.hex",
+        "hashes": {
+          "inventory": "e91424386ec4785eaad3dcf038c9d6ceafcb3732b8a1afbdae3ef6bf79cc3ace",
+          "details": "96220885d34b9d688165acdb99cf6625c56b80bdf6aca53ce9a26a9279c6ad8b",
+          "service": "a4fdedc7813f1b46c064ab3a912e465859454937ecb7d004d635df0c34cba2dd"
+        }
+      },
+      {
+        "source": 38052,
+        "category": 8,
+        "local": 431,
+        "phase": "box_relogged",
+        "icon": "icon/item/50136.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.1.box_relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.1.box_relogged.details.hex",
+        "hashes": {
+          "inventory": "e91424386ec4785eaad3dcf038c9d6ceafcb3732b8a1afbdae3ef6bf79cc3ace",
+          "details": "96220885d34b9d688165acdb99cf6625c56b80bdf6aca53ce9a26a9279c6ad8b"
+        }
+      },
+      {
+        "source": 38057,
+        "category": 8,
+        "local": 432,
+        "phase": "bag",
+        "icon": "icon/item/50128.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.2.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.2.bag.details.hex",
+        "hashes": {
+          "inventory": "c5169edbaf0b2bc589fa757511e8aa11c2c8a6d30a059baaa42222c2c27ca0f9",
+          "details": "81b84dcf532e50ec4c187e6dfb362bf337d7ed11fa0a38e9d2b08c69893844e2"
+        }
+      },
+      {
+        "source": 38057,
+        "category": 8,
+        "local": 432,
+        "phase": "box_ready",
+        "icon": "icon/item/50128.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.2.box_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.2.box_ready.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.2.box_ready.service.hex",
+        "hashes": {
+          "inventory": "c5169edbaf0b2bc589fa757511e8aa11c2c8a6d30a059baaa42222c2c27ca0f9",
+          "details": "81b84dcf532e50ec4c187e6dfb362bf337d7ed11fa0a38e9d2b08c69893844e2",
+          "service": "3cdcc9bdf454db49746889fb70f54e302aec9c2986b440b3517edadd6179e3e5"
+        }
+      },
+      {
+        "source": 38057,
+        "category": 8,
+        "local": 432,
+        "phase": "opened",
+        "icon": "icon/item/50128.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.2.opened.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.2.opened.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.2.opened.service.hex",
+        "hashes": {
+          "inventory": "4e2b3cd2843d64a22631c5e9cac01f19b7335b04998f1814b2d114d8bd71def2",
+          "details": "8403a503c6f3b351579a86784ef8ad1e8bf33ab389fd15642a3457d0d12292d0",
+          "service": "2ddcc4e10a7eb14b1669a8b5a35f78ade9672adbf08caef0cf78bf979be2ad22"
+        }
+      },
+      {
+        "source": 38057,
+        "category": 8,
+        "local": 432,
+        "phase": "box_relogged",
+        "icon": "icon/item/50128.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.2.box_relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.2.box_relogged.details.hex",
+        "hashes": {
+          "inventory": "4e2b3cd2843d64a22631c5e9cac01f19b7335b04998f1814b2d114d8bd71def2",
+          "details": "8403a503c6f3b351579a86784ef8ad1e8bf33ab389fd15642a3457d0d12292d0"
+        }
+      },
+      {
+        "source": 39032,
+        "category": 5,
+        "local": 785,
+        "phase": "ready",
+        "icon": "icon/item/71107.tga",
+        "amount": 20000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.3.ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.3.ready.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.3.ready.service.hex",
+        "hashes": {
+          "inventory": "8b6d1aec460502f330c9b287c7ffcb6f1937457d8565695d25ef30c4f3c10821",
+          "details": "487563b668cf8b0bac62a16606fdbeddb503a172e0c5cf1f927c91a681978ea0",
+          "service": "139da83b59834051abaf90308e7a24679cfd4220ff78c18450ef61bcedada7a6"
+        }
+      },
+      {
+        "source": 39032,
+        "category": 5,
+        "local": 785,
+        "phase": "applied",
+        "icon": "icon/item/71107.tga",
+        "amount": 20000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.3.applied.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.3.applied.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.3.applied.service.hex",
+        "hashes": {
+          "inventory": "4c1eaf35cd96670282cbf3a7bff6b924fd413a898c9d6693aa02ebcb2defdb3e",
+          "details": "ab6740c97aec5645b7f50d574a71ff1e81576c23ffb75b92c4eb330474ad5d04",
+          "service": "8f770df0a112527d9e3f5f9eb73d43a30c7dc306c6ed7b5461270de7fe861926"
+        }
+      },
+      {
+        "source": 39032,
+        "category": 5,
+        "local": 785,
+        "phase": "relogged",
+        "icon": "icon/item/71107.tga",
+        "amount": 20000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.3.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.3.relogged.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.3.relogged.service.hex",
+        "hashes": {
+          "inventory": "4c1eaf35cd96670282cbf3a7bff6b924fd413a898c9d6693aa02ebcb2defdb3e",
+          "details": "ab6740c97aec5645b7f50d574a71ff1e81576c23ffb75b92c4eb330474ad5d04",
+          "service": "8f770df0a112527d9e3f5f9eb73d43a30c7dc306c6ed7b5461270de7fe861926"
+        }
+      },
+      {
+        "source": 39032,
+        "category": 5,
+        "local": 785,
+        "phase": "cap_ready",
+        "icon": "icon/item/71107.tga",
+        "amount": 20000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.3.cap_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.3.cap_ready.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.3.cap_ready.service.hex",
+        "hashes": {
+          "inventory": "eabb89b5cddd9e2f95ec998bf1f1ea058a96d461c302175a5b09623c4d1ed12d",
+          "details": "487563b668cf8b0bac62a16606fdbeddb503a172e0c5cf1f927c91a681978ea0",
+          "service": "102126182a890bdb00e5bc3223f0c2311b31a94612f067775778e5473854107b"
+        }
+      },
+      {
+        "source": 39032,
+        "category": 5,
+        "local": 785,
+        "phase": "cap_applied",
+        "icon": "icon/item/71107.tga",
+        "amount": 20000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.3.cap_applied.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.3.cap_applied.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.3.cap_applied.service.hex",
+        "hashes": {
+          "inventory": "4c1eaf35cd96670282cbf3a7bff6b924fd413a898c9d6693aa02ebcb2defdb3e",
+          "details": "ab6740c97aec5645b7f50d574a71ff1e81576c23ffb75b92c4eb330474ad5d04",
+          "service": "110602801423a70bd2ed10ff605f3051d854c7f5ced8f80c0472507e2f615491"
+        }
+      },
+      {
+        "source": 39032,
+        "category": 5,
+        "local": 785,
+        "phase": "cap_denied",
+        "icon": "icon/item/71107.tga",
+        "amount": 20000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.3.cap_denied.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.3.cap_denied.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.3.cap_denied.service.hex",
+        "hashes": {
+          "inventory": "208c1b7a88d316cbb0e49fc2d8572a43479e8e569620e92788d333ac4ade7b61",
+          "details": "487563b668cf8b0bac62a16606fdbeddb503a172e0c5cf1f927c91a681978ea0",
+          "service": "e061e5f1f7cdfedfde80c6a47c9029885788300c7dc73359a8705354cdef855d"
+        }
+      },
+      {
+        "source": 50063,
+        "category": 8,
+        "local": 433,
+        "phase": "bag",
+        "icon": "icon/item/50063_1.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.4.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.4.bag.details.hex",
+        "hashes": {
+          "inventory": "32ea5a71421bc4d0a0442b1385baed98abdc5f6004494ae794b018195bf81428",
+          "details": "f734328339e8410f11288a9a78dd46f4a577f0a96fe347f81d23f61efa4b9a6a"
+        }
+      },
+      {
+        "source": 50063,
+        "category": 8,
+        "local": 433,
+        "phase": "box_ready",
+        "icon": "icon/item/50063_1.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.4.box_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.4.box_ready.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.4.box_ready.service.hex",
+        "hashes": {
+          "inventory": "32ea5a71421bc4d0a0442b1385baed98abdc5f6004494ae794b018195bf81428",
+          "details": "f734328339e8410f11288a9a78dd46f4a577f0a96fe347f81d23f61efa4b9a6a",
+          "service": "7ab73fc9203f1a715f79cf8e8e056076defafb8a2218b5f1dca1af81d2e60fec"
+        }
+      },
+      {
+        "source": 50063,
+        "category": 8,
+        "local": 433,
+        "phase": "opened",
+        "icon": "icon/item/50063_1.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.4.opened.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.4.opened.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.4.opened.service.hex",
+        "hashes": {
+          "inventory": "1f8b5196965ff6158062e0853a4e420bba44ef1b7b837962acca1c08dd9504e2",
+          "details": "f4d0ca0feb11a4098391e1ba431fd39288992b1e7ad31bcc9e64bbf648fba046",
+          "service": "c8e27af7e1871f1632679aeffc29c626ad87d02121d45b621a3ec68b371c2ba2"
+        }
+      },
+      {
+        "source": 50063,
+        "category": 8,
+        "local": 433,
+        "phase": "box_relogged",
+        "icon": "icon/item/50063_1.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.4.box_relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.4.box_relogged.details.hex",
+        "hashes": {
+          "inventory": "1f8b5196965ff6158062e0853a4e420bba44ef1b7b837962acca1c08dd9504e2",
+          "details": "f4d0ca0feb11a4098391e1ba431fd39288992b1e7ad31bcc9e64bbf648fba046"
+        }
+      },
+      {
+        "source": 50098,
+        "category": 8,
+        "local": 434,
+        "phase": "bag",
+        "icon": "icon/item/50098.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.5.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.5.bag.details.hex",
+        "hashes": {
+          "inventory": "e8da0a190d423f2f1e7b2dc9dbdaddf3d5eb4daa1a7dbfe59c94946a228085fc",
+          "details": "4e6a0a60ccf62a368f42a5c672790c3847172b2d51fca8ee39432435b9f8501b"
+        }
+      },
+      {
+        "source": 50098,
+        "category": 8,
+        "local": 434,
+        "phase": "box_ready",
+        "icon": "icon/item/50098.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.5.box_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.5.box_ready.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.5.box_ready.service.hex",
+        "hashes": {
+          "inventory": "e8da0a190d423f2f1e7b2dc9dbdaddf3d5eb4daa1a7dbfe59c94946a228085fc",
+          "details": "4e6a0a60ccf62a368f42a5c672790c3847172b2d51fca8ee39432435b9f8501b",
+          "service": "0e46de67a7d86cc1553abb685c50bcea8576ddb16a41e4ebfafbea9bf41efa69"
+        }
+      },
+      {
+        "source": 50098,
+        "category": 8,
+        "local": 434,
+        "phase": "opened",
+        "icon": "icon/item/50098.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.5.opened.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.5.opened.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.5.opened.service.hex",
+        "hashes": {
+          "inventory": "09e212fd619fc84106bc2f32b8b87db2573555f4532a9e1cdfcac7b0906b4928",
+          "details": "bcb4e30824ba73f403ba7b7fa064e55f6d43e5e7f2d007970a021ffbfb048de9",
+          "service": "d11f29d5a304ef381ae74651eb6dd688a827cb8c0bf74fbf6594e3fd645389c3"
+        }
+      },
+      {
+        "source": 50098,
+        "category": 8,
+        "local": 434,
+        "phase": "box_relogged",
+        "icon": "icon/item/50098.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.5.box_relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.5.box_relogged.details.hex",
+        "hashes": {
+          "inventory": "09e212fd619fc84106bc2f32b8b87db2573555f4532a9e1cdfcac7b0906b4928",
+          "details": "bcb4e30824ba73f403ba7b7fa064e55f6d43e5e7f2d007970a021ffbfb048de9"
+        }
+      },
+      {
+        "source": 50204,
+        "category": 8,
+        "local": 435,
+        "phase": "bag",
+        "icon": "icon/item/50204.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.6.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.6.bag.details.hex",
+        "hashes": {
+          "inventory": "f820c76a7544e289028450e419fc72ec5f6af8cfca460ad6bbb888e27577d2a3",
+          "details": "e52a046cf9463641e80164a16ca2f8073dd16cf83b51272e107d8931de9bc3d3"
+        }
+      },
+      {
+        "source": 50204,
+        "category": 8,
+        "local": 435,
+        "phase": "box_ready",
+        "icon": "icon/item/50204.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.6.box_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.6.box_ready.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.6.box_ready.service.hex",
+        "hashes": {
+          "inventory": "f820c76a7544e289028450e419fc72ec5f6af8cfca460ad6bbb888e27577d2a3",
+          "details": "e52a046cf9463641e80164a16ca2f8073dd16cf83b51272e107d8931de9bc3d3",
+          "service": "bd39cf3ac0f338271ced36ff3ab5c02a4f8054cf0949ae5412a830a76689703a"
+        }
+      },
+      {
+        "source": 50204,
+        "category": 8,
+        "local": 435,
+        "phase": "opened",
+        "icon": "icon/item/50204.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.6.opened.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.6.opened.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.6.opened.service.hex",
+        "hashes": {
+          "inventory": "d49468ef131429e862be0932e446bb8cf4fbd8706b13523f3464fcdcb7561821",
+          "details": "1385529bd37d1394eed8b09690672f51ba758a4e9ef754768b20755ae80808b5",
+          "service": "2eeb8b40fd96a0923707207efbe8a74b4132690da2d196bc36490e6ae27eec85"
+        }
+      },
+      {
+        "source": 50204,
+        "category": 8,
+        "local": 435,
+        "phase": "box_relogged",
+        "icon": "icon/item/50204.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.6.box_relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.6.box_relogged.details.hex",
+        "hashes": {
+          "inventory": "d49468ef131429e862be0932e446bb8cf4fbd8706b13523f3464fcdcb7561821",
+          "details": "1385529bd37d1394eed8b09690672f51ba758a4e9ef754768b20755ae80808b5"
+        }
+      },
+      {
+        "source": 70100,
+        "category": 5,
+        "local": 786,
+        "phase": "ready",
+        "icon": "icon/item/aranyzen.tga",
+        "amount": 50000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.7.ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.7.ready.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.7.ready.service.hex",
+        "hashes": {
+          "inventory": "e084f86eda0c146d6471e7a6b9a8df854292f9ce9be24ffed4617e3eab962fa0",
+          "details": "38eafe70f2c134d35f5f18efacda1ccc0aaed3deadaf85268a5eaecc9fe812dd",
+          "service": "85dcae376fa363dbe57b3d527db431b4afc6e224f93263c0f2bcb53a4671d93c"
+        }
+      },
+      {
+        "source": 70100,
+        "category": 5,
+        "local": 786,
+        "phase": "applied",
+        "icon": "icon/item/aranyzen.tga",
+        "amount": 50000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.7.applied.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.7.applied.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.7.applied.service.hex",
+        "hashes": {
+          "inventory": "4c1eaf35cd96670282cbf3a7bff6b924fd413a898c9d6693aa02ebcb2defdb3e",
+          "details": "ab6740c97aec5645b7f50d574a71ff1e81576c23ffb75b92c4eb330474ad5d04",
+          "service": "3058eb817ad1a23a9209bdd9da2b196f0f0556f60ad713464bf3ba6a79c5c0dc"
+        }
+      },
+      {
+        "source": 70100,
+        "category": 5,
+        "local": 786,
+        "phase": "relogged",
+        "icon": "icon/item/aranyzen.tga",
+        "amount": 50000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.7.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.7.relogged.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.7.relogged.service.hex",
+        "hashes": {
+          "inventory": "4c1eaf35cd96670282cbf3a7bff6b924fd413a898c9d6693aa02ebcb2defdb3e",
+          "details": "ab6740c97aec5645b7f50d574a71ff1e81576c23ffb75b92c4eb330474ad5d04",
+          "service": "3058eb817ad1a23a9209bdd9da2b196f0f0556f60ad713464bf3ba6a79c5c0dc"
+        }
+      },
+      {
+        "source": 70100,
+        "category": 5,
+        "local": 786,
+        "phase": "cap_ready",
+        "icon": "icon/item/aranyzen.tga",
+        "amount": 50000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.7.cap_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.7.cap_ready.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.7.cap_ready.service.hex",
+        "hashes": {
+          "inventory": "ce1e99708da6b0190b1607d3c3dabc5db4a25210b1fe1a2f2d73ae1a540560fa",
+          "details": "38eafe70f2c134d35f5f18efacda1ccc0aaed3deadaf85268a5eaecc9fe812dd",
+          "service": "bbe50d4baad3870c7e265e7405242aa5b4521b271f12c0bebd123f654d4c948f"
+        }
+      },
+      {
+        "source": 70100,
+        "category": 5,
+        "local": 786,
+        "phase": "cap_applied",
+        "icon": "icon/item/aranyzen.tga",
+        "amount": 50000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.7.cap_applied.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.7.cap_applied.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.7.cap_applied.service.hex",
+        "hashes": {
+          "inventory": "4c1eaf35cd96670282cbf3a7bff6b924fd413a898c9d6693aa02ebcb2defdb3e",
+          "details": "ab6740c97aec5645b7f50d574a71ff1e81576c23ffb75b92c4eb330474ad5d04",
+          "service": "6c8a9e2eb777b344b5cf78cc136d27d2237ac62bb8eb8fb6bbe055fc78af8f61"
+        }
+      },
+      {
+        "source": 70100,
+        "category": 5,
+        "local": 786,
+        "phase": "cap_denied",
+        "icon": "icon/item/aranyzen.tga",
+        "amount": 50000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.7.cap_denied.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.7.cap_denied.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.7.cap_denied.service.hex",
+        "hashes": {
+          "inventory": "9d9f7060bed2ea4db1bde320ccdad0cfb07833fcd89529651665f780e05bfd47",
+          "details": "38eafe70f2c134d35f5f18efacda1ccc0aaed3deadaf85268a5eaecc9fe812dd",
+          "service": "8121600933059d20878dc550e597f50512e7b59a3244b34621cc86e1c4a8fcb1"
+        }
+      },
+      {
+        "source": 70102,
+        "category": 5,
+        "local": 787,
+        "phase": "ready",
+        "icon": "icon/item/70102.tga",
+        "amount": 5000,
+        "minimum": 0,
+        "maximum": 2500000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.8.ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.8.ready.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.8.ready.service.hex",
+        "hashes": {
+          "inventory": "23ed4965ba088cae99712af80950f91d729a765c48c88aa38be9d8f2f80a3830",
+          "details": "8403a503c6f3b351579a86784ef8ad1e8bf33ab389fd15642a3457d0d12292d0",
+          "service": "f3049004dc9cf82f058d4d84d13f0c232f45b36d64fc919cd714a4fa2c747f86"
+        }
+      },
+      {
+        "source": 70102,
+        "category": 5,
+        "local": 787,
+        "phase": "applied",
+        "icon": "icon/item/70102.tga",
+        "amount": 5000,
+        "minimum": 0,
+        "maximum": 2500000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.8.applied.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.8.applied.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.8.applied.service.hex",
+        "hashes": {
+          "inventory": "4c1eaf35cd96670282cbf3a7bff6b924fd413a898c9d6693aa02ebcb2defdb3e",
+          "details": "ab6740c97aec5645b7f50d574a71ff1e81576c23ffb75b92c4eb330474ad5d04",
+          "service": "c8365f637c16d59d7710de34604eb69fa988447097f482f06677ceaf8764a529"
+        }
+      },
+      {
+        "source": 70102,
+        "category": 5,
+        "local": 787,
+        "phase": "relogged",
+        "icon": "icon/item/70102.tga",
+        "amount": 5000,
+        "minimum": 0,
+        "maximum": 2500000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.8.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.8.relogged.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.8.relogged.service.hex",
+        "hashes": {
+          "inventory": "4c1eaf35cd96670282cbf3a7bff6b924fd413a898c9d6693aa02ebcb2defdb3e",
+          "details": "ab6740c97aec5645b7f50d574a71ff1e81576c23ffb75b92c4eb330474ad5d04",
+          "service": "c8365f637c16d59d7710de34604eb69fa988447097f482f06677ceaf8764a529"
+        }
+      },
+      {
+        "source": 70102,
+        "category": 5,
+        "local": 787,
+        "phase": "cap_ready",
+        "icon": "icon/item/70102.tga",
+        "amount": 5000,
+        "minimum": 0,
+        "maximum": 2500000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.8.cap_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.8.cap_ready.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.8.cap_ready.service.hex",
+        "hashes": {
+          "inventory": "964776ee7959feab5f406e85ed48308a7c648edc57ffb72b7958b4a4bf8043ef",
+          "details": "8403a503c6f3b351579a86784ef8ad1e8bf33ab389fd15642a3457d0d12292d0",
+          "service": "99fd3a54839e1a69ab01db84d9b4f9c1b02de2d3a35fd3a85cb7fba62893c879"
+        }
+      },
+      {
+        "source": 70102,
+        "category": 5,
+        "local": 787,
+        "phase": "cap_applied",
+        "icon": "icon/item/70102.tga",
+        "amount": 5000,
+        "minimum": 0,
+        "maximum": 2500000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.8.cap_applied.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.8.cap_applied.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.8.cap_applied.service.hex",
+        "hashes": {
+          "inventory": "4c1eaf35cd96670282cbf3a7bff6b924fd413a898c9d6693aa02ebcb2defdb3e",
+          "details": "ab6740c97aec5645b7f50d574a71ff1e81576c23ffb75b92c4eb330474ad5d04",
+          "service": "5384f8e1416f6cf50dc28b43542d4023c65b47068668f80f997aa073322ba0ab"
+        }
+      },
+      {
+        "source": 70102,
+        "category": 5,
+        "local": 787,
+        "phase": "cap_denied",
+        "icon": "icon/item/70102.tga",
+        "amount": 5000,
+        "minimum": 0,
+        "maximum": 2500000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.8.cap_denied.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.8.cap_denied.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.8.cap_denied.service.hex",
+        "hashes": {
+          "inventory": "141d4b9ecbfea1b0c65e895315345a2a8a7d9780e87918d37e78273adbb4f6be",
+          "details": "8403a503c6f3b351579a86784ef8ad1e8bf33ab389fd15642a3457d0d12292d0",
+          "service": "aecc1d6b19df50611fb870e46cbec6a96db80f11f8442a2976daa0728343a68b"
+        }
+      },
+      {
+        "source": 71107,
+        "category": 5,
+        "local": 788,
+        "phase": "ready",
+        "icon": "icon/item/71107.tga",
+        "amount": 20000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.9.ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.9.ready.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.9.ready.service.hex",
+        "hashes": {
+          "inventory": "78f07e922ed605986b05bcb793489dedbb8a706f89f00f32292a434fb47a5b21",
+          "details": "cfb5295f43963e2ddc7420a2704fa75524263a5cc96992a370be5330002173fc",
+          "service": "19cabdcf7c6f011f3abfe620a6ef29e3d8538c09e35ec536ede9982a12711876"
+        }
+      },
+      {
+        "source": 71107,
+        "category": 5,
+        "local": 788,
+        "phase": "applied",
+        "icon": "icon/item/71107.tga",
+        "amount": 20000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.9.applied.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.9.applied.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.9.applied.service.hex",
+        "hashes": {
+          "inventory": "4c1eaf35cd96670282cbf3a7bff6b924fd413a898c9d6693aa02ebcb2defdb3e",
+          "details": "ab6740c97aec5645b7f50d574a71ff1e81576c23ffb75b92c4eb330474ad5d04",
+          "service": "a1fb94144e7eb9991b70f09158e8b5df16ad85b88f6956196c1cf38e16d54c85"
+        }
+      },
+      {
+        "source": 71107,
+        "category": 5,
+        "local": 788,
+        "phase": "relogged",
+        "icon": "icon/item/71107.tga",
+        "amount": 20000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.9.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.9.relogged.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.9.relogged.service.hex",
+        "hashes": {
+          "inventory": "4c1eaf35cd96670282cbf3a7bff6b924fd413a898c9d6693aa02ebcb2defdb3e",
+          "details": "ab6740c97aec5645b7f50d574a71ff1e81576c23ffb75b92c4eb330474ad5d04",
+          "service": "a1fb94144e7eb9991b70f09158e8b5df16ad85b88f6956196c1cf38e16d54c85"
+        }
+      },
+      {
+        "source": 71107,
+        "category": 5,
+        "local": 788,
+        "phase": "cap_ready",
+        "icon": "icon/item/71107.tga",
+        "amount": 20000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.9.cap_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.9.cap_ready.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.9.cap_ready.service.hex",
+        "hashes": {
+          "inventory": "83d766268b13226267ad46d84a17917fac795cd9cc5238417ae8a68ae3dfb8f4",
+          "details": "cfb5295f43963e2ddc7420a2704fa75524263a5cc96992a370be5330002173fc",
+          "service": "3f7725be23a50647cb550fb4b4e39f9d071dc5c963f0fff61ef428789df90a62"
+        }
+      },
+      {
+        "source": 71107,
+        "category": 5,
+        "local": 788,
+        "phase": "cap_applied",
+        "icon": "icon/item/71107.tga",
+        "amount": 20000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.9.cap_applied.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.9.cap_applied.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.9.cap_applied.service.hex",
+        "hashes": {
+          "inventory": "4c1eaf35cd96670282cbf3a7bff6b924fd413a898c9d6693aa02ebcb2defdb3e",
+          "details": "ab6740c97aec5645b7f50d574a71ff1e81576c23ffb75b92c4eb330474ad5d04",
+          "service": "b27f6ca635b1e1b0c814e0a18c25fa78ee5d550e1860e481699b50b4c053b06a"
+        }
+      },
+      {
+        "source": 71107,
+        "category": 5,
+        "local": 788,
+        "phase": "cap_denied",
+        "icon": "icon/item/71107.tga",
+        "amount": 20000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.9.cap_denied.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.9.cap_denied.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.9.cap_denied.service.hex",
+        "hashes": {
+          "inventory": "3c5feabe334c00d21e7565d4d6cc407b955b7a101e8389fed65d97f74cc1fbae",
+          "details": "cfb5295f43963e2ddc7420a2704fa75524263a5cc96992a370be5330002173fc",
+          "service": "6ab81b655cc2d22f550476d3fa57ccb62116ae857c387dcd5da89fd41284c414"
+        }
+      },
+      {
+        "source": 71150,
+        "category": 8,
+        "local": 436,
+        "phase": "bag",
+        "icon": "icon/item/71150.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.10.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.10.bag.details.hex",
+        "hashes": {
+          "inventory": "a8b7d28739bebbcffbe28be4c1b4b62e0327f1fad789ab6d6da634fe141b058b",
+          "details": "024cc38ec321c9d06fe1bd5cb83880ca6a30ce4e6de44e3e5621c00891b49851"
+        }
+      },
+      {
+        "source": 71150,
+        "category": 8,
+        "local": 436,
+        "phase": "box_ready",
+        "icon": "icon/item/71150.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.10.box_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.10.box_ready.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.10.box_ready.service.hex",
+        "hashes": {
+          "inventory": "a8b7d28739bebbcffbe28be4c1b4b62e0327f1fad789ab6d6da634fe141b058b",
+          "details": "024cc38ec321c9d06fe1bd5cb83880ca6a30ce4e6de44e3e5621c00891b49851",
+          "service": "33f62b03792912ab2656e9eb155cb986de7eacb9f41ceae4c703087d7b3ad854"
+        }
+      },
+      {
+        "source": 71150,
+        "category": 8,
+        "local": 436,
+        "phase": "opened",
+        "icon": "icon/item/71150.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.10.opened.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.10.opened.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.10.opened.service.hex",
+        "hashes": {
+          "inventory": "5164c95a9e2c13eb2bc91611d32ae17e764a8e014d6562dc129de6e75a8764f6",
+          "details": "482df63699997d43f58d69b5b68a01657c30f82081b74aa7e88cc2be8b97b276",
+          "service": "31dbb5e656093f28915cac45c097609ae4bbfe1340b6a56635131b0668057117"
+        }
+      },
+      {
+        "source": 71150,
+        "category": 8,
+        "local": 436,
+        "phase": "box_relogged",
+        "icon": "icon/item/71150.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.10.box_relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.10.box_relogged.details.hex",
+        "hashes": {
+          "inventory": "5164c95a9e2c13eb2bc91611d32ae17e764a8e014d6562dc129de6e75a8764f6",
+          "details": "482df63699997d43f58d69b5b68a01657c30f82081b74aa7e88cc2be8b97b276"
+        }
+      },
+      {
+        "source": 71159,
+        "category": 8,
+        "local": 437,
+        "phase": "bag",
+        "icon": "icon/item/71159.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.11.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.11.bag.details.hex",
+        "hashes": {
+          "inventory": "3e004d9dc835492cb36a76d4c66c0b3034de36ad15a85533e7b2fbf6b9cf9da5",
+          "details": "52512d0b801877af798725f9563922f5ee829842d843fa07c1bbc6c08093f22e"
+        }
+      },
+      {
+        "source": 71159,
+        "category": 8,
+        "local": 437,
+        "phase": "box_ready",
+        "icon": "icon/item/71159.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.11.box_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.11.box_ready.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.11.box_ready.service.hex",
+        "hashes": {
+          "inventory": "3e004d9dc835492cb36a76d4c66c0b3034de36ad15a85533e7b2fbf6b9cf9da5",
+          "details": "52512d0b801877af798725f9563922f5ee829842d843fa07c1bbc6c08093f22e",
+          "service": "5c6310ad61a9298b0e98a600f557faea731155de744b1f27188cb8a8ddc4603c"
+        }
+      },
+      {
+        "source": 71159,
+        "category": 8,
+        "local": 437,
+        "phase": "opened",
+        "icon": "icon/item/71159.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.11.opened.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.11.opened.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.11.opened.service.hex",
+        "hashes": {
+          "inventory": "bc2ba8f5998689b1cc1dc39d97a98975e7bcb09fb8eade762295e6787576ac33",
+          "details": "edb26e367c7df250840f740ebce3c4473dd2cc4cfb9a1b59b21b29ec1db9d863",
+          "service": "00d77062c37e8dfd42def7f83cbeffbce77742b8648e0c875235c7ea543f2da7"
+        }
+      },
+      {
+        "source": 71159,
+        "category": 8,
+        "local": 437,
+        "phase": "box_relogged",
+        "icon": "icon/item/71159.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.11.box_relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.11.box_relogged.details.hex",
+        "hashes": {
+          "inventory": "bc2ba8f5998689b1cc1dc39d97a98975e7bcb09fb8eade762295e6787576ac33",
+          "details": "edb26e367c7df250840f740ebce3c4473dd2cc4cfb9a1b59b21b29ec1db9d863"
+        }
+      },
+      {
+        "source": 71160,
+        "category": 8,
+        "local": 438,
+        "phase": "bag",
+        "icon": "icon/item/71160.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.12.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.12.bag.details.hex",
+        "hashes": {
+          "inventory": "630f52042a951ad8c005e5df8f303085e13772728981237acfa7461116b23c56",
+          "details": "7c59f6bdedbe9e0034accea77c136b2ddfff349b00f14f337856f6ecb790eee6"
+        }
+      },
+      {
+        "source": 71160,
+        "category": 8,
+        "local": 438,
+        "phase": "box_ready",
+        "icon": "icon/item/71160.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.12.box_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.12.box_ready.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.12.box_ready.service.hex",
+        "hashes": {
+          "inventory": "630f52042a951ad8c005e5df8f303085e13772728981237acfa7461116b23c56",
+          "details": "7c59f6bdedbe9e0034accea77c136b2ddfff349b00f14f337856f6ecb790eee6",
+          "service": "ebeaa26fe99ee2085a59fab6c090fd27a3913a9c33273311c7c15bbb97005f1c"
+        }
+      },
+      {
+        "source": 71160,
+        "category": 8,
+        "local": 438,
+        "phase": "opened",
+        "icon": "icon/item/71160.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.12.opened.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.12.opened.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.12.opened.service.hex",
+        "hashes": {
+          "inventory": "373fc98762bf812123e0c010f9f3147a174a025eccc023e709861052c63656ce",
+          "details": "3f7215cb78529836169a1155ca6308fbb5d6b881f70f457781d2e6a3683baa2b",
+          "service": "fb0c048c0af2ad1181828aef784b173e7075ed5fc8f3ec1f82656fe15386fcd5"
+        }
+      },
+      {
+        "source": 71160,
+        "category": 8,
+        "local": 438,
+        "phase": "box_relogged",
+        "icon": "icon/item/71160.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.12.box_relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.12.box_relogged.details.hex",
+        "hashes": {
+          "inventory": "373fc98762bf812123e0c010f9f3147a174a025eccc023e709861052c63656ce",
+          "details": "3f7215cb78529836169a1155ca6308fbb5d6b881f70f457781d2e6a3683baa2b"
+        }
+      },
+      {
+        "source": 72100,
+        "category": 5,
+        "local": 789,
+        "phase": "ready",
+        "icon": "icon/item/aranygyumi.tga",
+        "amount": 100000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.13.ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.13.ready.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.13.ready.service.hex",
+        "hashes": {
+          "inventory": "4562cd293b5aca50782dcdb8acbd1789e04a0ba01c1533ea88dde0818726ba78",
+          "details": "775eb1fe302fb88eb40eb4ce4790fe60f1e0e64e06c272a7fd3d2b315c216081",
+          "service": "d8ab136fd73447ce0569a736ccc4b6491d810def1d85812b3415b81345f386f4"
+        }
+      },
+      {
+        "source": 72100,
+        "category": 5,
+        "local": 789,
+        "phase": "applied",
+        "icon": "icon/item/aranygyumi.tga",
+        "amount": 100000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.13.applied.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.13.applied.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.13.applied.service.hex",
+        "hashes": {
+          "inventory": "4c1eaf35cd96670282cbf3a7bff6b924fd413a898c9d6693aa02ebcb2defdb3e",
+          "details": "ab6740c97aec5645b7f50d574a71ff1e81576c23ffb75b92c4eb330474ad5d04",
+          "service": "1a3fd817bd0ae93b51869c3fe6f709f43128b84800bb97612a89d9d5145343ab"
+        }
+      },
+      {
+        "source": 72100,
+        "category": 5,
+        "local": 789,
+        "phase": "relogged",
+        "icon": "icon/item/aranygyumi.tga",
+        "amount": 100000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.13.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.13.relogged.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.13.relogged.service.hex",
+        "hashes": {
+          "inventory": "4c1eaf35cd96670282cbf3a7bff6b924fd413a898c9d6693aa02ebcb2defdb3e",
+          "details": "ab6740c97aec5645b7f50d574a71ff1e81576c23ffb75b92c4eb330474ad5d04",
+          "service": "1a3fd817bd0ae93b51869c3fe6f709f43128b84800bb97612a89d9d5145343ab"
+        }
+      },
+      {
+        "source": 72100,
+        "category": 5,
+        "local": 789,
+        "phase": "cap_ready",
+        "icon": "icon/item/aranygyumi.tga",
+        "amount": 100000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.13.cap_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.13.cap_ready.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.13.cap_ready.service.hex",
+        "hashes": {
+          "inventory": "a8f35b078f155daa1ab12ad49d8e1288acc3a1d21007d63ddbe9cf66197a384e",
+          "details": "775eb1fe302fb88eb40eb4ce4790fe60f1e0e64e06c272a7fd3d2b315c216081",
+          "service": "309bb98a60d18595719982a81a490d77c220382f8441778db926177b6f8af88d"
+        }
+      },
+      {
+        "source": 72100,
+        "category": 5,
+        "local": 789,
+        "phase": "cap_applied",
+        "icon": "icon/item/aranygyumi.tga",
+        "amount": 100000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.13.cap_applied.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.13.cap_applied.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.13.cap_applied.service.hex",
+        "hashes": {
+          "inventory": "4c1eaf35cd96670282cbf3a7bff6b924fd413a898c9d6693aa02ebcb2defdb3e",
+          "details": "ab6740c97aec5645b7f50d574a71ff1e81576c23ffb75b92c4eb330474ad5d04",
+          "service": "484c802b754dac52d31540d7486c34f8457b21cea79e7270fe55d848261ee4e3"
+        }
+      },
+      {
+        "source": 72100,
+        "category": 5,
+        "local": 789,
+        "phase": "cap_denied",
+        "icon": "icon/item/aranygyumi.tga",
+        "amount": 100000,
+        "minimum": 0,
+        "maximum": 25000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.13.cap_denied.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.13.cap_denied.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.13.cap_denied.service.hex",
+        "hashes": {
+          "inventory": "4969f24e811a127aba52d614c2eef4e04e16249043541628353cd291aa851e16",
+          "details": "775eb1fe302fb88eb40eb4ce4790fe60f1e0e64e06c272a7fd3d2b315c216081",
+          "service": "c521d7f021a3e29a6a77107cefc9376918b0e332c63b8d26af7d004114015143"
+        }
+      },
+      {
+        "source": 72101,
+        "category": 5,
+        "local": 790,
+        "phase": "ready",
+        "icon": "icon/item/kiralygyumi.tga",
+        "amount": 300000,
+        "minimum": 25000000,
+        "maximum": 50000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.14.ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.14.ready.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.14.ready.service.hex",
+        "hashes": {
+          "inventory": "93b7e5b1d29d538f17c3985015c007be9f8bf0280f2bbb574451597ff1dcb91a",
+          "details": "07298eac5b1dbaadbca45d68ebd418c3dac7b2f0873fa66e5367d3c8d34487f8",
+          "service": "80ea39a885e06aaa91e4d8834398f5f7081a3d8f11e4394f8f6337a080758369"
+        }
+      },
+      {
+        "source": 72101,
+        "category": 5,
+        "local": 790,
+        "phase": "applied",
+        "icon": "icon/item/kiralygyumi.tga",
+        "amount": 300000,
+        "minimum": 25000000,
+        "maximum": 50000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.14.applied.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.14.applied.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.14.applied.service.hex",
+        "hashes": {
+          "inventory": "4c1eaf35cd96670282cbf3a7bff6b924fd413a898c9d6693aa02ebcb2defdb3e",
+          "details": "ab6740c97aec5645b7f50d574a71ff1e81576c23ffb75b92c4eb330474ad5d04",
+          "service": "f3aa29c502e06a643406d4fd4a85424e415e6619e07d6fed1688c424449f3a87"
+        }
+      },
+      {
+        "source": 72101,
+        "category": 5,
+        "local": 790,
+        "phase": "relogged",
+        "icon": "icon/item/kiralygyumi.tga",
+        "amount": 300000,
+        "minimum": 25000000,
+        "maximum": 50000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.14.relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.14.relogged.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.14.relogged.service.hex",
+        "hashes": {
+          "inventory": "4c1eaf35cd96670282cbf3a7bff6b924fd413a898c9d6693aa02ebcb2defdb3e",
+          "details": "ab6740c97aec5645b7f50d574a71ff1e81576c23ffb75b92c4eb330474ad5d04",
+          "service": "f3aa29c502e06a643406d4fd4a85424e415e6619e07d6fed1688c424449f3a87"
+        }
+      },
+      {
+        "source": 72101,
+        "category": 5,
+        "local": 790,
+        "phase": "cap_ready",
+        "icon": "icon/item/kiralygyumi.tga",
+        "amount": 300000,
+        "minimum": 25000000,
+        "maximum": 50000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.14.cap_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.14.cap_ready.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.14.cap_ready.service.hex",
+        "hashes": {
+          "inventory": "552ebe48358e6f75dc6820eb90c9c951f68cf9499a5267e6ce22c4271a99cc4a",
+          "details": "07298eac5b1dbaadbca45d68ebd418c3dac7b2f0873fa66e5367d3c8d34487f8",
+          "service": "1bd3973c0020fc2e215639c222f35ecac2c438cae5f6759584f10786d045aee8"
+        }
+      },
+      {
+        "source": 72101,
+        "category": 5,
+        "local": 790,
+        "phase": "cap_applied",
+        "icon": "icon/item/kiralygyumi.tga",
+        "amount": 300000,
+        "minimum": 25000000,
+        "maximum": 50000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.14.cap_applied.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.14.cap_applied.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.14.cap_applied.service.hex",
+        "hashes": {
+          "inventory": "4c1eaf35cd96670282cbf3a7bff6b924fd413a898c9d6693aa02ebcb2defdb3e",
+          "details": "ab6740c97aec5645b7f50d574a71ff1e81576c23ffb75b92c4eb330474ad5d04",
+          "service": "4780fc8894751c4fb403f2363df628aaec6983b8c117efa012e98738438459f2"
+        }
+      },
+      {
+        "source": 72101,
+        "category": 5,
+        "local": 790,
+        "phase": "cap_denied",
+        "icon": "icon/item/kiralygyumi.tga",
+        "amount": 300000,
+        "minimum": 25000000,
+        "maximum": 50000000,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.14.cap_denied.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.14.cap_denied.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.14.cap_denied.service.hex",
+        "hashes": {
+          "inventory": "12c09e11b48606cc8210a6fdfae626b3e6a2192632bba712091215f9cd91449c",
+          "details": "07298eac5b1dbaadbca45d68ebd418c3dac7b2f0873fa66e5367d3c8d34487f8",
+          "service": "9d56f9df68b026defeccbd3d6f816fba6cb44cb4420b26fd09fa88394e025bc7"
+        }
+      },
+      {
+        "source": 78315,
+        "category": 8,
+        "local": 439,
+        "phase": "bag",
+        "icon": "icon/item/bonbon.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.15.bag.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.15.bag.details.hex",
+        "hashes": {
+          "inventory": "39cf3e2a8d8345635afe464a1eba91923d31e6a8c42ce967593dcdc06aa93fd4",
+          "details": "e777e5fd1735cb1146bdcc3f4c0ca9e44f554084a05bd3376007dadec94ae810"
+        }
+      },
+      {
+        "source": 78315,
+        "category": 8,
+        "local": 439,
+        "phase": "box_ready",
+        "icon": "icon/item/bonbon.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.15.box_ready.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.15.box_ready.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.15.box_ready.service.hex",
+        "hashes": {
+          "inventory": "39cf3e2a8d8345635afe464a1eba91923d31e6a8c42ce967593dcdc06aa93fd4",
+          "details": "e777e5fd1735cb1146bdcc3f4c0ca9e44f554084a05bd3376007dadec94ae810",
+          "service": "b442bef307ad72d78b802ffe7a057817d017eae15b5f79ad426412b6c0d405c0"
+        }
+      },
+      {
+        "source": 78315,
+        "category": 8,
+        "local": 439,
+        "phase": "opened",
+        "icon": "icon/item/bonbon.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.15.opened.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.15.opened.details.hex",
+        "service": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.15.opened.service.hex",
+        "hashes": {
+          "inventory": "73095cd424f76b91a0fafe9cf4d712ca895bd14e26539d494dad2c5df25d6252",
+          "details": "f1d4fbbc210af52da0909a102f1518045779e199cb6059dace17a7582b0b1eb5",
+          "service": "815b6a621357d7a838bff15ebe3792746c34393086a08e724d68f45ee1d50439"
+        }
+      },
+      {
+        "source": 78315,
+        "category": 8,
+        "local": 439,
+        "phase": "box_relogged",
+        "icon": "icon/item/bonbon.tga",
+        "amount": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "inventory": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.15.box_relogged.inventory.hex",
+        "details": "C:\\Users\\ixtre\\AppData\\Local\\Temp\\AurigaItemValidation\\character-services-v41-stage\\source-character-service-runtime.15.box_relogged.details.hex",
+        "hashes": {
+          "inventory": "73095cd424f76b91a0fafe9cf4d712ca895bd14e26539d494dad2c5df25d6252",
+          "details": "f1d4fbbc210af52da0909a102f1518045779e199cb6059dace17a7582b0b1eb5"
+        }
+      }
+    ],
+    "actual_game_item_worker": true,
+    "full_actor_world_test": false,
+    "installed_to_game": false
+  },
+  "stage": {
+    "candidate_sha256": "953345279401b25e3029ed485366f6a4e234b412bfbb15a6347b714f53d8c6e2",
+    "catalog_hash": "af5266e1b8292a94708290dd580cf8787bdd3d7179c9ea5e245a6fe82192dbfb",
+    "installed_to_game": false,
+    "migrations": {
+      "000_protos_database.sql": "44e6b1bbdb9f926649f8a15bba6eb9aff369fe59fad65fb939356d6576fd9826",
+      "001_category_registry.sql": "4da11171651ec5a26c762351f74988f8967d63bc87db982fcb93a8b981d7836c",
+      "002_category_seed.sql": "1eebf2af98e9e1ae54f80b0c8feeedc90ce660e68e194f8a5cc933b956db0ac2",
+      "003_equipment_profiles.sql": "ec826265269310e15b6648cd7aa14239dceee6cbbc62b8f6f4d60d61c088e442",
+      "004_refinement_profiles.sql": "79945357254c52e9ac9ac7999966b2fd5d4120688199027c5261d690573fd947",
+      "005_weapon_armor_catalog.sql": "0ccd92c62cbe9ef9f3ecc5f0340ad185468d26422c080d86507a018f320a0b98",
+      "006_bonus_profiles.sql": "d3454aa044f8b86e071be074a252491a48f7fb3c0596598bd6c62deefe8b6970",
+      "007_bonus_registry_seed.sql": "6d56218006149cb38fb6f0eafbf1f6d50580729d6f7083595f7add0533828e5d",
+      "008_accessory_material_catalog.sql": "8e93b1885e5a5bbd59239737720c023bdd044e93ee67e9d76d49ef5872ad42bd",
+      "009_accessory_socket_profiles.sql": "3a76f6e9c3e713716cad7a8f72efdcb1cee61e5edb0cd1beb47de0a9757aca7c",
+      "010_recovery_consumables.sql": "856eafa864ed52dfb6fd2a0016ec7d95c38c3f04240359c6128f1843f8abc674",
+      "011_catalog_format.sql": "e352b70ca5c92ef0a5235dac47961b41934fc31f910cc11eb017b99eb04b5a4b",
+      "012_containers.sql": "a0cc203aa491ab7145584d510a894603190776266e296e477f496f6f9910bb1c",
+      "013_currency_tokens.sql": "2402bdd4e26fef92eb1d5f68196eca92c3961107048c85cf76b09338ae436712",
+      "014_timed_consumables.sql": "009a9f4119ea503f44f8eba6d4138046012727c0d6634afcb69140fd158458c0",
+      "015_automatic_recovery.sql": "0a0cd5b5dcb0d0d7eb3cb35a84a03cfb65ae97810c4474dc8e99c8b63e79429d",
+      "016_toggle_effects.sql": "eb12412346fd0957da193eee3252bc39747f8c108fe23664a284c842cfa60a09",
+      "017_skill_books.sql": "a624678c3c6f93fabdb9de53476e3578c742347b55c05801e719f1e8c32118f2",
+      "018_refinement_recipes.sql": "e4a57d30f5b8104d9cd4c87b30a3a1b4d6c8c56871895b935fe7370d756a215a",
+      "019_quest_items.sql": "b4c7c320afab3f83f379cddc0b9f5b89e3433c1f6bea700f4e80e56b7f0ec3c3",
+      "020_socket_stones.sql": "5e3bcbe46fe09baaafdd07b232ec953e7bb2e942cc19c520589af505e612df6e",
+      "021_costumes.sql": "a9b843e10e3a5d0eb4b00b2f765a109ac4f684a51a945fba950001780b6becf9",
+      "022_gathering_items.sql": "2f25ad4984b8f75c995dcb9332e994e1bcd13e615104cf50c53dc0edf9f340af",
+      "023_polymorph_items.sql": "83a65b40c10e076da833080dae4638bc9af3cd549a595552a96ec02385f7edaa",
+      "024_soul_items.sql": "bd0038ff59bbade14ddf0e0d460d3dc88ba5610bc243c39aaea64d26f4c0b75a",
+      "025_companion_items.sql": "4c549bf5d1819b876c6bffc71fdf075335dc37fc7f46161df9998f241cd401f0",
+      "026_growth_pet_progression.sql": "95c6c1fc434382b79225bc1b9d76cf7d1218f678754363b25261f7871ecc226a",
+      "027_pet_care.sql": "239a9634ac1e769ae824e4f3c3e6d10be649c7825cf88f0a0fbd021c56dcf7e5",
+      "028_pet_lifecycle.sql": "da16016ee0565f08f7e31caef65329f392494c975c6916c4980e5beda98709a9",
+      "029_socket_services.sql": "8cbc2dca7a78c1b453388d12bcfb6b704145476a62ab0557362413a0c3fd8792",
+      "030_instance_attributes.sql": "f7996a4f109af589b6940048ac35b396e01d62118c804b9dfa7e21a0ca44cb03",
+      "031_mob_drops.sql": "65873fc78552ee340e674e73be98f80a00c9c10e04721aed0180c98b9b3a5fd7",
+      "032_book_aids.sql": "98a7123d2e89d0f9db8348cf6b5abb0a2e3a6656c78a88384f773900a657b9e0",
+      "033_companion_flight.sql": "fe86daee3c6d7748953d6a4d2edb1b2d99a0155006cb2a7d149709028c6c1214",
+      "034_regalia_special_bonuses.sql": "6ae899f639fef3de7d006dce43ac6073fb67135a99c633bbfa984862ae06db97",
+      "035_ammunition.sql": "a075c209662590920043458ad82b2ca771c4c5373e0b35e2a55ada9188508b6e",
+      "036_forge_aids.sql": "2fea2a3ee8fecee5fea25359d51d8fa87c5c8efc6206c17702467dabaac12fd3",
+      "037_equipment_conversion.sql": "a0400c5dbbd669174ab29a4df5d4e971d924d4a427f718d695a2f3da517dfa09",
+      "038_empty_loot_draw.sql": "7ec3878fc3ea0f4f186b04744e554e7613ffd444d8e5240d2387f3a4b2d4b1b5",
+      "039_additional_equipment_slots.sql": "25a03f9b2036bba26908473185c6916cd4588671da240de1790f156a4d916e56",
+      "040_item_definition_rules.sql": "630eb8dbc9f9541ce447868c3b7e4a6c4e58c78b4b2c7be12eedaeea9d878dc1",
+      "041_refined_loot_rewards.sql": "aa6e33bfff8a6ecd0b493e1f7ea0ad73003f9755bae627b64db93131e599d685",
+      "042_attribute_reroll_rules.sql": "b2e9c31e82ccf2b28cdc70d17ea102a1242ed9e3ab420565da7bce8ce3610845",
+      "043_tool_transitions.sql": "662e2a4e072c66bc4216ec72661e742dd1a0c15b2bf77ea925fad471883fc819",
+      "044_companion_costumes.sql": "75cef298e258337c18c8d74144975b5d4b2771e9bb0e268f9ae00964c1cf8e92",
+      "045_body_costume_effects.sql": "9f1d264aa94b7f89e908ad815e2a2688f1fb1fb08667c95987b908957961859e",
+      "046_weapon_costume_effects.sql": "1ce525cdb4c5f39f2c4952dc9d65e6bf982a10e53964a30ac6b5331013543b46",
+      "047_permanent_toggle_effects.sql": "e4900b3b63649971ffa1937c6a7ca49211ed07a9bb29f9534495957513ecdaea",
+      "048_soul_transitions_bonus_choices.sql": "a033679569b5d412be780367ec5986643e01ee739e79add332ac06ff3516dc85",
+      "049_character_services.sql": "121bf947a03f64cd1a9aaa40442b6f47f4b51665e505d377c6b3a70c20202af7"
+    },
+    "tables": {
+      "accessory_socket_grade": 100,
+      "accessory_socket_material": 65,
+      "accessory_socket_profile": 25,
+      "attribute_candidate": 1102,
+      "attribute_group": 113,
+      "attribute_profile": 42,
+      "attribute_service_profile": 51,
+      "attribute_tier_chance": 117,
+      "attribute_value": 4787,
+      "automatic_recovery_profile": 18,
+      "bonus_definition": 143,
+      "bonus_profile": 6348,
+      "bonus_profile_entry": 14630,
+      "bonus_tool_choice": 10,
+      "book_aid_profile": 4,
+      "catalog_format": 1,
+      "companion_form": 436,
+      "consumable_cooldown_profile": 1,
+      "forge_aid_level": 2816,
+      "growth_pet_level": 39,
+      "growth_pet_profile": 13,
+      "growth_pet_stage": 14,
+      "instant_recovery_profile": 26,
+      "item_accessory": 743,
+      "item_ammo": 20,
+      "item_ammo_policy": 3,
+      "item_appearance_profile": 796,
+      "item_armor": 1386,
+      "item_attack_profile": 2,
+      "item_attribute_binding": 3261,
+      "item_base": 6844,
+      "item_bonus_tool": 38,
+      "item_category": 22,
+      "item_character_service": 6,
+      "item_companion": 496,
+      "item_consumable": 328,
+      "item_container": 78,
+      "item_container_key": 5,
+      "item_costume": 976,
+      "item_costume_visual": 2788,
+      "item_currency_token": 19,
+      "item_definition_rules": 9762,
+      "item_fishing": 67,
+      "item_forge_aid": 43,
+      "item_material": 614,
+      "item_polymorph": 12,
+      "item_quest": 783,
+      "item_regalia": 117,
+      "item_resistance_profile": 1,
+      "item_skill_book": 96,
+      "item_socket_stone": 145,
+      "item_soul": 33,
+      "item_special": 42,
+      "item_tool": 65,
+      "item_trade_policy": 7,
+      "item_use_policy": 16,
+      "item_weapon": 738,
+      "loot_entry": 1937,
+      "loot_profile": 94,
+      "mob_drop_entry": 0,
+      "mob_drop_group": 0,
+      "periodic_recovery_profile": 4,
+      "pet_age_tier": 21,
+      "pet_enchant_rule": 4,
+      "pet_extension_rule": 4,
+      "pet_feed_rule": 3,
+      "pet_hatch_profile": 13,
+      "pet_skill_definition": 164,
+      "pet_skill_rank": 171,
+      "pet_skin_rule": 4,
+      "pet_slot_rule": 44,
+      "pet_study_rule": 22,
+      "pet_supply_profile": 42,
+      "pet_training_profile": 11,
+      "polymorph_form": 3,
+      "polymorph_mastery_rule": 8,
+      "polymorph_profile": 12,
+      "polymorph_skill_rule": 492,
+      "recovery_profile": 62,
+      "refinement_ingredient": 14806,
+      "refinement_level": 10832,
+      "refinement_profile": 6844,
+      "refinement_recipe": 5390,
+      "regalia_bonus_rule": 2170,
+      "reserve_recovery_profile": 14,
+      "skill_book_profile": 96,
+      "skill_book_step": 985,
+      "skill_book_target": 189,
+      "socket_service_profile": 4,
+      "soul_level": 42,
+      "soul_profile": 26,
+      "special_bonus_tier": 23,
+      "timed_effect_group": 40,
+      "timed_effect_profile": 114,
+      "toggle_effect_group": 35,
+      "toggle_effect_profile": 77,
+      "tool_level": 95,
+      "tool_profile": 65
+    },
+    "validated": true
+  },
+  "worker_checks": 597,
+  "unity": {
+    "editor": "6000.3.27f1",
+    "source_service_checks": 54628,
+    "actual_worker_packet_sets": 76,
+    "opened_boxes": 10,
+    "runs": 2
+  },
+  "merge_deferred": 542,
+  "remaining_behavior_or_policy": 191,
+  "installed_to_game": false,
+  "full_login_tls_ecs_flow_tested": false
+}

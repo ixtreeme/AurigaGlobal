@@ -23,6 +23,8 @@ class PetHatchPanel(QWidget):
         hint.setWordWrap(True);hint.setObjectName('FieldHint');layout.addWidget(hint)
 
     def set_targets(self,model):
+        if getattr(self,'catalog_model',None) is model:return
+        self.catalog_model=model
         self.target.blockSignals(True);self.target.clear()
         for row in model.tables['item_companion']:
             if row['companion_kind']!='3':continue

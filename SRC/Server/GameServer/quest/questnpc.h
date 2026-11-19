@@ -67,6 +67,7 @@ namespace quest
 			bool	OnAttrIn(PC& pc);
 			bool	OnAttrOut(PC& pc);
 			bool	OnUseItem(PC& pc, bool bReceiveAll);
+			bool	OnTypedItemUse(PC& pc, TypedItemUseSource source);
 			bool	OnTakeItem(PC& pc);
 			bool	OnEnterState(PC& pc, uint32_t quest_index, int state);
 			bool	OnLeaveState(PC& pc, uint32_t quest_index, int state);

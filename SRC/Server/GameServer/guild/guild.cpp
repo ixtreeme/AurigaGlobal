@@ -1585,50 +1585,9 @@ void CGuild::ResetAllStats()
 }
 
 
-bool isEmpty(int iAccID,int iPos)
-{
-	std::unique_ptr<SQLMsg> pMsg( DBManager::instance().DirectQuery("SELECT pos FROM item WHERE owner_id=%d and pos=%d", iAccID, iPos) );
-		if (pMsg->Get()->uiNumRows == 0)
-			return true;
-	return true;
-}
 
-void CGuild::GiveReward(int reward)
-{
-	for (auto it = m_member.begin(); it != m_member.end(); ++it)
-	{
-		uint32_t dwPlayerid = it->first;
-		std::unique_ptr<SQLMsg> pMsg( DBManager::instance().DirectQuery("SELECT account_id FROM player.player WHERE id=%d", dwPlayerid) );
-		if (pMsg->Get()->uiNumRows == 0)
-			return;
-		MYSQL_ROW row = pMsg->Get()->FetchRow();
-		int iAccountID = 0;
-		str_to_number( iAccountID, row[0] );
 
-		std::unique_ptr<SQLMsg> pMsg2( DBManager::instance().DirectQuery("SELECT login FROM account.account WHERE id=%d", iAccountID) );
-		if (pMsg2->Get()->uiNumRows == 0)
-			return;
-		MYSQL_ROW nrow = pMsg2->Get()->FetchRow();
 
-		/*for (int i = 39; i >= 0; i--)
-		{
-			if (isEmpty(iAccountID, i))
-			{
-				iPos = i;
-				break;
-			}
-		}
-		if (iPos == -1)
-			return;*/
-
-		//INSERT INTO player.item_award(`login`, `vnum`, `count`, `mall`) VALUES ('account', 189, 1, 1);
-		//Sostituire la query di sotto con questa di sopra una volta aggiungo il system award di VegaS
-		//DBManager::instance().DirectQuery("INSERT INTO item (owner_id, window, pos, count, vnum) VALUES ('%d', 'MALL', '%d', '1', '%d');", iAccountID, iPos, reward);
-		DBManager::instance().QueryPrepared(
-				"INSERT INTO item_award (login, vnum, count, why, mall) VALUES (?, ?, 1, 'GUILD_REWARD', 1)",
-				{ SqlParam::Text(nrow[0]), SqlParam::Int(reward) });
-	}
-}
 
 void CGuild::ChangeTrophies(bool bWinner, bool bDraw)
 {

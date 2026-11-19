@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "TypedSpecialBonuses.hpp"
+#include "TypedCostumeTransfer.hpp"
 #include "TypedCostumes.hpp"
 #include "TypedInventorySync.hpp"
 #include "TypedRecovery.hpp"
@@ -8,6 +9,8 @@
 #include "../quest/questpc.h"
 #include "ItemCatalogRuntime.hpp"
 #include <item/SpecialBonusRuntime.hpp>
+#include <item/AbsorptionSashWire.hpp>
+#include "../ecs/systems/AffectSystem.hpp"
 #include "../ecs/systems/InventorySystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
@@ -30,7 +33,7 @@ static_assert(HEADER_CG_TYPED_SPECIAL_BONUSES!=HEADER_CG_CLIENT_VERSION2 &&
     HEADER_CG_TYPED_SPECIAL_BONUSES!=HEADER_CG_HANDSHAKE && HEADER_CG_TYPED_SPECIAL_BONUSES!=HEADER_CG_TIME_SYNC);
 enum class Status : std::uint8_t {Ready=0,Applied=1,Denied=2,Stale=3,Invalid=4,Pending=5,Closed=6,Failed=7};
 // EnTT hashes component type names: never share an anonymous Session name with shops.
-struct TypedSpecialBonusSession {std::uint64_t nonce=0;Request request{};std::optional<item::PersistentItem> source,target;std::array<std::uint8_t,16> operation{};bool attempted=false,pending=false;Status status=Status::Invalid;};
+struct TypedSpecialBonusSession {std::uint64_t nonce=0;Request request{};std::optional<item::PersistentItem> source,target;std::array<std::uint8_t,16> operation{};bool attempted=false,pending=false;Status status=Status::Invalid;std::optional<item::AbsorptionSashQuote> sashQuote;std::uint8_t sashOutcome=0;std::uint64_t sashResult=0;};
 entt::entity Current(std::uint32_t pid,std::uint64_t token){const auto e=CHARACTER_MANAGER::instance().FindEntityByPID(pid);const auto* login=g_registry.valid(e) ? g_registry.try_get<ecs::TypedItemLogin>(e) : nullptr;return login && login->token==token ? e : entt::null;}
 bool Admitted(entt::entity e){if(!g_registry.valid(e) || !ecs::PlayerRuntime::IsPC(e) || CombatSystem::IsDead(e) || !InventorySystem::CanHandleItems(e) || ecs::SocialSystem::HasExchange(e) || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e) || ecs::SocialSystem::GetMyShop(e)!=entt::null || ecs::SocialSystem::GetShopOwner(e)!=entt::null || !g_registry.all_of<ecs::TypedItems,ecs::TypedItemLogin>(e))return false;const auto* flags=g_registry.try_get<ecs::StatusFlags>(e);if(flags && (flags->isObserverMode || flags->isStunned))return false;const auto* quest=g_registry.try_get<ecs::QuestPCState>(e);if(!quest || !quest->pc || quest->pc->IsRunning())return false;
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
@@ -40,10 +43,20 @@ auto* d=ecs::PlayerRuntime::GetDesc(e);return d && d->IsPhase(PHASE_GAME);}
 item::EquipContext Actor(entt::entity e){item::EquipContext a{static_cast<std::uint16_t>(std::max(0,ecs::PointSystem::GetLevel(e))),ecs::PlayerRuntime::GetJob(e),ecs::PlayerRuntime::GetSex(e)};a.inCombat=TypedItemEffectFacts(e).actor.inCombat;a.nowUtcMs=TypedItemEffectNow();return a;}
 std::uint64_t Elapsed(entt::entity e,const Request& r){const auto all=TypedCostumeElapsed(e);const auto id=r.operation==3 ? r.target : r.source;const auto i=std::ranges::find(all,id,&item::CostumeElapsed::instance);return i==all.end() ? 0 : i->elapsedMs;}
 std::optional<std::uint32_t> Random(std::uint32_t maximum){std::uint32_t value;if(maximum==UINT32_MAX){if(RAND_bytes(reinterpret_cast<unsigned char*>(&value),4)!=1)return {};return value;}const auto bound=maximum+1;const auto threshold=static_cast<std::uint32_t>((std::uint64_t{1}<<32)%bound);do{if(RAND_bytes(reinterpret_cast<unsigned char*>(&value),4)!=1)return {};}while(value<threshold);return value%bound;}
-void Reply(entt::entity e,Status status,const Request* request=nullptr){if(!g_registry.valid(e))return;const auto* s=g_registry.try_get<TypedSpecialBonusSession>(e);std::vector<std::uint8_t> b;const auto put=[&](std::uint64_t v,unsigned n){for(unsigned j=0;j<n;++j)b.push_back(static_cast<std::uint8_t>(v>>(8*j)));};put(220,1);put(35,4);put(1,1);put(static_cast<unsigned>(status),1);put(request ? request->nonce : s ? s->nonce : 0,8);put(request ? request->source : s ? s->request.source : 0,8);put(request ? request->target : s ? s->request.target : 0,8);put(request ? std::min<unsigned>(request->operation,3) : s ? s->request.operation : 0,1);put(request ? std::min<unsigned>(request->selection,1) : s ? s->request.selection : 0,1);put(0,2);SendTypedInventory(e);auto* d=ecs::PlayerRuntime::GetDesc(e);if(d && d->IsPhase(PHASE_GAME))d->Packet(b.data(),b.size());}
+bool SashRequest(const Request& r){return r.operation==3 && r.selection>=2 && r.selection<=4;}
+item::AbsorptionSashActor SashActor(entt::entity e){return {Actor(e),Admitted(e),!CombatSystem::IsDead(e),ecs::PlayerRuntime::IsObserverMode(e),AffectSystem::IsPolymorphed(e)};}
+std::expected<item::AbsorptionSashQuote,item::ItemPersistenceError> SashQuote(entt::entity e,const Request& r){
+    const auto c=store::CurrentCatalog();const auto* t=g_registry.try_get<ecs::TypedItems>(e);const auto a=item::ItemInstanceId::Create(r.source),b=item::ItemInstanceId::Create(r.target);
+    if(!c || !t || !a || !b)return std::unexpected(item::ItemPersistenceError::InvalidItem);
+    return item::PrepareAbsorptionSash(*c,t->state.fence.owner,t->state.items,t->state.wallets,*a,*b,static_cast<item::AbsorptionSashOperation>(r.selection-1),SashActor(e));
+}
+void Reply(entt::entity e,Status status,const Request* request=nullptr){if(!g_registry.valid(e))return;const auto* s=g_registry.try_get<TypedSpecialBonusSession>(e);const auto* r=request ? request : s ? &s->request : nullptr;
+    if(r && SashRequest(*r)){const auto c=store::CurrentCatalog();if(!c)return;auto b=item::EncodeAbsorptionSashReply(*c,static_cast<unsigned>(status),request ? request->nonce : s->nonce,r->source,r->target,r->selection,!request && s && s->sashQuote ? &*s->sashQuote : nullptr,!request && s ? s->sashOutcome : 0,!request && s ? s->sashResult : 0);SendTypedInventory(e);if(auto* d=ecs::PlayerRuntime::GetDesc(e);d && d->IsPhase(PHASE_GAME))d->Packet(b.data(),b.size());return;}
+    std::vector<std::uint8_t> b;const auto put=[&](std::uint64_t v,unsigned n){for(unsigned j=0;j<n;++j)b.push_back(static_cast<std::uint8_t>(v>>(8*j)));};put(220,1);put(35,4);put(1,1);put(static_cast<unsigned>(status),1);put(request ? request->nonce : s ? s->nonce : 0,8);put(request ? request->source : s ? s->request.source : 0,8);put(request ? request->target : s ? s->request.target : 0,8);put(request ? std::min<unsigned>(request->operation,3) : s ? s->request.operation : 0,1);put(request ? std::min<unsigned>(request->selection,1) : s ? s->request.selection : 0,1);put(0,2);SendTypedInventory(e);auto* d=ecs::PlayerRuntime::GetDesc(e);if(d && d->IsPhase(PHASE_GAME))d->Packet(b.data(),b.size());}
 std::expected<item::ItemCommit,item::ItemPersistenceError> Plan(entt::entity e,const TypedSpecialBonusSession& s,const item::SpecialBonusRandom& random){const auto c=store::CurrentCatalog();const auto* t=g_registry.try_get<ecs::TypedItems>(e);const auto id=item::ItemInstanceId::Create(s.request.source);if(!c || !t || !id)return std::unexpected(item::ItemPersistenceError::InvalidItem);return item::MakeSpecialBonusCommit(*c,s.operation,t->state.fence,t->state.storages,t->state.items,*id,s.request.target ? std::optional{item::ItemInstanceId::Create(s.request.target).value()} : std::nullopt,static_cast<item::SpecialBonusAction>(s.request.operation),s.request.selection,Elapsed(e,s.request),Actor(e),random);}
 }
 bool HandleTypedSpecialBonusesPacket(entt::entity e,const char* bytes){
+    if(HandleTypedCostumeTransferPacket(e,bytes))return true;
     const auto r=*reinterpret_cast<const Request*>(bytes);if(!g_registry.valid(e))return true;auto* session=g_registry.try_get<TypedSpecialBonusSession>(e);
     if(session && session->pending){Reply(e,Status::Pending);return true;}
     if(r.action==3){g_registry.remove<TypedSpecialBonusSession>(e);Reply(e,Status::Closed);return true;}
@@ -53,10 +66,11 @@ bool HandleTypedSpecialBonusesPacket(entt::entity e,const char* bytes){
     if(!Admitted(e) || g_registry.all_of<ecs::TypedItemBusy>(e)){Reply(e,Status::Denied,&r);return true;}
     const auto* t=g_registry.try_get<ecs::TypedItems>(e);
     if(r.action==1){
-        if(r.nonce || r.operation<1 || r.operation>3 || !r.source || (r.operation==3)!=bool(r.target)){Reply(e,Status::Invalid,&r);return true;}
+        if(r.nonce || r.operation<1 || r.operation>3 || r.selection>4 || (r.selection>=2 && r.operation!=3) || !r.source || (r.operation==3)!=bool(r.target)){Reply(e,Status::Invalid,&r);return true;}
         TypedSpecialBonusSession next;next.request=r;next.nonce=0;if(RAND_bytes(reinterpret_cast<unsigned char*>(&next.nonce),8)!=1 || !next.nonce || RAND_bytes(next.operation.data(),16)!=1){Reply(e,Status::Failed,&r);return true;}
         const auto source=std::ranges::find(t->state.items,r.source,[](const auto& i){return i.id.Value();});const auto target=std::ranges::find(t->state.items,r.target,[](const auto& i){return i.id.Value();});if(source==t->state.items.end()){Reply(e,Status::Invalid,&r);return true;}next.source=*source;if(target!=t->state.items.end())next.target=*target;
-        const auto planned=Plan(e,next,[](std::uint32_t){return std::optional<std::uint32_t>{0};});next.status=planned ? Status::Ready : Status::Invalid;g_registry.emplace_or_replace<TypedSpecialBonusSession>(e,std::move(next));Reply(e,g_registry.get<TypedSpecialBonusSession>(e).status);return true;
+        if(SashRequest(r)){const auto q=SashQuote(e,r);if(q)next.sashQuote=*q;next.status=q ? Status::Ready : Status::Invalid;}
+        else{const auto planned=Plan(e,next,[](std::uint32_t){return std::optional<std::uint32_t>{0};});next.status=planned ? Status::Ready : Status::Invalid;}g_registry.emplace_or_replace<TypedSpecialBonusSession>(e,std::move(next));Reply(e,g_registry.get<TypedSpecialBonusSession>(e).status);return true;
     }
     if(r.action!=2 || !session || session->nonce!=r.nonce || session->request.source!=r.source || session->request.target!=r.target || session->request.operation!=r.operation || session->request.selection!=r.selection){Reply(e,Status::Stale,&r);return true;}
     if(session->attempted){Reply(e,session->status);return true;}session->attempted=true;
@@ -64,7 +78,18 @@ bool HandleTypedSpecialBonusesPacket(entt::entity e,const char* bytes){
     // Rebase unrelated clocks only; a changing source or target needs a fresh preview.
     if(!session->source || source==t->state.items.end() || *source!=*session->source || (r.target && (!session->target || target==t->state.items.end() || *target!=*session->target))){session->status=Status::Stale;Reply(e,session->status);return true;}
     auto permit=ecs::resource_admission::Enter({e},auriga::resource_admission::Operation::ItemUse);if(!permit || !permit->Current()){session->status=Status::Denied;Reply(e,session->status);return true;}
-    auto planned=Plan(e,*session,Random);if(!planned){session->status=Status::Invalid;Reply(e,session->status);return true;}
+    std::expected<item::ItemCommit,item::ItemPersistenceError> planned=std::unexpected(item::ItemPersistenceError::InvalidChange);
+    if(SashRequest(r)){
+        const auto c=store::CurrentCatalog();const auto q=SashQuote(e,r);if(!c || !q){session->status=Status::Invalid;Reply(e,session->status);return true;}
+        item::AbsorptionSashDecision draw;
+        if(q->operation==item::AbsorptionSashOperation::Combine){
+            const auto roll=Random(9999);if(!roll){session->status=Status::Failed;Reply(e,session->status);return true;}draw.successRoll=*roll+1;
+            if(draw.successRoll<=q->successBp){const auto percent=Random(q->maximumPercent-q->minimumPercent);const auto ids=store::PeekInstanceIds(1);if(!percent || ids.size()!=1){session->status=Status::Failed;Reply(e,session->status);return true;}draw.resultPercent=q->minimumPercent+*percent;draw.newInstance=ids.front();}
+        }
+        const auto result=item::MakeAbsorptionSashCommit(*c,session->operation,t->state.fence,t->state.storages,t->state.items,t->state.wallets,*item::ItemInstanceId::Create(r.source),*item::ItemInstanceId::Create(r.target),q->operation,SashActor(e),draw);
+        if(result){planned=result->commit;session->sashQuote=result->quote;session->sashOutcome=result->success ? 1 : 2;session->sashResult=result->resultInstance ? result->resultInstance->Value() : 0;if(draw.newInstance)store::SpendInstanceIds(1);}
+    }else planned=Plan(e,*session,Random);
+    if(!planned){session->status=Status::Invalid;Reply(e,session->status);return true;}
     const auto pid=ecs::PlayerRuntime::GetPlayerID(e);const auto token=g_registry.get<ecs::TypedItemLogin>(e).token;const auto nonce=session->nonce;auto held=std::make_shared<auriga::resource_admission::Permit>(std::move(*permit));session->pending=true;session->status=Status::Pending;g_registry.emplace_or_replace<ecs::TypedItemBusy>(e);
     const auto fence=t->state.fence;const auto complete=[pid,token,nonce,held](store::CommitOutcome result){const auto e=Current(pid,token);if(e==entt::null)return;if(result.state)g_registry.emplace_or_replace<ecs::TypedItems>(e,std::move(*result.state));g_registry.remove<ecs::TypedItemBusy>(e);auto* s=g_registry.try_get<TypedSpecialBonusSession>(e);if(s && s->nonce==nonce){s->pending=false;s->status=result.write ? Status::Applied : Status::Failed;Reply(e,s->status);}else SendTypedInventory(e);PumpTypedItemGrants(e);};
     if(!store::RequestCommit(fence.owner,fence.sessionGeneration,std::move(*planned),complete)){g_registry.remove<ecs::TypedItemBusy>(e);session=g_registry.try_get<TypedSpecialBonusSession>(e);if(session){session->pending=false;session->status=Status::Failed;}Reply(e,Status::Failed);}return true;

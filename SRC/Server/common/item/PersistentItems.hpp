@@ -4,6 +4,10 @@
 #include "BookLearning.hpp"
 #include "AutomaticRecovery.hpp"
 #include "ItemInstanceId.hpp"
+#include "RecallItems.hpp"
+#include "PrivateShopState.hpp"
+#include "DungeonEntryState.hpp"
+#include "NativeAwards.hpp"
 #include <deque>
 #include <optional>
 #include <span>
@@ -22,8 +26,12 @@ struct ItemOwner
 enum class ItemStorageKind : std::uint8_t
 {
     Inventory=1, Equipment=2, Safebox=3, Mall=4, GuildStorage=5,
-    MountInventory=6, TradeEscrow=7, Mail=8, PendingAward=9, PetCarrier=10,
+    MountInventory=6, TradeEscrow=7, Mail=8, PendingAward=9, PetCarrier=10, SpecialInventory=11,
 };
+// Character special inventory (C47): one storage (id 1) of 9x4 pages; each special
+// type owns eight consecutive pages. Only plain items of the type's categories fit.
+inline constexpr std::uint16_t SpecialInventoryColumns=9, SpecialInventoryRows=4,
+    SpecialInventoryPagesPerType=8, SpecialInventoryTypes=6;
 struct ItemStorage
 {
     ItemOwner owner;
@@ -83,7 +91,13 @@ struct PersistentItem
     std::optional<CostumeLifetimeState> costume;
     std::optional<SoulState> soul;
     std::optional<RegaliaState> regalia;
+    std::optional<AbsorptionSashState> sash;
     std::optional<BonusToolState> bonusTool;
+    std::optional<RecallItemState> recall;
+    std::optional<EnergyCrystalState> energy;
+    std::optional<std::uint64_t> currencyAmount;
+    std::optional<std::uint64_t> shopPermitDeadline;
+    std::optional<PrivateShopListing> privateShop;
     bool operator==(const PersistentItem&) const = default;
 };
 struct ItemOwnerFence
@@ -140,8 +154,13 @@ struct ItemCommit
     std::optional<ItemRecoveryChange> recovery;
     std::optional<ItemLearningChange> learning;
     std::optional<ItemPetStudyCooldown> petStudyCooldown;
+    std::optional<CurrencyAwardClaim> currencyAward;
+    std::optional<NativeAwardClaim> nativeAward;
+    std::optional<CurrencyDropIntent> currencyDrop;
+    std::optional<PrivateShopMutation> privateShop;
+    std::optional<DungeonEntryMutation> dungeonEntry;
 };
-inline constexpr std::size_t MaxItemCommitItems=32, MaxItemCommitOwners=8,
+inline constexpr std::size_t MaxItemCommitItems=128, MaxItemCommitOwners=8,
     MaxItemCommitStorages=16, MaxItemCommitResult=4096, MaxLoadedOwnerItems=4096;
 inline constexpr std::size_t MaxLoadedOwnerStorages=4096;
 enum class ItemPersistenceError
@@ -153,6 +172,8 @@ enum class ItemPersistenceError
     ReceiptMismatch, InvalidStoredData, MissingOwner, RequirementNotMet, TransferDenied,
 };
 bool ValidItemOwner(ItemOwner) noexcept;
+// 0 upgrade materials, 1 books, 2 stones, 3 chests, 4 essences, 5 other; none: not special.
+std::optional<std::uint8_t> SpecialInventoryType(ItemCategory) noexcept;
 bool ValidItemStorage(const ItemStorageLayout&) noexcept;
 // Phase-one persistence deliberately refuses categories whose additional
 // lifetime/pet/tool/etc. state is not represented here. Never zero-fill them.
@@ -304,9 +325,13 @@ struct ItemGrant
     std::optional<PolymorphInstanceState> polymorph;
     std::optional<ToolInstanceState> tool;
     std::uint64_t createdAtUtcMs=0; // Issuance UTC for timed seals/skins; never rebuilt on load.
+    bool tryMagic=false; // Explicit award policy; ordinary issuance does not enable it implicitly.
+    std::optional<std::uint16_t> magicChanceBp;
+    std::optional<RecallItemState> recall;
+    std::optional<std::uint64_t> currencyAmount;
 };
 std::expected<ItemCommit,ItemPersistenceError> MakeGrantCommit(const ItemCatalog&,std::array<std::uint8_t,16> operationId,
-    ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const ItemGrant&,std::span<const ItemInstanceId> ids);
+    ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const ItemGrant&,std::span<const ItemInstanceId> ids,ItemStorageKind targetStorage=ItemStorageKind::Inventory);
 // Grants that wait while an earlier typed operation of the owner is in the
 // store (C7b-3 monster drops). A grant joins the first waiting grant of the
 // same item state whose sum stays within `mergeLimit` units (one stack), else

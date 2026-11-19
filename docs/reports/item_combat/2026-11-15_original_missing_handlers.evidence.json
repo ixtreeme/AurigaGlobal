@@ -1,0 +1,70 @@
+{
+  "source_ids": [
+    39006,
+    39033,
+    39063,
+    39064,
+    50004,
+    50068,
+    70207,
+    70208,
+    70252,
+    70253,
+    70254,
+    70611,
+    71022,
+    71023,
+    71024,
+    71025,
+    71031,
+    71035,
+    71047,
+    71068,
+    71075,
+    71076,
+    71077,
+    71078,
+    71079,
+    71086,
+    71087,
+    71091,
+    72319,
+    90000,
+    90001,
+    27998
+  ],
+  "dependency_source_ids": [
+    50067
+  ],
+  "preserved_not_retired": true,
+  "no_synthetic_use_behavior": true,
+  "scan": "build/original-remaining-noop-scan.json",
+  "scan_sha256": "0f7efa9186f3196e771a32e20f45b0de39046b7616dd57daca6382ed495cddcb",
+  "remaining_valid_archive_behavior_kept": [
+    71052
+  ],
+  "reference_exceptions": {
+    "71068": [
+      {
+        "path": "F:\\SF_V3_5\\SOURCE_SERVER_9999\\Server\\game\\src\\unique_item.h",
+        "line": 88,
+        "text": "\t//UNIQUE_ITEM_MARRIAGE_FASTER_LOVE_POINT = 71068,"
+      }
+    ],
+    "90000": [
+      {
+        "path": "D:\\AurigaGlobal\\Server2-Local\\data\\quest\\questlib.lua",
+        "line": 671,
+        "text": "\t90000,"
+      }
+    ]
+  },
+  "source_hashes": {
+    "SRC\\Server\\GameServer\\ecs\\systems\\ItemSystem_LegacyBridge.cpp": "55669ab4242253088400f4a4c2e931209ef00327bca6b6645e4f5aa344ab5068",
+    "SRC\\Server\\GameServer\\item\\unique_item.h": "cbbbdedb26f29e93c41107f993f8ea11d31bd9fc8f393497efca9c95eef293fd",
+    "D:\\AurigaGlobal\\Server2-Local\\data\\ori_to_new_table.json": "3956376883f51f9effa8d479010b58e886788f0e63f745771e1e2206dbf03555",
+    "F:\\SF_V3_5\\SOURCE_SERVER_9999\\Server\\game\\src\\char_item.cpp": "bae9fdc4cfb394f2bda07f4c9b1a77577e76a35da8cab2ed6d89a2d6231980d0"
+  },
+  "candidate_sha256": "ec1a836d9f0e35e5190dd8d08b7c1ac862e83b361e819ba7fdf20ee1fffd252f",
+  "reason": "Original gameplay handler is absent, not merely unported. User requested deferral of missing/broken originals until teammate merge."
+}

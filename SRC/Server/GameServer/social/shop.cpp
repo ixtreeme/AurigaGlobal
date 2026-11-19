@@ -9,6 +9,7 @@
 #include "utils.h"
 #include "config.h"
 #include "shop.h"
+#include "../item/TypedPrivateShops.hpp"
 #include "desc.h"
 #include "desc_manager.h"
 #include "char_interface.hpp"
@@ -316,6 +317,7 @@ namespace ShopSystem
 	// grid items; the guest relation and the header are the same.
 	bool AddGuest(entt::entity shopEntity, entt::entity guest, uint32_t owner_vid, bool bOtherEmpire)
 	{
+        if(auto* s=Find(shopEntity);s && HasTypedPrivateShop(s->owner))return TryOpenTypedPrivateShop(guest,s->owner);
 		ecs::ShopData* shop = Find(shopEntity);
 		if (!shop)
 			return false;

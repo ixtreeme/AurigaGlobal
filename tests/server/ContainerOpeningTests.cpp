@@ -57,8 +57,14 @@ std::vector<std::byte> Run()
     Check(CheckContainerOpening(*levelCatalog,request,f::Character(),inventory).error()==ContainerOpeningError::Level,"minimum level enforced");
     modified=Source();modified.lootProfiles[1].entries[1].kind=LootRewardKind::Experience;const auto xpCatalog=BuildItemCatalog(modified).value();draws=0;
     Check(!MakeContainerOpeningCommit(*xpCatalog,{20},fence,bags,inventory,wallets,request,ids,[&](auto){++draws;return 0;}) && draws==0,"unsupported unsampled effects disable the whole profile");
-    modified=Source();modified.lootProfiles[0].entries[0].rareAttributeChanceBp=1;const auto rare=BuildItemCatalog(modified).value();
-    Check(!ValidateContainerContents(*rare,box.key),"unsupported rare-attribute policy cannot be silently dropped");
+    modified=Source();modified.lootProfiles[0].entries={{1,LootRewardKind::Item,base::Sword(),1,1,10000}};
+    modified.attributeBirthProfiles={{1,"birth.container",10000,10000,{{0,1,10000},{1,1,10000},{2,1,10000}}}};
+    ItemDefinitionRules birth{base::Sword()};birth.birthAttributeProfile=1;modified.definitionRules={birth};const auto rare=BuildItemCatalog(modified).value();
+    Check(ValidateContainerContents(*rare,box.key).has_value(),"explicit rare-attribute reward is supported");
+    const auto rarePlan=MakeContainerOpeningCommit(*rare,{0xB7},fence,bags,std::array{box},wallets,{box.id,{}, {255,0,0,false},0},ids,[](auto){return 0;});
+    Check(rarePlan.has_value(),"actual container issues a magic award with its own chance override");
+    const auto born=std::ranges::find_if(rarePlan->commit.items,[](const auto& ch){return !ch.before && ch.after.key==base::Sword();});
+    Check(born!=rarePlan->commit.items.end() && std::ranges::count_if(born->after.attributes.slots,[](const auto& b){return b.has_value();})==3,"100 percent chest policy overrides zero prototype magic chance");
     Check(!ValidateContainerContents(c,base::QuestBox()),"scripted box is not a normal loot draw");
     modified=Source();modified.lootProfiles[1].entries.clear();for(unsigned i=1;i<=9;++i)modified.lootProfiles[1].entries.push_back({static_cast<std::uint16_t>(i),LootRewardKind::Item,base::Leather(),1,5000,0});
     const auto tooMany=BuildItemCatalog(modified).value();Check(!ValidateContainerContents(*tooMany,chest.key),"independent outcome enumeration has a bounded budget");
@@ -71,6 +77,69 @@ std::vector<std::byte> Run()
     Check(packet && EncodeContainerOpening(c,0,nullptr,nullptr,0,ContainerOpeningStatus::Closed,{},{})->size()==69,"golden and terminal container wire envelopes");
     return *packet;
 }
+void WorldRewardAdmission()
+{
+    const auto fence=ItemOwnerFence{f::Character(),7,1};const auto box=Item(base::GiftBox(),301,0,2);const std::array bags{f::Inventory()};const std::array wallets{f::Gold()};const std::array ids{ItemInstanceId::Create(302).value()};
+    for(auto kind:{LootRewardKind::SpawnMonster,LootRewardKind::SpawnMonsterGroup}) {
+        auto source=Source();source.lootProfiles[0].entries={{1,kind,{},101,1,0}};const auto c=BuildItemCatalog(source).value();Check(ValidateContainerContents(*c,box.key).has_value(),"world creature rewards have a real opening path");unsigned draws=0;
+        ContainerOpeningRequest request{box.id,{},{100,0,0,false,false}};Check(!MakeContainerOpeningCommit(*c,{71},fence,bags,std::array{box},wallets,request,ids,[&](auto){++draws;return 0;}) && draws==0,"all world targets must be admitted by the server before RNG");
+        request.actor.worldSpawnsAdmitted=true;const auto plan=MakeContainerOpeningCommit(*c,{72},fence,bags,std::array{box},wallets,request,{},[&](auto){++draws;return 0;});Check(plan && draws==1 && plan->worldRewards==std::vector<ContainerWorldReward>{{kind,101}} && plan->won==std::vector<std::uint16_t>{1},"selected world reward retains its exact creature definition and won entry");Check(plan->commit.items.size()==1 && plan->commit.items[0].after.count==1 && ValidateItemCommit(*c,plan->commit).has_value(),"world-only opening consumes once without issuing a fake inventory item");
+        const auto retry=MakeContainerOpeningCommit(*c,{72},fence,bags,std::array{box},wallets,request,{},[](auto){return 0;});Check(retry && retry->worldRewards==plan->worldRewards && retry->commit.result==plan->commit.result,"same selected world result has a stable receipt");
+        unsigned calls=0;const auto sink=[&](const ContainerWorldReward& value){Check(value==plan->worldRewards[0],"dispatcher preserves exact source world target");++calls;};Check(DispatchContainerWorldRewards(plan->worldRewards,false,false,sink)==0 && DispatchContainerWorldRewards(plan->worldRewards,true,true,sink)==0 && calls==0,"failed persistence and receipt replay never dispatch world rewards");Check(DispatchContainerWorldRewards(plan->worldRewards,true,false,sink)==1 && calls==1,"only successful new persistence dispatches world rewards");
+    }
+    {auto source=Source();ItemDefinitionRules disabled{box.key};disabled.available=false;source.definitionRules={disabled};const auto c=BuildItemCatalog(source).value();Check(!CheckContainerOpening(*c,{box.id,{},{100,0,0,false,true}},f::Character(),std::array{box}),"temporarily unavailable original assets cannot be bypassed with an existing source instance");}
+    for(auto nonitem:{LootRewardKind::Nothing,LootRewardKind::SpawnMonsterGroup}) {
+        auto source=Source();source.lootProfiles[0].mode=LootPickMode::IndependentChance;source.lootProfiles[0].entries={{1,nonitem,{},nonitem==LootRewardKind::Nothing ? 0u : 101u,5000,0},{2,LootRewardKind::Item,base::Leather(),1,5000,0}};const auto c=BuildItemCatalog(source).value();auto small=f::Inventory();small.columns=small.rows=small.pages=1;unsigned draws=0;
+        const auto result=MakeContainerOpeningCommit(*c,{73},fence,std::array{small},std::array{box},wallets,{box.id,{},{100,0,0,false,true}},ids,[&](auto){++draws;return 0;});Check(!result && result.error()==ContainerOpeningError::NoRoom && draws==0,"empty/world outcomes never shift uncertain item mask bits or enable an inventory reroll");
+    }
+}
+std::vector<std::byte> RefinedReward()
+{
+    auto source=Source();source.lootProfiles[1].entries[0]={1,LootRewardKind::Item,base::Sword(),1,10000,0,9};
+    const auto c=BuildItemCatalog(source).value();
+    const auto chest=Item(base::IronChest(),22,0),key=Item(base::IronKey(),23,1);
+    auto plain=Item(base::Sword(),24,2);plain.refinementLevel=0;
+    const std::vector<PersistentItem> items{chest,key,plain};
+    const std::vector<ItemStorageLayout> bags{f::Inventory()};const std::vector<ItemWallet> wallets{f::Gold()};
+    const auto resultId=ItemInstanceId::Create(90).value();unsigned draws=0;
+    auto result=MakeContainerOpeningCommit(*c,{50},{f::Character(),7,1},bags,items,wallets,{chest.id,key.id,{100,0,0,false}},std::array{resultId},[&](auto){++draws;return 0;});
+    Check(result && draws==2,"refined reward draws only after complete admission");
+    const auto granted=std::ranges::find(result->commit.items,resultId,[](const auto& change){return change.after.id;});
+    Check(granted!=result->commit.items.end() && granted->after.key==base::Sword() && granted->after.refinementLevel==9 && granted->after.count==1,"container grants the exact +9 state instead of +0");
+    Check(std::ranges::none_of(result->commit.items,[&](const auto& change){return change.after.id==plain.id;}),"existing +0 weapon is unchanged");
+    auto changed=source;changed.lootProfiles[1].entries[0].refinementLevel=8;
+    Check(BuildItemCatalog(changed).value()->ContentHash()!=c->ContentHash(),"reward level participates in the catalog hash");
+    changed.lootProfiles[1].entries[0].refinementLevel=static_cast<std::uint16_t>(source.refinements[1].maxLevel+1);
+    Check(!BuildItemCatalog(changed),"unavailable reward refinement state cannot publish");
+    changed=source;changed.lootProfiles[1].entries[1].refinementLevel=1;
+    Check(!BuildItemCatalog(changed),"currency cannot carry a refinement level");
+    changed=source;changed.refinementRecipes.clear();changed.refinements[1].kind=RefinementKind::ExactState;
+    changed.refinements[1].maxLevel=200;changed.refinements[1].levels={{200,{},{}}};changed.lootProfiles[1].entries[0].refinementLevel=200;
+    const auto exact=BuildItemCatalog(changed).value();
+    const std::vector<PersistentItem> exactItems{chest,key};
+    const auto exactPlan=MakeContainerOpeningCommit(*exact,{51},{f::Character(),7,1},bags,exactItems,wallets,{chest.id,key.id,{100,0,0,false}},std::array{resultId},[](auto){return 0;});
+    Check(exactPlan && std::ranges::any_of(exactPlan->commit.items,[](const auto& change){return change.after.refinementLevel==200;}),"single exact +200 state grants without an invented +0 state");
+    const std::vector<std::uint64_t> keys{key.id.Value()};const std::vector<std::uint16_t> won{1,2};
+    return EncodeContainerOpening(*c,123,&chest,&key,1,ContainerOpeningStatus::Opened,keys,won).value();
+}
+}
+void LiveContentsSnapshot()
+{
+    auto source=Source();source.containers[1].lootProfile=source.containers[0].lootProfile;
+    const auto baseCatalog=BuildItemCatalog(source).value();const auto pinned=baseCatalog->ContentHash();
+    const auto first=baseCatalog->WithRewards({},{{base::GiftBox(),LootPickMode::IndependentChance,{{1,LootRewardKind::Item,base::Leather(),2,10000,0,0}}}}).value();
+    const auto second=baseCatalog->WithRewards({},{{base::GiftBox(),LootPickMode::IndependentChance,{{1,LootRewardKind::Item,base::Leather(),3,10000,0,0}}}}).value();
+    Check(baseCatalog->ContentHash()==pinned && first->ContentHash()!=pinned && second->ContentHash()!=first->ContentHash(),"live loot has an independent validated hash");
+    const auto unselected=std::get<ItemContainerRow>(second->Find(base::IronChest())->category);
+    Check(second->FindLoot(*unselected.lootProfile)->Data().entries[0].amount==3,"unselected chest sharing a base profile is unchanged");
+    const auto box=Item(base::GiftBox(),500,0,2);const std::vector<PersistentItem> inventory{box};
+    const std::vector<ItemStorageLayout> bags{f::Inventory()};const std::vector<ItemWallet> wallets{f::Gold()};
+    const std::array ids{ItemInstanceId::Create(600).value()};const ItemOwnerFence fence{f::Character(),7,1};
+    auto oldPlan=MakeContainerOpeningCommit(*baseCatalog,{70},fence,bags,inventory,wallets,{box.id,{}, {100,0,0,false}},ids,[](auto){return 0;},first.get());
+    auto newPlan=MakeContainerOpeningCommit(*baseCatalog,{71},fence,bags,inventory,wallets,{box.id,{}, {100,0,0,false}},ids,[](auto){return 0;},second.get());
+    Check(oldPlan && newPlan && oldPlan->commit.items.back().after.count==2 && newPlan->commit.items.back().after.count==3,"in-flight and new openings use their captured reward versions");
+    Check(oldPlan->commit.catalogHash==pinned && newPlan->commit.catalogHash==pinned && ValidateItemCommit(*baseCatalog,newPlan->commit).has_value(),"live container grant retains the persistence catalog pin");
+    Check(!baseCatalog->WithRewards({},{{base::Leather(),LootPickMode::WeightedOne,{{1,LootRewardKind::Item,base::Leather(),1,1,0,0}}}}),"a material cannot become a live container");
 }
 int main(int argc,char** argv)
-{try{const auto bytes=Run();if(argc==3 && std::string_view(argv[1])=="--write-golden"){std::ofstream out(argv[2]);for(auto b:bytes)out<<std::hex<<std::setfill('0')<<std::setw(2)<<std::to_integer<unsigned>(b);out<<'\n';if(!out)throw std::runtime_error("golden write");}std::cout<<checks<<" container opening checks passed\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+{try{WorldRewardAdmission();LiveContentsSnapshot();const auto ordinary=Run(),refined=RefinedReward();if(argc==3 && (std::string_view(argv[1])=="--write-golden" || std::string_view(argv[1])=="--write-refined-golden")){const auto& bytes=std::string_view(argv[1])=="--write-golden" ? ordinary : refined;std::ofstream out(argv[2]);for(auto b:bytes)out<<std::hex<<std::setfill('0')<<std::setw(2)<<std::to_integer<unsigned>(b);out<<'\n';if(!out)throw std::runtime_error("golden write");}std::cout<<checks<<" container opening checks passed\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

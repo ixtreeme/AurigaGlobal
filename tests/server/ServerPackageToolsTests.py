@@ -27,6 +27,30 @@ CHECKER = None
 
 
 class PackageToolsTests(unittest.TestCase):
+    def test_native_quest_replacement_preserves_original_and_audits_both_sources(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source, output = root / 'source', root / 'output'
+            source.mkdir()
+            output.mkdir()
+            builder = DataBuilder(source, output)
+            replacement_names = ('guild_rank_manager.lua', 'create_ore.lua')
+            for name in replacement_names:
+                original = source / name
+                original.write_text('original ' + name, encoding='utf-8')
+                builder.copy(original, output / 'data/quest/Quest/gilda' / name)
+            builder.apply_native_quests(output / 'data')
+            for name in replacement_names:
+                self.assertEqual((source / name).read_text(encoding='utf-8'), 'original ' + name)
+                self.assertEqual((output / 'data/quest/Quest/gilda' / name).read_bytes(),
+                                 (REPO / 'config/typed_quests' / name).read_bytes())
+            builder.verify_originals()
+            from server_package import data
+            real = data.digest
+            with mock.patch.object(data, 'digest', side_effect=lambda p: 'changed' if p == REPO / 'config/typed_quests/create_ore.lua' else real(p)):
+                with self.assertRaisesRegex(PackageError, 'Source changed'):
+                    builder.verify_originals()
+
     def read_live_state(self, path):
         # Windows can briefly deny an open during the supervisor's atomic replace.
         # Retry only the sharing error; malformed JSON and persistent errors fail.
@@ -598,8 +622,10 @@ class ExternalSqlTests(unittest.TestCase):
         player = next(query for content, query in calls if 'database="player"' in content)
         common = next(query for content, query in calls if 'database="common"' in content)
         self.assertIn('FROM `mob_proto_realm`', player)
-        self.assertIn('FROM `shop`', player)
-        self.assertNotIn('shop_realm', player)
+        self.assertNotIn('FROM `shop`', player)
+        self.assertIn('FROM `item_persistence_format`', player)
+        self.assertIn('FROM `item_native_award`', player)
+        self.assertNotIn('item_native_award_realm', player)
         self.assertIn('FROM `locale`', common)
         self.assertNotIn('locale_realm', common)
         self.assertTrue(all(not path.exists() for path in temporary))

@@ -1,0 +1,9 @@
+# Időzített segédhatások, C46
+
+A 27610 horgászgömb 20 perc online halelőrejelzést ad, és halálkor megszűnik. A 71004 és 76008 az eredeti 536870911 másodperces online halálvédelmet adja: ugyanabba az elutasítási csoportba tartoznak, és az első jogosult, nem városi NPC-halálbüntetésnél egyetlen tartós tranzakció használja fel a hatást. A tárgyfogyás, időállapot, műveletnyugta és tulajdonosi kerítés együtt érvényesül; újrabelépés nem tölti újra az időt.
+
+A külön segédhatásfajta statbónusz nélküli profilként él a 46-os katalógusban (054-es migráció). GC243 v3 közli a hatásfajtát; a halelőrejelzés GC254 v6, mert a v5 az eszközműveleteké. A szerver a tényleges jutalomtáblából választ, a fogási siker ettől független. A megszakítás, mozgás, halál és kilépés csaliköltséget ment; ismert kudarc esetén nincs jutalomhely- vagy új tárgyazonosító-igény. A Unity megtartja az interaktív minijátékot és a sorszámozott kattintásokat.
+
+Ellenőrzések: GameServer és Database fordítás; 66 natív/SQL regressziós teszt sikeres a két migrációszám-fixtúra javítása után; 46 sémateszt; 277 tényleges ItemStore/SQL-próba és 27 csomagállapot; Unity 6.3 fordítás és 26262 ellenőrzés, 9 tényleges használati gomb, halelőrejelzés és minijáték-kattintás. A végleges konverzió két futásban bájtpontosan azonos. A korábbi SQL-próbacsomaghoz képest csak az újrafordított helper binárisának hash-e változott.
+
+Állapot: 9810 konvertált, 491 korábban kivezetett, 629 merge-re váró hiányos eredeti sor és 56 további bekötendő sor; 6892 natív definíció. A négy külön nyilvántartott, hiányzó világmodellre váró idéző továbbra is várakozik. Nem történt telepítés az aktív helyi játékra; 94 játékosadat-tábla üres, a helyi katalógus 1574 definíciós maradt. Teljes TLS-belépéses ECS-játékpróba és Addressables player build nem futott. A további konverzió folytatódik.

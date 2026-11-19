@@ -89,6 +89,11 @@ struct MobDrop
     std::uint32_t amount = 0;
     std::uint16_t rareAttributeChanceBp = 0;
 };
+
+struct ItemGrant;
+// Positive table values override normal magic-birth chance; zero retains the
+// item's definition policy, matching the legacy mob-drop default.
+ItemGrant MakeMobDropGrant(const MobDrop&);
 enum class MobDropError { InvalidContext, DrawOutOfRange };
 // Every group of the mob's rank (not for stones) and of the mob itself, in
 // group order; see IC-035 for each roll's legacy rule. Nothing is granted here.

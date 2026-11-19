@@ -22,6 +22,15 @@ inline void Extend(ItemCatalogSource& s)
     }
     for(unsigned n=1;n<=2;++n){auto b=prototype;b.key=Bait(n);b.contentCode="fishing.runtime_tool_bait_"+std::to_string(n);b.minimumLevel=0;b.maxStack=200;s.items.push_back(b);s.fishingItems.push_back({b.key,FishingKind::Bait,{},{},n==1 ? 20u : 50u});}
 }
+inline void ExtendTransitions(ItemCatalogSource& s)
+{
+    s.refinements.push_back({26100,"refine.explicit_tool_state",RefinementKind::Tool,0,{{0,{},{}}}});
+    auto prototype=*std::ranges::find(s.items,Tool(),&ItemBaseRow::key);
+    for(unsigned n:{6u,7u}){auto b=prototype;b.key=Tool(n);b.contentCode=n==6 ? "tool.branch_base" : "tool.branch_next";b.refinementProfile=26100;s.items.push_back(b);s.tools.push_back({b.key,ToolKind::Rod,26100+n-6,FishingPool::First,true});}
+    ToolLevel level{0,10,0,3,1,3,5000,ToolFailure::ResetAtLevel,0,0};level.successItem=Tool(7);level.failureItem=Tool(6);level.displayGrade=1;
+    s.toolProfiles.push_back({26100,"tool.explicit_transitions",{level}});
+    ToolLevel terminal{0,20,0,0,0,1,0,ToolFailure::LosePoints,{},0};terminal.displayGrade=2;s.toolProfiles.push_back({26101,"tool.explicit_terminal",{terminal}});
+}
 inline ItemCatalogSource Catalog(){auto s=persistent_item_fixture::Catalog();Extend(s);return s;}
 inline PersistentItem Item(unsigned n=1)
 {PersistentItem p{ItemInstanceId::Create(26000+n).value(),Tool(n),persistent_item_fixture::Character()};p.placement=ItemPlacement{ItemStorageKind::Inventory,1,10+n};p.tool=ToolInstanceState{3,0};return p;}

@@ -70,6 +70,7 @@ struct SkillBookAdmission
     // Missing owner decisions deny admission; the isolated catalog is not a skill catalog.
     bool skillSystemEnabled = false, targetAllowedByRules = false;
     bool delayBypassAvailable = false, chanceBonusAvailable = false;
+    bool hairCostumeEquipped = false;
 };
 enum class SkillBookOutcome : std::uint8_t { Failed = 1, Progress = 2, Learned = 3, Forgotten = 4, HorsePoint = 5 };
 struct SkillBookPlan

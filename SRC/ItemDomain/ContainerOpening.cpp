@@ -4,6 +4,11 @@
 
 namespace auriga::item
 {
+std::size_t DispatchContainerWorldRewards(std::span<const ContainerWorldReward> rewards,bool written,bool replay,const std::function<void(const ContainerWorldReward&)>& sink)
+{
+    if(!written || replay || !sink)return 0;
+    std::size_t dispatched=0;for(const auto& reward:rewards)if(ContainerWorldSpawn(reward.kind) && reward.definition){sink(reward);++dispatched;}return dispatched;
+}
 namespace
 {
 using E=ContainerOpeningError;
@@ -13,6 +18,7 @@ std::expected<void,E> Allowed(const ItemCatalog& c,const PersistentItem& item,It
 {
     if(!ContainerItemUsable(item,owner) || !ValidatePersistentItem(c,item) || actor.characterClass>3 || actor.sex>1)return std::unexpected(E::Invalid);
     const auto& b=c.Find(item.key)->base;const auto* use=c.FindUsePolicy(b.usePolicy);
+    if(const auto* rules=c.FindDefinitionRules(item.key,item.refinementLevel);rules && !rules->available)return std::unexpected(E::Unavailable);
     if(b.retired || !use || !(use->allowedClasses&(1u<<actor.characterClass)) || !(use->allowedSexes&(1u<<actor.sex)) || (actor.inCombat && !use->useDuringCombat))return std::unexpected(E::Denied);
     if(actor.level<b.minimumLevel)return std::unexpected(E::Level);return {};
 }
@@ -27,9 +33,14 @@ std::expected<ContainerOpeningPlan,E> Build(const ItemCatalog& c,std::array<std:
     for(const auto& reward:rewards)
     {
         plan.won.push_back(reward.entry);
+        if(reward.kind==LootRewardKind::Nothing)continue;
         if(reward.kind==LootRewardKind::Gold)
         {if(reward.amount>std::uint64_t(INT64_MAX)-plan.gold)return std::unexpected(E::WalletLimit);plan.gold+=reward.amount;continue;}
-        const auto grant=MakeGrantCommit(c,operation,fence,layouts,working,{*reward.item,0,static_cast<std::uint32_t>(reward.amount),{},{},{},request.nowUtcMs},ids.subspan(usedIds));
+        if(ContainerWorldSpawn(reward.kind)){if(!request.actor.worldSpawnsAdmitted)return std::unexpected(E::Denied);plan.worldRewards.push_back({reward.kind,static_cast<std::uint32_t>(reward.amount)});continue;}
+        if(reward.kind!=LootRewardKind::Item || !reward.item)return std::unexpected(E::Unsupported);
+        ItemGrant award{*reward.item,reward.refinementLevel,static_cast<std::uint32_t>(reward.amount),{},{},{},request.nowUtcMs};
+        if(reward.rareAttributeChanceBp){award.tryMagic=true;award.magicChanceBp=reward.rareAttributeChanceBp;}
+        const auto grant=MakeGrantCommit(c,operation,fence,layouts,working,award,ids.subspan(usedIds));
         if(!grant)return std::unexpected(grant.error()==ItemPersistenceError::InvalidPlacement ? E::NoRoom : grant.error()==ItemPersistenceError::LimitExceeded ? E::Unavailable : E::Invalid);
         for(const auto& change:grant->items)
         {if(change.before)*std::ranges::find(working,change.after.id,&PersistentItem::id)=change.after;else{working.push_back(change.after);++usedIds;}}
@@ -64,9 +75,9 @@ std::expected<void,E> ValidateContainerContents(const ItemCatalog& c,ItemKey key
     std::size_t uncertain=0,items=0;
     for(const auto& reward:profile->Data().entries)
     {
-        if(reward.kind==LootRewardKind::Gold)continue;
-        if(reward.kind!=LootRewardKind::Item || reward.rareAttributeChanceBp || !reward.item)return std::unexpected(E::Unsupported);
-        const auto* target=c.Find(*reward.item);if(!target || target->base.retired || !SupportsPersistentGrant(c,*target) || !c.RefinedBaseStats(*reward.item,0))return std::unexpected(E::Unsupported);
+        if(reward.kind==LootRewardKind::Gold || reward.kind==LootRewardKind::Nothing || ContainerWorldSpawn(reward.kind))continue;
+        if(reward.kind!=LootRewardKind::Item || !reward.item)return std::unexpected(E::Unsupported);
+        const auto* target=c.Find(*reward.item);const auto* rules=c.FindDefinitionRules(*reward.item,reward.refinementLevel);if(!target || target->base.retired || !SupportsPersistentGrant(c,*target) || !c.RefinedBaseStats(*reward.item,reward.refinementLevel) || (rules && !rules->available))return std::unexpected(E::Unsupported);
         ++items;if(reward.weight<10000)++uncertain;
     }
     if(profile->Data().mode==LootPickMode::IndependentChance && (uncertain>MaxUncertainContainerItems || items+2>MaxItemCommitItems))return std::unexpected(E::Unsupported);
@@ -78,6 +89,7 @@ std::expected<ContainerOpenRequest,E> CheckContainerOpening(const ItemCatalog& c
     if(const auto allowed=Allowed(c,*box,owner,request.actor);!allowed)return std::unexpected(allowed.error());
     if(const auto supported=ValidateContainerContents(c,box->key);!supported)return std::unexpected(supported.error());
     const auto& row=std::get<ItemContainerRow>(c.Find(box->key)->category);
+    if(!request.actor.worldSpawnsAdmitted && std::ranges::any_of(c.FindLoot(*row.lootProfile)->Data().entries,[](const auto& reward){return ContainerWorldSpawn(reward.kind);}))return std::unexpected(E::Denied);
     const auto* key=request.key ? Find(inventory,*request.key) : nullptr;
     if(row.kind==ContainerKind::Locked && !request.key)return std::unexpected(E::KeyRequired);
     if(row.kind==ContainerKind::Use && request.key)return std::unexpected(E::WrongKey);
@@ -91,12 +103,14 @@ std::expected<ContainerOpenRequest,E> CheckContainerOpening(const ItemCatalog& c
 }
 std::expected<ContainerOpeningPlan,E> MakeContainerOpeningCommit(const ItemCatalog& c,std::array<std::uint8_t,16> operation,
     ItemOwnerFence fence,std::span<const ItemStorageLayout> layouts,std::span<const PersistentItem> inventory,
-    std::span<const ItemWallet> wallets,ContainerOpeningRequest request,std::span<const ItemInstanceId> ids,const LootDraw& draw)
+    std::span<const ItemWallet> wallets,ContainerOpeningRequest request,std::span<const ItemInstanceId> ids,const LootDraw& draw,
+    const ItemCatalog* rewardCatalog)
 {
     if(fence.owner.kind!=ItemOwnerKind::Character || inventory.size()>MaxLoadedOwnerItems)return std::unexpected(E::Invalid);
     std::set<ItemInstanceId> unique;for(const auto& item:inventory)if(item.owner!=fence.owner || !unique.insert(item.id).second || !ValidatePersistentItem(c,item))return std::unexpected(E::Invalid);
-    const auto checked=CheckContainerOpening(c,request,fence.owner,inventory);if(!checked)return std::unexpected(checked.error());
-    const auto& row=std::get<ItemContainerRow>(c.Find(checked->container)->category);const auto& profile=c.FindLoot(*row.lootProfile)->Data();
+    const auto& rewards=rewardCatalog?*rewardCatalog:c;
+    const auto checked=CheckContainerOpening(rewards,request,fence.owner,inventory);if(!checked)return std::unexpected(checked.error());
+    const auto& row=std::get<ItemContainerRow>(rewards.Find(checked->container)->category);const auto& profile=rewards.FindLoot(*row.lootProfile)->Data();
     // Admit every possible item result BEFORE the caller's RNG is touched.
     // Checking only the sampled result permits inventory-based reward rerolls.
     if(profile.mode==LootPickMode::WeightedOne)
@@ -107,11 +121,16 @@ std::expected<ContainerOpeningPlan,E> MakeContainerOpeningCommit(const ItemCatal
         for(std::size_t mask=0;mask<(std::size_t{1}<<uncertain);++mask)
         {
             std::vector<LootEntry> possible;std::size_t bit=0;
-            for(const auto& reward:profile.entries)if(reward.kind==LootRewardKind::Gold || reward.weight==10000 || (mask&(std::size_t{1}<<bit++)))possible.push_back(reward);
+            for(const auto& reward:profile.entries) {
+                // Only uncertain inventory footprints occupy mask bits. World
+                // rewards and empty outcomes cannot shift a later item bit.
+                if(reward.kind==LootRewardKind::Item){if(reward.weight==10000 || (mask&(std::size_t{1}<<bit++)))possible.push_back(reward);}
+                else if(reward.kind==LootRewardKind::Gold || ContainerWorldSpawn(reward.kind))possible.push_back(reward);
+            }
             const auto candidate=Build(c,operation,fence,layouts,inventory,wallets,request,ids,possible);if(!candidate)return std::unexpected(candidate.error());
         }
     }
-    const auto picked=PlanContainerOpen(c,*checked,draw);if(!picked)return std::unexpected(E::Invalid);
+    const auto picked=PlanContainerOpen(rewards,*checked,draw);if(!picked)return std::unexpected(E::Invalid);
     return Build(c,operation,fence,layouts,inventory,wallets,request,ids,picked->rewards);
 }
 std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeContainerOpening(const ItemCatalog& c,
@@ -123,12 +142,12 @@ std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeContainerOpe
     if(static_cast<unsigned>(status)>15 || (box ? (!session || !revision || !row) : (session || key || revision || !keys.empty() || !won.empty() || status==ContainerOpeningStatus::Ready || status==ContainerOpeningStatus::Opened || status==ContainerOpeningStatus::Pending)) || keys.size()>MaxLoadedOwnerItems || won.size()>MaxLootEntries)return std::unexpected(TypedInventoryWireError::BadValue);
     std::vector<std::byte> out;const auto put=[&](std::uint64_t v,unsigned n){for(unsigned i=0;i<n;++i)out.push_back(std::byte((v>>(i*8))&255));};
     const auto putKey=[&](const PersistentItem* item){put(item ? static_cast<unsigned>(item->key.Category()) : 0,2);put(item ? item->key.LocalId() : 0,4);put(item ? item->refinementLevel : 0,2);};
-    put(233,1);put(0,4);put(1,1);put(static_cast<unsigned>(status),1);put(session,8);put(box ? box->id.Value() : 0,8);put(key ? key->id.Value() : 0,8);put(revision,8);putKey(box);putKey(key);
+    put(233,1);put(0,4);put(2,1);put(static_cast<unsigned>(status),1);put(session,8);put(box ? box->id.Value() : 0,8);put(key ? key->id.Value() : 0,8);put(revision,8);putKey(box);putKey(key);
     put(row ? static_cast<unsigned>(row->kind) : 0,1);put(row ? row->lockId : 0,2);put(profile ? static_cast<unsigned>(profile->Data().mode) : 0,1);
     put(keys.size(),2);for(auto id:keys)put(id,8);put(profile ? profile->Data().entries.size() : 0,2);
     std::vector<ItemGrant> extra;if(box)extra.push_back({box->key,box->refinementLevel,1});if(key)extra.push_back({key->key,key->refinementLevel,1});
     if(profile)for(const auto& reward:profile->Data().entries)
-    {put(reward.entry,2);put(static_cast<unsigned>(reward.kind),1);put(reward.item ? static_cast<unsigned>(reward.item->Category()) : 0,2);put(reward.item ? reward.item->LocalId() : 0,4);put(reward.amount,8);put(reward.weight,4);put(reward.rareAttributeChanceBp,2);if(reward.item)extra.push_back({*reward.item,0,1});}
+    {put(reward.entry,2);put(static_cast<unsigned>(reward.kind),1);put(reward.item ? static_cast<unsigned>(reward.item->Category()) : 0,2);put(reward.item ? reward.item->LocalId() : 0,4);put(reward.amount,8);put(reward.weight,4);put(reward.rareAttributeChanceBp,2);put(reward.refinementLevel,2);if(reward.item)extra.push_back({*reward.item,reward.refinementLevel,1});}
     put(won.size(),2);for(auto entry:won){if(!profile || !entry || entry>profile->Data().entries.size())return std::unexpected(TypedInventoryWireError::BadValue);put(entry,2);}
     const auto details=extra.empty() ? std::expected<std::vector<std::byte>,TypedInventoryWireError>(std::vector<std::byte>{}) : EncodeTypedItemDetails(c,{},false,extra);
     if(!details)return std::unexpected(details.error());put(details->size(),4);out.insert(out.end(),details->begin(),details->end());

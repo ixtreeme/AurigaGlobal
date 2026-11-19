@@ -1,0 +1,276 @@
+{
+  "date": "2026-11-17",
+  "server_branch": "20261103",
+  "unity_branch": "/main/unity63-integration-20261103",
+  "unity_editor": "6000.3.27f1",
+  "feature": "live_mob_drop_edit_reload",
+  "complete": true,
+  "instance_migration": 43,
+  "online_edit_scope": "drop tables only; local managed package",
+  "base_catalog_immutable": true,
+  "publication": "immutable SQL releases with atomic head",
+  "core_activation": "validated atomic shared pointer per core; all-current-core acknowledgement",
+  "failed_reload_retains_previous": true,
+  "stale_editor_cas": true,
+  "commit_unknown_reconciliation": true,
+  "ctest_passed": [
+    "mob_drops",
+    "catalog_editor",
+    "drop_reload_control",
+    "live_mob_drops_mariadb",
+    "item_catalog_runtime_mariadb"
+  ],
+  "editor_cases": 84,
+  "drop_control_cases": 7,
+  "live_sql_cases": 8,
+  "runtime_cases": 126,
+  "checks": {
+    "live-drops-complete-build.log": {
+      "path": "build/live-drops-complete-build.log",
+      "sha256": "ecaf47e56ab6fdd4742c7e8317e869957b14106c4cf9c1535467b08314c8aa74"
+    },
+    "live-drops-worker-final-build.log": {
+      "path": "build/live-drops-worker-final-build.log",
+      "sha256": "417b49d5b43937d458d115ffc6cae85b4f3597723d2cb81840053ad1e344ad3c"
+    },
+    "live-drops-verified-regression.log": {
+      "path": "build/live-drops-verified-regression.log",
+      "sha256": "dae73834bac9d343bef482256e394c64bec84b2aaba6aa41419a39a4836e542b"
+    },
+    "live-drops-editor-verified-tests.log": {
+      "path": "build/live-drops-editor-verified-tests.log",
+      "sha256": "91802bf805c1a1239878db2552395bfd0257898b1fb317045e8e033d930cc85b"
+    },
+    "live-drops-control-final-tests.log": {
+      "path": "build/live-drops-control-final-tests.log",
+      "sha256": "ebc70fc026dc40133abe5e9ce5ad21b72f0dafcf0c05460fbd2e2da007ed048b"
+    },
+    "live-drops-manager-final-build.log": {
+      "path": "build/live-drops-manager-final-build.log",
+      "sha256": "7176aa636d18cf62f3a9276a34d26a353ce67509b5474fd35131c0930c3a97d2"
+    },
+    "live-drops-live-proof.log": {
+      "path": "build/live-drops-live-proof.log",
+      "sha256": "62d6a0d98f9392b03ff0f5e7eb356f568a1d1897f62d36faf0663a314407fff0"
+    },
+    "live-drops-unity-live.log": {
+      "path": "build/live-drops-unity-live.log",
+      "sha256": "2b3c6f366378acff2b92ae2ff131fd1f1f0a7ee5ff8470acc623ff92c1b21e1d"
+    },
+    "live-drops-manual-reload.log": {
+      "path": "build/live-drops-manual-reload.log",
+      "sha256": "59ba183aa486484b4eaa7346832c7034fee4ebd7e57b5752216329f774af2416"
+    },
+    "live-drops-quest-restore.log": {
+      "path": "build/live-drops-quest-restore.log",
+      "sha256": "e249f858ab05059afb40d2df5abb801451772037700bba5d497773646fc21fc6"
+    }
+  },
+  "live_proof": {
+    "first": "598c79b27484ca660b63ff90f6b7af2ada3dd6102072be7209987fbdb56ae746",
+    "second": "047df8b51c59ae2650be3f66ce79de5aef06236dcd5fe8b9c6e05074e2f71776",
+    "first_activation": {
+      "available": true,
+      "running": true,
+      "cores": [
+        {
+          "name": "ch1-core1",
+          "hash": "598c79b27484ca660b63ff90f6b7af2ada3dd6102072be7209987fbdb56ae746",
+          "release": "7f2fa94d973c67231b0cde15a60bf28f",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch1-core2",
+          "hash": "598c79b27484ca660b63ff90f6b7af2ada3dd6102072be7209987fbdb56ae746",
+          "release": "7f2fa94d973c67231b0cde15a60bf28f",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch99-core99",
+          "hash": "598c79b27484ca660b63ff90f6b7af2ada3dd6102072be7209987fbdb56ae746",
+          "release": "7f2fa94d973c67231b0cde15a60bf28f",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "error": "",
+          "pending": false
+        }
+      ],
+      "hash": "598c79b27484ca660b63ff90f6b7af2ada3dd6102072be7209987fbdb56ae746",
+      "release": "7f2fa94d973c67231b0cde15a60bf28f",
+      "activated": true
+    },
+    "second_activation": {
+      "available": true,
+      "running": true,
+      "cores": [
+        {
+          "name": "ch1-core1",
+          "hash": "047df8b51c59ae2650be3f66ce79de5aef06236dcd5fe8b9c6e05074e2f71776",
+          "release": "b84a5c395802fb9537d76b416eab1dec",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch1-core2",
+          "hash": "047df8b51c59ae2650be3f66ce79de5aef06236dcd5fe8b9c6e05074e2f71776",
+          "release": "b84a5c395802fb9537d76b416eab1dec",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch99-core99",
+          "hash": "047df8b51c59ae2650be3f66ce79de5aef06236dcd5fe8b9c6e05074e2f71776",
+          "release": "b84a5c395802fb9537d76b416eab1dec",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "error": "",
+          "pending": false
+        }
+      ],
+      "hash": "047df8b51c59ae2650be3f66ce79de5aef06236dcd5fe8b9c6e05074e2f71776",
+      "release": "b84a5c395802fb9537d76b416eab1dec",
+      "activated": true
+    },
+    "base_hash_unchanged": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+    "server_processes_unchanged": {
+      "database": 36616,
+      "ch1-core1": 20336,
+      "ch1-core2": 23348,
+      "ch99-core99": 36584,
+      "login": 33768
+    },
+    "actual_first_kill": true,
+    "actual_second_kill_same_session": true,
+    "relog_persisted": true,
+    "protected_state_unchanged": {
+      "items": "5ece41c57b2502e544f8dd7ddb7016506f364d5c9d5eb7bbcbb71e08fb160a73",
+      "wallets": "134ef18248817b5dcedb24c97964c5f1116f5ebceb9bbe3b63fd407980558b92"
+    },
+    "retired_tables_absent": 17,
+    "drop_list_restored": true,
+    "restored_activation": {
+      "available": true,
+      "running": true,
+      "cores": [
+        {
+          "name": "ch1-core1",
+          "hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "release": "e9ab176b1130663ae1bec8ddbd2e034d",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch1-core2",
+          "hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "release": "e9ab176b1130663ae1bec8ddbd2e034d",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch99-core99",
+          "hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "release": "e9ab176b1130663ae1bec8ddbd2e034d",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "error": "",
+          "pending": false
+        }
+      ],
+      "hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+      "release": "e9ab176b1130663ae1bec8ddbd2e034d",
+      "activated": true
+    },
+    "quest_restored_without_restart": true
+  },
+  "final_state": {
+    "base_catalog_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+    "effective_drop_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+    "release": "e9ab176b1130663ae1bec8ddbd2e034d",
+    "drop_groups": 183,
+    "drop_entries": 9027,
+    "deferred_merge_entries_unchanged": 637,
+    "server_processes": {
+      "database": 36616,
+      "ch1-core1": 20336,
+      "ch1-core2": 23348,
+      "ch99-core99": 36584,
+      "login": 33768
+    },
+    "all_cores_acknowledged": [
+      {
+        "name": "ch1-core1",
+        "hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+        "release": "e9ab176b1130663ae1bec8ddbd2e034d",
+        "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+        "supported": true,
+        "error": "",
+        "pending": false
+      },
+      {
+        "name": "ch1-core2",
+        "hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+        "release": "e9ab176b1130663ae1bec8ddbd2e034d",
+        "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+        "supported": true,
+        "error": "",
+        "pending": false
+      },
+      {
+        "name": "ch99-core99",
+        "hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+        "release": "e9ab176b1130663ae1bec8ddbd2e034d",
+        "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+        "supported": true,
+        "error": "",
+        "pending": false
+      }
+    ],
+    "original_quest_restored": true,
+    "test_drop_groups_absent": true,
+    "manifest_verified": true
+  },
+  "manager_deployment": {
+    "files": 246,
+    "manager_exe_sha256": "935af962e3170f208085dd5fccaf8bd9add1255a2b9298c1005b1d0c0873bcd6",
+    "server_processes_unchanged": {
+      "database": 36616,
+      "ch1-core1": 20336,
+      "ch1-core2": 23348,
+      "ch99-core99": 36584,
+      "login": 33768
+    }
+  },
+  "deferred_merge_items_unchanged": 637,
+  "source_catalog_sha256": "9ab3dac7f81d2898ab89aeeca641bffc4f59b28ac5f7683d080282ea9913babd",
+  "remote_deployed": false,
+  "committed": false,
+  "unity_checked_in": false,
+  "untested": [
+    "FreeBSD",
+    "standalone/mobile Unity builds",
+    "remote package editing",
+    "load and multi-host network-outage tests"
+  ],
+  "ctest_result_logs": {
+    "mob_drops": "build/live-drops-verified-regression.log",
+    "catalog_editor": "build/live-drops-editor-verified-tests.log",
+    "drop_reload_control": "build/live-drops-verified-regression.log",
+    "live_mob_drops_mariadb": "build/live-drops-verified-regression.log",
+    "item_catalog_runtime_mariadb": "build/live-drops-verified-regression.log"
+  },
+  "ctest_result_note": "catalog_editor final 84-case pass is in its dedicated corrected-test log; the other four cases passed in the aggregate log."
+}

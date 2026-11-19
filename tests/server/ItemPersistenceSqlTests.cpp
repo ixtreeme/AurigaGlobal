@@ -19,6 +19,7 @@
 #include "CatalogSnapshotFixture.hpp"
 #include <ItemPersistenceSql.hpp>
 #include <StoragePersistenceSql.hpp>
+#include <NativeAwardsSql.hpp>
 #include <item/OwnedGround.hpp>
 #include <item/NpcShops.hpp>
 #include <item/PlayerTrades.hpp>
@@ -690,6 +691,7 @@ void FixedCompanionSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c)
     }
 }
 #include "StorageSqlCases.hpp"
+#include "NativeAwardSqlCases.hpp"
 #include "TypedMissionSqlCases.hpp"
 void ForgeSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c){
     const ItemOwner owner{ItemOwnerKind::Character,880132};const auto bag=f::Inventory(owner);const ItemWallet wallet{owner,WalletCurrency::Gold,1,1000};Check(p::ProvisionOwner(admin,c,owner,std::span(&bag,1),std::span(&wallet,1)).has_value(),"forge SQL owner");unsigned serial=0;const auto op=[&](){return std::array<std::uint8_t,16>{0x32,0x74,static_cast<std::uint8_t>(++serial)};};auto state=p::LoadCurrentItemOwner(writer,c,owner).value();
@@ -725,7 +727,117 @@ void SoulSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c){
     Check(Scalar(admin,"SELECT COUNT(*) FROM player.item_soul_strike_event WHERE owner_id=880130")=="1","one durable combat event");Check(Find(p::LoadCurrentItemOwner(writer,c,owner).value(),core.Value()).soul->strikes==1,"exactly one accepted strike debit");
     auto saved=state.items;Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"soul relog session");state=p::LoadCurrentItemOwner(writer,c,owner).value();Check(state.items==saved,"active charge and strikes reload exactly");context={};context.actor.level=120;auto off=plan(core,SoulAction::Deactivate);Check(off && p::CommitItems(writer,c,off->commit).has_value(),"SQL deactivation");state=p::LoadCurrentItemOwner(writer,c,owner).value();auto refined=plan(core,SoulAction::Refine,0,ItemInstanceId::Create(7000003).value());Check(refined && p::CommitItems(writer,c,refined->commit).has_value(),"SQL level and one scroll atomic");state=p::LoadCurrentItemOwner(writer,c,owner).value();saved=state.items;Check(p::ClaimOwnerSession(writer,c,owner).has_value() && p::LoadCurrentItemOwner(writer,c,owner)->items==saved,"refined soul and scroll survive relog");
 }
-void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
+// Keep independent SQL flows outside the large fixture-construction frame.
+// Every assertion still runs; the test keeps Windows' default1MiB stack.
+void PermanentCompanionSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& catalog,ItemKey petSeal,ItemKey mountSeal)
+{
+    const auto* c=&catalog;
+    {
+        const ItemOwner owner{ItemOwnerKind::Character,880103};
+        const auto bag=f::Inventory(owner);
+        Check(p::ProvisionOwner(admin,*c,owner,std::span(&bag,1),{}).has_value(),"companion owner provisioned");
+        auto state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        const auto ids=p::ReserveItemInstanceIds(writer,*c,2).value();
+        const auto petId=ItemInstanceId::Create(ids.first).value(),mountId=ItemInstanceId::Create(ids.first+1).value();
+        auto grant=MakeGrantCommit(*c,{29,1},state.fence,state.storages,state.items,{petSeal,0,1},std::array{petId});
+        Check(grant && grant->items.front().after.companion==CompanionState{} &&
+              p::CommitItems(writer,*c,*grant).has_value(),"permanent pet granted with explicit dormant state");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        grant=MakeGrantCommit(*c,{29,2},state.fence,state.storages,state.items,{mountSeal,0,1},std::array{mountId});
+        Check(grant && p::CommitItems(writer,*c,*grant).has_value(),"permanent mount seal granted");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        Message invalidRiding(admin.DirectQueryPrepared("UPDATE player.item_instance SET companion_recall_requested=NULL,companion_riding_requested=1 WHERE instance_id=?",{U::UInt(mountId.Value())}));
+        Check(invalidRiding && invalidRiding->uiSQLErrno,"SQL CHECK rejects NULL recall intent rather than accepting UNKNOWN");
+
+        const auto requestFor=[&](ItemInstanceId id,CompanionAction action,std::uint8_t serial){
+            const auto& seal=Find(state,id.Value());
+            CompanionRequest request{seal.key};
+            request.state=*seal.companion;
+            request.instanceId=id.Value();
+            request.revision=seal.revision;
+            request.ownerId=request.actorId=owner.id;
+            request.rulesetRevision=1;
+            request.operationId={29,serial};
+            request.count=1;
+            request.characterLevel=50;
+            request.characterClass=request.sex=1;
+            request.action=action;
+            request.admittedByServer=request.ownerAlive=request.worldAllowsCompanion=true;
+            return request;
+        };
+        const auto summon=MakeCompanionCommit(*c,state.fence,state.storages,state.items,
+            requestFor(petId,CompanionAction::Summon,3));
+        Check(summon && p::CommitItems(writer,*c,*summon).has_value() &&
+              p::CommitItems(writer,*c,*summon)->replay,"summon intent and receipt commit once");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        const auto& called=Find(state,petId.Value());
+        Check(called.count==1 && called.companion->recallRequested && called.companion->phase==CompanionPhase::Dormant &&
+              !called.companion->activeFormId,"only recall intent survives, with the intact seal");
+        const auto second=requestFor(mountId,CompanionAction::Summon,4);
+        const auto occupied=MakeCompanionCommit(*c,state.fence,state.storages,state.items,second);
+        Check(!occupied && occupied.error()==E::Conflict,
+            "a pet and mount cannot occupy the same typed follower channel");
+        const std::array staleView{Find(state,mountId.Value())};
+        const auto stalePlan=MakeCompanionCommit(*c,state.fence,state.storages,staleView,second);
+        Check(stalePlan.has_value(),"incomplete snapshot does not expose the occupied channel to the planner");
+        const auto refused=p::CommitItems(writer,*c,*stalePlan);
+        Check(!refused && refused.error()==E::Conflict,
+            "SQL current read rejects a second recall intent even with an incomplete inventory");
+        Check(!MakeConsumeCommit(*c,{29,5},state.fence,state.storages,state.items,petId,1),
+            "an active seal cannot be destroyed by a generic item operation");
+        const auto move=MakeMoveCommit(*c,{29,6},state.fence,state.storages,state.items,petId,{ItemStorageKind::Inventory,1,5});
+        Check(move && p::CommitItems(writer,*c,*move).has_value(),"active seal can move within its owner's bag");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        Check(p::ClaimOwnerSession(writer,*c,owner).has_value(),"companion relog fence claimed");
+        const auto relog=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        Check(relog.items==state.items && relog.fence.sessionGeneration>state.fence.sessionGeneration,
+            "permanent seal identity, position and recall intent survive relog");
+        state=relog;
+        const auto dismiss=MakeCompanionCommit(*c,state.fence,state.storages,state.items,
+            requestFor(petId,CompanionAction::Dismiss,7));
+        Check(dismiss && p::CommitItems(writer,*c,*dismiss).has_value(),"dismiss clears durable intent");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        Check(!Find(state,petId.Value()).companion->recallRequested &&
+              Find(state,petId.Value()).placement->anchor==5,"dismiss preserves owned seal at its new location");
+        Query(admin,"UPDATE player.item_instance SET companion_recall_requested=1 WHERE instance_id=?",{U::UInt(petId.Value())});
+        Check(!p::LoadCurrentItemOwner(writer,*c,owner),"tampered recall intent fails instance hash");
+        Query(admin,"UPDATE player.item_instance SET companion_recall_requested=0 WHERE instance_id=?",{U::UInt(petId.Value())});
+        Check(p::LoadCurrentItemOwner(writer,*c,owner)->items==state.items,"exact recall intent restores valid state");
+        auto request=requestFor(mountId,CompanionAction::Summon,8);
+        auto mountWrite=MakeCompanionCommit(*c,state.fence,state.storages,state.items,request);
+        Check(mountWrite && p::CommitItems(writer,*c,*mountWrite).has_value(),"mount follower intent saved");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        request=requestFor(mountId,CompanionAction::Mount,9);request.worldAllowsRiding=true;
+        request.state.phase=CompanionPhase::Following;request.state.activeFormId=2;
+        mountWrite=MakeCompanionCommit(*c,state.fence,state.storages,state.items,request);
+        Check(mountWrite && p::CommitItems(writer,*c,*mountWrite).has_value() && p::CommitItems(writer,*c,*mountWrite)->replay,"riding intent commits and replays exactly once");
+        auto forged=*mountWrite;forged.result[4]=static_cast<std::uint8_t>(CompanionAction::Dismount);
+        Check(!ValidateItemCommit(*c,forged),"receipt action must match the exact intent transition");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        Check(Find(state,mountId.Value()).companion->ridingRequested && Find(state,mountId.Value()).companion->phase==CompanionPhase::Dormant,"SQL stores riding intent without claiming a live rider");
+        Check(p::ClaimOwnerSession(writer,*c,owner).has_value() && p::LoadCurrentItemOwner(writer,*c,owner)->items==state.items,"mounted seal survives a new owner session exactly");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        Query(admin,"UPDATE player.item_instance SET companion_riding_requested=0 WHERE instance_id=?",{U::UInt(mountId.Value())});
+        Check(!p::LoadCurrentItemOwner(writer,*c,owner),"tampered riding intent fails canonical digest");
+        Query(admin,"UPDATE player.item_instance SET companion_riding_requested=1 WHERE instance_id=?",{U::UInt(mountId.Value())});
+        request=requestFor(mountId,CompanionAction::Dismount,10);request.state.phase=CompanionPhase::Riding;request.state.activeFormId=2;
+        mountWrite=MakeCompanionCommit(*c,state.fence,state.storages,state.items,request);
+        Check(mountWrite && p::CommitItems(writer,*c,*mountWrite).has_value(),"dismount clears riding intent atomically");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        Check(!Find(state,mountId.Value()).companion->ridingRequested && Find(state,mountId.Value()).companion->recallRequested,"dismounted mount remains a requested follower");
+        Check(p::ClaimOwnerSession(writer,*c,owner).has_value() && p::LoadCurrentItemOwner(writer,*c,owner)->items==state.items,"dismount survives relog exactly");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        request=requestFor(mountId,CompanionAction::Mount,11);request.worldAllowsRiding=true;request.state.phase=CompanionPhase::Following;request.state.activeFormId=2;
+        mountWrite=MakeCompanionCommit(*c,state.fence,state.storages,state.items,request);
+        Check(mountWrite && p::CommitItems(writer,*c,*mountWrite).has_value(),"mount can be ridden again");
+        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
+        request=requestFor(mountId,CompanionAction::Dismiss,12);request.state.phase=CompanionPhase::Riding;request.state.activeFormId=2;
+        mountWrite=MakeCompanionCommit(*c,state.fence,state.storages,state.items,request);
+        Check(mountWrite && p::CommitItems(writer,*c,*mountWrite).has_value(),"recall while riding clears both durable intents");
+    }
+}
+struct SqlFixtureContext {std::shared_ptr<const ItemCatalog> catalog;ItemKey hatchEgg,growthSeal,petSeal,mountSeal,petBook;};
+SqlFixtureContext ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::string& pw)
 {
     auto source=attribute_runtime_fixture::Catalog();
     {const auto forge=forge_runtime_fixture::Catalog();for(const auto& b:forge.items)if(b.key.Category()==ItemCategory::ForgeAid)source.items.push_back(b);source.forgeAids=forge.forgeAids;}
@@ -820,12 +932,12 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
     source.items.push_back(std::move(eggBase));
     const auto sqlBox=ItemKey::Create(8,99).value();auto boxBase=*std::ranges::find(source.items,item_catalog_fixture::GiftBox(),&ItemBaseRow::key);
     boxBase.key=sqlBox;boxBase.contentCode="container.sql_opening";source.items.push_back(boxBase);source.containers.push_back({sqlBox,ContainerKind::Locked,3,7});
-    source.lootProfiles.push_back({3,"loot.sql_opening",LootPickMode::IndependentChance,{{1,LootRewardKind::Item,f::Leather().key,3,10000,0},{2,LootRewardKind::Gold,{},75,10000,0}}});
+    source.lootProfiles.push_back({3,"loot.sql_opening",LootPickMode::IndependentChance,{{1,LootRewardKind::Item,f::Sword().key,1,10000,0,9},{2,LootRewardKind::Gold,{},75,10000,0}}});
     const auto catalog=BuildItemCatalog(source);
     if(!catalog)throw std::runtime_error("SQL fixture catalog rejected: "+catalog.error().field);
     const auto c=*catalog;Populate(admin,source);
     auto loadedCatalog=s::ReadCatalog(writer,{c->Revision(),c->ContentHash()});Check(loadedCatalog.has_value(),"SQL/native catalog parity");
-    Query(admin,"INSERT INTO player.item_persistence_format VALUES(1,1,?,?)",{U::UInt(c->Revision()),U::Blob(Bytes(c->ContentHash()))});
+    Query(admin,"INSERT INTO player.item_persistence_format(singleton,schema_version,catalog_revision,catalog_sha256) VALUES(1,1,?,?)",{U::UInt(c->Revision()),U::Blob(Bytes(c->ContentHash()))});
     Execute(admin,"INSERT INTO player.item_owner_fence VALUES(1,42,7,1),(1,43,8,1),(2,42,9,1),(3,42,10,1)");
     Execute(admin,"INSERT INTO player.item_storage VALUES(1,42,1,1,5,9,2),(1,43,1,1,5,9,2),(2,42,3,1,5,9,2),(3,42,5,1,5,9,2),(1,42,2,1,8,1,1)");
     Execute(admin,"INSERT INTO player.item_wallet VALUES(1,42,1,1,1000)");
@@ -1078,6 +1190,20 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         Check(!p::CommitItems(writer,*c,*stale),"old session cannot sell");
         auto after=p::LoadCurrentItemOwner(writer,*c,customer).value();
         Check(after.items==state.items && after.wallets==state.wallets,"stale sale changes neither items nor money");
+        op.fill(0xB5);const auto materials=MakeGrantCommit(*c,op,after.fence,after.storages,after.items,{item_catalog_fixture::Leather(),0,9},std::span(ids).subspan(4));
+        Check(materials && p::CommitItems(writer,*c,*materials).has_value(),"native barter test funds material inventory");
+        after=p::LoadCurrentItemOwner(writer,*c,customer).value();
+        NpcShopOffer exchange=offer;exchange.bundleGold=7;exchange.costs={{item_catalog_fixture::Leather(),0,3}};
+        op.fill(0xB6);const auto barter=MakeNpcBuyCommit(*c,op,after.fence,after.storages,after.items,after.wallets,exchange,2,std::span(ids).subspan(5));
+        Check(barter.has_value(),"native barter can be prepared before a currency race");
+        auto raced=*barter;for(auto& change:raced.items)if(change.before && change.before->key==item_catalog_fixture::Leather()){++change.before->revision;++change.after.revision;}
+        Check(!p::CommitItems(writer,*c,raced),"changed payment item revision rolls the entire barter transaction back");
+        const auto still=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(still.items==after.items && still.wallets==after.wallets && still.fence==after.fence,"failed barter changes neither gold, currency items nor rewards");
+        Check(barter && p::CommitItems(writer,*c,*barter).has_value(),"barter and explicit bundle price share one real SQL commit");
+        replay=p::CommitItems(writer,*c,*barter);Check(replay && replay->replay,"real SQL barter retry cannot duplicate rewards or charge twice");
+        const auto exchanged=p::LoadCurrentItemOwner(writer,*c,customer).value();std::uint64_t remaining=0;for(const auto& item:exchanged.items)if(item.key==item_catalog_fixture::Leather())remaining+=item.count;
+        Check(exchanged.wallets.front().balance==736 && remaining==3 && exchanged.items.size()==5,"barter reload has exact gold, material and reward quantities");
+        op.fill(0xB7);Check(MakeNpcBuyCommit(*c,op,exchanged.fence,exchanged.storages,exchanged.items,exchanged.wallets,exchange,2,std::span(ids).subspan(7)).error()==NpcShopError::NoMaterials,"insufficient native currency refuses a second barter");
     }
     {
         const ItemOwner left{ItemOwnerKind::Character,880083},right{ItemOwnerKind::Character,880084};
@@ -1194,13 +1320,13 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         const auto replay=p::CommitItems(writer,*c,opening->commit);Check(replay && replay->replay,"container receipt replay does not draw or consume again");
         auto changed=opening->commit;changed.result.back()^=1;Check(!p::CommitItems(writer,*c,changed),"recorded container result cannot be changed on replay");
         state=p::LoadCurrentItemOwner(writer,*c,customer).value();
-        Check(Find(state,boxId.Value()).count==1 && Find(state,keyId.Value()).count==1 && Find(state,resultId.Value()).count==3 && state.wallets[0].balance==1075,"container reload preserves precise inputs, result ID and money");
-        op[15]=4;auto raced=MakeContainerOpeningCommit(*c,op,state.fence,state.storages,state.items,state.wallets,request,{},[](auto){return 0;});Check(raced.has_value(),"last container opening planned");
+        Check(Find(state,boxId.Value()).count==1 && Find(state,keyId.Value()).count==1 && Find(state,resultId.Value()).count==1 && Find(state,resultId.Value()).refinementLevel==9 && state.wallets[0].balance==1075,"container reload preserves precise inputs, result ID and money");
+        const auto nextResult=ItemInstanceId::Create(block.first+3).value();op[15]=4;auto raced=MakeContainerOpeningCommit(*c,op,state.fence,state.storages,state.items,state.wallets,request,std::array{nextResult},[](auto){return 0;});Check(raced.has_value(),"last container opening planned");
         ++raced->commit.wallets[0].before.revision;++raced->commit.wallets[0].after.revision;
         Check(!p::CommitItems(writer,*c,raced->commit),"container wallet CAS rolls back whole opening");
         auto after=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(after.items==state.items && after.wallets==state.wallets && after.fence==state.fence,"failed opening preserves key, box, items and wallet");
         const auto missing=p::FindItemReceipt(writer,*c,raced->commit);Check(missing && !*missing,"failed container opening has no success receipt");
-        auto stale=MakeContainerOpeningCommit(*c,op,state.fence,state.storages,state.items,state.wallets,request,{},[](auto){return 0;});Check(stale && p::ClaimOwnerSession(writer,*c,customer).has_value(),"container relog advances owner fence");
+        auto stale=MakeContainerOpeningCommit(*c,op,state.fence,state.storages,state.items,state.wallets,request,std::array{nextResult},[](auto){return 0;});Check(stale && p::ClaimOwnerSession(writer,*c,customer).has_value(),"container relog advances owner fence");
         Check(!p::CommitItems(writer,*c,stale->commit),"old login cannot open another container");after=p::LoadCurrentItemOwner(writer,*c,customer).value();
         Check(after.items==state.items && after.wallets==state.wallets,"container result survives session change");
     }
@@ -1385,7 +1511,7 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         Check(p::CommitItems(writer,*c,first->commit).has_value() && p::CommitItems(writer,*c,first->commit)->replay,"book source, XP, progress, deadline and receipt commit once");state=p::LoadCurrentItemOwner(writer,*c,customer).value();live=state.learning.character;Check(state.learning==first->commit.learning->after && state.items[0].count==2 && Scalar(admin,"SELECT exp FROM player.player WHERE id=880096")=="900","entire learning state reloads exactly");
         auto changed=first->commit;changed.result[4]=3;Check(!p::CommitItems(writer,*c,changed),"receipt binds recorded book outcome");
         auto second=MakeBookRuntimeCommit(*c,{22,2},state.fence,state.storages,state.items,state.learning,live,id,bf::Facts(),2500,{0,1500});Check(second && p::CommitItems(writer,*c,second->commit).has_value(),"second successful read promotes once");state=p::LoadCurrentItemOwner(writer,*c,customer).value();Check(state.learning.character.skills[1].level==1 && state.learning.character.experience==800 && state.learning.progress[0].reads==0,"learned level and counter reload together");
-        const auto save=ProtectBookSave("UPDATE player.player SET exp = 9999, skill_point = 9, sub_skill_point = 9, horse_skill_point = 9, skill_level = '', level = 1, level_step = 0, stat_point = 0, random_hp = 0, random_sp = 0, name = 'later' WHERE id=880096",0,"");Check(save.has_value(),"real legacy save protection constructed");Execute(admin,*save);Check(Scalar(admin,"SELECT exp FROM player.player WHERE id=880096")=="800" && Scalar(admin,"SELECT typed_book_revision FROM player.player WHERE id=880096")=="2" && Scalar(admin,"SELECT name FROM player.player WHERE id=880096")=="later","late legacy save preserves every book field while other fields still save");
+        const auto save=ProtectBookSave("UPDATE player.player SET exp = 9999, skill_point = 9, sub_skill_point = 9, horse_skill_point = 9, skill_level = '', level = 1, level_step = 0, stat_point = 0, random_hp = 0, random_sp = 0, alignment = 0, stat_reset_count = 0, part_hair = 0, name = 'later' WHERE id=880096",0,"");Check(save.has_value(),"real legacy save protection constructed");Execute(admin,*save);Check(Scalar(admin,"SELECT exp FROM player.player WHERE id=880096")=="800" && Scalar(admin,"SELECT typed_book_revision FROM player.player WHERE id=880096")=="2" && Scalar(admin,"SELECT name FROM player.player WHERE id=880096")=="later","late legacy save preserves every book field while other fields still save");
         Check(p::ClaimOwnerSession(writer,*c,customer).has_value(),"book relog fence");Check(p::LoadCurrentItemOwner(writer,*c,customer)->learning==state.learning,"book level, reads and offline deadline survive relog");
         Query(admin,"UPDATE player.item_book_learning SET state_sha256=UNHEX(REPEAT('00',32)) WHERE owner_kind=1 AND owner_id=880096");Check(!p::LoadCurrentItemOwner(writer,*c,customer),"corrupt learning hash fails closed");Query(admin,"UPDATE player.item_book_learning SET state_sha256=? WHERE owner_kind=1 AND owner_id=880096",{U::Blob(Bytes(*BookLearningDigest(customer,state.learning)))});
     }
@@ -1486,119 +1612,40 @@ void ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,const std::strin
         Check(p::CommitItems(writer,*c,failed->commit).has_value() && p::CommitItems(writer,*c,failed->commit)->replay,"failed minigame is receipted once");state=p::LoadCurrentItemOwner(writer,*c,owner).value();Check(state.items.size()==1 && Find(state,ids.first).tool==ToolInstanceState{0,0},"timeout consumes bait but never grants loot or practice");
         Check(p::ClaimOwnerSession(writer,*c,owner).has_value(),"water relog claim");Check(p::LoadCurrentItemOwner(writer,*c,owner)->items==state.items,"water failure survives relog exactly");
     }
-    {
-        const ItemOwner owner{ItemOwnerKind::Character,880103};
-        const auto bag=f::Inventory(owner);
-        Check(p::ProvisionOwner(admin,*c,owner,std::span(&bag,1),{}).has_value(),"companion owner provisioned");
-        auto state=p::LoadCurrentItemOwner(writer,*c,owner).value();
-        const auto ids=p::ReserveItemInstanceIds(writer,*c,2).value();
-        const auto petId=ItemInstanceId::Create(ids.first).value(),mountId=ItemInstanceId::Create(ids.first+1).value();
-        auto grant=MakeGrantCommit(*c,{29,1},state.fence,state.storages,state.items,{petSeal,0,1},std::array{petId});
-        Check(grant && grant->items.front().after.companion==CompanionState{} &&
-              p::CommitItems(writer,*c,*grant).has_value(),"permanent pet granted with explicit dormant state");
-        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
-        grant=MakeGrantCommit(*c,{29,2},state.fence,state.storages,state.items,{mountSeal,0,1},std::array{mountId});
-        Check(grant && p::CommitItems(writer,*c,*grant).has_value(),"permanent mount seal granted");
-        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
-        Message invalidRiding(admin.DirectQueryPrepared("UPDATE player.item_instance SET companion_recall_requested=NULL,companion_riding_requested=1 WHERE instance_id=?",{U::UInt(mountId.Value())}));
-        Check(invalidRiding && invalidRiding->uiSQLErrno,"SQL CHECK rejects NULL recall intent rather than accepting UNKNOWN");
-
-        const auto requestFor=[&](ItemInstanceId id,CompanionAction action,std::uint8_t serial){
-            const auto& seal=Find(state,id.Value());
-            CompanionRequest request{seal.key};
-            request.state=*seal.companion;
-            request.instanceId=id.Value();
-            request.revision=seal.revision;
-            request.ownerId=request.actorId=owner.id;
-            request.rulesetRevision=1;
-            request.operationId={29,serial};
-            request.count=1;
-            request.characterLevel=50;
-            request.characterClass=request.sex=1;
-            request.action=action;
-            request.admittedByServer=request.ownerAlive=request.worldAllowsCompanion=true;
-            return request;
-        };
-        const auto summon=MakeCompanionCommit(*c,state.fence,state.storages,state.items,
-            requestFor(petId,CompanionAction::Summon,3));
-        Check(summon && p::CommitItems(writer,*c,*summon).has_value() &&
-              p::CommitItems(writer,*c,*summon)->replay,"summon intent and receipt commit once");
-        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
-        const auto& called=Find(state,petId.Value());
-        Check(called.count==1 && called.companion->recallRequested && called.companion->phase==CompanionPhase::Dormant &&
-              !called.companion->activeFormId,"only recall intent survives, with the intact seal");
-        const auto second=requestFor(mountId,CompanionAction::Summon,4);
-        const auto occupied=MakeCompanionCommit(*c,state.fence,state.storages,state.items,second);
-        Check(!occupied && occupied.error()==E::Conflict,
-            "a pet and mount cannot occupy the same typed follower channel");
-        const std::array staleView{Find(state,mountId.Value())};
-        const auto stalePlan=MakeCompanionCommit(*c,state.fence,state.storages,staleView,second);
-        Check(stalePlan.has_value(),"incomplete snapshot does not expose the occupied channel to the planner");
-        const auto refused=p::CommitItems(writer,*c,*stalePlan);
-        Check(!refused && refused.error()==E::Conflict,
-            "SQL current read rejects a second recall intent even with an incomplete inventory");
-        Check(!MakeConsumeCommit(*c,{29,5},state.fence,state.storages,state.items,petId,1),
-            "an active seal cannot be destroyed by a generic item operation");
-        const auto move=MakeMoveCommit(*c,{29,6},state.fence,state.storages,state.items,petId,{ItemStorageKind::Inventory,1,5});
-        Check(move && p::CommitItems(writer,*c,*move).has_value(),"active seal can move within its owner's bag");
-        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
-        Check(p::ClaimOwnerSession(writer,*c,owner).has_value(),"companion relog fence claimed");
-        const auto relog=p::LoadCurrentItemOwner(writer,*c,owner).value();
-        Check(relog.items==state.items && relog.fence.sessionGeneration>state.fence.sessionGeneration,
-            "permanent seal identity, position and recall intent survive relog");
-        state=relog;
-        const auto dismiss=MakeCompanionCommit(*c,state.fence,state.storages,state.items,
-            requestFor(petId,CompanionAction::Dismiss,7));
-        Check(dismiss && p::CommitItems(writer,*c,*dismiss).has_value(),"dismiss clears durable intent");
-        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
-        Check(!Find(state,petId.Value()).companion->recallRequested &&
-              Find(state,petId.Value()).placement->anchor==5,"dismiss preserves owned seal at its new location");
-        Query(admin,"UPDATE player.item_instance SET companion_recall_requested=1 WHERE instance_id=?",{U::UInt(petId.Value())});
-        Check(!p::LoadCurrentItemOwner(writer,*c,owner),"tampered recall intent fails instance hash");
-        Query(admin,"UPDATE player.item_instance SET companion_recall_requested=0 WHERE instance_id=?",{U::UInt(petId.Value())});
-        Check(p::LoadCurrentItemOwner(writer,*c,owner)->items==state.items,"exact recall intent restores valid state");
-        auto request=requestFor(mountId,CompanionAction::Summon,8);
-        auto mountWrite=MakeCompanionCommit(*c,state.fence,state.storages,state.items,request);
-        Check(mountWrite && p::CommitItems(writer,*c,*mountWrite).has_value(),"mount follower intent saved");
-        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
-        request=requestFor(mountId,CompanionAction::Mount,9);request.worldAllowsRiding=true;
-        request.state.phase=CompanionPhase::Following;request.state.activeFormId=2;
-        mountWrite=MakeCompanionCommit(*c,state.fence,state.storages,state.items,request);
-        Check(mountWrite && p::CommitItems(writer,*c,*mountWrite).has_value() && p::CommitItems(writer,*c,*mountWrite)->replay,"riding intent commits and replays exactly once");
-        auto forged=*mountWrite;forged.result[4]=static_cast<std::uint8_t>(CompanionAction::Dismount);
-        Check(!ValidateItemCommit(*c,forged),"receipt action must match the exact intent transition");
-        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
-        Check(Find(state,mountId.Value()).companion->ridingRequested && Find(state,mountId.Value()).companion->phase==CompanionPhase::Dormant,"SQL stores riding intent without claiming a live rider");
-        Check(p::ClaimOwnerSession(writer,*c,owner).has_value() && p::LoadCurrentItemOwner(writer,*c,owner)->items==state.items,"mounted seal survives a new owner session exactly");
-        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
-        Query(admin,"UPDATE player.item_instance SET companion_riding_requested=0 WHERE instance_id=?",{U::UInt(mountId.Value())});
-        Check(!p::LoadCurrentItemOwner(writer,*c,owner),"tampered riding intent fails canonical digest");
-        Query(admin,"UPDATE player.item_instance SET companion_riding_requested=1 WHERE instance_id=?",{U::UInt(mountId.Value())});
-        request=requestFor(mountId,CompanionAction::Dismount,10);request.state.phase=CompanionPhase::Riding;request.state.activeFormId=2;
-        mountWrite=MakeCompanionCommit(*c,state.fence,state.storages,state.items,request);
-        Check(mountWrite && p::CommitItems(writer,*c,*mountWrite).has_value(),"dismount clears riding intent atomically");
-        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
-        Check(!Find(state,mountId.Value()).companion->ridingRequested && Find(state,mountId.Value()).companion->recallRequested,"dismounted mount remains a requested follower");
-        Check(p::ClaimOwnerSession(writer,*c,owner).has_value() && p::LoadCurrentItemOwner(writer,*c,owner)->items==state.items,"dismount survives relog exactly");
-        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
-        request=requestFor(mountId,CompanionAction::Mount,11);request.worldAllowsRiding=true;request.state.phase=CompanionPhase::Following;request.state.activeFormId=2;
-        mountWrite=MakeCompanionCommit(*c,state.fence,state.storages,state.items,request);
-        Check(mountWrite && p::CommitItems(writer,*c,*mountWrite).has_value(),"mount can be ridden again");
-        state=p::LoadCurrentItemOwner(writer,*c,owner).value();
-        request=requestFor(mountId,CompanionAction::Dismiss,12);request.state.phase=CompanionPhase::Riding;request.state.activeFormId=2;
-        mountWrite=MakeCompanionCommit(*c,state.fence,state.storages,state.items,request);
-        Check(mountWrite && p::CommitItems(writer,*c,*mountWrite).has_value(),"recall while riding clears both durable intents");
-    }
-    GrowthPetBirthSql(admin,writer,*c,hatchEgg,growthSeal,petSeal,petBook);
-    FixedCompanionSql(admin,writer,*c);
-    SoulSql(admin,writer,*c);
-    AmmoSql(admin,writer,*c);
-    ForgeSql(admin,writer,*c);
-    StorageSql(admin,writer,*c);
-    TypedMissionSql(admin,writer,*c,port,pw);
-    Sessions(admin,writer,*c);
-    Allocator(admin,writer,*c,port,pw);
+    return {c,hatchEgg,growthSeal,petSeal,mountSeal,petBook};
 }
+void GayaCraftSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c) {
+ const ItemOwner owner{ItemOwnerKind::Character,880186};const auto bag=f::Inventory(owner);const std::array wallets{ItemWallet{owner,WalletCurrency::Gold,1,1000},ItemWallet{owner,WalletCurrency::Gaya,1,20}};
+ Check(p::ProvisionOwner(admin,c,owner,std::span(&bag,1),wallets).has_value(),"Gaya SQL owner provision");auto state=p::LoadCurrentItemOwner(writer,c,owner).value();
+ auto source=f::Sword(8801861);source.owner=owner;source.boundTo=owner;auto fuel=f::Leather(8801862);fuel.owner=owner;fuel.count=10;fuel.placement->anchor=4;
+ auto grant=f::Grant(c,{source,fuel});grant.operationId={81,1};grant.owners={state.fence};grant.storages={bag};Check(p::CommitItems(writer,c,grant).has_value(),"decorated source stored in SQL");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+ auto award=MakeQuestGayaChange(c,{81,2},state.fence,state.wallets[1],5,MaxNativeGayaBalance);Check(award && p::CommitItems(writer,c,*award).has_value(),"quest Gaya credited through production writer");Check(p::CommitItems(writer,c,*award)->replay,"quest Gaya replay never credits twice");state=p::LoadCurrentItemOwner(writer,c,owner).value();
+ Execute(writer,"INSERT INTO player.item_mission_watch(character_id) VALUES(880186)");
+ CraftRecipe recipe{81,"SQL upgrade",{f::LongSword(),0,1},25,10000,{{fuel.key,0,2},{source.key,source.refinementLevel,1}},7,CraftIngredient{source.key,source.refinementLevel,1}};
+ const auto id=ItemInstanceId::Create(8801863).value();const std::array rolls{std::uint16_t{0}};auto plan=MakeCraftCommit(c,{81,3},state.fence,state.storages,state.items,state.wallets,recipe,1,rolls,std::span(&id,1),0,source.id.Value());Check(plan.has_value(),"Gaya SQL copy plan");
+ Execute(admin,"UPDATE player.item_wallet SET state_revision=state_revision+1 WHERE owner_kind=1 AND owner_id=880186 AND currency=3");Check(!p::CommitItems(writer,c,plan->commit),"Gaya wallet revision race rejects whole craft");auto after=p::LoadCurrentItemOwner(writer,c,owner).value();Check(after.items==state.items && after.wallets[0]==state.wallets[0] && after.wallets[1].balance==25,"Gaya race rolls back Yang, source, fuel and output");state=after;
+ plan=MakeCraftCommit(c,{81,4},state.fence,state.storages,state.items,state.wallets,recipe,1,rolls,std::span(&id,1),0,source.id.Value());Check(plan && p::CommitItems(writer,c,plan->commit).has_value(),"Gaya and decorated equipment upgrade commits atomically");Check(p::CommitItems(writer,c,plan->commit)->replay,"upgrade replay cannot duplicate transferred item");state=p::LoadCurrentItemOwner(writer,c,owner).value();const auto& result=Find(state,id.Value());Check(result.attributes==source.attributes && result.stones==source.stones && result.boundTo==source.boundTo && state.wallets[0].balance==975 && state.wallets[1].balance==18,"SQL retains exact bonuses, sockets, binding and both balances");
+ Check(Scalar(admin,"SELECT units FROM player.item_mission_event WHERE character_id=880186 AND event_kind=2")=="1","Gaya copy recipe credits native crafting mission once, including replay and rollback");
+ Check(p::ClaimOwnerSession(writer,c,owner).has_value(),"Gaya craft relog");after=p::LoadCurrentItemOwner(writer,c,owner).value();Check(after.items==state.items && after.wallets==state.wallets,"Gaya and upgraded item survive relog");
+ Message bad(admin.DirectQueryPrepared("UPDATE player.item_wallet SET balance=999999 WHERE owner_kind=1 AND owner_id=880186 AND currency=3",{}));Check(bad && bad->uiSQLErrno,"SQL enforces original Gaya ceiling");
+}
+void FreshCharacters(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c){
+ Query(admin,"INSERT INTO player.player(id,gold) VALUES(98001,0),(98002,1000),(98003,0),(98005,0)");Query(admin,"INSERT INTO player.item(id,owner_id) VALUES(98003,98003)");
+ Check(p::EnsureFreshCharacterOwner(writer,c,98001).value(),"new empty character automatically starts native inventory");const auto owner=ItemOwner{ItemOwnerKind::Character,98001};auto state=p::LoadCurrentItemOwner(writer,c,owner).value();
+ Check(state.wallets.size()==2&&state.wallets[0].balance==0&&state.wallets[1].currency==WalletCurrency::Gaya&&state.wallets[1].balance==0,"fresh native wallets never copy shadow money or Gaya");
+ Check(std::ranges::any_of(state.storages,[](const auto& s){return s.storage.kind==ItemStorageKind::Inventory&&s.pages==8;}),"new character receives all eight inventory pages");
+ Check(std::ranges::any_of(state.storages,[](const auto& s){return s.storage.kind==ItemStorageKind::SpecialInventory&&s.pages==48;}),"new character receives full special inventory");
+ Check(std::ranges::any_of(state.storages,[](const auto& s){return s.storage.kind==ItemStorageKind::TradeEscrow&&s.storage.id==OwnedGroundStorageId;}),"new character can use authoritative owned ground drops");
+ Check(p::EnsureFreshCharacterOwner(writer,c,98001).value()&&p::LoadCurrentItemOwner(writer,c,owner)->wallets==state.wallets,"repeated login bootstrap preserves native balance and identity");
+ Execute(admin,"UPDATE player.player SET gaya=1 WHERE id=98005");Check(!p::EnsureFreshCharacterOwner(writer,c,98005).value(),"legacy Gaya balance requires explicit migration");
+ Check(!p::EnsureFreshCharacterOwner(writer,c,98002).value(),"nonzero legacy gold requires explicit migration");Check(p::EnsureFreshCharacterOwner(writer,c,98003).value() && p::LoadCurrentItemOwner(writer,c,{ItemOwnerKind::Character,98003})->items.empty(),"native owner creation never imports retired rows");Check(!p::EnsureFreshCharacterOwner(writer,c,98004).value(),"nonexistent character is not provisioned");
+ p::CharacterBirthProfile birth{0,1,std::string(64,'a'),{{{f::LongSword(),0,1},{},EquipmentSlot::Weapon}}};
+ Check(p::IssueFreshCharacterItems(writer,c,98001,std::span(&birth,1),1000000).has_value(),"fresh native pack commits on real SQL");
+ const auto born=p::LoadCurrentItemOwner(writer,c,owner).value();Check(born.items.size()==1&&born.items.front().placement->kind==ItemStorageKind::Equipment,"starter weapon is born in native equipment");
+ Check(p::IssueFreshCharacterItems(writer,c,98001,std::span(&birth,1),2000000).has_value()&&p::LoadCurrentItemOwner(writer,c,owner)->items==born.items,"repeated login never duplicates or redraws starter items");
+ Check(p::ClaimOwnerSession(writer,c,owner).has_value()&&p::IssueFreshCharacterItems(writer,c,98001,std::span(&birth,1),3000000).has_value()&&p::LoadCurrentItemOwner(writer,c,owner)->items==born.items,"relogin preserves concrete native starter identity");
+}
+
 }
 int main(int argc,char** argv)
 {
@@ -1610,7 +1657,21 @@ int main(int argc,char** argv)
         {
             std::string portText,pw,token;std::getline(std::cin,portText);std::getline(std::cin,pw);std::getline(std::cin,token);
             Check(token.size()==32,"owned token required");CAsyncSQL admin,writer;const auto port=std::stoul(portText);Setup(admin,port,pw,"root");
-            Check(Scalar(admin,"SELECT token FROM protos.ic_persistence_owner")==token,"owned sandbox identity");Setup(writer,port,pw,"item_writer");ActualSql(admin,writer,port,pw);
+            Check(Scalar(admin,"SELECT token FROM protos.ic_persistence_owner")==token,"owned sandbox identity");Setup(writer,port,pw,"item_writer");auto fixture=ActualSql(admin,writer,port,pw);
+            const auto c=fixture.catalog;
+            PermanentCompanionSql(admin,writer,*c,fixture.petSeal,fixture.mountSeal);
+            GrowthPetBirthSql(admin,writer,*c,fixture.hatchEgg,fixture.growthSeal,fixture.petSeal,fixture.petBook);
+            FixedCompanionSql(admin,writer,*c);
+            SoulSql(admin,writer,*c);
+            AmmoSql(admin,writer,*c);
+            ForgeSql(admin,writer,*c);
+            StorageSql(admin,writer,*c);
+            NativeAwardsSql(admin,writer,*c);
+            TypedMissionSql(admin,writer,*c,port,pw);
+            GayaCraftSql(admin,writer,*c);
+            FreshCharacters(admin,writer,*c);
+            Sessions(admin,writer,*c);
+            Allocator(admin,writer,*c,port,pw);
         }
         else Check(argc==2 && std::string_view(argv[1])=="--completion-only","explicit test mode required");
         std::cout<<checks<<" Item persistence SQL checks passed\n";return 0;

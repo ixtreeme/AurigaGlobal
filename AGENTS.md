@@ -24,3 +24,12 @@ The previous `D:/Auriga-Unity6/SRC/AurigaUnity` workspace and the older
 `D:/Auriga-Unity másolata/SRC/AurigaUnity` workspaces contain local pending
 changes. Preserve those changes; use the active Unity 6.3 workspace for this
 server/client integration work.
+
+## Deferred architecture context
+
+The user agreed on a future channel-scoped map runtime inspired by
+`D:/IxtreemeWorld`: one GameServer process per CH, dynamic simulation zones
+and a worker pool, replacing manual map-to-core assignment. The user asked
+to store this direction and revisit it when relevant; it is not an active
+implementation task. See [the saved context](docs/adr/channel_zone_runtime_direction.md)
+for the intent, source references, current limitations and open decisions.

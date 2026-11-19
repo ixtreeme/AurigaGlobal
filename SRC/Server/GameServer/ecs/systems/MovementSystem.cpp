@@ -1,4 +1,6 @@
 #include "../../core/stdafx.h"
+#include "../../world/WarpRoutingRules.hpp"
+#include "../../world/LocalWarp.hpp"
 #include "../../story/SpyQuestSystem.hpp"
 #include "../../raid/EclipseRaidSystem.hpp"
 #include "../../story/CaravanQuestSystem.hpp"
@@ -11,6 +13,7 @@
 #include "PlayerRuntimeSystem.hpp"
 #include "MovementSystem.hpp"
 #include "../../item/TypedEquipment.hpp"
+#include "../../item/TypedWorldUtilities.hpp"
 #include "AISystem.hpp"
 #include "CombatSystem.hpp"
 #include "../components/ai_components.hpp"
@@ -701,7 +704,7 @@ bool Show(entt::entity e, int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bo
     return true;
 }
 
-bool WarpSet(entt::entity e, int32_t x, int32_t y, int32_t lPrivateMapIndex)
+static bool WarpSetImpl(entt::entity e, int32_t x, int32_t y, int32_t lPrivateMapIndex,bool preferLocal)
 {
     if (!IsValid(e) || !ecs::PlayerRuntime::IsPC(e))
         return false;
@@ -715,6 +718,7 @@ bool WarpSet(entt::entity e, int32_t x, int32_t y, int32_t lPrivateMapIndex)
 
 #ifdef ENABLE_GENERAL_CH
     uint8_t ch = ecs::PlayerRuntime::GetDesc(e) ? ecs::PlayerRuntime::GetDesc(e)->GetAccountTable().bChannel : 0;
+    ch=auriga::world::WarpChannel(ch,g_bChannel,lPrivateMapIndex,lPrivateMapIndex>=10000&&SECTREE_MANAGER::instance().GetMap(lPrivateMapIndex)!=nullptr);
     if (!CMapLocation::instance().Get(ch, x, y, lMapIndex, lAddr, wPort)) {
         LOG_ERROR("cannot find map location index {} x {} y {} name {}", lMapIndex, x, y, ecs::PlayerRuntime::GetName(e).data());
         return false;
@@ -747,6 +751,13 @@ bool WarpSet(entt::entity e, int32_t x, int32_t y, int32_t lPrivateMapIndex)
     }
 #endif
 
+    // A locally created private map must return to its owning core. The public
+    // base-map route may belong to another channel (also when GENERAL_CH is off).
+    if(auriga::world::OwnsPrivateWarp(lPrivateMapIndex,SECTREE_MANAGER::instance().GetMap(lPrivateMapIndex)!=nullptr)||(preferLocal&&SECTREE_MANAGER::instance().GetMap(lMapIndex)!=nullptr)){
+        const auto localAddress=inet_addr(g_szPublicIP);
+        if(localAddress==INADDR_NONE||localAddress==0)return false;
+        lAddr=localAddress;wPort=mother_port;
+    }
     Stop(e);
     ecs::SessionSystem::Save(e);
 
@@ -798,6 +809,9 @@ bool WarpSet(entt::entity e, int32_t x, int32_t y, int32_t lPrivateMapIndex)
     return true;
 }
 
+bool WarpSet(entt::entity e,int32_t x,int32_t y,int32_t privateMap){return WarpSetImpl(e,x,y,privateMap,false);}
+bool WarpSetOnCurrentCore(entt::entity e,int32_t x,int32_t y,int32_t privateMap){return WarpSetImpl(e,x,y,privateMap,true);}
+
 void WarpEnd(entt::entity e)
 {
     if (!IsValid(e))
@@ -833,6 +847,7 @@ void WarpEnd(entt::entity e)
     Stop(e);
 
     SetWarpLocationRaw(e, 0, 0, 0);
+    if(IsValid(e))ResumeTypedWorldWarp(e);
 
     // Show places the character in a sectree and can retire it.
     if (IsValid(e))

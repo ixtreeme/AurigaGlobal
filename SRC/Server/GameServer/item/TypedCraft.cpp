@@ -19,6 +19,7 @@
 #include "../network/desc.h"
 #include "../core/packet.h"
 #include <item/Crafting.hpp>
+#include <item/CraftConfig.hpp>
 #include <Core/Logging.hpp>
 #include <nlohmann/json.hpp>
 #include <algorithm>
@@ -40,7 +41,8 @@ struct TypedCraftSession
 {
     entt::entity npc=entt::null;
     std::uint32_t vid=0,race=0,recipe=0,attempts=0,successes=0;
-    std::uint64_t token=0,request=0;
+    std::uint64_t token=0,request=0,source=0;
+    std::uint8_t lastAction=0;std::uint32_t lastRecipe=0,lastCount=0;
     Status status=Status::Ready;
     bool pending=false;
 };
@@ -74,13 +76,14 @@ void Reply(entt::entity e,Status status)
     if(!catalog || !desc || !desc->IsPhase(PHASE_GAME))return;
     const auto* s=g_registry.try_get<TypedCraftSession>(e);const auto found=s ? workshops.find(s->race) : workshops.end();
     const auto packet=items::EncodeCraftWorkshop(*catalog,found==workshops.end() ? nullptr : &found->second,s ? s->vid : 0,
-        s ? s->token : 0,s ? s->request : 0,status,s ? s->recipe : 0,s ? s->attempts : 0,s ? s->successes : 0);
+        s ? s->token : 0,s ? s->request : 0,status,s ? s->recipe : 0,s ? s->attempts : 0,s ? s->successes : 0,s ? s->source : 0);
     SendTypedInventory(e);if(packet)desc->LargePacket(packet->data(),static_cast<int>(packet->size()));else LOG_ERROR("TypedCraft: response could not be encoded");
 }
 Status Refusal(items::CraftError e)
 {
     switch(e){case items::CraftError::NoMaterials:return Status::NoMaterials;case items::CraftError::NoMoney:return Status::NoMoney;
     case items::CraftError::NoRoom:return Status::NoRoom;case items::CraftError::Unavailable:return Status::Failed;
+    case items::CraftError::SelectSource:return Status::SelectSource;case items::CraftError::Incompatible:return Status::Incompatible;case items::CraftError::NoGaya:return Status::NoGaya;
     case items::CraftError::Limit:return Status::Limit;default:return Status::Invalid;}
 }
 }
@@ -90,30 +93,10 @@ std::expected<void,std::string> LoadTypedCrafting(const std::string& path)
     {
         if(!std::filesystem::exists(path)){workshops.clear();return {};}
         if(std::filesystem::file_size(path)>(1u<<20))return std::unexpected("typed_crafting.json exceeds 1 MiB");
-        std::ifstream stream(path);const auto json=nlohmann::json::parse(stream);
-        if(!json.is_object() || json.size()!=2 || json.at("version")!=1 || !json.at("workshops").is_array() || json.at("workshops").size()>items::MaxCraftWorkshops)return std::unexpected("invalid crafting document");
-        const auto readNumber=[](const nlohmann::json& row,const char* key,std::uint64_t max)->std::uint64_t {
-            const auto& v=row.at(key);if(!v.is_number_unsigned() || v.get<std::uint64_t>()>max)throw std::runtime_error("invalid crafting integer");return v.get<std::uint64_t>();};
-        const auto key=[&](const nlohmann::json& row){auto value=items::ItemKey::Create(static_cast<std::uint16_t>(readNumber(row,"category",UINT16_MAX)),static_cast<std::uint32_t>(readNumber(row,"local",UINT32_MAX)));if(!value)throw std::runtime_error("invalid ItemKey");return *value;};
-        std::vector<items::CraftWorkshop> definitions;
-        for(const auto& w:json.at("workshops"))
-        {
-            if(!w.is_object() || w.size()!=3 || !w.at("recipes").is_array() || w.at("recipes").size()>items::MaxCraftRecipes)return std::unexpected("invalid workshop");
-            items::CraftWorkshop shop{static_cast<std::uint32_t>(readNumber(w,"npc_race",UINT32_MAX)),w.at("name").get<std::string>(),{}};
-            for(const auto& r:w.at("recipes"))
-            {
-                if(!r.is_object() || r.size()!=6 || !r.at("ingredients").is_array() || r.at("ingredients").size()>items::MaxCraftIngredients || !r.at("result").is_object() || r.at("result").size()!=4)return std::unexpected("invalid crafting recipe");
-                const auto& result=r.at("result");
-                items::CraftRecipe recipe{static_cast<std::uint32_t>(readNumber(r,"id",UINT32_MAX)),r.at("name").get<std::string>(),
-                    {key(result),static_cast<std::uint16_t>(readNumber(result,"level",255)),static_cast<std::uint32_t>(readNumber(result,"count",UINT32_MAX))},
-                    readNumber(r,"gold",INT64_MAX),static_cast<std::uint16_t>(readNumber(r,"chance_bp",10000)),{}};
-                for(const auto& i:r.at("ingredients"))
-                {if(!i.is_object() || i.size()!=4)return std::unexpected("invalid crafting ingredient");recipe.ingredients.push_back({key(i),static_cast<std::uint16_t>(readNumber(i,"level",255)),static_cast<std::uint32_t>(readNumber(i,"count",UINT32_MAX))});}
-                shop.recipes.push_back(std::move(recipe));
-            }
-            definitions.push_back(std::move(shop));
-        }
-        const auto catalog=store::CurrentCatalog();if(!catalog || !items::ValidateCraftWorkshops(*catalog,definitions))return std::unexpected("crafting recipes do not match the item catalog");
+        std::ifstream stream(path);const std::string text{std::istreambuf_iterator<char>{stream},{}};
+        const auto catalog=store::CurrentCatalog();if(!catalog)return std::unexpected("item catalog unavailable");
+        auto parsed=items::ParseCraftWorkshops(text,*catalog);if(!parsed)return std::unexpected(parsed.error());
+        auto definitions=std::move(*parsed);
         std::map<std::uint32_t,items::CraftWorkshop> next;for(auto& w:definitions)next.emplace(w.npcRace,std::move(w));workshops=std::move(next);
         LOG_INFO("TypedCraft: {} workshops loaded",workshops.size());return {};
     }
@@ -154,10 +137,10 @@ bool HandleTypedCraftPacket(entt::entity e,const char* data)
     if(!s || s->token!=r.session || s->vid!=r.npc){Reply(e,Status::Stale);return true;}
     if(r.action==3){CloseTypedCraft(e);return true;}
     if(s->pending){Reply(e,Status::Pending);return true;}
-    if(r.action!=2){Reply(e,Status::Invalid);return true;}
+    if(r.action!=2 && r.action!=4){Reply(e,Status::Invalid);return true;}
     if(!r.request || r.request!=s->request+1)
-    {Reply(e,r.request==s->request && r.recipe==s->recipe && r.count==s->attempts ? s->status : Status::Stale);return true;}
-    s->request=r.request;s->recipe=r.recipe;s->attempts=r.count;s->successes=0;s->status=Status::Invalid;
+    {Reply(e,r.request==s->request && r.action==s->lastAction && r.recipe==s->lastRecipe && r.count==s->lastCount ? s->status : Status::Stale);return true;}
+    s->request=r.request;s->lastAction=r.action;s->lastRecipe=r.recipe;s->lastCount=r.count;s->recipe=r.action==2?r.recipe:0;s->attempts=r.action==2?r.count:0;s->successes=0;s->status=Status::Invalid;
     if(!Admitted(e,true) || !InRange(e,s->npc)){CloseTypedCraft(e);return true;}
     if(g_registry.all_of<ecs::TypedItemBusy>(e)){s->status=Status::Busy;Reply(e,s->status);return true;}
     auto permission=ecs::resource_admission::Enter({e},auriga::resource_admission::Operation::ItemUse);
@@ -166,10 +149,17 @@ bool HandleTypedCraftPacket(entt::entity e,const char* data)
     const auto catalog=store::CurrentCatalog();
     if(!typed || !login || !s || s->token!=r.session || s->request!=r.request || !catalog || !Admitted(e,true) || !InRange(e,s->npc) || g_registry.all_of<ecs::TypedItemBusy>(e))return true;
     const auto& recipes=workshops.at(s->race).recipes;const auto recipe=std::ranges::find(recipes,r.recipe,&items::CraftRecipe::id);
+    if(r.action==4) {
+        const auto id=std::uint64_t{r.recipe}|(std::uint64_t{r.count}<<32);
+        const auto found=std::ranges::find_if(typed->state.items,[&](const auto& item){return item.id.Value()==id;});
+        if(!id || (found!=typed->state.items.end() && std::ranges::any_of(recipes,[&](const auto& candidate){return candidate.copySource && items::CraftCopySourceUsable(*found,typed->state.fence.owner,*candidate.copySource);})))
+        {s->source=id;s->status=Status::Ready;}else s->status=Status::Invalid;
+        Reply(e,s->status);return true;
+    }
     if(recipe==recipes.end() || !r.count || r.count>items::MaxCraftBatch){Reply(e,Status::Invalid);return true;}
     std::vector<std::uint16_t> rolls;std::uniform_int_distribution<unsigned> roll(0,9999);for(unsigned i=0;i<r.count;++i)rolls.push_back(static_cast<std::uint16_t>(roll(Engine())));
     const auto& state=typed->state;const auto fence=state.fence;const auto token=login->token;
-    auto plan=items::MakeCraftCommit(*catalog,Operation(),fence,state.storages,state.items,state.wallets,*recipe,r.count,rolls,store::PeekInstanceIds(items::MaxItemCommitItems),TypedItemEffectNow());
+    auto plan=items::MakeCraftCommit(*catalog,Operation(),fence,state.storages,state.items,state.wallets,*recipe,r.count,rolls,store::PeekInstanceIds(items::MaxItemCommitItems),TypedItemEffectNow(),recipe->copySource?s->source:0);
     if(!plan){s->status=Refusal(plan.error());Reply(e,s->status);return true;}
     const auto successes=plan->successes;const auto pid=ecs::PlayerRuntime::GetPlayerID(e);
     auto held=std::make_shared<auriga::resource_admission::Permit>(std::move(*permission));

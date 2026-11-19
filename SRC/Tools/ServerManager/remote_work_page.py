@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QFileDialog, QFormLayout,
 from backend import EditorError
 import remote_jobs as jobs
 import ssh_connection as ssh
+import change_review as review
 from remote_packages_page import RemotePackages
 
 
@@ -42,6 +43,8 @@ class RemoteWork:
         self.process = self.session = self.planner = self.snapshot = None
         self.cancel_process = None
         self.request = None
+        self.review_stage = None
+        self.pending_callback = None
         self.phase = ''
         self.controls_list = []
         self.log_file = None
@@ -361,10 +364,11 @@ class RemoteWork:
             return
         try:
             request = jobs.build_request(self.current(), action)
-            self.session = ssh.Session(self.page.operation_profile(), parent=self.page)
-            self.request = request
+            profile=self.page.operation_profile()
+            if not self.approve('Távoli konfigurálás / build',request,review.dict_rows(profile['name'],{},request)):return
+            self.session = ssh.Session(profile, parent=self.page)
             self.begin_log()
-            self.start_worker(request, action)
+            self.start_worker(self.request, action)
         except (EditorError, OSError) as error:
             self.cleanup()
             self.page.owner.error(str(error))
@@ -373,8 +377,17 @@ class RemoteWork:
         if self.page.probe_process is not None or self.active() or self.snapshot is None:
             return
         try:
-            self.request = self.snapshot.upload_request(self.overwrite.isChecked(), self.delete.isChecked())
-            self.session = ssh.Session(self.page.operation_profile(), parent=self.page)
+            request = self.snapshot.upload_request(self.overwrite.isChecked(), self.delete.isChecked())
+            profile=self.page.operation_profile()
+            rows=[(request['destination'],'Feltöltési cél','Jelenlegi fájlok','Az alábbi kijelölt változások')]
+            rows.extend((row['path'],'Fájl','Meglévő' if row['previous'] else 'Nincs','Új tartalom · %d bájt'%row['size']) for row in request['files'])
+            rows.extend((name,'Mappa','Nincs','Létrehozás') for name in request['directories'])
+            rows.extend((row['path'],'Fájl','Meglévő','Törlés') for row in request['deletions'])
+            files={row['key']:dict(path=str(self.snapshot.root/row['key']),sha256=row['sha256']) for row in request['files']}
+            if not self.approve('Távoli fájlok feltöltése',request,rows,files):return
+            self.snapshot.root=self.review_stage.path/'files';self.snapshot.root.mkdir(exist_ok=True)
+            self.snapshot.request=self.request
+            self.session = ssh.Session(profile, parent=self.page)
             self.begin_log()
             self.start_worker(self.request, 'prepare')
         except (EditorError, OSError) as error:
@@ -390,12 +403,48 @@ class RemoteWork:
             if state.get('running') or state.get('starting'):
                 raise EditorError('Telepítés előtt állítsd le a kiválasztott szervert az Áttekintés oldalon.')
             self.request = jobs.install_request(self.current(), profile['remote_root'])
+            if not self.approve('Build telepítése',self.request,review.dict_rows(profile['name'],{},self.request)+
+                [(profile['remote_root'],'Szerverprogramok','Jelenlegi négy program','Ellenőrzött build telepítése, előtte védőmentés')]):return
             self.session = ssh.Session(profile, parent=self.page)
             self.begin_log()
             self.start_worker(self.request, 'install')
         except (EditorError, OSError) as error:
             self.cleanup()
             self.page.owner.error(str(error))
+
+    def approve(self,title,request,rows,files=None):
+        stage=review.request(self.page.owner,title,'remote_operation',request,rows,files=files)
+        if stage is None:
+            self.status.setText('Ideiglenes mentés elkészült. Nem történt feltöltés.');return False
+        self.review_stage=stage;self.request=stage.begin(self.page.owner);return True
+
+    def reviewed_done(self,success):
+        if self.review_stage:self.review_stage.finish(success);self.review_stage=None
+        callback,self.pending_callback=self.pending_callback,None
+        if callback:QTimer.singleShot(0,lambda:callback(success,'' if success else self.status.text()))
+
+    def execute_pending(self,stage,request,callback):
+        """Resume solely from the durable approved request, including after restart."""
+        if self.active():raise EditorError('Már fut távoli művelet.')
+        self.review_stage=stage;self.pending_callback=callback;self.request=request
+        try:
+            self.session=ssh.Session(self.page.owner.remote_profile,parent=self.page);self.begin_log()
+            action=request.get('action')
+            if action=='prepare':
+                class SavedUpload:
+                    compared=True
+                    changes=()
+                    unchanged=skipped=0
+                    def close(self):pass
+                    @property
+                    def stage(self):return self.request['destination']+'/.auriga-manager/uploads/'+self.request['id']
+                    def batch(self):return jobs.UploadSnapshot.batch(self)
+                self.snapshot=SavedUpload();self.snapshot.root=stage.path/'files';self.snapshot.root.mkdir(exist_ok=True);self.snapshot.request=request
+                self.start_worker(request,'prepare')
+            elif action in ('build','configure','install'):self.start_worker(request,action)
+            else:
+                self.packages.pending='';self.start_worker(request,'packages')
+        except Exception:self.cleanup();raise
 
     def start_worker(self, request, phase):
         self.start_process(self.session.ssh('python3 -u -'), phase, jobs.worker_input(request))
@@ -493,6 +542,7 @@ class RemoteWork:
                 if self.phase == 'packages':
                     try:
                         self.status.setText(self.packages.completed(self.phase_output))
+                        self.reviewed_done(True)
                     except (KeyError, TypeError, ValueError) as error:
                         self.status.setText('Hibás csomagválasz: ' + str(error))
                     self.cleanup()
@@ -501,6 +551,7 @@ class RemoteWork:
                 self.status.setText('A négy program telepítése sikeresen befejeződött. Mentési útvonal a naplóban. '
                     'A szervert az Áttekintés oldalon indíthatod.' if self.phase == 'install' else
                     'A távoli művelet sikeresen befejeződött. Részletek és mentési útvonal a naplóban.')
+                self.reviewed_done(True)
                 self.cleanup()
                 self.invalidate()
                 self.page.controls()
@@ -547,6 +598,7 @@ class RemoteWork:
             self.page.controls()
 
     def cleanup(self):
+        self.reviewed_done(False)
         if self.session:
             # A cancellation SSH process may still be reading the same config.
             if self.cancel_process:

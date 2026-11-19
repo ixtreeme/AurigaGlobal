@@ -1,0 +1,135 @@
+{
+  "checked_utc": "2026-11-13T20:35:09.103610+00:00",
+  "server_branch": "20261103",
+  "unity_branch": "/main/unity63-integration-20261103",
+  "unity_editor": "6000.3.27f1",
+  "scope": [
+    "private conversations",
+    "offline private messages",
+    "current guild chat"
+  ],
+  "functions": [
+    "server conversation index restored on login",
+    "server timestamps and stable message IDs",
+    "forty-message keyset pages",
+    "older-messages UI button",
+    "return to latest messages from Social action menu and envelope",
+    "UTF-8 author names with actual legacy CP1250 or UTF-8 body decoding",
+    "monotonic participant-owned persisted read cursors",
+    "unread restored after reconnect",
+    "new messages remain unread while browsing older pages",
+    "guild cache isolated when membership changes"
+  ],
+  "storage": {
+    "schema_migration": [
+      "db/migrations/social/002_social_history.sql",
+      "db/migrations/social/003_social_history_datetime.sql"
+    ],
+    "engine": "InnoDB",
+    "tables": [
+      "social_chat_sequence",
+      "social_chat_message",
+      "social_chat_read"
+    ],
+    "writes": "Server validates sender and recipient/current guild, allocates ID and time, encrypts, commits atomically, then delivers. Failed persistence prevents delivery.",
+    "retention": "No automatic message deletion introduced.",
+    "client_cache_messages_per_thread": 500,
+    "page_messages": 40,
+    "recent_thread_index_limit": 256,
+    "timestamp": "created_at DATETIME(3), UTC. Exact epoch milliseconds reconstructed for existing authenticated metadata and managed wire.",
+    "datetime_verification": "docs/reports/ui/nexoria_social_datetime.evidence.json"
+  },
+  "protection": {
+    "cipher": "OpenSSL AES-256-GCM",
+    "key_bytes": 32,
+    "random_nonce_bytes": 12,
+    "authentication_tag_bytes": 16,
+    "authenticated_metadata": [
+      "format domain",
+      "global server ID",
+      "UTC timestamp",
+      "private/guild scope and participant IDs",
+      "sender ID and name",
+      "sender empire and GM state"
+    ],
+    "key_storage": "Dedicated ACL-protected directory outside the repository, server package, HTTP content root and database; key material never sent to clients or logged.",
+    "key_file": "D:/AurigaGlobal/LocalSecrets/social-history-v1/chat-history.key",
+    "key_acl": "Verified: server Windows identity and SYSTEM only.",
+    "message_update_delete": "Rejected by append-only database triggers; no client editing or deletion API.",
+    "access": "Private scope always includes authenticated player ID. Guild scope comes from live server identity and is checked against current SQL membership. Cursors must reference a row in that exact authorized scope.",
+    "queries": "Bound prepared values with strict bounded identifiers, numeric cursors, limits and throttles.",
+    "read_integrity": "Decrypt/authenticate every row in a page before sending any content. Authentication failure rejects the page and exposes no unverified body.",
+    "transit": "Existing pinned TLS game transport.",
+    "plain_copies": "Private/guild legacy GM chat logging suppressed while archive enabled. Offline messages bypass the former plaintext offline queue. History command payloads excluded from debug command logging."
+  },
+  "checks": {
+    "native_build": "GameServer, SocialHistoryCryptoTests and ServerConfigTests succeeded",
+    "deployed_server_sha256": "957d2e1c7906cccb344aa965c41c17957c9bae4f06484041adfae89f3dad0520",
+    "native_tests_passed": [
+      "social_history_crypto",
+      "server_config",
+      "social_rules",
+      "atlas_teleport_rules",
+      "persistent_items",
+      "typed_inventory_wire"
+    ],
+    "crypto_cases": [
+      "round trip",
+      "fresh random nonce",
+      "wrong key",
+      "ciphertext modification",
+      "tag modification",
+      "nonce modification",
+      "ID/time/sender/name/scope/empire/GM metadata modification",
+      "size and hex bounds"
+    ],
+    "unity_compilation": "passed in pinned open Editor",
+    "social_baseline_checks": 61,
+    "history_validator": "passed: index, paging, server timestamps, chunk assembly, mixed text encodings, replay deduplication, malformed/cross-conversation/incomplete rejection, integrity failure, unread while browsing, guild isolation, reset",
+    "existing_ui_regression": "passed: UI 346, remaining windows 527, settings 222, authored item windows 89, inventory/storage 39, C47 92; 111 gallery windows rendered",
+    "local_tls": {
+      "accounts": "three isolated newly created local test accounts; two are members of an isolated test guild and the third is not",
+      "write_and_reconnect": "passed",
+      "after_game_server_stack_restart": "passed",
+      "flows": [
+        "real private send and encrypted archive return",
+        "real older-message button retrieves more than forty stored rows",
+        "guild send and authorized restore",
+        "outsider private-history query exposes no other pair data",
+        "forged cursor from another pair denied",
+        "guild history denied for non-member",
+        "read cursor confirmed by server and survives fresh client login",
+        "offline send persisted without legacy plaintext queue",
+        "exactly one offline unread restored on fresh login",
+        "private, offline and guild contents restored after game stack restart"
+      ],
+      "server_restart_note": "All game cores, login and Database process stopped and restarted with the same external key. MariaDB remained running.",
+      "native_wallets_yang": [
+        1000000,
+        1000000,
+        1000000
+      ]
+    },
+    "sql_verification": "passed: encrypted rows, plaintext sentinel absent from ciphertext, direct UPDATE and DELETE refused, final private/guild read cursors persisted, wallets unchanged",
+    "isolated_records_by_kind": {
+      "1": 95,
+      "2": 2
+    },
+    "datetime_followup": "Lossless 003 upgrade and native read/write SQL validated with real Unity TLS clients; see timestamp evidence report."
+  },
+  "limits_and_untested": [
+    "Archive starts when enabled; volatile client-only history from before activation is not imported as authentic server data.",
+    "Normal public/shout chat and the separate system-broadcast notification feed are outside this Social archive.",
+    "Message bodies are encrypted; routing metadata and read cursors are not hidden from database administrators.",
+    "Full database/server administrators can bypass triggers, delete data or restore an older valid database. No external WORM storage or independent rollback anchor is implemented. A compromised server/key holder is outside this protection boundary.",
+    "Keep the encryption key backed up separately; replacing or losing it prevents decryption of existing rows. No automatic key rotation is introduced.",
+    "Current integration uses one player database/character-ID namespace; independently numbered realms require separate player databases.",
+    "Cross-core live delivery, production load, standalone player build, physical Android/iOS devices and an independent security audit were not exercised in this work unit."
+  ],
+  "references": [
+    "https://docs.openssl.org/3.4/man3/EVP_EncryptInit/",
+    "https://docs.openssl.org/master/man3/RAND_bytes/"
+  ],
+  "local_server": "Running all channels plus CH99 with encrypted history enabled; existing content service preserved.",
+  "version_control": "Local changes only; no commit, check-in or push."
+}

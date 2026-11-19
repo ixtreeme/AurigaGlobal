@@ -10,10 +10,14 @@
 #include <item/PersistentItems.hpp>
 
 // Puts an item state on the ground at (x, y) on a map. With a claimant the
-// loot is theirs for 60 s (not on battle arena maps); it vanishes after 5
+// loot is theirs for 60 s by default (explicit dungeon claims may be longer,
+// never on battle arena maps); it vanishes after 5
 // minutes. False when the place is not on a loaded map.
 bool DropTypedLoot(const auriga::item::ItemGrant& grant, std::int32_t mapIndex, std::int32_t x, std::int32_t y,
-	std::int32_t z, entt::entity claimant);
+	std::int32_t z, entt::entity claimant,std::uint64_t claimMs=60000);
+bool ReserveTypedCurrencyDrop(const auriga::item::CurrencyDropIntent&);
+void PublishTypedCurrencyDrop(const auriga::item::CurrencyDropIntent&);
+void CancelTypedCurrencyDrop(const auriga::item::CurrencyDropIntent&);
 // CG_ITEM_PICKUP for a typed loot VID. True when the VID is typed loot
 // (handled, whatever the outcome); false lets the legacy pickup run.
 bool PickupTypedLoot(entt::entity character, std::uint32_t vid);

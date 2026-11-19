@@ -14,6 +14,33 @@ import build_manager
 
 @unittest.skipUnless(os.name == 'nt', 'Windows DLL search isolation')
 class PackagingTests(unittest.TestCase):
+    def test_qt_icu_collision_is_checked_in_both_frozen_layouts(self):
+        for relative in ('PySide6/Qt6Core.dll', 'Qt6Core.dll'):
+            for compatible in (False, True):
+                with self.subTest(relative=relative, compatible=compatible), tempfile.TemporaryDirectory(prefix='auriga-icu-bundle-') as temp:
+                    bundle = Path(temp)
+                    core = bundle / '_internal' / relative
+                    core.parent.mkdir(parents=True)
+                    core.write_bytes(b'Qt fixture')
+                    icu = bundle / '_internal/icuuc.dll'
+                    icu.write_bytes(b'collected ICU fixture')
+                    imported = mock.Mock(dll=b'icuuc.dll', imports=[mock.Mock(name=None)])
+                    imported.imports[0].name = b'u_strToUpper'
+                    exported = mock.Mock()
+                    exported.name = b'u_strToUpper' if compatible else b'u_strToUpper_78'
+                    def module(path):
+                        result = mock.MagicMock()
+                        result.__enter__.return_value = result
+                        if Path(path) == core:
+                            result.DIRECTORY_ENTRY_IMPORT = [imported]
+                        else:
+                            result.DIRECTORY_ENTRY_EXPORT.symbols = [exported]
+                        return result
+                    with mock.patch.dict(sys.modules, {'pefile': mock.Mock(PE=module)}):
+                        build_manager.fix_windows_icu(bundle)
+                    self.assertEqual(icu.exists(), compatible)
+                    self.assertTrue(core.is_file())
+
     def test_item_helpers_receive_their_own_mariadb_and_zlib(self):
         with tempfile.TemporaryDirectory(prefix='auriga-item-bundle-') as temp:
             root = Path(temp); native = root / 'native'; native.mkdir()

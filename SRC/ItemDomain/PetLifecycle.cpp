@@ -11,7 +11,7 @@ namespace {
 using E=PetLifecycleError;
 constexpr auto MaxTime=static_cast<std::uint64_t>(INT64_MAX);
 bool ValidEffect(PetEffect e,std::int64_t value) {
-    return e>=PetEffect::MaximumHpFlat && e<=PetEffect::DodgeArrowChance && value>=0 &&
+    return e>=PetEffect::MaximumHpFlat && e<=PetEffect::CharacterMeleeReflection && value>=0 &&
         value<=(e==PetEffect::MaximumHpFlat ? 1'000'000'000'000'000LL : 1'000'000LL);
 }
 const ItemCompanionRow* Companion(const ItemCatalog& c,ItemKey key) {
@@ -297,6 +297,25 @@ std::expected<PetBonusValues,E> CollectPetSkillBonuses(const ItemCatalog& c,cons
     const auto bonuses=CollectPetPassiveBonuses(c,r,worldAllowsPet,inDungeon);
     if(!bonuses)return std::unexpected(bonuses.error());
     return bonuses->skills;
+}
+std::vector<BonusEntry> CharacterPetBonuses(const PetPassiveBonuses& source) {
+    std::vector<BonusEntry> out;
+    constexpr std::array bindings{
+        std::pair{PetEffect::CharacterWarriorResistance,BonusId::WarriorResistance},
+        std::pair{PetEffect::CharacterSuraResistance,BonusId::SuraResistance},
+        std::pair{PetEffect::CharacterNinjaResistance,BonusId::AssassinResistance},
+        std::pair{PetEffect::CharacterShamanResistance,BonusId::ShamanResistance},
+        std::pair{PetEffect::CharacterMonsterCriticalChance,BonusId::MonsterCriticalChance},
+        std::pair{PetEffect::CharacterStoneDamage,BonusId::StoneDamage},
+        std::pair{PetEffect::CharacterBossDamage,BonusId::BossDamage},
+        std::pair{PetEffect::CharacterPremiumExperience,BonusId::PremiumExperience},
+        std::pair{PetEffect::CharacterPremiumGold,BonusId::PremiumGold},
+        std::pair{PetEffect::CharacterAttackMultiplier,BonusId::AttackMultiplier},
+        std::pair{PetEffect::CharacterMeleeBlock,BonusId::MeleeBlockChance},
+        std::pair{PetEffect::CharacterMeleeReflection,BonusId::MeleeReflection}
+    };
+    for(const auto& [effect,bonus]:bindings)if(const auto value=source.skills[static_cast<unsigned>(effect)])out.push_back({bonus,value});
+    return out;
 }
 std::expected<std::int64_t,E> ApplyPetDamage(const PetBonusValues& attacker,
     const PetBonusValues& victim,std::int64_t damage,const PetCombatant& source,const PetCombatant& target,

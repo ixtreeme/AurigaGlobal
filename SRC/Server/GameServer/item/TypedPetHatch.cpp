@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "TypedPetHatch.hpp"
+#include <item/PetStudyWire.hpp>
 #include "ItemCatalogRuntime.hpp"
 #include "ItemStore.hpp"
 #include "TypedCompanions.hpp"
@@ -259,6 +260,13 @@ void Reply(entt::entity entity, Status status, std::uint64_t id, std::uint64_t t
     const std::string_view nameKey = entry && entry->base.nameKey.size() <= 256 ? std::string_view(entry->base.nameKey) : std::string_view{};
     const auto* pet = seal && seal->growthPet ? &*seal->growthPet : nullptr;
 
+    if((study && !resetting) || (!study && !feeding && !progression && !service)){
+        item::PetStudyRuntimeView view;view.withStudy=study!=nullptr;view.status=static_cast<std::uint8_t>(status);view.item=id;view.quote=token;view.cost=cost;view.gold=wallet ? wallet->balance : 0;view.target=target;view.seal=seal;
+        if(study){view.book=study->book;view.skill=study->skill;view.slot=study->slot;view.nextRank=study->nextRank;view.chanceBp=study->chanceBp;view.readyAtMs=study->readyAtMs;view.options=study->options;view.usesBypass=study->usesBypass;view.bypassTokens=typed ? typed->state.learning.bypassTokens : 0;}
+        if(pet){view.slots=StudySlots(*catalog,*seal,typed->state.fence);if((status==Status::Details || status==Status::StudyList || status==Status::StudyReady) && pet->life.clock==item::CompanionClock::ActiveTime)view.elapsedMs=TypedGrowthPetElapsed(entity,seal->id.Value());}
+        static_assert(HEADER_GC_TYPED_PET_HATCH==item::PetStudyRuntimeHeader);
+        if(const auto bytes=item::EncodePetStudyRuntime(*catalog,view))ecs::PlayerRuntime::GetDesc(entity)->LargePacket(bytes->data(),static_cast<int>(bytes->size()));return;
+    }
     PacketWriter packet;
     packet.Put<std::uint8_t>(HEADER_GC_TYPED_PET_HATCH);
     packet.Put<std::uint32_t>(0);

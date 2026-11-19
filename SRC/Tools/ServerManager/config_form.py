@@ -48,9 +48,9 @@ NAMES = {
     'dir': 'Questek mappája', 'object_dir': 'Quest object mappák', 'mark_min_level': 'Céhjel minimális szintje',
     'mark_server': 'Céhjelek kiszolgálása', 'database_link': 'Database-kapcsolat',
     'account_sql': 'Fiókadatbázis', 'spam_block': 'Spamvédelem', 'item_destroy': 'Eldobott tárgyak eltűnése',
-    'items': 'Új tárgyrendszer', 'catalog': 'Új tárgykatalógus induláskor (off / required)',
+    'items': 'Tárgyrendszer', 'catalog': 'Kötelező natív tárgykatalógus (required)',
     'catalog_revision': 'Katalógus kiadási száma', 'catalog_sha256': 'Elvárt katalógus-hash (üres: bármely érvényes)',
-    'drops': 'Szörnydrop forrása (legacy / typed: a katalógus droptáblái)',
+    'drops': 'Natív szörnydrop (typed: a katalógus droptáblái)',
 }
 ROLES = {'player': 'Játékosadatok', 'account': 'Fiókok', 'common': 'Közös adatok', 'log': 'Naplóadatok', 'mission': 'Küldetések'}
 HELP = {
@@ -141,6 +141,7 @@ def inherited(document, scope):
 class ConfigForm(QWidget):
     changed = Signal()
     error = Signal(str)
+    topologyRequested = Signal()
 
     def __init__(self, advanced_factory):
         super().__init__()
@@ -155,6 +156,10 @@ class ConfigForm(QWidget):
         self.scopes.setMinimumHeight(36)
         self.scopes.currentIndexChanged.connect(self.scope_changed)
         selector.addWidget(self.scopes, 1)
+        self.topology_button = QPushButton('CH-k és core-ok…')
+        self.topology_button.setToolTip('Csatornák és core-ok létrehozása, törlése és térképfelosztása')
+        self.topology_button.clicked.connect(self.topologyRequested)
+        selector.addWidget(self.topology_button)
         self.mode = QComboBox()
         self.mode.addItems(['Űrlapnézet', 'Haladó szerkezet'])
         self.mode.currentIndexChanged.connect(self.mode_changed)

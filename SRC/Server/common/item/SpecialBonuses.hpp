@@ -6,7 +6,7 @@
 
 namespace auriga::item {
 // Stoles are the six-bonus costume, not the independent absorption sash.
-enum class RegaliaKind : std::uint8_t { Stole=1,Rune=2 };
+enum class RegaliaKind : std::uint8_t { Stole=1,Rune=2,AbsorptionSash=3 };
 struct RegaliaRule {
     std::uint8_t index=0,variant=0;
     std::uint16_t minimumChargeBp=0;
@@ -20,15 +20,17 @@ struct ItemRegaliaRow {
     std::vector<RegaliaRule> rules;
 };
 enum class SpecialBonusOperation : std::uint8_t {
-    StoleReroll=1,RuneCharge=2,CostumeReset=3,CostumeGrant=4,CostumeRemove=5,PairedAddon=6,
+    StoleReroll=1,RuneCharge=2,CostumeReset=3,CostumeGrant=4,CostumeRemove=5,PairedAddon=6,SashClear=7,CostumeTransfer=8,
 };
 struct SpecialBonusTier {std::uint8_t draw=0,tier=0;std::uint16_t chanceBp=0;};
+struct BonusToolChoice {std::uint8_t choice=0;BonusEntry payload;};
 struct ItemBonusToolRow {
     ItemKey key;
     SpecialBonusOperation operation{};
     std::uint16_t units=0,parameter=0;
     std::optional<BonusEntry> payload;
     std::vector<SpecialBonusTier> tiers;
+    std::vector<BonusToolChoice> choices; // Uniform, server-issued payload; never rerolled on load/use.
 };
 struct RegaliaState {
     std::array<std::optional<BonusEntry>,6> bonuses{};
@@ -47,7 +49,7 @@ std::uint32_t RegaliaSlot(const ItemRegaliaRow&);
 bool ValidRegaliaState(const ItemRegaliaRow&,const RegaliaState&);
 bool ValidBonusToolState(const ItemBonusToolRow&,const BonusToolState&);
 RegaliaState InitialRegalia(const ItemRegaliaRow&,std::span<const std::uint8_t,16> entropy,std::uint64_t instance);
-BonusToolState InitialBonusTool(const ItemBonusToolRow&);
+BonusToolState InitialBonusTool(const ItemBonusToolRow&,std::span<const std::uint8_t,16> entropy=std::array<std::uint8_t,16>{},std::uint64_t instance=0);
 RegaliaState AdvanceRegalia(const ItemRegaliaRow&,RegaliaState,std::uint64_t elapsed);
 std::vector<BonusEntry> RegaliaContributions(const ItemRegaliaRow&,const RegaliaState&);
 std::vector<std::uint8_t> EncodeRegaliaState(const RegaliaState&);

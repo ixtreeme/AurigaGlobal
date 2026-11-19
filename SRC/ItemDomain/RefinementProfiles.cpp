@@ -9,11 +9,12 @@ std::expected<ValidatedRefinementProfile, RefinementError> ValidateRefinementPro
 {
     if (!source.id || !detail::ContentCode(source.code)) return std::unexpected(RefinementError::InvalidIdentity);
     if (source.kind != RefinementKind::None && source.kind != RefinementKind::Weapon &&
-        source.kind != RefinementKind::Armor && source.kind != RefinementKind::Accessory && source.kind != RefinementKind::SocketStone && source.kind != RefinementKind::Costume && source.kind != RefinementKind::Tool && source.kind != RefinementKind::Soul && source.kind != RefinementKind::Companion)
+        source.kind != RefinementKind::Armor && source.kind != RefinementKind::Accessory && source.kind != RefinementKind::SocketStone && source.kind != RefinementKind::Costume && source.kind != RefinementKind::Tool && source.kind != RefinementKind::Soul && source.kind != RefinementKind::Companion && source.kind != RefinementKind::ExactState)
         return std::unexpected(RefinementError::InvalidKind);
     if (source.maxLevel > 255 || (source.kind == RefinementKind::None && source.maxLevel != 0))
         return std::unexpected(RefinementError::InvalidLevelRange);
-    if (source.levels.size() != std::size_t(source.maxLevel) + 1)
+    const bool exact=source.kind==RefinementKind::ExactState;
+    if (source.levels.size() != (exact ? 1 : std::size_t(source.maxLevel) + 1))
         return std::unexpected(RefinementError::IncompleteLevels);
     if (bonuses.size() > MaxBonusProfiles) return std::unexpected(RefinementError::InvalidBonusContext);
     std::vector<const ValidatedBonusProfile*> bonusIndex;
@@ -32,7 +33,8 @@ std::expected<ValidatedRefinementProfile, RefinementError> ValidateRefinementPro
     for (std::size_t i = 0; i < source.levels.size(); ++i)
     {
         const auto& step = source.levels[i];
-        if (step.level != i) return std::unexpected(RefinementError::IncompleteLevels);
+        if((step.buyAmount && *step.buyAmount>INT64_MAX) || (step.sellAmount && *step.sellAmount>INT64_MAX))return std::unexpected(RefinementError::InvalidGain);
+        if (step.level != (exact ? source.maxLevel : i)) return std::unexpected(RefinementError::IncompleteLevels);
         for (auto value : step.gain.Values())
             if (value < 0 || value > MaxItemStatRaw) return std::unexpected(RefinementError::InvalidGain);
         if (i == 0 && (step.gain != ItemBaseStats{} || step.extraBonusProfile))

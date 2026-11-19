@@ -1,6 +1,7 @@
 """Exercise the native item writer in a new owned MariaDB, never a live DB."""
 from __future__ import annotations
 import argparse
+import os
 import json
 from pathlib import Path
 import subprocess
@@ -20,14 +21,14 @@ def main():
     parser.add_argument("--work-dir", type=Path, required=True)
     args = parser.parse_args()
     token = uuid.uuid4().hex
-    sandbox = Sandbox(args.work_dir / token, args.mariadb_bin)
+    sandbox = Sandbox((Path(os.environ['AURIGA_ITEM_SQL_TEST_ROOT']) / 'ItemPersistenceSqlTests' if os.environ.get('AURIGA_ITEM_SQL_TEST_ROOT') else args.work_dir) / token, args.mariadb_bin)
     try:
         sandbox.start()
         sandbox.verify()
         sandbox.client.query("CREATE DATABASE player CHARACTER SET utf8mb4 COLLATE utf8mb4_bin")
         paths = sorted((ROOT / "db/migrations/item_combat").glob("[0-9][0-9][0-9]_*.sql"))
-        if [int(path.name[:3]) for path in paths] != list(range(37)):
-            raise RuntimeError("expected complete native catalog drafts 000..036")
+        if [int(path.name[:3]) for path in paths] != list(range(64)):
+            raise RuntimeError("expected complete native catalog drafts 000..057")
         paths.append(ROOT / "db/migrations/item_instance/001_item_persistence.sql")
         paths.append(ROOT / "db/migrations/item_instance/002_instance_id_allocator.sql")
         paths.append(ROOT / "db/migrations/item_instance/003_owned_ground.sql")
@@ -49,9 +50,31 @@ def main():
         paths.append(ROOT / "db/migrations/item_instance/019_ammo_runtime.sql")
         paths.append(ROOT / "db/migrations/item_instance/020_shared_storage.sql")
         paths.append(ROOT / "db/migrations/item_instance/021_mission_events.sql")
+        paths.append(ROOT / "db/migrations/item_instance/024_dragon_coin_wallet.sql")
+        paths.append(ROOT / "db/migrations/item_instance/025_special_inventory.sql")
+        paths.append(ROOT / "db/migrations/item_instance/026_additional_equipment_slots.sql")
+        paths.append(ROOT / "db/migrations/item_instance/027_companion_costume_slots.sql")
+        paths.append(ROOT / "db/migrations/item_instance/028_body_costume_effect_slot.sql")
+        paths.append(ROOT / "db/migrations/item_instance/029_weapon_costume_effect_slot.sql")
+        paths.append(ROOT / "db/migrations/item_instance/030_stole_lifetime.sql")
+        paths.append(ROOT / "db/migrations/item_instance/031_unique_lifetime.sql")
+        paths.append(ROOT / "db/migrations/item_instance/032_stat_reset_credits.sql")
+        paths.append(ROOT / "db/migrations/item_instance/033_absorption_sashes.sql")
+        paths.append(ROOT / "db/migrations/item_instance/034_hair_dye_character.sql")
+        paths.append(ROOT / "db/migrations/item_instance/035_stateful_world_utilities.sql")
+        paths.append(ROOT / "db/migrations/item_instance/036_energy_crystals.sql")
+        paths.append(ROOT / "db/migrations/item_instance/037_native_currency_awards.sql")
+        paths.append(ROOT / "db/migrations/item_instance/038_private_shops.sql")
+        paths.append(ROOT / "db/migrations/item_instance/039_dungeon_entry_reservations.sql")
+        paths.append(ROOT / "db/migrations/item_instance/040_gaya_wallet.sql")
+        paths.append(ROOT / "db/migrations/item_instance/041_native_runtime.sql")
+        paths.append(ROOT / "db/migrations/item_instance/042_native_item_awards.sql")
+        paths.append(ROOT / "db/migrations/item_instance/043_live_mob_drops.sql")
         sandbox.client.query("CREATE TABLE player.player(id INT UNSIGNED PRIMARY KEY, name VARCHAR(24) NOT NULL DEFAULT '', exp INT UNSIGNED NOT NULL DEFAULT 0, skill_point SMALLINT NOT NULL DEFAULT 0, sub_skill_point SMALLINT NOT NULL DEFAULT 0, horse_skill_point SMALLINT NOT NULL DEFAULT 0, skill_level BLOB NULL) ENGINE=InnoDB")
         sandbox.client.query("CREATE TABLE player.player_deleted LIKE player.player")
-        sandbox.client.query("ALTER TABLE player.player ADD account_id INT UNSIGNED NOT NULL DEFAULT 0, ADD level TINYINT UNSIGNED NOT NULL DEFAULT 1, ADD level_step TINYINT UNSIGNED NOT NULL DEFAULT 0, ADD stat_point SMALLINT NOT NULL DEFAULT 0, ADD random_hp SMALLINT NOT NULL DEFAULT 0, ADD random_sp SMALLINT NOT NULL DEFAULT 0")
+        sandbox.client.query("ALTER TABLE player.player ADD gold BIGINT UNSIGNED NOT NULL DEFAULT 0, ADD account_id INT UNSIGNED NOT NULL DEFAULT 0, ADD alignment INT UNSIGNED NOT NULL DEFAULT 0, ADD level TINYINT UNSIGNED NOT NULL DEFAULT 1, ADD level_step TINYINT UNSIGNED NOT NULL DEFAULT 0, ADD stat_point SMALLINT NOT NULL DEFAULT 0, ADD random_hp SMALLINT NOT NULL DEFAULT 0, ADD random_sp SMALLINT NOT NULL DEFAULT 0")
+        sandbox.client.query("CREATE TABLE player.item(id BIGINT UNSIGNED PRIMARY KEY,owner_id INT UNSIGNED NOT NULL) ENGINE=InnoDB")
+        sandbox.client.query("ALTER TABLE player.player ADD job TINYINT UNSIGNED NOT NULL DEFAULT 0, ADD skill_group TINYINT UNSIGNED NOT NULL DEFAULT 1")
         sandbox.client.query("CREATE TABLE player.guild(id INT UNSIGNED PRIMARY KEY, master INT UNSIGNED NOT NULL) ENGINE=InnoDB")
         sandbox.client.query("CREATE TABLE player.guild_member(pid INT UNSIGNED PRIMARY KEY,guild_id INT UNSIGNED NOT NULL,grade TINYINT UNSIGNED NOT NULL) ENGINE=InnoDB")
         for path in paths:
@@ -88,6 +111,7 @@ def main():
         sandbox.client.query("GRANT ALL ON mission.* TO 'item_writer'@'localhost'")
         sandbox.client.query("GRANT INSERT,UPDATE,DELETE ON player.item_mission_event TO 'item_writer'@'localhost'")
         sandbox.client.query("GRANT INSERT,DELETE ON player.item_mission_watch TO 'item_writer'@'localhost'")
+        sandbox.client.query("GRANT INSERT,UPDATE ON player.item_native_award TO 'item_writer'@'localhost'")
         metadata = {"version": sandbox.client.query("SELECT VERSION()")[0][0],
                     "owned_datadir_verified": True, "catalog_select_only": True,
                     "catalog_drafts": sum(path.parent.name=='item_combat' for path in paths), "instance_schema": 1}

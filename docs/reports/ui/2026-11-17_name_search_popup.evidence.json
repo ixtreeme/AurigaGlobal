@@ -1,0 +1,71 @@
+{
+  "date": "2026-11-17",
+  "checked_utc": "2026-11-17T19:31:07.216576+00:00",
+  "result": "SUCCESS",
+  "feature": "scrollable_name_search_popups",
+  "interaction_tests": 9,
+  "regression_suites": [
+    "catalog_editor",
+    "bulk_rewards_editor"
+  ],
+  "query": "fül",
+  "matches": 119,
+  "manager_files_verified": 248,
+  "backup": "D:\\AurigaGlobal\\Server2-Local\\run\\deployments\\name-picker-manager-20261117T193049Z",
+  "server_processes_before": [
+    [
+      "Database.exe",
+      31428
+    ],
+    [
+      "GameServer.exe",
+      10880
+    ],
+    [
+      "GameServer.exe",
+      20684
+    ],
+    [
+      "GameServer.exe",
+      34024
+    ],
+    [
+      "LoginServer.exe",
+      24644
+    ]
+  ],
+  "server_processes_after": [
+    [
+      "Database.exe",
+      31428
+    ],
+    [
+      "GameServer.exe",
+      10880
+    ],
+    [
+      "GameServer.exe",
+      20684
+    ],
+    [
+      "GameServer.exe",
+      34024
+    ],
+    [
+      "LoginServer.exe",
+      24644
+    ]
+  ],
+  "server_restarted": false,
+  "live_data_published": false,
+  "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+  "live_hash": "162ef5115b58d6b833aa303550d0eef430a266fbe42296ca63d490c116c6d95a",
+  "live_release": "ae3c6e6e6242e5cbe7ba744b881b17f6",
+  "deferred_merge_items": 637,
+  "deferred_source_unchanged": true,
+  "unity_checks_run": false,
+  "installed_popup_observed": true,
+  "installed_popup_scrolled": true,
+  "installed_selection_observed": "Ezüst Fülbevaló",
+  "installed_dialog_cancelled_without_save": true
+}

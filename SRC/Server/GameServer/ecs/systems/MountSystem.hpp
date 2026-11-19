@@ -9,12 +9,6 @@
 #include "../components/social_components.hpp"
 #include "../../pet/horse_rider.h"
 
-struct MountInventoryLoadRequest {
-    entt::entity character { entt::null };
-    uint32_t accountId { 0 };
-    uint64_t requestId { 0 };
-};
-
 namespace MountSystem {
 
 bool IsRiding(entt::entity rider);
@@ -50,13 +44,7 @@ entt::entity RemoveMountInventoryItem(entt::entity rider, uint32_t pos,
 bool RemoveMountInventoryItemByEntity(entt::entity rider, entt::entity item,
     bool skipDbDelete = false);
 bool MoveMountInventoryItem(entt::entity rider, uint32_t from, uint32_t to);
-void CollectMountInventoryItems(entt::entity rider,
-    std::vector<TMountInventoryItemTable>& out);
-void SendMountInventory(entt::entity owner);
 // Asks the database for the account mount inventory, once.
-void QueryMountInventory(entt::entity e);
-void LoadMountInventory(entt::entity e, uint32_t accountId, uint64_t requestId,
-    const std::vector<TMountInventoryItemTable>& items);
 entt::entity CreateMountInventory(entt::entity owner, uint32_t accountId,
     uint8_t height = 16);
 void ComputeMountInventoryBonuses(entt::entity owner);

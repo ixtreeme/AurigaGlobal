@@ -26,13 +26,15 @@ struct ItemBaseStats
     bool operator==(const ItemBaseStats&) const = default;
 };
 
-enum class RefinementKind : std::uint8_t { None = 1, Weapon = 2, Armor = 3, Accessory = 4, SocketStone = 5, Costume = 6, Tool = 7, Soul = 8, Companion = 9 };
+enum class RefinementKind : std::uint8_t { None = 1, Weapon = 2, Armor = 3, Accessory = 4, SocketStone = 5, Costume = 6, Tool = 7, Soul = 8, Companion = 9, ExactState = 10 };
 struct RefinementLevel
 {
     std::uint16_t level = 0;
     // Cumulative gains relative to level zero, not a delta from the prior step.
     ItemBaseStats gain;
     std::optional<std::uint32_t> extraBonusProfile;
+    std::optional<std::uint16_t> minimumLevel;
+    std::optional<std::uint64_t> buyAmount,sellAmount;
 };
 struct RefinementProfile
 {
@@ -59,6 +61,7 @@ public:
     const RefinementProfile& Data() const noexcept { return data_; }
     const RefinementLevel* FindLevel(std::uint16_t level) const noexcept
     {
+        if(data_.kind==RefinementKind::ExactState)return level==data_.maxLevel ? &data_.levels.front() : nullptr;
         return level <= data_.maxLevel && level < data_.levels.size() ? &data_.levels[level] : nullptr;
     }
 private:

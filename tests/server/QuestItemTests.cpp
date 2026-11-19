@@ -1,5 +1,6 @@
 #include "ItemCatalogFixture.hpp"
 #include "CatalogSnapshotFixture.hpp"
+#include <item/BuiltinUtilityRuntime.hpp>
 #include <algorithm>
 #include <iostream>
 #include <source_location>
@@ -92,6 +93,31 @@ void Validate()
     bad([](auto& s){std::ranges::find(s.items,Token(),&ItemBaseRow::key)->refinementProfile=2;});
     bad([](auto& s){std::ranges::find(s.items,Token(),&ItemBaseRow::key)->binding=BindingPolicy::OnEquip;});
 }
+void BuiltinUtilities()
+{
+    const ItemOwner owner{ItemOwnerKind::Character,778};const std::array layouts{ItemStorageLayout{{owner,ItemStorageKind::Inventory,1},5,9,4}};const ItemOwnerFence fence{owner,1,1};
+    for(const auto group:{"cleanse","invisibility","white_flag","courage_combined","firework_random","firework_1","firework_4","firework_7","china_firework","spinning_top","restore_hp_full","restore_sp_full","restore_stamina_full","teleport_ring","self_poison","polymorph_cancel","spouse_warp"}) {
+        auto definition=Fixture();definition.questItems[1].groupCode=std::string("utility.")+group;definition.questItems[1].allowedContexts=15;const auto c=BuildItemCatalog(definition).value();const std::array ids{ItemInstanceId::Create(650001).value()};const std::array<std::uint8_t,16> op{0xAB};
+        const auto grant=MakeGrantCommit(*c,op,fence,layouts,{},ItemGrant{Scroll(),0,2},ids).value();const auto source=grant.items[0].after;
+        BuiltinUtilityFacts facts{{Scroll(),2,50,QuestItemContext::World,false,false,true,false},0,0,21,true,false};
+        facts.summonZoneAllowed=facts.warpAllowed=facts.marriageAvailable=true;facts.maximumSp=1003;facts.currentSp=300;
+        const auto p=PrepareBuiltinUtility(*c,source,owner,facts).value();Check(p.handler==BuiltinQuestHandler(definition.questItems[1].groupCode),"compiled utility handler resolves without an old item identity");
+        Check(p.consume==(p.handler==BuiltinQuestItem::TeleportRing || p.handler==BuiltinQuestItem::PolymorphCancel || p.handler==BuiltinQuestItem::SpouseWarp ? 0 : 1),"native reusable utilities never consume their source");
+        if(p.handler==BuiltinQuestItem::SpouseWarp){
+            Check(p.spCost==300,"original spouse ring costs floor of30 percent maximum SP");
+            for(unsigned gate=0;gate<7;++gate){auto denied=facts;if(gate==0)denied.summonZoneAllowed=false;if(gate==1)denied.warpAllowed=false;if(gate==2)denied.marriageAvailable=false;if(gate==3)denied.marriageArenaBlocked=true;if(gate==4)denied.currentSp=299;if(gate==5)denied.maximumSp=UINT64_MAX;if(gate==6)denied.currentSp=UINT64_MAX;Check(!PrepareBuiltinUtility(*c,source,owner,denied),"spouse warp requires actual zone, portal, marriage, arena and SP facts");}
+            for(std::uint64_t maximum:{0ULL,1ULL,3ULL,4ULL,99ULL,100ULL,101ULL,1003ULL,static_cast<unsigned long long>(INT64_MAX)}){auto boundary=facts;boundary.maximumSp=maximum;boundary.currentSp=maximum;const auto cost=PrepareBuiltinUtility(*c,source,owner,boundary).value().spCost;Check(cost==maximum/100*30+maximum%100*30/100,"source SP rounding is exact across signed-pool boundaries");if(cost){boundary.currentSp=cost-1;Check(!PrepareBuiltinUtility(*c,source,owner,boundary),"one SP below exact cost never warps");boundary.currentSp=cost;Check(PrepareBuiltinUtility(*c,source,owner,boundary).has_value(),"exact SP cost is admitted");}}
+        }
+        if(p.handler==BuiltinQuestItem::Invisibility)Check(p.durationSeconds==300,"source invisibility duration is exactly 300 seconds");
+        if(p.handler==BuiltinQuestItem::FireworkRandom)Check(p.firstFirework==1 && p.lastFirework==6,"random source fireworks cover all six original effects");
+        if(p.handler==BuiltinQuestItem::Firework7)Check(p.firstFirework==7 && p.lastFirework==7,"source fixed seventh firework is not silently remapped");
+        const auto commit=MakeBuiltinUtilityCommit(*c,op,fence,layouts,std::array{source},source.id,facts);
+        if(p.consume)Check(commit && commit->items[0].after.count==1 && ValidateItemCommit(*c,*commit).has_value(),"utility uses the authoritative one-unit persistence writer");else Check(!commit,"teleport menu cannot consume its reusable ring");
+        for(unsigned gate=0;gate<8;++gate) {auto denied=facts;auto subject=source;if(gate==0)denied.alive=false;if(gate==1)denied.mapIndex=0;if(gate==2)denied.use.admittedByServer=false;if(gate==3)denied.use.observer=true;if(gate==4)denied.use.characterLevel=49;if(gate==5)denied.use.stackUnits=1;if(gate==6)subject.owner.id++;if(gate==7)subject.placement=ItemPlacement{ItemStorageKind::Equipment,1,0};Check(!PrepareBuiltinUtility(*c,subject,owner,denied),"utility source ownership, location and live actor admission cannot be bypassed");}
+        if(p.handler==BuiltinQuestItem::CourageCombined){facts.mapIndex=1;Check(!PrepareBuiltinUtility(*c,source,owner,facts),"source courage is forbidden on map one");}
+        if(p.handler==BuiltinQuestItem::ChinaFirework || p.handler==BuiltinQuestItem::SpinningTop){facts.use.context=QuestItemContext::Arena;Check(!PrepareBuiltinUtility(*c,source,owner,facts),"source regional firework is forbidden in arena");facts.use.context=QuestItemContext::World;facts.pvpPotionsBlocked=true;Check(!PrepareBuiltinUtility(*c,source,owner,facts),"regional firework observes the source PvP restriction");}
+    }
+}
 void SnapshotAndHash()
 {
     auto s=Fixture();const auto catalog=BuildItemCatalog(s).value();auto snapshot=catalog_snapshot_fixture::Snapshot(s);
@@ -116,6 +142,6 @@ int main(int argc,char** argv)
         for(auto b:hash)std::cout<<"0123456789abcdef"[b>>4]<<"0123456789abcdef"[b&15];
         std::cout<<'\n';return 0;
     }
-    try {Dispatch();Validate();SnapshotAndHash();std::cout<<"Quest item checks passed: "<<checks<<'\n';return 0;}
+    try {Dispatch();Validate();BuiltinUtilities();SnapshotAndHash();std::cout<<"Quest item checks passed: "<<checks<<'\n';return 0;}
     catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
 }

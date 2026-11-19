@@ -454,7 +454,7 @@ bool NewPlayerTable2(TPlayerTable* table, const char* name, uint8_t race, uint8_
 void CInputLogin::CharacterCreate(LPDESC d, const char* data)
 {
 	struct command_player_create* pinfo = (struct command_player_create*)data;
-	if (!packet_string::IsTerminated(pinfo->name) || pinfo->index >= PLAYER_PER_ACCOUNT || !d->GetAccountTable().id)
+	if (!packet_string::IsTerminated(pinfo->name) || pinfo->index >= PLAYER_PER_ACCOUNT || !d->GetAccountTable().id || d->GetEmpire()<1 || d->GetEmpire()>3)
 	{
 		d->SetPhase(PHASE_CLOSE);
 		return;

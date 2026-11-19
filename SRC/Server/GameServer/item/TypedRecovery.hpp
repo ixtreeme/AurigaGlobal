@@ -18,6 +18,10 @@ void PreviewTypedRecovery(entt::entity,std::uint64_t);
 bool HandleTypedRecoveryPacket(entt::entity,const char*);
 std::uint64_t TypedRecoveryElapsed(entt::entity);
 std::uint64_t TypedRecoveryCooldown(entt::entity,std::uint32_t);
+bool HasTypedTimedUtility(entt::entity,auriga::item::TimedEffectUtility);
+// False means no native protection; true owns this penalty until its exact
+// effect cancellation settles. The completion runs only for the same login.
+bool RequestTypedDeathProtection(entt::entity,std::function<void(bool)>);
 auriga::item::InstantRecoveryAdmission TypedRecoveryAdmission(entt::entity,std::optional<std::uint32_t>,std::uint32_t);
 void ApplyTypedRecovery(entt::entity,const auriga::item::InstantRecoveryPlan&);
 namespace auriga::item::runtime

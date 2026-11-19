@@ -4,13 +4,20 @@
 
 namespace auriga::item
 {
-struct NpcShopOffer { std::uint32_t id=0; ItemGrant grant; };
+struct NpcShopCost { ItemKey key;std::uint16_t level=0;std::uint32_t count=0; };
+struct NpcShopOffer {
+    std::uint32_t id=0; ItemGrant grant;
+    // Authored price for one whole bundle, including an explicitly free one.
+    std::optional<std::uint64_t> bundleGold;
+    std::vector<NpcShopCost> costs;
+};
 struct NpcShop { std::uint32_t npcRace=0; std::string name; std::vector<NpcShopOffer> offers; };
 inline constexpr std::size_t MaxNpcShops=256, MaxNpcShopOffers=128;
 inline constexpr std::uint32_t MaxShopQuantity=10000;
-enum class NpcShopError { Invalid, Denied, NoMoney, NoRoom, WalletFull, Unavailable };
+enum class NpcShopError { Invalid, Denied, NoMoney, NoRoom, WalletFull, Unavailable, NoMaterials };
 enum class NpcShopStatus : std::uint8_t
-{ Closed=0, Ready=1, Bought=2, Sold=3, Busy=4, Invalid=5, Denied=6, NoMoney=7, NoRoom=8, WalletFull=9, Failed=10, Stale=11 };
+{ Closed=0, Ready=1, Bought=2, Sold=3, Busy=4, Invalid=5, Denied=6, NoMoney=7, NoRoom=8, WalletFull=9, Failed=10, Stale=11, NoMaterials=12 };
+std::expected<std::uint64_t,NpcShopError> NpcBuyBundlePrice(const ItemCatalog&,const NpcShopOffer&);
 std::expected<void,NpcShopError> ValidateNpcShops(const ItemCatalog&,std::span<const NpcShop>);
 std::expected<ItemCommit,NpcShopError> MakeNpcBuyCommit(const ItemCatalog&,std::array<std::uint8_t,16>,
     ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,std::span<const ItemWallet>,
@@ -22,6 +29,8 @@ std::uint64_t NpcSellUnitPrice(const ItemCatalog&,const PersistentItem&);
 // GC 228 v1: header:u8,size:u32,version:u8,status:u8,npc:u32,session:u64,request:u64,
 // name:text16,offers:u16 {id:u32,key:6,level:u16,units:u32,unitPrice:u64},
 // sales:u16 {instance:u64,unitPrice:u64},detailsSize:u32,GC227 bytes.
+// v2 retains this layout and appends bundleGold:u64,costs:u8
+// {key:6,level:u16,count:u32} after EACH offer. CG229 is unchanged.
 std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeNpcShop(const ItemCatalog&,const NpcShop*,
     std::uint32_t npc,std::uint64_t session,std::uint64_t request,NpcShopStatus,std::span<const PersistentItem>);
 } // namespace auriga::item

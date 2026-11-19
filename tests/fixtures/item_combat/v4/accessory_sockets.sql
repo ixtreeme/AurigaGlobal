@@ -67,7 +67,7 @@ VALUES
     (6,3,'material.socket_drill','item.socket_drill.name','item.socket_drill.description','icons/socket_drill.png',1,1,20,30,0,1,2,1,1,1);
 INSERT INTO protos.item_material VALUES(6,2,5),(6,3,4);
 INSERT INTO protos.accessory_socket_profile VALUES(1,'socket.copper',3,1,1);
-INSERT INTO protos.accessory_socket_grade VALUES
+INSERT INTO protos.accessory_socket_grade(profile_id,grade,duration_ms,bonus_increase_bp,minimum_raw,minimum_bp,minimum_integer,unlock_chance_bp,charge_chance_bp) VALUES
     (1,0,0,0,0,0,0,5000,10000),
     (1,1,86400000,1000,1000,100,1,5000,10000),
     (1,2,43200000,2000,2000,200,2,5000,10000),

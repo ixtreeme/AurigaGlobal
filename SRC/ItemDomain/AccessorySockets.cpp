@@ -36,8 +36,13 @@ std::expected<ValidatedAccessorySocketProfile, AccessorySocketError> ValidateAcc
     if (!source.maxGrade) return std::unexpected(AccessorySocketError::InvalidMaximum);
     if (!source.unlockUnitsPerAttempt || !source.chargeUnitsPerAttempt) return std::unexpected(AccessorySocketError::InvalidUnits);
     if (source.grades.size() != std::size_t(source.maxGrade) + 1) return std::unexpected(AccessorySocketError::IncompleteGrades);
-    if (auto result = Materials(source.unlockMaterials); !result) return std::unexpected(result.error());
-    if (auto result = Materials(source.chargeMaterials); !result) return std::unexpected(result.error());
+    // An imported lifetime can be read/expired before its material services
+    // are published. Empty bindings require every corresponding chance to be
+    // explicitly disabled; no placeholder material acquires a false meaning.
+    const bool unlockDisabled=std::ranges::none_of(source.grades,[](const auto& g){return g.unlockChanceBp!=0;});
+    const bool chargeDisabled=std::ranges::none_of(source.grades,[](const auto& g){return g.chargeChanceBp!=0;});
+    if (auto result = Materials(source.unlockMaterials,unlockDisabled); !result) return std::unexpected(result.error());
+    if (auto result = Materials(source.chargeMaterials,chargeDisabled || !source.permanentChargeMaterials.empty()); !result) return std::unexpected(result.error());
     if (auto result = Materials(source.permanentChargeMaterials, true); !result) return std::unexpected(result.error());
     for (auto key : source.permanentChargeMaterials)
         if (std::ranges::binary_search(source.chargeMaterials, key)) return std::unexpected(AccessorySocketError::InvalidCompatibility);
@@ -71,7 +76,7 @@ std::expected<void, AccessorySocketError> ValidateAccessorySocketState(
     if (!profile.FindGrade(0) || !grade || state.unlockedCapacity > profile.Data().maxGrade || state.activeGrade > state.unlockedCapacity)
         return std::unexpected(AccessorySocketError::InvalidState);
     if ((!state.activeGrade && (state.remainingMs || state.permanent)) ||
-        (state.permanent && (state.remainingMs || profile.Data().permanentChargeMaterials.empty())) ||
+        (state.permanent && (state.remainingMs || (profile.Data().permanentChargeMaterials.empty() && std::ranges::any_of(profile.Data().grades,[](const auto& g){return g.chargeChanceBp!=0;})))) ||
         (state.activeGrade && !state.permanent && (!state.remainingMs || state.remainingMs > grade->durationMs)))
         return std::unexpected(AccessorySocketError::InvalidState);
     return {};

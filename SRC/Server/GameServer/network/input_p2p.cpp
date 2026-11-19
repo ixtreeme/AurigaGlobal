@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../social/SocialActions.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
@@ -101,6 +102,7 @@ int CInputP2P::Relay(LPDESC d, const char * c_pData, size_t uiBytes)
 		memcpy(buf, c_pbData, p->lSize);
 
 		TPacketGCWhisper* p2 = (TPacketGCWhisper*) buf;
+		if(p2->szNameFrom[CHARACTER_NAME_MAX_LEN]!='\0'||SocialBlocked(std::string(ecs::PlayerRuntime::GetName(chr)),p2->szNameFrom))return p->lSize;
 		uint8_t bToEmpire = (p2->bType >> 4);
 		p2->bType = p2->bType & 0x0F;
 		if(p2->bType == 0x0F) {

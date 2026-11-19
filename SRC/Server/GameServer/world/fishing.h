@@ -31,6 +31,7 @@ namespace fishing
 	};
 
 	extern void Initialize();
+    bool PredictFish(entt::entity ch);
 	extern LPEVENT CreateFishingEvent(entt::entity ch);
 	extern void Take(fishing_event_info* info, entt::entity ch);
 	extern void Simulation(int level, int count, int map_grade, entt::entity ch);

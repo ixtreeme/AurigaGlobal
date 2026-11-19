@@ -56,6 +56,7 @@ struct TypedGroundView
 	std::uint16_t level = 0;
 	std::uint32_t count = 0;
 	std::string code;
+    std::uint64_t goldAmount=0; // v2 only: ground Yang directly credits the wallet.
 };
 enum class TypedGroundWireError : std::uint8_t { Truncated, BadHeader, BadVersion, BadSize, BadValue, TrailingBytes };
 std::expected<std::vector<std::byte>, TypedGroundWireError> EncodeTypedGround(const TypedGroundView&);

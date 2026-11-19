@@ -39,20 +39,12 @@ bool CClientManager::PlayerCacheDrainCurrent(const auriga::player_session::Lease
         }
     return false;
 }
-bool CClientManager::PlayerCacheDrainView(uint32_t player, CPlayerTableCache *&cache,
-                                          std::vector<CItemCache *> &items)
+bool CClientManager::PlayerCacheDrainView(uint32_t player, CPlayerTableCache *&cache)
 {
     cache = GetPlayerCache(player);
     if (!cache)
         return false; // The source must have submitted its final player snapshot first.
-    // Include every owned cache, even if a legacy owner-set index is missing.
-    for (const auto &[id, item] : m_map_itemCache)
-        if (item->Get(false)->owner == player)
-        {
-            if (item->Get(false)->id != id || items.size() >= auriga::player_cache::MaximumItems)
-                return false;
-            items.push_back(item);
-        }
+    // Native item transactions have their own session/revision fence and SQL writer.
     return true;
 }
 bool CClientManager::BeginPlayerCacheDrain(const auriga::player_session::Lease &lease,
@@ -71,10 +63,9 @@ bool CClientManager::BeginPlayerCacheDrain(const auriga::player_session::Lease &
     if (m_playerCacheDrains.size() >= 256)
         return false;
     CPlayerTableCache *player = nullptr;
-    std::vector<CItemCache *> items;
-    if (!PlayerCacheDrainView(lease.key.character, player, items))
+    if (!PlayerCacheDrainView(lease.key.character, player))
         return false;
-    auto drain = auriga::player_cache::Drain::Begin(m_playerSessions, lease, challenge, {player, items},
+    auto drain = auriga::player_cache::Drain::Begin(m_playerSessions, lease, challenge, {player},
                                                     CDBManager::instance().PlayerQueueOrigins(), []
                                                     { return CDBManager::instance().DrainPlayerWrites(); });
     if (!drain)
@@ -96,8 +87,7 @@ CClientManager::PollPlayerCacheDrain(const auriga::player_session::Lease &lease,
         return auriga::player_cache::Receipt{lease, challenge, auriga::player_cache::Status::Stale};
     }
     CPlayerTableCache *player = nullptr;
-    std::vector<CItemCache *> items;
-    if (!PlayerCacheDrainView(lease.key.character, player, items))
+    if (!PlayerCacheDrainView(lease.key.character, player))
         player = nullptr;
-    return it->second.Poll(m_playerSessions, {player, items});
+    return it->second.Poll(m_playerSessions, {player});
 }

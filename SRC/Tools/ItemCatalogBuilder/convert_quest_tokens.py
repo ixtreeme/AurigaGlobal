@@ -175,7 +175,7 @@ def convert(tables, plan, preserved, project, visuals, locales):
         document = model.new(10)
         base = document['base']
         base.update(local_id=str(key['local_id']), content_code=code, name_key='item.' + code + '.name',
-                    description_key='item.' + code + '.description', icon_asset=visual['icon']['path'],
+                    description_key='item.' + code + '.description', icon_asset=visual['icon']['path'].removeprefix('Assets/Metin2/Generated/ItemIcons/'),
                     inventory_height=str(row['size']), max_stack=str(SOURCE_STACK_LIMIT if row['flag'] & STACK_FLAG else 1),
                     min_level=str(max([row['limitvalue' + str(i)] for i in range(2) if row['limittype' + str(i)] == 1], default=0)))
         document['child']['local_id'] = base['local_id']
@@ -184,7 +184,7 @@ def convert(tables, plan, preserved, project, visuals, locales):
         document['trade'].update(allow_drop=str(int(not row['antiflag'] & (1 << 7))),
                                  allow_sell=str(int(not row['antiflag'] & (1 << 8))))
         document['appearance'] = dict(model_asset=visual['ground_model']['path'])
-        model.apply(document)
+        model.apply(document,encode_result=False)
         translations[code] = translation_for(row, code, locales)
         assets[code] = visual
         accepted.append(dict(source_id=row['vnum'], item=key, source_row_hash=value_hash(row),

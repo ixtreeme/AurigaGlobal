@@ -283,6 +283,8 @@ class TargetGuiTests(unittest.TestCase):
         self.patch = mock.patch.object(ssh, 'Session', FakeSession);self.patch.start()
         FakeSession.calls=[];FakeSession.fail=False;FakeSession.slow=False
         self.window = self.ui.MainWindow(self.local)
+        from ReviewFixture import approve_fixture
+        approve_fixture(self,self.window)
         self.errors=[];self.window.error=self.errors.append
         self.profile=ssh.new_profile()
         self.profile.update(name='Teszt távoli', remote_root=str(self.remote))

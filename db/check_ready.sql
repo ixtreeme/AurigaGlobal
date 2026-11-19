@@ -8,10 +8,7 @@ FROM common.locale WHERE mKey = 'SKILL_POWER_BY_LEVEL'
 UNION ALL SELECT 'common.locale / DB_NAME_COLUMN', IF(COUNT(*) = 1, 'READY', 'MISSING')
 FROM common.locale WHERE mKey = 'DB_NAME_COLUMN'
 UNION ALL SELECT 'player.mob_proto', IF(COUNT(*) > 0, 'READY', 'IMPORT_REQUIRED') FROM player.mob_proto
-UNION ALL SELECT 'player.item_proto', IF(COUNT(*) > 0, 'READY', 'IMPORT_REQUIRED') FROM player.item_proto
 UNION ALL SELECT 'player.skill_proto', IF(COUNT(*) > 0, 'READY', 'IMPORT_REQUIRED') FROM player.skill_proto
-UNION ALL SELECT 'player.shop', IF(COUNT(*) > 0, 'READY', 'IMPORT_REQUIRED') FROM player.shop
-UNION ALL SELECT 'player.shop_item', IF(COUNT(*) > 0, 'READY', 'IMPORT_REQUIRED') FROM player.shop_item
-UNION ALL SELECT 'player.item_attr', IF(COUNT(*) > 0, 'READY', 'IMPORT_REQUIRED') FROM player.item_attr
-UNION ALL SELECT 'player.item_attr_rare', IF(COUNT(*) > 0, 'READY', 'IMPORT_REQUIRED') FROM player.item_attr_rare
-UNION ALL SELECT 'player.item_attr_rare_8', IF(COUNT(*) > 0, 'READY', 'IMPORT_REQUIRED') FROM player.item_attr_rare_8;
+UNION ALL SELECT 'player.item_persistence_format / native runtime',
+       IF(COUNT(*) = 1 AND MIN(native_runtime_version)=1, 'READY', 'MISSING_OR_INVALID') FROM player.item_persistence_format
+UNION ALL SELECT 'player.item_native_award', IF(COUNT(*) >= 0, 'READY', 'MISSING') FROM player.item_native_award;

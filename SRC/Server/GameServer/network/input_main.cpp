@@ -1,5 +1,6 @@
 #include "../mission/TypedMissionRuntime.hpp"
 #include "../item/TypedBooks.hpp"
+#include <item/LegacyItemProtocol.hpp>
 #include "../item/TypedPolymorph.hpp"
 #include "../item/TypedCompanions.hpp"
 #include "../item/TypedPetHatch.hpp"
@@ -106,6 +107,8 @@
 #include "../item/TypedItemMissions.hpp"
 #include "../item/TypedContainerOpening.hpp"
 #include "../item/TypedTokenRedemption.hpp"
+#include "../item/TypedMoney.hpp"
+#include "../item/TypedPrivateShops.hpp"
 #include "../item/TypedSocketMaintenance.hpp"
 #include "../item/TypedAttributes.hpp"
 #include "../item/TypedStorage.hpp"
@@ -218,6 +221,15 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 
 
 	int iExtraLen = 0;
+
+	if (auriga::item::IsLegacyItemMutation(bHeader))
+	{
+		// Closing also terminates variable-length legacy shop packets safely:
+		// no payload bytes may be interpreted as a following game packet.
+		LOG_ERROR("TypedItems: refused legacy item packet {} for pid {}", bHeader, ecs::PlayerRuntime::GetPlayerID(character));
+		d->SetPhase(PHASE_CLOSE);
+		return -1;
+	}
 
 	if (test_server && bHeader != HEADER_CG_MOVE)
 		LOG_INFO("CInputMain::Analyze() ==> Header [{}] ", bHeader);
@@ -423,35 +435,6 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 			Warp(character, c_pData);
 			break;
 
-		case HEADER_CG_SAFEBOX_CHECKIN:
-			SafeboxCheckin(character, c_pData);
-			break;
-
-		case HEADER_CG_SAFEBOX_CHECKOUT:
-			SafeboxCheckout(character, c_pData, false);
-			break;
-
-		case HEADER_CG_SAFEBOX_ITEM_MOVE:
-			SafeboxItemMove(character, c_pData);
-			break;
-
-		case HEADER_CG_MALL_CHECKOUT:
-			SafeboxCheckout(character, c_pData, true);
-			break;
-
-
-		case HEADER_CG_MOUNT_INVENTORY_CHECKIN:
-			MountInventoryCheckin(character, c_pData);
-			break;
-
-		case HEADER_CG_MOUNT_INVENTORY_CHECKOUT:
-			MountInventoryCheckout(character, c_pData);
-			break;
-
-		case HEADER_CG_MOUNT_INVENTORY_ITEM_MOVE:
-			MountInventoryItemMove(character, c_pData);
-			break;
-
 		case HEADER_CG_TYPED_ITEM_MOVE:
 			HandleTypedItemMovePacket(character, c_pData);
 			break;
@@ -521,7 +504,13 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		case HEADER_CG_TYPED_SHOP:
 			HandleTypedShopPacket(character, c_pData);
 			break;
-		case HEADER_CG_TYPED_ITEM_DROP:
+        case HEADER_CG_TYPED_PRIVATE_SHOP:
+            if((iExtraLen=HandleTypedPrivateShopPacket(character,c_pData,m_iBufferLeft))<0)return -1;
+            break;
+		case HEADER_CG_TYPED_MONEY:
+            HandleTypedMoneyPacket(character,c_pData);
+            break;
+        case HEADER_CG_TYPED_ITEM_DROP:
 			HandleTypedItemDropPacket(character, c_pData);
 			break;
 
@@ -671,6 +660,9 @@ int CInputDead::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 
 	switch (bHeader)
 	{
+        case HEADER_CG_TYPED_PRIVATE_SHOP:
+            if((iExtraLen=HandleTypedPrivateShopPacket(character,c_pData,m_iBufferLeft))<0)return -1;
+            break;
 		case HEADER_CG_PONG:
 			Pong(d);
 			break;
@@ -763,4 +755,4 @@ void CInputMain::RequestLanguage(entt::entity character, const char* targetName)
 }
 #endif
 
-
+

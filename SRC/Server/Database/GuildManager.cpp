@@ -7,6 +7,15 @@
 #include <math.h>
 
 extern std::string g_stLocale;
+namespace {
+void QueueNativeGuildCurrencyAward(std::string_view login,std::int64_t amount,unsigned reason){
+    if(amount<=0)return;
+    CDBManager::instance().QueryPrepared(
+        "INSERT INTO player.item_currency_award(login,amount,reason_kind) VALUES(LOWER(TRIM(?)),?,?)",
+        {SqlParam::Text(std::string(login)),SqlParam::Int(amount),SqlParam::UInt(reason)});
+}
+}
+
 
 const int GUILD_RANK_MAX_NUM = 20;
 
@@ -1167,18 +1176,14 @@ bool CGuildManager::Bet(uint32_t dwID, const char * c_pszLogin, int64_t dwGold, 
 	if (it == m_map_kWarReserve.end())
 	{
 		LOG_INFO("WAR_RESERVE: Bet: cannot find reserve war by id {}", dwID);
-		CDBManager::instance().QueryPrepared(
-				"INSERT INTO item_award (login, vnum, socket0, given_time) VALUES(?, ?, ?, NOW())",
-				{ SqlParam::Text(c_pszLogin), SqlParam::Int(ITEM_ELK_VNUM), SqlParam::Int(dwGold) });
+		QueueNativeGuildCurrencyAward(c_pszLogin,dwGold,1);
 		return false;
 	}
 
 	if (!it->second->Bet(c_pszLogin, dwGold, dwGuild))
 	{
 		LOG_INFO("WAR_RESERVE: Bet: cannot bet id {}, login {}, gold {}, guild {}", dwID, c_pszLogin, dwGold, dwGuild);
-		CDBManager::instance().QueryPrepared(
-				"INSERT INTO item_award (login, vnum, socket0, given_time) VALUES(?, ?, ?, NOW())",
-				{ SqlParam::Text(c_pszLogin), SqlParam::Int(ITEM_ELK_VNUM), SqlParam::Int(dwGold) });
+		QueueNativeGuildCurrencyAward(c_pszLogin,dwGold,2);
 		return false;
 	}
 
@@ -1353,9 +1358,7 @@ void CGuildWarReserve::Draw()
 
 	for (const auto& bet : mapBet)
 	{
-		CDBManager::instance().QueryPrepared(
-				"INSERT INTO item_award (login, vnum, socket0, given_time) VALUES(?, ?, ?, NOW())",
-				{ SqlParam::Text(bet.first), SqlParam::Int(ITEM_ELK_VNUM), SqlParam::UInt(bet.second.second) });
+		QueueNativeGuildCurrencyAward(bet.first,bet.second.second,3);
 	}
 }
 
@@ -1432,8 +1435,6 @@ void CGuildWarReserve::End(int iScoreFrom, int iScoreTo)
 
 		const int64_t dwGold = static_cast<int64_t>(static_cast<double>(dwTotalBet) * ratio * 0.9);
 
-		CDBManager::instance().QueryPrepared(
-				"INSERT INTO item_award (login, vnum, socket0, given_time) VALUES(?, ?, ?, NOW())",
-				{ SqlParam::Text(bet.first), SqlParam::Int(ITEM_ELK_VNUM), SqlParam::UInt(static_cast<uint32_t>(dwGold)) });
+		QueueNativeGuildCurrencyAward(bet.first,dwGold,4);
 	}
 }

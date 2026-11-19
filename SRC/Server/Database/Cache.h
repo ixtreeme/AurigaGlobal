@@ -3,16 +3,6 @@
 #include <common/service.h>
 #include <common/tables.h>
 
-class CItemCache : public cache<TPlayerItem>
-{
-    public:
-	CItemCache();
-	virtual ~CItemCache();
-
-	void Delete();
-	virtual void OnFlush();
-};
-
 class CPlayerTableCache : public cache<TPlayerTable>
 {
     public:
@@ -24,23 +14,6 @@ class CPlayerTableCache : public cache<TPlayerTable>
 	uint32_t GetLastUpdateAgeSeconds() const { return cache<TPlayerTable>::GetLastUpdateAgeSeconds(); }
 };
 
-// MYSHOP_PRICE_LIST
-class CItemPriceListTableCache : public cache< TItemPriceListTable >
-{
-    public:
-
-	/// Constructor
-	CItemPriceListTableCache(void);
-	virtual ~CItemPriceListTableCache();
-
-	void	UpdateList(const TItemPriceListTable* pUpdateList);
-
-	virtual void	OnFlush(void);
-
-    private:
-
-	static const int	s_nMinFlushSec;		///< Minimum cache expire time
-};
 // END_OF_MYSHOP_PRICE_LIST
 
 #ifdef __SKILL_COLOR_SYSTEM__

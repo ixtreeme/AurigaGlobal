@@ -1,5 +1,13 @@
 # Az itemrendszer fennmaradó munkái — commit- és kódaudit
 
+2026-11-16-i frissítés: a 637 merge-re váró tétel változatlan. A natív backend kötelező, a régi állapottárolás és fallback kivezetve, a céhjutalom natív Mall-kézbesítése élőben ellenőrizve. A teljes fizikai ECS/vnum/APPLY/Lua forrástakarítás még nyitott. [Részletes aktuális állapot](2026-11-16_native_item_retirement.md).
+
+2026-11-14-i kiegészítés: a felhasználó minden régi fiók, karakter és
+tárgyállapot törlését kérte, ezért karakteradat-konverzió már nem szükséges.
+A kizárólag helyi adatürítés elkészült, újraindítás után is üres a játékosállapot.
+A natív karakterek régi itemútjának lezárása és a további kivezetési feladatok:
+[aktuális állapot](2026-11-14_legacy_item_retirement.md).
+
 Átvizsgált szerverág: `20261103`, kiinduló commit `05ca0871`.
 Unity: `/main/unity63-integration-20261103`, kiinduló changeset `cs:86`.
 
@@ -32,7 +40,7 @@ commitok és jelentések adják.
 | 7. C32 — elkészült | Hét fejlesztőtekercs-család és három esélynövelő csoport, közös előnézettel és tartós megerősítéssel | Szerver/Unity-bekötés, típusos szerkesztő, 11 élő eset, 516 ellenőrzés és négy újrabelépés. [Jelentés](2026-11-08_typed_forge_aids.md), [IC-067](../../adr/item_combat_067_typed_forge_aids.md). |
 | 8. C33 — elkészült | Fiókszintű pénztárca, bank, Mall, céhraktár, tárgylevél és függő jutalom | Közös szerver/Unity-út, értékmegőrző pénzjegyváltás, teljes/részleges tárgymozgatás, SQL-jogosultság és céhbezárási kapu. 836 élő ellenőrzés és öt újrabelépés sikeres. [Jelentés](2026-11-08_account_wallet_storage.md), [IC-068](../../adr/item_combat_068_account_wallet_storage.md). A legacy cash-import és shopátállás a konverzióhoz tartozik. |
 | 9. C34 — item-integráció elkészült; a teljes Mission még nyitott | Tartós általános Mission-haladás, típusos feltétel/költség/jutalom, Unity-napló és Lua coroutine API | 296 élő ellenőrzés és hét újrabelépés sikeres; [jelentés](2026-11-08_typed_mission_quests.md), [IC-069](../../adr/item_combat_069_typed_mission_quests.md). Az XP-/szint-/fiókvaluta-jutalmakat a C35 bekötötte; 2211 élő ellenőrzés és kilenc újrabelépés sikeres ([C35 jelentés](2026-11-08_mission_progression_rewards.md)). A kampány/Mission Studio, további világ-események és a régi questek tartalmi konverziója még hátravan. |
-| 10. Teljes tartalom- és karakterkonverzió | Prototípusok, példányok, receptek, droppok, boltok és minden hivatkozás egyszeri konverziója; régi tárgyút kivezetése | A konverteralap és auditok megvannak; a normál legacy leltár átállítását a felhasználó korábban későbbre kérte. Nem kapcsoljuk át e részfeladat mellékhatásaként. |
+| 10. Teljes tartalom- és karakterkonverzió — folyamatban | Prototípusok, példányok, receptek, droppok, boltok és minden hivatkozás egyszeri konverziója; régi tárgyút kivezetése | A [C42](2026-11-10_legacy_inventory_conversion.md) és [C43](2026-11-10_legacy_equipment_conversion.md) után a [C44](2026-11-10_legacy_full_inventory_conversion.md) az eredeti szabika karakter mind a 76 tárgyát / 593 darabját átállította, a további fogyóeszközökkel, pénzjegyekkel, segédekkel, ládákkal és használható questtárgyakkal együtt. 70 új definíció, 91 recept, atomi állapot- és pénztárcaimport; a másolat és az eredeti fiók Unity-újrabelépése is sikeres. Az eredeti leltár már tesztelhető az új UI-ban. A teljes tartalmi hivatkozáskonverzió, a többi régi karakter/tároló és a 3 100 blokkolt felszerelési forrássor továbbra is nyitott. |
 | 11. Kiadási ellenőrzés és grafikai integráció | Teljes világjelenet, távoli avatarok typed megjelenésének végső próbája, standalone kliens, FreeBSD, teljes gazdasági/mission regresszió és terhelés | A C28 publikálja a typed alap- és jelmezmodelleket a megfigyelőnek, az izolált próba tényleges mesheket hoz létre mindkét actoron. A teljes világjelenetes, animációs és production Addressables-próba továbbra is szükséges. |
 
 ## Az audit módszere

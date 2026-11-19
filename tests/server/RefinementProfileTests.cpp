@@ -113,9 +113,20 @@ void AccessoryRefinementHasNoHiddenRawGain()
     invalid.levels[1].gain.physicalDefenseRaw = 1000;
     Check(ValidateRefinementProfile(std::move(invalid), bonuses).error() == RefinementError::WrongStatKind, "accessory profile cannot hide raw defense gains");
 }
+void ExactState()
+{
+    const auto exact=ValidateRefinementProfile({70,"refine.exact_state",RefinementKind::ExactState,200,{{200,{},{}}}}).value();
+    Check(exact.FindLevel(200) && !exact.FindLevel(0) && !exact.FindLevel(199),"exact state never creates intermediate levels");
+    Check(ResolveRefinedBaseStats({123000,0,0,0},exact,200).value().physicalAttackRaw==123000,"exact state retains its authored base");
+    Check(NextRefinementLevel(exact,200).error()==RefinementError::AtMaximumLevel,"exact state needs an explicit cross-prototype recipe");
+    auto invalid=exact.Data();invalid.levels[0].level=199;
+    Check(!ValidateRefinementProfile(invalid),"exact maximum must match its single level");
+    invalid=exact.Data();invalid.levels.push_back({0,{},{}});
+    Check(!ValidateRefinementProfile(invalid),"exact state cannot hide other levels");
+}
 }
 int main()
 {
-    try { GoldenAndOrdering(); InvalidProfiles(); ProfileDefinedCeiling(); AccessoryRefinementHasNoHiddenRawGain(); std::cout << "Refinement checks passed: " << checks << '\n'; return 0; }
+    try { GoldenAndOrdering(); InvalidProfiles(); ProfileDefinedCeiling(); AccessoryRefinementHasNoHiddenRawGain(); ExactState(); std::cout << "Refinement checks passed: " << checks << '\n'; return 0; }
     catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

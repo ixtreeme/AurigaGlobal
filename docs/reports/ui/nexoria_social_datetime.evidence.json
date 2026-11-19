@@ -1,0 +1,46 @@
+{
+  "checked_utc": "2026-11-13T20:58:48.410159+00:00",
+  "scope": "Human-readable chat archive database timestamps; managed protocol and display unchanged",
+  "schema_migrations": [
+    "db/migrations/social/002_social_history.sql",
+    "db/migrations/social/003_social_history_datetime.sql"
+  ],
+  "column": "created_at DATETIME(3)",
+  "timezone": "UTC, independent of session time_zone",
+  "preview": [
+    [
+      "1",
+      "2026-11-13 19:54:59.124"
+    ],
+    [
+      "2",
+      "2026-11-13 19:57:26.926"
+    ]
+  ],
+  "existing_records_preserved": 102,
+  "total_records_after_live_check": 150,
+  "preservation": "Every original field, millisecond timestamp, nonce, ciphertext and authentication tag compared exactly before/after. Old protected table retained as social_chat_message_epoch_backup.",
+  "protection": "New table append-only triggers active before copy and atomic rename; original backup remains protected.",
+  "native_server_sha256": "957d2e1c7906cccb344aa965c41c17957c9bae4f06484041adfae89f3dad0520",
+  "checks": {
+    "native_build": "GameServer, SocialHistoryCryptoTests, ServerConfigTests passed",
+    "native_ctest": [
+      "typed_inventory_wire",
+      "persistent_items",
+      "social_history_crypto",
+      "social_rules",
+      "server_config"
+    ],
+    "isolated_sql_migration": "Passed seven timestamp boundaries, exact round trip, UTC timezone independence, new writes, ciphertext preservation and update/delete protection on both tables",
+    "unity_editor": "6000.3.27f1; managed source/protocol unchanged; live validators compiled and executed in pinned Editor",
+    "unity_existing_records_after_restart": "Passed: old private, offline and guild records authenticated and restored after full game stack restart on the new schema",
+    "unity_new_writes_and_reconnect": "Passed: real native private/guild writes, paging, participant authorization, persisted read cursor, offline unread and reconnect with DATETIME(3)",
+    "live_sql": "Passed: encrypted rows, plaintext sentinel absent, direct update/delete denied, private/guild read cursors current, native wallets unchanged",
+    "local_server": "All game cores, login, Database and local MariaDB running"
+  },
+  "untested": [
+    "Production deployment/load",
+    "Standalone Unity player build"
+  ],
+  "version_control": "Local changes only; no commit, check-in or push"
+}

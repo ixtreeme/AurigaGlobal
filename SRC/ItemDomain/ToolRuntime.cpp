@@ -62,15 +62,15 @@ std::expected<ToolRuntimePlan,E> MakeToolRuntimeCommit(const ItemCatalog& c,std:
     else
     {
         const auto plan=PlanToolAction(c,{Context(fence.owner,r.actor,op),Snapshot(*tool),r.action==ToolRuntimeAction::Refine ? ToolAction::Refine : ToolAction::Practice,tool->tool->trainingPoints,r.roll});if(!plan)return std::unexpected(plan.error());
-        out.level=plan->afterLevel;out.state.trainingPoints=plan->afterPoints;out.outcome=r.action==ToolRuntimeAction::Practice ? 4 : plan->success ? 1 : 2;
+        out.level=plan->afterLevel;out.state.trainingPoints=plan->afterPoints;out.afterItem=plan->afterItem;if(out.afterItem)out.state.baitPower=0;out.outcome=r.action==ToolRuntimeAction::Practice ? 4 : plan->success ? 1 : 2;
         commit.operationId=op;commit.catalogRevision=c.Revision();commit.catalogHash=c.ContentHash();commit.kind=ItemOperationKind::Service;commit.owners={fence};
     }
-    auto after=*tool;++after.revision;after.refinementLevel=out.level;after.tool=out.state;commit.items.push_back({*tool,after});
+    auto after=*tool;++after.revision;if(out.afterItem)after.key=*out.afterItem;after.refinementLevel=out.level;after.tool=out.state;commit.items.push_back({*tool,after});
     const ItemStorage storage{tool->owner,tool->placement->kind,tool->placement->storageId};
     if(std::ranges::find(commit.storages,storage,&ItemStorageLayout::storage)==commit.storages.end())
     {const auto l=std::ranges::find(layouts,storage,&ItemStorageLayout::storage);if(l==layouts.end())return std::unexpected(E::InvalidSnapshot);commit.storages.push_back(*l);}
-    commit.kind=ItemOperationKind::Service;commit.outcomeCode=0x2510+out.outcome;commit.result={'T','L','R',1,out.outcome};
-    const auto put=[&](std::uint64_t n,unsigned bytes){for(unsigned i=0;i<bytes;++i)commit.result.push_back(static_cast<std::uint8_t>(n>>(8*i)));};put(r.roll,4);put(out.level,2);put(out.state.trainingPoints,4);put(out.state.baitPower,4);
+    commit.kind=ItemOperationKind::Service;commit.outcomeCode=0x2510+out.outcome;commit.result={'T','L','R',static_cast<std::uint8_t>(out.afterItem ? 2 : 1),out.outcome};
+    const auto put=[&](std::uint64_t n,unsigned bytes){for(unsigned i=0;i<bytes;++i)commit.result.push_back(static_cast<std::uint8_t>(n>>(8*i)));};put(r.roll,4);put(out.level,2);put(out.state.trainingPoints,4);put(out.state.baitPower,4);if(out.afterItem){put(static_cast<unsigned>(out.afterItem->Category()),2);put(out.afterItem->LocalId(),4);}
     if(!ValidateItemCommit(c,commit))return std::unexpected(E::InvalidState);return out;
 }
 }

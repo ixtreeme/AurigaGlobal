@@ -1,0 +1,235 @@
+{
+  "date": "2026-11-17",
+  "checked_utc": "2026-11-17T17:26:29.670044+00:00",
+  "complete": true,
+  "feature": "live_existing_reward_count_and_chance_update",
+  "server_branch": "20261103",
+  "unity_branch": "/main/unity63-integration-20261103",
+  "unity_editor": "6000.3.27f1",
+  "local_package": "D:\\AurigaGlobal\\Server2-Local",
+  "manager_backup": "D:\\AurigaGlobal\\Server2-Local\\run\\deployments\\bulk-update-manager-20261117T172356Z",
+  "installed_manager_files_verified": 248,
+  "no_server_restart": true,
+  "server_processes": {
+    "database": 31428,
+    "ch1-core1": 10880,
+    "ch1-core2": 34024,
+    "ch99-core99": 20684,
+    "login": 24644
+  },
+  "base_catalog_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+  "source_catalog_sha256": "9ab3dac7f81d2898ab89aeeca641bffc4f59b28ac5f7683d080282ea9913babd",
+  "deferred_637_unchanged": true,
+  "final_mob_groups": 183,
+  "final_mob_entries": 9031,
+  "final_chest_overrides": 1,
+  "preexisting_live_contents_preserved": true,
+  "live_proof": {
+    "run": "ea374630eaf846d7",
+    "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+    "first_hash": "81f2dfe1d8dc824e7d39c2fde12a58db80593bcfd65285e3c44ca0675d4a1c50",
+    "updated_hash": "ff401cfb5dd3525c182e14d09c0d909a3cc7789dae37c1f5af84a6933a3d513b",
+    "first_activation": {
+      "available": true,
+      "containers_available": true,
+      "running": true,
+      "cores": [
+        {
+          "name": "ch1-core1",
+          "hash": "81f2dfe1d8dc824e7d39c2fde12a58db80593bcfd65285e3c44ca0675d4a1c50",
+          "release": "b0fd104d2c0f712c4f95c0a2023d4c5e",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch1-core2",
+          "hash": "81f2dfe1d8dc824e7d39c2fde12a58db80593bcfd65285e3c44ca0675d4a1c50",
+          "release": "b0fd104d2c0f712c4f95c0a2023d4c5e",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch99-core99",
+          "hash": "81f2dfe1d8dc824e7d39c2fde12a58db80593bcfd65285e3c44ca0675d4a1c50",
+          "release": "b0fd104d2c0f712c4f95c0a2023d4c5e",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        }
+      ],
+      "hash": "81f2dfe1d8dc824e7d39c2fde12a58db80593bcfd65285e3c44ca0675d4a1c50",
+      "release": "b0fd104d2c0f712c4f95c0a2023d4c5e",
+      "activated": true
+    },
+    "update_activation": {
+      "available": true,
+      "containers_available": true,
+      "running": true,
+      "cores": [
+        {
+          "name": "ch1-core1",
+          "hash": "ff401cfb5dd3525c182e14d09c0d909a3cc7789dae37c1f5af84a6933a3d513b",
+          "release": "9ba7864764cc4a47aa54fb7c0f3008ee",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch1-core2",
+          "hash": "ff401cfb5dd3525c182e14d09c0d909a3cc7789dae37c1f5af84a6933a3d513b",
+          "release": "9ba7864764cc4a47aa54fb7c0f3008ee",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch99-core99",
+          "hash": "ff401cfb5dd3525c182e14d09c0d909a3cc7789dae37c1f5af84a6933a3d513b",
+          "release": "9ba7864764cc4a47aa54fb7c0f3008ee",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        }
+      ],
+      "hash": "ff401cfb5dd3525c182e14d09c0d909a3cc7789dae37c1f5af84a6933a3d513b",
+      "release": "9ba7864764cc4a47aa54fb7c0f3008ee",
+      "activated": true
+    },
+    "server_processes_unchanged": {
+      "database": 31428,
+      "ch1-core1": 10880,
+      "ch1-core2": 34024,
+      "ch99-core99": 20684,
+      "login": 24644
+    },
+    "two_chests_opened_after_update": true,
+    "actual_mob_kills_before_and_after": true,
+    "edited_count_and_chance": true,
+    "held_quote_preserved": true,
+    "same_connection": true,
+    "relog_persisted": true,
+    "protected_state": {
+      "items": "5ece41c57b2502e544f8dd7ddb7016506f364d5c9d5eb7bbcbb71e08fb160a73",
+      "wallets": "134ef18248817b5dcedb24c97964c5f1116f5ebceb9bbe3b63fd407980558b92"
+    },
+    "backup": "D:\\AurigaGlobal\\Server2-Local\\run\\deployments\\live-update-proof-20261117T172105Z",
+    "original_contents_restored": true,
+    "cleanup_activation": {
+      "available": true,
+      "containers_available": true,
+      "running": true,
+      "cores": [
+        {
+          "name": "ch1-core1",
+          "hash": "162ef5115b58d6b833aa303550d0eef430a266fbe42296ca63d490c116c6d95a",
+          "release": "ae3c6e6e6242e5cbe7ba744b881b17f6",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch1-core2",
+          "hash": "162ef5115b58d6b833aa303550d0eef430a266fbe42296ca63d490c116c6d95a",
+          "release": "ae3c6e6e6242e5cbe7ba744b881b17f6",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        },
+        {
+          "name": "ch99-core99",
+          "hash": "162ef5115b58d6b833aa303550d0eef430a266fbe42296ca63d490c116c6d95a",
+          "release": "ae3c6e6e6242e5cbe7ba744b881b17f6",
+          "base_hash": "741577036e2516600031bd492d5b3f22d3f14b0561321586dfd431fa5a945c85",
+          "supported": true,
+          "containers_supported": true,
+          "error": "",
+          "pending": false
+        }
+      ],
+      "hash": "162ef5115b58d6b833aa303550d0eef430a266fbe42296ca63d490c116c6d95a",
+      "release": "ae3c6e6e6242e5cbe7ba744b881b17f6",
+      "activated": true
+    }
+  },
+  "ctest_passed": [
+    "container_opening",
+    "catalog_editor",
+    "bulk_rewards_editor",
+    "live_rewards_mariadb"
+  ],
+  "workflow_cases": 12,
+  "clarity_cases": 6,
+  "reward_editor_cases": 17,
+  "live_sql_cases": 10,
+  "frozen_native_gui_smoke": {
+    "catalog_loaded": true,
+    "bulk_menu_opened": true,
+    "update_dialog_opened": true,
+    "no_ui_data_saved": true
+  },
+  "screenshots": [
+    "../ui/2026-11-17_bulk_update_editor.png"
+  ],
+  "checks": {
+    "bulk-update-final-tests.log": {
+      "path": "build/bulk-update-final-tests.log",
+      "sha256": "3f264c572342c47cb8c0311fcb3ff5315ee24c34fec5a25e7f497a91f8283c1d"
+    },
+    "bulk-update-clarity.log": {
+      "path": "build/bulk-update-clarity.log",
+      "sha256": "a56fa956e4f9062fbf6ef1c890c4d39a5e5bc4df3ed4c32d1a586cc0eebc9755"
+    },
+    "bulk-update-workflow-tests.log": {
+      "path": "build/bulk-update-workflow-tests.log",
+      "sha256": "1737b0b9e2b1ebf0d0ce9c55d56409a7ff6d4da0f01a02d78bc90c53271c56a1"
+    },
+    "bulk-update-ui-preview.log": {
+      "path": "build/bulk-update-ui-preview.log",
+      "sha256": "727029010cb04eaa1a807c9aa085189b6abebe592e57ca471aab5b87889364e3"
+    },
+    "bulk-update-unity-live.log": {
+      "path": "build/bulk-update-unity-live.log",
+      "sha256": "b6f58e051ec69ddb012cab41bdf1e295f10d23e274a67cda9328f9c452a593ab"
+    },
+    "bulk-update-live-proof.log": {
+      "path": "build/bulk-update-live-proof.log",
+      "sha256": "598fb487f541f112b806f2c9f1369cd2ac73cc5a20d7ef706a4bab7e9af23a56"
+    },
+    "bulk-update-manager-build.log": {
+      "path": "build/bulk-update-manager-build.log",
+      "sha256": "ca42cb8a665e46e20a3cba52f8bcd985bfdb547376500605a41ab94431a47b52"
+    },
+    "bulk-update-manager-deploy.log": {
+      "path": "build/bulk-update-manager-deploy.log",
+      "sha256": "4a44593062c12616f82e82a52500c45534224d1fe2fd0d936283a30f78e450c0"
+    }
+  },
+  "generated_build_archive": "C:/Users/ixtre/AppData/Local/Temp/AurigaGeneratedBuildArchive/20261117-live-bulk-update/archive-map.json",
+  "full_drop_workbench_implemented": false,
+  "legacy_txt_script_adapter_implemented": false,
+  "design": "docs/server_manager_drop_workbench_direction.md",
+  "not_run": [
+    "FreeBSD build",
+    "standalone/mobile Unity build",
+    "remote package editing",
+    "load and multi-host outage tests"
+  ]
+}

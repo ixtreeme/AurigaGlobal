@@ -1,5 +1,8 @@
 #include "../mission/TypedMissionRuntime.hpp"
 #include "../item/ItemStore.hpp"
+#include "../item/TypedMoney.hpp"
+#include "../item/TypedQuestItems.hpp"
+#include "typed_money_continuation.h"
 #include "stdafx.h"
 #include <cmath>
 #include <Core/Logging.hpp>
@@ -1182,18 +1185,11 @@ namespace quest
 	}
 
 	ALUA(pc_get_money)
-	{
-		// migrated from CHARACTER::GetGold
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (const auto* gold = ECS_TryGet<ecs::GoldAmount>(e))
-		{
-			lua_pushnumber(L, gold->amount);
-			return 1;
-		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		lua_pushnumber(L, ecs::PointSystem::GetGold(chEntity));
-		return 1;
-	}
+    {
+        const auto e=CQuestManager::instance().GetPCEntity(L);
+        if(const auto* typed=g_registry.valid(e)?g_registry.try_get<ecs::TypedItems>(e):nullptr){for(const auto& w:typed->state.wallets)if(w.owner==typed->state.fence.owner&&w.currency==auriga::item::WalletCurrency::Gold){lua_pushinteger(L,static_cast<lua_Integer>(w.balance));return 1;}return luaL_error(L,"Native gold wallet unavailable");}
+        lua_pushinteger(L,ecs::PointSystem::GetGold(e));return 1;
+    }
 
 	ALUA(pc_get_real_alignment)
 	{
@@ -1233,6 +1229,15 @@ namespace quest
 
 	ALUA(pc_change_money)
 	{
+        const auto nativeEntity=CQuestManager::instance().GetPCEntity(L);
+        if(g_registry.valid(nativeEntity)&&g_registry.all_of<ecs::TypedItems>(nativeEntity)){
+            int valid=0;const auto delta=lua_tointegerx(L,-1,&valid);if(!valid||delta==INT64_MIN)return luaL_error(L,"Native gold change requires an exact signed integer");if(!delta)return 0;
+            auto& q=CQuestManager::instance();const auto* state=q.GetCurrentState();if(!lua_isyieldable(L)||q.IsInOtherPCBlock()||!state||state->co!=L)return luaL_error(L,"Native gold change requires the authenticated player's quest coroutine");
+            const auto pid=ecs::PlayerRuntime::GetPlayerID(nativeEntity);
+            if(!RequestTypedQuestGoldChange(nativeEntity,delta,[pid,co=L](bool ok){CQuestManager::instance().ResumeTypedItems(pid,co,ok);}))return luaL_error(L,"Native gold transaction unavailable or insufficient funds");
+            lua_settop(L,0);lua_pushliteral(L,"typed_items");return lua_yieldk(L,1,0,ResumeNativeQuestMoney);
+        }
+
 		// migrated from CHARACTER::PointChange(POINT_GOLD, ...)
 		// DUAL-PATH: ECS update + legacy call during migration window
 		const int64_t gold = static_cast<int64_t>(lua_tonumber(L, -1));
@@ -3038,86 +3043,6 @@ teleport_area:
 		return 1;
 	}
 
-	ALUA(pc_give_award)
-	{
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		LPDESC desc = ecs::PlayerRuntime::GetDesc(chEntity);
-		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isstring(L, 3) )
-		{
-			sys_err("QUEST give award call error : wrong argument");
-			lua_pushnumber (L, 0);
-			return 1;
-		}
-		if (!desc)
-		{
-			lua_pushnumber(L, 0);
-			return 1;
-		}
-
-		uint32_t dwVnum = (int) lua_tonumber(L, 1);
-
-		int icount = (int) lua_tonumber(L, 2);
-
-		LOG_INFO("QUEST [award] item {} to login {}", dwVnum, desc->GetAccountTable().login);
-
-		DBManager::instance().QueryPrepared(
-			"INSERT INTO item_award (login, vnum, count, given_time, why, mall) "
-			"SELECT ?, ?, ?, NOW(), ?, 1 FROM DUAL "
-			"WHERE NOT EXISTS (SELECT login, why FROM item_award WHERE login = ? AND why = ?)",
-			{
-				SqlParam::Text(desc->GetAccountTable().login),
-				SqlParam::UInt(dwVnum),
-				SqlParam::Int(icount),
-				SqlParam::Text(lua_tostring(L, 3)),
-				SqlParam::Text(desc->GetAccountTable().login),
-				SqlParam::Text(lua_tostring(L, 3))
-			});
-
-		lua_pushnumber (L, 0);
-		return 1;
-	}
-	ALUA(pc_give_award_socket)
-	{
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		LPDESC desc = ecs::PlayerRuntime::GetDesc(chEntity);
-		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isstring(L, 3) || !lua_isstring(L, 4) || !lua_isstring(L, 5) || !lua_isstring(L, 6) )
-		{
-			sys_err("QUEST give award call error : wrong argument");
-			lua_pushnumber (L, 0);
-			return 1;
-		}
-		if (!desc)
-		{
-			lua_pushnumber(L, 0);
-			return 1;
-		}
-
-		uint32_t dwVnum = (int) lua_tonumber(L, 1);
-
-		int icount = (int) lua_tonumber(L, 2);
-
-		LOG_INFO("QUEST [award] item {} to login {}", dwVnum, desc->GetAccountTable().login);
-
-		DBManager::instance().QueryPrepared(
-			"INSERT INTO item_award (login, vnum, count, given_time, why, mall, socket0, socket1, socket2) "
-			"SELECT ?, ?, ?, NOW(), ?, 1, ?, ?, ? FROM DUAL "
-			"WHERE NOT EXISTS (SELECT login, why FROM item_award WHERE login = ? AND why = ?)",
-			{
-				SqlParam::Text(desc->GetAccountTable().login),
-				SqlParam::UInt(dwVnum),
-				SqlParam::Int(icount),
-				SqlParam::Text(lua_tostring(L, 3)),
-				SqlParam::Text(lua_tostring(L, 4)),
-				SqlParam::Text(lua_tostring(L, 5)),
-				SqlParam::Text(lua_tostring(L, 6)),
-				SqlParam::Text(desc->GetAccountTable().login),
-				SqlParam::Text(lua_tostring(L, 3))
-			});
-
-		lua_pushnumber (L, 0);
-		return 1;
-	}
-
 	ALUA(pc_get_informer_type)
 	{
 		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
@@ -3944,6 +3869,14 @@ teleport_area:
 #endif
 
 #ifdef ENABLE_GAYA_SYSTEM
+    static int NativeQuestGaya(lua_State* L,entt::entity character,std::int64_t delta) {
+        if(!delta)return 0;
+        auto& q=CQuestManager::instance();const auto* state=q.GetCurrentState();
+        if(delta==INT64_MIN || !lua_isyieldable(L) || q.IsInOtherPCBlock() || !state || state->co!=L)return luaL_error(L,"Native Gaya requires the authenticated quest coroutine");
+        const auto pid=ecs::PlayerRuntime::GetPlayerID(character);
+        if(!RequestTypedQuestGayaChange(character,delta,[pid,co=L](bool ok){CQuestManager::instance().ResumeTypedItems(pid,co,ok);}))return luaL_error(L,"Native Gaya transaction unavailable or insufficient funds");
+        lua_settop(L,0);lua_pushliteral(L,"typed_items");return lua_yieldk(L,1,0,ResumeNativeQuestMoney);
+    }
 	ALUA(pc_get_gaya)
 	{
 		lua_pushnumber(L, ecs::PointSystem::Get(CQuestManager::instance().GetPCEntity(L), POINT_GAYA));
@@ -3953,6 +3886,9 @@ teleport_area:
 	ALUA(pc_give_gaya)
 	{
 		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
+        if(g_registry.valid(character) && g_registry.all_of<ecs::TypedItems>(character)) {
+            int valid=0;const auto delta=lua_tointegerx(L,1,&valid);if(!valid || delta<=0)return luaL_error(L,"Native Gaya award requires a positive exact integer");return NativeQuestGaya(L,character,delta);
+        }
 		if (!lua_isnumber(L, 1))
 		{
 			sys_err("QUEST : wrong argument");
@@ -3975,6 +3911,10 @@ teleport_area:
 
 	ALUA(pc_change_gaya)
 	{
+        const auto native=CQuestManager::instance().GetPCEntity(L);
+        if(g_registry.valid(native) && g_registry.all_of<ecs::TypedItems>(native)) {
+            int valid=0;const auto delta=lua_tointegerx(L,-1,&valid);if(!valid)return luaL_error(L,"Native Gaya change requires an exact signed integer");return NativeQuestGaya(L,native,delta);
+        }
 		const int gaya = static_cast<int>(lua_tonumber(L, -1));
 		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
 		const int64_t currentGaya = ecs::PointSystem::Get(character, POINT_GAYA);
@@ -4246,15 +4186,124 @@ teleport_area:
 #endif
 
 
+    namespace
+    {
+        namespace item = auriga::item;
+
+        std::optional<item::MissionItemAmount> ReadQuestItem(lua_State* L, int first, bool withCount)
+        {
+            int valid = 0;
+            const auto category = lua_tointegerx(L, first, &valid);
+            if (!valid || category < 1 || category > UINT16_MAX)
+                return std::nullopt;
+            const auto local = lua_tointegerx(L, first + 1, &valid);
+            if (!valid || local < 1 || local > UINT32_MAX)
+                return std::nullopt;
+            const auto level = lua_tointegerx(L, first + 2, &valid);
+            if (!valid || level < 0 || level > 255)
+                return std::nullopt;
+            const auto key = item::ItemKey::Create(static_cast<uint16_t>(category), static_cast<uint32_t>(local));
+            if (!key)
+                return std::nullopt;
+            const auto count = withCount ? lua_tointegerx(L, first + 3, &valid) : 1;
+            if (!valid || count < 1 || count > 50000)
+                return std::nullopt;
+            return item::MissionItemAmount{*key, static_cast<uint16_t>(level), static_cast<uint32_t>(count)};
+        }
+
+        bool ReadQuestItems(lua_State* L, int index, std::vector<item::MissionItemAmount>& result)
+        {
+            if (!lua_istable(L, index) || lua_rawlen(L, index) > item::MaxMissionItemEntries)
+                return false;
+            const auto count = static_cast<int>(lua_rawlen(L, index));
+            for (int i = 1; i <= count; ++i)
+            {
+                lua_rawgeti(L, index, i);
+                if (!lua_istable(L, -1) || lua_rawlen(L, -1) != 4)
+                {
+                    lua_pop(L, 1);
+                    return false;
+                }
+                const int row = lua_gettop(L);
+                for (int field = 1; field <= 4; ++field)
+                    lua_rawgeti(L, row, field);
+                const auto value = ReadQuestItem(L, row + 1, true);
+                lua_pop(L, 5);
+                if (!value)
+                    return false;
+                result.push_back(*value);
+            }
+            return true;
+        }
+    }
+
     ALUA(pc_typed_item_count)
     {
-        auto e=CQuestManager::instance().GetCurrentCharacter();
-        int valid=0;const auto category=lua_tointegerx(L,1,&valid);if(!valid || category<1 || category>UINT16_MAX){lua_pushnil(L);return 1;}
-        const auto local=lua_tointegerx(L,2,&valid);if(!valid || local<1 || uint64_t(local)>UINT32_MAX){lua_pushnil(L);return 1;}
-        const auto level=lua_tointegerx(L,3,&valid);const auto key=auriga::item::ItemKey::Create(uint16_t(category),uint32_t(local));
-        const auto* state=g_registry.valid(e)?g_registry.try_get<ecs::TypedItems>(e):nullptr;
-        if(!valid || level<0 || level>255 || !key || !state || g_registry.all_of<ecs::TypedItemBusy>(e)){lua_pushnil(L);return 1;}
-        lua_pushinteger(L,auriga::item::CountMissionItems(state->state.items,state->state.fence.owner,*key,uint16_t(level)));return 1;
+        const auto value = ReadQuestItem(L, 1, false);
+        const auto entity = CQuestManager::instance().GetCurrentCharacter();
+        const auto* typed = g_registry.valid(entity) ? g_registry.try_get<ecs::TypedItems>(entity) : nullptr;
+        if (!value || !typed || g_registry.all_of<ecs::TypedItemBusy>(entity))
+            lua_pushnil(L);
+        else
+            lua_pushinteger(L, item::CountMissionItems(typed->state.items, typed->state.fence.owner,
+                value->key, value->level));
+        return 1;
+    }
+
+    static int RunTypedItemExchange(lua_State* L, bool useSelectedItem)
+    {
+        const auto refused = [L](const char* reason) {
+            lua_pushboolean(L, false);
+            lua_pushstring(L, reason);
+            return 2;
+        };
+        auto& quest = CQuestManager::instance();
+        auto* state = quest.GetCurrentState();
+        if (!lua_isyieldable(L) || quest.IsInOtherPCBlock() || !state || state->co != L)
+            return refused("invalid_context");
+
+        int valid = 0;
+        std::vector<item::MissionItemAmount> costs, rewards;
+        lua_Integer goldCost = 0;
+        lua_Integer goldReward = 0;
+        if (useSelectedItem)
+        {
+            if (!state->typedItemUse.id)
+                return refused("invalid_context");
+            goldReward = lua_tointegerx(L, 2, &valid);
+            if (!valid || goldReward < 0 || !ReadQuestItems(L, 1, rewards))
+                return refused("invalid");
+        }
+        else
+        {
+            goldCost = lua_tointegerx(L, 3, &valid);
+            if (!valid || goldCost < 0 || !ReadQuestItems(L, 1, costs) || !ReadQuestItems(L, 2, rewards))
+                return refused("invalid");
+        }
+
+        const auto entity = quest.GetCurrentCharacter();
+        const auto pid = ecs::PlayerRuntime::GetPlayerID(entity);
+        const auto result = RequestTypedQuestItemExchange(entity, std::move(costs), std::move(rewards),
+            static_cast<uint64_t>(goldCost),
+            [pid, coroutine = L](bool ok) { CQuestManager::instance().ResumeTypedItems(pid, coroutine, ok); },
+            useSelectedItem ? state->typedItemUse : TypedItemUseSource{}, static_cast<uint64_t>(goldReward));
+        if (!result)
+        {
+            switch (result.error())
+            {
+            case item::ItemMissionError::Requirements: return refused("materials");
+            case item::ItemMissionError::NoMoney: return refused("yang");
+            case item::ItemMissionError::NoRoom: return refused("inventory_full");
+            case item::ItemMissionError::Limit:
+                return refused(useSelectedItem && goldReward > 0 ? "yang_limit" : "unavailable");
+            default: return refused("unavailable");
+            }
+        }
+        if (useSelectedItem)
+            state->typedItemUse = {};
+        lua_settop(L, 0);
+        lua_pushliteral(L, "typed_items");
+        return lua_yieldk(L, 1, 0, [](lua_State* thread, int, lua_KContext) { return lua_gettop(thread); });
     }
     ALUA(pc_typed_mission_status)
     {
@@ -4271,6 +4320,10 @@ teleport_area:
         lua_settop(L,0);lua_pushliteral(L,"typed_items");
         return lua_yieldk(L,1,0,[](lua_State* thread,int,lua_KContext){return lua_gettop(thread);});
     }
+
+    // Exchange inventory requirements, or redeem exactly the item used to start this handler.
+    ALUA(pc_typed_item_exchange) { return RunTypedItemExchange(L, false); }
+    ALUA(pc_typed_item_redeem) { return RunTypedItemExchange(L, true); }
 
 	void RegisterPCFunctionTable()
 	{
@@ -4345,6 +4398,8 @@ teleport_area:
 			{ "give_item2_select",		pc_give_or_drop_item_and_select	},
 			{ "give_gold",		pc_give_gold		},
 			{ "typed_item_count", pc_typed_item_count },
+            { "typed_item_exchange", pc_typed_item_exchange },
+            { "typed_item_redeem", pc_typed_item_redeem },
             { "typed_mission_status", pc_typed_mission_status },
             { "typed_mission_action", pc_typed_mission_action },
             { "count_item",		pc_count_item		},
@@ -4476,8 +4531,6 @@ teleport_area:
 			{ "get_informer_type",	pc_get_informer_type	},
 			{ "get_informer_item",  pc_get_informer_item	},
 
-			{ "give_award",			pc_give_award			},
-			{ "give_award_socket",	pc_give_award_socket	},
 
 			{ "get_killee_drop_pct",	pc_get_killee_drop_pct	},
 

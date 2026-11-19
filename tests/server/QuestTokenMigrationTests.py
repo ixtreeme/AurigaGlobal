@@ -57,6 +57,7 @@ class ConversionTests(unittest.TestCase):
         self.assertEqual(result['summary']['converted'], 1)
         base = model.items()[0]
         self.assertEqual((base['max_stack'], base['min_level'], base['inventory_height']), ('50000','42','3'))
+        self.assertEqual(base['icon_asset'],'icon/item/orb.tga')
         document = model.item((10,1))
         self.assertEqual(document['use']['allowed_classes'], '14')
         self.assertEqual(document['use']['allowed_sexes'], '1')

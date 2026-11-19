@@ -41,22 +41,10 @@ player_cache_wire::Receipt ToWire(const Receipt &receipt)
 }
 std::optional<Drain::Stamp> Drain::Inspect(View view, uint32_t character, bool clean)
 {
-    if (!view.player || view.items.size() > MaximumItems || view.player->Get(false)->id != character ||
+    if (!view.player || view.player->Get(false)->id != character ||
         (clean && view.player->HasPendingQuery()))
         return {};
-    Stamp stamp{view.player->Version(), {}};
-    stamp.items.reserve(view.items.size());
-    for (auto *item : view.items)
-    {
-        if (!item || !item->Get(false)->id || item->Get(false)->owner != character ||
-            (clean && item->HasPendingQuery()))
-            return {};
-        stamp.items.push_back({item->Get(false)->id, item->Version()});
-    }
-    std::ranges::sort(stamp.items, {}, &ItemStamp::id);
-    for (size_t i = 1; i < stamp.items.size(); ++i)
-        if (stamp.items[i - 1].id == stamp.items[i].id)
-            return {};
+    Stamp stamp{view.player->Version()};
     return stamp;
 }
 std::optional<Drain> Drain::Begin(const player_session::Authority &authority, player_session::Lease lease,
@@ -74,8 +62,6 @@ std::optional<Drain> Drain::Begin(const player_session::Authority &authority, pl
     if (origins[0].lane == origins[1].lane)
         return {};
     view.player->Flush();
-    for (auto *item : view.items)
-        item->Flush();
     Drain drain;
     drain.lease_ = lease;
     drain.challenge_ = challenge;

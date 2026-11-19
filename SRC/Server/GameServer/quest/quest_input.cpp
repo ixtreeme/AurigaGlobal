@@ -33,6 +33,7 @@
 #include "../ecs/systems/StatSystem.hpp"
 #include "desc_client.h"
 #include "gm.h"
+#include "../item/TypedItemOps.hpp"
 
 void CInputMain::ScriptButton(entt::entity character, const void* c_pData)
 {
@@ -63,6 +64,7 @@ void CInputMain::ScriptAnswer(entt::entity character, const void* c_pData)
 // TODO Phase 8: migrate ScriptAnswer handler ECS
 // DUAL-PATH: legacy only during migration window
 	TPacketCGScriptAnswer * p = (TPacketCGScriptAnswer *) c_pData;
+	if(HandleTypedQuestAnswer(character,p->answer))return;
 	LOG_INFO("QUEST ScriptAnswer pid {} answer {}", ecs::PlayerRuntime::GetPlayerID(character), p->answer);
 
 	if (p->answer > 250)

@@ -26,14 +26,14 @@ inline bool AssetReference(std::string_view value, bool allowEmpty = false) noex
         if (i == value.size() || value[i] == '/')
         {
             const auto part = value.substr(start, i - start);
-            if (part.empty() || part == "." || part == "..") return false;
+            if (part.empty() || part == "." || part == ".." || part.front()==' ' || part.back()==' ') return false;
             start = i + 1;
         }
         else
         {
             const auto c = static_cast<unsigned char>(value[i]);
             if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-                  (c >= '0' && c <= '9') || c == '_' || c == '-' || c == '.')) return false;
+                  (c >= '0' && c <= '9') || c == '_' || c == '-' || c == '.' || c == ' ')) return false;
         }
     }
     return true;

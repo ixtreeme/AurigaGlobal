@@ -1,6 +1,10 @@
 #include "stdafx.h"
 #include "GameConfig.h"
+#include "../dungeon/DungeonUi.hpp"
+#include "../combat/DeathRecap.hpp"
+#include "../social/SocialHistory.hpp"
 #include "../quest/quest_runtime.h"
+#include "../item/ItemCatalogRuntime.hpp"
 #include <Core/server_config.h>
 #include <iostream>
 #include "../ecs/AIHelpers.hpp"
@@ -252,6 +256,8 @@ void heartbeat(LPHEART ht, int pulse)
         WoodcuttingSystem::Tick(get_dword_time());
         HerbalismSystem::Tick(get_dword_time());
         AurigaMissionPass::Tick();
+        DungeonUi::Tick();
+        DeathRecap::Tick();
     }
     if (pulse % std::max(1, passes_per_sec / 5) == 0)
         if (auto* quests = quest::CQuestManager::instance_ptr()) quests->PollReloadControl();
@@ -326,6 +332,7 @@ void heartbeat(LPHEART ht, int pulse)
 
 	DBManager::instance().Process();
 	auriga::item::runtime::ItemStore::Instance().Drain();
+    auriga::item::runtime::TickLiveDropReload();
 	if (!(pulse % passes_per_sec))
 		TickTypedLoot(); // typed ground loot: lapsed claims, expiry (F4 C7c)
 	AccountDB::instance().Process();
@@ -427,6 +434,7 @@ int main(int argc, char **argv)
     { std::cerr << "GameServer configuration: " << configError << '\n'; return 1; }
     if (options.checkOnly) { auriga::config::PrintChecked(section, auriga::config::Role::Game); return 0; }
     if (!auriga::config::EnterWorkingDirectory(section, configError)) { std::cerr << configError << '\n'; return 1; }
+    if(!InitializeSocialHistory(gameConfig.socialHistoryKeyFile,configError)){std::cerr<<"Social history: "<<configError<<'\n';return 1;}
 
 	// Declared before the managers, so it is destroyed after them (see the guard).
 	ThecoreShutdownGuard thecoreShutdown;
@@ -494,6 +502,7 @@ int main(int argc, char **argv)
 	quest::CQuestManager quest_manager;
     quest_manager.ConfigureReloadControl(section.source.parent_path().generic_string(), section.instance,
         LocaleService_GetBasePath(), g_stQuestDir);
+    auriga::item::runtime::ConfigureDropReloadControl(section.instance);
 
 	if (!quest_manager.Initialize()) {
 		CleanUpForEarlyExit();

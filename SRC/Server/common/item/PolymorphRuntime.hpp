@@ -4,6 +4,9 @@
 namespace auriga::item
 {
 const ItemPolymorphRow* PolymorphItem(const ItemCatalog&,ItemKey);
+// Server-authored quest award: concrete original form and practice are issued
+// once; a blank book is never turned into a random form on load or use.
+std::expected<ItemGrant,PolymorphError> OriginalPolymorphBookGrant(const ItemCatalog&,std::uint32_t mob,std::uint32_t practice,std::uint16_t grade);
 // Quote probes a valid decision without mutating; only Make... accepts the
 // separately recorded server roll and produces the receipted write.
 std::expected<PolymorphPlan,PolymorphError> QuotePolymorphRuntime(const ItemCatalog&,const PersistentItem&,const RecoverySchedule&,PolymorphRequest,std::uint64_t now);

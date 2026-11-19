@@ -170,6 +170,14 @@ class Parser {
             for (size_t i = 2; i < parts.size(); ++i) { if (i > 2) handler.argument += '.'; handler.argument += parts[i]; }
         }
         std::transform(handler.event.begin(), handler.event.end(), handler.event.begin(), [](unsigned char c) { return char(std::tolower(c)); });
+        if (handler.event == "typed_use") {
+            if (parts.size() != 2 || handler.target.size() < 3 || handler.target.front() != '"' || handler.target.back() != '"')
+                Fail(file, tokens[at - 1].line, "typed_use requires a quoted item content code");
+            handler.target = handler.target.substr(1, handler.target.size() - 2);
+            if (handler.target.size() > 96 || !std::isalpha(static_cast<unsigned char>(handler.target.front())) ||
+                handler.target.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.") != std::string::npos)
+                Fail(file, tokens[at - 1].line, "invalid typed_use item content code");
+        }
         return handler;
     }
 public:

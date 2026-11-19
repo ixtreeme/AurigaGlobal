@@ -1,5 +1,6 @@
 #include "../../SRC/Server/GameServer/core/lua_incl.h"
 #include "../../SRC/Server/GameServer/quest/quest_source.h"
+#include "../../SRC/Server/GameServer/quest/typed_money_continuation.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -48,12 +49,22 @@ void Parser(lua_State* L) {
     Execute(L, q.handlers[0].code);
     lua_getglobal(L, "result"); Check(lua_tointeger(L, -1) == 2, "legacy operators/functions failed"); lua_pop(L, 1);
     Check(q.handlers[0].code.find("[=[begin end !=]=]") != std::string::npos, "normalizer rewrote a string");
+    const auto typed = quest::source::ParseLegacy(
+        R"(quest x begin state start begin when "catalog.10.scroll".typed_use begin return end end end)", "typed.quest");
+    Check(typed.handlers.size() == 1 && typed.handlers[0].target == "catalog.10.scroll" &&
+        typed.handlers[0].event == "typed_use", "typed use selector preserves a dotted catalog code");
+    Reject([&] { quest::source::ParseLegacy(
+        "quest x begin state start begin when 71056.typed_use begin return end end end", "bad.quest"); });
     Reject([&] { quest::source::ParseLegacy("quest x begin state start begin when login begin", "bad.quest"); });
     Reject([&] { auto bad = quest::source::ParseLegacy("quest x begin state start begin when login begin if then end end end end", "bad.quest"); quest::source::Validate(L, bad); });
     Reject([&] { quest::source::ParseLegacy("quest x begin state start begin when login begin local s='bad\n' end end end", "bad.quest"); });
     Reject([&] { quest::source::ParseLegacy("quest x begin state other begin end end", "bad.quest"); });
 }
-void Coroutines(lua_State* L) {
+int NativeMoneyYield(lua_State* L){lua_settop(L,0);lua_pushliteral(L,"typed_items");return lua_yieldk(L,1,0,quest::ResumeNativeQuestMoney);}
+void NativeMoneyCoroutine(lua_State* L){lua_pushcfunction(L,NativeMoneyYield);lua_setglobal(L,"native_money");
+ for(bool success:{false,true}){Execute(L,"after_native_money=false");auto* co=lua_newthread(L);const auto ref=luaL_ref(L,LUA_REGISTRYINDEX);const std::string code="native_money(); after_native_money=true";Check(luaL_loadbufferx(co,code.data(),code.size(),"@native_money","t")==LUA_OK,"native money continuation compiles");int results=0;Check(lua_resume(co,L,0,&results)==LUA_YIELD&&std::string(lua_tostring(co,1))=="typed_items","actual native gold continuation suspends before later reward");lua_settop(co,0);lua_pushboolean(co,success);lua_pushstring(co,success?"committed":"refused");const auto status=lua_resume(co,L,2,&results);Check(status==(success?LUA_OK:LUA_ERRRUN),"refused native debit aborts quest, committed debit resumes");lua_getglobal(L,"after_native_money");Check(bool(lua_toboolean(L,-1))==success,"later reward only executes after committed native gold write");lua_pop(L,1);lua_closethread(co,L);luaL_unref(L,LUA_REGISTRYINDEX,ref);}
+}
+void Coroutines(lua_State* L) {NativeMoneyCoroutine(L);
     const std::string code = R"lua(
         local selected = coroutine.yield("select", {"one", "two"})
         assert(selected == 2)

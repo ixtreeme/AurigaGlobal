@@ -13,6 +13,7 @@
 #include "desc.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
+#include "../item/TypedItemShop.hpp"
 #include "mob_manager.h"
 #include "party.h"
 #include "regen.h"
@@ -2312,6 +2313,10 @@ void CHARACTER_MANAGER::LoadItemShopBuy(entt::entity character, int itemID, int 
 	if (!ecs::PlayerRuntime::IsPC(character) || !ecs::PlayerRuntime::GetDesc(character))
 		return;
 	if (itemCount < 1 || itemCount > 20)
+		return;
+	// Native item system: wallet debit and item delivery in one store commit.
+	if (itemID > 0 && BeginTypedItemShopBuy(character, static_cast<uint32_t>(itemID), itemCount,
+			ecs::PlayerRuntime::GetProtectTime(character, "itemshop.log") == 1))
 		return;
 
 	if (!m_IShopManager.empty())

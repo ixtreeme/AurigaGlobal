@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QHBoxLayout, QHeaderView, QLab
 from backend import EditorError
 import remote_packages as packages
 import ssh_connection as ssh
+import change_review as review
 
 
 class RemotePackages:
@@ -126,6 +127,11 @@ class RemotePackages:
                 raise EditorError('Telepítés előtt készíts telepítési tervet.')
             request = packages.request(operation, query=self.search.text(), packages=self.names.text(),
                                        fingerprint=self.plan['fingerprint'] if self.plan else '')
+            if operation in ('install','update'):
+                rows=[(profile['name'],'Csomagtelepítési terv' if operation=='install' else 'Elérhető csomagok jegyzéke',
+                    'Jelenlegi állapot',self.plan['plan'] if operation=='install' else 'Csomagkatalógus frissítése')]
+                if not work.approve('Távoli csomagművelet',request,rows):return
+                request=work.request
             if operation in ('plan', 'install', 'update'):
                 self.invalidate()
             work.session = ssh.Session(profile, parent=self.page)

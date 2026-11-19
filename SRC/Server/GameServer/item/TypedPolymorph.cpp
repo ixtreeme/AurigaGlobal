@@ -4,6 +4,7 @@
 #include "TypedInventorySync.hpp"
 #include "TypedEquipment.hpp"
 #include "TypedDrops.hpp"
+#include "TypedItemOps.hpp"
 #include "ItemCatalogRuntime.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/ResourceAdmission.hpp"
@@ -74,6 +75,13 @@ void Reply(entt::entity e,Status status,std::uint8_t error=255)
     const auto packet=item::EncodePolymorphRuntime(*c,{static_cast<std::uint8_t>(status),error,s->purpose,s->outcome,s->roll,s->control,s->preview,TypedItemEffectNow(),source,&*state,actor ? &*actor : nullptr,actor ? Name(actor->mobTemplate) : "",state->polymorph ? Name(state->polymorph->effect.mobTemplate) : ""});
     if(packet)ecs::PlayerRuntime::GetDesc(e)->LargePacket(packet->data(),static_cast<int>(packet->size()));else LOG_ERROR("TypedPolymorph: encode failed pid {} error {}",ecs::PlayerRuntime::GetPlayerID(e),static_cast<unsigned>(packet.error()));
 }
+}
+bool GiveTypedPolymorphBook(entt::entity e,std::uint32_t mob,std::uint32_t practice,std::uint8_t grade)
+{
+    const auto c=store::CurrentCatalog();const auto* definition=CMobManager::instance().Get(mob);
+    if(!c || !InGame(e) || !definition || definition->m_table.bType!=CHAR_TYPE_MONSTER)return false;
+    const auto grant=item::OriginalPolymorphBookGrant(*c,mob,practice,grade);
+    return grant && RequestTypedItemGrant(e,*grant).has_value();
 }
 void SendTypedPolymorph(entt::entity e)
 {if(const auto* s=g_registry.try_get<TypedPolymorphSession>(e);s && s->visible)Reply(e,s->status,s->error);}

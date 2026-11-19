@@ -7,12 +7,13 @@
 #include <optional>
 #include <string>
 #include <span>
+#include <vector>
 
 namespace auriga::item
 {
-// Sashes, summons, runes and visual effects require their own behavior. They
-// cannot be published as these ordinary body/hair/weapon costumes.
-enum class CostumeKind : std::uint8_t { Body = 1, Hair = 2, Weapon = 3 };
+// Companion skins are worn independently of a summon; their ordinary bonuses
+// apply even when no companion is active. They never summon a creature.
+enum class CostumeKind : std::uint8_t { Body = 1, Hair = 2, Weapon = 3, PetSkin = 4, MountSkin = 5, BodyEffect = 6, WeaponEffect = 7 };
 enum class CostumeClock : std::uint8_t { Permanent = 1, SinceCreation = 2, SinceFirstUse = 3, EquippedTime = 4 };
 struct ItemCostumeRow
 {
@@ -21,6 +22,10 @@ struct ItemCostumeRow
     std::optional<WeaponSubtype> weapon;
     CostumeClock clock = CostumeClock::Permanent;
     std::uint64_t durationMs = 0;
+    std::optional<std::uint32_t> companionForm;
+    std::uint16_t bodyEffect=0; // Authored effect palette ID, never an item identity.
+    // Native weapon subtype order 1..6; alternate dagger/fan appearances.
+    std::array<std::uint16_t,8> weaponEffects{};
 };
 struct CostumeVisualRow
 {
@@ -46,6 +51,11 @@ struct CostumeClockStep
 // Shared item-clock mathematics; domain-specific callers validate their own
 // content identity. No synthetic costume prototype is needed for a pet skin.
 struct CostumeClockDefinition { CostumeClock clock; std::uint64_t durationMs; };
+class ItemCatalog;
+// Costumes and the independent six-bonus stole share the same persisted clock.
+// Permanent stoles retain their historical, clock-free instance representation.
+std::optional<CostumeClockDefinition> FindWearableClock(const ItemCatalog&,ItemKey);
+bool ValidItemClock(CostumeClockDefinition,const CostumeLifetimeState&,bool equipped=false) noexcept;
 struct CostumeLifetimePlan
 {
     CostumeLifetimeState after;
@@ -90,6 +100,20 @@ enum class CostumeEquipError
     LevelTooLow, InvalidRefinement, WeaponRequired, WeaponMismatch, InvalidLifetime, MissingVisual,
 };
 class ItemCatalog;
+struct PersistentItem;
+// Project lifetimes before selecting a visual. Effects need a worn real body
+// armor or body costume, but their own ordinary bonuses do not.
+std::uint16_t WornBodyCostumeEffect(const ItemCatalog&,std::span<const PersistentItem>);
+std::uint16_t WornWeaponCostumeEffect(const ItemCatalog&,std::span<const PersistentItem>);
+struct CostumeAppearance {
+    std::uint32_t vid=0;std::uint64_t revision=0;
+    std::uint8_t weapon=0,tool=0;std::array<std::string,6> models;
+    std::uint8_t runeMode=0;std::uint16_t bodyEffect=0,weaponEffect=0;std::string absorptionSash;
+};
+// GC241 v3: v2 fields followed by bodyEffect:u16. All paths are authored assets.
+std::optional<std::vector<std::uint8_t>> EncodeCostumeAppearance(const CostumeAppearance&,std::uint8_t version=5);
+// Callers project lifetime first. Only an unexpired, correctly worn skin wins.
+std::optional<std::uint32_t> WornCompanionCostumeForm(const ItemCatalog&,std::span<const PersistentItem>,CostumeKind);
 // Owning appearance/lifetime intent, not an equipment or persistence writer.
 // The owner binds concrete instance/revision/session, checks locks/location and
 // the displaced item, then atomically commits the swap and lifetime change.

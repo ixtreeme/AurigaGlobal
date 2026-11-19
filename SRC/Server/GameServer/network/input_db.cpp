@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "../item/TypedBooks.hpp"
+#include "../item/LegacyItemBoundary.hpp"
 #include <common/character_creation.h>
 #include <Core/packet_string.h>
 #include <common/time_64_packets.h>
@@ -71,6 +72,7 @@
 #include "../ecs/components/vital_components.hpp"
 #include "../ecs/components/inventory_components.hpp"
 #include "../item/ItemStore.hpp"
+#include "../item/ItemCatalogRuntime.hpp"
 #include "../item/TypedInventorySync.hpp"
 #include "../item/TypedEquipment.hpp"
 #include "../item/TypedAccessoryClock.hpp"
@@ -182,7 +184,7 @@ void CInputDB::LoginSuccess(uint32_t dwHandle, const char *data)
 	{
 		TPacketGCEmpire pe;
 		pe.bHeader = HEADER_GC_EMPIRE;
-		pe.bEmpire = number(1, 3);
+		pe.bEmpire = pTab->bEmpire; // zero requests real empire selection for a new account
 		d->Packet(&pe, sizeof(pe));
 	}
 	else
@@ -254,227 +256,7 @@ d->GetAccountTable().bChannel,
 
 	d->Packet(&pack, sizeof(TPacketGCPlayerCreateSuccess));
 
-#ifdef ENABLE_REWARD_AT_START
-	struct SInitialItem
-	{
-		uint8_t	window;
-		uint16_t	pos;
-		uint32_t	count;
-		uint32_t	dwVnum;
-		TPlayerItemAttribute	aAttr[5];
-	};
 
-
-	static SInitialItem initialItems[MAIN_RACE_MAX_NUM][13] =
-	{
-		/* MAIN_RACE_WARRIOR_M */
-		{
-			//{INVENTORY, 0, 1, 19, {APPLY_STR, 1, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_POISON_PCT, 8, APPLY_STUN_PCT, 8}},								// 2 slot
-			//{INVENTORY, 1, 1, 3009, {APPLY_STR, 1, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_POISON_PCT, 8, APPLY_STUN_PCT, 8}},								// 3 slot
-			//{INVENTORY, 2, 1, 11209, {APPLY_MAX_HP, 2500, APPLY_ATT_GRADE_BONUS, 5, APPLY_STEAL_HP, 1, APPLY_REFLECT_MELEE, 1, APPLY_CAST_SPEED, 20}},					// 2 slot
-			{INVENTORY, 3, 1, 12209, {APPLY_HP_REGEN, 5, APPLY_POISON_PCT, 10, APPLY_DODGE, 3, APPLY_ATT_SPEED, 10, APPLY_ATTBONUS_ORC, 20}},								// 1 slot
-			{INVENTORY, 4, 1, 13009, {APPLY_IMMUNE_STUN, 1, APPLY_STR, 1, APPLY_BLOCK, 2, APPLY_REFLECT_MELEE, 1, APPLY_ATTBONUS_ORC, 20}},								// 1 slot
-			{INVENTORY, 8, 1, 14009, {APPLY_MAX_HP, 2500, APPLY_PENETRATE_PCT, 1, APPLY_STEAL_HP, 1, APPLY_ATTBONUS_ORC, 20, APPLY_ITEM_DROP_BONUS, 1}},					// 1 slot
-			{INVENTORY, 9, 1, 15009, {APPLY_MAX_HP, 2500, APPLY_CRITICAL_PCT, 5, APPLY_DODGE, 3, APPLY_STUN_PCT, 8, APPLY_GOLD_DOUBLE_BONUS, 20}},						// 1 slot
-			{INVENTORY, 10, 1, 16009, {APPLY_MAX_HP, 2500, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_HP_REGEN, 5, APPLY_STUN_PCT, 8}},						// 1 slot
-			{INVENTORY, 12, 1, 17009, {APPLY_POISON_REDUCE, 10, APPLY_ITEM_DROP_BONUS, 1, APPLY_ATTBONUS_ORC, 20, APPLY_ATTBONUS_MILGYO, 20, APPLY_ATTBONUS_ANIMAL, 20}},	// 1 slot
-			{INVENTORY, 13, 1, 50187, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-			{INVENTORY, 14, 1, 50188, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-			//{INVENTORY, 15, 1, 88224, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
-
-		},
-		/* MAIN_RACE_ASSASSIN_W */
-		{
-			//{INVENTORY, 0, 1, 1009, {APPLY_STR, 1, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_POISON_PCT, 8, APPLY_STUN_PCT, 8}},								// 1 slot
-			//{INVENTORY, 1, 1, 2009, {APPLY_STR, 1, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_POISON_PCT, 8, APPLY_STUN_PCT, 8}},								// 2 slot
-			//{INVENTORY, 2, 1, 19, {APPLY_STR, 1, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_POISON_PCT, 8, APPLY_STUN_PCT, 8}},								// 2 slot
-			//{INVENTORY, 3, 1, 11409, {APPLY_MAX_HP, 2500, APPLY_ATT_GRADE_BONUS, 5, APPLY_STEAL_HP, 1, APPLY_REFLECT_MELEE, 1, APPLY_CAST_SPEED, 20}},					// 2 slot
-			{INVENTORY, 4, 1, 12349, {APPLY_HP_REGEN, 5, APPLY_POISON_PCT, 10, APPLY_DODGE, 3, APPLY_ATT_SPEED, 10, APPLY_ATTBONUS_ORC, 20}},								// 1 slot
-			{INVENTORY, 5, 1, 13009, {APPLY_IMMUNE_STUN, 1, APPLY_STR, 1, APPLY_BLOCK, 2, APPLY_REFLECT_MELEE, 1, APPLY_ATTBONUS_ORC, 20}},								// 1 slot
-			{INVENTORY, 9, 1, 14009, {APPLY_MAX_HP, 2500, APPLY_PENETRATE_PCT, 1, APPLY_STEAL_HP, 1, APPLY_ATTBONUS_ORC, 20, APPLY_ITEM_DROP_BONUS, 1}},					// 1 slot
-			{INVENTORY, 10, 1, 15009, {APPLY_MAX_HP, 2500, APPLY_CRITICAL_PCT, 5, APPLY_DODGE, 3, APPLY_STUN_PCT, 8, APPLY_GOLD_DOUBLE_BONUS, 20}},						// 1 slot
-			{INVENTORY, 11, 1, 16009, {APPLY_MAX_HP, 2500, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_HP_REGEN, 5, APPLY_STUN_PCT, 8}},						// 1 slot
-			{INVENTORY, 12, 1, 17009, {APPLY_POISON_REDUCE, 10, APPLY_ITEM_DROP_BONUS, 1, APPLY_ATTBONUS_ORC, 20, APPLY_ATTBONUS_MILGYO, 20, APPLY_ATTBONUS_ANIMAL, 20}},	// 1 slot
-			{INVENTORY, 13, 1, 50187, {0, 10, 0, 0, 0, 0, 0, 0, 0, 0}},
-			{INVENTORY, 14, 1, 50188, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0} },
-			//{INVENTORY, 15, 1, 88224, {0, 10, 0, 0, 0, 0, 0, 0, 0, 0}}
-		},
-		/* MAIN_RACE_SURA_M */
-		{
-			//{INVENTORY, 0, 1, 19, {APPLY_STR, 1, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_POISON_PCT, 8, APPLY_STUN_PCT, 8}},								// 2 slot
-			//{INVENTORY, 1, 1, 11609, {APPLY_MAX_HP, 2500, APPLY_ATT_GRADE_BONUS, 5, APPLY_STEAL_HP, 1, APPLY_REFLECT_MELEE, 1, APPLY_CAST_SPEED, 20}},					// 2 slot
-			{INVENTORY, 2, 1, 12489, {APPLY_HP_REGEN, 5, APPLY_POISON_PCT, 10, APPLY_DODGE, 3, APPLY_ATT_SPEED, 10, APPLY_ATTBONUS_ORC, 20}},								// 1 slot
-			{INVENTORY, 3, 1, 13009, {APPLY_IMMUNE_STUN, 1, APPLY_STR, 1, APPLY_BLOCK, 2, APPLY_REFLECT_MELEE, 1, APPLY_ATTBONUS_ORC, 20}},								// 1 slot
-			{INVENTORY, 4, 1, 14009, {APPLY_MAX_HP, 2500, APPLY_PENETRATE_PCT, 1, APPLY_STEAL_HP, 1, APPLY_ATTBONUS_ORC, 20, APPLY_ITEM_DROP_BONUS, 1}},					// 1 slot
-			{INVENTORY, 7, 1, 15009, {APPLY_MAX_HP, 2500, APPLY_CRITICAL_PCT, 5, APPLY_DODGE, 3, APPLY_STUN_PCT, 8, APPLY_GOLD_DOUBLE_BONUS, 20}},						// 1 slot
-			{INVENTORY, 8, 1, 16009, {APPLY_MAX_HP, 2500, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_HP_REGEN, 5, APPLY_STUN_PCT, 8}},							// 1 slot
-			{INVENTORY, 9, 1, 17009, {APPLY_POISON_REDUCE, 10, APPLY_ITEM_DROP_BONUS, 1, APPLY_ATTBONUS_ORC, 20, APPLY_ATTBONUS_MILGYO, 20, APPLY_ATTBONUS_ANIMAL, 20}},	// 1 slot
-			{INVENTORY, 10, 1, 50187, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-			{INVENTORY, 14, 1, 50188, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-			//{INVENTORY, 15, 1, 88224, {0, 10, 0, 0, 0, 0, 0, 0, 0, 0}}
-
-		},
-		/* MAIN_RACE_SHAMAN_W */
-		{
-			//{INVENTORY, 0, 1, 5009, {APPLY_STR, 1, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_POISON_PCT, 8, APPLY_STUN_PCT, 8}},								// 1 slot
-			//{INVENTORY, 1, 1, 7009, {APPLY_STR, 1, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_POISON_PCT, 8, APPLY_STUN_PCT, 8}},								// 1 slot
-			//{INVENTORY, 2, 1, 11809, {APPLY_MAX_HP, 2500, APPLY_ATT_GRADE_BONUS, 5, APPLY_STEAL_HP, 1, APPLY_REFLECT_MELEE, 1, APPLY_CAST_SPEED, 20}},					// 2 slot
-			{INVENTORY, 3, 1, 12629, {APPLY_HP_REGEN, 5, APPLY_POISON_PCT, 10, APPLY_DODGE, 3, APPLY_ATT_SPEED, 10, APPLY_ATTBONUS_ORC, 20}},								// 1 slot
-			{INVENTORY, 4, 1, 13009, {APPLY_IMMUNE_STUN, 1, APPLY_STR, 1, APPLY_BLOCK, 2, APPLY_REFLECT_MELEE, 1, APPLY_ATTBONUS_ORC, 20}},								// 1 slot
-			{INVENTORY, 5, 1, 14009, {APPLY_MAX_HP, 2500, APPLY_PENETRATE_PCT, 1, APPLY_STEAL_HP, 1, APPLY_ATTBONUS_ORC, 20, APPLY_ITEM_DROP_BONUS, 1}},					// 1 slot
-			{INVENTORY, 6, 1, 15009, {APPLY_MAX_HP, 2500, APPLY_CRITICAL_PCT, 5, APPLY_DODGE, 3, APPLY_STUN_PCT, 8, APPLY_GOLD_DOUBLE_BONUS, 20}},						// 1 slot
-			{INVENTORY, 8, 1, 16009, {APPLY_MAX_HP, 2500, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_HP_REGEN, 5, APPLY_STUN_PCT, 8}},							// 1 slot
-			{INVENTORY, 9, 1, 17009, {APPLY_POISON_REDUCE, 10, APPLY_ITEM_DROP_BONUS, 1, APPLY_ATTBONUS_ORC, 20, APPLY_ATTBONUS_MILGYO, 20, APPLY_ATTBONUS_ANIMAL, 20}},	// 1 slot
-			{INVENTORY, 10, 1, 50187, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-			{INVENTORY, 14, 1, 50188, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-			//{INVENTORY, 15, 1, 88224, {0, 10, 0, 0, 0, 0, 0, 0, 0, 0}}
-		},
-		/* MAIN_RACE_WARRIOR_W */
-		{
-			//{INVENTORY, 0, 1, 19, {APPLY_STR, 1, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_POISON_PCT, 8, APPLY_STUN_PCT, 8}},								// 2 slot
-			//{INVENTORY, 1, 1, 3009, {APPLY_STR, 1, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_POISON_PCT, 8, APPLY_STUN_PCT, 8}},								// 3 slot
-			//{INVENTORY, 2, 1, 11209, {APPLY_MAX_HP, 2500, APPLY_ATT_GRADE_BONUS, 5, APPLY_STEAL_HP, 1, APPLY_REFLECT_MELEE, 1, APPLY_CAST_SPEED, 20}},					// 2 slot
-			{INVENTORY, 3, 1, 12209, {APPLY_HP_REGEN, 5, APPLY_POISON_PCT, 10, APPLY_DODGE, 3, APPLY_ATT_SPEED, 10, APPLY_ATTBONUS_ORC, 20}},								// 1 slot
-			{INVENTORY, 4, 1, 13009, {APPLY_IMMUNE_STUN, 1, APPLY_STR, 1, APPLY_BLOCK, 2, APPLY_REFLECT_MELEE, 1, APPLY_ATTBONUS_ORC, 20}},								// 1 slot
-			{INVENTORY, 8, 1, 14009, {APPLY_MAX_HP, 2500, APPLY_PENETRATE_PCT, 1, APPLY_STEAL_HP, 1, APPLY_ATTBONUS_ORC, 20, APPLY_ITEM_DROP_BONUS, 1}},					// 1 slot
-			{INVENTORY, 9, 1, 15009, {APPLY_MAX_HP, 2500, APPLY_CRITICAL_PCT, 5, APPLY_DODGE, 3, APPLY_STUN_PCT, 8, APPLY_GOLD_DOUBLE_BONUS, 20}},						// 1 slot
-			{INVENTORY, 10, 1, 16009, {APPLY_MAX_HP, 2500, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_HP_REGEN, 5, APPLY_STUN_PCT, 8}},						// 1 slot
-			{INVENTORY, 12, 1, 17009, {APPLY_POISON_REDUCE, 10, APPLY_ITEM_DROP_BONUS, 1, APPLY_ATTBONUS_ORC, 20, APPLY_ATTBONUS_MILGYO, 20, APPLY_ATTBONUS_ANIMAL, 20}},	// 1 slot
-			{INVENTORY, 13, 1, 50187, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-			{INVENTORY, 14, 1, 50188, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-			//{INVENTORY, 15, 1, 88224, {0, 10, 0, 0, 0, 0, 0, 0, 0, 0}}
-		},
-		/* MAIN_RACE_ASSASSIN_M */
-		{
-			//{INVENTORY, 0, 1, 1009, {APPLY_STR, 1, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_POISON_PCT, 8, APPLY_STUN_PCT, 8}},								// 1 slot
-			//{INVENTORY, 1, 1, 2009, {APPLY_STR, 1, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_POISON_PCT, 8, APPLY_STUN_PCT, 8}},								// 2 slot
-			//{INVENTORY, 2, 1, 19, {APPLY_STR, 1, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_POISON_PCT, 8, APPLY_STUN_PCT, 8}},								// 2 slot
-			{INVENTORY, 3, 1, 11409, {APPLY_MAX_HP, 2500, APPLY_ATT_GRADE_BONUS, 5, APPLY_STEAL_HP, 1, APPLY_REFLECT_MELEE, 1, APPLY_CAST_SPEED, 20}},					// 2 slot
-			{INVENTORY, 4, 1, 12349, {APPLY_HP_REGEN, 5, APPLY_POISON_PCT, 10, APPLY_DODGE, 3, APPLY_ATT_SPEED, 10, APPLY_ATTBONUS_ORC, 20}},								// 1 slot
-			{INVENTORY, 5, 1, 13009, {APPLY_IMMUNE_STUN, 1, APPLY_STR, 1, APPLY_BLOCK, 2, APPLY_REFLECT_MELEE, 1, APPLY_ATTBONUS_ORC, 20}},								// 1 slot
-			{INVENTORY, 9, 1, 14009, {APPLY_MAX_HP, 2500, APPLY_PENETRATE_PCT, 1, APPLY_STEAL_HP, 1, APPLY_ATTBONUS_ORC, 20, APPLY_ITEM_DROP_BONUS, 1}},					// 1 slot
-			{INVENTORY, 10, 1, 15009, {APPLY_MAX_HP, 2500, APPLY_CRITICAL_PCT, 5, APPLY_DODGE, 3, APPLY_STUN_PCT, 8, APPLY_GOLD_DOUBLE_BONUS, 20}},						// 1 slot
-			{INVENTORY, 11, 1, 16009, {APPLY_MAX_HP, 2500, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_HP_REGEN, 5, APPLY_STUN_PCT, 8}},						// 1 slot
-			{INVENTORY, 12, 1, 17009, {APPLY_POISON_REDUCE, 10, APPLY_ITEM_DROP_BONUS, 1, APPLY_ATTBONUS_ORC, 20, APPLY_ATTBONUS_MILGYO, 20, APPLY_ATTBONUS_ANIMAL, 20}},	// 1 slot
-			{INVENTORY, 13, 1, 50187, {0, 10, 0, 0, 0, 0, 0, 0, 0, 0}},
-			{INVENTORY, 14, 1, 50188, {0, 10, 0, 0, 0, 0, 0, 0, 0, 0}},
-			//{INVENTORY, 15, 1, 88224, {0, 10, 0, 0, 0, 0, 0, 0, 0, 0}}
-		},
-		/* MAIN_RACE_SURA_W */
-		{
-			//{INVENTORY, 0, 1, 19, {APPLY_STR, 1, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_POISON_PCT, 8, APPLY_STUN_PCT, 8}},								// 2 slot
-			//{INVENTORY, 1, 1, 11609, {APPLY_MAX_HP, 2500, APPLY_ATT_GRADE_BONUS, 5, APPLY_STEAL_HP, 1, APPLY_REFLECT_MELEE, 1, APPLY_CAST_SPEED, 20}},					// 2 slot
-			{INVENTORY, 2, 1, 12489, {APPLY_HP_REGEN, 5, APPLY_POISON_PCT, 10, APPLY_DODGE, 3, APPLY_ATT_SPEED, 10, APPLY_ATTBONUS_ORC, 20}},								// 1 slot
-			{INVENTORY, 3, 1, 13009, {APPLY_IMMUNE_STUN, 1, APPLY_STR, 1, APPLY_BLOCK, 2, APPLY_REFLECT_MELEE, 1, APPLY_ATTBONUS_ORC, 20}},								// 1 slot
-			{INVENTORY, 4, 1, 14009, {APPLY_MAX_HP, 2500, APPLY_PENETRATE_PCT, 1, APPLY_STEAL_HP, 1, APPLY_ATTBONUS_ORC, 20, APPLY_ITEM_DROP_BONUS, 1}},					// 1 slot
-			{INVENTORY, 7, 1, 15009, {APPLY_MAX_HP, 2500, APPLY_CRITICAL_PCT, 5, APPLY_DODGE, 3, APPLY_STUN_PCT, 8, APPLY_GOLD_DOUBLE_BONUS, 20}},						// 1 slot
-			{INVENTORY, 8, 1, 16009, {APPLY_MAX_HP, 2500, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_HP_REGEN, 5, APPLY_STUN_PCT, 8}},							// 1 slot
-			{INVENTORY, 9, 1, 17009, {APPLY_POISON_REDUCE, 10, APPLY_ITEM_DROP_BONUS, 1, APPLY_ATTBONUS_ORC, 20, APPLY_ATTBONUS_MILGYO, 20, APPLY_ATTBONUS_ANIMAL, 20}},	// 1 slot
-			{INVENTORY, 10, 1, 50187, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-			{INVENTORY, 14, 1, 50188, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-			//{INVENTORY, 15, 1, 88224, {0, 10, 0, 0, 0, 0, 0, 0, 0, 0}}
-		},
-		/* MAIN_RACE_SHAMAN_M */
-		{
-			//{INVENTORY, 0, 1, 5009, {APPLY_STR, 1, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_POISON_PCT, 8, APPLY_STUN_PCT, 8}},								// 1 slot
-			//{INVENTORY, 1, 1, 7009, {APPLY_STR, 1, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_POISON_PCT, 8, APPLY_STUN_PCT, 8}},								// 1 slot
-			//{INVENTORY, 2, 1, 11809, {APPLY_MAX_HP, 2500, APPLY_ATT_GRADE_BONUS, 5, APPLY_STEAL_HP, 1, APPLY_REFLECT_MELEE, 1, APPLY_CAST_SPEED, 20}},					// 2 slot
-			{INVENTORY, 3, 1, 12629, {APPLY_HP_REGEN, 5, APPLY_POISON_PCT, 10, APPLY_DODGE, 3, APPLY_ATT_SPEED, 10, APPLY_ATTBONUS_ORC, 20}},								// 1 slot
-			{INVENTORY, 4, 1, 13009, {APPLY_IMMUNE_STUN, 1, APPLY_STR, 1, APPLY_BLOCK, 2, APPLY_REFLECT_MELEE, 1, APPLY_ATTBONUS_ORC, 20}},								// 1 slot
-			{INVENTORY, 5, 1, 14009, {APPLY_MAX_HP, 2500, APPLY_PENETRATE_PCT, 1, APPLY_STEAL_HP, 1, APPLY_ATTBONUS_ORC, 20, APPLY_ITEM_DROP_BONUS, 1}},					// 1 slot
-			{INVENTORY, 6, 1, 15009, {APPLY_MAX_HP, 2500, APPLY_CRITICAL_PCT, 5, APPLY_DODGE, 3, APPLY_STUN_PCT, 8, APPLY_GOLD_DOUBLE_BONUS, 20}},						// 1 slot
-			{INVENTORY, 8, 1, 16009, {APPLY_MAX_HP, 2500, APPLY_CRITICAL_PCT, 5, APPLY_PENETRATE_PCT, 1, APPLY_HP_REGEN, 5, APPLY_STUN_PCT, 8}},							// 1 slot
-			{INVENTORY, 9, 1, 17009, {APPLY_POISON_REDUCE, 10, APPLY_ITEM_DROP_BONUS, 1, APPLY_ATTBONUS_ORC, 20, APPLY_ATTBONUS_MILGYO, 20, APPLY_ATTBONUS_ANIMAL, 20}},	// 1 slot
-			{INVENTORY, 10, 1, 50187, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-			{INVENTORY, 14, 1, 50188, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-			//{INVENTORY, 15, 1, 88224, {0, 10, 0, 0, 0, 0, 0, 0, 0, 0}}
-		}
-	};
-
-
-	const unsigned race = pPacketDB->player.byJob;
-	if (race >= MAIN_RACE_MAX_NUM) return;
-	std::array<bool, INVENTORY_MAX_NUM> occupied{};
-	auto grant = [&](uint32_t vnum, uint32_t count, int wear, const TPlayerItemAttribute* attributes = nullptr) {
-		const auto* proto = ITEM_MANAGER::instance().GetTable(vnum);
-		if (!proto) { LOG_ERROR("Missing starter item {}", vnum); return; }
-		TPlayerItem item{};
-		item.owner = pPacketDB->player.dwID;
-		item.id = ITEM_MANAGER::instance().GetNewID();
-		item.vnum = vnum; item.count = count;
-		// Direct DB starter grants bypass CreateItem/UseItem initialization.
-		// Equipped first-use costumes must already have a running expiry timer.
-		for (const auto& limit : proto->aLimits) {
-			if (limit.bType == LIMIT_REAL_TIME || (wear >= 0 && limit.bType == LIMIT_REAL_TIME_START_FIRST_USE)) {
-				item.alSockets[0] = static_cast<int32_t>(time(nullptr) + (limit.lValue > 0 ? limit.lValue : 604800));
-				if (limit.bType == LIMIT_REAL_TIME_START_FIRST_USE) item.alSockets[1] = 1;
-			}
-			else if (limit.bType == LIMIT_TIMER_BASED_ON_WEAR) item.alSockets[0] = limit.lValue;
-		}
-		if (wear >= 0) { item.window = EQUIPMENT; item.pos = wear; }
-		else {
-			const int height = std::max(1, static_cast<int>(proto->bSize));
-			int found = -1;
-			for (int cell = 0; cell < INVENTORY_MAX_NUM; ++cell) {
-				const int bottom = cell + (height - 1) * INVENTORY_PAGE_COLUMN;
-				if (bottom >= INVENTORY_MAX_NUM || cell / INVENTORY_PAGE_SIZE != bottom / INVENTORY_PAGE_SIZE) continue;
-				bool free = true;
-				for (int row = 0; row < height; ++row) if (occupied[cell + row * INVENTORY_PAGE_COLUMN]) free = false;
-				if (!free) continue;
-				found = cell;
-				for (int row = 0; row < height; ++row) occupied[cell + row * INVENTORY_PAGE_COLUMN] = true;
-				break;
-			}
-			if (found < 0) { LOG_ERROR("Starter inventory full for {}", item.owner); return; }
-			item.window = INVENTORY; item.pos = found;
-		}
-		if (attributes) std::copy_n(attributes, 5, item.aAttr);
-		else if (proto->bType == ITEM_COSTUME &&
-			(proto->bSubType == COSTUME_BODY || proto->bSubType == COSTUME_HAIR || proto->bSubType == COSTUME_WEAPON)) {
-			// Use the same magic/addon initializer as quest/chest item creation,
-			// then persist its complete rolled attributes with the starter row.
-			const auto rolled = ITEM_MANAGER::instance().CreateItem(vnum, count, 0, true, -1, true);
-			if (!ItemSystem::IsValidItem(rolled)) { LOG_ERROR("Failed starter costume initialization {}", vnum); return; }
-			ItemSystem::SetItemSkipSave(rolled, true);
-			for (int index = 0; index < ITEM_ATTRIBUTE_MAX_NUM; ++index)
-				item.aAttr[index] = ItemSystem::GetItemAttribute(rolled, index);
-			// The detached template must never emit a DB row or delete the real grant.
-			ITEM_MANAGER::instance().DestroyItem(rolled);
-		}
-#ifdef ATTR_LOCK
-		item.lockedattr = -1;
-#endif
-		db_clientdesc->DBPacket(HEADER_GD_ITEM_SAVE, 0, &item, sizeof(item));
-	};
-	for (const auto& initial : initialItems[race]) {
-		if (!initial.dwVnum || initial.dwVnum == 50188 || initial.dwVnum == 11409) continue;
-		int wear = -1;
-		switch (initial.dwVnum) {
-		case 12209:case 12349:case 12489:case 12629:wear=WEAR_HEAD;break;
-		case 13009:wear=WEAR_SHIELD;break;case 14009:wear=WEAR_WRIST;break;
-		case 15009:wear=WEAR_FOOTS;break;case 16009:wear=WEAR_NECK;break;case 17009:wear=WEAR_EAR;break;
-		}
-		grant(initial.dwVnum, initial.count, wear, initial.aAttr);
-	}
-	const uint32_t weapon = character_creation::Weapon(race, pPacketDB->player.skill_group);
-	grant(weapon, 1, WEAR_WEAPON);
-	grant(character_creation::Armor(race), 1, WEAR_BODY);
-	const uint32_t alternatives[4][3]{{19,3009,0},{1009,2009,19},{19,0,0},{5009,7009,0}};
-	for (uint32_t vnum : alternatives[race % 4]) if (vnum && vnum != weapon) grant(vnum, 1, -1);
-	grant(71231, 1, WEAR_COSTUME_MOUNT);
-	grant(88222, 1, WEAR_COSTUME_EFFECT_WEAPON);
-	grant(88224, 1, WEAR_COSTUME_EFFECT_BODY);
-	grant(character_creation::Male(race) ? 41311 : 41312, 1, WEAR_COSTUME_BODY);
-	grant(character_creation::Male(race) ? 45147 : 45148, 1, WEAR_COSTUME_HAIR);
-	const uint32_t costume = character_creation::WeaponCostume(weapon);
-	grant(costume, 1, WEAR_COSTUME_WEAPON);
-	for (uint32_t vnum : alternatives[race % 4])
-		if (vnum && character_creation::WeaponCostume(vnum) != costume)
-			grant(character_creation::WeaponCostume(vnum), 1, -1);
-	grant(76016, 40, -1);
-#endif
-
-	LogManager::instance().CharLog(pack.player.dwID, 0, 0, 0, "CREATE PLAYER", "", d->GetHostName());
 }
 
 void CInputDB::PlayerDeleteSuccess(LPDESC d, const char * data)
@@ -533,38 +315,39 @@ void CInputDB::ChangeName(LPDESC d, const char * data)
 //#define ENABLE_GOHOME_IF_MAP_NOT_EXIST
 // Typed items (item system F4, IC-034): claim a new session and load the
 // character's typed state on the item store thread. A provisioned character
-// exclusively uses typed equipment. Never-provisioned characters retain legacy state.
+// exclusively uses typed equipment. Every character must load native state before entering the world.
 static void LoadTypedItems(entt::entity character)
 {
 	namespace items = auriga::item::runtime;
-	if (!items::ItemStore::Instance().Running())
-		return;
 	static uint64_t s_lastToken = 0;
 	const uint64_t token = ++s_lastToken;
 	const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(character);
 	g_registry.emplace_or_replace<ecs::TypedItemLogin>(character, token);
+	if (!items::ItemStore::Instance().Running())
+	{
+		g_registry.get<ecs::TypedItemLogin>(character).mode = ecs::TypedItemLogin::Mode::Unavailable;
+        if (auto* desc = ecs::PlayerRuntime::GetDesc(character)) desc->SetPhase(PHASE_CLOSE);
+		return;
+	}
     g_registry.emplace_or_replace<ecs::TypedEquipmentProjection>(character); // no combat until owner mode is known
-	const bool queued = items::RequestLoginLoad(pid, [pid, token](items::LoginLoad result) {
+	const bool queued = items::RequestPlayerLoginLoad(pid, [pid, token](items::LoginLoad result) {
 		const entt::entity entity = CHARACTER_MANAGER::instance().FindEntityByPID(pid);
-		const auto* login = entity != entt::null && g_registry.valid(entity) ? g_registry.try_get<ecs::TypedItemLogin>(entity) : nullptr;
+		auto* login = entity != entt::null && g_registry.valid(entity) ? g_registry.try_get<ecs::TypedItemLogin>(entity) : nullptr;
 		if (!login || login->token != token)
 			return; // logged out, or a newer login owns the session now
 		if (result.loaded)
 		{
+			login->mode = ecs::TypedItemLogin::Mode::Native;
 			LOG_INFO("TypedItems: pid {} session {}: {} items", pid, result.session, result.loaded->items.size());
 			g_registry.emplace_or_replace<ecs::TypedItems>(entity, std::move(*result.loaded));
             if(!ApplyTypedBookLogin(entity)){if(auto* desc=ecs::PlayerRuntime::GetDesc(entity))desc->SetPhase(PHASE_CLOSE);return;}
             StartTypedAccessoryClock(entity);StartTypedRecoveryClock(entity);
+			InventorySystem::SetItemLoaded(entity);
 			SendTypedInventory(entity); // only once the client is in game
 		}
-		else if (result.loaded.error() == auriga::item::ItemPersistenceError::MissingOwner)
-        {
-            g_registry.remove<ecs::TypedEquipmentProjection>(entity);
-            ecs::PointSystem::Compute(entity);
-            LOG_TRACE("TypedItems: pid {} has no typed items yet", pid);
-        }
         else
         {
+            login->mode = ecs::TypedItemLogin::Mode::Unavailable;
             LOG_ERROR("TypedItems: pid {} load failed (error {})", pid, static_cast<int>(result.loaded.error()));
             if (auto* desc = ecs::PlayerRuntime::GetDesc(entity)) desc->SetPhase(PHASE_CLOSE);
         }
@@ -697,8 +480,6 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 
 	LOG_INFO("InputDB: player_load {} {}x{}x{} LEVEL {} MOV_SPEED {} JOB {} ATG {} DFG {} GMLv {}", pTab->name, ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity), ecs::PlayerRuntime::GetZ(chEntity), (ecs::PointSystem::GetLevel(chEntity)), ecs::PointSystem::Get(chEntity, POINT_MOV_SPEED), ecs::PlayerRuntime::GetJob(chEntity), ecs::PointSystem::Get(chEntity, POINT_ATT_GRADE), ecs::PointSystem::Get(chEntity, POINT_DEF_GRADE), ecs::PlayerRuntime::GetGMLevel(chEntity));
 
-	ecs::SessionSystem::QuerySafeboxSize(chEntity);
-	MountSystem::QueryMountInventory(chEntity);
 }
 
 void CInputDB::Boot(const char* data)
@@ -1100,97 +881,9 @@ void CInputDB::Boot(const char* data)
 		LOG_INFO("boot packet end check ok [{:x}]==0xffff", endCheck);
 	data +=2;
 
-	if (!ITEM_MANAGER::instance().SetMaxItemID(*range))
-	{
-		LOG_ERROR("not enough item id contact your administrator!");
-		thecore_shutdown();
-		return;
-	}
-
-	if (!ITEM_MANAGER::instance().SetMaxSpareItemID(*rangespare))
-	{
-		LOG_ERROR("not enough item id for spare contact your administrator!");
-		thecore_shutdown();
-		return;
-	}
-
-
-	// LOCALE_SERVICE
-	const int FILE_NAME_LEN = 256;
-	char szCommonDropItemFileName[FILE_NAME_LEN];
-	char szETCDropItemFileName[FILE_NAME_LEN];
-	char szMOBDropItemFileName[FILE_NAME_LEN];
-	char szDropItemGroupFileName[FILE_NAME_LEN];
-	char szSpecialItemGroupFileName[FILE_NAME_LEN];
-	char szMapIndexFileName[FILE_NAME_LEN];
-	char szItemVnumMaskTableFileName[FILE_NAME_LEN];
-
-	snprintf(szCommonDropItemFileName, sizeof(szCommonDropItemFileName),
-			"%s/common_drop_item.json", LocaleService_GetBasePath().c_str());
-	snprintf(szETCDropItemFileName, sizeof(szETCDropItemFileName),
-			"%s/etc_drop_item.json", LocaleService_GetBasePath().c_str());
-	snprintf(szMOBDropItemFileName, sizeof(szMOBDropItemFileName),
-			"%s/mob_drop_item.json", LocaleService_GetBasePath().c_str());
-	snprintf(szSpecialItemGroupFileName, sizeof(szSpecialItemGroupFileName),
-			"%s/special_item_group.json", LocaleService_GetBasePath().c_str());
-	snprintf(szDropItemGroupFileName, sizeof(szDropItemGroupFileName),
-			"%s/drop_item_group.json", LocaleService_GetBasePath().c_str());
-	snprintf(szMapIndexFileName, sizeof(szMapIndexFileName),
-			"%s/index.json", LocaleService_GetMapPath().c_str());
-	snprintf(szItemVnumMaskTableFileName, sizeof(szItemVnumMaskTableFileName),
-			"%s/ori_to_new_table.json", LocaleService_GetBasePath().c_str());
-
-	LOG_INFO("Initializing Informations of Cube System");
-	Cube_InformationInitialize();
-
-	LOG_INFO("LoadLocaleFile: CommonDropItem: {}", szCommonDropItemFileName);
-	if (!ITEM_MANAGER::instance().ReadCommonDropItemFile(szCommonDropItemFileName))
-	{
-		LOG_ERROR("cannot load CommonDropItem: {}", szCommonDropItemFileName);
-		thecore_shutdown();
-		return;
-	}
-
-	LOG_INFO("LoadLocaleFile: ETCDropItem: {}", szETCDropItemFileName);
-	if (!ITEM_MANAGER::instance().ReadEtcDropItemFile(szETCDropItemFileName))
-	{
-		LOG_ERROR("cannot load ETCDropItem: {}", szETCDropItemFileName);
-		thecore_shutdown();
-		return;
-	}
-
-	LOG_INFO("LoadLocaleFile: DropItemGroup: {}", szDropItemGroupFileName);
-	if (!ITEM_MANAGER::instance().ReadDropItemGroup(szDropItemGroupFileName))
-	{
-		LOG_ERROR("cannot load DropItemGroup: {}", szDropItemGroupFileName);
-		thecore_shutdown();
-		return;
-	}
-
-	LOG_INFO("LoadLocaleFile: SpecialItemGroup: {}", szSpecialItemGroupFileName);
-	if (!ITEM_MANAGER::instance().ReadSpecialDropItemFile(szSpecialItemGroupFileName))
-	{
-		LOG_ERROR("cannot load SpecialItemGroup: {}", szSpecialItemGroupFileName);
-		thecore_shutdown();
-		return;
-	}
-
-	LOG_INFO("LoadLocaleFile: ItemVnumMaskTable : {}", szItemVnumMaskTableFileName);
-	if (!ITEM_MANAGER::instance().ReadItemVnumMaskTable(szItemVnumMaskTableFileName))
-	{
-		LOG_INFO("Could not open MaskItemTable");
-	}
-
-	LOG_INFO("LoadLocaleFile: MOBDropItemFile: {}", szMOBDropItemFileName);
-	if (!ITEM_MANAGER::instance().ReadMonsterDropItemGroup(szMOBDropItemFileName))
-	{
-		LOG_ERROR("cannot load MOBDropItemFile: {}", szMOBDropItemFileName);
-		thecore_shutdown();
-		return;
-	}
-
+    const std::string szMapIndexFileName = LocaleService_GetMapPath() + "/index.json";
 	LOG_INFO("LoadLocaleFile: MapIndex: {}", szMapIndexFileName);
-	if (!SECTREE_MANAGER::instance().Build(szMapIndexFileName, LocaleService_GetMapPath().c_str()))
+	if (!SECTREE_MANAGER::instance().Build(szMapIndexFileName.c_str(), LocaleService_GetMapPath().c_str()))
 	{
 		LOG_ERROR("cannot load MapIndex: {}", szMapIndexFileName);
 		thecore_shutdown();
@@ -1591,8 +1284,9 @@ int CInputDB::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		break;
 
 	case HEADER_DG_ITEM_LOAD:
-		ItemLoad(DESC_MANAGER::instance().FindByHandle(m_dwHandle), c_pData);
-		break;
+        LOG_ERROR("Retired Database item-load packet refused");
+        if(auto* d=DESC_MANAGER::instance().FindByHandle(m_dwHandle))d->SetPhase(PHASE_CLOSE);
+        break;
 
 	case HEADER_DG_QUEST_LOAD:
 		QuestLoad(DESC_MANAGER::instance().FindByHandle(m_dwHandle), c_pData);
@@ -1602,26 +1296,6 @@ int CInputDB::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		AffectLoad(DESC_MANAGER::instance().FindByHandle(m_dwHandle), c_pData);
 		break;
 
-
-	case HEADER_DG_SAFEBOX_LOAD:
-		SafeboxLoad(DESC_MANAGER::instance().FindByHandle(m_dwHandle), c_pData);
-		break;
-
-	case HEADER_DG_SAFEBOX_CHANGE_SIZE:
-		SafeboxChangeSize(DESC_MANAGER::instance().FindByHandle(m_dwHandle), c_pData);
-		break;
-
-	case HEADER_DG_SAFEBOX_WRONG_PASSWORD:
-		SafeboxWrongPassword(DESC_MANAGER::instance().FindByHandle(m_dwHandle));
-		break;
-
-	case HEADER_DG_SAFEBOX_CHANGE_PASSWORD_ANSWER:
-		SafeboxChangePasswordAnswer(DESC_MANAGER::instance().FindByHandle(m_dwHandle), c_pData);
-		break;
-
-	case HEADER_DG_MALL_LOAD:
-		MallLoad(DESC_MANAGER::instance().FindByHandle(m_dwHandle), c_pData);
-		break;
 
 	case HEADER_DG_EMPIRE_SELECT:
 		EmpireSelect(DESC_MANAGER::instance().FindByHandle(m_dwHandle), c_pData);
@@ -2160,4 +1834,4 @@ void CInputDB::EventManager(const char* c_pData)
 }
 #endif
 
-
+

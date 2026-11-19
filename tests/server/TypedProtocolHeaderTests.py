@@ -3,6 +3,17 @@ from pathlib import Path
 import re,unittest
 ROOT=Path(__file__).resolve().parents[2]
 class TypedProtocolHeaders(unittest.TestCase):
+    def test_retired_item_packet_policy_matches_unity(self):
+        native=(ROOT/'SRC/Server/common/item/LegacyItemProtocol.hpp').read_text(encoding='utf-8')
+        unity=Path('D:/Auriga-Unity6/SRC/AurigaUnity-20261103/Assets/Metin2/Runtime/Network/Metin2ItemBackendPolicy.cs')
+        if not unity.exists():self.skipTest('Active Unity workspace is not present')
+        client=unity.read_text(encoding='utf-8').split('public static bool IsLegacyMutation',1)[1].split(';',1)[0]
+        retired=set(map(int,re.findall(r'case (\d+):',native)))
+        self.assertEqual(retired,set(map(int,re.findall(r'\b\d+\b',client))))
+        headers=(ROOT/'SRC/Server/common/Headers/Header_CG.h').read_text(encoding='utf-8')
+        names='ITEM_USE ITEM_DROP ITEM_MOVE ITEM_DROP2 ITEM_DESTROY ITEM_DIVISION EXCHANGE SHOP MYSHOP OPENSHOP ITEM_USE_TO_ITEM MALL_CHECKOUT SAFEBOX_CHECKIN SAFEBOX_CHECKOUT SAFEBOX_ITEM_MOVE ITEM_GIVE REFINE MOUNT_INVENTORY_CHECKIN MOUNT_INVENTORY_CHECKOUT MOUNT_INVENTORY_ITEM_MOVE PetSetName SWITCHBOT ACCE CUBE_RENEWAL'.split()
+        symbols=['HEADER_CG_'+name for name in names]+['ENVANTER_BLACK']
+        self.assertEqual(retired,{int(re.search(r'\b'+symbol+r'\s*=\s*(\d+)',headers)[1]) for symbol in symbols})
     def test_extension_ids_do_not_alias_legacy_packets(self):
         for direction,name,value in [('CG','TYPED_MISSION',202),('GC','TYPED_MISSION',202),('CG','TYPED_STORAGE',201),('GC','TYPED_STORAGE',201),('CG','TYPED_FORGE',212),('GC','TYPED_FORGE',212),('CG','TYPED_SOUL',213),('GC','TYPED_SOUL',219),('CG','TYPED_SPECIAL_BONUSES',214),('GC','TYPED_SPECIAL_BONUSES',220),('GC','TYPED_APPEARANCE',241)]:
             text=(ROOT/'SRC/Server/common/Headers'/('Header_'+direction+'.h')).read_text(encoding='utf-8')

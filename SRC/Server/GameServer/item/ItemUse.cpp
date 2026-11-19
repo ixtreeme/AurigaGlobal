@@ -33,7 +33,11 @@ namespace
 		if (canAdd == 0)
 			return;
 
-		ecs::PlayerRuntime::SetDragonCoin(chEntity, cur + canAdd);
+		if (!ecs::PlayerRuntime::AddDragonCoin(chEntity, canAdd))
+		{
+			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "The Dragon Coin wallet is unavailable right now.");
+			return;
+		}
 		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "You received %lld Dragon Coins.", static_cast<long long>(canAdd));
 	}
 

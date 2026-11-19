@@ -1,6 +1,10 @@
+#include "../../item/TypedBooks.hpp"
 #include "../../mission/TypedMissionRuntime.hpp"
 #include "../../item/TypedSoulClock.hpp"
 #include "../../core/stdafx.h"
+#include <item/PremiumAttack.hpp>
+#include "../../dungeon/DungeonUiEvents.hpp"
+#include "../../combat/DeathRecapEvents.hpp"
 #include "../../story/SpyQuestSystem.hpp"
 #include "../../story/CaravanQuestSystem.hpp"
 #include "../../raid/EclipseRaidSystem.hpp"
@@ -805,6 +809,7 @@ uint8_t GetAlignmentGrade(entt::entity e)
 
 void UpdateAlignment(entt::entity e, int64_t amount)
 {
+    if(DeferTypedBookMutation(e,[e,amount](){UpdateAlignment(e,amount);}))return;
     if (!ecs::Invariants::HasAnyTypeTag(g_registry, e)) return;
     const auto oldGrade = GetAlignmentGrade(e);
     const auto oldVisibleAlignment = GetAlignment(e) / 10;
@@ -2213,6 +2218,8 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
     if(SpyQuest::Hooks::death)SpyQuest::Hooks::death(victim,killer);
     CaravanQuest::OnDeath(victim,killer);
     EclipseRaid::OnDeath(victim,killer);
+    if (!(RuntimeFlags(victim) && IS_SET(RuntimeFlags(victim)->instantFlag, INSTANT_FLAG_NO_REWARD)))
+        DungeonUi::Events::Death(victim);
 
 	// LostCastle klonoknak nincs mob_proto (m_pkMobData == nullptr),
 	// ezert a normal !ecs::PlayerRuntime::IsPC(victim) reward/resurrection ag GetMobTable()-t hivna es crashelne.
@@ -2406,6 +2413,7 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 	}
 #endif
 	ecs::PlayerRuntime::SetPosition(victim, POS_DEAD);
+    DeathRecap::Events::Death(victim,killer);
     NotifyTypedRecoveryDeath(victim);
 	AffectSystem::ClearAffect(victim, true);
 
@@ -2938,6 +2946,10 @@ void DeathPenalty(entt::entity e, uint8_t bTown)
 	if (!ecs::IsCharacter(e))
 		return;
 
+    // Retry the whole decision after a pending typed mutation, including the
+    // original random exemption. Never calculate from an in-flight character.
+    if(DeferTypedBookMutation(e,[e,bTown](){DeathPenalty(e,bTown);}))return;
+
 	LOG_INFO("DEATH_PERNALY_CHECK({}) town({})", ecs::PlayerRuntime::GetName(e).data(), bTown);
 
 	Cube_close(e);
@@ -2969,6 +2981,14 @@ void DeathPenalty(entt::entity e, uint8_t bTown)
 
 	if (RuntimeFlags(e) && IS_SET(RuntimeFlags(e)->instantFlag, INSTANT_FLAG_DEATH_PENALTY))
 	{
+        if(!bTown && RequestTypedDeathProtection(e,[e](bool saved){
+            if(!g_registry.valid(e))return;
+            if(!saved){if(auto* d=ecs::PlayerRuntime::GetDesc(e))d->SetPhase(PHASE_CLOSE);return;}
+            if(auto* flags=RuntimeFlags(e))REMOVE_BIT(flags->instantFlag,INSTANT_FLAG_DEATH_PENALTY);
+#ifdef TEXTS_IMPROVEMENT
+            ecs::ChatSystem::SendNew(e,CHAT_TYPE_INFO,384,"");
+#endif
+        }))return;
 				if (auto* flags = RuntimeFlags(e))
 			REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_DEATH_PENALTY);
 
@@ -3802,7 +3822,7 @@ static void GiveTypedMobDrops(entt::entity victim, entt::entity killer, int delt
 	if (drops.empty())
 		return;
 	const auto give = [](entt::entity owner, const items::MobDrop& drop) {
-		QueueTypedItemGrant(owner, { drop.item, drop.refinementLevel, drop.amount });
+		QueueTypedItemGrant(owner,items::MakeMobDropGrant(drop));
 	};
 #ifdef ENABLE_DUNGEON_SHARED_DROP_HWID
 	if (const auto winners = SharedDungeonDropWinners(victim, killer); !winners.empty())
@@ -3940,420 +3960,11 @@ void Reward(entt::entity e, bool bItemDrop)
 	//
 	//
 	//
-	//PROF_UNIT pu3("r3");
-	entt::entity itemEntity = entt::null;
-
-	std::vector<entt::entity> s_vec_item;
-	s_vec_item.clear();
-
-	// One GetDropPct per kill, shared by the legacy drops and, with
-	// items.drops = "typed", the catalog drop tables that replace the legacy
-	// tables (F4 C7b-3, IC-035).
-	int iDeltaPercent = 0, iRandRange = 0;
-	const bool bDropPct = ITEM_MANAGER::instance().GetDropPct(e, attacker, iDeltaPercent, iRandRange);
-	const bool bTypedDrops = bDropPct && auriga::item::runtime::TypedDropsEnabled();
-	if (bTypedDrops)
-		GiveTypedMobDrops(e, attacker, iDeltaPercent, iRandRange);
-
-	if (bDropPct && ITEM_MANAGER::instance().CreateDropItem(e, attacker, s_vec_item, iDeltaPercent, iRandRange, !bTypedDrops))
-	{
-
-#ifdef ENABLE_RARE_DROP_NOTICE_RAZOR93
-		for (const entt::entity dropItem : s_vec_item)
-		{
-			if (verjema_szadba_ixtreeme.find(ItemSystem::GetItemVnum(dropItem)) != verjema_szadba_ixtreeme.end())
-			{
-		std::string message = MakeItemLink(dropItem, attacker, e);
-				BroadcastNotice(message.c_str());
-			}
-		}
-#endif
-#ifdef ENABLE_DROP_INSTANT_INVENTORY
-		const bool bInstantRewardToInventory = true;
-#endif
-
-		bool bSharedDungeonDrop = false;
-
-#ifdef ENABLE_DUNGEON_SHARED_DROP_HWID
-		// Dungeon party shared drop (ground + ownership) + HWID|HOST szures:
-		// - csak mapindex
-		// - csak ha a killer partyban van
-		// - ugyanazt a dropot kapja minden jogosult (kulon item peldany, ownershipelve)
-		// - azonos HWID+HOST eseten csak 1 karakter kap (a legtobb dmg a mobra)
-
-		if (!s_vec_item.empty())
-		{
-			const long lMapIndex = ecs::PlayerRuntime::GetMapIndex(e); // a megolt mob mapindexe
-			const std::vector<entt::entity> winners = SharedDungeonDropWinners(e, attacker);
-			if (!winners.empty())
-			{
-				// 2) template drop lementese (vnum/count/socket/attr)
-				struct SPartySharedDropItem
-				{
-					uint32_t vnum;
-					uint32_t count;
-					// uint32_t, not long: sockets are 32-bit on the wire and
-					// on Windows, but long is 64-bit on LP64 (FreeBSD).
-					uint32_t sockets[ITEM_SOCKET_MAX_NUM];
-					TPlayerItemAttribute attrs[ITEM_ATTRIBUTE_MAX_NUM];
-				};
-
-				std::vector<SPartySharedDropItem> drops;
-				drops.reserve(s_vec_item.size());
-
-				for (const entt::entity srcItem : s_vec_item)
-				{
-					if (!ItemSystem::IsValidItem(srcItem))
-						continue;
-
-					SPartySharedDropItem di{};
-					di.vnum = ItemSystem::GetItemVnum(srcItem);
-					di.count = ItemSystem::GetItemCount(srcItem);
-
-					for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-						di.sockets[i] = ItemSystem::GetItemSocket(srcItem, i);
-
-					for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-						di.attrs[i] = ItemSystem::GetItemAttribute(srcItem, i);
-
-					drops.push_back(di);
-				}
-
-				// 3) kiosztas: minden HWID-unique winnernek ugyanaz a drop (ground + ownership)
-				for (const entt::entity rchEntity : winners)
-				{
-					if (rchEntity == entt::null || !ecs::PlayerRuntime::IsPC(rchEntity) || !ecs::PlayerRuntime::GetDesc(rchEntity))
-						continue;
-
-					PIXEL_POSITION mpos = pos;
-
-					// kis eltolas, hogy ne 1 pontra essen minden
-					mpos.x = number(-7, 7) * 20 + ecs::PlayerRuntime::GetX(e);
-					mpos.y = number(-7, 7) * 20 + ecs::PlayerRuntime::GetY(e);
-
-					for (const auto& di : drops)
-					{
-						const entt::entity newItem =
-							ITEM_MANAGER::instance().CreateItem(di.vnum, di.count);
-						if (!ItemSystem::IsValidItem(newItem))
-							continue;
-
-						for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-							ItemSystem::SetItemSocket(newItem, i, di.sockets[i]);
-
-						for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-							ItemSystem::SetItemAttribute(
-								newItem, i, di.attrs[i].bType, di.attrs[i].sValue);
-
-#ifdef ENABLE_DROP_INSTANT_INVENTORY
-						if (bInstantRewardToInventory)
-						{
-							__GiveRewardItemToCharacterOrDrop(rchEntity, e, newItem, mpos);
-						}
-						else
-						{
-							if (!ItemSystem::PlaceItemOnGround(
-									newItem, lMapIndex, mpos, 300))
-							{
-								ItemSystem::DestroyItemEntityEcs(
-									newItem, "SHARED_DROP_PLACE_FAIL");
-								continue;
-							}
-
-							if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(rchEntity)) == false)
-								ItemSystem::SetGroundOwnership(
-									newItem, rchEntity);
-						}
-#else
-						if (!ItemSystem::PlaceItemOnGround(
-								newItem, lMapIndex, mpos, 300))
-						{
-							ItemSystem::DestroyItemEntityEcs(
-								newItem, "SHARED_DROP_PLACE_FAIL");
-							continue;
-						}
-
-						if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(rchEntity)) == false)
-							ItemSystem::SetGroundOwnership(
-								newItem, rchEntity);
-#endif
-					}
-				}
-
-				// 4) a template itemeket megsemmisitjuk, hogy ne duplazzon
-				for (const entt::entity srcItem : s_vec_item)
-				{
-					if (ItemSystem::IsValidItem(srcItem))
-						ItemSystem::DestroyItemEntityEcs(
-							srcItem,
-							"COMBAT_SHARED_DROP_TEMPLATE");
-				}
-
-				s_vec_item.clear();
-				bSharedDungeonDrop = true;
-			}
-		}
-#endif // ENABLE_DUNGEON_SHARED_DROP_HWID
-
-
-		if (!bSharedDungeonDrop)
-		{
-#ifdef ENABLE_DROP_INSTANT_INVENTORY
-
-			if (s_vec_item.size() == 0);
-			else if (s_vec_item.size() == 1)
-			{
-				itemEntity = s_vec_item[0];
-				if (!ItemSystem::IsValidItem(itemEntity))
-				{
-					LOG_ERROR("invalid item entity in single drop");
-					CombatSystem::ClearDamageLedger(e);
-					return;
-				}
-
-				const bool bKeepGroundDrop = false;
-
-				if (bInstantRewardToInventory && !bKeepGroundDrop)
-				{
-					__GiveRewardItemToCharacterOrDrop(attacker, e, itemEntity, pos);
-				}
-				else
-				{
-					if (!ItemSystem::PlaceItemOnGround(
-							itemEntity, ecs::PlayerRuntime::GetMapIndex(e), pos, 300))
-					{
-						LOG_ERROR("failed to place single drop entity {}",
-							static_cast<uint32_t>(itemEntity));
-						CombatSystem::ClearDamageLedger(e);
-						return;
-					}
-
-					if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(attacker)) == false)
-					{
-						ItemSystem::SetGroundOwnership(
-							itemEntity, attacker);
-					}
-
-					LOG_INFO("DROP_ITEM: {} {} {} from {}",
-						ItemSystem::GetItemName(itemEntity), pos.x, pos.y, ecs::PlayerRuntime::GetName(e).data());
-				}
-
-				pos.x = number(-7, 7) * 20;
-				pos.y = number(-7, 7) * 20;
-				pos.x += ecs::PlayerRuntime::GetX(e);
-				pos.y += ecs::PlayerRuntime::GetY(e);
-			}
-			else
-			{
-				int iItemIdx = s_vec_item.size() - 1;
-
-				std::vector<entt::entity> v = DropContributors(e);
-
-				if (v.empty())
-				{
-					while (iItemIdx >= 0)
-					{
-						itemEntity = s_vec_item[iItemIdx--];
-
-						if (!ItemSystem::IsValidItem(itemEntity))
-						{
-							LOG_ERROR("item null in vector idx {}", iItemIdx + 1);
-							continue;
-						}
-
-						if (!ItemSystem::PlaceItemOnGround(
-								itemEntity, ecs::PlayerRuntime::GetMapIndex(e), pos, 300))
-							continue;
-
-						if (ecs::IsCharacter(attacker) && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(attacker)) == false)
-							ItemSystem::SetGroundOwnership(
-								itemEntity, attacker);
-
-						LOG_INFO("DROP_ITEM: {} {} {} by {}",
-							ItemSystem::GetItemName(itemEntity), pos.x, pos.y, ecs::PlayerRuntime::GetName(e).data());
-
-						pos.x = number(-7, 7) * 20;
-						pos.y = number(-7, 7) * 20;
-						pos.x += ecs::PlayerRuntime::GetX(e);
-						pos.y += ecs::PlayerRuntime::GetY(e);
-					}
-				}
-				else
-				{
-					std::vector<entt::entity>::iterator it = v.begin();
-
-					while (iItemIdx >= 0)
-					{
-						itemEntity = s_vec_item[iItemIdx--];
-
-						if (!ItemSystem::IsValidItem(itemEntity))
-						{
-							LOG_ERROR("item null in vector idx {}", iItemIdx + 1);
-							continue;
-						}
-
-						entt::entity owner = *it;
-
-						const entt::entity ownerParty = ecs::SocialSystem::GetParty(owner);
-						if (ownerParty != entt::null)
-							owner = PartySystem::GetNextOwnership(ownerParty, owner, ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e));
-
-						++it;
-
-						if (it == v.end())
-							it = v.begin();
-
-						const bool bKeepGroundDrop = false;
-
-						if (bInstantRewardToInventory && !bKeepGroundDrop)
-						{
-							__GiveRewardItemToCharacterOrDrop(owner, e, itemEntity, pos);
-						}
-						else
-						{
-							if (!ItemSystem::PlaceItemOnGround(
-									itemEntity, ecs::PlayerRuntime::GetMapIndex(e), pos, 300))
-								continue;
-
-							if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(owner)) == false)
-							{
-								ItemSystem::SetGroundOwnership(
-									itemEntity, owner);
-							}
-
-							LOG_INFO("DROP_ITEM: {} {} {} by {}",
-								ItemSystem::GetItemName(itemEntity), pos.x, pos.y, ecs::PlayerRuntime::GetName(e).data());
-						}
-
-						pos.x = number(-7, 7) * 20;
-						pos.y = number(-7, 7) * 20;
-						pos.x += ecs::PlayerRuntime::GetX(e);
-						pos.y += ecs::PlayerRuntime::GetY(e);
-					}
-				}
-			}
-
-#else
-
-			if (s_vec_item.size() == 0);
-			else if (s_vec_item.size() == 1)
-			{
-				itemEntity = s_vec_item[0];
-				if (!ItemSystem::IsValidItem(itemEntity))
-				{
-					LOG_ERROR("invalid item entity in single ground drop");
-					CombatSystem::ClearDamageLedger(e);
-					return;
-				}
-				if (!ItemSystem::PlaceItemOnGround(
-						itemEntity, ecs::PlayerRuntime::GetMapIndex(e), pos, 300))
-				{
-					LOG_ERROR("failed to place single ground drop entity {}",
-						static_cast<uint32_t>(itemEntity));
-					CombatSystem::ClearDamageLedger(e);
-					return;
-				}
-
-				if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(attacker)) == false)
-				{
-					ItemSystem::SetGroundOwnership(
-						itemEntity, attacker);
-				}
-
-				pos.x = number(-7, 7) * 20;
-				pos.y = number(-7, 7) * 20;
-				pos.x += ecs::PlayerRuntime::GetX(e);
-				pos.y += ecs::PlayerRuntime::GetY(e);
-
-				LOG_INFO("DROP_ITEM: {} {} {} from {}",
-					ItemSystem::GetItemName(itemEntity), pos.x, pos.y, ecs::PlayerRuntime::GetName(e).data());
-			}
-			else
-			{
-				int iItemIdx = s_vec_item.size() - 1;
-
-				std::vector<entt::entity> v = DropContributors(e);
-
-				if (v.empty())
-				{
-					while (iItemIdx >= 0)
-					{
-						itemEntity = s_vec_item[iItemIdx--];
-
-						if (!ItemSystem::IsValidItem(itemEntity))
-						{
-							LOG_ERROR("item null in vector idx {}", iItemIdx + 1);
-							continue;
-						}
-
-						if (!ItemSystem::PlaceItemOnGround(
-								itemEntity, ecs::PlayerRuntime::GetMapIndex(e), pos, 300))
-							continue;
-
-						if (ecs::IsCharacter(attacker) && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(attacker)) == false)
-							ItemSystem::SetGroundOwnership(
-								itemEntity, attacker);
-
-						pos.x = number(-7, 7) * 20;
-						pos.y = number(-7, 7) * 20;
-						pos.x += ecs::PlayerRuntime::GetX(e);
-						pos.y += ecs::PlayerRuntime::GetY(e);
-
-						LOG_INFO("DROP_ITEM: {} {} {} by {}",
-							ItemSystem::GetItemName(itemEntity), pos.x, pos.y, ecs::PlayerRuntime::GetName(e).data());
-					}
-				}
-				else
-				{
-					std::vector<entt::entity>::iterator it = v.begin();
-
-					while (iItemIdx >= 0)
-					{
-						itemEntity = s_vec_item[iItemIdx--];
-
-						if (!ItemSystem::IsValidItem(itemEntity))
-						{
-							LOG_ERROR("item null in vector idx {}", iItemIdx + 1);
-							continue;
-						}
-
-						if (!ItemSystem::PlaceItemOnGround(
-								itemEntity, ecs::PlayerRuntime::GetMapIndex(e), pos, 300))
-							continue;
-
-						entt::entity owner = *it;
-
-						const entt::entity ownerParty = ecs::SocialSystem::GetParty(owner);
-						if (ownerParty != entt::null)
-							owner = PartySystem::GetNextOwnership(ownerParty, owner, ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e));
-
-						++it;
-
-						if (it == v.end())
-							it = v.begin();
-
-						if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(owner)) == false)
-						{
-							ItemSystem::SetGroundOwnership(
-								itemEntity, owner);
-						}
-
-						pos.x = number(-7, 7) * 20;
-						pos.y = number(-7, 7) * 20;
-						pos.x += ecs::PlayerRuntime::GetX(e);
-						pos.y += ecs::PlayerRuntime::GetY(e);
-
-						LOG_INFO("DROP_ITEM: {} {} {} by {}",
-							ItemSystem::GetItemName(itemEntity), pos.x, pos.y, ecs::PlayerRuntime::GetName(e).data());
-					}
-				}
-			}
-
-#endif
-		}
-	}
-
-	CombatSystem::ClearDamageLedger(e);
+    // Native catalog drops are the only item reward path.
+    int deltaPercent = 0, randomRange = 0;
+    if (ITEM_MANAGER::instance().GetDropPct(e, attacker, deltaPercent, randomRange))
+        GiveTypedMobDrops(e, attacker, deltaPercent, randomRange);
+    CombatSystem::ClearDamageLedger(e);
 }
 
 } // namespace CombatSystem
@@ -4415,7 +4026,7 @@ void RewardGold(entt::entity e, entt::entity attacker)
 					gold += (gold * ecs::PointSystem::Get(attacker, POINT_MALL_GOLDBONUS) / 100);
 				}
 
-				ecs::PointSystem::Change(attacker, POINT_GOLD, gold, true);
+				ItemSystem::GiveGold(attacker, gold);
 			}
 		}
 		else {
@@ -4542,22 +4153,8 @@ void RewardGold(entt::entity e, entt::entity attacker)
 						LOG_TRACE("Drop Money gold {} GoldMin {} GoldMax {}", iGold, (*ecs::PlayerRuntime::GetMobTable(e)).dwGoldMax, (*ecs::PlayerRuntime::GetMobTable(e)).dwGoldMax);
 					}
 
-#ifdef ENABLE_YANG_INSTANT_INVENTORY_RAZOR93
 					ItemSystem::GiveGold(attacker, iGold);
 					iTotalGold += iGold;
-#else
-					const entt::entity gold = ITEM_MANAGER::instance().CreateItem(1, iGold);
-					if (ItemSystem::IsValidItem(gold))
-					{
-						pos.x = ecs::PlayerRuntime::GetX(e) + ((number(-14, 14) + number(-14, 14)) * 23);
-						pos.y = ecs::PlayerRuntime::GetY(e) + ((number(-14, 14) + number(-14, 14)) * 23);
-						if (ItemSystem::PlaceItemOnGround(
-								gold, ecs::PlayerRuntime::GetMapIndex(e), pos, 300))
-							iTotalGold += iGold;
-						else
-							ItemSystem::DestroyItemEntityEcs(gold, "GOLD_DROP_PLACE_FAIL");
-					}
-#endif
 				}
 			}
 			else if (1 == number(1, iGold10DropPct))
@@ -4575,22 +4172,8 @@ void RewardGold(entt::entity e, entt::entity attacker)
 						continue;
 					}
 
-#ifdef ENABLE_YANG_INSTANT_INVENTORY_RAZOR93
 					ItemSystem::GiveGold(attacker, iGold);
 					iTotalGold += iGold;
-#else
-					const entt::entity gold = ITEM_MANAGER::instance().CreateItem(1, iGold);
-					if (ItemSystem::IsValidItem(gold))
-					{
-						pos.x = ecs::PlayerRuntime::GetX(e) + (number(-7, 7) * 20);
-						pos.y = ecs::PlayerRuntime::GetY(e) + (number(-7, 7) * 20);
-						if (ItemSystem::PlaceItemOnGround(
-								gold, ecs::PlayerRuntime::GetMapIndex(e), pos, 300))
-							iTotalGold += iGold;
-						else
-							ItemSystem::DestroyItemEntityEcs(gold, "GOLD_DROP_PLACE_FAIL");
-					}
-#endif
 
 				}
 			}
@@ -4629,20 +4212,7 @@ void RewardGold(entt::entity e, entt::entity attacker)
 						}
 						else
 						{
-#ifdef ENABLE_YANG_INSTANT_INVENTORY_RAZOR93
 							ItemSystem::GiveGold(attacker, splitGold);
-#else
-							const entt::entity gold = ITEM_MANAGER::instance().CreateItem(1, splitGold);
-							if (ItemSystem::IsValidItem(gold))
-							{
-								pos.x = ecs::PlayerRuntime::GetX(e) + (number(-7, 7) * 20);
-								pos.y = ecs::PlayerRuntime::GetY(e) + (number(-7, 7) * 20);
-								if (!ItemSystem::PlaceItemOnGround(
-										gold, ecs::PlayerRuntime::GetMapIndex(e), pos, 300))
-									ItemSystem::DestroyItemEntityEcs(
-										gold, "GOLD_DROP_PLACE_FAIL");
-							}
-#endif
 						}
 					}
 				}
@@ -4684,6 +4254,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
         return false;
 
     const EDamageType type = static_cast<EDamageType>(damageType);
+    DeathRecap::Events::DamageScope recapDamage(attacker,damageType);
 
     if (!ecs::Invariants::HasAnyTypeTag(g_registry, victim))
         return false;
@@ -4813,6 +4384,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	const int64_t iCurSP = static_cast<int64_t>(ecs::PlayerRuntime::GetSP(victim));
 
 	bool IsCritical = false;
+    recapDamage.Critical(IsCritical);
 	bool IsPenetrate = false;
 	bool IsDeathBlow = false;
 
@@ -4983,7 +4555,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			{
 				if (ecs::PointSystem::Get(victim, POINT_REFLECT_MELEE))
 				{
-					int reflectDamage = dam * ecs::PointSystem::Get(victim, POINT_REFLECT_MELEE) / 100;
+					int reflectDamage = EquipmentLegacyInt(EquipmentScale(dam,std::int64_t(ecs::PointSystem::Get(victim,POINT_REFLECT_MELEE))*100));
 
 					if (AffectSystem::IsImmune(attacker, IMMUNE_REFLECT))
 						reflectDamage = int(reflectDamage / 3.0f + 0.5f);
@@ -5322,7 +4894,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		//
 		if (ecs::PointSystem::Get(attacker, POINT_MALL_ATTBONUS) > 0)
 		{
-			int64_t add_dam = std::min((int64_t)300, dam * ecs::PointSystem::GetLimitPoint(attacker, POINT_MALL_ATTBONUS) / 100);
+			int64_t add_dam = auriga::item::PremiumAttackAddition(dam,ecs::PointSystem::GetLimitPoint(attacker, POINT_MALL_ATTBONUS));
 			dam += add_dam;
 		}
 
@@ -5865,7 +5437,10 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		if (static_cast<int64_t>(ecs::PlayerRuntime::GetHP(victim)) - dam <= 0) // @fixme137
 			dam = ecs::PlayerRuntime::GetHP(victim);
 
+		const auto dungeonHpBefore=ecs::PlayerRuntime::GetHP(victim);
 		ecs::PointSystem::Change(victim, POINT_HP, -dam, false);
+		const auto dungeonHpAfter=ecs::PlayerRuntime::GetHP(victim);
+		if (dungeonHpBefore>dungeonHpAfter) DungeonUi::Events::Damage(attacker,victim,dungeonHpBefore-dungeonHpAfter);
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
 		if (ecs::PlayerRuntime::IsStone(victim))
 			ProcessStoneSpawnStep(victim);

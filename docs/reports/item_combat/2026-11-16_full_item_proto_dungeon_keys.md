@@ -1,0 +1,13 @@
+# Eredeti rúna- és ork-kulcsok
+
+89102: tíz rúna-töredék egy lélekkulccsá cserélése, egyetlen natív tranzakcióval; a költség több kötegből is összeállhat.89103: a második–negyedik szint type1 szakaszán a vezető vagy egyedüli játékos kulcsával továbblépés; az ötödik szint type6 szakaszán bármely tag egy valódi közeli20507 rúnaoltárnak felajánlhat egy kulcsot. A szerver500 egységen belül a legközelebbi tényleges oltárt választja, VID döntetlennel. Mindig a pontos kiválasztott kulcspéldány fogy. A forrásban a töredék halmozható, a kész kulcs és az ork-kulcs egyedi példány; az eredeti méretek megmaradtak.
+
+A kazamata állapotát egy függő művelet védi; a szint, a szakasz és az entitás generációja rögzített. A világ csak az első igazolt SQL-mentés után lép tovább; COMMIT-újraegyeztetés vagy közbeni kijelentkezés nem duplázza és nem hagyja el a már kifizetett lépést. Az ötödik oltárnál a megmaradt kulcsok takarítása, a regen leállítása és a kapu-boss sebezhetősége az eredeti szabályokat követi.
+
+A4003–4008 szörnyek5%-os, vezetői és mennyiségi korlátos töredékjutalma natív példányt ad; a függő kiosztás is beleszámít a korlátba. A4009/4010 szörnyek3%-os földi kulcsa valódi natív zsákmány, az eredeti180 másodperces tulajdonosi védelemmel. Más zsákmányok60 másodperces alapértéke változatlan. A zöld ork-kulcs89104 eredetileg passzív: a három meglévő kazamata takarító ágát kötöttük be, a piramis legfeljebb255 darabos korlátjával. Nincs kitalált használati hatás.
+
+A karakterenként sorba állított takarítás megvárja a folyamatban lévő tárgyműveletet és a normál ItemStore-tranzakción át ír. Az új működés natív tartalomkódot használ; nincs futásidejű régi protó-azonosító leképezés. A régi backend meglévő ágai az eredeti konstansokkal megmaradtak. Az új kliens a meglévő pontos CG226 Használ műveletet használja. Nem változott a katalógus51 formátuma, a példányséma vagy a csomagok alakja.
+
+Ellenőrzés:225 natív doménpróba,93 konverterteszt,84 tényleges SQL/ItemStore ellenőrzés14 állapottal, Unity6.3 fordítás és309 ellenőrzés két tényleges Használ kattintással. GameServer/Database fordítás és68 regressziós teszt sikeres. A megismételt konverzió bájtpontosan azonos. A korai SQL-próba az azonosítófoglalás hiányát fedte fel; javítva a kiszolgálóban és a próbában, friss saját adatbázison újramérve.
+
+9846 konvertált és491 kivezetett forrásprotó,6928 natív definíció.633 hiányos tétel a merge-re vár,16 további viselkedés/politika feldolgozása folytatódik. Nem próbáltunk teljes TLS/ECS kazamatamenetet, élő világban földi felvételt vagy Addressables játékosbuildet. Az eredmény nincs telepítve az aktív helyi játékra; a94 játékosállapot-tábla továbbra is üres.

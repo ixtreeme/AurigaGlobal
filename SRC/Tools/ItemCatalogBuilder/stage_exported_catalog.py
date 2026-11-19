@@ -22,12 +22,14 @@ INSERT_ORDER = (
     'item_ammo_policy','item_resistance_profile','skill_book_profile','skill_book_target','skill_book_step',
     'bonus_profile','bonus_profile_entry','refinement_profile','refinement_level',
     'accessory_socket_profile','accessory_socket_grade','attribute_profile','attribute_group','attribute_candidate','attribute_value','attribute_service_profile','attribute_tier_chance','socket_service_profile','consumable_cooldown_profile',
-    'timed_effect_group','timed_effect_profile','toggle_effect_group','toggle_effect_profile',
+    'timed_effect_group','timed_effect_profile','energy_crystal_tier','toggle_effect_group','toggle_effect_profile','book_aid_profile',
     'recovery_profile','instant_recovery_profile','reserve_recovery_profile','periodic_recovery_profile','automatic_recovery_profile',
     'loot_profile','item_base','pet_hatch_profile','item_weapon','item_armor','item_material','item_accessory','item_consumable',
     'item_attribute_binding','item_skill_book','item_container','item_container_key','item_currency_token','loot_entry','accessory_socket_material',
     'pet_feed_rule','companion_form','pet_training_profile','pet_age_tier','pet_slot_rule','pet_skill_definition','pet_skill_rank','pet_supply_profile','pet_study_rule','pet_extension_rule','pet_enchant_rule','pet_skin_rule','item_special','growth_pet_profile','growth_pet_level','growth_pet_stage','item_companion','soul_profile','soul_level','item_soul','polymorph_form','polymorph_profile','polymorph_skill_rule','polymorph_mastery_rule','item_polymorph','tool_profile','tool_level','item_tool','item_fishing','item_quest','item_socket_stone','item_costume','item_costume_visual','refinement_recipe','refinement_ingredient',
     'mob_drop_group','mob_drop_entry',
+    'item_regalia','absorption_sash_profile','sash_donor_profile','sash_donor_component','regalia_bonus_rule','item_bonus_tool','bonus_tool_choice','special_bonus_tier','costume_transfer_target','currency_token_policy',
+    'item_ammo','item_forge_aid','forge_aid_level','attribute_birth_profile','attribute_birth_tier','item_definition_rules','item_character_service',
 )
 REGISTRIES=('catalog_format','item_category','bonus_definition')
 
@@ -62,7 +64,7 @@ def validate_candidate(candidate,blank):
             raise MigrationError('Invalid or reused issued category counter')
 
 
-def stage(candidate_file,helper,work,binaries):
+def stage(candidate_file,helper,work,binaries,verify=None):
     candidate_file=Path(candidate_file).resolve(strict=True)
     document=strict_json(candidate_file.read_text(encoding='utf-8'))
     candidate=document['packet']
@@ -72,7 +74,7 @@ def stage(candidate_file,helper,work,binaries):
     if expected!=candidate['hash']:raise MigrationError('Candidate hash mismatch')
     sandbox=Sandbox(work,binaries)
     migrations=sorted((ROOT/'db/migrations/item_combat').glob('[0-9][0-9][0-9]_*.sql'))
-    if [int(p.name[:3]) for p in migrations]!=list(range(33)):raise MigrationError('Unexpected catalog migration chain')
+    if [int(p.name[:3]) for p in migrations]!=list(range(64)):raise MigrationError('Unexpected catalog migration chain')
     try:
         sandbox.start();sandbox.verify()
         for path in migrations:
@@ -94,6 +96,7 @@ def stage(candidate_file,helper,work,binaries):
         saved=native(helper,dict(action='read',connection=dict(port=sandbox.port,user='root',password=sandbox.password)))
         if saved['hash']!=expected or saved['sequences']!=candidate['sequences']:
             raise MigrationError('Restored catalog content/counters differ from candidate')
+        if verify is not None:verify(sandbox,candidate)
         result=dict(validated=True,installed_to_game=False,candidate_sha256=file_hash(candidate_file),catalog_hash=expected,
                     tables={name:len(rows) for name,rows in candidate['tables'].items()},
                     migrations={p.name:file_hash(p) for p in migrations})

@@ -453,7 +453,7 @@ def plan_state(root,api,identity,selected):
     value=dict(backup=identity,archive=meta['archive_sha256'],scopes=selected,config=digest(Path(root)/'server.json'),files=paths,sql=public)
     fingerprint=hashlib.sha256(json.dumps(value,sort_keys=True).encode()).hexdigest()
     return dict(id=identity,fingerprint=fingerprint,scopes=selected,files=len(source),
-                remove=sorted(set(files)-set(source)),sql=public,archive_size=meta['archive_size'])
+                replace=sorted(source),remove=sorted(set(files)-set(source)),sql=public,archive_size=meta['archive_size'])
 
 
 def restore_plan(root,api,identity,selected):

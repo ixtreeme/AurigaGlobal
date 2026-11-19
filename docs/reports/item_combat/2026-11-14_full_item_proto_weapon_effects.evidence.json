@@ -1,0 +1,3576 @@
+{
+  "generated_at": "2026-11-14T19:54:02.437854+00:00",
+  "summary": {
+    "blocked_reasons": {
+      "invalid_chest_lock": 2,
+      "invalid_inventory_height": 6,
+      "invalid_mount_definition": 10,
+      "invalid_timed_effect_duration": 7,
+      "invalid_toggle_effect_definition": 37,
+      "invalid_weapon_costume_effect_attachment:163": 1,
+      "missing_equipment_asset": 154,
+      "missing_source_container_reward_group": 236,
+      "missing_source_icon": 293,
+      "missing_stole_effect_asset": 6,
+      "missing_stole_model": 1,
+      "missing_tool_model:item/etc/canna_2.gr2": 20,
+      "missing_unity_asset_reference": 12,
+      "missing_weapon_costume_effect_mapping:1297": 1,
+      "missing_weapon_costume_effect_mapping:1326": 2,
+      "missing_weapon_costume_effect_mapping:1335": 2,
+      "missing_weapon_costume_effect_mapping:1344": 2,
+      "non_bonus_affect_requires_dedicated_behavior": 4,
+      "seed_moon_bottle_cooldown_policy_required": 2,
+      "semantic_converter_required:11:0": 1,
+      "semantic_converter_required:15:0": 1,
+      "semantic_converter_required:16:10": 4,
+      "semantic_converter_required:19:0": 1,
+      "semantic_converter_required:22:0": 1,
+      "semantic_converter_required:27:0": 7,
+      "semantic_converter_required:28:3": 28,
+      "semantic_converter_required:35:0": 5,
+      "semantic_converter_required:35:1": 5,
+      "semantic_converter_required:36:0": 1,
+      "semantic_converter_required:37:0": 12,
+      "semantic_converter_required:38:0": 1,
+      "semantic_converter_required:3:1": 9,
+      "semantic_converter_required:3:10": 121,
+      "semantic_converter_required:3:12": 1,
+      "semantic_converter_required:3:13": 1,
+      "semantic_converter_required:3:15": 1,
+      "semantic_converter_required:3:23": 6,
+      "semantic_converter_required:3:29": 2,
+      "semantic_converter_required:3:32": 1,
+      "semantic_converter_required:3:39": 1,
+      "semantic_converter_required:3:40": 1,
+      "semantic_converter_required:3:45": 1,
+      "semantic_converter_required:3:9": 1,
+      "semantic_converter_required:9:0": 1,
+      "skill_selected_on_instance_not_in_prototype": 4,
+      "source_bonus_out_of_native_bounds:31": 1,
+      "source_fish_has_no_effect": 1,
+      "source_reward_rare_field_out_of_range": 1,
+      "source_stone_has_no_equipment_target": 3,
+      "timed_stole_definition_requires_clock": 9,
+      "unmapped_behavior_value": 1,
+      "unported_apply:125": 3,
+      "unported_apply:126": 1,
+      "unported_apply:127": 1,
+      "unported_apply:51": 16,
+      "unresolved_container_reward:2875": 3,
+      "unresolved_container_reward:30617": 17,
+      "unresolved_container_reward:30618": 1,
+      "unresolved_container_reward:48611": 1,
+      "unresolved_container_reward:55003": 1,
+      "unresolved_container_reward:55010": 1,
+      "unresolved_container_reward:70065": 1,
+      "unresolved_container_reward:70102": 8,
+      "unresolved_container_reward:70402": 3,
+      "unresolved_container_reward:70403": 1,
+      "unresolved_container_reward:71035": 1,
+      "unresolved_container_reward:72044": 5,
+      "unresolved_container_reward:72320": 4,
+      "unresolved_fishing_result:27847": 1,
+      "unresolved_fishing_result:27877": 1,
+      "unsupported_ability_effect": 5
+    },
+    "blocked_source_rows": 1107,
+    "converted_source_rows": 9388,
+    "new_native_definitions": 4896,
+    "retired_source_rows": 491,
+    "source_rows": 10986
+  },
+  "catalog_schema": 38,
+  "catalog_hash": "d36c5ab06d43722b3c0a82e435efe73d9722ab6247fb84d8734c3acb06f650fb",
+  "native_definitions": 6470,
+  "candidate": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-v38.json",
+  "candidate_sha256": "a50b742dcee59ef7ee25553d7447f66627c955ccf29a8b5378405f9c48cbc936",
+  "newly_converted_ids": [
+    50077,
+    78107,
+    88210,
+    88211,
+    88214,
+    88215,
+    88218,
+    88219,
+    88222,
+    88223,
+    88226,
+    88227,
+    88230,
+    88231,
+    88234,
+    88235,
+    88238,
+    88239,
+    88242,
+    88243,
+    88246,
+    88247,
+    88250,
+    88251,
+    88254,
+    88255,
+    88258
+  ],
+  "preserved_definitions": 1574,
+  "preserved_rows": 29204,
+  "remaining_groups": {
+    "behavior": 222,
+    "assets": 493,
+    "source_or_policy": 108,
+    "loot": 284
+  },
+  "installed_to_game": false,
+  "source_inputs": {
+    "fishing": "63d90dfd96df7a2cdd27bfb2c7a1fb075510fbb49c233aa50a09ebf05d38efef",
+    "groups": "6097c3f65ec0af169d0a931133f98919e9a277676696296a0224f6db6ea7fda7",
+    "helper": "804e30d0e0f8781cc6f82b70e72271bb2c363d42fa7adf955819176f91cb1887",
+    "known": [
+      "50e34c168aec7763c1d7abb50411c5b496b0903d8d8ebf7f61e666ea6188af0b"
+    ],
+    "preserved": "e13271550bc5ba20645046251db8a98189e14e6b393f6e584c38b68dac051234",
+    "source": "51d9ba3130ccb9c3b07f23c380445a882ba4e1357cb8bad0f5ac6cbc2ff7a9c1",
+    "unity_item_catalog": "3b8a05edba2e6f3216fd9e0abcd90fe05ca7595b5324bd79a7b95118dcf96abb"
+  },
+  "source_rules": {
+    "GameServer/core/constants.cpp": "a9ae06f91cf5ac925e342ae32ebae32b85fddbfd409015cdedb808e9f4950a67",
+    "GameServer/ecs/EntityFactory.cpp": "baee7b08de923e225d56bcf18aba92cddf31d64d06b62151c4110fe0069c498e",
+    "GameServer/ecs/components/item_components.hpp": "7a5e71dcb76c7e4bb5f93dbcf9c009169a4b823c5503c9fe595342706f40d96b",
+    "GameServer/ecs/systems/InventorySystem.cpp": "6c150c440d436604945305d80eaf0dd4b41fcd6ef26d06c2fb62913ced3ddf77",
+    "GameServer/ecs/systems/ItemAttributeSystem.cpp": "6bbe087212c8d735fd7a761e913bf7c4c0bd9ffba8a6a2924f66f296183d7720",
+    "GameServer/ecs/systems/ItemSystem.cpp": "eeda85ec6aaa1784cb0c113f9b8e17a29facdbc30598217552834312ea4a48fe",
+    "GameServer/ecs/systems/ItemSystem_LegacyBridge.cpp": "55669ab4242253088400f4a4c2e931209ef00327bca6b6645e4f5aa344ab5068",
+    "GameServer/ecs/systems/SkillSystem.cpp": "de8eca2479cd55daf9af8e95f8551c2ed3f23f719a10178b659d595a396a66da",
+    "GameServer/item/item_manager.cpp": "ec35b205cd8a1bcb36f1f1f8bb74b726708956bb264bd3dcd3d9389905b5ae2c",
+    "GameServer/world/fishing.cpp": "dfd1392dcb7e91cbdb29a2fcd47ccab93662433a9f1a02927e48c287bb1f0e6d",
+    "GameServer/world/mining.cpp": "3235423e8188b89d3ed03a65fd1e59789256798ec6cffe52bd3156052a162f28",
+    "common/CommonDefines.h": "9c1acbf251fb1deda41d35bc98fb2b91ba159c5b2035e6f1278b22024516b63a",
+    "common/rune_length.h": "d775403a785e93196da42a037c55c1b347e113a25518b2dc882ae323eb80e810",
+    "common/service.h": "03970b3ad758b40dc531d51bcdde7aebf87f554e51f5a7fc4874684852fc6d93"
+  },
+  "ctest_latest_status": {
+    "catalog_editor_mariadb": "Passed",
+    "item_bench_mariadb": "Passed",
+    "catalog_editor": "Passed",
+    "item_combat_schema_foundation": "Passed",
+    "catalog_sql_mariadb": "Passed",
+    "item_persistence_mariadb": "Passed",
+    "item_category_generator": "Passed",
+    "item_catalog_digest": "Passed",
+    "item_bonus_generator": "Passed",
+    "full_catalog_conversion": "Passed",
+    "plain_material_migration": "Passed",
+    "quest_token_migration": "Passed",
+    "legacy_remaining_migration": "Passed",
+    "legacy_item_migration": "Passed",
+    "consumables": "Passed",
+    "automatic_recovery": "Passed",
+    "legacy_equipment_migration": "Passed",
+    "npc_shops": "Passed",
+    "accessory_runtime": "Passed",
+    "timed_effects": "Passed",
+    "socket_insertion": "Passed",
+    "containers": "Passed",
+    "ammo_runtime": "Passed",
+    "socket_maintenance": "Passed",
+    "accessory_sockets": "Passed",
+    "skill_books": "Passed",
+    "forge_runtime": "Passed",
+    "automatic_runtime": "Passed",
+    "currency_tokens": "Passed",
+    "special_bonuses": "Passed",
+    "soul_runtime": "Passed",
+    "attribute_runtime": "Passed",
+    "storage_runtime": "Passed",
+    "token_redemption": "Passed",
+    "toggle_effects": "Passed",
+    "container_opening": "Passed",
+    "catalog_sql_snapshot": "Passed",
+    "bonus_profiles": "Passed",
+    "item_key": "Passed",
+    "pet_care": "Passed",
+    "costumes": "Passed",
+    "polymorph_items": "Passed",
+    "refinement_profiles": "Passed",
+    "instance_attributes": "Passed",
+    "companion_items": "Passed",
+    "item_catalog": "Passed",
+    "persistent_items": "Passed",
+    "soul_items": "Passed",
+    "refinement_recipes": "Passed",
+    "socket_services": "Passed",
+    "gathering_items": "Passed",
+    "pet_lifecycle": "Passed",
+    "socket_stones": "Passed",
+    "mob_drops": "Passed",
+    "growth_pet_progression": "Passed",
+    "quest_items": "Passed",
+    "typed_ground": "Passed",
+    "typed_inventory_wire": "Passed",
+    "catalog_sql_completion": "Passed",
+    "item_persistence_completion": "Passed",
+    "tool_runtime": "Passed",
+    "resource_gathering": "Passed",
+    "gathering_rules": "Passed",
+    "item_catalog_runtime_mariadb": "Passed"
+  },
+  "converter_tests": 52,
+  "editor_tests": {
+    "total": 76,
+    "passed": 75,
+    "skipped": 1
+  },
+  "worker": {
+    "success": true,
+    "validation_kind": "weapon_effects",
+    "candidate_sha256": "a50b742dcee59ef7ee25553d7447f66627c955ccf29a8b5378405f9c48cbc936",
+    "catalog_hash": "d36c5ab06d43722b3c0a82e435efe73d9722ab6247fb84d8734c3acb06f650fb",
+    "native_keys": [
+      {
+        "category_id": 4,
+        "local_id": 1858
+      },
+      {
+        "category_id": 4,
+        "local_id": 1861
+      }
+    ],
+    "packets": [
+      {
+        "variant": 0,
+        "weapon_case": 0,
+        "source": 88211,
+        "weapon_source": 10,
+        "race": 0,
+        "phase": "bag",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.0.bag.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.0.bag.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.0.bag.appearance.hex",
+        "hashes": {
+          "inventory": "ccd5286fd065a401cd270366ddce9b681ec858b56c834e51f075b91dabc977f0",
+          "details": "b6ede478873148092681a9b5319a782f0193142654bdf7591b8417dff499ae95",
+          "appearance": "54576b12e0542105c3a23bb0eaf86eed04402db3f3c0c75f7d1fa628ec22bbac"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 0,
+        "source": 88211,
+        "weapon_source": 10,
+        "race": 0,
+        "phase": "unarmed",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.0.unarmed.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.0.unarmed.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.0.unarmed.appearance.hex",
+        "hashes": {
+          "inventory": "f09aa73cad4d872932cbb38c1c7c45f62b052d03877643f23d928c46610e62ff",
+          "details": "b6ede478873148092681a9b5319a782f0193142654bdf7591b8417dff499ae95",
+          "appearance": "62809cbb1d1996dd57258594f33c4164b9bacb5cacffa029d2714a030916e97d"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 0,
+        "source": 88211,
+        "weapon_source": 10,
+        "race": 0,
+        "phase": "worn",
+        "expected_effect": 77,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.0.worn.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.0.worn.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.0.worn.appearance.hex",
+        "hashes": {
+          "inventory": "97ad8d80c4691ed44f39d516f61831ee8397845abe4dc0920ae8417cc93c86a5",
+          "details": "b6ede478873148092681a9b5319a782f0193142654bdf7591b8417dff499ae95",
+          "appearance": "73f43bf8d0688d7034ec925840647baf08f57c58aacb88c7593d922daf1be024"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 0,
+        "source": 88211,
+        "weapon_source": 10,
+        "race": 0,
+        "phase": "weapon_off",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.0.weapon_off.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.0.weapon_off.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.0.weapon_off.appearance.hex",
+        "hashes": {
+          "inventory": "c2387f42c42814f3b0082904ea7e80a44c6930905535353134cb3e40cf37ed39",
+          "details": "b6ede478873148092681a9b5319a782f0193142654bdf7591b8417dff499ae95",
+          "appearance": "82bd89c3f3b201b9a4121f7f0b0aaf57ac49689bc5d370fec0cbed543549962d"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 0,
+        "source": 88211,
+        "weapon_source": 10,
+        "race": 0,
+        "phase": "unequipped",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.0.unequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.0.unequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.0.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "d2c5c160b03d35502c38fac0528e39d9e262886daf3b9128aff1d52be4291d1d",
+          "details": "b6ede478873148092681a9b5319a782f0193142654bdf7591b8417dff499ae95",
+          "appearance": "9511615af6d083bfb249baec12237f125dee8e15d79daf3148f38d9108fe2f85"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 0,
+        "source": 88211,
+        "weapon_source": 10,
+        "race": 0,
+        "phase": "reequipped",
+        "expected_effect": 77,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.0.reequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.0.reequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.0.reequipped.appearance.hex",
+        "hashes": {
+          "inventory": "97ad8d80c4691ed44f39d516f61831ee8397845abe4dc0920ae8417cc93c86a5",
+          "details": "b6ede478873148092681a9b5319a782f0193142654bdf7591b8417dff499ae95",
+          "appearance": "9a9650557d6d1cc29c974f4b2695919efdf66f5dfb50aeb38d3cf1f4b46ba3d9"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 1,
+        "source": 88211,
+        "weapon_source": 1000,
+        "race": 5,
+        "phase": "bag",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.1.bag.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.1.bag.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.1.bag.appearance.hex",
+        "hashes": {
+          "inventory": "7e8bc9dec0b9ed7bc3fda7ffab0cb51314e8d239b31199e5f1c9ce57445c36ac",
+          "details": "e01a5dd40f2047f1a1dd49a15324d9650a86e0b098b5ed2ed1e5236030c13750",
+          "appearance": "54576b12e0542105c3a23bb0eaf86eed04402db3f3c0c75f7d1fa628ec22bbac"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 1,
+        "source": 88211,
+        "weapon_source": 1000,
+        "race": 5,
+        "phase": "unarmed",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.1.unarmed.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.1.unarmed.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.1.unarmed.appearance.hex",
+        "hashes": {
+          "inventory": "a2ad824ea292d01c7b6bf79bc3b4dce9d25f89a8f330f240d0d1c85078c78304",
+          "details": "e01a5dd40f2047f1a1dd49a15324d9650a86e0b098b5ed2ed1e5236030c13750",
+          "appearance": "62809cbb1d1996dd57258594f33c4164b9bacb5cacffa029d2714a030916e97d"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 1,
+        "source": 88211,
+        "weapon_source": 1000,
+        "race": 5,
+        "phase": "worn",
+        "expected_effect": 79,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.1.worn.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.1.worn.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.1.worn.appearance.hex",
+        "hashes": {
+          "inventory": "8232f16c5c843dc388495940bc29231118454dce870bf128428bff8ae077e1b7",
+          "details": "e01a5dd40f2047f1a1dd49a15324d9650a86e0b098b5ed2ed1e5236030c13750",
+          "appearance": "a3e57b6758b1876dfdef9f4ac660e69162e39fc44c8a489617cb6d818ae77e86"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 1,
+        "source": 88211,
+        "weapon_source": 1000,
+        "race": 5,
+        "phase": "weapon_off",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.1.weapon_off.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.1.weapon_off.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.1.weapon_off.appearance.hex",
+        "hashes": {
+          "inventory": "8af37e0c79e5b66412e4b8189670001d8880afed220aec2b63b31b25f6a3f8bf",
+          "details": "e01a5dd40f2047f1a1dd49a15324d9650a86e0b098b5ed2ed1e5236030c13750",
+          "appearance": "82bd89c3f3b201b9a4121f7f0b0aaf57ac49689bc5d370fec0cbed543549962d"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 1,
+        "source": 88211,
+        "weapon_source": 1000,
+        "race": 5,
+        "phase": "unequipped",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.1.unequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.1.unequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.1.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "3109c013595818e8d99dba7d218823865852beb5ea1a6ab0175f57abd37bb3fc",
+          "details": "e01a5dd40f2047f1a1dd49a15324d9650a86e0b098b5ed2ed1e5236030c13750",
+          "appearance": "9fa846ee97b2dfcf910e9bbeae2f4b263f9a1d453c003a55ebc1e2af9b828638"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 1,
+        "source": 88211,
+        "weapon_source": 1000,
+        "race": 5,
+        "phase": "reequipped",
+        "expected_effect": 79,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.1.reequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.1.reequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.1.reequipped.appearance.hex",
+        "hashes": {
+          "inventory": "8232f16c5c843dc388495940bc29231118454dce870bf128428bff8ae077e1b7",
+          "details": "e01a5dd40f2047f1a1dd49a15324d9650a86e0b098b5ed2ed1e5236030c13750",
+          "appearance": "069f42836d8bd4e46fffe05d030419f62f753098f5623a69667b6c04927b161a"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 2,
+        "source": 88211,
+        "weapon_source": 2000,
+        "race": 5,
+        "phase": "bag",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.2.bag.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.2.bag.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.2.bag.appearance.hex",
+        "hashes": {
+          "inventory": "599385d5bf76bcc46f5bc654fa01126d4e696b593d35b629073a0ae1924b360a",
+          "details": "7c3bb8314be94f85b1dc3f04b40aa072bc75714c195996e634b9fac5f0837d49",
+          "appearance": "54576b12e0542105c3a23bb0eaf86eed04402db3f3c0c75f7d1fa628ec22bbac"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 2,
+        "source": 88211,
+        "weapon_source": 2000,
+        "race": 5,
+        "phase": "unarmed",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.2.unarmed.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.2.unarmed.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.2.unarmed.appearance.hex",
+        "hashes": {
+          "inventory": "e625f41b6a466ad052741936ac4e5239dd15be8b1480db2aed751c04b93db7b8",
+          "details": "7c3bb8314be94f85b1dc3f04b40aa072bc75714c195996e634b9fac5f0837d49",
+          "appearance": "62809cbb1d1996dd57258594f33c4164b9bacb5cacffa029d2714a030916e97d"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 2,
+        "source": 88211,
+        "weapon_source": 2000,
+        "race": 5,
+        "phase": "worn",
+        "expected_effect": 80,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.2.worn.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.2.worn.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.2.worn.appearance.hex",
+        "hashes": {
+          "inventory": "32a688eae5721c27071d770d292e91f0632a58833454f5f3b9a3473eff3b2a17",
+          "details": "7c3bb8314be94f85b1dc3f04b40aa072bc75714c195996e634b9fac5f0837d49",
+          "appearance": "acc58f6066f65da07903849823008c770ae07e8679b8b54fd880444f815dd27f"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 2,
+        "source": 88211,
+        "weapon_source": 2000,
+        "race": 5,
+        "phase": "weapon_off",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.2.weapon_off.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.2.weapon_off.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.2.weapon_off.appearance.hex",
+        "hashes": {
+          "inventory": "a2a463c50bc5fa0c07aaf0d0f479ce55bde922cec52261e79916d6ce7439b718",
+          "details": "7c3bb8314be94f85b1dc3f04b40aa072bc75714c195996e634b9fac5f0837d49",
+          "appearance": "82bd89c3f3b201b9a4121f7f0b0aaf57ac49689bc5d370fec0cbed543549962d"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 2,
+        "source": 88211,
+        "weapon_source": 2000,
+        "race": 5,
+        "phase": "unequipped",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.2.unequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.2.unequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.2.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "554346fc8bd9eec007d9d2fb181f5f024a420ddf9b8306c5cabe9c386954142d",
+          "details": "7c3bb8314be94f85b1dc3f04b40aa072bc75714c195996e634b9fac5f0837d49",
+          "appearance": "146d9ed757239db2f2c9c8f7281ffa983393415f4aa0ca8415ae766b50e8c1ea"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 2,
+        "source": 88211,
+        "weapon_source": 2000,
+        "race": 5,
+        "phase": "reequipped",
+        "expected_effect": 80,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.2.reequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.2.reequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.2.reequipped.appearance.hex",
+        "hashes": {
+          "inventory": "32a688eae5721c27071d770d292e91f0632a58833454f5f3b9a3473eff3b2a17",
+          "details": "7c3bb8314be94f85b1dc3f04b40aa072bc75714c195996e634b9fac5f0837d49",
+          "appearance": "779bd0ca594633ee67a7b0a8422346a04e2821f094884d983b4a358e3b66e6a3"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 3,
+        "source": 88211,
+        "weapon_source": 3000,
+        "race": 0,
+        "phase": "bag",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.3.bag.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.3.bag.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.3.bag.appearance.hex",
+        "hashes": {
+          "inventory": "6835a25c055b7eb3ecd3fb918ae81505a0d906b006c268a914b9cb55fdde6ef9",
+          "details": "4267b34900466334f0bf741b206ec2d73fe3c81cb095d9e5a99a705306f508e7",
+          "appearance": "54576b12e0542105c3a23bb0eaf86eed04402db3f3c0c75f7d1fa628ec22bbac"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 3,
+        "source": 88211,
+        "weapon_source": 3000,
+        "race": 0,
+        "phase": "unarmed",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.3.unarmed.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.3.unarmed.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.3.unarmed.appearance.hex",
+        "hashes": {
+          "inventory": "9caf9422a54595c1c04e36ad3cd38cd80b1419e32be8b75b2921912f004de28b",
+          "details": "4267b34900466334f0bf741b206ec2d73fe3c81cb095d9e5a99a705306f508e7",
+          "appearance": "62809cbb1d1996dd57258594f33c4164b9bacb5cacffa029d2714a030916e97d"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 3,
+        "source": 88211,
+        "weapon_source": 3000,
+        "race": 0,
+        "phase": "worn",
+        "expected_effect": 78,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.3.worn.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.3.worn.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.3.worn.appearance.hex",
+        "hashes": {
+          "inventory": "b934fb5de01ff5970995edb1b264ee0b13c8ca6fca5ad54d142657653c52ed8d",
+          "details": "4267b34900466334f0bf741b206ec2d73fe3c81cb095d9e5a99a705306f508e7",
+          "appearance": "8dacfec4bbda4621c4ccb5a9a597b63191b7955260c4ab77d14a2ad0fcc3b0e1"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 3,
+        "source": 88211,
+        "weapon_source": 3000,
+        "race": 0,
+        "phase": "weapon_off",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.3.weapon_off.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.3.weapon_off.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.3.weapon_off.appearance.hex",
+        "hashes": {
+          "inventory": "4b997f416c0366df3d1fbdb0fd0278778b496bfe738273431bd9585dd0eeb580",
+          "details": "4267b34900466334f0bf741b206ec2d73fe3c81cb095d9e5a99a705306f508e7",
+          "appearance": "82bd89c3f3b201b9a4121f7f0b0aaf57ac49689bc5d370fec0cbed543549962d"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 3,
+        "source": 88211,
+        "weapon_source": 3000,
+        "race": 0,
+        "phase": "unequipped",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.3.unequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.3.unequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.3.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "5968f7a2f3a1128c931ebca3cbf167dfe0ce7e0d2ca7903a3ed76f0d441cd42b",
+          "details": "4267b34900466334f0bf741b206ec2d73fe3c81cb095d9e5a99a705306f508e7",
+          "appearance": "c321df7b474992a79688c7cfec3dd77194817e82c338a0b1b53c41ed05a65705"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 3,
+        "source": 88211,
+        "weapon_source": 3000,
+        "race": 0,
+        "phase": "reequipped",
+        "expected_effect": 78,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.3.reequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.3.reequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.3.reequipped.appearance.hex",
+        "hashes": {
+          "inventory": "b934fb5de01ff5970995edb1b264ee0b13c8ca6fca5ad54d142657653c52ed8d",
+          "details": "4267b34900466334f0bf741b206ec2d73fe3c81cb095d9e5a99a705306f508e7",
+          "appearance": "91640eb2e750cb88ab54a666bf2973faa9200684c52aaa8125834b336618d31e"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 4,
+        "source": 88211,
+        "weapon_source": 5000,
+        "race": 7,
+        "phase": "bag",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.4.bag.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.4.bag.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.4.bag.appearance.hex",
+        "hashes": {
+          "inventory": "9b9041045e51585a71b3c19d048ac52a7620eeaa24fd29396e9dfd125fc3d718",
+          "details": "c5debc3a12e2463122e5c4c3fd871bd25ce5a2a6500fc584e2956c1ff99d8294",
+          "appearance": "54576b12e0542105c3a23bb0eaf86eed04402db3f3c0c75f7d1fa628ec22bbac"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 4,
+        "source": 88211,
+        "weapon_source": 5000,
+        "race": 7,
+        "phase": "unarmed",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.4.unarmed.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.4.unarmed.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.4.unarmed.appearance.hex",
+        "hashes": {
+          "inventory": "fefe533ca428b4d90630ef48c994280b328ea7f1c84d732ea5fc927e38237db5",
+          "details": "c5debc3a12e2463122e5c4c3fd871bd25ce5a2a6500fc584e2956c1ff99d8294",
+          "appearance": "62809cbb1d1996dd57258594f33c4164b9bacb5cacffa029d2714a030916e97d"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 4,
+        "source": 88211,
+        "weapon_source": 5000,
+        "race": 7,
+        "phase": "worn",
+        "expected_effect": 81,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.4.worn.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.4.worn.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.4.worn.appearance.hex",
+        "hashes": {
+          "inventory": "4647c77d75b3e635659bc429947484ddc724f04acf866953f81bdd32edd1cfd9",
+          "details": "c5debc3a12e2463122e5c4c3fd871bd25ce5a2a6500fc584e2956c1ff99d8294",
+          "appearance": "e773c05c1d515ff8f7a911eaead42a543340b9b4ac9789941982a1aa19db19ba"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 4,
+        "source": 88211,
+        "weapon_source": 5000,
+        "race": 7,
+        "phase": "weapon_off",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.4.weapon_off.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.4.weapon_off.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.4.weapon_off.appearance.hex",
+        "hashes": {
+          "inventory": "b32f10f362faaa10f938b5bfb402fc65f1381931ab7f8f233e0dbcbc5fc39267",
+          "details": "c5debc3a12e2463122e5c4c3fd871bd25ce5a2a6500fc584e2956c1ff99d8294",
+          "appearance": "82bd89c3f3b201b9a4121f7f0b0aaf57ac49689bc5d370fec0cbed543549962d"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 4,
+        "source": 88211,
+        "weapon_source": 5000,
+        "race": 7,
+        "phase": "unequipped",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.4.unequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.4.unequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.4.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "a00d7e45fd67bb3c6acf4a353a0dd88a26219b9be4ea2b62a2f85af26b7b0d0a",
+          "details": "c5debc3a12e2463122e5c4c3fd871bd25ce5a2a6500fc584e2956c1ff99d8294",
+          "appearance": "612d55f8a143f05a994161fa7de840447636f2c2392cd4c013d0624601edc333"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 4,
+        "source": 88211,
+        "weapon_source": 5000,
+        "race": 7,
+        "phase": "reequipped",
+        "expected_effect": 81,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.4.reequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.4.reequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.4.reequipped.appearance.hex",
+        "hashes": {
+          "inventory": "4647c77d75b3e635659bc429947484ddc724f04acf866953f81bdd32edd1cfd9",
+          "details": "c5debc3a12e2463122e5c4c3fd871bd25ce5a2a6500fc584e2956c1ff99d8294",
+          "appearance": "3e31ebbc3d7576a5c2903e57dd05387562442447b5540725bfd487ff2fa31488"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 5,
+        "source": 88211,
+        "weapon_source": 7000,
+        "race": 7,
+        "phase": "bag",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.5.bag.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.5.bag.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.5.bag.appearance.hex",
+        "hashes": {
+          "inventory": "8a95740baea7ef611ef0949c4395910b0bea4c88cf3c62d5de518d911eec82e9",
+          "details": "e8e0957efb700afad8c1ef9934ee79c759f05f566f8cc01e491c8c487cb5a03d",
+          "appearance": "54576b12e0542105c3a23bb0eaf86eed04402db3f3c0c75f7d1fa628ec22bbac"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 5,
+        "source": 88211,
+        "weapon_source": 7000,
+        "race": 7,
+        "phase": "unarmed",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.5.unarmed.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.5.unarmed.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.5.unarmed.appearance.hex",
+        "hashes": {
+          "inventory": "157c831ef10f7fca1e2ef3705e95d112a88234e66e2aca20b4ce31fcac8a15f5",
+          "details": "e8e0957efb700afad8c1ef9934ee79c759f05f566f8cc01e491c8c487cb5a03d",
+          "appearance": "62809cbb1d1996dd57258594f33c4164b9bacb5cacffa029d2714a030916e97d"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 5,
+        "source": 88211,
+        "weapon_source": 7000,
+        "race": 7,
+        "phase": "worn",
+        "expected_effect": 82,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.5.worn.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.5.worn.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.5.worn.appearance.hex",
+        "hashes": {
+          "inventory": "f205635e58f8eb2ba5734b09cfe94b7823b671908ebb5243788d6e9b62197c4d",
+          "details": "e8e0957efb700afad8c1ef9934ee79c759f05f566f8cc01e491c8c487cb5a03d",
+          "appearance": "dc032707842ea6261163dfb7fb8c41396e4ee68fa67f828d54e5381a0e3cd218"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 5,
+        "source": 88211,
+        "weapon_source": 7000,
+        "race": 7,
+        "phase": "weapon_off",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.5.weapon_off.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.5.weapon_off.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.5.weapon_off.appearance.hex",
+        "hashes": {
+          "inventory": "43da5a98c64dc1002973e326939c3844681e6176056f9b78a76547870f32f08d",
+          "details": "e8e0957efb700afad8c1ef9934ee79c759f05f566f8cc01e491c8c487cb5a03d",
+          "appearance": "82bd89c3f3b201b9a4121f7f0b0aaf57ac49689bc5d370fec0cbed543549962d"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 5,
+        "source": 88211,
+        "weapon_source": 7000,
+        "race": 7,
+        "phase": "unequipped",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.5.unequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.5.unequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.5.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "75d590dbbd2b2886cd3f4084b6d4b984ca2c5a661cfd3eb4c9e5318854bf46e2",
+          "details": "e8e0957efb700afad8c1ef9934ee79c759f05f566f8cc01e491c8c487cb5a03d",
+          "appearance": "49b80eac4efec96f88defdc8ab6957857f1b8b137fb102c5d70c2a10941fb591"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 5,
+        "source": 88211,
+        "weapon_source": 7000,
+        "race": 7,
+        "phase": "reequipped",
+        "expected_effect": 82,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.5.reequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.5.reequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.5.reequipped.appearance.hex",
+        "hashes": {
+          "inventory": "f205635e58f8eb2ba5734b09cfe94b7823b671908ebb5243788d6e9b62197c4d",
+          "details": "e8e0957efb700afad8c1ef9934ee79c759f05f566f8cc01e491c8c487cb5a03d",
+          "appearance": "9775afb4cfdf04acbbfaa4d0b6d6d24a71d75697605585104d8fc6f30cdcb84a"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 6,
+        "source": 88211,
+        "weapon_source": 1090,
+        "race": 5,
+        "phase": "bag",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.6.bag.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.6.bag.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.6.bag.appearance.hex",
+        "hashes": {
+          "inventory": "6229571e52e2129136a8852c91169450c3a33aab160339d5ad10ce037ec404bb",
+          "details": "e3598b2ade8283a0e13ed679a0b9d6a629bc6037e021d82cfe628e9b68c6a1be",
+          "appearance": "54576b12e0542105c3a23bb0eaf86eed04402db3f3c0c75f7d1fa628ec22bbac"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 6,
+        "source": 88211,
+        "weapon_source": 1090,
+        "race": 5,
+        "phase": "unarmed",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.6.unarmed.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.6.unarmed.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.6.unarmed.appearance.hex",
+        "hashes": {
+          "inventory": "654573255d3edea2420885884dcac40ecb854521a4bbdefb44f50ee3697011f9",
+          "details": "e3598b2ade8283a0e13ed679a0b9d6a629bc6037e021d82cfe628e9b68c6a1be",
+          "appearance": "62809cbb1d1996dd57258594f33c4164b9bacb5cacffa029d2714a030916e97d"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 6,
+        "source": 88211,
+        "weapon_source": 1090,
+        "race": 5,
+        "phase": "worn",
+        "expected_effect": 579,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.6.worn.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.6.worn.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.6.worn.appearance.hex",
+        "hashes": {
+          "inventory": "182acdf7ebd4fea9b77d47f5b4c759d73d836e0a839f5dbdc0184530a1b6e47e",
+          "details": "e3598b2ade8283a0e13ed679a0b9d6a629bc6037e021d82cfe628e9b68c6a1be",
+          "appearance": "e5e54915133618ec369ce4a81d64e5ae9e74ad33771a8d0cdf54502570f8d306"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 6,
+        "source": 88211,
+        "weapon_source": 1090,
+        "race": 5,
+        "phase": "weapon_off",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.6.weapon_off.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.6.weapon_off.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.6.weapon_off.appearance.hex",
+        "hashes": {
+          "inventory": "1097269508e4ef912c28cb469920e2dea721a660bf0994dbdd785461d3b3ac78",
+          "details": "e3598b2ade8283a0e13ed679a0b9d6a629bc6037e021d82cfe628e9b68c6a1be",
+          "appearance": "82bd89c3f3b201b9a4121f7f0b0aaf57ac49689bc5d370fec0cbed543549962d"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 6,
+        "source": 88211,
+        "weapon_source": 1090,
+        "race": 5,
+        "phase": "unequipped",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.6.unequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.6.unequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.6.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "109f2484f3acd1c952d98f579ef1f02c8f0ea5e68ccf4976ede7b9ae76d24a1f",
+          "details": "e3598b2ade8283a0e13ed679a0b9d6a629bc6037e021d82cfe628e9b68c6a1be",
+          "appearance": "f6c93ac236907d8f9918e536cf378da02872c70a7d852f64ce09e3b60a0309b2"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 6,
+        "source": 88211,
+        "weapon_source": 1090,
+        "race": 5,
+        "phase": "reequipped",
+        "expected_effect": 579,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.6.reequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.6.reequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.6.reequipped.appearance.hex",
+        "hashes": {
+          "inventory": "182acdf7ebd4fea9b77d47f5b4c759d73d836e0a839f5dbdc0184530a1b6e47e",
+          "details": "e3598b2ade8283a0e13ed679a0b9d6a629bc6037e021d82cfe628e9b68c6a1be",
+          "appearance": "5919251d840acdffb38c09f795adbba3db1480073e6dd819becc2195406c11be"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 7,
+        "source": 88211,
+        "weapon_source": 7190,
+        "race": 7,
+        "phase": "bag",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.7.bag.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.7.bag.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.7.bag.appearance.hex",
+        "hashes": {
+          "inventory": "430c4a77128277bf0aa9bb20589a24a2a9bf85a5706237a01c58a78c86585d7c",
+          "details": "9d9743c1897eedcb37918701520b9757707a121706a4d7053107809207752ae6",
+          "appearance": "54576b12e0542105c3a23bb0eaf86eed04402db3f3c0c75f7d1fa628ec22bbac"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 7,
+        "source": 88211,
+        "weapon_source": 7190,
+        "race": 7,
+        "phase": "unarmed",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.7.unarmed.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.7.unarmed.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.7.unarmed.appearance.hex",
+        "hashes": {
+          "inventory": "77bccacb1fabe379dafd3d03d14717acf5039d4367e8dae69d2127b3357f58ff",
+          "details": "9d9743c1897eedcb37918701520b9757707a121706a4d7053107809207752ae6",
+          "appearance": "62809cbb1d1996dd57258594f33c4164b9bacb5cacffa029d2714a030916e97d"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 7,
+        "source": 88211,
+        "weapon_source": 7190,
+        "race": 7,
+        "phase": "worn",
+        "expected_effect": 582,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.7.worn.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.7.worn.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.7.worn.appearance.hex",
+        "hashes": {
+          "inventory": "ad65973d9b34e1b4dfaaffc566b080dc85efab47c5d85e9e4bf99757e5b5caed",
+          "details": "9d9743c1897eedcb37918701520b9757707a121706a4d7053107809207752ae6",
+          "appearance": "b073d4256566f1dd4be2b4f145549a7d823e3d31885241227eff614f803a13d0"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 7,
+        "source": 88211,
+        "weapon_source": 7190,
+        "race": 7,
+        "phase": "weapon_off",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.7.weapon_off.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.7.weapon_off.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.7.weapon_off.appearance.hex",
+        "hashes": {
+          "inventory": "51099c9e1bb271fecaf14ada22c21da838f93c695fd32ca57fc13695c047942a",
+          "details": "9d9743c1897eedcb37918701520b9757707a121706a4d7053107809207752ae6",
+          "appearance": "82bd89c3f3b201b9a4121f7f0b0aaf57ac49689bc5d370fec0cbed543549962d"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 7,
+        "source": 88211,
+        "weapon_source": 7190,
+        "race": 7,
+        "phase": "unequipped",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.7.unequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.7.unequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.7.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "a607e25b2cfa27ad5879a11354ddd7768f20a39ecd91349062c5117aaca9294d",
+          "details": "9d9743c1897eedcb37918701520b9757707a121706a4d7053107809207752ae6",
+          "appearance": "7846279779bbd3731d58314e5d85552991ffc0e5f93dc62540a9dce60e22e8d6"
+        }
+      },
+      {
+        "variant": 0,
+        "weapon_case": 7,
+        "source": 88211,
+        "weapon_source": 7190,
+        "race": 7,
+        "phase": "reequipped",
+        "expected_effect": 582,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.7.reequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.7.reequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.7.reequipped.appearance.hex",
+        "hashes": {
+          "inventory": "ad65973d9b34e1b4dfaaffc566b080dc85efab47c5d85e9e4bf99757e5b5caed",
+          "details": "9d9743c1897eedcb37918701520b9757707a121706a4d7053107809207752ae6",
+          "appearance": "575218985ecd1ad47ea6611123b11f18ee07861d613de8a5d4fd4ff627ba1a12"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 0,
+        "source": 88214,
+        "weapon_source": 10,
+        "race": 0,
+        "phase": "bag",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.8.bag.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.8.bag.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.8.bag.appearance.hex",
+        "hashes": {
+          "inventory": "e1de513690170e1a2c556827a3917afd240db59bd7db8fd46f810256c79eb37e",
+          "details": "ce6acd1ffda4f47e678160854152cc43dbdae53d1b07383f8e02b6a7ca4a8bcf",
+          "appearance": "54576b12e0542105c3a23bb0eaf86eed04402db3f3c0c75f7d1fa628ec22bbac"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 0,
+        "source": 88214,
+        "weapon_source": 10,
+        "race": 0,
+        "phase": "unarmed",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.8.unarmed.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.8.unarmed.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.8.unarmed.appearance.hex",
+        "hashes": {
+          "inventory": "6f29e579c80ef1b84811f7ecf852597961ff23bd73a504176d2ee4bb0d80d475",
+          "details": "ce6acd1ffda4f47e678160854152cc43dbdae53d1b07383f8e02b6a7ca4a8bcf",
+          "appearance": "62809cbb1d1996dd57258594f33c4164b9bacb5cacffa029d2714a030916e97d"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 0,
+        "source": 88214,
+        "weapon_source": 10,
+        "race": 0,
+        "phase": "worn",
+        "expected_effect": 132,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.8.worn.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.8.worn.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.8.worn.appearance.hex",
+        "hashes": {
+          "inventory": "990ce038d747b0ccc21333dc78d633df195566746cb194d9126607802ca9691e",
+          "details": "ce6acd1ffda4f47e678160854152cc43dbdae53d1b07383f8e02b6a7ca4a8bcf",
+          "appearance": "830ca2484e415f641fa43c0c41100b9d2b4455071730fe82b3aeba7122ddce48"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 0,
+        "source": 88214,
+        "weapon_source": 10,
+        "race": 0,
+        "phase": "weapon_off",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.8.weapon_off.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.8.weapon_off.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.8.weapon_off.appearance.hex",
+        "hashes": {
+          "inventory": "a918a873a97f7feab758cc809c90d9e59a9c7b1ec44a404f3e0893822c29592e",
+          "details": "ce6acd1ffda4f47e678160854152cc43dbdae53d1b07383f8e02b6a7ca4a8bcf",
+          "appearance": "82bd89c3f3b201b9a4121f7f0b0aaf57ac49689bc5d370fec0cbed543549962d"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 0,
+        "source": 88214,
+        "weapon_source": 10,
+        "race": 0,
+        "phase": "unequipped",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.8.unequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.8.unequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.8.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "e7a8417d8f87b24e6ce94109fd28a448081fdd693e402f2d957163e8658a3637",
+          "details": "ce6acd1ffda4f47e678160854152cc43dbdae53d1b07383f8e02b6a7ca4a8bcf",
+          "appearance": "9511615af6d083bfb249baec12237f125dee8e15d79daf3148f38d9108fe2f85"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 0,
+        "source": 88214,
+        "weapon_source": 10,
+        "race": 0,
+        "phase": "reequipped",
+        "expected_effect": 132,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.8.reequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.8.reequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.8.reequipped.appearance.hex",
+        "hashes": {
+          "inventory": "990ce038d747b0ccc21333dc78d633df195566746cb194d9126607802ca9691e",
+          "details": "ce6acd1ffda4f47e678160854152cc43dbdae53d1b07383f8e02b6a7ca4a8bcf",
+          "appearance": "c358a8678c035474f4df5e7bfa152a5114e21349d11bdc60816d697f703fd973"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 0,
+        "source": 88214,
+        "weapon_source": 10,
+        "race": 0,
+        "phase": "expired",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.8.expired.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.8.expired.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.8.expired.appearance.hex",
+        "hashes": {
+          "inventory": "8b40e5d05c9f592775fc2b3300d2a3ed2b845d16938130463e5ae245ea280605",
+          "details": "7f21250fdc10c2e2cae1f0039bd32c3cf2eed4c76415de23c6cf795a418756e2",
+          "appearance": "d1272523d60d8dc1bb666ae32e19656b6ae4bd38da8b3b832f0d6c814f044212"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 1,
+        "source": 88214,
+        "weapon_source": 1000,
+        "race": 5,
+        "phase": "bag",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.9.bag.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.9.bag.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.9.bag.appearance.hex",
+        "hashes": {
+          "inventory": "2d0ccb963cebfb8d6f2de0c0498d558e7f04a03c9d81a2cf9bfa42244f00aea8",
+          "details": "f9979b4e26cc5f1039688130c22077904e6645bed042243349a08987ba18f20d",
+          "appearance": "54576b12e0542105c3a23bb0eaf86eed04402db3f3c0c75f7d1fa628ec22bbac"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 1,
+        "source": 88214,
+        "weapon_source": 1000,
+        "race": 5,
+        "phase": "unarmed",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.9.unarmed.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.9.unarmed.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.9.unarmed.appearance.hex",
+        "hashes": {
+          "inventory": "4cbcc0f991706fa68826e5ff651b977080d8ab2bd056aa4d018f6c85b6fc2168",
+          "details": "f9979b4e26cc5f1039688130c22077904e6645bed042243349a08987ba18f20d",
+          "appearance": "62809cbb1d1996dd57258594f33c4164b9bacb5cacffa029d2714a030916e97d"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 1,
+        "source": 88214,
+        "weapon_source": 1000,
+        "race": 5,
+        "phase": "worn",
+        "expected_effect": 134,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.9.worn.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.9.worn.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.9.worn.appearance.hex",
+        "hashes": {
+          "inventory": "55f36356e2ed87289e56f9c574ec4102080343daa5f60e392d4a85719fb15f0e",
+          "details": "f9979b4e26cc5f1039688130c22077904e6645bed042243349a08987ba18f20d",
+          "appearance": "d0e5dc8fe8f05e4b5ad63bcba76a41f785ff8f14008d653921b7bab901f533cc"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 1,
+        "source": 88214,
+        "weapon_source": 1000,
+        "race": 5,
+        "phase": "weapon_off",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.9.weapon_off.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.9.weapon_off.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.9.weapon_off.appearance.hex",
+        "hashes": {
+          "inventory": "c137901caaadaf82f239f787cedc38c899557ceda3b428c5c290031657f4d940",
+          "details": "f9979b4e26cc5f1039688130c22077904e6645bed042243349a08987ba18f20d",
+          "appearance": "82bd89c3f3b201b9a4121f7f0b0aaf57ac49689bc5d370fec0cbed543549962d"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 1,
+        "source": 88214,
+        "weapon_source": 1000,
+        "race": 5,
+        "phase": "unequipped",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.9.unequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.9.unequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.9.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "89ebea6ed6067f1fd4b3a00cfd6d805f231dbb34c7b4f17ff0549704fe700d6b",
+          "details": "f9979b4e26cc5f1039688130c22077904e6645bed042243349a08987ba18f20d",
+          "appearance": "9fa846ee97b2dfcf910e9bbeae2f4b263f9a1d453c003a55ebc1e2af9b828638"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 1,
+        "source": 88214,
+        "weapon_source": 1000,
+        "race": 5,
+        "phase": "reequipped",
+        "expected_effect": 134,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.9.reequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.9.reequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.9.reequipped.appearance.hex",
+        "hashes": {
+          "inventory": "55f36356e2ed87289e56f9c574ec4102080343daa5f60e392d4a85719fb15f0e",
+          "details": "f9979b4e26cc5f1039688130c22077904e6645bed042243349a08987ba18f20d",
+          "appearance": "69f8333beb352e2c6acbc04d2bf36a9fecdacecb2138393bce96774a55ea3a57"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 1,
+        "source": 88214,
+        "weapon_source": 1000,
+        "race": 5,
+        "phase": "expired",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.9.expired.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.9.expired.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.9.expired.appearance.hex",
+        "hashes": {
+          "inventory": "cb939482ef0dfc96f683f19fc23cd995249789687829316284dfbddeb84783b6",
+          "details": "7e21d4c401111bba438167c7099834b62f9a5284784bc117d23df047a6c46638",
+          "appearance": "28d7b94fa76c74126ac84d044c69750868532083a8bb7d15e082f99df1e0e835"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 2,
+        "source": 88214,
+        "weapon_source": 2000,
+        "race": 5,
+        "phase": "bag",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.10.bag.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.10.bag.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.10.bag.appearance.hex",
+        "hashes": {
+          "inventory": "411ab01f3c687ee85eadb5775b85936f163caec243e4d8e3d76f004e7e8ffc72",
+          "details": "4bb36a0e34abca271bfefa075caf0b34bf0bde03fdc0e63ab1d302bf0250dacf",
+          "appearance": "54576b12e0542105c3a23bb0eaf86eed04402db3f3c0c75f7d1fa628ec22bbac"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 2,
+        "source": 88214,
+        "weapon_source": 2000,
+        "race": 5,
+        "phase": "unarmed",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.10.unarmed.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.10.unarmed.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.10.unarmed.appearance.hex",
+        "hashes": {
+          "inventory": "abe1a15cf626a3f385ea7e46ebd3ddca38b1cf5dba996fcdb9ee879940d1b226",
+          "details": "4bb36a0e34abca271bfefa075caf0b34bf0bde03fdc0e63ab1d302bf0250dacf",
+          "appearance": "62809cbb1d1996dd57258594f33c4164b9bacb5cacffa029d2714a030916e97d"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 2,
+        "source": 88214,
+        "weapon_source": 2000,
+        "race": 5,
+        "phase": "worn",
+        "expected_effect": 135,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.10.worn.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.10.worn.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.10.worn.appearance.hex",
+        "hashes": {
+          "inventory": "05ade16e137d07e23d2d2cea9d3f0d2348582a13cf7aa4d4fd4517ddcf963fac",
+          "details": "4bb36a0e34abca271bfefa075caf0b34bf0bde03fdc0e63ab1d302bf0250dacf",
+          "appearance": "11937b9803eacaa1bc66bb9fc761b6eacc85dd8b97d96be437efa9f82a4ea7d8"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 2,
+        "source": 88214,
+        "weapon_source": 2000,
+        "race": 5,
+        "phase": "weapon_off",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.10.weapon_off.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.10.weapon_off.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.10.weapon_off.appearance.hex",
+        "hashes": {
+          "inventory": "bdc798028a1b4370626c52314155411819d2e1498580f9ffb636b3727bda39f8",
+          "details": "4bb36a0e34abca271bfefa075caf0b34bf0bde03fdc0e63ab1d302bf0250dacf",
+          "appearance": "82bd89c3f3b201b9a4121f7f0b0aaf57ac49689bc5d370fec0cbed543549962d"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 2,
+        "source": 88214,
+        "weapon_source": 2000,
+        "race": 5,
+        "phase": "unequipped",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.10.unequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.10.unequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.10.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "17731e5606fd13e0510efc853a984c652acd1af6e3bd2c025930637d20965b23",
+          "details": "4bb36a0e34abca271bfefa075caf0b34bf0bde03fdc0e63ab1d302bf0250dacf",
+          "appearance": "146d9ed757239db2f2c9c8f7281ffa983393415f4aa0ca8415ae766b50e8c1ea"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 2,
+        "source": 88214,
+        "weapon_source": 2000,
+        "race": 5,
+        "phase": "reequipped",
+        "expected_effect": 135,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.10.reequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.10.reequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.10.reequipped.appearance.hex",
+        "hashes": {
+          "inventory": "05ade16e137d07e23d2d2cea9d3f0d2348582a13cf7aa4d4fd4517ddcf963fac",
+          "details": "4bb36a0e34abca271bfefa075caf0b34bf0bde03fdc0e63ab1d302bf0250dacf",
+          "appearance": "e7593fbc66c8d58cc5a63194d2b4939753c4271049f404ddf62231c29f0cd724"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 2,
+        "source": 88214,
+        "weapon_source": 2000,
+        "race": 5,
+        "phase": "expired",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.10.expired.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.10.expired.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.10.expired.appearance.hex",
+        "hashes": {
+          "inventory": "68e3ac8234dff9a02dd8a390d432b4a6418547136ca2b98ff3465cd933778724",
+          "details": "e89a3abdff6adfad51f31cdd4864052f11947860970d85f4dc84e3af2e3043a3",
+          "appearance": "e5e0d93dbabdd85e2f27569b133bdb10992c87aef9c4d43747065de6f26e4e2c"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 3,
+        "source": 88214,
+        "weapon_source": 3000,
+        "race": 0,
+        "phase": "bag",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.11.bag.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.11.bag.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.11.bag.appearance.hex",
+        "hashes": {
+          "inventory": "99b14faf6ecd91ef7ed8fc69d86e8c9fbc72120b1889866d0667a19eb40ea0c5",
+          "details": "e307d86dc5f3b31e89e84bb5462b8113502591f8dad8a71e812b2320a6c7f744",
+          "appearance": "54576b12e0542105c3a23bb0eaf86eed04402db3f3c0c75f7d1fa628ec22bbac"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 3,
+        "source": 88214,
+        "weapon_source": 3000,
+        "race": 0,
+        "phase": "unarmed",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.11.unarmed.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.11.unarmed.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.11.unarmed.appearance.hex",
+        "hashes": {
+          "inventory": "8e767a04a2993986eca7b3942cb049f5891d37bb35214dac601e8e6e686d6143",
+          "details": "e307d86dc5f3b31e89e84bb5462b8113502591f8dad8a71e812b2320a6c7f744",
+          "appearance": "62809cbb1d1996dd57258594f33c4164b9bacb5cacffa029d2714a030916e97d"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 3,
+        "source": 88214,
+        "weapon_source": 3000,
+        "race": 0,
+        "phase": "worn",
+        "expected_effect": 133,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.11.worn.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.11.worn.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.11.worn.appearance.hex",
+        "hashes": {
+          "inventory": "c3554a23337f4421b7cd8f940349e183c0e15d9c5e1d1cddc56b2d41f6951d62",
+          "details": "e307d86dc5f3b31e89e84bb5462b8113502591f8dad8a71e812b2320a6c7f744",
+          "appearance": "91cdf5d82ba99c8752de52f32a061c57ee582ad86e7d4d587bd3b42f7d18a576"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 3,
+        "source": 88214,
+        "weapon_source": 3000,
+        "race": 0,
+        "phase": "weapon_off",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.11.weapon_off.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.11.weapon_off.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.11.weapon_off.appearance.hex",
+        "hashes": {
+          "inventory": "f9bc8ec1356f1eaed31b70923a456b951ce0030fb0f550a618f547e15530598b",
+          "details": "e307d86dc5f3b31e89e84bb5462b8113502591f8dad8a71e812b2320a6c7f744",
+          "appearance": "82bd89c3f3b201b9a4121f7f0b0aaf57ac49689bc5d370fec0cbed543549962d"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 3,
+        "source": 88214,
+        "weapon_source": 3000,
+        "race": 0,
+        "phase": "unequipped",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.11.unequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.11.unequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.11.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "fa01b3367aec03ff33e079876dbc0f8caa57a564ee87edbfd39b247dbcd88b02",
+          "details": "e307d86dc5f3b31e89e84bb5462b8113502591f8dad8a71e812b2320a6c7f744",
+          "appearance": "c321df7b474992a79688c7cfec3dd77194817e82c338a0b1b53c41ed05a65705"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 3,
+        "source": 88214,
+        "weapon_source": 3000,
+        "race": 0,
+        "phase": "reequipped",
+        "expected_effect": 133,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.11.reequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.11.reequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.11.reequipped.appearance.hex",
+        "hashes": {
+          "inventory": "c3554a23337f4421b7cd8f940349e183c0e15d9c5e1d1cddc56b2d41f6951d62",
+          "details": "e307d86dc5f3b31e89e84bb5462b8113502591f8dad8a71e812b2320a6c7f744",
+          "appearance": "250265dff8e81dff28bdf4523b6207505caa5bd262159e7a4201290f7ab4fed2"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 3,
+        "source": 88214,
+        "weapon_source": 3000,
+        "race": 0,
+        "phase": "expired",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.11.expired.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.11.expired.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.11.expired.appearance.hex",
+        "hashes": {
+          "inventory": "14573f0ac4ee039820cf7bc1f61b2331c957e6572ab9b33d8c2110923b9e890e",
+          "details": "83925f6c1303f5b51f04ceeb1a9331a432cccf7ad19052328f284e1e354d92ea",
+          "appearance": "f2c3d4c7553292176192ef032a550778c33da81c7ca8e8e24476ea8e8eb4e870"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 4,
+        "source": 88214,
+        "weapon_source": 5000,
+        "race": 7,
+        "phase": "bag",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.12.bag.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.12.bag.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.12.bag.appearance.hex",
+        "hashes": {
+          "inventory": "349f6e185aba9631f10ac7095728407daeefe50736a2dc2e203db19b6d935467",
+          "details": "5a7b0ff640428c26f0183e3d7f3528d78ada2b3d9fa065fb9f440d28c932df2e",
+          "appearance": "54576b12e0542105c3a23bb0eaf86eed04402db3f3c0c75f7d1fa628ec22bbac"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 4,
+        "source": 88214,
+        "weapon_source": 5000,
+        "race": 7,
+        "phase": "unarmed",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.12.unarmed.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.12.unarmed.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.12.unarmed.appearance.hex",
+        "hashes": {
+          "inventory": "c62b2eb129e981be8ac2fdbdc1b16cf6c845a669893a3606101f93ba10bd3031",
+          "details": "5a7b0ff640428c26f0183e3d7f3528d78ada2b3d9fa065fb9f440d28c932df2e",
+          "appearance": "62809cbb1d1996dd57258594f33c4164b9bacb5cacffa029d2714a030916e97d"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 4,
+        "source": 88214,
+        "weapon_source": 5000,
+        "race": 7,
+        "phase": "worn",
+        "expected_effect": 136,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.12.worn.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.12.worn.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.12.worn.appearance.hex",
+        "hashes": {
+          "inventory": "8db49621ff51933bafc6935d0fb1ed6f45cf672746f6f931b737340c6c641c0f",
+          "details": "5a7b0ff640428c26f0183e3d7f3528d78ada2b3d9fa065fb9f440d28c932df2e",
+          "appearance": "88c0633cf774e8cc99b4ec0ace0a459cd2cfc5089be59e2ee3275d79cbc67545"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 4,
+        "source": 88214,
+        "weapon_source": 5000,
+        "race": 7,
+        "phase": "weapon_off",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.12.weapon_off.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.12.weapon_off.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.12.weapon_off.appearance.hex",
+        "hashes": {
+          "inventory": "de0e572dafdf711e6b0f0c274c349af8de1267d7b9df9d88dc409d6588bb3801",
+          "details": "5a7b0ff640428c26f0183e3d7f3528d78ada2b3d9fa065fb9f440d28c932df2e",
+          "appearance": "82bd89c3f3b201b9a4121f7f0b0aaf57ac49689bc5d370fec0cbed543549962d"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 4,
+        "source": 88214,
+        "weapon_source": 5000,
+        "race": 7,
+        "phase": "unequipped",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.12.unequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.12.unequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.12.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "1923f3d1b98f7b38ce6fa29f752212e6a12dd15a96c59ed60208fbd03f017aa4",
+          "details": "5a7b0ff640428c26f0183e3d7f3528d78ada2b3d9fa065fb9f440d28c932df2e",
+          "appearance": "612d55f8a143f05a994161fa7de840447636f2c2392cd4c013d0624601edc333"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 4,
+        "source": 88214,
+        "weapon_source": 5000,
+        "race": 7,
+        "phase": "reequipped",
+        "expected_effect": 136,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.12.reequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.12.reequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.12.reequipped.appearance.hex",
+        "hashes": {
+          "inventory": "8db49621ff51933bafc6935d0fb1ed6f45cf672746f6f931b737340c6c641c0f",
+          "details": "5a7b0ff640428c26f0183e3d7f3528d78ada2b3d9fa065fb9f440d28c932df2e",
+          "appearance": "6e4a43bfa932737e116c1b691bbaaf68a6c27e3fb4e1a63146d3e374bce74931"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 4,
+        "source": 88214,
+        "weapon_source": 5000,
+        "race": 7,
+        "phase": "expired",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.12.expired.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.12.expired.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.12.expired.appearance.hex",
+        "hashes": {
+          "inventory": "e50185c5a20ef5e6d9e2a3245c74898f0908d8a5a86b0e9c53b66e30da25ee1e",
+          "details": "d5a8997a8a40ef58be0663634cbd8d3742bdfe7dd22279ee78cdbf4d88ba9b84",
+          "appearance": "61da49c10ec208ff42659239db2074614c1328fb31eb7c4a9c9b30e3c10db05a"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 5,
+        "source": 88214,
+        "weapon_source": 7000,
+        "race": 7,
+        "phase": "bag",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.13.bag.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.13.bag.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.13.bag.appearance.hex",
+        "hashes": {
+          "inventory": "5ea47017c16da2ab31a7a0ddef6fb48a15a0c1639981fdbf0b736aaaf0957cce",
+          "details": "9211a5516c0aebb6544cf98b189e61f832d49ee107e3d6415f8713e4fca22f2c",
+          "appearance": "54576b12e0542105c3a23bb0eaf86eed04402db3f3c0c75f7d1fa628ec22bbac"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 5,
+        "source": 88214,
+        "weapon_source": 7000,
+        "race": 7,
+        "phase": "unarmed",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.13.unarmed.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.13.unarmed.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.13.unarmed.appearance.hex",
+        "hashes": {
+          "inventory": "dfa933501f68af8bb065b63f00b00819f5746cff26078902f37d191c0bb3e537",
+          "details": "9211a5516c0aebb6544cf98b189e61f832d49ee107e3d6415f8713e4fca22f2c",
+          "appearance": "62809cbb1d1996dd57258594f33c4164b9bacb5cacffa029d2714a030916e97d"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 5,
+        "source": 88214,
+        "weapon_source": 7000,
+        "race": 7,
+        "phase": "worn",
+        "expected_effect": 137,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.13.worn.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.13.worn.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.13.worn.appearance.hex",
+        "hashes": {
+          "inventory": "bc9c162ce5b894225c46935203870f9e2ef6f17880acbb3d232f2a36636cd823",
+          "details": "9211a5516c0aebb6544cf98b189e61f832d49ee107e3d6415f8713e4fca22f2c",
+          "appearance": "786b0ca2dccb13c245cc2a2537b3679763acbdacd4be5c962c85f770fafda9a8"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 5,
+        "source": 88214,
+        "weapon_source": 7000,
+        "race": 7,
+        "phase": "weapon_off",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.13.weapon_off.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.13.weapon_off.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.13.weapon_off.appearance.hex",
+        "hashes": {
+          "inventory": "c55f4be1d17b9d16d3d4ed813be2334efa347680a7423315cd93facc0d34fe6c",
+          "details": "9211a5516c0aebb6544cf98b189e61f832d49ee107e3d6415f8713e4fca22f2c",
+          "appearance": "82bd89c3f3b201b9a4121f7f0b0aaf57ac49689bc5d370fec0cbed543549962d"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 5,
+        "source": 88214,
+        "weapon_source": 7000,
+        "race": 7,
+        "phase": "unequipped",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.13.unequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.13.unequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.13.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "7deaa499669a2ec9c15a7ddd7327a147c31026b5a92d9dbe0f595fbeb77521c6",
+          "details": "9211a5516c0aebb6544cf98b189e61f832d49ee107e3d6415f8713e4fca22f2c",
+          "appearance": "49b80eac4efec96f88defdc8ab6957857f1b8b137fb102c5d70c2a10941fb591"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 5,
+        "source": 88214,
+        "weapon_source": 7000,
+        "race": 7,
+        "phase": "reequipped",
+        "expected_effect": 137,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.13.reequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.13.reequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.13.reequipped.appearance.hex",
+        "hashes": {
+          "inventory": "bc9c162ce5b894225c46935203870f9e2ef6f17880acbb3d232f2a36636cd823",
+          "details": "9211a5516c0aebb6544cf98b189e61f832d49ee107e3d6415f8713e4fca22f2c",
+          "appearance": "45d9e2a7788e9cbf344644b66ce1255ac570cdc3c05693392625c7563ed8a03e"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 5,
+        "source": 88214,
+        "weapon_source": 7000,
+        "race": 7,
+        "phase": "expired",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.13.expired.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.13.expired.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.13.expired.appearance.hex",
+        "hashes": {
+          "inventory": "c4c6c1824f6938052db27fca460a850eed0f02227ca4811291f93877cb360116",
+          "details": "69519b901d56941e1f4e9dedf65fc0e1492575b97711049293b887295b95228b",
+          "appearance": "974dde8df9f56b0226d99b5e71eac8567354a0eb4c5a9cfc5fb520a3d6fcb1b9"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 6,
+        "source": 88214,
+        "weapon_source": 1090,
+        "race": 5,
+        "phase": "bag",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.14.bag.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.14.bag.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.14.bag.appearance.hex",
+        "hashes": {
+          "inventory": "90ca8dac5e497ce97a5ffb6bb15abff2ca21e69fc3ae32f8d4535e6b9a63d5f2",
+          "details": "bf57ea935be06c5e1ae7dd2944c2ee418bb75092bde327411e0aeb9735ea191c",
+          "appearance": "54576b12e0542105c3a23bb0eaf86eed04402db3f3c0c75f7d1fa628ec22bbac"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 6,
+        "source": 88214,
+        "weapon_source": 1090,
+        "race": 5,
+        "phase": "unarmed",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.14.unarmed.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.14.unarmed.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.14.unarmed.appearance.hex",
+        "hashes": {
+          "inventory": "6f016ad4a1cf0a2d6a1ae37a0c40ec10dc1f1406fdd8d1d06ff1a5ebc7d1292e",
+          "details": "bf57ea935be06c5e1ae7dd2944c2ee418bb75092bde327411e0aeb9735ea191c",
+          "appearance": "62809cbb1d1996dd57258594f33c4164b9bacb5cacffa029d2714a030916e97d"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 6,
+        "source": 88214,
+        "weapon_source": 1090,
+        "race": 5,
+        "phase": "worn",
+        "expected_effect": 634,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.14.worn.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.14.worn.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.14.worn.appearance.hex",
+        "hashes": {
+          "inventory": "fe8d709ef437f6de2eaddd1dfecbc79d3698d13309946f3e8c2e5a20133a1118",
+          "details": "bf57ea935be06c5e1ae7dd2944c2ee418bb75092bde327411e0aeb9735ea191c",
+          "appearance": "536d10dbcf1367e6987f081c9d47c8d4f3f137c4485aa917a4781e1c12f6e486"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 6,
+        "source": 88214,
+        "weapon_source": 1090,
+        "race": 5,
+        "phase": "weapon_off",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.14.weapon_off.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.14.weapon_off.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.14.weapon_off.appearance.hex",
+        "hashes": {
+          "inventory": "ba93f0eb252d057ba59994463090d7d1d38bde656b2e536b8110f715c1bacbff",
+          "details": "bf57ea935be06c5e1ae7dd2944c2ee418bb75092bde327411e0aeb9735ea191c",
+          "appearance": "82bd89c3f3b201b9a4121f7f0b0aaf57ac49689bc5d370fec0cbed543549962d"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 6,
+        "source": 88214,
+        "weapon_source": 1090,
+        "race": 5,
+        "phase": "unequipped",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.14.unequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.14.unequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.14.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "744b4e93abfc3f9eeae55368af26c68b62f16c4f97dd92ae6fab6789720b49e8",
+          "details": "bf57ea935be06c5e1ae7dd2944c2ee418bb75092bde327411e0aeb9735ea191c",
+          "appearance": "f6c93ac236907d8f9918e536cf378da02872c70a7d852f64ce09e3b60a0309b2"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 6,
+        "source": 88214,
+        "weapon_source": 1090,
+        "race": 5,
+        "phase": "reequipped",
+        "expected_effect": 634,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.14.reequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.14.reequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.14.reequipped.appearance.hex",
+        "hashes": {
+          "inventory": "fe8d709ef437f6de2eaddd1dfecbc79d3698d13309946f3e8c2e5a20133a1118",
+          "details": "bf57ea935be06c5e1ae7dd2944c2ee418bb75092bde327411e0aeb9735ea191c",
+          "appearance": "450588d964f4c04841f4f3b6dd2ebfd7a86d854b34d562fcca9b4cf7fc34a5ff"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 6,
+        "source": 88214,
+        "weapon_source": 1090,
+        "race": 5,
+        "phase": "expired",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.14.expired.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.14.expired.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.14.expired.appearance.hex",
+        "hashes": {
+          "inventory": "135fd9174b1007c2fe3823c28d1f82c21199193d6849025df3e6ca24e8ff7661",
+          "details": "c4b4b463e5dab42ab26c0d5fcf90d0373cc2e1c0f345e23f388b0e1bc1d850ac",
+          "appearance": "104e9c069faa27ae1f08f9ecf1a75b8cf095ec40340f6663fc0ef7ec0c34a618"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 7,
+        "source": 88214,
+        "weapon_source": 7190,
+        "race": 7,
+        "phase": "bag",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.15.bag.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.15.bag.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.15.bag.appearance.hex",
+        "hashes": {
+          "inventory": "7bc2125730dc0688cd6488d4ec2304c2e4e96e051ce817421a8822f16d956fcc",
+          "details": "b175a684e9aae1b95ee39a17639a405e4f35074a019d1bf4796db2849d77a550",
+          "appearance": "54576b12e0542105c3a23bb0eaf86eed04402db3f3c0c75f7d1fa628ec22bbac"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 7,
+        "source": 88214,
+        "weapon_source": 7190,
+        "race": 7,
+        "phase": "unarmed",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.15.unarmed.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.15.unarmed.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.15.unarmed.appearance.hex",
+        "hashes": {
+          "inventory": "f1c4491764ba54cd01d25f90bec54268aa136cd88df2246b905cbd2f5104b63f",
+          "details": "b175a684e9aae1b95ee39a17639a405e4f35074a019d1bf4796db2849d77a550",
+          "appearance": "62809cbb1d1996dd57258594f33c4164b9bacb5cacffa029d2714a030916e97d"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 7,
+        "source": 88214,
+        "weapon_source": 7190,
+        "race": 7,
+        "phase": "worn",
+        "expected_effect": 637,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.15.worn.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.15.worn.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.15.worn.appearance.hex",
+        "hashes": {
+          "inventory": "71116663dba98fda99019f4a659a2f574e3e0ea469c958fcb60953bbe72e8aaf",
+          "details": "b175a684e9aae1b95ee39a17639a405e4f35074a019d1bf4796db2849d77a550",
+          "appearance": "be7bbc1b3830c45aae51a6ea28641d5fe609ca209d09310440c9670776c1c10b"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 7,
+        "source": 88214,
+        "weapon_source": 7190,
+        "race": 7,
+        "phase": "weapon_off",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.15.weapon_off.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.15.weapon_off.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.15.weapon_off.appearance.hex",
+        "hashes": {
+          "inventory": "4e6493cca3b666a7d5ee5b1f9077be802cfbae12ae0ccf1bf40398a20723af29",
+          "details": "b175a684e9aae1b95ee39a17639a405e4f35074a019d1bf4796db2849d77a550",
+          "appearance": "82bd89c3f3b201b9a4121f7f0b0aaf57ac49689bc5d370fec0cbed543549962d"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 7,
+        "source": 88214,
+        "weapon_source": 7190,
+        "race": 7,
+        "phase": "unequipped",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.15.unequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.15.unequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.15.unequipped.appearance.hex",
+        "hashes": {
+          "inventory": "46f1d295ac54e082140f1261276bfa814e3e45566d2d6f029fef43bae3531af7",
+          "details": "b175a684e9aae1b95ee39a17639a405e4f35074a019d1bf4796db2849d77a550",
+          "appearance": "7846279779bbd3731d58314e5d85552991ffc0e5f93dc62540a9dce60e22e8d6"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 7,
+        "source": 88214,
+        "weapon_source": 7190,
+        "race": 7,
+        "phase": "reequipped",
+        "expected_effect": 637,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.15.reequipped.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.15.reequipped.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.15.reequipped.appearance.hex",
+        "hashes": {
+          "inventory": "71116663dba98fda99019f4a659a2f574e3e0ea469c958fcb60953bbe72e8aaf",
+          "details": "b175a684e9aae1b95ee39a17639a405e4f35074a019d1bf4796db2849d77a550",
+          "appearance": "50cfbb7f6d11a7636b9a4146436858b993e785071688f9f169c6c9aa255e98e7"
+        }
+      },
+      {
+        "variant": 1,
+        "weapon_case": 7,
+        "source": 88214,
+        "weapon_source": 7190,
+        "race": 7,
+        "phase": "expired",
+        "expected_effect": 0,
+        "inventory": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.15.expired.inventory.hex",
+        "details": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.15.expired.details.hex",
+        "appearance": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.15.expired.appearance.hex",
+        "hashes": {
+          "inventory": "79284957ac2580f01b3234ff2b50cc92dc6acd79564d797ac4bd186594a84f10",
+          "details": "37c8e48473ac98b884d975edf355c46317064447c58169291a77d7ef6fbbec91",
+          "appearance": "f3d0c3cb3247ce02c320d7b284bcf77dbd453be25632616398e8cd8797b5f38e"
+        }
+      }
+    ],
+    "effects": [
+      {
+        "source": 88210,
+        "values": [
+          77,
+          79,
+          80,
+          78,
+          81,
+          82,
+          579,
+          582
+        ],
+        "icon": "icon/item/88210.tga"
+      },
+      {
+        "source": 88211,
+        "values": [
+          77,
+          79,
+          80,
+          78,
+          81,
+          82,
+          579,
+          582
+        ],
+        "icon": "icon/item/88211.tga"
+      },
+      {
+        "source": 88214,
+        "values": [
+          132,
+          134,
+          135,
+          133,
+          136,
+          137,
+          634,
+          637
+        ],
+        "icon": "icon/item/88214.tga"
+      },
+      {
+        "source": 88215,
+        "values": [
+          132,
+          134,
+          135,
+          133,
+          136,
+          137,
+          634,
+          637
+        ],
+        "icon": "icon/item/88215.tga"
+      },
+      {
+        "source": 88218,
+        "values": [
+          140,
+          142,
+          143,
+          141,
+          144,
+          145,
+          642,
+          645
+        ],
+        "icon": "icon/item/88218.tga"
+      },
+      {
+        "source": 88219,
+        "values": [
+          140,
+          142,
+          143,
+          141,
+          144,
+          145,
+          642,
+          645
+        ],
+        "icon": "icon/item/88219.tga"
+      },
+      {
+        "source": 88222,
+        "values": [
+          148,
+          150,
+          151,
+          149,
+          152,
+          153,
+          650,
+          653
+        ],
+        "icon": "icon/item/88222.tga"
+      },
+      {
+        "source": 88223,
+        "values": [
+          148,
+          150,
+          151,
+          149,
+          152,
+          153,
+          650,
+          653
+        ],
+        "icon": "icon/item/88223.tga"
+      },
+      {
+        "source": 88226,
+        "values": [
+          156,
+          158,
+          159,
+          157,
+          160,
+          161,
+          658,
+          661
+        ],
+        "icon": "icon/item/88226.tga"
+      },
+      {
+        "source": 88227,
+        "values": [
+          156,
+          158,
+          159,
+          157,
+          160,
+          161,
+          658,
+          661
+        ],
+        "icon": "icon/item/88227.tga"
+      },
+      {
+        "source": 88230,
+        "values": [
+          164,
+          166,
+          167,
+          165,
+          168,
+          169,
+          666,
+          669
+        ],
+        "icon": "icon/item/88230.tga"
+      },
+      {
+        "source": 88231,
+        "values": [
+          164,
+          166,
+          167,
+          165,
+          168,
+          169,
+          666,
+          669
+        ],
+        "icon": "icon/item/88231.tga"
+      },
+      {
+        "source": 88234,
+        "values": [
+          172,
+          174,
+          175,
+          173,
+          176,
+          177,
+          674,
+          677
+        ],
+        "icon": "icon/item/88234.tga"
+      },
+      {
+        "source": 88235,
+        "values": [
+          172,
+          174,
+          175,
+          173,
+          176,
+          177,
+          674,
+          677
+        ],
+        "icon": "icon/item/88235.tga"
+      },
+      {
+        "source": 88238,
+        "values": [
+          180,
+          182,
+          183,
+          181,
+          184,
+          185,
+          682,
+          685
+        ],
+        "icon": "icon/item/88238.tga"
+      },
+      {
+        "source": 88239,
+        "values": [
+          180,
+          182,
+          183,
+          181,
+          184,
+          185,
+          682,
+          685
+        ],
+        "icon": "icon/item/88239.tga"
+      },
+      {
+        "source": 88242,
+        "values": [
+          188,
+          190,
+          191,
+          189,
+          192,
+          193,
+          690,
+          693
+        ],
+        "icon": "icon/item/88242.tga"
+      },
+      {
+        "source": 88243,
+        "values": [
+          188,
+          190,
+          191,
+          189,
+          192,
+          193,
+          690,
+          693
+        ],
+        "icon": "icon/item/88243.tga"
+      },
+      {
+        "source": 88246,
+        "values": [
+          196,
+          198,
+          199,
+          197,
+          200,
+          201,
+          698,
+          701
+        ],
+        "icon": "icon/item/88246.tga"
+      },
+      {
+        "source": 88247,
+        "values": [
+          196,
+          198,
+          199,
+          197,
+          200,
+          201,
+          698,
+          701
+        ],
+        "icon": "icon/item/88247.tga"
+      },
+      {
+        "source": 88250,
+        "values": [
+          204,
+          206,
+          207,
+          205,
+          208,
+          209,
+          706,
+          709
+        ],
+        "icon": "icon/item/88250.tga"
+      },
+      {
+        "source": 88251,
+        "values": [
+          204,
+          206,
+          207,
+          205,
+          208,
+          209,
+          706,
+          709
+        ],
+        "icon": "icon/item/88251.tga"
+      },
+      {
+        "source": 88254,
+        "values": [
+          212,
+          214,
+          215,
+          213,
+          216,
+          217,
+          714,
+          717
+        ],
+        "icon": "icon/item/88254.tga"
+      },
+      {
+        "source": 88255,
+        "values": [
+          212,
+          214,
+          215,
+          213,
+          216,
+          217,
+          714,
+          717
+        ],
+        "icon": "icon/item/88255.tga"
+      },
+      {
+        "source": 88258,
+        "values": [
+          850,
+          158,
+          159,
+          157,
+          160,
+          161,
+          658,
+          661
+        ],
+        "icon": "icon/item/werapon effect purple moon.tga"
+      }
+    ],
+    "assets": [
+      {
+        "id": 77,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/nero/ridack_sword_black.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 78,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/nero/ridack_spear_black.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 79,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining/nero/ridack_knife_black.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 80,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining/nero/ridack_bow_black.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 81,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/nero/ridack_bell_black.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 82,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/nero/ridack_fan_black.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 83,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/nero/ridack_knife_black.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 132,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/viola/ridack_sword_fushiia.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 133,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/viola/ridack_spear_fushiia.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 134,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining/viola/ridack_knife_fushiia.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 135,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining/viola/ridack_bow_fushiia.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 136,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/viola/ridack_bell_fushiia.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 137,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/viola/ridack_fan_fushiia.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 138,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/viola/ridack_knife_fushiia.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 140,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/orange/ridack_sword_orange.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 141,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/orange/ridack_spear_orange.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 142,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining/orange/ridack_knife_orange.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 143,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining/orange/ridack_bow_orange.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 144,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/orange/ridack_bell_orange.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 145,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/orange/ridack_fan_orange.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 146,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/orange/ridack_knife_orange.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 148,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/verdino/ridack_sword_jade.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 149,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/verdino/ridack_spear_jade.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 150,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining/verdino/ridack_knife_jade.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 151,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining/verdino/ridack_bow_jade.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 152,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/verdino/ridack_bell_jade.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 153,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/verdino/ridack_fan_jade.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 154,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/verdino/ridack_knife_jade.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 156,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/viola/ridack_sword_purple2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 157,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/viola/ridack_spear_purple2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 158,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining1/viola/ridack_knife_purple2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 159,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining1/viola/ridack_bow_purple2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 160,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/viola/ridack_bell_purple2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 161,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/viola/ridack_fan_purple2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 162,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/viola/ridack_knife_purple2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 164,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/blu/ridack_sword_blue2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 165,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/blu/ridack_spear_blue2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 166,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining1/blu/ridack_knife_blue2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 167,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining1/blu/ridack_bow_blue2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 168,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/blu/ridack_bell_blue2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 169,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/blu/ridack_fan_blue2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 170,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/blu/ridack_knife_blue2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 172,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/rosa/ridack_sword_pink2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 173,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/rosa/ridack_spear_pink2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 174,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining1/rosa/ridack_knife_pink2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 175,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining1/rosa/ridack_bow_pink2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 176,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/rosa/ridack_bell_pink2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 177,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/rosa/ridack_fan_pink2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 178,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/rosa/ridack_knife_pink2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 180,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/bianco/ridack_sword_white2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 181,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/bianco/ridack_spear_white2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 182,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining1/bianco/ridack_knife_white2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 183,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining1/bianco/ridack_bow_white2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 184,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/bianco/ridack_bell_white2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 185,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/bianco/ridack_fan_white2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 186,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/bianco/ridack_knife_white2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 188,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/verde/ridack_sword_green.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 189,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/verde/ridack_spear_green.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 190,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining2/verde/ridack_knife_green.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 191,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining2/verde/ridack_bow_green.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 192,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/verde/ridack_bell_green.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 193,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/verde/ridack_fan_green.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 194,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/verde/ridack_knife_green.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 196,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/rosso/ridack_sword_red.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 197,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/rosso/ridack_spear_red.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 198,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining2/rosso/ridack_knife_red.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 199,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining2/rosso/ridack_bow_red.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 200,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/rosso/ridack_bell_red.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 201,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/rosso/ridack_fan_red.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 202,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/rosso/ridack_knife_red.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 204,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/blu/ridack_sword_blue.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 205,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/blu/ridack_spear_blue.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 206,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining2/blu/ridack_knife_blue.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 207,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining2/blu/ridack_bow_blue.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 208,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/blu/ridack_bell_blue.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 209,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/blu/ridack_fan_blue.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 210,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/blu/ridack_knife_blue.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 212,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/giallo/ridack_sword_yellow.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 213,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/giallo/ridack_spear_yellow.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 214,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining2/giallo/ridack_knife_yellow.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 215,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining2/giallo/ridack_bow_yellow.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 216,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/giallo/ridack_bell_yellow.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 217,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/giallo/ridack_fan_yellow.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 218,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/giallo/ridack_knife_yellow.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 231,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining/nero/ridack_fan_black.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 232,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining/viola/ridack_fan_fushiia.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 233,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining/orange/ridack_fan_orange.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 234,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining/verdino/ridack_fan_jade.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 235,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining1/viola/ridack_fan_purple2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 236,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining1/blu/ridack_fan_blue2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 237,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining1/rosa/ridack_fan_pink2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 238,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining1/bianco/ridack_fan_white2.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 239,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining2/verde/ridack_fan_green.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 240,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining2/rosso/ridack_fan_red.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 241,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining2/blu/ridack_fan_blue.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 242,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining2/giallo/ridack_fan_yellow.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 579,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining/nero/ridack_knife_black_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 582,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/nero/ridack_fan_black_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 583,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/nero/ridack_knife_black_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 634,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining/viola/ridack_knife_fushiia_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 637,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/viola/ridack_fan_fushiia_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 638,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/viola/ridack_knife_fushiia_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 642,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining/orange/ridack_knife_orange_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 645,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/orange/ridack_fan_orange_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 646,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/orange/ridack_knife_orange_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 650,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining/verdino/ridack_knife_jade_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 653,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/verdino/ridack_fan_jade_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 654,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining/verdino/ridack_knife_jade_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 658,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining1/viola/ridack_knife_purple2_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 661,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/viola/ridack_fan_purple2_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 662,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/viola/ridack_knife_purple2_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 666,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining1/blu/ridack_knife_blue2_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 669,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/blu/ridack_fan_blue2_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 670,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/blu/ridack_knife_blue2_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 674,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining1/rosa/ridack_knife_pink2_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 677,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/rosa/ridack_fan_pink2_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 678,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/rosa/ridack_knife_pink2_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 682,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining1/bianco/ridack_knife_white2_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 685,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/bianco/ridack_fan_white2_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 686,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining1/bianco/ridack_knife_white2_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 690,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining2/verde/ridack_knife_green_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 693,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/verde/ridack_fan_green_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 694,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/verde/ridack_knife_green_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 698,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining2/rosso/ridack_knife_red_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 701,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/rosso/ridack_fan_red_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 702,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/rosso/ridack_knife_red_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 706,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining2/blu/ridack_knife_blue_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 709,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/blu/ridack_fan_blue_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 710,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/blu/ridack_knife_blue_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 714,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining2/giallo/ridack_knife_yellow_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 717,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/giallo/ridack_fan_yellow_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 718,
+        "bone": "PART_WEAPON",
+        "path": "effect/shining2/giallo/ridack_knife_yellow_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 731,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining/nero/ridack_fan_black_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 732,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining/viola/ridack_fan_fushiia_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 733,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining/orange/ridack_fan_orange_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 734,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining/verdino/ridack_fan_jade_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 735,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining1/viola/ridack_fan_purple2_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 736,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining1/blu/ridack_fan_blue2_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 737,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining1/rosa/ridack_fan_pink2_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 738,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining1/bianco/ridack_fan_white2_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 739,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining2/verde/ridack_fan_green_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 740,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining2/rosso/ridack_fan_red_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 741,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining2/blu/ridack_fan_blue_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 742,
+        "bone": "PART_WEAPON_LEFT",
+        "path": "effect/shining2/giallo/ridack_fan_yellow_special.mse",
+        "catalogRegistered": true
+      },
+      {
+        "id": 850,
+        "bone": "PART_WEAPON",
+        "path": "effect/sword_6/sword_8.mse",
+        "catalogRegistered": true
+      }
+    ],
+    "pairs": [
+      {
+        "right": 79,
+        "left": 83,
+        "mountedOnly": false
+      },
+      {
+        "right": 134,
+        "left": 138,
+        "mountedOnly": false
+      },
+      {
+        "right": 142,
+        "left": 146,
+        "mountedOnly": false
+      },
+      {
+        "right": 150,
+        "left": 154,
+        "mountedOnly": false
+      },
+      {
+        "right": 158,
+        "left": 162,
+        "mountedOnly": false
+      },
+      {
+        "right": 166,
+        "left": 170,
+        "mountedOnly": false
+      },
+      {
+        "right": 174,
+        "left": 178,
+        "mountedOnly": false
+      },
+      {
+        "right": 182,
+        "left": 186,
+        "mountedOnly": false
+      },
+      {
+        "right": 190,
+        "left": 194,
+        "mountedOnly": false
+      },
+      {
+        "right": 198,
+        "left": 202,
+        "mountedOnly": false
+      },
+      {
+        "right": 206,
+        "left": 210,
+        "mountedOnly": false
+      },
+      {
+        "right": 214,
+        "left": 218,
+        "mountedOnly": false
+      },
+      {
+        "right": 579,
+        "left": 583,
+        "mountedOnly": false
+      },
+      {
+        "right": 634,
+        "left": 638,
+        "mountedOnly": false
+      },
+      {
+        "right": 642,
+        "left": 646,
+        "mountedOnly": false
+      },
+      {
+        "right": 650,
+        "left": 654,
+        "mountedOnly": false
+      },
+      {
+        "right": 658,
+        "left": 662,
+        "mountedOnly": false
+      },
+      {
+        "right": 666,
+        "left": 670,
+        "mountedOnly": false
+      },
+      {
+        "right": 674,
+        "left": 678,
+        "mountedOnly": false
+      },
+      {
+        "right": 682,
+        "left": 686,
+        "mountedOnly": false
+      },
+      {
+        "right": 690,
+        "left": 694,
+        "mountedOnly": false
+      },
+      {
+        "right": 698,
+        "left": 702,
+        "mountedOnly": false
+      },
+      {
+        "right": 706,
+        "left": 710,
+        "mountedOnly": false
+      },
+      {
+        "right": 714,
+        "left": 718,
+        "mountedOnly": false
+      },
+      {
+        "right": 82,
+        "left": 231,
+        "mountedOnly": true
+      },
+      {
+        "right": 137,
+        "left": 232,
+        "mountedOnly": true
+      },
+      {
+        "right": 145,
+        "left": 233,
+        "mountedOnly": true
+      },
+      {
+        "right": 153,
+        "left": 234,
+        "mountedOnly": true
+      },
+      {
+        "right": 161,
+        "left": 235,
+        "mountedOnly": true
+      },
+      {
+        "right": 169,
+        "left": 236,
+        "mountedOnly": true
+      },
+      {
+        "right": 177,
+        "left": 237,
+        "mountedOnly": true
+      },
+      {
+        "right": 185,
+        "left": 238,
+        "mountedOnly": true
+      },
+      {
+        "right": 193,
+        "left": 239,
+        "mountedOnly": true
+      },
+      {
+        "right": 201,
+        "left": 240,
+        "mountedOnly": true
+      },
+      {
+        "right": 209,
+        "left": 241,
+        "mountedOnly": true
+      },
+      {
+        "right": 217,
+        "left": 242,
+        "mountedOnly": true
+      },
+      {
+        "right": 582,
+        "left": 731,
+        "mountedOnly": true
+      },
+      {
+        "right": 637,
+        "left": 732,
+        "mountedOnly": true
+      },
+      {
+        "right": 645,
+        "left": 733,
+        "mountedOnly": true
+      },
+      {
+        "right": 653,
+        "left": 734,
+        "mountedOnly": true
+      },
+      {
+        "right": 661,
+        "left": 735,
+        "mountedOnly": true
+      },
+      {
+        "right": 669,
+        "left": 736,
+        "mountedOnly": true
+      },
+      {
+        "right": 677,
+        "left": 737,
+        "mountedOnly": true
+      },
+      {
+        "right": 685,
+        "left": 738,
+        "mountedOnly": true
+      },
+      {
+        "right": 693,
+        "left": 739,
+        "mountedOnly": true
+      },
+      {
+        "right": 701,
+        "left": 740,
+        "mountedOnly": true
+      },
+      {
+        "right": 709,
+        "left": 741,
+        "mountedOnly": true
+      },
+      {
+        "right": 717,
+        "left": 742,
+        "mountedOnly": true
+      }
+    ],
+    "containers": [
+      {
+        "source": 78107,
+        "path": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.box.0.hex",
+        "sha256": "4f59b0b321bf299230813ed4c240ca01ab675239b02c5b93164cc06d81a8dea4"
+      },
+      {
+        "source": 50077,
+        "path": "D:\\AurigaGlobal\\LiveWork\\AurigaGlobal\\build\\full-proto-weapon-effects-worker-sql-final\\source-weapon-effect-runtime.box.1.hex",
+        "sha256": "802375f318255612d4e9a92d6bb352c1746fa665d796d705efdbd72f497802d9"
+      }
+    ],
+    "realms_modified": false,
+    "actual_game_item_worker": true,
+    "full_actor_world_test": false
+  },
+  "unity": {
+    "editor": "6000.3.27f1",
+    "success": true,
+    "suites": {
+      "TYPED_COMPANION_WIRE": 700,
+      "TYPED_ITEM_INTEGRATION": 14005,
+      "TYPED_EQUIPMENT_INTEGRATION": 2447,
+      "TYPED_COSTUME_OFFLINE": 397,
+      "TYPED_SPECIAL_BONUS_OFFLINE": 8003,
+      "TYPED_SOUL_OFFLINE": 1252,
+      "TYPED_FORGE_OFFLINE": 6993,
+      "TYPED_STORAGE_OFFLINE": 4667,
+      "TYPED_MISSION_OFFLINE": 3236,
+      "TYPED_AMMO_OFFLINE": 1340,
+      "NEXORIA_UI": 346
+    },
+    "real_player_skeleton": true,
+    "authored_effect_assets": 145,
+    "source_icons": 25,
+    "actual_worker_packets": 104,
+    "source_container_packets": 2,
+    "result_mtime": 1794686033.0866318
+  },
+  "live_local": {
+    "accounts": 0,
+    "characters": 0,
+    "legacy_items": 0,
+    "native_instances": 0,
+    "empty_player_state_tables": 94,
+    "catalog_definitions": 1574
+  },
+  "fingerprints": {
+    "SRC/Tools/ItemCatalogBuilder/convert_full_catalog.py": "00028b34476189184fccfe9a15515ade77c42bfac2c8e4bf87a05c771f0662c5",
+    "SRC/Tools/ItemCatalogBuilder/full_catalog_weapon_effects.py": "e8cb19d4cd35138832d0945cb6a881fd5c70748d38df816756f701a0ac1a510a",
+    "SRC/Tools/ItemCatalogBuilder/upgrade_exported_catalog.py": "caa6521a5070551194f39584895061230c1acb0fa13817c6fb4c9af369bccf71",
+    "SRC/Tools/ServerManager/costume_editor.py": "a26b04920211df7269291d1b3c1e75164fd6c26b8ff8e0d34a475f1e9284c46a",
+    "SRC/Tools/ServerManager/item_catalog.py": "b2710c20156d79b1e070b6705f7f5830b892e56df621973ad5f0296436ce7026",
+    "SRC/Server/common/item/Costumes.hpp": "8e2fb0995b48a557c0eb2d9bff6f13fecceebf5d7e256c93a52ad6b7cd6c018e",
+    "SRC/Server/common/item/ItemCatalog.hpp": "60829328f8f193e3dde15f537d7e65c71fa3e4b9d95d4d9ab070bd2094b2c382",
+    "SRC/ItemDomain/ContentValidation.hpp": "d73f461fd790432035c1a3a86ae3909a7e38a93fc7c4675754e97e8433a92dce",
+    "SRC/ItemDomain/Costumes.cpp": "8f956d5e38d799991b85b9a9f3256ef97119b4ccb5e74a2f6e17f993bccda3af",
+    "SRC/ItemDomain/CostumePersistence.cpp": "313e9bcf96f4b3b6bb0e6c62d42d0fbd7bc2f5033446ea6e72a5e2941c4fea61",
+    "SRC/ItemDomain/TypedInventoryWire.cpp": "1f3bb94919614a897022b0bcb196c5514abf9c3ffd93a97a5a2a03b49d4c1ee2",
+    "SRC/ItemDomain/CatalogHash.cpp": "a7b34ae16db07d6fbaea660b44cf2e9183929506500f8e47c53894fccb22ec03",
+    "SRC/Server/GameServer/item/TypedCostumes.cpp": "94a0ae9dbf96dd6da9ba9cc6a5f6408b805de0de5779cbbf8e44766f617b5a16",
+    "SRC/Server/GameServer/ecs/systems/MountFlightSystem.hpp": "94149786051891758f65b111fcc70ec9c5215625ac35b82c5a7767d2f88bcc99",
+    "db/migrations/item_combat/046_weapon_costume_effects.sql": "1ce525cdb4c5f39f2c4952dc9d65e6bf982a10e53964a30ac6b5331013543b46",
+    "db/migrations/item_instance/029_weapon_costume_effect_slot.sql": "58290551df963bb011955dd9d1b6de20bdba3f1e15790a5f287f915a5a675fc9",
+    "tests/server/SourceWeaponEffectCatalogTests.py": "02962eca06c1e9eec393a2c67c7650cec2cbaa95359eefa20b5c118e992a4c48",
+    "tests/server/ItemCatalogRuntimeTests.cpp": "0de716aebc66580e18623a2a4150283f8be2fd678f5a45c43360601b8b9ecbba",
+    "tests/server/ItemCatalogRuntimeTests.py": "8f45fee515bc85b48572991ece25cd8dd2fa5165e7683943605635823ae925cf",
+    "tests/server/CostumeTests.cpp": "8233ef9dc77d273323748b6388fd6e93a2881ccd3e3b2865c187d85f5804bad4",
+    "tests/server/FullCatalogConversionTests.py": "4d8d9765a5798820beda1a8de1d0eeb48a26a8fae0761ee3955a4c44cf157824",
+    "tests/server/CatalogEditorTests.py": "4e5a3258a86dba50cb406ddeeae9a7795fed4920433a613bcb292a51f0d77417",
+    "build/c26b-game-native/SRC/Server/GameServer/GameServer.exe": "722839f3b35fe043334a06139bd8deefee4144096d31b7d178c8f69001a1f5e0",
+    "build/weapon-effects-initial-build.log": "b19cb1cc16e90ac796b70c901412cf5b7172750db1d58185f573f552e3fc414a",
+    "build/weapon-effects-all-tests-build.log": "b947c0b4a4d8b017fe1b38a6d5048080bc8ca0c05f1a29aa59e71ef57bf8a43a",
+    "build/weapon-effects-runtime-final-build.log": "b3cf485c01339032be39ce00bc98804c5ac42e2d1c4bfab6517914ef1a60d059",
+    "build/weapon-effects-converter-tests.log": "bf09cd3111dc31b6d0cf3d67fa4dfc7786969c006c180475f8e5dce1059e4ad5",
+    "build/weapon-effects-editor-tests.log": "9a19ff3163daee71deb1d8510c967f8a51fbe36ac8b74f4fdf495f94949e4931",
+    "build/weapon-effects-unity-final-success.log": "090c6a20479784d19531001407fc8bbd23e0ebaacb0e67f360a97d7401cf967b",
+    "build/weapon-effects-metadata-update.json": "6fcd4aa1500b62472241d3fab9759d8770d76d5dd10a0970684cc72890b119b4",
+    "build/weapon-effects-sandbox-archive-result.json": "61b0860fa24c6a79b1c7117a4dd75224b34c5625f9c88969c004fe5a946f868b",
+    "build/weapon-effects-regression-tests.log": "0a7b03ba545b971097b6940aa1ab92a0a54d1774cf8d026c0ed47c4bc5defcf2",
+    "build/weapon-effects-targeted-tests.log": "6435dba2807c1530f5f4e895d4d58c4a6e73129026d32560c0f05af4189cb6ff"
+  },
+  "unity_fingerprints": {
+    "Runtime/Network/Metin2TypedInventoryCodec.cs": "48df4e5cda69fcd646dcb685c26a0eceac3c746f89e10525f5182e5b56760322",
+    "Runtime/Network/Metin2TypedInventoryState.cs": "6827ec1ee9bdaf0e28264b815bf618019e76292237265639f84de549573f4e21",
+    "Runtime/Network/Metin2TypedInventoryWindow.cs": "21ccaed49b973228b4f6535def91a570e553e090790c9b7916b6e011059702f0",
+    "Runtime/Network/Metin2TypedItemDetails.cs": "65258cce9d9d1b37587b32e9d7a7e2b2f87e18f2426dbdb8b4080fc25933f61b",
+    "Runtime/Network/Metin2TypedAppearanceCodec.cs": "3e364349da87ea377a899845b169da9b74ab547d2727c463c959dc391fa5f8d2",
+    "Runtime/Network/Metin2EquipmentRuntimeBinder.cs": "4e51e156e7746362efd6ba25cdbb95fd08e6c03fbae75c645df7ae81d80bfa8c",
+    "Runtime/Network/Metin2CostumeEffectAppearance.cs": "a001cee7a5a6cd4918850b6f92d075640ac1fa9a634e1e34bdeda9923ed5bd21",
+    "Runtime/Network/Metin2NetworkEntityWorld.cs": "6eb94d2768b46e3154e68f521a9a9f8af97ad4addcac0392054034416955dfaa",
+    "Runtime/Network/Metin2ClientBootstrap.cs": "b663ba2e15482cda9a3e30709a0fbec557cc4be682939a4a313bf41eaad751e3",
+    "Editor/Metin2SourceWeaponEffectValidator.cs": "3f5d4cde1aa8ec751c523aca1c62f3619a2f918c405261567ad0cb94221c09eb",
+    "Editor/Metin2TypedShopValidationBridge.cs": "85c8ffa91e2e89544dd1313c7635facff43e729f7e4c543d2730d1c99eeb08b5"
+  },
+  "not_tested": [
+    "Full login/auth/TLS/ECS world flow with this catalog",
+    "Observer delivery, combat and all player races with these typed effects in a running realm",
+    "Remaining 1107 blocked source rows"
+  ]
+}

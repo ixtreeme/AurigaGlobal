@@ -1,5 +1,12 @@
 # MariaDB-séma az Auriga szerverhez
 
+2026-11-16: az új helyi `init-db` a `retired_item_tables.json` 17 régi
+item-állapottábláját kiszűri. A teljes `schema.sql` az explicit offline
+backup-visszaállításhoz és konverzióhoz megmarad. A futó itemrendszerhez a natív
+katalógus és példánymigrációk szükségesek, jelenleg a 041-es runtime-markerrel és
+a 042-es natív jutalomsorral együtt. A korábbi item/shop/APPLY referenciaadatok
+már nem indulási előfeltételek. [Átállás és ellenőrzések](../docs/reports/item_combat/2026-11-16_native_item_retirement.md).
+
 A [schema.sql](schema.sql) a jelenlegi szerverforrás új telepítéshez készített
 sémája: **4 adatbázis, 102 tábla**, InnoDB, `utf8mb4_unicode_ci`. A Database,
 GameServer és LoginServer SQL-használatát, a közös típusokat, az aktív feature
