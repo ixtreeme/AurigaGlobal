@@ -111,14 +111,14 @@ void Get(Inventory& inventory, uint32_t pos, uint8_t size)
     }
 }
 
-bool StartMountExpireIfNeeded(entt::entity itemEntity)
+void StartMountExpireIfNeeded(entt::entity itemEntity)
 {
     if (itemEntity == entt::null)
-        return false;
+        return;
 
     const TItemTable* itemProto = ItemSystem::GetItemProto(itemEntity);
     if (!itemProto)
-        return false;
+        return;
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
     const bool bIsMountLikeItem =
@@ -127,9 +127,8 @@ bool StartMountExpireIfNeeded(entt::entity itemEntity)
     const bool bIsMountLikeItem = ItemSystem::IsRideItem(itemEntity);
 #endif
     if (!bIsMountLikeItem || itemProto->cLimitRealTimeFirstUseIndex == -1)
-        return false;
+        return;
 
-    bool changed = false;
     if (ItemSystem::GetItemSocket(itemEntity, 1) == 0)
     {
         const uint8_t index = static_cast<uint8_t>(itemProto->cLimitRealTimeFirstUseIndex);
@@ -141,24 +140,15 @@ bool StartMountExpireIfNeeded(entt::entity itemEntity)
 
         ItemSystem::SetItemSocket(itemEntity, 0, time(nullptr) + duration);
         ItemSystem::SetItemSocket(itemEntity, 1, 1);
-        changed = true;
     }
 
     ItemSystem::StartRealTimeExpireEventEcs(itemEntity);
-    return changed;
 }
 
-uint32_t AccountId(const Inventory& inventory)
-{
-    return inventory.accountId;
-}
-
-// Legacy mount storage is retired. Native account storage uses the item writer.
-void SaveItem(const Inventory&, uint32_t, entt::entity) {}
-void DeleteItem(const Inventory&, uint32_t, uint32_t) {}
-
+// The legacy grid only retains in-memory state for the remaining ECS callers.
+// Durable mounts are stored by the native account item writer.
 bool AddToInventory(Inventory& inventory, entt::entity owner, uint32_t pos,
-    entt::entity itemEntity, bool skipSave)
+    entt::entity itemEntity)
 {
     if (inventory.owner != owner || inventory.destroying ||
         !ItemSystem::IsValidItem(itemEntity) ||
@@ -183,14 +173,7 @@ bool AddToInventory(Inventory& inventory, entt::entity owner, uint32_t pos,
     Put(inventory, pos, ItemSystem::GetItemSize(itemEntity));
     inventory.items[pos] = itemEntity;
 
-    const bool expireStateChanged = StartMountExpireIfNeeded(itemEntity);
-    if ((!skipSave || expireStateChanged) && !SaveItem(inventory, pos, itemEntity))
-    {
-        ItemSystem::RemoveItemEcs(itemEntity);
-        Get(inventory,pos,ItemSystem::GetItemSize(itemEntity));
-        inventory.items[pos]=entt::null;
-        return false;
-    }
+    StartMountExpireIfNeeded(itemEntity);
     return true;
 }
 
@@ -208,11 +191,10 @@ bool RestoreToInventory(Inventory& inventory, entt::entity owner, uint32_t pos,
 
     Put(inventory, pos, ItemSystem::GetItemSize(itemEntity));
     inventory.items[pos] = itemEntity;
-    return SaveItem(inventory, pos, itemEntity);
+    return true;
 }
 
-bool Detach(Inventory& inventory, uint32_t pos, entt::entity expectedItem,
-    bool skipDbDelete)
+bool Detach(Inventory& inventory, uint32_t pos, entt::entity expectedItem)
 {
     if (!IsValidPosition(inventory, pos))
         return false;
@@ -222,7 +204,6 @@ bool Detach(Inventory& inventory, uint32_t pos, entt::entity expectedItem,
         (expectedItem != entt::null && item != expectedItem))
         return false;
 
-    if (!skipDbDelete && !DeleteItem(inventory,pos,ItemSystem::GetItemID(item))) return false;
     Get(inventory, pos, ItemSystem::GetItemSize(item));
     inventory.items[pos] = entt::null;
     return true;
@@ -385,15 +366,15 @@ entt::entity GetMountInventoryItem(entt::entity rider, uint32_t cell)
 }
 
 bool AddMountInventoryItem(entt::entity rider, uint32_t pos,
-    entt::entity item, bool skipSave)
+    entt::entity item, bool /*skipSave*/)
 {
     const entt::entity inventoryHandle = GetMountInventory(rider);
     auto* inventory = FindInventory(inventoryHandle);
-    return inventory && AddToInventory(*inventory, rider, pos, item, skipSave);
+    return inventory && AddToInventory(*inventory, rider, pos, item);
 }
 
 entt::entity RemoveMountInventoryItem(entt::entity rider, uint32_t pos,
-    bool skipDbDelete)
+    bool /*skipDbDelete*/)
 {
     auto* inventory = FindInventoryForOwner(rider);
     if (!inventory || !IsValidPosition(*inventory, pos))
@@ -404,7 +385,7 @@ entt::entity RemoveMountInventoryItem(entt::entity rider, uint32_t pos,
         ItemSystem::GetItemOwner(item) != rider ||
         ItemSystem::GetItemWindow(item) != MOUNT_INVENTORY ||
         ItemSystem::GetItemCell(item) != pos ||
-        !Detach(*inventory, pos, item, skipDbDelete))
+        !Detach(*inventory, pos, item))
         return entt::null;
 
     if (!ItemSystem::RemoveItemEcs(item))
@@ -416,7 +397,7 @@ entt::entity RemoveMountInventoryItem(entt::entity rider, uint32_t pos,
 }
 
 bool RemoveMountInventoryItemByEntity(entt::entity rider, entt::entity item,
-    bool skipDbDelete)
+    bool /*skipDbDelete*/)
 {
     auto* inventory = FindInventoryForOwner(rider);
     if (!inventory || item == entt::null)
@@ -425,7 +406,7 @@ bool RemoveMountInventoryItemByEntity(entt::entity rider, entt::entity item,
     for (uint32_t pos = 0; pos < inventory->items.size(); ++pos)
     {
         if (inventory->items[pos] == item)
-            return Detach(*inventory, pos, item, skipDbDelete);
+            return Detach(*inventory, pos, item);
     }
     return false;
 }
@@ -467,13 +448,6 @@ bool MoveMountInventoryItem(entt::entity rider, uint32_t from, uint32_t to)
     }
     inventory->items[from] = entt::null;
     inventory->items[to] = item;
-    // The unique item ID makes REPLACE an atomic move between bank cells.
-    if (!SaveItem(*inventory,to,item)) {
-        inventory->items[to]=entt::null;inventory->items[from]=item;
-        Get(*inventory,to,size);Put(*inventory,from,size);
-        ItemSystem::SetItemCell(item,rider,from);
-        return false;
-    }
     return true;
 }
 
