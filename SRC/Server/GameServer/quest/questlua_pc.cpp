@@ -4408,6 +4408,7 @@ teleport_area:
 			{ "give_item2_select",		pc_give_or_drop_item_and_select	},
 			{ "give_gold",		pc_give_gold		},
 			{ "typed_item_count", pc_typed_item_count },
+            { "typed_pet_egg_key", pc_typed_pet_egg_key },
             { "typed_item_grant", pc_typed_item_grant },
             { "typed_item_exchange", pc_typed_item_exchange },
             { "typed_item_redeem", pc_typed_item_redeem },
