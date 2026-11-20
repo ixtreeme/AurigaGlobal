@@ -6,7 +6,8 @@ quest reset_scroll begin
 				return
 			end
 
-			say_title(string.format("%s:", item_name(71054)))
+			local title = game.typed_item_use_name("Birodalmak oldata")
+			say_title(string.format("%s:", title))
 			say("")
 			local lang = pc.get_language()
 			ResetScroll.ShowRequisites(71054);
@@ -15,7 +16,7 @@ quest reset_scroll begin
 			end
 
 			if (select(gameforge[lang].reset_scroll._1, gameforge[lang].reset_scroll._2) == 1) then
-				say_title(string.format("%s:", item_name(71054)))
+				say_title(string.format("%s:", title))
 				say("")
 				say(gameforge[lang].reset_scroll._7)
 				local emp = select(
@@ -29,7 +30,7 @@ quest reset_scroll begin
 					return
 				end
 
-				say_title(string.format("%s:", item_name(71054)))
+				say_title(string.format("%s:", title))
 				say("")
 				local ret = pc.typed_change_empire(emp)
 				if (ret == 1) then
@@ -58,7 +59,8 @@ quest reset_scroll begin
 				return
 			end
 
-			say_title(string.format("%s:", item_name(71002)))
+			local title = game.typed_item_use_name("Állapot visszaállító")
+			say_title(string.format("%s:", title))
 			say("")
 			local lang = pc.get_language()
 			say(gameforge[lang].reset_scroll._16)
@@ -68,7 +70,7 @@ quest reset_scroll begin
 					return
 				end
 				pc.reset_point();
-				say_title(string.format("%s:", item_name(71002)))
+				say_title(string.format("%s:", title))
 				say("")
 				say(gameforge[lang].reset_scroll._17)
 			end
@@ -80,12 +82,13 @@ quest reset_scroll begin
 				return
 			end
 
-			say_title(string.format("%s:", item_name(71048)))
+			local title = game.typed_item_use_name("Megváltoztató varázslat")
+			say_title(string.format("%s:", title))
 			say("")
 			local lang = pc.get_language()
 			say(gameforge[lang].reset_scroll._48)
 			if (select(gameforge[lang].reset_scroll._1, gameforge[lang].reset_scroll._2) == 1) then
-				say_title(string.format("%s:", item_name(71048)))
+				say_title(string.format("%s:", title))
 				say("")
 				if pc.is_polymorphed() then
 					say(gameforge[lang].reset_scroll._18)
@@ -115,7 +118,8 @@ quest reset_scroll begin
 				return
 			end
 
-			say_title(string.format("%s:", item_name(71099)))
+			local title = game.typed_item_use_name("Utód gyűrűje")
+			say_title(string.format("%s:", title))
 			say("")
 			ResetScroll.ShowRequisites(71099);
 			if (not ResetScroll.CheckRequisites(71099)) then
@@ -124,12 +128,12 @@ quest reset_scroll begin
 
 			local lang = pc.get_language()
 			if (select(gameforge[lang].reset_scroll._1, gameforge[lang].reset_scroll._2) == 1) then
-				say_title(string.format("%s:", item_name(71099)))
+				say_title(string.format("%s:", title))
 				say("")
 				say(gameforge[lang].reset_scroll._21)
-				say_title(string.format("%s:[ENTER]", item_name(71099)))
+				say_title(string.format("%s:[ENTER]", title))
 				local s = input();
-				say_title(string.format("%s:", item_name(71099)))
+				say_title(string.format("%s:", title))
 				say("")
 				if (pc.get_name() == s) then
 					say(gameforge[lang].reset_scroll._22)
@@ -155,13 +159,13 @@ quest reset_scroll begin
 			end
 		end
 
-		function redistribute_stat(stat, label, display_item)
+		function redistribute_stat(stat, label, fallback_name)
 			local lang = pc.get_language()
 			if not pc.can_warp() then
 				syschat(gameforge[lang].reset_scroll._35)
 				return
 			end
-			say_title(string.format("%s:", item_name(display_item)))
+			say_title(string.format("%s:", game.typed_item_use_name(fallback_name)))
 			say("")
 			if select(gameforge[lang].reset_scroll._1, gameforge[lang].reset_scroll._2) ~= 1 then
 				return
@@ -176,19 +180,19 @@ quest reset_scroll begin
 		end
 
 		when "catalog.10.redistribution_vit_e630cba25bc9".typed_use begin
-			reset_scroll.redistribute_stat(0, "_28", 71103)
+			reset_scroll.redistribute_stat(0, "_28", "Újraelosztás (VIT)")
 		end
 
 		when "catalog.10.redistribution_int_99427a85760d".typed_use begin
-			reset_scroll.redistribute_stat(1, "_29", 71104)
+			reset_scroll.redistribute_stat(1, "_29", "Újraelosztás (INT)")
 		end
 
 		when "catalog.10.redistribution_str_031297f88e89".typed_use begin
-			reset_scroll.redistribute_stat(2, "_30", 71105)
+			reset_scroll.redistribute_stat(2, "_30", "Újraelosztás (ERŐ)")
 		end
 
 		when "catalog.10.redistribution_dex_55686f3043a2".typed_use begin
-			reset_scroll.redistribute_stat(3, "_31", 71106)
+			reset_scroll.redistribute_stat(3, "_31", "Újraelosztás (ÜGY)")
 		end
 
 		when "catalog.10.scroll_of_lore_change_951ace981834".typed_use begin
@@ -197,7 +201,8 @@ quest reset_scroll begin
 				return
 			end
 
-			say_title(string.format("%s:", item_name(71100)))
+			local title = game.typed_item_use_name("Tancsere bizonyítvány")
+			say_title(string.format("%s:", title))
 			say("")
 			local lang = pc.get_language()
 			ResetScroll.ShowRequisites(71100);
@@ -206,7 +211,7 @@ quest reset_scroll begin
 			end
 
 			if (select(gameforge[lang].reset_scroll._1, gameforge[lang].reset_scroll._2) == 1) then
-				say_title(string.format("%s:", item_name(71100)))
+				say_title(string.format("%s:", title))
 				say("")
 				if not pc.can_warp() then
 					say(gameforge[lang].reset_scroll._35)
@@ -262,7 +267,8 @@ quest reset_scroll begin
 				return
 			end
 
-			say_title(string.format("%s:", item_name(71055)))
+			local title = game.typed_item_use_name("Név oldata")
+			say_title(string.format("%s:", title))
 			say("")
 			ResetScroll.ShowRequisites(71055);
 			if (not ResetScroll.CheckRequisites(71055)) then
@@ -272,7 +278,7 @@ quest reset_scroll begin
 			local lang = pc.get_language()
 			say(gameforge[lang].reset_scroll._39)
 			local new_name = input()
-			say_title(string.format("%s:", item_name(71055)))
+			say_title(string.format("%s:", title))
 			say("")
 			local old_name = pc.get_name();
 			if (new_name == old_name) then

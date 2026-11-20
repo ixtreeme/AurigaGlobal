@@ -19,6 +19,7 @@
 #include "../ecs/quest_helpers.hpp"
 #include "../item/TypedGuildRewards.hpp"
 #include "../item/ItemCatalogRuntime.hpp"
+#include "../item/ItemStore.hpp"
 #include "../item/TypedLoot.hpp"
 
 #ifdef ADVANCED_GUILD_INFO
@@ -116,6 +117,69 @@ namespace quest
 		ecs::SessionSystem::SetSafeboxOpenPosition(chEntity);
 		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "ShowMeMallPassword");
 		return 0;
+	}
+
+	static std::optional<lua_Integer> QuestItemInteger(lua_State* L, int index, lua_Integer minimum, lua_Integer maximum)
+	{
+		int valid = 0;
+		const auto value = lua_tointegerx(L, index, &valid);
+		return valid && value >= minimum && value <= maximum ? std::optional{value} : std::nullopt;
+	}
+
+	static auto QuestItemKey(lua_State* L)
+	{
+		const auto category = QuestItemInteger(L, 1, 1, UINT16_MAX);
+		const auto local = QuestItemInteger(L, 2, 1, UINT32_MAX);
+		return auriga::item::ItemKey::Create(static_cast<uint16_t>(category.value_or(0)),
+			static_cast<uint32_t>(local.value_or(0)));
+	}
+
+	static int PushTypedItemName(lua_State* L, const auriga::item::ItemCatalogEntry* item, int fallbackIndex)
+	{
+		std::size_t length = 0;
+		const char* provided = lua_tolstring(L, fallbackIndex, &length);
+		std::string fallback = provided && length ? std::string(provided, length) : "Tárgy";
+		for (char& character : fallback)
+			if (!character || std::string_view("[]|;\r\n").find(character) != std::string_view::npos)
+				character = ' ';
+
+		const auto validKey = [](char ch) {
+			return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
+				(ch >= '0' && ch <= '9') || ch == '.' || ch == '_' || ch == '-';
+		};
+		if (item && !item->base.nameKey.empty() && std::ranges::all_of(item->base.nameKey, validKey))
+			lua_pushfstring(L, "[TYPED_ITEM_NAME key;%s|fallback;%s]", item->base.nameKey.c_str(), fallback.c_str());
+		else
+			lua_pushlstring(L, fallback.data(), fallback.size());
+		return 1;
+	}
+
+	ALUA(game_typed_item_name)
+	{
+		const auto catalog = auriga::item::runtime::CurrentCatalog();
+		const auto key = QuestItemKey(L);
+		return PushTypedItemName(L, catalog && key ? catalog->Find(*key) : nullptr, 3);
+	}
+
+	ALUA(game_typed_item_use_name)
+	{
+		auto& manager = CQuestManager::instance();
+		const auto* state = manager.GetCurrentState();
+		if (!state || state->co != L || !state->typedItemUse.id || manager.IsInOtherPCBlock())
+			return PushTypedItemName(L, nullptr, 1);
+
+		const auto actor = manager.GetCurrentPCEntity();
+		const auto* inventory = g_registry.valid(actor) ? g_registry.try_get<ecs::TypedItems>(actor) : nullptr;
+		const auto catalog = auriga::item::runtime::CurrentCatalog();
+		if (!inventory || !catalog)
+			return PushTypedItemName(L, nullptr, 1);
+
+		const auto& items = inventory->state.items;
+		const auto source = std::ranges::find_if(items, [&](const auto& row) {
+			return row.owner == inventory->state.fence.owner && !row.destroyed &&
+				row.id.Value() == state->typedItemUse.id && row.revision == state->typedItemUse.revision;
+		});
+		return PushTypedItemName(L, source == items.end() ? nullptr : catalog->Find(source->key), 1);
 	}
 
 	ALUA(game_drop_item)
@@ -426,6 +490,8 @@ namespace quest
 			{ "drop_item",					game_drop_item					},
 			{ "drop_item_with_ownership",	game_drop_item_with_ownership	},
 			{ "drop_typed_item_with_ownership", game_drop_typed_item_with_ownership },
+			{ "typed_item_name", game_typed_item_name },
+			{ "typed_item_use_name", game_typed_item_use_name },
 #ifdef ADVANCED_GUILD_INFO
 			{ "give_guild_reward",			game_give_guild_reward			},
 			{ "mysql_query",				game_mysql_query 				},
