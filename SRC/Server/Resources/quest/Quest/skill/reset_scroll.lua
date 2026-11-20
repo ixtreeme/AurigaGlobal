@@ -154,37 +154,40 @@ quest reset_scroll begin
 			end
 		end
 
-		--** Ridistribuzione Status: VIT, INT, STR, DEX.
-		when 71103.use or 71104.use or 71105.use or 71106.use begin
+		function redistribute_stat(stat, label, display_item)
+			local lang = pc.get_language()
 			if not pc.can_warp() then
-				syschat(gameforge[pc.get_language()].reset_scroll._35)
+				syschat(gameforge[lang].reset_scroll._35)
 				return
 			end
-
-			local item_vnum = item.get_vnum()
-			local lang = pc.get_language()
-			local status_name = {
-									[71103] = gameforge[lang].reset_scroll._28,
-									[71104] = gameforge[lang].reset_scroll._29,
-									[71105] = gameforge[lang].reset_scroll._30,
-									[71106] = gameforge[lang].reset_scroll._31,
-			}
-
-			say_title(string.format("%s:", item_name(item.get_vnum())))
+			say_title(string.format("%s:", item_name(display_item)))
 			say("")
-			if (select(gameforge[lang].reset_scroll._1, gameforge[lang].reset_scroll._2) == 1) then
-				local ret = pc.reset_status(item_vnum - 71103);
-				say_title(string.format("%s:", item_name(item.get_vnum())))
-				say("")
-				if (not ret) then
-					say_reward(gameforge[lang].reset_scroll._32)
-					return
-				end
-
-				pc.remove_item(item_vnum, 1);
-				say(string.format(gameforge[lang].reset_scroll._33, status_name[item_vnum]))
-
+			if select(gameforge[lang].reset_scroll._1, gameforge[lang].reset_scroll._2) ~= 1 then
+				return
 			end
+			if not pc.can_warp() or not pc.typed_item_redeem({}, 0) then
+				say_reward(gameforge[lang].reset_scroll._32)
+				return
+			end
+			if pc.reset_status(stat) then
+				say(string.format(gameforge[lang].reset_scroll._33, gameforge[lang].reset_scroll[label]))
+			end
+		end
+
+		when "catalog.10.redistribution_vit_e630cba25bc9".typed_use begin
+			reset_scroll.redistribute_stat(0, "_28", 71103)
+		end
+
+		when "catalog.10.redistribution_int_99427a85760d".typed_use begin
+			reset_scroll.redistribute_stat(1, "_29", 71104)
+		end
+
+		when "catalog.10.redistribution_str_031297f88e89".typed_use begin
+			reset_scroll.redistribute_stat(2, "_30", 71105)
+		end
+
+		when "catalog.10.redistribution_dex_55686f3043a2".typed_use begin
+			reset_scroll.redistribute_stat(3, "_31", 71106)
 		end
 
 		when "catalog.10.scroll_of_lore_change_951ace981834".typed_use begin
