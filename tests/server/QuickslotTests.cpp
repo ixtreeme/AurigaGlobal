@@ -32,7 +32,6 @@
 #include "../../SRC/Server/GameServer/network/db.h"
 #include "../../SRC/Server/GameServer/core/config.h"
 #include "../../SRC/Server/GameServer/core/log.h"
-#include "../../SRC/Server/GameServer/pet/MountInventory.h"
 #include "../../SRC/Server/GameServer/world/sectree_manager.h"
 #include "../../SRC/Server/GameServer/core/utils.h"
 #include <Core/Logging.hpp>
@@ -725,8 +724,6 @@ void MountSystem::UpdateMountSkin(entt::entity) { Unexpected(); }
 void MountSystem::MountUnsummon(entt::entity, entt::entity) { Unexpected(); }
 void MountSystem::UpdatePetSkin(entt::entity) { Unexpected(); }
 void MountSystem::MountSummon(entt::entity, entt::entity) { Unexpected(); }
-entt::entity MountSystem::GetMountInventory(entt::entity) { Unexpected(); }
-bool MountSystem::RemoveMountInventoryItemByEntity(entt::entity, entt::entity, bool) { Unexpected(); }
 bool PetInventorySystem::RemovePetInventoryItemByEntity(entt::entity, entt::entity, bool) { Unexpected(); }
 void MountSystem::MountCostume(entt::entity, entt::entity) { Unexpected(); }
 bool ItemSystem::IsExtraItem(entt::entity e) { return Meta(e).extra; }

@@ -36,12 +36,8 @@ ACMD(do_stonecraft);
 
 
 #ifdef __NEWPET_SYSTEM__
-ACMD(do_CubePetAdd);
-ACMD(do_FeedCubePet);
+#ifndef ENABLE_NEW_PET_EDITS
 ACMD(do_PetSkill);
-ACMD(do_PetEvo);
-#ifdef ENABLE_NEW_PET_EDITS
-ACMD(do_PetIncreaseSkill);
 #endif
 #endif
 // ADD_COMMAND_SLOW_STUN
@@ -360,25 +356,6 @@ ACMD(do_wheel_open)
 	}
 	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "BINARY_WHEEL_ASKOPEN");
 }
-
-#ifdef ENABLE_NEW_PET_EDITS
-ACMD(do_petenchant)
-{
-	if ((ecs::PlayerRuntime::IsObserverMode(character)) || (CombatSystem::IsDead(character)) || (CombatSystem::IsStun(character)))
-		return;
-
-	char arg1[256];
-	one_argument(argument, arg1, sizeof(arg1));
-	if (!*arg1)
-		return;
-
-	int iArg = atoi(arg1);
-	if ((iArg < 0) || (iArg > 2))
-		return;
-
-	ecs::PlayerRuntime::SetPetEnchant(character, iArg);
-}
-#endif
 
 #ifdef ENABLE_RUNE_SYSTEM
 ACMD(do_rune);
@@ -730,12 +707,8 @@ struct command_info cmd_info[] =
 
 	{ "do_clear_affect", do_clear_affect, 	0, POS_DEAD,		GM_IMPLEMENTOR},
 #ifdef __NEWPET_SYSTEM__
-	{ "cubepetadd", 		do_CubePetAdd,	0,			POS_DEAD,	GM_PLAYER },
-	{ "feedcubepet", 		do_FeedCubePet,	0,			POS_DEAD,	GM_PLAYER },
+#ifndef ENABLE_NEW_PET_EDITS
 	{ "petskills", 			do_PetSkill,	0,			POS_DEAD,	GM_PLAYER },
-	{ "petvoincrease",			do_PetEvo,	0,			POS_DEAD,	GM_PLAYER },
-#ifdef ENABLE_NEW_PET_EDITS
-	{"petincskill", do_PetIncreaseSkill, 0, POS_DEAD, GM_PLAYER},
 #endif
 #endif
 #ifdef ENABLE_NEWSTUFF
@@ -774,9 +747,6 @@ struct command_info cmd_info[] =
 	{"manage_exp", do_manage_exp, 0, POS_DEAD, GM_PLAYER},
 #ifdef ENABLE_LOCKED_EXTRA_INVENTORY
 	{"unlock_extra", do_unlock_extra, 0, POS_DEAD, GM_PLAYER},
-#endif
-#ifdef ENABLE_NEW_PET_EDITS
-	{"petenchant", do_petenchant, 0, POS_DEAD, GM_PLAYER},
 #endif
 #ifdef ENABLE_BLOCK_MULTIFARM
 	{"drop_block", do_drop_block, 0, POS_DEAD, GM_PLAYER},

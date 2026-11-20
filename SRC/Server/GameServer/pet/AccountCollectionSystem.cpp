@@ -178,10 +178,10 @@ void Notify(std::uint32_t account)
     P2P_MANAGER::instance().Send(&packet, sizeof(packet));
 }
 
-std::optional<std::uint16_t> MountCount(entt::entity owner)
+std::uint16_t MountCount(entt::entity owner)
 {
     const auto* projection = g_registry.valid(owner) ? g_registry.try_get<Projection>(owner) : nullptr;
-    return projection ? std::optional{projection->mountCount} : std::nullopt;
+    return projection ? projection->mountCount : 0;
 }
 
 std::uint64_t Revision(entt::entity owner)

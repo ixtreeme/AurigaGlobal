@@ -12,6 +12,7 @@
 #include "../ecs/systems/SkillSystem.hpp"
 #include "../ecs/systems/NetworkSyncSystem.hpp"
 #include "../item/item_manager.h"
+#include "../item/LegacyItemBoundary.hpp"
 #include "../ecs/systems/MountSystem.hpp"
 #include "../pet/PetSystem.h"
 #include "../ecs/systems/AffectSystem.hpp"
@@ -45,12 +46,10 @@ struct SavedCharacter {
     std::vector<uint8_t> skills;
     std::array<entt::entity, WEAR_MAX_NUM> previousWears {};
     std::vector<entt::entity> temporaryItems;
-    std::vector<std::pair<uint32_t, entt::entity>> temporaryMounts;
     uint32_t petMob {0};
 };
 
 std::map<uint32_t, SavedCharacter> applied;
-#include "BenchmarkActiveMounts.inc"
 
 constexpr std::array<uint8_t, 7> SavedPointTypes {
     POINT_ST, POINT_HT, POINT_DX, POINT_IQ, POINT_STAT, POINT_SKILL, POINT_SUB_SKILL
@@ -491,14 +490,6 @@ void Undo(SavedCharacter& saved, std::ostringstream& errors) {
     }
     if (saved.petMob)
         PetSystem::Unsummon(character, saved.petMob, true);
-    for (const auto& [pos, item] : saved.temporaryMounts) {
-        const auto removed = MountSystem::RemoveMountInventoryItem(character, pos, true);
-        if (removed != item) {
-            errors << "Could not safely remove temporary mount at " << pos << ". ";
-        } else if (ItemSystem::IsValidItem(removed)) {
-            ItemSystem::DestroyItemEntityEcs(removed, "BENCHMARK_MOUNT_RESTORE");
-        }
-    }
     for (const auto item : saved.temporaryItems) {
         if (!ItemSystem::IsValidItem(item)) continue;
         if (ItemSystem::GetItemOwner(item) == character &&
@@ -573,50 +564,8 @@ bool Apply(entt::entity character, int tier, std::string_view defenseWeapon,
                   ". Update the GameServer configuration and restart it before testing.";
         return false;
     }
-    if (MountSystem::GetMountInventory(character) == entt::null) {
-        message = "Mount inventory has not loaded; retry after login sync.";
-        return false;
-    }
-    const int mountWidth = MountSystem::GetMountInventoryWidth(character);
-    const int mountHeight = MountSystem::GetMountInventorySize(character);
-    const int mountCapacity = mountWidth * mountHeight;
-    if (mountWidth <= 0 || mountHeight <= 0) {
-        message = "Mount inventory dimensions are invalid.";
-        return false;
-    }
-    // Active live mounts are all size-one items in the validated item_proto.
-    // Count *actual* free cells and missing VNUMs before touching character
-    // points/equipment or allocating temporary items.
-    std::set<uint32_t> mountVnumsAlreadyOwned;
-    int emptyMountCells = 0;
-    for (int cell = 0; cell < mountCapacity; ++cell) {
-        const auto existing = MountSystem::GetMountInventoryItem(character, cell);
-        if (ItemSystem::IsValidItem(existing))
-            mountVnumsAlreadyOwned.insert(ItemSystem::GetItemVnum(existing));
-        else if (MountSystem::IsMountInventoryPositionEmpty(character, cell, 1))
-            ++emptyMountCells;
-    }
-    int missingMounts = 0;
-    for (const auto mountVnum : kActiveMounts) {
-        const auto* proto = ITEM_MANAGER::instance().GetTable(mountVnum);
-        if (!proto) {
-            message = "Required mount VNUM missing from loaded item_proto: " +
-                      std::to_string(mountVnum);
-            return false;
-        }
-        if (proto->bSize != 1) {
-            message = "Unexpected non-single-cell mount VNUM " +
-                      std::to_string(mountVnum) + "; cannot safely auto-equip.";
-            return false;
-        }
-        if (!mountVnumsAlreadyOwned.count(mountVnum)) ++missingMounts;
-    }
-    if (missingMounts > emptyMountCells) {
-        message = "Mount inventory needs " + std::to_string(missingMounts) +
-                  " free cells but has " + std::to_string(emptyMountCells) +
-                  " (capacity " + std::to_string(mountCapacity) +
-                  " = " + std::to_string(mountWidth) + "x" +
-                  std::to_string(mountHeight) + ").";
+    if (BlocksLegacyItems(character)) {
+        message = "Automatic benchmark equipment setup is unavailable on the typed item backend.";
         return false;
     }
     // UpdateAlignment uses the real value as its authority, so a character
@@ -910,44 +859,6 @@ bool Apply(entt::entity character, int tier, std::string_view defenseWeapon,
 #else
     return fail("Baashido pet costume 88027 requires ENABLE_COSTUME_PET.");
 #endif
-    // Account mount inventory is account-shared. Add only missing VNUMs and
-    // use the inventory's no-save mode. Every inserted cell is remembered so
-    // it can be detached without deleting a live account-mount DB row.
-    for (const uint32_t mountVnum : kActiveMounts) {
-        if (!ITEM_MANAGER::instance().GetTable(mountVnum))
-            return fail("Missing active mount VNUM " + std::to_string(mountVnum));
-        bool owned = false;
-        const int capacity = mountCapacity; // Width * height, NOT height alone.
-        for (int cell = 0; cell < capacity; ++cell) {
-            const auto old = MountSystem::GetMountInventoryItem(character, cell);
-            if (ItemSystem::IsValidItem(old) && ItemSystem::GetItemVnum(old) == mountVnum) {
-                owned = true;
-                break;
-            }
-        }
-        if (owned) continue;
-        const entt::entity item = ITEM_MANAGER::instance().CreateItem(mountVnum, 1, 0, false, -1, true);
-        if (!ItemSystem::IsValidItem(item))
-            return fail("Could not create mount " + std::to_string(mountVnum));
-        // Prevent the helper's first-use initialization from writing a row.
-        // The whole item is temporary and skipSave=true.
-        ItemSystem::SetItemSocket(item, 0, static_cast<uint32_t>(time(nullptr)) + 86400 * 30, false);
-        ItemSystem::SetItemSocket(item, 1, 1, false);
-        bool added = false;
-        for (int cell = 0; cell < capacity; ++cell) {
-            if (MountSystem::IsMountInventoryPositionEmpty(character, cell, ItemSystem::GetItemSize(item)) &&
-                MountSystem::AddMountInventoryItem(character, cell, item, true)) {
-                saved.temporaryMounts.emplace_back(static_cast<uint32_t>(cell), item);
-                added = true;
-                break;
-            }
-        }
-        if (!added) {
-            ItemSystem::DestroyItemEntityEcs(item, "BENCHMARK_MOUNT_NO_SPACE");
-            return fail("Mount insertion failed despite successful capacity preflight: VNUM " +
-                        std::to_string(mountVnum) + ".");
-        }
-    }
     // The 16 real belt-family maxima are registered in the special inventory
     // range 500..659, where StatSystem::ApplyBeltPoints actually reads them.
     for (int family = 0; family < 16; ++family) {
@@ -1119,7 +1030,7 @@ bool Apply(entt::entity character, int tier, std::string_view defenseWeapon,
           << "Necromancer wing 85153: all six grade-four stole bonuses maximized. "
           << "Baashido pet costume 88027 equipped in pet-skin slot (base bonuses via EquipTo). "
           << "item_extra_proto applied by real equip logic. "
-          << "Live mount whitelist (123), 16 max belts, 7 runes and one PvP pet applied; self-buffs only.";
+          << "16 max belts, 7 runes and one PvP pet applied; self-buffs only.";
     message = reply.str();
     return true;
 }

@@ -87,7 +87,7 @@ std::vector<std::string> databaseRow;
 std::vector<std::string> queries;
 SqlParams lastParams;
 bool failQuery = false, failPayment = false;
-int nullColumn = -1, databaseRows = 1, liveResults = 0, consumed = 0, removedItems = 0;
+int nullColumn = -1, databaseRows = 1, liveResults = 0, consumed = 0;
 uint32_t nowSeconds = 2000000;
 int questDelay = 0;
 std::set<entt::entity> growthBonusOwners;
@@ -134,7 +134,7 @@ void Reset()
     computes = modifications = mobQueries = clearCalls = lastClearValue = 0;
     onCompute = {};
     failQuery = failPayment = false;
-    nullColumn = -1; databaseRows = 1; consumed = removedItems = questDelay = 0;
+    nullColumn = -1; databaseRows = 1; consumed = questDelay = 0;
     queries.clear(); lastParams.clear(); growthBonusOwners.clear();
     std::fill(std::begin(testPetExp), std::end(testPetExp), 1000u);
     databaseRow = {"grown pet","1","0","0","10","20","30","0","0","0","0","-1","0","-1","0","120","200","0","1","1000000"};
@@ -296,7 +296,6 @@ bool ConsumeItemEcs(entt::entity e, uint32_t count) {
 }
 bool DestroyItemEntityEcs(entt::entity e, const char*) {
     if (failPayment || !IsValidItem(e)) return false;
-    ++removedItems;
     g_registry.destroy(e);
     return true;
 }
@@ -818,56 +817,31 @@ void GrowthDatabaseValidation()
     NewPetSystem::Unsummon(owner, 34041);
 }
 
-void GrowthFeedAndSkillInputs()
+void GrowthSkillBookInputs()
 {
     Reset();
     const auto owner = Character(), seal = GrowthSeal(owner);
     NewPetSystem::SetUpdatePeriod(owner, 0);
+    databaseRow[7] = "1";
+    databaseRow[8] = "1";
     auto* actor = NewPetSystem::Summon(owner, 34041, seal, "", false);
-    Check(actor != nullptr, "growth feed fixture summon failed");
-    const auto food = Item(owner);
-    g_registry.get<ItemState>(food).vnum = 55001;
-    const auto cell = g_registry.get<ItemState>(food).cell;
-    for (int invalid : {-1,9,180,INT_MAX,INT_MIN}) NewPetSystem::SetItemCube(owner, invalid, cell);
-    NewPetSystem::ItemCubeFeed(owner, 1);
-    Check(g_registry.valid(food) && removedItems == 0, "out-of-bounds feed selection accepted");
-    NewPetSystem::SetItemCube(owner, 0, cell);
-    NewPetSystem::SetItemCube(owner, 1, cell);
-    failPayment = true;
-    NewPetSystem::ItemCubeFeed(owner, 1);
-    Check(g_registry.valid(food) && ItemSystem::GetItemSocket(seal, 1) == 120, "failed feed awarded duration");
-    failPayment = false;
-    NewPetSystem::SetItemCube(owner, 0, cell);
-    g_registry.destroy(food);
-    const auto replacement = Item(owner);
-    g_registry.get<ItemState>(replacement).cell = cell;
-    g_registry.get<ItemState>(replacement).vnum = 55001;
-    NewPetSystem::ItemCubeFeed(owner, 1);
-    Check(g_registry.valid(replacement), "stale feed consumed a replacement entity");
-    NewPetSystem::SetItemCube(owner, 0, cell);
-    NewPetSystem::ItemCubeFeed(owner, 1);
-    NewPetSystem::UpdateTime(owner, true);
-    Check(!g_registry.valid(replacement) && removedItems == 1 && ItemSystem::GetItemSocket(seal, 1) == 200,
-        "valid growth feeding did not cap duration");
+    Check(actor != nullptr, "growth skill fixture summon failed");
     const auto book = Item(owner);
     auto& material = g_registry.get<ItemState>(book);
     material.proto.bType = ITEM_TYPE_PET; material.proto.alValues[0] = 1; material.count = 5;
-    for (int invalid : {-1,4,INT_MAX,INT_MIN})
-        Check(!NewPetSystem::IncreasePetSkill(owner, invalid, material.cell), "invalid skill slot accepted");
-    failPayment = true;
-    Check(!NewPetSystem::IncreasePetSkill(owner, 0, material.cell) && consumed == 0, "failed skill payment advanced skill");
-    failPayment = false;
-    Check(NewPetSystem::IncreasePetSkill(owner, 0, material.cell) && consumed == 1, "native skill learning failed");
-    Check(!NewPetSystem::IncreasePetSkill(owner, 1, material.cell) && consumed == 1, "duplicate growth skill accepted");
     material.owner = Character();
-    Check(!NewPetSystem::IncreasePetSkillByBook(owner, book) && consumed == 1, "foreign owner's book consumed");
+    Check(!NewPetSystem::IncreasePetSkillByBook(owner, book) && consumed == 0, "foreign owner's book consumed");
     material.owner = owner;
     material.locked = true;
-    Check(!NewPetSystem::IncreasePetSkillByBook(owner, book) && consumed == 1, "locked skill book consumed");
-    NewPetSystem::DoPetSkill(owner, INT_MAX);
-    NewPetSystem::DoPetSkill(owner, -1);
+    Check(!NewPetSystem::IncreasePetSkillByBook(owner, book) && consumed == 0, "locked skill book consumed");
+    material.locked = false;
+    failPayment = true;
+    Check(!NewPetSystem::IncreasePetSkillByBook(owner, book) && consumed == 0, "failed skill payment consumed a book");
+    failPayment = false;
+    Check(!NewPetSystem::IncreasePetSkillByBook(owner, book) && consumed == 1 && actor->skill[0] == 1,
+        "failed skill roll changed rank or did not consume a book");
     NewPetSystem::Unsummon(owner, 34041);
-    Check(databaseRow[7] == "1" && databaseRow[8] == "1", "learned skill not persisted");
+    Check(databaseRow[7] == "1" && databaseRow[8] == "1", "failed skill study changed the persisted skill");
 }
 
 void GrowthStaleAndMultiple()
@@ -941,8 +915,6 @@ void GrowthRecycledSealAndNullOwner()
     Reset();
     NewPetSystem::SetUpdatePeriod(entt::null, 0);
     NewPetSystem::ChangeName(entt::null, "Pet");
-    NewPetSystem::SetItemCube(entt::null, INT_MIN, INT_MAX);
-    NewPetSystem::ItemCubeFeed(entt::null, 1);
     NewPetSystem::RefreshBuff(entt::null);
     NewPetSystem::UpdatePetSkin(entt::null);
     Check(!NewPetSystem::Mount(entt::null, 34041)
@@ -1045,7 +1017,7 @@ int main()
         PetDeathOptionsAndSkinFailure();
         GrowthLifecycleAndExpiry();
         GrowthDatabaseValidation();
-        GrowthFeedAndSkillInputs();
+        GrowthSkillBookInputs();
         GrowthStaleAndMultiple();
         GrowthRecycledSealAndNullOwner();
         Reset();

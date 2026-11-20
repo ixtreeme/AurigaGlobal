@@ -128,8 +128,6 @@ bool IsGuardNPC(entt::entity e);
 uint64_t GetSP(entt::entity e);
 int GetQuestFlag(entt::entity e, const std::string& flag);
 void SetQuestFlag(entt::entity e, const std::string& flag, int value);
-int GetPetEnchant(entt::entity e);
-void SetPetEnchant(entt::entity e, int value);
 void SetUseSeedOrMoonBottleTime(entt::entity e);
 int GetCmdAntiFloodPulse(entt::entity e);
 void SetCmdAntiFloodPulse(entt::entity e, int pulse);
@@ -260,10 +258,6 @@ bool SetQuestNPCLockOwner(entt::entity npc, entt::entity owner);
 uint32_t GetQuestBy(entt::entity e);
 bool SetQuestBy(entt::entity e, uint32_t questVnum);
 void DestroyCharacter(entt::entity e);
-#ifdef __NEWPET_SYSTEM__
-void SetEggVID(entt::entity e, int vid);
-int GetEggVID(entt::entity e);
-#endif
 #ifdef __DUNGEON_INFO_SYSTEM__
 uint64_t GetQuestDamage(entt::entity e, int race);
 // Keeps the highest hit e has dealt to a tracked dungeon boss race.

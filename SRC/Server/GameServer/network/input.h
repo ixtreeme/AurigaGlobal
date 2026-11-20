@@ -109,9 +109,6 @@ class CInputMain : public CInputProcessor
 	protected:
 		void		Attack(entt::entity character, const uint8_t header, const char* data);
 		int			Whisper(entt::entity character, const char * data, uint64_t uiBytes);
-#ifdef __NEWPET_SYSTEM__
-		void		BraveRequestPetName(entt::entity character, const char* c_pData);
-#endif
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
 		void		InventoryExpansion(entt::entity character, const char * data);
 #endif

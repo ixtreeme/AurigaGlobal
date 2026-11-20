@@ -33,7 +33,6 @@
 #include "../../item/item_manager.h"
 #include "../../core/log.h"
 #include "../../network/db.h"
-#include "../../pet/MountInventory.h"
 #include "../../item/safebox.h"
 #ifdef ENABLE_SWITCHBOT
 #include "../../social/new_switchbot.h"
@@ -2612,10 +2611,6 @@ entt::entity RemoveFromCharacter(entt::entity item)
     g_registry.get<ecs::ItemLocation>(item) = {RESERVED_WINDOW, 0};
     g_registry.get<ecs::ItemEquipped>(item) = {};
 
-    // External containers have already unpublished their slot in normal Remove/
-    // Close flows. Mount's item-based removal is idempotent when invoked here.
-    if (oldPosition.window_type == MOUNT_INVENTORY && g_registry.valid(owner))
-        MountSystem::RemoveMountInventoryItemByEntity(owner, item);
 #ifdef ENABLE_SWITCHBOT
     for (const auto cell : switchSlots)
         if (g_registry.valid(owner))

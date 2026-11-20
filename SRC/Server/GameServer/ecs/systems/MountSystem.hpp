@@ -31,26 +31,10 @@ void SummonCostumeMount(entt::entity rider, entt::entity mountItem, bool spawnFa
 void MountCostume(entt::entity rider, entt::entity mountItem);
 void UnmountCostume(entt::entity rider);
 void DestroyCostumeMountRuntime(entt::entity rider);
-entt::entity GetMountInventory(entt::entity rider);
+#if defined(AURIGA_LEGACY_ITEM_TESTS)
 entt::entity GetMountInventoryItem(entt::entity rider, uint32_t cell);
-bool IsMountInventoryPositionValid(entt::entity rider, uint32_t pos);
-bool IsMountInventoryPositionEmpty(entt::entity rider, uint32_t pos, uint8_t size);
-int GetMountInventorySize(entt::entity rider);
-int GetMountInventoryWidth(entt::entity rider);
-bool AddMountInventoryItem(entt::entity rider, uint32_t pos, entt::entity item,
-    bool skipSave = false);
-entt::entity RemoveMountInventoryItem(entt::entity rider, uint32_t pos,
-    bool skipDbDelete = false);
-bool RemoveMountInventoryItemByEntity(entt::entity rider, entt::entity item,
-    bool skipDbDelete = false);
-bool MoveMountInventoryItem(entt::entity rider, uint32_t from, uint32_t to);
-// Asks the database for the account mount inventory, once.
-entt::entity CreateMountInventory(entt::entity owner, uint32_t accountId,
-    uint8_t height = 16);
-void ComputeMountInventoryBonuses(entt::entity owner);
+#endif
 void UpdateMountCountOverheadToViewers(entt::entity owner);
-bool SetMountInventory(entt::entity rider, entt::entity inventory);
-void DestroyMountInventory(entt::entity rider);
 ecs::MountState& GetMountStateRef(entt::entity rider);
 uint32_t GetLastMountTime(entt::entity rider);
 uint32_t GetMyHorseVnum(entt::entity rider);

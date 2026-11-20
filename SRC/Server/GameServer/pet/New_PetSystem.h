@@ -60,14 +60,11 @@ int GetLevelStep(entt::entity owner);
 int GetNextExpFromMob(entt::entity owner);
 int ResetSkills(entt::entity owner);
 int ResetSkill(entt::entity owner, int type);
-bool IncreasePetSkill(entt::entity owner, int slot, int type);
 bool IncreasePetSkillByBook(entt::entity owner, entt::entity bookItem);
 #else
 bool IncreasePetSkill(entt::entity owner, int skill);
-#endif
-void SetItemCube(entt::entity owner, int pos, int invpos);
-void ItemCubeFeed(entt::entity owner, int type);
 void DoPetSkill(entt::entity owner, int skillslot);
+#endif
 uint32_t GetNewPetItemID(entt::entity owner);
 
 } // namespace NewPetSystem

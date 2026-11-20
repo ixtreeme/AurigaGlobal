@@ -325,7 +325,6 @@ void TeardownActor(entt::entity owner, NewPetRecord& actor, bool keepRecord)
     actor.level = 1;
     actor.levelStep = actor.expFromMob = actor.expFromItem = actor.exp = actor.expItem = 0;
     actor.timePet = actor.immTime = actor.slotImm = 0;
-    actor.feedItems.fill({});
     if (!keepRecord)
         actor = {};
 }
@@ -517,128 +516,11 @@ void SetActorExp(entt::entity owner, NewPetRecord& actor, uint32_t exp, int mode
 
 }
 
-void SetActorItemCube(entt::entity owner, NewPetRecord& actor, int pos, int invpos)
-{
-    // Client slot bounds must be checked BEFORE touching the nine-slot array.
-    if (pos < 0 || pos >= static_cast<int>(actor.feedItems.size()) || invpos < 0
-        || invpos >= INVENTORY_MAX_NUM || !NewPetSystem::HasValidSummon(owner, actor) || IsTradeWindowOpen(owner))
-        return;
-    const auto item = ItemSystem::GetInventoryItem(owner, invpos);
-    if (item == actor.summonItem || !CanUseMaterial(owner, item))
-        return;
-    for (const auto& selection : actor.feedItems)
-        if (selection.item == item)
-            return;
-    if (actor.feedItems[pos].item == entt::null)
-        actor.feedItems[pos] = { item, invpos };
-}
-
-void ActorItemCubeFeed(entt::entity owner, NewPetRecord& actor, int type)
-{
-    // Detach selections first, including rejected feeds, so stale selections
-    // cannot later consume a replacement item in the same inventory cell.
-    const auto selections = std::exchange(actor.feedItems, {});
-    if (!NewPetSystem::HasValidSummon(owner, actor) || IsTradeWindowOpen(owner) || (type != 1 && type != 3))
-        return;
-    for (const auto& selection : selections)
-    {
-        const auto item = selection.item;
-        if (!NewPetSystem::HasValidSummon(owner, actor))
-            return;
-        if (!CanUseMaterial(owner, item) || item == actor.summonItem
-            || selection.cell < 0 || ItemSystem::GetInventoryItem(owner, selection.cell) != item)
-            continue;
-        if (type == 1)
-        {
-            const auto vnum = ItemSystem::GetItemVnum(item);
-            if (!((vnum >= 55401 && vnum <= 55411) || (vnum >= 55701 && vnum <= 55711) || vnum == 55001))
-                continue;
-            const uint64_t added = vnum == 55001 ? actor.totalDuration / 2 : static_cast<uint64_t>(actor.totalDuration) * 3 / 100;
-            if (!ItemSystem::DestroyItemEntityEcs(item, "PET_CUBE_FEED"))
-                continue;
-            actor.duration = static_cast<uint32_t>(std::min<uint64_t>(actor.totalDuration, actor.duration + added));
-            ecs::ChatSystem::Send(owner, CHAT_TYPE_COMMAND, "PetDuration %u %u", actor.duration, actor.totalDuration);
-        }
-        else if (actor.level < 120 && (ItemSystem::GetItemType(item) == ITEM_WEAPON || ItemSystem::GetItemType(item) == ITEM_ARMOR))
-        {
-            const auto exp = ItemSystem::GetItemShopBuyPrice(item) / 2;
-            if (exp <= 0 || exp > UINT32_MAX)
-                continue;
-            if (ItemSystem::DestroyItemEntityEcs(item, "PET_CUBE_FEED"))
-                SetActorExp(owner, actor, exp, 1);
-        }
-    }
-}
-
-#ifdef ENABLE_NEW_PET_EDITS
-bool ActorIncreasePetSkill(entt::entity owner, NewPetRecord& actor, int iSlot, int iType)
-#else
+#ifndef ENABLE_NEW_PET_EDITS
 bool ActorIncreasePetSkill(entt::entity owner, NewPetRecord& actor, int skill)
-#endif
 {
     if (!NewPetSystem::HasValidSummon(owner, actor) || IsTradeWindowOpen(owner))
         return false;
-#ifdef ENABLE_NEW_PET_EDITS
-    if (iSlot < 0 || iSlot >= 4 || iType < 0 || iType > UINT16_MAX)
-        return false;
-    int idx = actor.skillSlot[iSlot];
-    if (idx == -1)
-        return false;
-
-    if (actor.skill[iSlot] >= 10) {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 58, "");
-#endif
-        return false;
-    }
-
-    TItemPos Cell;
-    Cell.cell = iType;
-#ifdef ENABLE_EXTRA_INVENTORY
-    Cell.window_type = EXTRA_INVENTORY;
-#else
-    Cell.window_type = INVENTORY;
-#endif
-    const entt::entity bookItem = ItemSystem::GetItem(owner, Cell);
-    if (!CanUseMaterial(owner, bookItem))
-        return false;
-
-    iType = ItemSystem::GetItemValue(bookItem, 0);
-    if ((iType > 12) || (iType < 1) || ((idx != 0) && (idx != iType)) || (ItemSystem::GetItemType(bookItem) != ITEM_TYPE_PET))
-        return false;
-
-    for (int i = 0; i < 4; i++) {
-        if ((iType == actor.skillSlot[i]) && (iSlot != i)) {
-#ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 55, "");
-#endif
-            return false;
-        }
-    }
-
-    if (!ItemSystem::ConsumeItemEcs(bookItem, 1))
-        return false;
-
-    if (idx == 0)
-        actor.skillSlot[iSlot] = iType;
-
-    actor.skill[iSlot] += 1;
-
-#ifdef TEXTS_IMPROVEMENT
-    if (actor.skill[iSlot] == 1) {
-        ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 57, "");
-    }
-    else {
-        ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 56, "%d", actor.skill[iSlot]);
-    }
-#endif
-    ecs::ChatSystem::Send(owner, CHAT_TYPE_COMMAND, "PetSkill %d %d %d", iSlot, actor.skillSlot[iSlot], actor.skill[iSlot]);
-
-    ClearBuff(owner);
-    GiveBuff(owner, actor);
-
-    return true;
-#else
     if (skill < 1 || skill > std::size(Pet_Skill_Table) || (actor.level < 80 && actor.evolution < 3))
         return false;
     for (int i = 0; i < 4; ++i)
@@ -686,8 +568,8 @@ bool ActorIncreasePetSkill(entt::entity owner, NewPetRecord& actor, int skill)
     ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 745, "");
 #endif
     return false;
-#endif
 }
+#endif
 
 #ifdef ENABLE_NEW_PET_EDITS
 bool ActorIncreasePetSkillByBook(entt::entity owner, NewPetRecord& actor, entt::entity bookItem)
@@ -963,14 +845,12 @@ void UpdateActorTime(entt::entity owner, NewPetRecord& actor, bool now)
         NewPetSystem::Unsummon(owner, actor.vnum);
 }
 
+#ifndef ENABLE_NEW_PET_EDITS
 void ActorDoPetSkill(entt::entity owner, NewPetRecord& actor, int skillslot)
 {
     if (!NewPetSystem::HasValidSummon(owner, actor) || skillslot < 0 || skillslot >= 4 || actor.skillSlot[skillslot] < 1
         || actor.skillSlot[skillslot] > std::size(Pet_Skill_Table) || actor.skill[skillslot] < 1
         || 2 + actor.skill[skillslot] >= std::size(Pet_Skill_Table[0])) return;
-#ifdef ENABLE_NEW_PET_EDITS
-    return;
-#else
     if (actor.level < 80 || actor.evolution < 3)
         return;
     switch (actor.skillSlot[skillslot])
@@ -1035,8 +915,8 @@ void ActorDoPetSkill(entt::entity owner, NewPetRecord& actor, int skillslot)
     default:
         return;
     }
-#endif
 }
+#endif
 } // namespace
 
 EVENTFUNC(newpetsystem_update_event)
@@ -1607,12 +1487,6 @@ int ResetSkill(entt::entity owner, int type)
     return actor ? ActorResetSkill(owner, *actor, type) : 2;
 }
 
-bool IncreasePetSkill(entt::entity owner, int slot, int type)
-{
-    auto* actor = FindSummonedRecord(owner);
-    return actor && ActorIncreasePetSkill(owner, *actor, slot, type);
-}
-
 bool IncreasePetSkillByBook(entt::entity owner, entt::entity bookItem)
 {
     auto* actor = FindSummonedRecord(owner);
@@ -1624,21 +1498,6 @@ bool IncreasePetSkill(entt::entity owner, int skill)
     auto* actor = FindSummonedRecord(owner);
     return actor && ActorIncreasePetSkill(owner, *actor, skill);
 }
-#endif
-
-void SetItemCube(entt::entity owner, int pos, int invpos)
-{
-    auto* actor = FindSummonedRecord(owner);
-    if (actor)
-        SetActorItemCube(owner, *actor, pos, invpos);
-}
-
-void ItemCubeFeed(entt::entity owner, int type)
-{
-    auto* actor = FindSummonedRecord(owner);
-    if (actor)
-        ActorItemCubeFeed(owner, *actor, type);
-}
 
 void DoPetSkill(entt::entity owner, int skillslot)
 {
@@ -1646,6 +1505,7 @@ void DoPetSkill(entt::entity owner, int skillslot)
     if (actor)
         ActorDoPetSkill(owner, *actor, skillslot);
 }
+#endif
 
 uint32_t GetNewPetItemID(entt::entity owner)
 {

@@ -68,7 +68,7 @@ int test_server = 0, gPlayerMaxLevel = 150, g_iStatusPointGetLevelLimit = 115;
 namespace P = ecs::PointSystem;
 namespace {
 int checks = 0, modifies = 0, packets = 0, supportLevel = 0;
-int64_t mountHP = 0;const CMob* polyPrototype=nullptr;
+const CMob* polyPrototype=nullptr;
 entt::entity connected = entt::null;
 LPDESC DescToken() { alignas(DESC) static unsigned char token[sizeof(DESC)] {}; return reinterpret_cast<LPDESC>(token); }
 std::vector<TPacketGCPointChange> pointPackets;
@@ -104,7 +104,7 @@ entt::entity Wear(entt::entity owner, int slot = WEAR_BODY) {
     g_registry.emplace<Gear>(item); equipment[{owner, slot}] = item; return item;
 }
 void Reset() {
-    g_registry.clear(); equipment.clear(); inventory.clear(); modifies = packets = supportLevel = 0; mountHP = 0;
+    g_registry.clear(); equipment.clear(); inventory.clear(); modifies = packets = supportLevel = 0;
     onItem = onAffect = onPacket = onMovement = {};
     connected = entt::null; pointPackets.clear(); pointBroadcasts = 0;
     for (auto& job : JobInitialPoints) {
@@ -198,7 +198,6 @@ void ModifyPoints(entt::entity item, bool add) {
 }
 }
 namespace MountSystem {
-void ComputeMountInventoryBonuses(entt::entity owner) { if (mountHP) P::Change(owner, POINT_MAX_HP, mountHP); }
 uint32_t GetMountVnum(entt::entity) { return 0; }
 // The point change resolved a character and did nothing without one.
 void SetMountVnum(entt::entity, uint32_t) {}
@@ -426,7 +425,7 @@ void SourceChecks() {
     g_registry.get<ecs::ItemOwner>(rune).owner = ActorEntity();
     P::Compute(e); Check(modifies == 1 && P::GetMaxHP(e) == 1270, "foreign equipment applied");
 
-    Reset(); e = ActorEntity(); const auto belt = Wear(e); equipment.clear(); mountHP = 100;
+    Reset(); e = ActorEntity(); const auto belt = Wear(e); equipment.clear();
     g_registry.get<ecs::ItemIdentity>(belt).vnum = 18000;
     auto& proto = g_registry.get<Gear>(belt).proto;
     proto.aApplies[0] = {APPLY_MAX_HP, 200}; proto.aApplies[1] = {APPLY_MAX_HP_PCT, 10};
@@ -434,10 +433,10 @@ void SourceChecks() {
     inventory[{e, BELT_INVENTORY_SLOT_START}] = belt;
     inventory[{e, BELT_INVENTORY_SLOT_START + 1}] = belt;
     for (int i = 0; i < 10; ++i) {
-        P::Compute(e); Check(P::GetMaxHP(e) == 1727 && modifies == 0, "belt/mount totals grew or duplicated");
+        P::Compute(e); Check(P::GetMaxHP(e) == 1617 && modifies == 0, "belt totals grew or duplicated");
     }
     g_registry.get<ecs::ItemIdentity>(belt).vnum = 18160;
-    P::Compute(e); Check(P::GetMaxHP(e) == 1370, "out-of-whitelist belt applied");
+    P::Compute(e); Check(P::GetMaxHP(e) == 1270, "out-of-whitelist belt applied");
 
     Reset(); e = ActorEntity(); supportLevel = 255;
     P::Compute(e); Check(P::GetMaxHP(e) == 4270 && P::Get(e, POINT_MALL_ATTBONUS) == 10, "support skill upper bound");
@@ -457,7 +456,7 @@ void SourceChecks() {
 }
 void TypedEquipmentChecks() {
     using B=auriga::item::BonusId;
-    Reset();const auto e=ActorEntity();Wear(e);mountHP=100;
+    Reset();const auto e=ActorEntity();Wear(e);
     auriga::item::EquipmentStats gear;gear.flat={20500,10000,7000,9000};gear.weapon=auriga::item::WeaponSubtype::Sword;
     gear.bonuses[unsigned(B::Strength)]=3;gear.bonuses[unsigned(B::Constitution)]=4;gear.bonuses[unsigned(B::Intelligence)]=2;
     gear.bonuses[unsigned(B::PhysicalAttackPercent)]=2500;gear.bonuses[unsigned(B::AttackSpeedPercent)]=1250;

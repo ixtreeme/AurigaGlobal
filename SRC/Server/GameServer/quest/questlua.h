@@ -20,9 +20,6 @@ namespace quest
 	extern void RegisterPartyFunctionTable();
 	extern void RegisterHorseFunctionTable();
 	extern void RegisterPetFunctionTable();
-#ifdef __NEWPET_SYSTEM__
-	extern void RegisterNewPetFunctionTable();
-#endif
 	extern void RegisterGuildFunctionTable();
 	extern void RegisterGameFunctionTable();
 	extern void RegisterArenaFunctionTable();

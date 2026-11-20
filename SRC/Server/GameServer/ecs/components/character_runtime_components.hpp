@@ -82,16 +82,4 @@ struct SyncOwned {
     std::unordered_set<entt::entity> owned;
 };
 
-struct MountInventoryRef {
-    entt::entity inventory { entt::null };
-};
-
-// Prevent duplicate account-inventory queries while the asynchronous DB
-// response is in flight.  The account id is captured so a stale response
-// cannot populate a character that has since changed accounts.
-struct MountInventoryLoadState {
-    uint32_t accountId { 0 };
-    uint64_t requestId { 0 };
-};
-
 } // namespace ecs

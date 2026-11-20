@@ -643,9 +643,6 @@ namespace quest
 #ifdef __PET_SYSTEM__
 		RegisterPetFunctionTable();
 #endif
-#ifdef __NEWPET_SYSTEM__
-		RegisterNewPetFunctionTable();
-#endif
 		RegisterITEMFunctionTable();
 		RegisterMarriageFunctionTable();
 		RegisterNPCFunctionTable();

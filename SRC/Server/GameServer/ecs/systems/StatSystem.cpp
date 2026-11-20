@@ -144,7 +144,6 @@ void Compute(entt::entity e)
 #endif
     }) ecs::PlayerRuntime::SetPart(e, part, ecs::PlayerRuntime::GetOriginalPart(e, part));
 
-    if (!HasTypedEquipment(e)) MountSystem::ComputeMountInventoryBonuses(e);
     if (!HasPointState(e)) return;
     int64_t maxHP = mobHP, maxSP = 0, maxStamina = 0;
     if (player) {

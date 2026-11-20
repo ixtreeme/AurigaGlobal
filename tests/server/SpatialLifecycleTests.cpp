@@ -49,7 +49,6 @@
 #include <stdexcept>
 #include <limits>
 #include <random>
-#include "../../SRC/Server/GameServer/pet/mount_inventory_helper.h"
 #include "../../SRC/Server/GameServer/world/map_location.h"
 #include "../../SRC/Server/GameServer/ecs/EcsDiagnostics.hpp"
 #include "../../SRC/Server/GameServer/network/desc.h"

@@ -111,31 +111,14 @@ struct HorseRider {
     entt::entity rider { entt::null };
 };
 
-// The pet enchant level, and when a seed or moon bottle was last used.
-// Both were CHARACTER fields only the item code read.
-struct PetEnchant {
-    int value { 0 };
-};
-
 struct SeedBottleTime {
     int pulse { 0 };
-};
-
-// The VID of the pet egg a player most recently requested a name for. It was
-// a field of the deleted new-pet system reference block.
-struct NewPetEggVID {
-    int vid { 0 };
 };
 
 // Authoritative runtime state for the growth ("new") pet. One record per
 // stable vnum; the spawned creature and the summon seal are entity handles.
 // The defaults mirror the deleted CNewPetActor constructor.
 struct NewPetActorState {
-    struct FeedSelection {
-        entt::entity item { entt::null };
-        int cell { -1 };
-    };
-
     uint32_t vnum { 0 };
     uint32_t options { 0 };
     entt::entity character { entt::null };
@@ -151,7 +134,6 @@ struct NewPetActorState {
     int timePet { 0 };
     int slotImm { 0 };
     uint32_t immTime { 0 };
-    std::array<FeedSelection, 9> feedItems {};
     std::array<int, 4> skill {};
     std::array<int, 4> skillSlot { -1, -1, -1, -1 };
     std::array<std::array<double, 2>, 3> bonusPet {{{ 69, 0 }, { 63, 0 }, { 119, 0 }}};

@@ -221,7 +221,8 @@ CPacketInfoCG::CPacketInfoCG()
 	Set(HEADER_CG_HACK, sizeof(TPacketCGHack), "Hack", true);
 
 #ifdef __NEWPET_SYSTEM__
-	Set(HEADER_CG_PetSetName, sizeof(TPacketCGRequestPetName), "BraveRequestPetName", true);
+	// Frame the retired packet so the legacy item boundary can reject it.
+	Set(HEADER_CG_PetSetName, sizeof(TPacketCGRequestPetName), "RetiredPetHatch", true);
 #endif
 
 	Set(HEADER_CG_MYSHOP, sizeof(TPacketCGMyShop), "MyShop", true);

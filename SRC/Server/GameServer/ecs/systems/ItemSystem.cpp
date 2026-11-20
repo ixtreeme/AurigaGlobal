@@ -57,7 +57,6 @@
 #include "../../core/dev_log.h"
 #include "../../../common/VnumHelper.h"
 #include "../../item/belt_inventory_helper.h"
-#include "../../pet/MountInventory.h"
 #include "../../item/item.h"
 #include "../../item/item_manager.h"
 #include "../../social/shop.h"

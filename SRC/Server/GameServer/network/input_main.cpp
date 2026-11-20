@@ -67,12 +67,7 @@
 #include "locale_service.h"
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/EntityFactory.hpp"
-#ifdef __NEWPET_SYSTEM__
-#include "New_PetSystem.h"
-#endif
 #include "belt_inventory_helper.h" // @fixme119
-#include "mount_inventory_helper.h"
-#include "MountInventory.h"
 #include "input.h"
 #include "input_item_helpers.hpp"
 #include "../ecs/Registry.hpp"
@@ -562,11 +557,6 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 			Hack(character, c_pData);
 			break;
 
-#ifdef __NEWPET_SYSTEM__
-		case HEADER_CG_PetSetName:
-			BraveRequestPetName(character, c_pData);
-			break;
-#endif
 		case HEADER_CG_MYSHOP:
 			if ((iExtraLen = MyShop(character, c_pData, m_iBufferLeft)) < 0)
 				return -1;

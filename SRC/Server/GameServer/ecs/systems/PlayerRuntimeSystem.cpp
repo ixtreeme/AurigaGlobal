@@ -84,7 +84,6 @@
 #include "../../social/messenger_manager.h"
 #include "../../world/mining.h"
 #include "../../entity/mob_manager.h"
-#include "../../pet/MountInventory.h"
 #include "../../pet/New_PetSystem.h"
 #include "../components/pet_mount_components.hpp"
 #include "../../pet/PetSystem.h"
@@ -674,21 +673,6 @@ void SetQuestFlag(entt::entity e, const std::string& flag, int value)
     quest::CQuestManager& q = quest::CQuestManager::instance();
     quest::PC* pPC = q.GetPC(GetPlayerID(e));
     pPC->SetFlag(flag, value);
-}
-
-int GetPetEnchant(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return 0;
-    const auto* pet = g_registry.try_get<ecs::PetEnchant>(e);
-    return pet ? pet->value : 0;
-}
-
-void SetPetEnchant(entt::entity e, int value)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return;
-    g_registry.get_or_emplace<ecs::PetEnchant>(e).value = value;
 }
 
 void SetUseSeedOrMoonBottleTime(entt::entity e)
@@ -1420,23 +1404,6 @@ void DestroyCharacter(entt::entity e)
 {
     CHARACTER_MANAGER::instance().DestroyCharacter(e);
 }
-
-#ifdef __NEWPET_SYSTEM__
-void SetEggVID(entt::entity e, int vid)
-{
-	if (e == entt::null || !g_registry.valid(e))
-		return;
-	g_registry.get_or_emplace<ecs::NewPetEggVID>(e).vid = vid;
-}
-
-int GetEggVID(entt::entity e)
-{
-	if (e == entt::null || !g_registry.valid(e))
-		return 0;
-	const auto* egg = g_registry.try_get<ecs::NewPetEggVID>(e);
-	return egg ? egg->vid : 0;
-}
-#endif
 
 #ifdef __DUNGEON_INFO_SYSTEM__
 uint64_t GetQuestDamage(entt::entity e, int race)
@@ -2807,7 +2774,6 @@ void DestroyCharacterStatePre(entt::entity character)
     ecs::PlayerRuntime::CancelCharEvent(character, ecs::PlayerRuntime::CharEvent::DestroyWhenIdle);
 
 
-    MountSystem::DestroyMountInventory(character);
 
 }
 

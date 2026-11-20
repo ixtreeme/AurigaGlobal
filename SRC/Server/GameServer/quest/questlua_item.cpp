@@ -342,43 +342,6 @@ namespace quest
 		return 0;
 	}
 
-#ifdef __NEWPET_SYSTEM__
-	ALUA (item_pet_death)
-	{
-		CQuestManager& q = CQuestManager::instance();
-		uint32_t itemid = ItemSystem::GetItemID(q.GetCurrentItemEntity());
-		if (itemid != 0)
-		{
-			char szQuery1[1024];
-			snprintf(szQuery1, sizeof(szQuery1), "SELECT duration FROM new_petsystem WHERE id = %u LIMIT 1", itemid);
-			std::unique_ptr<SQLMsg> pmsg2(DBManager::instance().DirectQuery(szQuery1));
-			if (pmsg2->Get()->uiNumRows > 0) {
-				MYSQL_ROW row = pmsg2->Get()->FetchRow();
-				lua_pushboolean(L, atoi(row[0]) <= 0);
-				return 0;
-			}
-			else{
-				lua_pushboolean(L, false);
-				sys_err("[NewPetSystem]Error no item founded!On item.pet.death");
-				return 0;
-			}
-					
-		}
-		return 0;
-	}
-
-	ALUA (item_pet_revive)
-	{
-		CQuestManager& q = CQuestManager::instance();
-		uint32_t itemid = ItemSystem::GetItemID(q.GetCurrentItemEntity());
-		if (itemid != 0)
-		{
-			DBManager::instance().Query("UPDATE new_petsystem SET duration =(tduration/2) WHERE id = %d", itemid);
-		}
-		return 0;
-	}
-#endif
-
 	ALUA(item_start_realtime_expire)
 	{
 		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
@@ -729,10 +692,6 @@ namespace quest
 			{ "get_level_limit", 				item_get_level_limit },
 			{ "start_realtime_expire", 			item_start_realtime_expire },
 			{ "copy_and_give_before_remove",	item_copy_and_give_before_remove},
-#ifdef __NEWPET_SYSTEM__
-			{ "petdeath",						item_pet_death},
-			{ "petrevive",						item_pet_revive},
-#endif		
 #ifdef ENABLE_NEWSTUFF
 			{ "get_wearflag0",			item_get_wearflag0},	// [return lua number]
 			{ "has_wearflag0",			item_has_wearflag0},	// [return lua boolean]

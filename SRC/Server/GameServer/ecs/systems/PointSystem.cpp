@@ -57,7 +57,6 @@
 #include "../../social/shop.h"
 #include "../../social/shop_manager.h"
 #include "../../item/safebox.h"
-#include "../../pet/MountInventory.h"
 #include "../../world/regen.h"
 #include "../../combat/pvp.h"
 #include "../../social/party.h"
@@ -567,7 +566,6 @@ bool SetExperienceBlocked(entt::entity e, bool blocked)
 #ifdef ENABLE_STOLE_COSTUME
 #include <common/stole_length.h>
 #endif
-#include "../../pet/mount_inventory_helper.h"
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
 #include "../../dungeon/OrcsDungeon.h"
 #include "../../dungeon/TritonTempleDungeon.h"

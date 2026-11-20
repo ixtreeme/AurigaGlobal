@@ -22,9 +22,7 @@
 #include "../../quest/questmanager.h"
 #include "../../item/item.h"
 #include "../../item/item_manager.h"
-#include "../../pet/MountInventory.h"
 #include "../../pet/AccountCollectionSystem.hpp"
-#include "../../pet/mount_inventory_helper.h"
 #include "../../pet/horsename_manager.h"
 #include "../../core/locale_service.h"
 #include "../../world/arena.h"
@@ -702,20 +700,7 @@ int GetBeltCount(entt::entity e)
 
 int GetMountCount(entt::entity e)
 {
-    if (const auto count = AccountCollectionSystem::MountCount(e))
-        return *count;
-    int mountItemCount = 0;
-    if (GetMountInventory(e) != entt::null)
-    {
-        const int total = GetMountInventoryWidth(e) * GetMountInventorySize(e);
-        for (int pos = 0; pos < total; ++pos)
-        {
-            if (GetMountInventoryItem(e, pos) != entt::null)
-                ++mountItemCount;
-        }
-    }
-
-    return mountItemCount;
+    return AccountCollectionSystem::MountCount(e);
 }
 
 void UpdateMountInventoryCountOverhead(entt::entity source, entt::entity viewerEntity)
@@ -1125,5 +1110,3 @@ void UpdatePetSkin(entt::entity e)
 } // namespace MountSystem
 
 #endif
-
-void MountSystem::ComputeMountInventoryBonuses(entt::entity) {}

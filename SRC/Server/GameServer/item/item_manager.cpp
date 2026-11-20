@@ -482,7 +482,9 @@ void ITEM_MANAGER::RemoveItem(entt::entity itemEntity, const char* reason)
 				const auto storage = SafeboxSystem::Get(owner, window);
 				return storage != entt::null ? SafeboxSystem::GetItem(storage, cell) : entt::null;
 			}
+#if defined(AURIGA_LEGACY_ITEM_TESTS)
 			if (window == MOUNT_INVENTORY) return MountSystem::GetMountInventoryItem(owner, cell);
+#endif
 			return ItemSystem::GetItem(owner, position);
 		};
 		// Never clear a foreign occupant (or its quickslot) from a stale location.
@@ -533,6 +535,7 @@ void ITEM_MANAGER::RemoveItem(entt::entity itemEntity, const char* reason)
 
 		if (!detached()) return;
 
+#if defined(AURIGA_LEGACY_ITEM_TESTS)
 		if (window == MOUNT_INVENTORY)
 		{
 			if (g_registry.valid(owner)) ecs::PointSystem::Compute(owner);
@@ -542,6 +545,7 @@ void ITEM_MANAGER::RemoveItem(entt::entity itemEntity, const char* reason)
 #endif
 			if (!detached()) return;
 		}
+#endif
 	}
 
 	DestroyItemNow(itemEntity);
@@ -608,7 +612,10 @@ void ITEM_MANAGER::DestroyItemNow(entt::entity itemEntity)
 		// Equipment locations store absolute inventory cells; GetItem's
 		// EQUIPMENT input takes a relative wear slot, so query INVENTORY here.
 		const TItemPos position(window == EQUIPMENT ? INVENTORY : window, cell);
-		if (window == SAFEBOX || window == MALL || window == MOUNT_INVENTORY ||
+		if (window == SAFEBOX || window == MALL ||
+#if defined(AURIGA_LEGACY_ITEM_TESTS)
+			window == MOUNT_INVENTORY ||
+#endif
 			ItemSystem::GetItem(owner, position) == itemEntity)
 			InventorySystem::RemoveFromCharacter(itemEntity);
 		else

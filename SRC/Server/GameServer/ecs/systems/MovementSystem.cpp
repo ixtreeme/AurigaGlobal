@@ -39,7 +39,6 @@
 #include "../../item/unique_item.h"
 #include "../../core/utils.h"
 #include "../../quest/questmanager.h"
-#include "../../pet/mount_inventory_helper.h"
 #include "../../social/party.h"
 #include "../CharacterAccessors.hpp"
 #include "../EntityFactory.hpp"
