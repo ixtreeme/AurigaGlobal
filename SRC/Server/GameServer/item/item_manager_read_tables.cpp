@@ -21,9 +21,6 @@
 #include "item_manager.h"
 
 #include <nlohmann/json.hpp>
-#ifdef __INGAME_WIKI__
-#include <common/in_game_wiki.h>
-#endif
 bool ITEM_MANAGER::ReadSpecialDropItemFile(const char * c_pszFileName)
 {
 	nlohmann::json doc;
@@ -165,21 +162,6 @@ bool ITEM_MANAGER::ReadSpecialDropItemFile(const char * c_pszFileName)
 
 					LOG_TRACE("        name {} count {} prob {} rare {}", name.c_str(), iCount, iProb, iRarePct);
 					pkGroup->AddItem(dwVnum, iCount, iProb, iRarePct);
-
-#ifdef __INGAME_WIKI__
-					auto pTableTemp = GetTable(dwVnum);
-					uint32_t addVnum = dwVnum;
-					uint32_t startRefineVnum = GetWikiItemStartRefineVnum(dwVnum);
-
-					if (pTableTemp && (pTableTemp->bType == ITEM_WEAPON || pTableTemp->bType == ITEM_ARMOR) && startRefineVnum != addVnum)
-						addVnum = (startRefineVnum != 0 ? startRefineVnum : addVnum);
-
-					CommonWikiData::TWikiItemOriginInfo origin_info;
-					origin_info.set_vnum(iVnum);
-					origin_info.set_is_mob(false);
-
-					m_itemOriginMap[addVnum].push_back(origin_info);
-#endif
 
 					// CHECK_UNIQUE_GROUP
 					if (iVnum < 30000)

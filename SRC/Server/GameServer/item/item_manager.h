@@ -186,7 +186,6 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		CommonWikiData::TWikiInfoTable*						GetItemWikiInfo(uint32_t vnum);
 		std::vector<CommonWikiData::TWikiRefineInfo>		GetWikiRefineInfo(uint32_t vnum);
 		std::vector<CSpecialItemGroup::CSpecialItemInfo>	GetWikiChestInfo(uint32_t vnum);
-		std::vector<CommonWikiData::TWikiItemOriginInfo>&	GetItemOrigin(uint32_t vnum) { return m_itemOriginMap[vnum]; }
 #endif
 		uint32_t			GetNewID();
 		bool			SetMaxItemID(TItemIDRangeTable range);
@@ -246,7 +245,6 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		int				m_iTopOfTable;
 #ifdef __INGAME_WIKI__
 		std::map<uint32_t, std::unique_ptr<CommonWikiData::TWikiInfoTable>> m_wikiInfoMap;
-		std::map<uint32_t, std::vector<CommonWikiData::TWikiItemOriginInfo>> m_itemOriginMap;
 #endif
 		ITEM_VID_MAP			m_VIDMap;
 		uint32_t				m_dwVIDCount;

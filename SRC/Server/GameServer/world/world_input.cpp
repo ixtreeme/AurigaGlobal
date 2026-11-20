@@ -184,9 +184,7 @@ void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* p
 #ifdef __INGAME_WIKI__
 void CInputMain::RecvWikiPacket(entt::entity character, const char * c_pData)
 {
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate RecvWikiPacket handler ECS
-// DUAL-PATH: legacy only during migration window
+    // Acquisition sources use the independent typed wiki request.
 	if (!ecs::PlayerRuntime::GetDesc(character))
 		return;
 
@@ -203,7 +201,6 @@ void CInputMain::RecvWikiPacket(entt::entity character, const char * c_pData)
 
 	if (pack.is_data_type(InGameWiki::LOAD_WIKI_ITEM))
 	{
-		const std::vector<CommonWikiData::TWikiItemOriginInfo>& originVec = ITEM_MANAGER::Instance().GetItemOrigin(p->vnum);
 		const std::vector<CSpecialItemGroup::CSpecialItemInfo> _gV = ITEM_MANAGER::instance().GetWikiChestInfo(p->vnum);
 		const std::vector<CommonWikiData::TWikiRefineInfo> _rV = ITEM_MANAGER::instance().GetWikiRefineInfo(p->vnum);
 		const CommonWikiData::TWikiInfoTable* _wif = ITEM_MANAGER::instance().GetItemWikiInfo(p->vnum);
@@ -211,11 +208,9 @@ void CInputMain::RecvWikiPacket(entt::entity character, const char * c_pData)
 		if (!_wif)
 			return;
 
-		const size_t origin_size = originVec.size();
 		const size_t chest_info_count = _wif->chest_info_count;
 		const size_t refine_infos_count = _wif->refine_infos_count;
 		const size_t buf_data_dize = sizeof(InGameWiki::TGCItemWikiPacket) +
-								(origin_size * sizeof(CommonWikiData::TWikiItemOriginInfo)) +
 								(chest_info_count * sizeof(CommonWikiData::TWikiChestInfo)) +
 								(refine_infos_count * sizeof(CommonWikiData::TWikiRefineInfo));
 
@@ -236,16 +231,11 @@ void CInputMain::RecvWikiPacket(entt::entity character, const char * c_pData)
 
 		InGameWiki::TGCItemWikiPacket data_packet;
 		data_packet.mutable_wiki_info(*_wif);
-		data_packet.set_origin_infos_count(origin_size);
 		data_packet.set_vnum(p->vnum);
 		data_packet.set_ret_id(p->ret_id);
 		buf.write(&data_packet, sizeof(data_packet));
 
 		{
-			if (origin_size)
-				for (int idx = 0; idx < (int)origin_size; ++idx)
-					buf.write(&(originVec[idx]), sizeof(CommonWikiData::TWikiItemOriginInfo));
-
 			if (chest_info_count > 0) {
 				for (int idx = 0; idx < (int)chest_info_count; ++idx) {
 					CommonWikiData::TWikiChestInfo write_struct(_gV[idx].vnum, _gV[idx].count);

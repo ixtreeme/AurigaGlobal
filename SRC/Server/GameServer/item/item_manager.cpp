@@ -1208,9 +1208,6 @@ CommonWikiData::TWikiInfoTable* ITEM_MANAGER::GetItemWikiInfo(uint32_t vnum)
 		return nullptr;
 
 	auto newTable = new CommonWikiData::TWikiInfoTable();
-	newTable->is_common = false;
-
-	newTable->origin_vnum = 0;
 	newTable->chest_info_count = 0;
 	m_wikiInfoMap.insert(std::make_pair(vnum, std::unique_ptr<CommonWikiData::TWikiInfoTable>(newTable)));
 
