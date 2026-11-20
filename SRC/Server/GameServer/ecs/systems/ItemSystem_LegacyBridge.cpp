@@ -796,61 +796,6 @@ bool ItemSystem::GiveItemFromSpecialItemGroup(entt::entity e, uint32_t dwGroupNu
 	return bSuccess;
 }
 
-bool ItemSystem::DestroyItem(entt::entity e, TItemPos Cell)
-{
-	if (!ecs::IsCharacter(e))
-		return false;
-
-	entt::entity item = entt::null;
-	if (!InventorySystem::CanHandleItems(e)) {
-#ifdef TEXTS_IMPROVEMENT
-#endif
-
-		return false;
-	}
-
-	if (CombatSystem::IsDead(e))
-		return false;
-
-	if (!InventorySystem::IsValidItemPosition(e, Cell) || !ItemSystem::IsValidItem(item = ItemSystem::GetItem(e, Cell)))
-		return false;
-
-	if (ItemSystem::IsItemEquipped(item))
-		return false;
-
-	if (ItemSystem::IsItemExchanging(item))
-		return false;
-
-	if (true == ItemSystem::IsItemLocked(item))
-		return false;
-
-	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(e))->IsRunning() == true)
-		return false;
-
-	if ((ItemSystem::GetItemVnum(item) >= 55701) && (ItemSystem::GetItemVnum(item) <= 55711)) {
-		if (ItemSystem::GetItemSocket(item, 0) != 0)
-			return false;
-	}
-
-#ifdef ENABLE_EXTRA_INVENTORY
-	if (ItemSystem::IsExtraItem(item)) {
-		InventorySystem::SyncQuickslot(e, QUICKSLOT_TYPE_ITEM_EXTRA, Cell.cell, 255);
-	}
-	else {
-		InventorySystem::SyncQuickslot(e, QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
-	}
-#else
-	InventorySystem::SyncQuickslot(e, QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
-#endif
-
-
-#ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 47, "%s", ItemSystem::GetItemName(item));
-#endif
-	ITEM_MANAGER::instance().RemoveItem(item, "DESTROY");
-	return true;
-}
-
 // The quest flag holding when this player last changed an item attribute.
 static const char kLastChangeItemAttrFlag[] = "Item.LastChangeItemAttr";
 // const char CHARACTER::msc_szChangeItemAttrCycleFlag[] = "change_itemattr_cycle";

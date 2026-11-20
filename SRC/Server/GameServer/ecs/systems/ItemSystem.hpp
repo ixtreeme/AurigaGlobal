@@ -144,8 +144,6 @@ StackMergeResult MergeItemStacksEcs(entt::entity owner, entt::entity source,
 entt::entity MergeItemIntoInventoryEcs(entt::entity owner, entt::entity item);
 bool ConsumeItemEcs(entt::entity item, uint32_t amount = 1);
 bool DestroyItemEntityEcs(entt::entity item, const char* reason = nullptr);
-// The player destroys the item in a cell of their own, or hands it to victim.
-bool DestroyItem(entt::entity e, TItemPos Cell);
 // The player drops an inventory item (all of it when bCount is 0), or gold.
 bool DropItem(entt::entity e, TItemPos Cell,
 #ifdef ENABLE_NEW_STACK_LIMIT
@@ -370,7 +368,6 @@ struct SpecialItemGroupResult {
 SpecialItemGroupResult GiveItemFromSpecialItemGroup(entt::entity e, uint32_t groupNum);
 bool GiveItemFromSpecialItemGroup(entt::entity e, uint32_t groupNum, std::vector<uint32_t>& itemVnums,
     std::vector<uint32_t>& itemCounts, std::vector<entt::entity>& itemEntities, int& count);
-void ItemDivision(entt::entity e, TItemPos cell);
 
 // Slice E - shop / trade / refine
 struct RefineInput {

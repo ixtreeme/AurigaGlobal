@@ -262,64 +262,9 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 			Position(character, c_pData);
 			break;
 
-		case HEADER_CG_ITEM_USE:
-			if (!ecs::PlayerRuntime::IsObserverMode(character))
-				ItemUse(character, c_pData);
-			break;
-
-		case HEADER_CG_ITEM_DROP:
-			if (!ecs::PlayerRuntime::IsObserverMode(character))
-			{
-				ItemDrop(character, c_pData);
-			}
-			break;
-
-#ifdef ENABLE_ACCE_SYSTEM
-		case HEADER_CG_ACCE:
-			Acce(character, c_pData);
-			break;
-#endif
-
-		case HEADER_CG_ITEM_DROP2:
-			if (!ecs::PlayerRuntime::IsObserverMode(character))
-				ItemDrop2(character, c_pData);
-			break;
-		case HEADER_CG_ITEM_DESTROY:
-			if (!ecs::PlayerRuntime::IsObserverMode(character))
-				ItemDestroy(character, c_pData);
-			break;
-		case HEADER_CG_ITEM_DIVISION:
-			{
-				if (!ecs::PlayerRuntime::IsObserverMode(character))
-					ItemDivision(character, c_pData);
-			}
-			break;
-		case HEADER_CG_ITEM_MOVE:
-			if (!ecs::PlayerRuntime::IsObserverMode(character))
-				ItemMove(character, c_pData);
-			break;
-
-
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-		case ENVANTER_BLACK:
-			if (!ecs::PlayerRuntime::IsObserverMode(character))
-				InventoryExpansion(character, c_pData);
-		break;
-#endif
-
 		case HEADER_CG_ITEM_PICKUP:
 			if (!ecs::PlayerRuntime::IsObserverMode(character))
 				ItemPickup(character, c_pData);
-			break;
-
-		case HEADER_CG_ITEM_USE_TO_ITEM:
-			if (!ecs::PlayerRuntime::IsObserverMode(character))
-				ItemToItem(character, c_pData);
-			break;
-
-		case HEADER_CG_ITEM_GIVE:
-			if (!ecs::PlayerRuntime::IsObserverMode(character))
-				ItemGive(character, c_pData);
 			break;
 
 		case HEADER_CG_EXCHANGE:
@@ -560,10 +505,6 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		case HEADER_CG_MYSHOP:
 			if ((iExtraLen = MyShop(character, c_pData, m_iBufferLeft)) < 0)
 				return -1;
-			break;
-
-		case HEADER_CG_REFINE:
-			Refine(character, c_pData);
 			break;
 
 #ifdef ENABLE_WHISPER_ADMIN_SYSTEM

@@ -3460,10 +3460,4 @@ SpecialItemGroupResult GiveItemFromSpecialItemGroup(entt::entity e, uint32_t gro
     return result;
 }
 
-void ItemDivision(entt::entity e, TItemPos cell)
-{
-    (void)e;
-    (void)cell;
-}
-
 } // namespace ItemSystem

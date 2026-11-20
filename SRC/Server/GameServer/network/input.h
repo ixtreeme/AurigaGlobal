@@ -109,18 +109,8 @@ class CInputMain : public CInputProcessor
 	protected:
 		void		Attack(entt::entity character, const uint8_t header, const char* data);
 		int			Whisper(entt::entity character, const char * data, uint64_t uiBytes);
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-		void		InventoryExpansion(entt::entity character, const char * data);
-#endif
 		int			Chat(entt::entity character, const char * data, uint32_t uiBytes);
-		void		ItemUse(entt::entity character, const char * data);
-		void		ItemDrop(entt::entity character, const char * data);
-		void		ItemDrop2(entt::entity character, const char * data);
-		void		ItemDestroy(entt::entity character, const char * data);
-		void		ItemDivision(entt::entity character, const char * data);
-		void		ItemMove(entt::entity character, const char * data);
 		void		ItemPickup(entt::entity character, const char * data);
-		void		ItemToItem(entt::entity character, const char * pcData);
 		void		QuickslotAdd(entt::entity character, const char * data);
 		void		QuickslotDelete(entt::entity character, const char * data);
 		void		QuickslotSwap(entt::entity character, const char * data);
@@ -164,16 +154,11 @@ class CInputMain : public CInputProcessor
 		void		AnswerMakeGuild(entt::entity character, const char* c_pData);
 
 		void		Fishing(entt::entity character, const char* c_pData);
-		void		ItemGive(entt::entity character, const char* c_pData);
 		void		Hack(entt::entity character, const char * c_pData);
 		int			MyShop(entt::entity character, const char * c_pData, size_t uiBytes);
 
 
 
-		void		Refine(entt::entity character, const char* c_pData);
-#ifdef ENABLE_ACCE_SYSTEM
-		void		Acce(entt::entity character, const char* c_pData);
-#endif
 #ifdef ENABLE_MAP_TELEPORTER
 		void		MapTeleporter(entt::entity character, TPacketCGMapTeleporter* pPack);
 #endif
