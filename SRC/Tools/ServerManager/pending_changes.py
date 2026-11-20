@@ -5,8 +5,8 @@ from PySide6.QtCore import QLockFile,QObject,Signal
 import backend as api
 import change_review as review
 
-CATALOG_KINDS={'catalog_edit','catalog_socket_edit','catalog_pet_chest'}
-ITEM_OPERATIONS={'item','pet_chest'}
+CATALOG_KINDS={'catalog_edit','catalog_socket_edit','catalog_pet_chest','catalog_pet_evolution'}
+ITEM_OPERATIONS={'item','pet_chest','pet_evolution'}
 SQL_KINDS={'item','container','bulk_rewards','mob_drop','mob_drop_delete'} | CATALOG_KINDS
 PENDING={'staged','approved','publishing','unconfirmed'}
 _models={}
@@ -77,14 +77,22 @@ def compile_catalog(before,operations):
         for base in model.tables['item_base']:
             category=base['category_id'];packet['sequences'][category]=str(max(int(packet['sequences'][category]),int(base['local_id'])+1))
     pet_chests=[op for op in operations if op['type']=='pet_chest']
+    pet_evolutions=[op for op in operations if op['type']=='pet_evolution']
+    if pet_chests or pet_evolutions:
+        packet['tables']=catalog.copy_tables(packet['tables'])
+        packet['columns']=dict(packet['columns'])
+        packet['sequences']=dict(packet['sequences'])
     if pet_chests:
         from pet_chest_catalog import add_pet_chest
         if len(pet_chests)!=1:raise api.EditorError('A petláda csak egy közös tervezetben tölthető fel.')
         chest=pet_chests[0]
-        packet['tables']=catalog.copy_tables(packet['tables'])
-        packet['sequences']=dict(packet['sequences'])
         add_pet_chest(packet,chest['rules'],chest['first_seal'])
-    source=read_model(before) if model is None and not pet_chests else catalog.Catalog(packet,live_drops=True)
+    if pet_evolutions:
+        from pet_evolution_catalog import add_pet_evolution
+        if len(pet_evolutions)!=1:raise api.EditorError('A petfejlesztés csak egy közös tervezetben tölthető fel.')
+        evolution=pet_evolutions[0]
+        add_pet_evolution(packet,evolution['families'],evolution['recipes'])
+    source=read_model(before) if model is None and not (pet_chests or pet_evolutions) else catalog.Catalog(packet,live_drops=True)
     live=copy.copy(source);live.tables=dict(source.tables)
     for name in ('mob_drop_group','mob_drop_entry'):live.tables[name]=list(source.tables[name])
     for op in operations:
@@ -268,10 +276,10 @@ class PendingChanges(QObject):
                     if a.loot(key)!=b.loot(key):operations.append(dict(type='container',key=list(key),document=b.loot(key),slot='container:%d:%d'%key,name=item_name(base)))
         target_rows={}
         if operations and all(op['type']=='item' for op in operations):
-            combined={e['body']['payload']['operation']['slot']:e['body']['payload']['operation'] for e in self.catalog_entries()}
+            combined={e['body']['payload']['operation']['slot']:e['body']['payload']['operation'] for e in self.catalog_entries(include_pet_evolution=False)}
             combined.update({op['slot']:op for op in operations});compile_catalog(baseline,list(combined.values()))
         if any(op['type']!='item' for op in operations):
-            combined={e['body']['payload']['operation']['slot']:e['body']['payload']['operation'] for e in self.catalog_entries()}
+            combined={e['body']['payload']['operation']['slot']:e['body']['payload']['operation'] for e in self.catalog_entries(include_pet_evolution=False)}
             combined.update({op['slot']:op for op in operations})
             item_ops=[op for op in combined.values() if op['type']=='item'];reference=compile_catalog(baseline,item_ops) if item_ops else baseline
             effective=compile_catalog(baseline,list(combined.values()))
@@ -296,10 +304,12 @@ class PendingChanges(QObject):
         if result is None:raise api.EditorError('Nincs ideiglenesen mentendő módosítás.')
         return result
 
-    def catalog_entries(self):return [e for e in self.entries() if e['body']['kind'] in CATALOG_KINDS]
+    def catalog_entries(self,*,include_pet_evolution=True):
+        return [e for e in self.entries() if e['body']['kind'] in CATALOG_KINDS
+                and (include_pet_evolution or e['body']['kind']!='catalog_pet_evolution')]
 
     def overlay_packet(self,packet):
-        entries=self.catalog_entries()
+        entries=self.catalog_entries(include_pet_evolution=False)
         if not entries:return packet.get('_pending_base',packet)
         key=(review.encoded(review.scope(self.owner)),self.revision)
         if key not in self.overlay_cache:
@@ -322,7 +332,7 @@ class PendingChanges(QObject):
         entries=[e for e in self.entries() if e['id'] in identities]
         if any(e['state']!='staged' for e in entries):raise api.EditorError('Bizonytalan feltöltést előbb ellenőrizni kell a szerveren. Nem törölhető függő szerkesztésként.')
         # Verify remaining dependent drafts before removing their prerequisites.
-        remaining=[e for e in self.catalog_entries() if e['id'] not in identities]
+        remaining=[e for e in self.catalog_entries(include_pet_evolution=False) if e['id'] not in identities]
         if remaining:compile_catalog(self.baseline(remaining),[e['body']['payload']['operation'] for e in remaining])
         old=self.index;self.index=[r for r in self.index if r['id'] not in identities]
         try:self.save_index()
@@ -337,18 +347,29 @@ class PendingChanges(QObject):
     def rebase_remaining(self,packet):
         entries=self.catalog_entries()
         if not entries:return
-        compile_catalog(packet,[e['body']['payload']['operation'] for e in entries])
+        editor_entries=self.catalog_entries(include_pet_evolution=False)
+        if editor_entries:compile_catalog(packet,[e['body']['payload']['operation'] for e in editor_entries])
         for e in entries:
             if e['state']!='staged':continue
             payload=dict(e['body']['payload'],before=packet)
             self.put(e['body']['title'],e['body']['kind'],payload,e['body']['rows'])
 
+    def publication_baseline(self, entries):
+        import item_catalog as catalog
+        from pet_evolution_catalog import V56, is_empty_schema_upgrade
+        before=self.baseline(entries);current=catalog.request(self.owner.root)
+        if any(e['body']['kind']=='catalog_pet_evolution' for e in entries) and current['tables']['catalog_format']!=V56:
+            raise api.EditorError('A petfejlesztési tervezet megmaradt. Feltöltéséhez az 56-os tárgykatalógus szükséges.')
+        old_live,new_live=before['live_drops'],current['live_drops']
+        if current['hash']==before['hash'] and new_live['hash']==old_live['hash'] and new_live['release']==old_live['release']:
+            return current
+        if is_empty_schema_upgrade(before,current):
+            return current
+        raise api.EditorError('Az éles katalógus vagy dropverzió megváltozott a tervezés óta. A függő csomag nem tölthető fel erre az állapotra.')
+
     def publish_catalog(self,entries):
         import item_catalog as catalog
-        from reward_catalog import Rewards
-        before=self.baseline(entries);current=catalog.request(self.owner.root)
-        if current['hash']!=before['hash'] or current.get('live_drops',{}).get('release')!=before.get('live_drops',{}).get('release'):
-            raise api.EditorError('Az éles katalógus vagy dropverzió megváltozott a tervezés óta. A függő csomag nem tölthető fel erre az állapotra.')
+        before=self.publication_baseline(entries);current=before
         ops=[e['body']['payload']['operation'] for e in entries];after=compile_catalog(before,ops)
         if any(op['type'] in ITEM_OPERATIONS for op in ops) and any(op['type'] not in ITEM_OPERATIONS for op in ops):
             import secrets

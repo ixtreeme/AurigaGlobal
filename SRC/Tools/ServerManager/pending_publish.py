@@ -54,17 +54,15 @@ class PendingPublisher(QObject):
             raise api.EditorError('A teljes visszaállítást külön hagyd jóvá, mert felülírhatja a többi szerkesztés célját. Jelöld ki csak a visszaállítást.')
         sql=[e for e in entries if e['body']['kind'] in CATALOG_KINDS]
         if sql:
-            before=self.queue.baseline(sql);ops=[e['body']['payload']['operation'] for e in sql]
+            ops=[e['body']['payload']['operation'] for e in sql]
             if state.get('running') and any(op['type'] in ITEM_OPERATIONS for op in ops):raise api.EditorError('A tervezetek megmaradtak. A tárgydefiníciók feltöltése előtt állítsd le a játékszervert; a dropok önállóan élőben feltölthetők.')
-            current=catalog.request(self.owner.root)
-            if current['hash']!=before['hash'] or current['live_drops']['hash']!=before['live_drops']['hash'] or current['live_drops']['release']!=before['live_drops']['release']:
-                raise api.EditorError('Az éles tárgy- vagy dropadatok megváltoztak a tervezet óta. Egyetlen változtatást sem töltöttünk fel.')
+            before=self.queue.publication_baseline(sql)
             after=compile_catalog(before,ops);model=catalog.Catalog(after,live_drops=True);rewards=Rewards(after)
             for base in rewards.containers():
                 key=(int(base['category_id']),int(base['local_id']))
                 if key in rewards.overrides:
                     doc=model.item(key);doc['loot']=rewards.loot(key);model.apply(doc,key,encode_result=False)
-            catalog.run_tool(dict(action='validate',tables=model.encode()),before['columns'])
+            catalog.run_tool(dict(action='validate',tables=model.encode()),after['columns'])
         for e in entries:
             body,status=e['stage'].read();data=body['payload'];kind=body['kind']
             if status['state']!='staged' or not review.Stage.matches(self.owner,body):raise api.EditorError('A jóváhagyott csomag időközben megváltozott.')

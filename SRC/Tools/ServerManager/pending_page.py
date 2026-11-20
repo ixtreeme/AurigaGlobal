@@ -79,7 +79,8 @@ class PendingPage(QWidget):
         for i,row in enumerate(rows):
             for j,value in enumerate(row):cell=QTableWidgetItem(str(value));cell.setToolTip(str(value));self.details.setItem(i,j,cell)
         idle=not self.owner.busy();ready=all(e['state']=='staged' and e['scope']==review.scope(self.owner) for e in selected)
-        self.open_button.setEnabled(idle and len(selected)==1 and ready);self.discard_button.setEnabled(idle and bool(selected) and ready)
+        can_edit=len(selected)==1 and selected[0]['body']['kind']!='catalog_pet_evolution'
+        self.open_button.setEnabled(idle and can_edit and ready);self.discard_button.setEnabled(idle and bool(selected) and ready)
         self.selected_button.setEnabled(idle and bool(selected) and ready);self.approve_button.setEnabled(idle and bool(self.queue.entries()) and all(e['state']=='staged' for e in self.queue.entries()))
         self.check_button.setEnabled(idle and any(e['state']!='staged' for e in selected));self.refresh_button.setEnabled(idle)
 
@@ -102,6 +103,7 @@ class PendingPage(QWidget):
         selected=self.selected()
         if len(selected)!=1 or self.owner.busy():return
         e=selected[0];body=e['body'];data=body['payload'];kind=body['kind']
+        if kind=='catalog_pet_evolution':return
         if kind=='file':
             relative=data['relative'];editor=self.owner.config_editor if relative=='server.json' else self.owner.quest_page.editor if relative.startswith('data/quest/') else self.owner.data_page.editor
             page=1 if relative=='server.json' else 3 if relative.startswith('data/quest/') else 2

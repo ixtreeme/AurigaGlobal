@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "stages": [
+    {
+      "level": 40,
+      "ingredients": {
+        "material.atokkonyv": 10,
+        "material.feher_gyongy": 10,
+        "material.aqua_gyongy": 3
+      }
+    },
+    {
+      "level": 60,
+      "ingredients": {
+        "material.holtak_konyve": 10,
+        "material.kek_gyongy": 10,
+        "material.zold_gyongy": 3
+      }
+    },
+    {
+      "level": 80,
+      "ingredients": {
+        "material.elet_konyve": 10,
+        "material.vervoros_gyongy": 10,
+        "material.lila_gyongy": 3
+      }
+    }
+  ]
+}
