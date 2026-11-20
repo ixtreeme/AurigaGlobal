@@ -121,10 +121,9 @@ const uint32_t party_exp_distribute_table[PLAYER_EXP_TABLE_MAX + 1] {};
 const int* aiPercentByDeltaLev = nullptr;
 const int* aiPercentByDeltaLevForBoss = nullptr;
 const int aiExpLossPercents[PLAYER_EXP_TABLE_MAX + 1] {};
-const SStoneDropInfo aStoneDrop[STONE_INFO_MAX_NUM] {};
 int test_server = 0, g_bItemCountLimit = 0;
 uint8_t g_bChannel = 1;
-bool g_bSkillDisable = false, g_NoDropMetinStone = false;
+bool g_bSkillDisable = false;
 int passes_per_sec = 25;
 namespace C = CombatSystem;
 namespace {
@@ -595,8 +594,7 @@ int CHARACTER_MANAGER::GetMobExpRate(entt::entity) { UnexpectedService(__func__)
 int CHARACTER_MANAGER::GetUserDamageRate(entt::entity) { UnexpectedService(__func__); }
 event_struct_ const * CHARACTER_MANAGER::CheckEventIsActive(unsigned char,unsigned char) { UnexpectedService(__func__); }
 entt::entity ITEM_MANAGER::CreateItem(unsigned int,unsigned int,unsigned int,bool,int,bool) { UnexpectedService(__func__); }
-bool ITEM_MANAGER::CreateDropItem(entt::entity,entt::entity,std::vector<entt::entity,std::allocator<entt::entity> > &,int,int,bool) { UnexpectedService(__func__); }
-bool ITEM_MANAGER::GetDropPct(entt::entity,entt::entity,int&,int&) { UnexpectedService(__func__); }
+bool ITEM_MANAGER::GetDropPct(entt::entity,entt::entity,double&,int&) { UnexpectedService(__func__); }
 auriga::item::MobDropContext MakeTypedMobDropContext(entt::entity, entt::entity) { UnexpectedService(__func__); }
 std::vector<auriga::item::MobDrop> RollTypedMobDrops(const auriga::item::MobDropContext&) { UnexpectedService(__func__); }
 void QueueTypedItemGrant(entt::entity,const auriga::item::ItemGrant&) { UnexpectedService(__func__); }
@@ -1143,47 +1141,6 @@ void FlyTargetChecks() {
     Check(!C::Shoot(entt::null, 0), "the null handle fired");
 }
 
-// The metin stone a monster is carrying, rolled once when it is set up and
-// read again by the drop tables when it dies. It was two CHARACTER fields with
-// inline getters; the roll and both reads share one component now. The fixture
-// table is all zeroes, so race 0 is the entry that matches and any other race
-// misses - which is the half that matters here.
-void MetinStoneDropChecks() {
-    Reset();
-    const auto mob = Actor();
-
-    Check(!C::GetDropMetinStoneVnum(mob) && !C::GetDropMetinStonePct(mob),
-        "a monster carries a stone before it was rolled");
-
-    g_registry.get<BattleFixture>(mob).race = 4711;
-    C::DetermineDropMetinStone(mob);
-    Check(!C::GetDropMetinStoneVnum(mob), "a race outside the table was given a stone");
-
-    g_registry.get<BattleFixture>(mob).race = 0;
-    C::DetermineDropMetinStone(mob);
-    const uint32_t rolled = C::GetDropMetinStoneVnum(mob);
-    Check(rolled != 0, "a race inside the table was given no stone");
-
-    // Rolling again replaces the result. The level loop adds to the vnum it
-    // picked, so an assignment turned into an accumulation would climb here
-    // and nowhere else.
-    C::DetermineDropMetinStone(mob);
-    Check(C::GetDropMetinStoneVnum(mob) == rolled, "re-rolling accumulated instead of replacing");
-
-    // The switch that turns stone drops off server-wide.
-    g_NoDropMetinStone = true;
-    C::DetermineDropMetinStone(mob);
-    Check(!C::GetDropMetinStoneVnum(mob), "stone drops stayed on while disabled");
-    g_NoDropMetinStone = false;
-
-    const auto retired = Actor();
-    g_registry.destroy(retired);
-    C::DetermineDropMetinStone(retired);
-    Check(!C::GetDropMetinStoneVnum(retired) && !C::GetDropMetinStonePct(retired),
-        "a destroyed monster carried a stone");
-    Check(!C::GetDropMetinStoneVnum(entt::null), "the null handle carried a stone");
-}
-
 void DeathStateChecks() {
     Reset();
     const auto member = Actor();
@@ -1318,7 +1275,7 @@ int main() {
         ZeroExpKillCreditChecks();
         NativeSPRecoveryChecks(); AlignmentChecks(); CallbackChecks(); ModeChecks(); MultiplierAndValidityChecks();
         BattleTargetChecks(); AggroSwitchChecks(); AttackHandleChecks();
-        DeathHandleChecks(); StoneOwnershipChecks(); DeathStateChecks(); LivenessChecks(); FlyTargetChecks(); MetinStoneDropChecks(); BattleMathChecks(); TypedPolymorphDamageChecks(); BattleAffectChecks(); AttackAuditChecks(); InteractionCounterChecks();
+        DeathHandleChecks(); StoneOwnershipChecks(); DeathStateChecks(); LivenessChecks(); FlyTargetChecks(); BattleMathChecks(); TypedPolymorphDamageChecks(); BattleAffectChecks(); AttackAuditChecks(); InteractionCounterChecks();
         std::cout << "Combat state checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

@@ -1,7 +1,6 @@
 #include "../../SRC/Server/GameServer/core/stdafx.h"
 #include "../../SRC/Server/GameServer/core/utils.h"
 #include "../../SRC/Server/GameServer/item/item_manager.h"
-#include "../../SRC/Server/GameServer/item/ItemCatalogRuntime.hpp"
 #include "../../SRC/Server/GameServer/item/item.h"
 #include "../../SRC/Server/GameServer/entity/char.h"
 #include "../../SRC/Server/GameServer/item/safebox.h"
@@ -17,15 +16,12 @@
 #include "../../SRC/Server/GameServer/item/blend_item.h"
 #include "../../SRC/Server/GameServer/item/unique_item.h"
 #include "../../SRC/Server/GameServer/item/refine.h"
-#include "../../SRC/Server/GameServer/item/item_manager_private_types.h"
 #include "../../SRC/Server/GameServer/ecs/EntityFactory.hpp"
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/InventorySystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MountSystem.hpp"
 #include <Core/Logging.hpp>
@@ -46,9 +42,6 @@ bool rejectFactory = false;
 bool rejectDetach = false;
 bool creationTest = false, rejectAllocation = false, rejectCount = false;
 bool persistenceTest = false;
-bool dropPreviewTest = false;
-bool typedDropsTest = false; // items.drops = "typed" (C7b-3)
-struct PreviewMob { bool stone; uint32_t race; };
 std::vector<uint8_t> persistedHeaders;
 std::vector<std::vector<uint8_t>> persistedPayloads;
 bool rejectRune = false, rejectTimer = false, blendExists = false;
@@ -76,10 +69,6 @@ const TItemTable& Proto(entt::entity item) {
 struct Player {};
 class Manager : public ITEM_MANAGER {
 public:
-    void DropGroups(uint32_t race, CDropItemGroup* drop, CMobItemGroup* kill) {
-        m_map_pkDropItemGroup[race] = drop;
-        m_map_pkMobItemGroup[race] = kill;
-    }
     void Prototype(TItemTable proto) { m_vec_prototype = {proto}; }
     TItemTable& Prototype() { return m_vec_prototype.front(); }
     void VID(uint32_t value) { m_dwVIDCount = value; }
@@ -102,7 +91,6 @@ public:
     ~Manager() { m_VIDMap.clear(); m_map_pkItemByID.clear(); m_set_pkItemForDelayedSave.clear(); }
 };
 void Reset() {
-    dropPreviewTest = false; typedDropsTest = false;
     persistenceTest = false; db_clientdesc = nullptr; persistedHeaders.clear(); persistedPayloads.clear();
     onCreation = {}; creationTest = rejectAllocation = rejectCount = false;
     rejectRune = rejectTimer = blendExists = highDraw = false;
@@ -267,31 +255,25 @@ const int* aiPercentByDeltaLev = nullptr;
 const int* aiPercentByDeltaLevForBoss = nullptr;
 int test_server = 0;
 int g_bItemCountLimit = 200;
-std::vector<CItemDropInfo> g_vec_pkCommonDropItem[MOB_RANK_MAX_NUM];
 int MAX(int, int) { Unexpected(); }
 int MINMAX(int, int, int) { Unexpected(); }
 int number_ex(int low, int high, const char*, int) { Check(creationTest && low <= high, "invalid creation RNG"); return highDraw ? high : low; }
 time_t get_global_time() { Check(creationTest, "unexpected clock"); return 10000; }
 const char* get_table_postfix() { Unexpected(); }
-bool AffectSystem::IsPolymorphed(entt::entity) { Check(dropPreviewTest, "unexpected polymorph query"); return false; }
-bool auriga::item::runtime::TypedDropsEnabled() noexcept { return typedDropsTest; }
-uint32_t ecs::PlayerRuntime::GetMobDropItemVnum(entt::entity) { Check(dropPreviewTest, "unexpected drop query"); return 0; }
-uint32_t ecs::PlayerRuntime::GetPolymorphItemVnum(entt::entity) { Unexpected(); }
 bool MountSystem::IsHorseRiding(entt::entity) { return false; }
-int64_t ecs::PointSystem::Get(entt::entity, uint8_t) { Check(dropPreviewTest, "unexpected preview point query"); return 0; }
-int ecs::PointSystem::GetLevel(entt::entity) { Check(dropPreviewTest, "unexpected preview level query"); return 75; }
+int ecs::PointSystem::GetLevel(entt::entity) { Unexpected(); }
+double ecs::PointSystem::GetPrecise(entt::entity, uint8_t) { Unexpected(); }
 namespace ecs::PlayerRuntime {
 LPDESC GetDesc(entt::entity owner) { Check(g_registry.valid(owner), "stale descriptor lookup"); return nullptr; }
 uint32_t GetAccountID(entt::entity owner) { Check(g_registry.valid(owner), "stale account lookup"); return 0; }
 uint32_t GetPlayerID(entt::entity owner) { Check(persistenceTest && IsPC(owner), "invalid save owner"); return 1234; }
 uint8_t GetEmpire(entt::entity) { Unexpected(); }
-uint32_t GetRaceNum(entt::entity entity) { Check(dropPreviewTest, "unexpected preview race query"); return g_registry.get<PreviewMob>(entity).race; }
 bool IsValid(entt::entity owner) { Check(persistenceTest, "unexpected player validity check"); return IsPC(owner); }
 bool IsPC(entt::entity owner) { return g_registry.valid(owner) && g_registry.all_of<Player>(owner); }
-bool IsStone(entt::entity entity) { Check(dropPreviewTest, "unexpected preview stone query"); return g_registry.get<PreviewMob>(entity).stone; }
+bool IsStone(entt::entity) { Unexpected(); }
 uint8_t GetCharType(entt::entity) { Unexpected(); }
-uint8_t GetMobRank(entt::entity) { Check(dropPreviewTest, "unexpected preview rank query"); return 0; }
-int64_t GetPremiumRemainSeconds(entt::entity, uint8_t) { Check(dropPreviewTest, "unexpected preview premium query"); return 0; }
+uint8_t GetMobRank(entt::entity) { Unexpected(); }
+int64_t GetPremiumRemainSeconds(entt::entity, uint8_t) { Unexpected(); }
 }
 void NetworkSyncSystem::PointsPacket(entt::entity owner) { Check(g_registry.valid(owner), "stale points packet"); ++points; }
 void ecs::PointSystem::Compute(entt::entity owner) {
@@ -304,7 +286,7 @@ entt::entity MountSystem::GetMountInventoryItem(entt::entity owner, uint32_t cel
 void MountSystem::UpdateMountCountOverheadToViewers(entt::entity owner) { Check(g_registry.valid(owner), "stale overhead"); ++overheads; }
 namespace ItemSystem {
 bool IsEquipUniqueItem(entt::entity, uint32_t) { Unexpected(); }
-bool IsEquipUniqueGroup(entt::entity, uint32_t) { Check(dropPreviewTest, "unexpected preview glove query"); return false; }
+bool IsEquipUniqueGroup(entt::entity, uint32_t) { Unexpected(); }
 uint32_t GetItemVnum(entt::entity item) { return g_registry.get<ecs::ItemIdentity>(item).vnum; }
 uint32_t GetItemOriginalVnum(entt::entity item) { return g_registry.get<ecs::ItemIdentity>(item).originalVnum; }
 void SetItemExtraProto(entt::entity item, TItemExtraProto*) { CreationStage("extra", item); }
@@ -360,14 +342,8 @@ bool StartSoulItemEventEcs(entt::entity item) { CreationStage("soul", item); ret
 bool InitializeRuneItem(entt::entity item) { CreationStage("rune", item); return !rejectRune; }
 void SaveItem(entt::entity item) { ++creationSaves; CreationStage("save", item); }
 }
-// These were inline CHARACTER getters over two zero-initialised fields until
-// DetermineDropMetinStone rolled them. No monster here has been rolled, so the
-// drop tables see what they saw before: no stone.
-uint32_t CombatSystem::GetDropMetinStoneVnum(entt::entity) { return 0; }
-uint8_t CombatSystem::GetDropMetinStonePct(entt::entity) { return 0; }
 int CHARACTER_MANAGER::GetMobItemRate(entt::entity) { Unexpected(); }
 const event_struct_* CHARACTER_MANAGER::CheckEventIsActive(uint8_t, uint8_t) { Unexpected(); }
-void CHARACTER_MANAGER::CheckEventForDrop(entt::entity, entt::entity, std::vector<entt::entity>&) { Unexpected(); }
 void CLIENT_DESC::DBPacketHeader(uint8_t header, uint32_t, uint32_t) {
     Check(persistenceTest && this == db_clientdesc, "unexpected DB header"); persistedHeaders.push_back(header);
 }
@@ -1263,66 +1239,11 @@ void PlayerCacheSnapshotCapture() {
 
 }
 
-namespace {
-void TargetDropPreview() {
-#ifdef __SEND_TARGET_INFO__
-    for (bool stone : {true, false}) {
-        Reset(); Manager manager; dropPreviewTest = true;
-        const auto victim = g_registry.create();
-        g_registry.emplace<ecs::TagCharacter>(victim);
-        g_registry.emplace<PreviewMob>(victim, stone, 8001u);
-        const auto killer = g_registry.create();
-        g_registry.emplace<ecs::TagCharacter>(killer);
-        g_registry.emplace<Player>(killer);
-        CDropItemGroup drop(1, 8001, "preview-drop");
-        drop.AddItem(71084, 100, 3); drop.AddItem(76018, 200, 2);
-        drop.AddItem(0, 100, 1); drop.AddItem(42, 100, 0);
-        CMobItemGroup kill(8001, 10, "preview-kill");
-        kill.AddItem(19, 1, 10, 0); kill.AddItem(29, 4, 90, 0);
-        manager.DropGroups(8001, &drop, &kill);
-        for (int repeat = 0; repeat < 5; ++repeat) {
-            std::vector<TargetInfoItem> items;
-            // number_ex rejects calls outside creationTest: preview must not roll RNG.
-            Check(manager.CreateDropItemVector(victim, killer, items), "configured drop preview missing");
-            Check(items.size() == 4, "preview omitted entries or retained invalid entries");
-            Check(items[0].vnum == 71084 && items[0].count == 3 &&
-                items[1].vnum == 76018 && items[1].count == 2 &&
-                items[2].vnum == 19 && items[2].count == 1 &&
-                items[3].vnum == 29 && items[3].count == 4, "preview contents/counts changed");
-        }
-        // Typed drops (C7b-3): the catalog tables replace these, so the
-        // legacy preview no longer lists them.
-        typedDropsTest = true;
-        std::vector<TargetInfoItem> typedPreview;
-        Check(!manager.CreateDropItemVector(victim, killer, typedPreview) && typedPreview.empty(),
-            "typed drops: the legacy tables are still previewed");
-        typedDropsTest = false;
-        CMobItemGroup emptyKill(8001, 10, "empty-kill");
-        manager.DropGroups(8001, &drop, &emptyKill);
-        std::vector<TargetInfoItem> dropOnly;
-        Check(manager.CreateDropItemVector(victim, killer, dropOnly) && dropOnly.size() == 2,
-            "drop-only preview failed with an empty kill group");
-        manager.DropGroups(8001, nullptr, &kill);
-        std::vector<TargetInfoItem> killOnly;
-        Check(manager.CreateDropItemVector(victim, killer, killOnly) && killOnly.size() == 2,
-            "kill-only preview did not enumerate all choices");
-        manager.DropGroups(8001, nullptr, nullptr);
-        std::vector<TargetInfoItem> empty;
-        Check(!manager.CreateDropItemVector(victim, killer, empty) && empty.empty(), "empty preview generated loot");
-        Check(!manager.CreateDropItemVector(entt::null, killer, empty), "invalid victim accepted");
-        Check(!manager.CreateDropItemVector(victim, entt::null, empty), "invalid killer accepted");
-        Check(!manager.CreateDropItemVector(killer, killer, empty), "player accepted as drop victim");
-    }
-#endif
-}
-}
-
 int main() {
     try {
         LogManager log;
         CSkillManager skills;
 
-        TargetDropPreview();
         CreationQuantitiesAndIdentity(); CreationPayloads(); SkillBookSelection(); CreationFailuresAndCallbacks();
         CreationRollbackTransfers();
         NativeLifecycle(); ReentryAndExceptions(); FactoryFailures(); RecycledAndTransferred(); SlotAndPersistenceGuards();

@@ -58,31 +58,6 @@ enum {
 	FORTUNE_MAX_NUM,
 };
 
-const int STONE_INFO_MAX_NUM = 31;
-const int STONE_LEVEL_MAX_NUM = 4;
-
-struct SStoneDropInfo
-{
-	uint32_t dwMobVnum;
-	int iDropPct;
-	int iLevelPct[STONE_LEVEL_MAX_NUM+1];
-};
-
-inline bool operator < (const SStoneDropInfo& l, uint32_t r)
-{
-	return l.dwMobVnum < r;
-}
-
-inline bool operator < (uint32_t l, const SStoneDropInfo& r)
-{
-	return l < r.dwMobVnum;
-}
-
-inline bool operator < (const SStoneDropInfo& l, const SStoneDropInfo& r)
-{
-	return l.dwMobVnum < r.dwMobVnum;
-}
-
 const int STONE_STOFA_INFO_MAX_NUM = 12;
 const int STOFA_MAX_NUM = 7;
 
@@ -205,7 +180,6 @@ extern const int aiChainLightningCountBySkillLevel_euckr[SKILL_MAX_LEVEL + 1];
 extern const char * c_apszEmpireNames[EMPIRE_MAX_NUM];
 extern const char * c_apszPrivNames[MAX_PRIV_NUM];
 
-extern const SStoneDropInfo aStoneDrop[STONE_INFO_MAX_NUM];
 
 #ifdef ENABLE_GUILD_ATTRIBUTE
 

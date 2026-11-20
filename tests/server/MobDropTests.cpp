@@ -108,6 +108,26 @@ void Lookup()
     Check(catalog->MobDropGroupsFor(102, 0).size() == 1 && catalog->MobDropGroupsFor(101, 1).size() == 3 && catalog->MobDropGroupsFor(7, 9).empty(),
           "other mobs and ranks see only their own groups");
     Check(catalog->FindMobDropGroup(3) && catalog->FindMobDropGroup(3)->minimumKillerLevel == 20 && !catalog->FindMobDropGroup(9), "find by group ID");
+
+    const auto preview = PreviewMobDrops(*catalog, Wolf());
+    Check(preview.size() == 4 && preview[0].group == 1 && preview[1].group == 2 && preview[2].group == 2 &&
+          preview[1].item == f::Sword() && preview[1].refinementLevel == 3 && preview[2].amount == 10 &&
+          preview[3].group == 3, "preview includes both weighted choices with their own item, level and amount");
+    const auto low = PreviewMobDrops(*catalog, Wolf(19));
+    const auto high = PreviewMobDrops(*catalog, Wolf(31));
+    Check(low.size() == 3 && low.back().group == 2 && high.size() == 3 && high.front().group == 2,
+          "preview uses both group and entry level limits");
+
+    auto kill = Wolf();
+    kill.doubleDrop = true;
+    const auto boosted = PreviewMobDrops(*catalog, kill);
+    Check(boosted.size() == 5 && boosted.back().group == 4, "preview includes the eligible double drop group");
+    kill.stone = true;
+    const auto stone = PreviewMobDrops(*catalog, kill);
+    Check(stone.size() == 2 && stone.front().group == 2 && stone.back().group == 2,
+          "preview excludes rank, double and level-gated groups on stones");
+    kill.mobVnum = 7;
+    Check(PreviewMobDrops(*catalog, kill).empty(), "preview is empty without eligible groups");
 }
 void SqlRows()
 {

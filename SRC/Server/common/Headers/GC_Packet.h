@@ -591,22 +591,6 @@ typedef struct packet_target
 	uint8_t	bElement;
 #endif
 } TPacketGCTarget;
-#ifdef __SEND_TARGET_INFO__
-
-typedef struct packet_target_info
-{
-	uint8_t	header;
-	uint32_t	dwVID;
-	uint32_t	race;
-	uint32_t	dwVnum;
-#ifdef ENABLE_NEW_STACK_LIMIT
-	uint32_t	count;
-#else
-	uint8_t	count;
-#endif
-} TPacketGCTargetInfo;
-
-#endif
 typedef struct packet_warp
 {
 	uint8_t	bHeader;

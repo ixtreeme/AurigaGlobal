@@ -120,7 +120,6 @@ extern uint32_t g_GoldDropTimeLimitValue;
 // #ifdef ENABLE_NEWSTUFF
 extern uint32_t g_BoxUseTimeLimitValue;
 extern uint32_t g_BuySellTimeLimitValue;
-extern bool g_NoDropMetinStone;
 extern bool g_NoMountAtGuildWar;
 extern bool g_NoPotionsOnPVP;
 // #endif

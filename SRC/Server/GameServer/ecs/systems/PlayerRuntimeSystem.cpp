@@ -1115,22 +1115,6 @@ uint8_t GetJob(entt::entity e)
 	return RaceToJob(race, &job) ? static_cast<uint8_t>(job) : JOB_WARRIOR;
 }
 
-// The vnum a mob drops beside its loot, and the item a polymorph turns into.
-// Both used to dereference m_pkMobData; GetMobTable answers null for anything
-// that has none.
-uint32_t GetMobDropItemVnum(entt::entity e)
-{
-	const TMobTable* table = GetMobTable(e);
-	if (!table)
-	{
-		LOG_ERROR("GetMobDropItemVnum: no mob table (vid={} race={} name={} map={} x={} y={})",
-			GetPacketVID(e), GetRaceNum(e), GetName(e), GetMapIndex(e), GetX(e), GetY(e));
-		return 0;
-	}
-
-	return table->dwDropItemVnum;
-}
-
 uint32_t GetPolymorphItemVnum(entt::entity e)
 {
 	const TMobTable* table = GetMobTable(e);
@@ -3024,11 +3008,6 @@ void ecs::PlayerRuntime::SetProto(entt::entity e, const CMob* pkMob)
     ecs::PlayerRuntime::AssignClickTrigger(e, t->bOnClickType);
 
     AffectSystem::ApplyMobAttribute(e, t);
-
-    if (t->bType == CHAR_TYPE_STONE)
-    {
-        CombatSystem::DetermineDropMetinStone(e);
-    }
 
     if (ecs::PlayerRuntime::IsWarp(e) || ecs::PlayerRuntime::IsGoto(e))
     {

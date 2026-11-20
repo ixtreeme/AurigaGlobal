@@ -270,7 +270,6 @@ bool SetVoteCoin(entt::entity e, int64_t amount);
 #endif
 
 #ifdef ENABLE_RANKING
-uint32_t GetMobDropItemVnum(entt::entity e);
 uint32_t GetPolymorphItemVnum(entt::entity e);
 void ResetPlayTime(entt::entity e, uint32_t remaining);
 uint32_t GetPlayStartTime(entt::entity e);

@@ -5,7 +5,6 @@
 #include "../ecs/systems/MountSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
-#include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/NetworkSyncSystem.hpp"
 #include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/components/item_components.hpp"
@@ -30,7 +29,6 @@
 #include "locale_service.h"
 #include "item.h"
 #include "item_manager.h"
-#include "ItemCatalogRuntime.hpp"
 #include "../ecs/EntityFactory.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/ItemRegistry.hpp"
@@ -41,7 +39,6 @@
 #endif
 #ifdef __INGAME_WIKI__
 #include "refine.h"
-#include <fstream>
 #endif
 
 namespace
@@ -790,105 +787,6 @@ bool ITEM_MANAGER::GetVnumByOriginalName(const char* c_pszName, uint32_t& r_dwVn
 	return false;
 }
 
-std::set<uint32_t> g_set_lotto;
-
-void load_lotto()
-{
-	static int bLoaded = false;
-
-	if (bLoaded)
-		return;
-
-	bLoaded = true;
-
-	std::ifstream file("lotto.txt");
-
-	if (!file)
-		return;
-
-	std::string line;
-
-	while (std::getline(file, line))
-	{
-		uint32_t dw = 0;
-		str_to_number(dw, line.c_str());
-		g_set_lotto.insert(dw);
-	}
-}
-
-uint32_t lotto()
-{
-	load_lotto();
-
-	char szBuf[6 + 1];
-
-	do
-	{
-		for (int i = 0; i < 6; ++i)
-			szBuf[i] = 48 + number(1, 9);
-
-		szBuf[6] = '\0';
-
-		uint32_t dw = 0;
-		str_to_number(dw, szBuf);
-
-		if (!g_set_lotto.contains(dw))
-		{
-			std::ofstream file("lotto.txt", std::ios::app);
-
-			if (file)
-				file << dw << '\n';
-
-			return dw;
-		}
-	} while (1);
-}
-
-
-class CItemDropInfo
-{
-public:
-	CItemDropInfo(int iLevelStart, int iLevelEnd, int iPercent, uint32_t dwVnum) :
-		m_iLevelStart(iLevelStart), m_iLevelEnd(iLevelEnd), m_iPercent(iPercent), m_dwVnum(dwVnum)
-	{
-	}
-
-	int	m_iLevelStart;
-	int	m_iLevelEnd;
-	int	m_iPercent; // 1 ~ 1000
-	uint32_t	m_dwVnum;
-
-	friend bool operator < (const CItemDropInfo& l, const CItemDropInfo& r)
-	{
-		return l.m_iLevelEnd < r.m_iLevelEnd;
-	}
-};
-
-extern std::vector<CItemDropInfo> g_vec_pkCommonDropItem[MOB_RANK_MAX_NUM];
-
-// 20050503.ipkn.
-double GetDropPerKillPct(int iMinimum, int iDefault, double iDeltaPercent, const char* c_pszFlag)
-{
-	int iVal = 0;
-
-	if ((iVal = quest::CQuestManager::instance().GetEventFlag(c_pszFlag)))
-	{
-		if (!test_server)
-		{
-			if (iVal < iMinimum)
-				iVal = iDefault;
-
-			if (iVal < 0)
-				iVal = iDefault;
-		}
-	}
-
-	if (iVal == 0)
-		return 0;
-
-	return (40000 * iDeltaPercent / iVal);
-}
-
 bool ITEM_MANAGER::GetDropPct(entt::entity victim, entt::entity killer,
 	OUT double& iDeltaPercent, OUT int& iRandRange)
 {
@@ -916,7 +814,7 @@ bool ITEM_MANAGER::GetDropPct(entt::entity victim, entt::entity killer,
 	else if (1 == number(1, 10000))
 		iDeltaPercent += 500;
 
-	LOG_INFO("CreateDropItem for level: {} rank: {} pct: {}", killerLevel, rank, iDeltaPercent);
+	LOG_INFO("Drop rate for level: {} rank: {} pct: {}", killerLevel, rank, iDeltaPercent);
 	iDeltaPercent = iDeltaPercent * CHARACTER_MANAGER::instance().GetMobItemRate(killer) / 100;
 
 	double itemDropBonus = ecs::PointSystem::GetPrecise(killer, POINT_ITEM_DROP_BONUS);
@@ -954,391 +852,6 @@ bool ITEM_MANAGER::GetDropPct(entt::entity victim, entt::entity killer,
 
 	return true;
 }
-#ifdef __SEND_TARGET_INFO__
-bool ITEM_MANAGER::CreateDropItemVector(entt::entity chr, entt::entity killer, std::vector<TargetInfoItem>& items)
-{
-#ifdef ENABLE_METINSTONE_DROP_BUGFIX_RAZOR9D
-	if (ecs::IsCharacter(chr) && ecs::PlayerRuntime::IsStone(chr) &&
-		!IsRegisteredDropMob(ecs::PlayerRuntime::GetRaceNum(chr)))
-	{
-		LOG_INFO("[DROP-BLOKK] Metinko {} ({}) nincs mob_drop_item.txt-ben - CreateDropItemVector megszakitva.",
-			ecs::PlayerRuntime::GetName(chr).data(),
-			ecs::PlayerRuntime::GetRaceNum(chr));
-		return false;
-	}
-#endif
-	if (!ecs::IsCharacter(chr) || !ecs::IsCharacter(killer) || AffectSystem::IsPolymorphed(chr) || ecs::PlayerRuntime::IsPC(chr))
-		return false;
-
-	const int level = ecs::PointSystem::GetLevel(killer);
-	const uint8_t rank = ecs::PlayerRuntime::GetMobRank(chr);
-	const uint32_t race = ecs::PlayerRuntime::GetRaceNum(chr);
-	const bool isStone = ecs::PlayerRuntime::IsStone(chr);
-	// With typed drops the catalog tables roll instead; this legacy preview
-	// lists only what the legacy runtime still drops.
-	const bool tableDrops = !auriga::item::runtime::TypedDropsEnabled();
-
-	const auto add = [&items](uint32_t vnum, uint32_t count)
-	{
-		if (vnum != 0 && count != 0)
-			items.push_back({vnum, count});
-	};
-
-	for (const CItemDropInfo& info : g_vec_pkCommonDropItem[rank])
-	{
-		if (!tableDrops || isStone || level < info.m_iLevelStart || level > info.m_iLevelEnd)
-			continue;
-
-		const TItemTable* table = GetTable(info.m_dwVnum);
-		if (!table)
-			continue;
-		if (table->bType == ITEM_POLYMORPH && info.m_dwVnum != ecs::PlayerRuntime::GetPolymorphItemVnum(chr))
-			continue;
-		add(info.m_dwVnum, 1);
-	}
-
-	// The target-info preview lists configured entries, including metin groups.
-	// It must not roll loot or consume the gameplay RNG.
-	if (const auto it = m_map_pkDropItemGroup.find(race); tableDrops && it != m_map_pkDropItemGroup.end() && it->second)
-	{
-		for (const auto& info : it->second->GetVector())
-			add(info.dwVnum, info.iCount);
-	}
-
-	if (const auto it = m_map_pkMobItemGroup.find(race); tableDrops && it != m_map_pkMobItemGroup.end())
-	{
-		CMobItemGroup* group = it->second;
-		if (group && !group->IsEmpty())
-		{
-			for (const auto& info : group->GetVector())
-				add(info.dwItemVnum, info.iCount);
-		}
-	}
-
-	if (tableDrops && !isStone)
-	{
-		if (const auto it = m_map_pkLevelItemGroup.find(race);
-			it != m_map_pkLevelItemGroup.end() && it->second->GetLevelLimit() <= static_cast<uint32_t>(level))
-		{
-			for (const auto& info : it->second->GetVector())
-				add(info.dwVNum, info.iCount);
-		}
-
-		const bool hasDoubleDrop = ecs::PlayerRuntime::GetPremiumRemainSeconds(killer, PREMIUM_ITEM) > 0 ||
-			ItemSystem::IsEquipUniqueGroup(killer, UNIQUE_GROUP_DOUBLE_ITEM)
-#ifdef ENABLE_NEW_COMMON_BONUSES
-			|| ecs::PointSystem::GetPrecise(killer, POINT_DOUBLE_DROP_ITEM) > 0
-#endif
-			;
-		if (hasDoubleDrop)
-		{
-			if (const auto it = m_map_pkGloveItemGroup.find(race); it != m_map_pkGloveItemGroup.end())
-			{
-				for (const auto& info : it->second->GetVector())
-					add(info.dwVnum, info.iCount);
-			}
-		}
-	}
-
-	if (ecs::PlayerRuntime::GetMobDropItemVnum(chr) && m_map_dwEtcItemDropProb.contains(ecs::PlayerRuntime::GetMobDropItemVnum(chr)))
-		add(ecs::PlayerRuntime::GetMobDropItemVnum(chr), 1);
-
-	if (isStone)
-	{
-		add(CombatSystem::GetDropMetinStoneVnum(chr), 1);
-	}
-
-	return !items.empty();
-}
-#endif
-uint32_t ITEM_MANAGER::AllocateGroundVID()
-{
-	if (m_dwVIDCount == UINT32_MAX) return 0; // never wrap over a live VID
-	return ++m_dwVIDCount;
-}
-
-bool ITEM_MANAGER::CreateDropItem(entt::entity chr, entt::entity killer, std::vector<entt::entity>& vec_item,
-	double iDeltaPercent, int iRandRange, bool tableDrops)
-{
-#ifdef ENABLE_METINSTONE_DROP_BUGFIX_RAZOR9d
-	const CMobItemGroup* pGroup = quest::CQuestManager::instance().GetMobDropItem(ecs::PlayerRuntime::GetRaceNum(chr));
-	if (!pGroup || pGroup->IsEmpty())
-	{
-		LOG_INFO("[DROP BLOCKED] Metin VNUM {} nincs regisztr?va mob_drop_item.txt-ben!", ecs::PlayerRuntime::GetRaceNum(chr));
-		return false;
-	}
-
-
-#endif
-	int iLevel = ecs::PointSystem::GetLevel(killer);
-
-	uint8_t bRank = ecs::PlayerRuntime::GetMobRank(chr);
-	entt::entity item = entt::null;
-
-	// Common Drop Items
-	auto it = g_vec_pkCommonDropItem[bRank].begin();
-
-	while (tableDrops && !ecs::PlayerRuntime::IsStone(chr) && it != g_vec_pkCommonDropItem[bRank].end())
-	{
-		const CItemDropInfo& c_rInfo = *(it++);
-
-		if (iLevel < c_rInfo.m_iLevelStart || iLevel > c_rInfo.m_iLevelEnd)
-			continue;
-
-		double iPercent = (c_rInfo.m_iPercent * iDeltaPercent) / 100;
-		//		3, "CreateDropItem %d ~ %d %d(%d)", c_rInfo.m_iLevelStart, c_rInfo.m_iLevelEnd, c_rInfo.m_dwVnum, iPercent, c_rInfo.m_iPercent);
-		LOG_ERROR("CreateDropItem {} ~ {} {}({})", c_rInfo.m_iLevelStart, c_rInfo.m_iLevelEnd, c_rInfo.m_dwVnum, iPercent, c_rInfo.m_iPercent);
-
-		if (iPercent >= number(1, iRandRange))
-		{
-			TItemTable* table = GetTable(c_rInfo.m_dwVnum);
-
-			if (!table)
-				continue;
-
-			item = entt::null;
-
-			if (table->bType == ITEM_POLYMORPH)
-			{
-				if (c_rInfo.m_dwVnum == ecs::PlayerRuntime::GetPolymorphItemVnum(chr))
-				{
-					item = CreateItem(c_rInfo.m_dwVnum, 1, 0, true);
-
-					if (ItemSystem::IsValidItem(item))
-						ItemSystem::SetItemSocket(item, 0, ecs::PlayerRuntime::GetRaceNum(chr));
-				}
-			}
-			else
-				item = CreateItem(c_rInfo.m_dwVnum, 1, 0, true);
-
-			if (ItemSystem::IsValidItem(item)) vec_item.push_back(item);
-		}
-	}
-
-	// Drop Item Group
-	{
-		if (ecs::PlayerRuntime::GetRaceNum(chr) == 4815)
-		{
-			LOG_ERROR("VIKING DROP CHECK: killer_lv={} mob_lv={} delta={} rand={}", ecs::IsCharacter(killer) ? ecs::PointSystem::GetLevel(killer) : 0, ecs::PointSystem::GetLevel(chr), iDeltaPercent, iRandRange);
-		}
-		auto it = m_map_pkDropItemGroup.find(ecs::PlayerRuntime::GetRaceNum(chr));
-
-		// Configured per-race drop groups apply to stones too, matching target info.
-		if (tableDrops && it != m_map_pkDropItemGroup.end() && it->second)
-		{
-			auto v = it->second->GetVector();
-
-			for (uint32_t i = 0; i < v.size(); ++i)
-			{
-
-				double iPercent = (v[i].dwPct * iDeltaPercent) / 100;
-
-				if (iPercent >= number(1, iRandRange))
-				{
-
-					item = CreateItem(v[i].dwVnum, v[i].iCount, 0, true);
-					if (ItemSystem::IsValidItem(item))
-					{
-						if (ItemSystem::GetItemType(item) == ITEM_POLYMORPH)
-						{
-							if (ItemSystem::GetItemVnum(item) == ecs::PlayerRuntime::GetPolymorphItemVnum(chr))
-							{
-								ItemSystem::SetItemSocket(item, 0, ecs::PlayerRuntime::GetRaceNum(chr));
-							}
-						}
-						if (ecs::PlayerRuntime::GetRaceNum(chr) == 4815)
-						{
-							LOG_ERROR("VIKING DROP ROLL: item={} pct_raw={} final={} count={}", v[i].dwVnum, v[i].dwPct, iPercent, v[i].iCount);
-						}
-						vec_item.push_back(item);
-					}
-				}
-			}
-		}
-	}
-
-	// MobDropItem Group
-	{
-		auto it = m_map_pkMobItemGroup.find(ecs::PlayerRuntime::GetRaceNum(chr));
-
-		if (tableDrops && it != m_map_pkMobItemGroup.end())
-		{
-			CMobItemGroup* pGroup = it->second;
-
-			// MOB_DROP_ITEM_BUG_FIX
-			if (pGroup && !pGroup->IsEmpty())
-			{
-				double iPercent = 40000 * iDeltaPercent / pGroup->GetKillPerDrop();
-				if (iPercent >= number(1, iRandRange))
-				{
-
-					const CMobItemGroup::SMobItemGroupInfo& info = pGroup->GetOne();
-					item = CreateItem(info.dwItemVnum, info.iCount, 0, true, info.iRarePct);
-					if (ItemSystem::IsValidItem(item)) vec_item.push_back(item);
-				}
-
-			}
-			// END_OF_MOB_DROP_ITEM_BUG_FIX
-		}
-	}
-
-	// Level Item Group
-	{
-		auto it = m_map_pkLevelItemGroup.find(ecs::PlayerRuntime::GetRaceNum(chr));
-
-		if (tableDrops && it != m_map_pkLevelItemGroup.end())
-		{
-			if (!ecs::PlayerRuntime::IsStone(chr) && it->second->GetLevelLimit() <= (uint32_t)iLevel)
-			{
-				auto v = it->second->GetVector();
-
-				for (uint32_t i = 0; i < v.size(); i++)
-				{
-					if (v[i].dwPct >= (uint32_t)number(1, 1000000/*iRandRange*/))
-					{
-						uint32_t dwVnum = v[i].dwVNum;
-						item = CreateItem(dwVnum, v[i].iCount, 0, true);
-						if (ItemSystem::IsValidItem(item)) vec_item.push_back(item);
-					}
-				}
-			}
-		}
-	}
-
-	{
-		if (tableDrops && !ecs::PlayerRuntime::IsStone(chr) && ((ecs::PlayerRuntime::GetPremiumRemainSeconds(killer, PREMIUM_ITEM) > 0) || (ItemSystem::IsEquipUniqueGroup(killer, UNIQUE_GROUP_DOUBLE_ITEM))
-#ifdef ENABLE_NEW_COMMON_BONUSES
-			|| (ecs::PointSystem::GetPrecise(killer, POINT_DOUBLE_DROP_ITEM) > 0)
-#endif
-			))
-		{
-			auto it = m_map_pkGloveItemGroup.find(ecs::PlayerRuntime::GetRaceNum(chr));
-
-			if (it != m_map_pkGloveItemGroup.end())
-			{
-				auto v = it->second->GetVector();
-
-				for (uint32_t i = 0; i < v.size(); ++i)
-				{
-					double iPercent = (v[i].dwPct * iDeltaPercent) / 100;
-
-					if (iPercent >= number(1, iRandRange))
-					{
-						uint32_t dwVnum = v[i].dwVnum;
-						item = CreateItem(dwVnum, v[i].iCount, 0, true);
-						if (ItemSystem::IsValidItem(item)) vec_item.push_back(item);
-					}
-				}
-			}
-		}
-	}
-
-	if (ecs::PlayerRuntime::GetMobDropItemVnum(chr))
-	{
-		auto it = m_map_dwEtcItemDropProb.find(ecs::PlayerRuntime::GetMobDropItemVnum(chr));
-
-		if (it != m_map_dwEtcItemDropProb.end())
-		{
-			double iPercent = (it->second * iDeltaPercent) / 100;
-
-			if (iPercent >= number(1, iRandRange))
-			{
-				item = CreateItem(ecs::PlayerRuntime::GetMobDropItemVnum(chr), 1, 0, true);
-				if (ItemSystem::IsValidItem(item)) vec_item.push_back(item);
-			}
-		}
-	}
-
-	if (ecs::PlayerRuntime::IsStone(chr))
-	{
-		if (CombatSystem::GetDropMetinStoneVnum(chr))
-		{
-			double iPercent = (CombatSystem::GetDropMetinStonePct(chr) * iDeltaPercent) * 400;
-			if (iPercent >= number(1, iRandRange))
-			{
-				item = CreateItem(CombatSystem::GetDropMetinStoneVnum(chr), 1, 0, true);
-				if (ItemSystem::IsValidItem(item))
-					vec_item.push_back(item);
-			}
-		}
-
-		//		item = CreateItem(pkChr->GetDropMetinStofaVnum(), 1, 0, true);
-		//		if (ItemSystem::IsValidItem(item))
-		//			vec_item.push_back(item);
-		//		item = CreateItem(pkChr->GetDropMetinSaccaVnum(), 1, 0, true);
-		//		if (ItemSystem::IsValidItem(item))
-		//			vec_item.push_back(item);
-	}
-
-	if (MountSystem::IsHorseRiding(killer) &&
-		GetDropPerKillPct(1000, 1000000, iDeltaPercent, "horse_skill_book_drop") >= number(1, iRandRange))
-	{
-		LOG_INFO("EVENT HORSE_SKILL_BOOK_DROP");
-
-		if (ItemSystem::IsValidItem(item = CreateItem(ITEM_HORSE_SKILL_TRAIN_BOOK, 1, 0, true)))
-			vec_item.push_back(item);
-	}
-
-
-	if (GetDropPerKillPct(100, 1000, iDeltaPercent, "lotto_drop") >= number(1, iRandRange))
-	{
-		uint32_t* pdw = new uint32_t[3];
-
-		pdw[0] = 50001;
-		pdw[1] = 1;
-		pdw[2] = quest::CQuestManager::instance().GetEventFlag("lotto_round");
-
-		DBManager::instance().ReturnQuery(QID_LOTTO, ecs::PlayerRuntime::GetPlayerID(killer), pdw,
-			"INSERT INTO lotto_list VALUES(0, 'server%s', %u, NOW())",
-			get_table_postfix(), ecs::PlayerRuntime::GetPlayerID(killer));
-	}
-
-	//
-	//
-	//CreateQuestDropItem(pkChr, pkKiller, vec_item, iDeltaPercent, iRandRange);
-#ifdef ENABLE_EVENT_MANAGER
-
-	if (ecs::PointSystem::GetLevel(killer) - ecs::PointSystem::GetLevel(chr) >= 30)
-	{
-		//eridj no
-	}
-	else
-	{
-
-		CHARACTER_MANAGER::Instance().CheckEventForDrop(chr, killer, vec_item);
-	}
-#endif
-
-
-
-
-
-	for (const entt::entity item : vec_item)
-	{
-		if (ItemSystem::IsValidItem(item))
-			DBManager::instance().SendMoneyLog(MONEY_LOG_DROP, ItemSystem::GetItemVnum(item), ItemSystem::GetItemCount(item));
-	}
-
-	return !vec_item.empty();
-}
-
-// ADD_GRANDMASTER_SKILL
-int GetThreeSkillLevelAdjust(int level)
-{
-	if (level < 40)
-		return 32;
-	if (level < 45)
-		return 16;
-	if (level < 50)
-		return 8;
-	if (level < 55)
-		return 4;
-	if (level < 60)
-		return 2;
-	return 1;
-}
-// END_OF_ADD_GRANDMASTER_SKILL
-
 // DROPEVENT_CHARSTONE
 // drop_char_stone 1
 // drop_char_stone.percent_lv01_10 5
@@ -1697,11 +1210,6 @@ CommonWikiData::TWikiInfoTable* ITEM_MANAGER::GetItemWikiInfo(uint32_t vnum)
 	auto newTable = new CommonWikiData::TWikiInfoTable();
 	newTable->is_common = false;
 
-	for (int it = 0; it < MOB_RANK_MAX_NUM && !newTable->is_common; ++it)
-		for (auto it2 = g_vec_pkCommonDropItem[it].begin(); it2 != g_vec_pkCommonDropItem[it].end() && !newTable->is_common; ++it2)
-			if (it2->m_dwVnum == vnum)
-				newTable->is_common = true;
-
 	newTable->origin_vnum = 0;
 	newTable->chest_info_count = 0;
 	m_wikiInfoMap.insert(std::make_pair(vnum, std::unique_ptr<CommonWikiData::TWikiInfoTable>(newTable)));
@@ -1773,13 +1281,6 @@ std::vector<CommonWikiData::TWikiRefineInfo> ITEM_MANAGER::GetWikiRefineInfo(uin
 
 	return (success ? _rV : std::vector<CommonWikiData::TWikiRefineInfo>());
 }
-#ifdef ENABLE_METINSTONE_DROP_BUGFIX_RAZOR9d
-bool ITEM_MANAGER::IsRegisteredDropMob(uint32_t dwMobVnum) const
-{
-	return m_map_pkMobItemGroup.find(dwMobVnum) != m_map_pkMobItemGroup.end();
-}
-
-#endif
 std::vector<CSpecialItemGroup::CSpecialItemInfo> ITEM_MANAGER::GetWikiChestInfo(uint32_t vnum)
 {
 	std::vector<CSpecialItemGroup::CSpecialItemInfo> _rV;

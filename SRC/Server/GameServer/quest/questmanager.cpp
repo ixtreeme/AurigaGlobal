@@ -38,7 +38,6 @@ uint32_t g_GoldDropTimeLimitValue = 0;
 #ifdef ENABLE_NEWSTUFF
 uint32_t g_BoxUseTimeLimitValue = 0;
 uint32_t g_BuySellTimeLimitValue = 0;
-bool g_NoDropMetinStone = false;
 bool g_NoMountAtGuildWar = false;
 bool g_NoPotionsOnPVP = false;
 #endif
@@ -1542,10 +1541,6 @@ namespace quest
 		else if (name == "buysell_limit_time")
 		{
 			g_BuySellTimeLimitValue = static_cast<uint32_t>(std::clamp<int64_t>(value, 0, UINT32_MAX / 1000) * 1000);
-		}
-		else if (name == "no_drop_metin_stone")
-		{
-			g_NoDropMetinStone = !!value;
 		}
 		else if (name == "no_mount_at_guild_war")
 		{

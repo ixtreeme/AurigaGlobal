@@ -23,13 +23,6 @@ struct SelectedBy {
     std::unordered_set<entt::entity> selectors;
 };
 
-// The metin stone this monster drops when it dies, and how likely it is.
-// Rolled once when the monster is set up. These were two CHARACTER fields.
-struct MetinStoneDrop {
-    uint32_t vnum { 0 };
-    uint8_t pct { 0 };
-};
-
 // Who has hurt this character and by how much. The killer, the experience
 // split and the drop ownership are all decided from it, and death clears it.
 // This was CHARACTER::m_map_kDamage with two accessors returning the map
