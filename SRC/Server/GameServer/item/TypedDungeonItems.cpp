@@ -23,6 +23,7 @@
 #include "ItemCatalogRuntime.hpp"
 #include "TypedInventorySync.hpp"
 #include "TypedDrops.hpp"
+#include "TypedQuestItems.hpp"
 #include "../dungeon/RuneDungeon.h"
 #include "../ecs/Registry.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
@@ -73,6 +74,32 @@ std::optional<item::ItemKey> FindTypedDungeonUseKey(item::DungeonUseRole role)
     const auto key = item::DungeonItemKey(*catalog, binding->code);
     const auto* definition = key ? catalog->Find(*key) : nullptr;
     return definition && !definition->base.retired ? key : std::nullopt;
+}
+
+void RequestTypedDungeonReward(entt::entity character,entt::entity dungeon,std::string rewardFlag,std::string_view code)
+{
+    const auto catalog = item::runtime::CurrentCatalog();
+    const auto key = catalog ? item::DungeonItemKey(*catalog, code) : std::nullopt;
+    const auto* definition = key ? catalog->Find(*key) : nullptr;
+    if (!definition || definition->base.retired || key->Category() != item::ItemCategory::Container)
+    {
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "A kazamata jutalomládája jelenleg nem elérhető.");
+        return;
+    }
+
+    const auto exchange = RequestTypedGameplayItemExchange(character, {}, {{*key, 0, 1}}, 0,
+        [character, dungeon, rewardFlag = std::move(rewardFlag)](bool written) {
+            if (!written)
+            {
+                ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "A jutalom átvétele nem sikerült.");
+                return;
+            }
+            if (g_registry.valid(dungeon))
+                DungeonSystem::SetFlag(dungeon, rewardFlag, 1);
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Megkaptad a kazamata jutalomládáját.");
+        });
+    if (!exchange)
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "A jutalom most nem vehető át. Ellenőrizd a szabad leltárhelyet.");
 }
 
 void QueueTypedDungeonCleanup(entt::entity e,std::string_view code,std::uint32_t maximum){if(!maximum || !g_registry.valid(e) || !g_registry.all_of<ecs::TypedItems>(e))return;auto& q=g_registry.get_or_emplace<PendingCleanup>(e).entries;if(q.size()<16)q.push_back({std::string(code),maximum});Pump(e);}

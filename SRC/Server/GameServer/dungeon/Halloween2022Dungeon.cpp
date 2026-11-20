@@ -103,8 +103,7 @@ namespace
     constexpr const char* kFloor2StonesRegen   = "data/dungeon/halloween2022_dungeon/2floor_stones.json";
 
     // Reward
-    constexpr uint32_t kRewardItemVnum  = 30934;
-    constexpr int32_t  kRewardItemCount = 1;
+    constexpr std::string_view kNativeRewardCode = "catalog.8.cathedral_chest_ed0cbaa1dd61";
 
     // Timers
     constexpr int32_t kTimeOutSec         = 30 * 60;
@@ -688,8 +687,7 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
             return true;
         }
 
-        if (ItemSystem::AutoGiveItemEcs(character, kRewardItemVnum, kRewardItemCount) != entt::null)
-            DungeonSystem::SetFlag(d, rewardFlag, 1);
+        RequestTypedDungeonReward(character, d, rewardFlag, kNativeRewardCode);
         return true;
     }
 

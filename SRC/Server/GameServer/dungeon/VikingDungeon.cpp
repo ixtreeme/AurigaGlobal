@@ -71,8 +71,7 @@ namespace
 
     constexpr uint32_t kFloor1ItemVnum = 33015;
     constexpr uint32_t kFloor3ItemVnum = 33016;
-    constexpr uint32_t kRewardItemVnum = 33017;
-    constexpr int32_t  kRewardItemCount = 1;
+    constexpr std::string_view kNativeRewardCode = "catalog.8.freeze_chest_022d34838ecb";
 
     constexpr uint32_t kFloor1LowBossVnum  = 4812;
     constexpr uint32_t kFloor1MainBossVnum = 4813;
@@ -1148,11 +1147,7 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
             return true;
         }
 
-        if (ItemSystem::AutoGiveItemEcs(character, kRewardItemVnum, kRewardItemCount) != entt::null)
-        {
-            DungeonSystem::SetFlag(d, rewardFlag, 1);
-            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Reward received.");
-        }
+        RequestTypedDungeonReward(character, d, rewardFlag, kNativeRewardCode);
         return true;
     }
 
