@@ -1,0 +1,6 @@
+-- Keep Razor93's quest name and start state for installed quest lists and saved state.
+-- The typed catalog routes the ring to the server's teleport menu.
+quest teleportgyuru begin
+    state start begin
+    end
+end
