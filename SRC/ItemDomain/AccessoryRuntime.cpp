@@ -34,6 +34,10 @@ bool AccessoryTarget(const ItemCatalog& c,const PersistentItem& item,ItemOwner o
     return item.owner==owner && !item.destroyed && item.count==1 && item.placement && item.placement->kind==ItemStorageKind::Inventory &&
         (!item.boundTo || item.boundTo==owner) && item.accessory && Profile(c,item) && ValidatePersistentItem(c,item).has_value();
 }
+bool AccessorySource(const PersistentItem& item,ItemOwner owner)
+{
+    return PlainInventoryItem(item,owner) || PlainInventoryItem(item,owner,ItemStorageKind::SpecialInventory);
+}
 std::expected<SocketMaintenancePlan,SocketMaintenanceError> MakeAccessorySocketCommit(const ItemCatalog& c,
     std::array<std::uint8_t,16> operation,ItemOwnerFence fence,std::span<const ItemStorageLayout> layouts,std::span<const PersistentItem> items,
     ItemInstanceId sourceId,ItemInstanceId targetId,SocketMaintenanceActor actor,AccessoryServiceKind kind,std::uint16_t roll)
@@ -43,7 +47,7 @@ std::expected<SocketMaintenancePlan,SocketMaintenanceError> MakeAccessorySocketC
     std::set<ItemStorage> storages;for(const auto& l:layouts)if(l.storage.owner!=fence.owner || !ValidItemStorage(l) || !storages.insert(l.storage).second)return std::unexpected(E::Invalid);
     std::set<ItemInstanceId> ids;for(const auto& i:items)if(i.owner!=fence.owner || !ids.insert(i.id).second || !ValidatePersistentItem(c,i))return std::unexpected(E::Invalid);
     const auto source=std::ranges::find(items,sourceId,&PersistentItem::id),target=std::ranges::find(items,targetId,&PersistentItem::id);
-    if(source==items.end() || target==items.end() || sourceId==targetId || !PlainInventoryItem(*source,fence.owner) || !AccessoryTarget(c,*target,fence.owner))return std::unexpected(E::Invalid);
+    if(source==items.end() || target==items.end() || sourceId==targetId || !AccessorySource(*source,fence.owner) || !AccessoryTarget(c,*target,fence.owner))return std::unexpected(E::Invalid);
     const auto snapshot=[](const PersistentItem& i){return StoneItemSnapshot{i.key,i.id.Value(),i.revision,i.owner.id,i.refinementLevel,i.count};};
     SocketItemPair pair{{operation,fence.owner.id,fence.sessionGeneration,c.Revision(),fence.revision,actor.level,actor.characterClass,actor.sex,true,actor.inCombat,false},snapshot(*source),snapshot(*target),true,true};
     const auto planned=PlanAccessoryService(c,{pair,*target->accessory,kind,roll});if(!planned)return std::unexpected(Error(planned.error()));
@@ -55,7 +59,8 @@ std::expected<SocketMaintenancePlan,SocketMaintenanceError> MakeAccessorySocketC
     q.kind=kind==AccessoryServiceKind::Unlock ? 5 : 6;q.units=planned->consumeUnits;q.available=source->count;q.chance=chance;q.maximum=p.maxGrade;
     q.accessoryBefore=q.accessoryFailure=*target->accessory;q.accessoryAfter=success->state;
     const auto* grade=profile.FindGrade(q.accessoryAfter.activeGrade);q.increaseBp=grade->bonusIncreaseBp;q.minimumRaw=grade->minimumRaw;q.minimumBp=grade->minimumBp;q.minimumInteger=grade->minimumInteger;
-    auto commit=MakeConsumeCommit(c,operation,fence,layouts,items,sourceId,planned->consumeUnits);if(!commit)return std::unexpected(E::Invalid);
+    auto commit=MakeConsumeCommit(c,operation,fence,layouts,items,sourceId,planned->consumeUnits,source->placement->kind);
+    if(!commit)return std::unexpected(E::Invalid);
     result.commit=std::move(*commit);auto& out=result.commit;out.kind=ItemOperationKind::Service;
     auto after=*target;++after.revision;after.accessory=planned->after;out.items.push_back({*target,after});
     for(const auto& l:layouts)if(l.storage==ItemStorage{fence.owner,target->placement->kind,target->placement->storageId} && std::ranges::find(out.storages,l)==out.storages.end())out.storages.push_back(l);

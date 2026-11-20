@@ -5,7 +5,7 @@ from PySide6.QtCore import QLockFile,QObject,QTimer
 from PySide6.QtWidgets import QDialog
 import backend as api
 import change_review as review
-from pending_changes import compile_catalog
+from pending_changes import CATALOG_KINDS,compile_catalog
 
 
 class PendingPublisher(QObject):
@@ -52,7 +52,7 @@ class PendingPublisher(QObject):
         if self.owner.is_remote() and not self.owner.remote_online:raise api.EditorError('A feltöltéshez csatlakozz a kiválasztott távoli szerverhez.')
         if any(e['body']['kind']=='backup-restore' for e in entries) and len(entries)>1:
             raise api.EditorError('A teljes visszaállítást külön hagyd jóvá, mert felülírhatja a többi szerkesztés célját. Jelöld ki csak a visszaállítást.')
-        sql=[e for e in entries if e['body']['kind']=='catalog_edit']
+        sql=[e for e in entries if e['body']['kind'] in CATALOG_KINDS]
         if sql:
             before=self.queue.baseline(sql);ops=[e['body']['payload']['operation'] for e in sql]
             if state.get('running') and any(op['type']=='item' for op in ops):raise api.EditorError('A tervezetek megmaradtak. A tárgydefiníciók feltöltése előtt állítsd le a játékszervert; a dropok önállóan élőben feltölthetők.')
@@ -82,7 +82,7 @@ class PendingPublisher(QObject):
             if kind=='backup-policy' and data.get('before_policy') is not None and not self.owner.is_remote():
                 import backup_tools
                 if backup_tools.policy(self.owner.root)!=data['before_policy']:raise api.EditorError('A mentési beállítások közben megváltoztak. Készíts új tervezetet.')
-            if kind not in {'catalog_edit','file','bench','bench_install','bench_setup','ssh_profile','ssh_profile_delete',
+            if kind not in CATALOG_KINDS | {'file','bench','bench_install','bench_setup','ssh_profile','ssh_profile_delete',
                             'backup-create','backup-policy','backup-restore','backup-import','server_action','remote_operation','remote_quest_activation'}:
                 raise api.EditorError('Ez a régebbi művelet új szerkesztést igényel: '+body['title'])
         return True
@@ -111,8 +111,8 @@ class PendingPublisher(QObject):
         self.batch.begin(self.owner)
         # The batch approval binds every child checksum. A child starts only at its own turn.
         for e in self.entries:e['stage'].approve(self.owner)
-        sql=[e for e in self.entries if e['body']['kind']=='catalog_edit']
-        rest=[e for e in self.entries if e['body']['kind']!='catalog_edit']
+        sql=[e for e in self.entries if e['body']['kind'] in CATALOG_KINDS]
+        rest=[e for e in self.entries if e['body']['kind'] not in CATALOG_KINDS]
         rest.sort(key=lambda e:2 if e['body']['kind'].startswith('ssh_profile') else 1 if e['body']['kind'] in ('server_action','remote_quest_activation') else 0)
         self.groups=([sql] if sql else [])+[[e] for e in rest];self.advance()
 
@@ -123,7 +123,7 @@ class PendingPublisher(QObject):
             for e in group:e['stage'].begin(self.owner)
             self.page.fill()
             self.page.status.setText('Feltöltés: '+group[0]['body']['title'])
-            if group[0]['body']['kind']=='catalog_edit':
+            if group[0]['body']['kind'] in CATALOG_KINDS:
                 def done(packet):self.catalog_result=packet;self.completed(group,True)
                 self.background(lambda:self.queue.publish_catalog(group),done,lambda error:self.completed(group,False,error))
             else:self.dispatch(group[0],lambda ok,error='':self.completed(group,ok,error))
@@ -200,7 +200,7 @@ class PendingPublisher(QObject):
                 if kind=='file' and not self.owner.is_remote():
                     actual=api.Document(self.owner.root,data['relative'],allow_invalid_json=True).digest
                     state='applied' if actual==review.digest(base64.b64decode(data['data'])) else 'staged' if actual==data['expected_hash'] else None
-                elif kind=='catalog_edit':
+                elif kind in CATALOG_KINDS:
                     actual=catalog.request(self.owner.root);base=self.queue.baseline([e])
                     state='staged' if actual['hash']==base['hash'] and actual['live_drops']['hash']==base['live_drops']['hash'] else None
                     if state is None:

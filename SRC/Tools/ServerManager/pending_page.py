@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (QAbstractItemView,QComboBox,QDialog,QDialogButton
     QPushButton,QSplitter,QTableWidget,QTableWidgetItem,QVBoxLayout,QWidget)
 import backend as api
 import change_review as review
+from pending_changes import CATALOG_KINDS
 from pending_publish import PendingPublisher
 
 STATES={'staged':'Feltöltésre vár','approved':'Jóváhagyva','publishing':'Feltöltés folyamatban','unconfirmed':'Eredmény ellenőrzése szükséges'}
@@ -105,7 +106,7 @@ class PendingPage(QWidget):
             relative=data['relative'];editor=self.owner.config_editor if relative=='server.json' else self.owner.quest_page.editor if relative.startswith('data/quest/') else self.owner.data_page.editor
             page=1 if relative=='server.json' else 3 if relative.startswith('data/quest/') else 2
             if editor.load(relative):self.owner.navigation.setCurrentRow(page)
-        elif kind=='catalog_edit':
+        elif kind in CATALOG_KINDS:
             page=self.owner.item_page;op=data['operation']
             page.loaded(self.queue.overlay_packet(self.queue.baseline([e])))
             if op['type']=='item':self.owner.navigation.setCurrentRow(8);page.open_item(tuple(op['key']))

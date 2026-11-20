@@ -101,7 +101,9 @@ bool HandleTypedSocketMaintenancePacket(entt::entity e,const char* data)
         const auto* profile=row && row->socketServiceProfile ? c->FindSocketService(*row->socketServiceProfile) : nullptr;
         const auto* stone=entry ? std::get_if<items::ItemSocketStoneRow>(&entry->category) : nullptr;const bool insertion=stone && stone->kind==items::SocketStoneKind::Insertable;
         const bool accessory=entry && items::AccessoryMaterial(*c,source->key);
-        if((!profile && !insertion && !accessory) || ((r.action==4 || r.action==5) && !accessory) || !items::PlainInventoryItem(*source,typed->state.fence.owner)){g_registry.remove<TypedSocketMaintenanceSession>(e);Reply(e,Status::Invalid);return true;}
+        const bool usable=entry && (accessory ? items::AccessorySource(*source,typed->state.fence.owner) :
+            items::PlainInventoryItem(*source,typed->state.fence.owner));
+        if((!profile && !insertion && !accessory) || ((r.action==4 || r.action==5) && !accessory) || !usable){g_registry.remove<TypedSocketMaintenanceSession>(e);Reply(e,Status::Invalid);return true;}
         TypedSocketMaintenanceSession next;next.nonce=Nonce();if(!next.nonce || !Operation(next.operation)){g_registry.remove<TypedSocketMaintenanceSession>(e);Reply(e,Status::Failed);return true;}
         next.fence=typed->state.fence;next.source=*source;next.quote.kind=accessory ? (r.action==5 ? 6 : 5) : insertion ? 4 : static_cast<std::uint8_t>(profile->kind);next.quote.units=accessory || insertion ? 1 : profile->unitsPerUse;next.quote.available=source->count;next.quote.chance=insertion ? Chance() : 0;
         std::vector<const items::PersistentItem*> candidates;for(const auto& item:typed->state.items)if(accessory ? items::AccessoryTarget(*c,item,next.fence.owner) : items::SocketMaintenanceTarget(*c,item,next.fence.owner))candidates.push_back(&item);

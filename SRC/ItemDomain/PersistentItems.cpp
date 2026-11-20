@@ -1372,11 +1372,13 @@ std::expected<ItemCommit,E> MakeEquipCommit(const ItemCatalog& c,std::array<std:
     return Relocate(c,operationId,owner,storages,inventory,std::move(changes));
 }
 std::expected<ItemCommit,E> MakeConsumeCommit(const ItemCatalog& c,std::array<std::uint8_t,16> operationId,ItemOwnerFence owner,
-    std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> inventory,ItemInstanceId id,std::uint32_t units)
+    std::span<const ItemStorageLayout> storages,std::span<const PersistentItem> inventory,ItemInstanceId id,std::uint32_t units,
+    ItemStorageKind storage)
 {
     if(std::ranges::all_of(operationId,[](auto b){return b==0;}))return std::unexpected(E::InvalidOperation);
     const auto* source=Placed(inventory,owner,id);if(!source)return std::unexpected(E::MissingItem);
-    if(source->placement->kind!=ItemStorageKind::Inventory)return std::unexpected(E::UnsupportedState);
+    if((storage!=ItemStorageKind::Inventory && storage!=ItemStorageKind::SpecialInventory) || source->placement->kind!=storage)
+        return std::unexpected(E::UnsupportedState);
     if(!units || units>source->count)return std::unexpected(E::InvalidChange);
     const auto layout=std::ranges::find_if(storages,[&](const ItemStorageLayout& l){
         return l.storage==ItemStorage{owner.owner,source->placement->kind,source->placement->storageId};});

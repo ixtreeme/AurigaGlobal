@@ -5,7 +5,8 @@ from PySide6.QtCore import QLockFile,QObject,Signal
 import backend as api
 import change_review as review
 
-SQL_KINDS={'item','container','bulk_rewards','mob_drop','mob_drop_delete','catalog_edit'}
+CATALOG_KINDS={'catalog_edit','catalog_socket_edit'}
+SQL_KINDS={'item','container','bulk_rewards','mob_drop','mob_drop_delete'} | CATALOG_KINDS
 PENDING={'staged','approved','publishing','unconfirmed'}
 _models={}
 
@@ -41,7 +42,9 @@ def rebind_profiles(document,current):
     def visit(value,previous):
         if isinstance(value,dict):
             for key,child in value.items():
-                if (key.endswith('_profile_id') or key in ('profile_id','policy_id')) and not (key=='ammo_policy_id' and document['base']['category_id']=='21'):
+                category=document['base']['category_id']
+                explicit=(key=='ammo_policy_id' and category=='21') or (key=='socket_profile_id' and category=='3')
+                if (key.endswith('_profile_id') or key in ('profile_id','policy_id')) and not explicit:
                     value[key]=previous.get(key) if isinstance(previous,dict) else None
                 else:visit(child,previous.get(key) if isinstance(previous,dict) else None)
         elif isinstance(value,list):
@@ -55,7 +58,16 @@ def compile_catalog(before,operations):
     model=catalog.Catalog(before) if any(op['type']=='item' for op in operations) else None
     for op in operations:
         if op['type']!='item':continue
-        key=tuple(op['key']);exists=any((int(r['category_id']),int(r['local_id']))==key for r in model.tables['item_base'])
+        key=tuple(op['key'])
+        if op.get('socket_profile_only'):
+            local=str(key[1])
+            child=next((row for row in model.tables['item_accessory'] if row['local_id']==local and row['category_id']==str(key[0])),None)
+            expected=op['document']['socket_profile']['id']
+            if child is None or child['socket_profile_id']!=expected:
+                raise api.EditorError('Az ékszer foglalatprofilja megváltozott. Készíts új tervezetet.')
+            model.apply_accessory_socket(op['document'],child)
+            continue
+        exists=any((int(r['category_id']),int(r['local_id']))==key for r in model.tables['item_base'])
         document=rebind_profiles(op['document'],model.item(key) if exists else {})
         model.apply(document,key if exists else None,encode_result=False)
     packet=copy.copy(before);packet['tables']=model.encode() if model is not None else before['tables'];packet['live_drops']=copy.deepcopy(before.get('live_drops',{}))
@@ -137,7 +149,7 @@ class PendingChanges(QObject):
         return result
 
     def baseline(self,entries=None):
-        sql=[e for e in (self.entries() if entries is None else entries) if e['body']['kind']=='catalog_edit']
+        sql=[e for e in (self.entries() if entries is None else entries) if e['body']['kind'] in CATALOG_KINDS]
         if not sql:return None
         payload=sql[0]['body']['payload']
         if 'before' in payload:return payload['before']
@@ -158,7 +170,7 @@ class PendingChanges(QObject):
 
     def slot(self,kind,payload):
         if kind=='file':return 'file:'+payload['relative']
-        if kind=='catalog_edit':return payload['operation']['slot']
+        if kind in CATALOG_KINDS:return payload['operation']['slot']
         if kind in ('ssh_profile','ssh_profile_delete'):return 'profile:'+(payload.get('profile') or payload['removed'])['id']
         if kind=='backup-policy':return kind
         if kind=='bench' and payload['action']=='wallet':return 'wallet:'+str(payload['owner'])
@@ -167,10 +179,12 @@ class PendingChanges(QObject):
 
     def put(self,title,kind,payload,rows,files=None):
         self.load();slot=self.slot(kind,payload);scope=review.scope(self.owner)
-        if kind=='catalog_edit' and 'before' in payload:
+        if kind in CATALOG_KINDS and 'before' in payload:
             payload=dict(payload);payload['before_ref']=self.store_baseline(payload.pop('before'))
         previous=next((e for e in self.entries() if slot and e.get('slot')==slot),None)
         if previous and previous['state']!='staged':raise api.EditorError('Ennek a módosításnak a korábbi feltöltése bizonytalan. Előbb ellenőrizd a szerver állapotát.')
+        if kind=='catalog_edit' and previous and previous['body']['kind']=='catalog_socket_edit':
+            kind='catalog_socket_edit'
         if previous and kind=='file':
             original=previous['body']['payload']
             base_encoding=original.get('base_encoding') or payload.get('base_encoding') or original.get('encoding','utf-8')
@@ -193,7 +207,7 @@ class PendingChanges(QObject):
         elif previous and kind=='bench' and payload['action']=='wallet':
             old=next((r[2] for r in previous['body']['rows'] if r[1]=='Yang'),None)
             if old is not None:rows=[(previous['body']['rows'][0][0],'Yang',old,str(payload['fields']['gold']))];rows=[r for r in rows if r[2]!=r[3]]
-        elif previous and not (kind=='catalog_edit' and payload['operation']['type']!='item'):rows=merged_rows(previous['body']['rows'],rows)
+        elif previous and not (kind in CATALOG_KINDS and payload['operation']['type']!='item'):rows=merged_rows(previous['body']['rows'],rows)
         stage=review.Stage.create(self.owner,title,kind,payload,rows,files,root=self.root,persistent=True)
         record=dict(id=stage.path.name,checksum=stage.checksum,scope=scope,slot=slot)
         updated=[e for e in self.index if previous is None or e['id']!=previous['id']]
@@ -258,8 +272,14 @@ class PendingChanges(QObject):
         try:
             for op in operations:
                 op_rows=rows if op['type']=='item' else target_rows.get((op['type'],tuple(op['key']) if op['type']=='container' else str(op['key'])),[])
+                kind='catalog_edit'
+                if op['type']=='item' and op['key'][0]==3:
+                    document=op['document']
+                    profile=document.get('socket_profile') or {}
+                    if profile.get('id')!=document['child'].get('socket_profile_id'):
+                        kind='catalog_socket_edit'
                 result=self.put(('Tárgy · ' if op['type']=='item' else 'Láda · ' if op['type']=='container' else 'Mobdrop · ')+op['name'],
-                                'catalog_edit',dict(before=baseline,operation=op),op_rows)
+                                kind,dict(before=baseline,operation=op),op_rows)
             self.save_index()
         except Exception:self.index=old_index;self.overlay_cache={};raise
         finally:self._editing=False
@@ -267,7 +287,7 @@ class PendingChanges(QObject):
         if result is None:raise api.EditorError('Nincs ideiglenesen mentendő módosítás.')
         return result
 
-    def catalog_entries(self):return [e for e in self.entries() if e['body']['kind']=='catalog_edit']
+    def catalog_entries(self):return [e for e in self.entries() if e['body']['kind'] in CATALOG_KINDS]
 
     def overlay_packet(self,packet):
         entries=self.catalog_entries()
@@ -312,7 +332,7 @@ class PendingChanges(QObject):
         for e in entries:
             if e['state']!='staged':continue
             payload=dict(e['body']['payload'],before=packet)
-            self.put(e['body']['title'],'catalog_edit',payload,e['body']['rows'])
+            self.put(e['body']['title'],e['body']['kind'],payload,e['body']['rows'])
 
     def publish_catalog(self,entries):
         import item_catalog as catalog

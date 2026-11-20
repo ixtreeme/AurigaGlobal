@@ -147,6 +147,8 @@ class Catalog:
                       trade=self.linked('item_trade_policy', base, 'trade_policy_id', 'policy_id'),
                       appearance=self.linked('item_appearance_profile', base, 'appearance_profile_id'),
                       refinement=refinement, levels=levels, bonuses=self.entries(base['base_bonus_profile_id']))
+        if category == 3:
+            result['socket_profile'] = self.socket_profile_document(child['socket_profile_id'])
         result.update(self.attribute_document(base))
         result['recipes'] = self.recipes_of(key)
         result['pet_food_rules']=[{k:v for k,v in r.items() if k not in ('category_id','local_id')} for r in sorted(self.tables['pet_feed_rule'],key=lambda r:int(r['service_kind'])) if (int(r['category_id']),int(r['local_id']))==tuple(key)]
@@ -472,6 +474,43 @@ class Catalog:
     def allocate(self, table, idcol='profile_id'):
         return str(max((int(row[idcol]) for row in self.tables[table]), default=0) + 1)
 
+    def socket_profile_document(self, identity):
+        profile = self.row('accessory_socket_profile', identity)
+        if profile is None:
+            return None
+        def rows(table, order):
+            found = [{k:v for k,v in row.items() if k != 'profile_id'} for row in self.tables[table]
+                     if row['profile_id'] == identity]
+            return sorted(found, key=lambda row: tuple(int(row[field]) for field in order))
+        return dict(id=identity,
+                    rules={key:value for key,value in profile.items() if key not in ('profile_id','code')},
+                    grades=rows('accessory_socket_grade', ('grade',)),
+                    materials=rows('accessory_socket_material', ('operation_kind','category_id','local_id')))
+
+    def apply_accessory_socket(self, document, child):
+        identity = child['socket_profile_id'] or None
+        child['socket_profile_id'] = identity
+        profile = document.get('socket_profile')
+        if not profile or profile['id'] != identity:
+            # The item editor can explicitly choose a different existing profile.
+            if identity is not None and self.row('accessory_socket_profile', identity) is None:
+                raise api.EditorError('A kiválasztott foglalatprofil már nem található.')
+            return
+        if self.socket_profile_document(identity) == profile:
+            return
+        for existing in self.tables['accessory_socket_profile']:
+            candidate = self.socket_profile_document(existing['profile_id'])
+            if all(candidate[section] == profile[section] for section in ('rules','grades','materials')):
+                child['socket_profile_id'] = existing['profile_id']
+                return
+        # Reusing a shared profile must never change other accessories or their clocks.
+        new_id = self.allocate('accessory_socket_profile')
+        self.replace('accessory_socket_profile', {'profile_id':new_id},
+                     [dict(profile['rules'], profile_id=new_id, code=f'editor.accessory_socket.{new_id}')])
+        self.replace('accessory_socket_grade', {'profile_id':new_id}, [dict(row, profile_id=new_id) for row in profile['grades']])
+        self.replace('accessory_socket_material', {'profile_id':new_id}, [dict(row, profile_id=new_id) for row in profile['materials']])
+        child['socket_profile_id'] = new_id
+
     def references(self, table, profile_id):
         _, sources, _ = PROFILES[table]
         return [(source, row) for source, field in sources for row in self.tables[source] if row.get(field) == str(profile_id)]
@@ -591,6 +630,8 @@ class Catalog:
             child['ammo_policy_id']=self.profile('item_ammo_policy',document['ammo'],None,idcol='policy_id')
         if category in (2, 3):
             child['resistance_profile_id'] = self.profile('item_resistance_profile', document['resistance'], child.get('resistance_profile_id'))
+        if category == 3:
+            self.apply_accessory_socket(document, child)
         self.apply_attributes(document,key)
         if category == 5:
             child['character_service']='1' if document.get('character_service') else '0'

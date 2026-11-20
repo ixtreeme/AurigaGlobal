@@ -5,6 +5,7 @@
 namespace auriga::item
 {
 bool AccessoryMaterial(const ItemCatalog&,ItemKey);
+bool AccessorySource(const PersistentItem&,ItemOwner);
 bool AccessoryTarget(const ItemCatalog&,const PersistentItem&,ItemOwner);
 std::expected<SocketMaintenancePlan,SocketMaintenanceError> MakeAccessorySocketCommit(const ItemCatalog&,
     std::array<std::uint8_t,16>,ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,

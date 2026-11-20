@@ -238,7 +238,8 @@ std::expected<ItemCommit,ItemPersistenceError> MakeUnequipCommit(const ItemCatal
 // a tombstone with no count and no placement. The effect of the use is the
 // caller's own plan (e.g. PlanInstantRecovery); this only writes the item.
 std::expected<ItemCommit,ItemPersistenceError> MakeConsumeCommit(const ItemCatalog&,std::array<std::uint8_t,16> operationId,
-    ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,ItemInstanceId,std::uint32_t units);
+    ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,ItemInstanceId,std::uint32_t units,
+    ItemStorageKind storage=ItemStorageKind::Inventory);
 // Writes a fixed seal's intent and lifetime. Maintain expires the seal atomically.
 std::expected<ItemCommit,ItemPersistenceError> MakeCompanionCommit(const ItemCatalog&,ItemOwnerFence,
     std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const CompanionRequest&);
