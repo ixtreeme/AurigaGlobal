@@ -2,7 +2,9 @@
 #include "TypedIdentityScrolls.hpp"
 #include "questmanager.h"
 #include "../ecs/ResourceAdmission.hpp"
+#include "../ecs/systems/AffectSystem.hpp"
 #include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/NetworkSyncSystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../entity/char_manager.h"
@@ -26,76 +28,62 @@ namespace item = auriga::item;
 namespace player = ecs::PlayerRuntime;
 
 enum NameResult { NamePending, NameMissing, NameInvalid, NameOccupied, NameChanged, NameRefused };
+enum EmpireResult { EmpireRefused, EmpireUnchanged, EmpireHasGuild, EmpireHasMarriage, EmpireChanged = 999 };
 
-std::optional<int> SubmitNameScroll(lua_State* L)
+struct ScrollUse
 {
-#ifdef ENABLE_LOCALECHECK_CHANGENAME
-    return NameRefused;
-#else
+    entt::entity actor;
+    const item::persistence::LoadedItemOwner* inventory;
+    item::ItemInstanceId source;
+    std::uint64_t revision;
+    std::array<std::uint8_t, 16> operation{};
+};
+
+std::optional<ScrollUse> ReadScrollUse(lua_State* L)
+{
     auto& manager = CQuestManager::instance();
     const auto* quest = manager.GetCurrentState();
     if (!lua_isyieldable(L) || !quest || quest->co != L || !quest->typedItemUse.id || manager.IsInOtherPCBlock())
-        return NameRefused;
-
-    std::size_t length = 0;
-    const char* argument = lua_type(L, 1) == LUA_TSTRING ? lua_tolstring(L, 1, &length) : nullptr;
-    if (!argument || !length) return NameMissing;
-    if (length > CHARACTER_NAME_MAX_LEN || std::string_view(argument, length).find('\0') != std::string_view::npos ||
-        !check_name(argument)) return NameInvalid;
+        return {};
 
     const auto actor = manager.GetCurrentPCEntity();
     if (!player::IsPC(actor) || g_registry.all_of<ecs::TypedItemBusy>(actor) ||
         !InventorySystem::CanHandleItems(actor) || !player::CanWarp(actor) ||
-        ecs::SocialSystem::GetGuild(actor) || ecs::SocialSystem::GetParty(actor) != entt::null)
-        return NameRefused;
-    if (!player::GetPendingName(actor).empty()) return NamePending;
+        ecs::SocialSystem::GetParty(actor) != entt::null)
+        return {};
 
-    const auto catalog = item::runtime::CurrentCatalog();
-    const auto* login = g_registry.try_get<ecs::TypedItemLogin>(actor);
     const auto* inventory = g_registry.try_get<ecs::TypedItems>(actor);
-    auto* desc = player::GetDesc(actor);
+    const auto* desc = player::GetDesc(actor);
     const auto source = item::ItemInstanceId::Create(quest->typedItemUse.id);
     const auto pid = player::GetPlayerID(actor);
-    if (!catalog || !login || !inventory || !desc || !desc->IsPhase(PHASE_GAME) || !source || !pid ||
-        inventory->state.fence.owner != item::ItemOwner{item::ItemOwnerKind::Character, pid})
-        return NameRefused;
+    if (!g_registry.all_of<ecs::TypedItemLogin>(actor) || !inventory || !desc || !desc->IsPhase(PHASE_GAME) ||
+        !source || !pid || inventory->state.fence.owner != item::ItemOwner{item::ItemOwnerKind::Character, pid})
+        return {};
 
-    const std::string before(player::GetName(actor));
-    const std::string after(argument, length);
-    std::unique_ptr<SQLMsg> name(DBManager::instance().DirectQueryPrepared(
-        "SELECT 1 FROM player.player WHERE name=? LIMIT 1", {SqlParam::Text(after)}));
-    if (!name || name->uiSQLErrno || !name->Get()) return NameRefused;
-    if (name->Get()->uiNumRows) return NameOccupied;
+    ScrollUse use{actor, &inventory->state, *source, quest->typedItemUse.revision};
+    if (RAND_bytes(use.operation.data(), static_cast<int>(use.operation.size())) != 1) return {};
+    return use;
+}
 
+bool QueueScroll(const ScrollUse& use, lua_State* L, item::ItemCommit write,
+    std::function<void(entt::entity, bool)> apply)
+{
+    const auto actor = use.actor;
     auto permit = ecs::resource_admission::Enter({actor}, auriga::resource_admission::Operation::ItemUse);
-    if (!permit || !permit->Current()) return NameRefused;
-    std::array<std::uint8_t, 16> operation{};
-    if (RAND_bytes(operation.data(), static_cast<int>(operation.size())) != 1) return NameRefused;
-    const auto& state = inventory->state;
-    const auto fence = state.fence;
-    auto write = item::MakeNameScrollCommit(*catalog, operation, fence, state.storages, state.items,
-        *source, quest->typedItemUse.revision, {before, after});
-    if (!write) return NameRefused;
+    if (!permit || !permit->Current()) return false;
 
-    const auto token = login->token;
-    const std::string host = desc->GetHostName();
+    const auto pid = player::GetPlayerID(actor);
+    const auto token = g_registry.get<ecs::TypedItemLogin>(actor).token;
+    const auto fence = write.owners.front();
     auto held = std::make_shared<auriga::resource_admission::Permit>(std::move(*permit));
     g_registry.emplace<ecs::TypedItemBusy>(actor);
-    if (!item::runtime::RequestCommit(fence.owner, fence.sessionGeneration, std::move(*write),
-        [actor, token, pid, coroutine = L, before, after, host, held](item::runtime::CommitOutcome result) mutable {
+    if (item::runtime::RequestCommit(fence.owner, fence.sessionGeneration, std::move(write),
+        [actor, token, pid, coroutine = L, apply = std::move(apply), held](item::runtime::CommitOutcome result) mutable {
             const auto current = [&] {
                 const auto* active = g_registry.valid(actor) ? g_registry.try_get<ecs::TypedItemLogin>(actor) : nullptr;
                 return active && active->token == token;
             };
-            if (result.write)
-            {
-                if (current()) player::SetPendingName(actor, after);
-                if (!result.write->replay)
-                {
-                    LogManager::instance().ChangeNameLog(pid, before.c_str(), after.c_str(), host.c_str());
-                    MessengerManager::instance().PublishRemovedAccountLinks(before);
-                }
-            }
+            if (result.write) apply(current() ? actor : entt::null, result.write->replay);
             if (!current()) return;
             if (result.state)
                 g_registry.emplace_or_replace<ecs::TypedItems>(actor, std::move(*result.state));
@@ -105,18 +93,100 @@ std::optional<int> SubmitNameScroll(lua_State* L)
             if (current()) CQuestManager::instance().ResumeTypedItems(pid, coroutine, result.write.has_value());
             if (current()) PumpTypedItemGrants(actor);
         }))
-    {
-        g_registry.remove<ecs::TypedItemBusy>(actor);
+        return true;
+
+    g_registry.remove<ecs::TypedItemBusy>(actor);
+    return false;
+}
+
+std::optional<int> SubmitNameScroll(lua_State* L)
+{
+#ifdef ENABLE_LOCALECHECK_CHANGENAME
+    return NameRefused;
+#else
+    std::size_t length = 0;
+    const char* argument = lua_type(L, 1) == LUA_TSTRING ? lua_tolstring(L, 1, &length) : nullptr;
+    if (!argument || !length) return NameMissing;
+    if (length > CHARACTER_NAME_MAX_LEN || std::string_view(argument, length).find('\0') != std::string_view::npos ||
+        !check_name(argument)) return NameInvalid;
+
+    const auto use = ReadScrollUse(L);
+    const auto catalog = item::runtime::CurrentCatalog();
+    if (!use || !catalog || ecs::SocialSystem::GetGuild(use->actor)) return NameRefused;
+    if (!player::GetPendingName(use->actor).empty()) return NamePending;
+
+    const std::string before(player::GetName(use->actor));
+    const std::string after(argument, length);
+    std::unique_ptr<SQLMsg> name(DBManager::instance().DirectQueryPrepared(
+        "SELECT 1 FROM player.player WHERE name=? LIMIT 1", {SqlParam::Text(after)}));
+    if (!name || name->uiSQLErrno || !name->Get()) return NameRefused;
+    if (name->Get()->uiNumRows) return NameOccupied;
+
+    const auto& state = *use->inventory;
+    auto write = item::MakeNameScrollCommit(*catalog, use->operation, state.fence, state.storages, state.items,
+        use->source, use->revision, {before, after});
+    if (!write) return NameRefused;
+
+    const auto pid = player::GetPlayerID(use->actor);
+    const std::string host = player::GetDesc(use->actor)->GetHostName();
+    if (!QueueScroll(*use, L, std::move(*write),
+        [pid, before, after, host](entt::entity actor, bool replay) {
+            if (actor != entt::null) player::SetPendingName(actor, after);
+            if (!replay)
+            {
+                LogManager::instance().ChangeNameLog(pid, before.c_str(), after.c_str(), host.c_str());
+                MessengerManager::instance().PublishRemovedAccountLinks(before);
+            }
+        }))
         return NameRefused;
-    }
     return std::nullopt;
 #endif
 }
+
+std::optional<int> SubmitEmpireScroll(lua_State* L)
+{
+    const auto empire = luaL_checkinteger(L, 1);
+    const auto use = ReadScrollUse(L);
+    const auto catalog = item::runtime::CurrentCatalog();
+    if (empire < 1 || empire > 3 || !use || !catalog || AffectSystem::IsPolymorphed(use->actor))
+        return EmpireRefused;
+
+    const item::EmpireScrollChange change{
+        player::GetAccountID(use->actor), player::GetEmpire(use->actor), static_cast<std::uint8_t>(empire)};
+    if (change.before == change.after) return EmpireUnchanged;
+    if (ecs::SocialSystem::GetGuild(use->actor)) return EmpireHasGuild;
+
+    const auto account = SqlParam::UInt(change.account);
+    std::unique_ptr<SQLMsg> eligibility(DBManager::instance().DirectQueryPrepared(
+        "SELECT EXISTS (SELECT 1 FROM player.player AS p JOIN player.guild_member AS m ON m.pid=p.id WHERE p.account_id=?), "
+        "EXISTS (SELECT 1 FROM player.player AS p JOIN player.marriage AS m ON m.pid1=p.id OR m.pid2=p.id WHERE p.account_id=?)",
+        {account, account}));
+    if (!eligibility || eligibility->uiSQLErrno || !eligibility->Get()) return EmpireRefused;
+    const auto row = eligibility->Get()->FetchRow();
+    if (!row || !row[0] || !row[1]) return EmpireRefused;
+    if (row[0][0] == '1') return EmpireHasGuild;
+    if (row[1][0] == '1') return EmpireHasMarriage;
+
+    const auto& state = *use->inventory;
+    auto write = item::MakeEmpireScrollCommit(*catalog, use->operation, state.fence, state.storages, state.items,
+        use->source, use->revision, change);
+    if (!write) return EmpireRefused;
+
+    if (!QueueScroll(*use, L, std::move(*write),
+        [empire = change.after](entt::entity actor, bool) {
+            if (actor == entt::null) return;
+            player::SetEmpire(actor, empire);
+            if (auto* desc = player::GetDesc(actor)) desc->GetAccountTable().bEmpire = empire;
+            NetworkSyncSystem::UpdatePacket(actor);
+        }))
+        return EmpireRefused;
+    return std::nullopt;
 }
 
-ALUA(pc_typed_change_name)
+template<int Changed, int Refused>
+int FinishScroll(lua_State* L, std::optional<int> status)
 {
-    if (const auto status = SubmitNameScroll(L))
+    if (status)
     {
         lua_pushinteger(L, *status);
         return 1;
@@ -125,10 +195,14 @@ ALUA(pc_typed_change_name)
     lua_settop(L, 0);
     lua_pushliteral(L, "typed_items");
     return lua_yieldk(L, 1, 0, [](lua_State* thread, int, lua_KContext) {
-        const int status = lua_toboolean(thread, 1) ? NameChanged : NameRefused;
+        const int status = lua_toboolean(thread, 1) ? Changed : Refused;
         lua_settop(thread, 0);
         lua_pushinteger(thread, status);
         return 1;
     });
 }
+}
+
+ALUA(pc_typed_change_name) { return FinishScroll<NameChanged, NameRefused>(L, SubmitNameScroll(L)); }
+ALUA(pc_typed_change_empire) { return FinishScroll<EmpireChanged, EmpireRefused>(L, SubmitEmpireScroll(L)); }
 }

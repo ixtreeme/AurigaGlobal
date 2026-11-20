@@ -7,6 +7,7 @@ namespace auriga::item
 namespace
 {
 constexpr std::string_view NameScrollCode = "catalog.10.tincture_of_the_name_2cbd51b0aa94";
+constexpr std::string_view EmpireScrollCode = "catalog.10.tincture_of_kingdoms_83e4f6b6bb83";
 
 bool ValidNames(NameScrollChange names)
 {
@@ -14,6 +15,28 @@ bool ValidNames(NameScrollChange names)
         return !name.empty() && name.size() <= CHARACTER_NAME_MAX_LEN && name.find('\0') == name.npos;
     };
     return valid(names.before) && valid(names.after) && names.before != names.after;
+}
+
+bool ValidEmpires(EmpireScrollChange change)
+{
+    return change.account && change.before >= 1 && change.before <= 3 &&
+        change.after >= 1 && change.after <= 3 && change.before != change.after;
+}
+
+std::expected<ItemCommit, ItemPersistenceError> MakeScrollCommit(const ItemCatalog& catalog,
+    std::array<std::uint8_t, 16> operation, ItemOwnerFence fence, std::span<const ItemStorageLayout> storages,
+    std::span<const PersistentItem> inventory, ItemInstanceId source, std::uint64_t revision,
+    std::uint16_t outcome, std::vector<std::uint8_t> receipt)
+{
+    auto write = MakeConsumeCommit(catalog, operation, fence, storages, inventory, source, 1);
+    if (!write) return std::unexpected(write.error());
+    if (write->items.front().before->revision != revision)
+        return std::unexpected(ItemPersistenceError::Conflict);
+
+    write->outcomeCode = outcome;
+    write->result = std::move(receipt);
+    if (auto valid = ValidateItemCommit(catalog, *write); !valid) return std::unexpected(valid.error());
+    return write;
 }
 }
 
@@ -31,10 +54,38 @@ std::optional<NameScrollChange> ReadNameScrollChange(const ItemCommit& write)
     return change;
 }
 
-bool ValidateNameScrollWrite(const ItemCatalog& catalog, const ItemCommit& write)
+std::optional<EmpireScrollChange> ReadEmpireScrollChange(const ItemCommit& write)
 {
-    if (write.outcomeCode != NameScrollOutcome) return true;
-    if (!ReadNameScrollChange(write) || write.kind != ItemOperationKind::Consume ||
+    const auto& data = write.result;
+    if (write.outcomeCode != EmpireScrollOutcome || data.size() != 10 ||
+        data[0] != 'E' || data[1] != 'M' || data[2] != 'P' || data[3] != 1)
+        return {};
+
+    EmpireScrollChange change{0, data[4], data[5]};
+    for (unsigned byte = 0; byte < 4; ++byte)
+        change.account |= std::uint32_t{data[6 + byte]} << (8 * byte);
+    if (!ValidEmpires(change)) return {};
+    return change;
+}
+
+bool ValidateIdentityScrollWrite(const ItemCatalog& catalog, const ItemCommit& write)
+{
+    std::string_view contentCode;
+    switch (write.outcomeCode)
+    {
+    case NameScrollOutcome:
+        if (!ReadNameScrollChange(write)) return false;
+        contentCode = NameScrollCode;
+        break;
+    case EmpireScrollOutcome:
+        if (!ReadEmpireScrollChange(write)) return false;
+        contentCode = EmpireScrollCode;
+        break;
+    default:
+        return true;
+    }
+
+    if (write.kind != ItemOperationKind::Consume ||
         write.owners.size() != 1 || write.owners.front().owner.kind != ItemOwnerKind::Character ||
         write.owners.front().owner.id > UINT32_MAX || write.items.size() != 1 ||
         !write.wallets.empty() || write.ground || write.recovery || write.learning || write.petStudyCooldown ||
@@ -44,7 +95,7 @@ bool ValidateNameScrollWrite(const ItemCatalog& catalog, const ItemCommit& write
     const auto& item = write.items.front();
     if (!item.before || !PlainInventoryItem(*item.before, write.owners.front().owner)) return false;
     const auto* definition = catalog.Find(item.before->key);
-    if (!definition || definition->base.retired || definition->base.contentCode != NameScrollCode ||
+    if (!definition || definition->base.retired || definition->base.contentCode != contentCode ||
         item.before->refinementLevel || !item.before->count || item.before->revision == UINT64_MAX)
         return false;
 
@@ -63,17 +114,23 @@ std::expected<ItemCommit, ItemPersistenceError> MakeNameScrollCommit(const ItemC
     std::span<const PersistentItem> inventory, ItemInstanceId source, std::uint64_t revision, NameScrollChange names)
 {
     if (!ValidNames(names)) return std::unexpected(ItemPersistenceError::InvalidChange);
+    std::vector<std::uint8_t> receipt{
+        'N', 'A', 'M', 1, static_cast<std::uint8_t>(names.before.size()), static_cast<std::uint8_t>(names.after.size())};
+    receipt.insert(receipt.end(), names.before.begin(), names.before.end());
+    receipt.insert(receipt.end(), names.after.begin(), names.after.end());
+    return MakeScrollCommit(catalog, operation, fence, storages, inventory, source, revision,
+        NameScrollOutcome, std::move(receipt));
+}
 
-    auto write = MakeConsumeCommit(catalog, operation, fence, storages, inventory, source, 1);
-    if (!write) return std::unexpected(write.error());
-    if (write->items.front().before->revision != revision)
-        return std::unexpected(ItemPersistenceError::Conflict);
-
-    write->outcomeCode = NameScrollOutcome;
-    write->result = {'N', 'A', 'M', 1, static_cast<std::uint8_t>(names.before.size()), static_cast<std::uint8_t>(names.after.size())};
-    write->result.insert(write->result.end(), names.before.begin(), names.before.end());
-    write->result.insert(write->result.end(), names.after.begin(), names.after.end());
-    if (auto valid = ValidateItemCommit(catalog, *write); !valid) return std::unexpected(valid.error());
-    return write;
+std::expected<ItemCommit, ItemPersistenceError> MakeEmpireScrollCommit(const ItemCatalog& catalog,
+    std::array<std::uint8_t, 16> operation, ItemOwnerFence fence, std::span<const ItemStorageLayout> storages,
+    std::span<const PersistentItem> inventory, ItemInstanceId source, std::uint64_t revision, EmpireScrollChange change)
+{
+    if (!ValidEmpires(change)) return std::unexpected(ItemPersistenceError::InvalidChange);
+    std::vector<std::uint8_t> receipt{'E', 'M', 'P', 1, change.before, change.after};
+    for (unsigned byte = 0; byte < 4; ++byte)
+        receipt.push_back(static_cast<std::uint8_t>(change.account >> (8 * byte)));
+    return MakeScrollCommit(catalog, operation, fence, storages, inventory, source, revision,
+        EmpireScrollOutcome, std::move(receipt));
 }
 }

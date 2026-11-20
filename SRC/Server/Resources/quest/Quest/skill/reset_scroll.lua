@@ -1,21 +1,21 @@
 quest reset_scroll begin
 	state start begin
-		when 71054.use begin
+		when "catalog.10.tincture_of_kingdoms_83e4f6b6bb83".typed_use begin
 			if not pc.can_warp() then
 				syschat(gameforge[pc.get_language()].reset_scroll._35)
 				return
 			end
 
-			say_title(string.format("%s:", item_name(item.get_vnum())))
+			say_title(string.format("%s:", item_name(71054)))
 			say("")
 			local lang = pc.get_language()
-			ResetScroll.ShowRequisites(item.get_vnum());
-			if (not ResetScroll.CheckRequisites(item.get_vnum())) then
+			ResetScroll.ShowRequisites(71054);
+			if (not ResetScroll.CheckRequisites(71054)) then
 				return
 			end
 
 			if (select(gameforge[lang].reset_scroll._1, gameforge[lang].reset_scroll._2) == 1) then
-				say_title(string.format("%s:", item_name(item.get_vnum())))
+				say_title(string.format("%s:", item_name(71054)))
 				say("")
 				say(gameforge[lang].reset_scroll._7)
 				local emp = select(
@@ -29,9 +29,9 @@ quest reset_scroll begin
 					return
 				end
 
-				say_title(string.format("%s:", item_name(item.get_vnum())))
+				say_title(string.format("%s:", item_name(71054)))
 				say("")
-				local ret = pc.change_empire(emp)
+				local ret = pc.typed_change_empire(emp)
 				if (ret == 1) then
 					say_reward(string.format(gameforge[lang].reset_scroll._8, locale.empire_names[pc.get_empire()]))
 					return
@@ -43,9 +43,11 @@ quest reset_scroll begin
 					say_reward(gameforge[lang].reset_scroll._11)
 					say_reward(gameforge[lang].reset_scroll._12)
 					return
+				elseif (ret ~= 999) then
+					say(gameforge[lang].common.unknownerr)
+					return
 				end
 
-				pc.remove_item(71054, 1);
 				say(gameforge[lang].reset_scroll._13)
 			end
 		end

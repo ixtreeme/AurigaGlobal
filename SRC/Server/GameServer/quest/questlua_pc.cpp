@@ -4508,6 +4508,7 @@ teleport_area:
 			{ "send_block_mode",		pc_send_block_mode	},
 
 			{ "change_empire",			pc_change_empire	},
+			{ "typed_change_empire",	pc_typed_change_empire },
 			{ "get_change_empire_count",	pc_get_change_empire_count	},
 			{ "set_change_empire_count",	pc_set_change_empire_count	},
 

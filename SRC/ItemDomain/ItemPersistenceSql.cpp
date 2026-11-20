@@ -214,6 +214,29 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
         tx.push_back({"DELETE FROM player.messenger_list WHERE account=? OR companion=?",
             {U::Text(std::string(rename->before)), U::Text(std::string(rename->before))}, {}, {}});
     }
+    if (const auto empire = ReadEmpireScrollChange(r))
+    {
+        const auto account = U::UInt(empire->account);
+        tx.push_back({"SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' "
+            "AND TABLE_NAME IN ('player','player_index','change_empire','guild_member','marriage') "
+            "HAVING COUNT(*)=5 AND SUM(ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE')=5", {}, {}, 1});
+        tx.push_back({"SELECT i.id FROM player.player_index AS i JOIN player.player AS p ON p.account_id=i.id "
+            "WHERE i.id=? AND i.empire=? AND p.id=? AND p.id IN (i.pid1,i.pid2,i.pid3,i.pid4) FOR UPDATE",
+            {account, U::UInt(empire->before), U::UInt(r.owners.front().owner.id)}, {}, 1});
+        tx.push_back({"SELECT id FROM player.player WHERE account_id=? ORDER BY id FOR UPDATE",
+            {account}, {}, {}});
+        tx.push_back({"SELECT 1 FROM player.player AS p JOIN player.guild_member AS m ON m.pid=p.id "
+            "WHERE p.account_id=? LIMIT 1 FOR UPDATE", {account}, {}, 0});
+        tx.push_back({"SELECT 1 FROM player.player AS p JOIN player.marriage AS m ON m.pid1=p.id OR m.pid2=p.id "
+            "WHERE p.account_id=? LIMIT 1 FOR UPDATE", {account}, {}, 0});
+        tx.push_back({"UPDATE player.player_index SET empire=? WHERE id=? AND empire=?",
+            {U::UInt(empire->after), account, U::UInt(empire->before)}, 1, {}});
+        tx.push_back({"INSERT INTO player.change_empire(account_id,change_count,last_change) "
+            "SELECT ?,0,NOW() FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM player.change_empire WHERE account_id=?)",
+            {account, account}, {}, {}});
+        tx.push_back({"UPDATE player.change_empire SET change_count=change_count+1,last_change=NOW() WHERE account_id=?",
+            {account}, 1, {}});
+    }
     if(const auto relation=ReadMarriageItemChange(r))
     {
         const auto first=(std::min)(relation->initiator,relation->partner);
