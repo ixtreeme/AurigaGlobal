@@ -336,19 +336,7 @@ namespace quest
 			return 0;
 		}
 
-		if (!GayaSystem::CheckItemsFull(chEntity))
-		{
-			GayaSystem::UpdateItems(chEntity);
-			GayaSystem::InfoMarket(chEntity);
-			GayaSystem::StartCheckTimeMarket(chEntity);
-		}
-		else
-		{
-			GayaSystem::InfoMarket(chEntity);
-			GayaSystem::StartCheckTimeMarket(chEntity);
-		}
-
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "OpenGuiGayaMarket");
+		GayaSystem::OpenTypedMarket(chEntity);
 		return 0;
 	}
 #endif

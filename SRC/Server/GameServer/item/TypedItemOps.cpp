@@ -102,7 +102,8 @@ void Tell(entt::entity character, const char* text)
 static std::expected<void, items::ItemMissionError> RequestTypedItemExchange(entt::entity character,
 	std::vector<items::MissionItemAmount> costs, std::vector<items::MissionItemAmount> rewards,
 	std::uint64_t goldCost, std::function<void(bool)> done,
-	quest::TypedItemUseSource source, std::uint64_t goldReward, bool inQuest)
+	quest::TypedItemUseSource source, std::uint64_t goldReward, bool inQuest,
+	items::WalletCurrency currency = items::WalletCurrency::Gold)
 {
 	using Error = items::ItemMissionError;
 	if (!g_registry.valid(character) || g_registry.all_of<ecs::TypedItemBusy>(character))
@@ -152,7 +153,7 @@ static std::expected<void, items::ItemMissionError> RequestTypedItemExchange(ent
 	std::ranges::copy(nonce, proof.action.begin());
 	items::ItemMission exchange;
 	exchange.id = exchange.version = 1;
-	exchange.code = "quest.item_exchange";
+	exchange.code = currency == items::WalletCurrency::Gaya ? "gaya.market.purchase" : "quest.item_exchange";
 	exchange.name = "Quest item exchange";
 	exchange.costs = std::move(costs);
 	exchange.rewards = std::move(rewards);
@@ -162,7 +163,7 @@ static std::expected<void, items::ItemMissionError> RequestTypedItemExchange(ent
 		: items::runtime::PeekInstanceIds(items::MaxItemCommitItems);
 	auto commit = inQuest
 		? items::MakeItemMissionCommit(*catalog, exchange, proof, 0, fence, state.storages, state.items, state.wallets, ids, TypedItemEffectNow(), sourceId)
-		: items::MakeGameplayItemExchangeCommit(*catalog, exchange, proof, fence, state.storages, state.items, state.wallets, ids, TypedItemEffectNow());
+		: items::MakeGameplayItemExchangeCommit(*catalog, exchange, proof, fence, state.storages, state.items, state.wallets, ids, TypedItemEffectNow(), currency);
 	if (!commit)
 		return std::unexpected(commit.error());
 	if (goldReward && std::ranges::any_of(commit->wallets, [](const auto& change) { return change.after.balance >= GOLD_MAX; }))
@@ -205,9 +206,9 @@ std::expected<void, items::ItemMissionError> RequestTypedQuestItemExchange(entt:
 
 std::expected<void, items::ItemMissionError> RequestTypedGameplayItemExchange(entt::entity character,
 	std::vector<items::MissionItemAmount> costs, std::vector<items::MissionItemAmount> rewards,
-	std::uint64_t goldCost, std::function<void(bool)> done)
+	std::uint64_t price, std::function<void(bool)> done, items::WalletCurrency currency)
 {
-	return RequestTypedItemExchange(character,std::move(costs),std::move(rewards),goldCost,std::move(done),{},0,false);
+	return RequestTypedItemExchange(character,std::move(costs),std::move(rewards),price,std::move(done),{},0,false,currency);
 }
 
 void RequestTypedItemMove(entt::entity character, std::uint64_t itemId, std::uint8_t storageKind, std::uint64_t storageId, std::uint32_t cell)

@@ -3097,15 +3097,20 @@ ACMD(do_gaya_system)
 	}
 	else if (strArg1 == "market")
 	{
-		if (0 == arg2[0])
-			return;
-
-		int slot = atoi(arg2);
-		GayaSystem::MarketItems(character, slot);
+		GayaSystem::OpenTypedMarket(character);
 	}
-	else if (strArg1 == "refresh")
+	else if (strArg1 == "market_buy")
 	{
-		GayaSystem::RefreshItems(character);
+		const std::string_view sessionText(arg2), slotText(arg3);
+		std::uint64_t session = 0;
+		std::uint32_t slot = 0;
+		const auto endSession = sessionText.data() + sessionText.size();
+		const auto endSlot = slotText.data() + slotText.size();
+		const auto parsedSession = std::from_chars(sessionText.data(), endSession, session);
+		const auto parsedSlot = std::from_chars(slotText.data(), endSlot, slot);
+		if (parsedSession.ec == std::errc{} && parsedSession.ptr == endSession && session &&
+			parsedSlot.ec == std::errc{} && parsedSlot.ptr == endSlot)
+			GayaSystem::BuyTypedMarketOffer(character, session, slot);
 	}
 }
 #endif

@@ -13,4 +13,5 @@ std::expected<void, auriga::item::ItemMissionError> RequestTypedQuestItemExchang
 
 std::expected<void, auriga::item::ItemMissionError> RequestTypedGameplayItemExchange(entt::entity character,
 	std::vector<auriga::item::MissionItemAmount> costs, std::vector<auriga::item::MissionItemAmount> rewards,
-	std::uint64_t goldCost, std::function<void(bool written)> done);
+	std::uint64_t price, std::function<void(bool written)> done,
+	auriga::item::WalletCurrency currency = auriga::item::WalletCurrency::Gold);

@@ -93,9 +93,11 @@ std::expected<std::vector<std::uint8_t>,E> ItemMissionReceipt(const ItemMission&
 static std::expected<ItemCommit,E> MakeExchangeCommit(const ItemCatalog& c,const ItemMission& m,ItemMissionProof proof,std::uint16_t level,
     ItemOwnerFence fence,std::span<const ItemStorageLayout> layouts,std::span<const PersistentItem> inventory,
     std::span<const ItemWallet> wallets,std::span<const ItemInstanceId> ids,std::uint64_t nowUtcMs,
-    std::optional<ItemInstanceId> requiredSource,bool gameplay)
+    std::optional<ItemInstanceId> requiredSource,bool gameplay,WalletCurrency currency)
 {
     if(!ValidateMission(c,m,gameplay) || proof.owner!=fence.owner || inventory.size()>MaxLoadedOwnerItems)return std::unexpected(E::Invalid);
+    if(currency!=WalletCurrency::Gold && (!gameplay || currency!=WalletCurrency::Gaya || m.goldReward))
+        return std::unexpected(E::Invalid);
     if(level<m.minimumLevel)return std::unexpected(E::Level);
     const auto op=ItemMissionOperation(proof);const auto receipt=MissionReceipt(m,proof,gameplay);if(!op || !receipt)return std::unexpected(E::Invalid);
     std::set<ItemInstanceId> unique;for(const auto& i:inventory)if(i.owner!=fence.owner || !unique.insert(i.id).second || !ValidatePersistentItem(c,i))return std::unexpected(E::Invalid);
@@ -109,11 +111,11 @@ static std::expected<ItemCommit,E> MakeExchangeCommit(const ItemCatalog& c,const
             source->count < m.costs.front().count)
             return std::unexpected(E::Requirements);
     }
-    const ItemWallet* gold=nullptr;for(const auto& w:wallets)if(w.owner==fence.owner && w.currency==WalletCurrency::Gold)
-    {if(gold || !w.revision || w.revision==UINT64_MAX || w.balance>INT64_MAX)return std::unexpected(E::Invalid);gold=&w;}
-    if((m.goldCost || m.goldReward) && !gold)return std::unexpected(E::Invalid);
-    if(gold && gold->balance<m.goldCost)return std::unexpected(E::NoMoney);
-    if(gold && m.goldReward>std::uint64_t(INT64_MAX)-(gold->balance-m.goldCost))return std::unexpected(E::Limit);
+    const ItemWallet* wallet=nullptr;for(const auto& w:wallets)if(w.owner==fence.owner && w.currency==currency)
+    {if(wallet || !w.revision || w.revision==UINT64_MAX || w.balance>INT64_MAX)return std::unexpected(E::Invalid);wallet=&w;}
+    if((m.goldCost || m.goldReward) && !wallet)return std::unexpected(E::Invalid);
+    if(wallet && wallet->balance<m.goldCost)return std::unexpected(E::NoMoney);
+    if(wallet && m.goldReward>std::uint64_t(INT64_MAX)-(wallet->balance-m.goldCost))return std::unexpected(E::Limit);
     std::vector<PersistentItem> working(inventory.begin(),inventory.end());std::vector<std::size_t> eligible;
     for(std::size_t i=0;i<working.size();++i)
         if((gameplay ? ExchangeItemUsable : MissionItemUsable)(working[i],fence.owner) && (!requiredSource || working[i].id==*requiredSource))
@@ -139,7 +141,7 @@ static std::expected<ItemCommit,E> MakeExchangeCommit(const ItemCatalog& c,const
     for(std::size_t i=0;i<inventory.size();++i)if(working[i]!=inventory[i])
     {working[i].revision=inventory[i].revision+1;out.items.push_back({inventory[i],working[i]});}
     for(std::size_t i=inventory.size();i<working.size();++i){working[i].revision=1;out.items.push_back({{},working[i]});}
-    if(gold && m.goldCost!=m.goldReward){auto after=*gold;after.balance=gold->balance-m.goldCost+m.goldReward;++after.revision;out.wallets.push_back({*gold,after});}
+    if(wallet && m.goldCost!=m.goldReward){auto after=*wallet;after.balance=wallet->balance-m.goldCost+m.goldReward;++after.revision;out.wallets.push_back({*wallet,after});}
     if(out.items.size()>MaxItemCommitItems)return std::unexpected(E::Limit);
     for(const auto& change:out.items)for(const auto* i:{change.before ? &*change.before : nullptr,&change.after})if(i && i->placement)
     {const ItemStorage storage{i->owner,i->placement->kind,i->placement->storageId};if(std::ranges::find(out.storages,storage,&ItemStorageLayout::storage)!=out.storages.end())continue;
@@ -151,13 +153,13 @@ std::expected<ItemCommit,E> MakeItemMissionCommit(const ItemCatalog& c,const Ite
     std::span<const ItemWallet> wallets,std::span<const ItemInstanceId> ids,std::uint64_t nowUtcMs,
     std::optional<ItemInstanceId> requiredSource)
 {
-    return MakeExchangeCommit(c,m,proof,level,fence,layouts,inventory,wallets,ids,nowUtcMs,requiredSource,false);
+    return MakeExchangeCommit(c,m,proof,level,fence,layouts,inventory,wallets,ids,nowUtcMs,requiredSource,false,WalletCurrency::Gold);
 }
 std::expected<ItemCommit,E> MakeGameplayItemExchangeCommit(const ItemCatalog& c,const ItemMission& m,ItemMissionProof proof,
     ItemOwnerFence fence,std::span<const ItemStorageLayout> layouts,std::span<const PersistentItem> inventory,
-    std::span<const ItemWallet> wallets,std::span<const ItemInstanceId> ids,std::uint64_t nowUtcMs)
+    std::span<const ItemWallet> wallets,std::span<const ItemInstanceId> ids,std::uint64_t nowUtcMs,WalletCurrency currency)
 {
-    return MakeExchangeCommit(c,m,proof,0,fence,layouts,inventory,wallets,ids,nowUtcMs,{},true);
+    return MakeExchangeCommit(c,m,proof,0,fence,layouts,inventory,wallets,ids,nowUtcMs,{},true,currency);
 }
 std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeItemMissionBoard(const ItemCatalog& c,const ItemMissionBoard* board,
     std::uint32_t npc,std::uint64_t session,std::uint64_t request,ItemMissionStatus status,std::uint32_t selected,std::span<const std::uint32_t> completed)
