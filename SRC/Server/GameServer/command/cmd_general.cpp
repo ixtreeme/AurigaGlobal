@@ -1,4 +1,7 @@
 #include "../item/TypedBooks.hpp"
+#include "../item/ItemCatalogRuntime.hpp"
+#include "../item/ItemStore.hpp"
+#include "../item/TypedQuestItems.hpp"
 #include "stdafx.h"
 #include "../combat/DeathRecapEvents.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
@@ -2710,53 +2713,27 @@ ACMD(do_PetEvo) {
 namespace
 {
 	const uint32_t STONE_CRAFT_NPC_VNUM = 9005;
-	const uint32_t STONE_CRAFT_REWARD_VNUM = 39066;
-	const int STONE_CRAFT_NEED_COUNT = 5;
-	const int STONE_CRAFT_MAX_DISTANCE = 1000;
+    constexpr std::uint32_t StoneCraftNeed = 5;
+    constexpr std::uint32_t STONE_CRAFT_MAX_DISTANCE = 1000;
+    constexpr std::string_view StoneCraftReward = "catalog.10.gaya_4dbbae9647e8";
 
-	static bool IsStoneCraftMaterialVnum(uint32_t vnum)
-	{
-		if (vnum >= 28030 && vnum <= 28043)
-			return true;
-
-		if (vnum >= 28130 && vnum <= 28143)
-			return true;
-
-		if (vnum >= 28230 && vnum <= 28243)
-			return true;
-
-		if (vnum >= 28330 && vnum <= 28343)
-			return true;
-
-		if (vnum >= 28430 && vnum <= 28443)
-			return true;
-
-		switch (vnum)
-		{
-		case 28100:
-		case 28104:
-		case 28108:
-		case 28112:
-
-		case 28200:
-		case 28204:
-		case 28208:
-		case 28212:
-
-		case 28300:
-		case 28304:
-		case 28308:
-		case 28312:
-
-		case 28400:
-		case 28404:
-		case 28408:
-		case 28412:
-			return true;
-		}
-
-		return false;
-	}
+    // Artwork IDs still identify rows in the original window. The costs use native keys and levels.
+    struct StoneCraftMaterial { std::uint32_t visual, local; std::uint16_t level; };
+    constexpr auto StoneCraftMaterials = [] {
+        std::array<StoneCraftMaterial, 86> rows{};
+        std::size_t index = 0;
+        for (std::uint16_t grade = 0; grade < 5; ++grade)
+            for (std::uint32_t stone = 0; stone < 14; ++stone)
+                rows[index++] = {28030u + 100u * grade + stone, 20u + stone, grade};
+        const std::array<StoneCraftMaterial, 16> special{{
+            {28100, 34, 0}, {28104, 35, 0}, {28108, 36, 0}, {28112, 204, 1},
+            {28200, 205, 2}, {28204, 206, 2}, {28208, 207, 2}, {28212, 208, 2},
+            {28300, 209, 3}, {28304, 210, 3}, {28308, 211, 3}, {28312, 212, 3},
+            {28400, 213, 4}, {28404, 214, 4}, {28408, 215, 4}, {28412, 216, 4},
+        }};
+        for (const auto& row : special) rows[index++] = row;
+        return rows;
+    }();
 
 	static entt::entity GetStoneCraftNpc(entt::entity ch)
 	{
@@ -2802,129 +2779,81 @@ namespace
 
 ACMD(do_stonecraft)
 {
-	if (!ecs::PlayerRuntime::IsPC(character))
-		return;
-	char arg1[256];
-	char arg2[256];
+    namespace item = auriga::item;
+    if (!ecs::PlayerRuntime::IsPC(character))
+        return;
 
-	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
+    char action[32], arg[32];
+    two_arguments(argument, action, sizeof(action), arg, sizeof(arg));
+    const std::string_view operation(action);
+    const bool all = operation == "makeall";
+    if (!all && operation != "open" && operation != "make")
+        return;
+    if (!CanUseStoneCraft(character, GetStoneCraftNpc(character)))
+    {
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "A kőátváltáshoz menj közelebb a kereskedőhöz.");
+        return;
+    }
+    if (operation == "open")
+    {
+        ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "stone_craft_open");
+        return;
+    }
 
-	if (!*arg1)
-		return;
+    std::uint32_t visual = 0;
+    if (!all)
+    {
+        const std::string_view value(arg);
+        const auto parsed = std::from_chars(value.data(), value.data() + value.size(), visual);
+        if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size() ||
+            std::ranges::find(StoneCraftMaterials, visual, &StoneCraftMaterial::visual) == StoneCraftMaterials.end())
+            return;
+    }
 
-	if (!str_cmp(arg1, "open"))
-	{
-		const entt::entity npc = GetStoneCraftNpc(character);
-		if (!CanUseStoneCraft(character, npc))
-		{
-			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You need to be closer to npc.");
-			return;
-		}
+    const auto catalog = item::runtime::CurrentCatalog();
+    const auto* inventory = g_registry.try_get<ecs::TypedItems>(character);
+    if (!catalog || !inventory || g_registry.all_of<ecs::TypedItemBusy>(character))
+        return;
+    const auto& entries = catalog->Entries();
+    const auto reward = std::ranges::find_if(entries, [](const auto& row) { return row.second.base.contentCode == StoneCraftReward; });
+    if (reward == entries.end() || reward->second.base.retired)
+    {
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "A kőátváltás most nem elérhető.");
+        return;
+    }
 
-		ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "stone_craft_open");
-		return;
-	}
+    std::vector<item::MissionItemAmount> costs;
+    std::uint64_t rewards = 0;
+    for (const auto& row : StoneCraftMaterials)
+    {
+        if (!all && row.visual != visual) continue;
+        const auto key = item::ItemKey::Create(item::ItemCategory::SocketStone, row.local);
+        if (!key || !catalog->RefinedBaseStats(*key, row.level)) continue;
+        const auto count = item::CountGameplayExchangeItems(inventory->state.items, inventory->state.fence.owner, *key, row.level);
+        const auto crafts = all ? count / StoneCraftNeed : (count >= StoneCraftNeed ? 1u : 0u);
+        if (!crafts) continue;
+        if (crafts > 50000 / StoneCraftNeed || rewards + crafts > 50000)
+        {
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Ennyi követ egyszerre nem lehet átváltani. Válassz egy követ a listából.");
+            return;
+        }
+        costs.push_back({*key, row.level, static_cast<std::uint32_t>(crafts * StoneCraftNeed)});
+        rewards += crafts;
+    }
+    if (!rewards)
+    {
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Az átváltáshoz öt egyforma kő kell.");
+        return;
+    }
 
-	if (!str_cmp(arg1, "make"))
-	{
-		if (!*arg2)
-			return;
-
-		uint32_t materialVnum = static_cast<uint32_t>(atoi(arg2));
-
-		if (!IsStoneCraftMaterialVnum(materialVnum))
-		{
-			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Unknow stone.");
-			return;
-		}
-
-		const entt::entity npc = GetStoneCraftNpc(character);
-		if (!CanUseStoneCraft(character, npc))
-		{
-			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You are too far from npc.");
-			return;
-		}
-
-		const int materialCount = ItemSystem::CountItemRenewal(character, materialVnum);
-		if (materialCount < STONE_CRAFT_NEED_COUNT)
-		{
-			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Not enough stone.");
-			return;
-		}
-
-		const entt::entity reward = ItemSystem::AutoGiveItemEcs(character, STONE_CRAFT_REWARD_VNUM, 1);
-		if (reward == entt::null)
-		{
-			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Not enough space in inventory.");
-			return;
-		}
-
-		ItemSystem::RemoveSpecifyItemEcs(character, materialVnum, STONE_CRAFT_NEED_COUNT, true);
-		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Craft successful.");
-		return;
-	}
-	if (!str_cmp(arg1, "makeall"))
-	{
-		const entt::entity npc = GetStoneCraftNpc(character);
-		if (!CanUseStoneCraft(character, npc))
-		{
-			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You are too far from npc");
-			return;
-		}
-
-		static const uint32_t stoneVnums[] =
-		{
-			28030, 28031, 28032, 28033, 28034, 28035, 28036, 28037, 28038, 28039, 28040, 28041, 28042, 28043,
-			28100, 28104, 28108, 28112,
-			28130, 28131, 28132, 28133, 28134, 28135, 28136, 28137, 28138, 28139, 28140, 28141, 28142, 28143,
-			28200, 28204, 28208, 28212,
-			28230, 28231, 28232, 28233, 28234, 28235, 28236, 28237, 28238, 28239, 28240, 28241, 28242, 28243,
-			28300, 28304, 28308, 28312,
-			28330, 28331, 28332, 28333, 28334, 28335, 28336, 28337, 28338, 28339, 28340, 28341, 28342, 28343,
-			28400, 28404, 28408, 28412,
-			28430, 28431, 28432, 28433, 28434, 28435, 28436, 28437, 28438, 28439, 28440, 28441, 28442, 28443
-		};
-
-		int totalCrafted = 0;
-
-		for (size_t i = 0; i < sizeof(stoneVnums) / sizeof(stoneVnums[0]); ++i)
-		{
-			const uint32_t materialVnum = stoneVnums[i];
-			const int materialCount = ItemSystem::CountItemRenewal(character, materialVnum);
-			const int craftCount = materialCount / STONE_CRAFT_NEED_COUNT;
-
-			if (craftCount > 0)
-				totalCrafted += craftCount;
-		}
-
-		if (totalCrafted <= 0)
-		{
-			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Not enough stone.");
-			return;
-		}
-
-
-		const entt::entity reward = ItemSystem::AutoGiveItemEcs(character, STONE_CRAFT_REWARD_VNUM, totalCrafted, -1, false);
-		if (reward == entt::null)
-		{
-			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Not enough space in inventory.");
-			return;
-		}
-
-		// Csak sikeres itemadas utan vonjuk le az anyagokat
-		for (size_t i = 0; i < sizeof(stoneVnums) / sizeof(stoneVnums[0]); ++i)
-		{
-			const uint32_t materialVnum = stoneVnums[i];
-			const int materialCount = ItemSystem::CountItemRenewal(character, materialVnum);
-			const int craftCount = materialCount / STONE_CRAFT_NEED_COUNT;
-
-			if (craftCount > 0)
-				ItemSystem::RemoveSpecifyItemEcs(character, materialVnum, craftCount * STONE_CRAFT_NEED_COUNT, true);
-		}
-
-		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Craft successful: You got %d items.", totalCrafted);
-		return;
-	}
+    const auto count = static_cast<std::uint32_t>(rewards);
+    const auto exchange = RequestTypedGameplayItemExchange(character, std::move(costs), {{reward->first, 0, count}}, 0,
+        [character, count](bool written) {
+            if (written) ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Sikeres átváltás. Kapott Gaya: %u.", count);
+            else ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "A kőátváltást nem sikerült menteni.");
+        });
+    if (!exchange)
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "A kőátváltás most nem menthető. Ellenőrizd a szabad leltárhelyet.");
 }
 #endif
 

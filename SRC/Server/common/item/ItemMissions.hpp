@@ -21,6 +21,7 @@ enum class ItemMissionStatus : std::uint8_t { Closed,Ready,Completed,AlreadyComp
 struct ItemMissionProof { ItemOwner owner;ItemCatalogDigest action{}; };
 bool MissionItemUsable(const PersistentItem&,ItemOwner);
 std::uint64_t CountMissionItems(std::span<const PersistentItem>,ItemOwner,ItemKey,std::uint16_t);
+std::uint64_t CountGameplayExchangeItems(std::span<const PersistentItem>,ItemOwner,ItemKey,std::uint16_t);
 std::expected<void,ItemMissionError> ValidateItemMission(const ItemCatalog&,const ItemMission&);
 // Immutable economic contract. Presentation names may change without enabling
 // another reward. Economic changes require an explicitly new mission version.
@@ -31,6 +32,9 @@ std::expected<ItemCommit,ItemMissionError> MakeItemMissionCommit(const ItemCatal
     std::uint16_t level,ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,
     std::span<const ItemWallet>,std::span<const ItemInstanceId>,std::uint64_t nowUtcMs=0,
     std::optional<ItemInstanceId> requiredSource={});
+std::expected<ItemCommit,ItemMissionError> MakeGameplayItemExchangeCommit(const ItemCatalog&,const ItemMission&,ItemMissionProof,
+    ItemOwnerFence,std::span<const ItemStorageLayout>,std::span<const PersistentItem>,
+    std::span<const ItemWallet>,std::span<const ItemInstanceId>,std::uint64_t nowUtcMs);
 // GC232 v1: header,size:u32,version,status,npc:u32,session:u64,request:u64,
 // selected:u32,name:text16,missions:u8 {id:u32,version:u32,code/name/description:text16,
 // minLevel:u16,completed:u8,goldCost/goldReward:u64,3x (count:u8,{key,level:u16,units:u32})},

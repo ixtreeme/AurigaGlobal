@@ -21,25 +21,36 @@ struct Writer
 bool Text(std::string_view s,std::size_t max,bool empty=false)
 {return (empty || !s.empty()) && s.size()<=max && std::ranges::none_of(s,[](unsigned char c){return c<32 || c==127;});}
 bool Code(std::string_view s){return !s.empty() && s.size()<=96 && s.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.")==s.npos;}
-bool Shape(const ItemMission& m)
+bool Shape(const ItemMission& m,bool gameplay=false)
 {
     if(!m.id || !m.version || !Code(m.code) || !Text(m.name,128) || !Text(m.description,1024,true) || m.minimumLevel>255 ||
        m.goldCost>INT64_MAX || m.goldReward>INT64_MAX || (m.costs.empty() && m.rewards.empty() && m.goldCost==m.goldReward && !m.rewardExtension))return false;
     for(const auto* list:{&m.requirements,&m.costs,&m.rewards})
-    {if(list->size()>MaxMissionItemEntries)return false;std::set<std::pair<ItemKey,std::uint16_t>> unique;
+    {if(list->size()>(gameplay && list==&m.costs ? MaxItemCommitItems : MaxMissionItemEntries))return false;std::set<std::pair<ItemKey,std::uint16_t>> unique;
      for(const auto& v:*list)if(!v.count || v.count>50000 || !unique.emplace(v.key,v.level).second)return false;}
     return true;
 }
 std::expected<ItemCatalogDigest,E> Hash(const Writer& w)
 {ItemCatalogDigest digest{};unsigned length=0;if(EVP_Digest(w.bytes.data(),w.bytes.size(),digest.data(),&length,EVP_sha256(),nullptr)!=1 || length!=digest.size())return std::unexpected(E::Unavailable);return digest;}
+bool ExchangeItemUsable(const PersistentItem& item,ItemOwner owner)
+{
+    return PlainInventoryItem(item,owner) || PlainInventoryItem(item,owner,ItemStorageKind::SpecialInventory);
+}
 }
 bool MissionItemUsable(const PersistentItem& item,ItemOwner owner)
 {return PlainInventoryItem(item,owner);}
 std::uint64_t CountMissionItems(std::span<const PersistentItem> items,ItemOwner owner,ItemKey key,std::uint16_t level)
 {std::uint64_t count=0;for(const auto& i:items)if(i.key==key && i.refinementLevel==level && MissionItemUsable(i,owner))count+=i.count;return count;}
-std::expected<void,E> ValidateItemMission(const ItemCatalog& c,const ItemMission& m)
+std::uint64_t CountGameplayExchangeItems(std::span<const PersistentItem> items,ItemOwner owner,ItemKey key,std::uint16_t level)
 {
-    if(!Shape(m))return std::unexpected(E::Invalid);
+    std::uint64_t count=0;
+    for(const auto& item:items)
+        if(item.key==key && item.refinementLevel==level && ExchangeItemUsable(item,owner))count+=item.count;
+    return count;
+}
+static std::expected<void,E> ValidateMission(const ItemCatalog& c,const ItemMission& m,bool gameplay)
+{
+    if(!Shape(m,gameplay))return std::unexpected(E::Invalid);
     for(const auto* list:{&m.requirements,&m.costs,&m.rewards})for(const auto& value:*list)
     {
         const auto* d=c.Find(value.key);
@@ -50,10 +61,18 @@ std::expected<void,E> ValidateItemMission(const ItemCatalog& c,const ItemMission
     std::uint64_t stacks=0;for(const auto& reward:m.rewards){const auto stack=c.Find(reward.key)->base.maxStack;stacks+=(std::uint64_t(reward.count)+stack-1)/stack;}
     if(stacks>MaxItemCommitItems)return std::unexpected(E::Limit);return {};
 }
+std::expected<void,E> ValidateItemMission(const ItemCatalog& c,const ItemMission& m)
+{
+    return ValidateMission(c,m,false);
+}
+static std::expected<ItemCatalogDigest,E> MissionDigest(const ItemMission& m,bool gameplay)
+{
+    if(!Shape(m,gameplay))return std::unexpected(E::Invalid);Writer w;w.Text("ITEM_MISSION_CONTRACT_1");w.Text(m.code);w.Put(m.version,4);w.Put(m.minimumLevel,2);
+    w.Amounts(m.requirements);w.Amounts(m.costs);w.Amounts(m.rewards);w.Put(m.goldCost,8);w.Put(m.goldReward,8);if(m.rewardExtension)w.Text("MISSION_REWARD_EXTENSION_1");return Hash(w);
+}
 std::expected<ItemCatalogDigest,E> ItemMissionDigest(const ItemMission& m)
 {
-    if(!Shape(m))return std::unexpected(E::Invalid);Writer w;w.Text("ITEM_MISSION_CONTRACT_1");w.Text(m.code);w.Put(m.version,4);w.Put(m.minimumLevel,2);
-    w.Amounts(m.requirements);w.Amounts(m.costs);w.Amounts(m.rewards);w.Put(m.goldCost,8);w.Put(m.goldReward,8);if(m.rewardExtension)w.Text("MISSION_REWARD_EXTENSION_1");return Hash(w);
+    return MissionDigest(m,false);
 }
 std::expected<std::array<std::uint8_t,16>,E> ItemMissionOperation(ItemMissionProof p)
 {
@@ -61,23 +80,27 @@ std::expected<std::array<std::uint8_t,16>,E> ItemMissionOperation(ItemMissionPro
     Writer w;w.Text("ITEM_MISSION_ACTION_1");w.Put(p.owner.id,8);w.bytes.insert(w.bytes.end(),p.action.begin(),p.action.end());auto digest=Hash(w);if(!digest)return std::unexpected(digest.error());
     std::array<std::uint8_t,16> op{};std::ranges::copy(std::span(*digest).first<16>(),op.begin());if(std::ranges::all_of(op,[](auto b){return b==0;}))return std::unexpected(E::Unavailable);return op;
 }
-std::expected<std::vector<std::uint8_t>,E> ItemMissionReceipt(const ItemMission& m,ItemMissionProof p)
+static std::expected<std::vector<std::uint8_t>,E> MissionReceipt(const ItemMission& m,ItemMissionProof p,bool gameplay)
 {
-    const auto digest=ItemMissionDigest(m);if(!digest || !ItemMissionOperation(p))return std::unexpected(E::Invalid);
+    const auto digest=MissionDigest(m,gameplay);if(!digest || !ItemMissionOperation(p))return std::unexpected(E::Invalid);
     Writer w;w.bytes={'I','M','Q',1};w.Put(static_cast<unsigned>(p.owner.kind),1);w.Put(p.owner.id,8);
     w.bytes.insert(w.bytes.end(),p.action.begin(),p.action.end());w.bytes.insert(w.bytes.end(),digest->begin(),digest->end());return w.bytes;
 }
-std::expected<ItemCommit,E> MakeItemMissionCommit(const ItemCatalog& c,const ItemMission& m,ItemMissionProof proof,std::uint16_t level,
+std::expected<std::vector<std::uint8_t>,E> ItemMissionReceipt(const ItemMission& m,ItemMissionProof p)
+{
+    return MissionReceipt(m,p,false);
+}
+static std::expected<ItemCommit,E> MakeExchangeCommit(const ItemCatalog& c,const ItemMission& m,ItemMissionProof proof,std::uint16_t level,
     ItemOwnerFence fence,std::span<const ItemStorageLayout> layouts,std::span<const PersistentItem> inventory,
     std::span<const ItemWallet> wallets,std::span<const ItemInstanceId> ids,std::uint64_t nowUtcMs,
-    std::optional<ItemInstanceId> requiredSource)
+    std::optional<ItemInstanceId> requiredSource,bool gameplay)
 {
-    if(!ValidateItemMission(c,m) || proof.owner!=fence.owner || inventory.size()>MaxLoadedOwnerItems)return std::unexpected(E::Invalid);
+    if(!ValidateMission(c,m,gameplay) || proof.owner!=fence.owner || inventory.size()>MaxLoadedOwnerItems)return std::unexpected(E::Invalid);
     if(level<m.minimumLevel)return std::unexpected(E::Level);
-    const auto op=ItemMissionOperation(proof);const auto receipt=ItemMissionReceipt(m,proof);if(!op || !receipt)return std::unexpected(E::Invalid);
+    const auto op=ItemMissionOperation(proof);const auto receipt=MissionReceipt(m,proof,gameplay);if(!op || !receipt)return std::unexpected(E::Invalid);
     std::set<ItemInstanceId> unique;for(const auto& i:inventory)if(i.owner!=fence.owner || !unique.insert(i.id).second || !ValidatePersistentItem(c,i))return std::unexpected(E::Invalid);
     for(const auto* list:{&m.requirements,&m.costs})for(const auto& v:*list)
-        if(CountMissionItems(inventory,fence.owner,v.key,v.level)<v.count)return std::unexpected(E::Requirements);
+        if((gameplay ? CountGameplayExchangeItems : CountMissionItems)(inventory,fence.owner,v.key,v.level)<v.count)return std::unexpected(E::Requirements);
     if (requiredSource)
     {
         const auto source = std::ranges::find(inventory, *requiredSource, &PersistentItem::id);
@@ -93,7 +116,7 @@ std::expected<ItemCommit,E> MakeItemMissionCommit(const ItemCatalog& c,const Ite
     if(gold && m.goldReward>std::uint64_t(INT64_MAX)-(gold->balance-m.goldCost))return std::unexpected(E::Limit);
     std::vector<PersistentItem> working(inventory.begin(),inventory.end());std::vector<std::size_t> eligible;
     for(std::size_t i=0;i<working.size();++i)
-        if(MissionItemUsable(working[i],fence.owner) && (!requiredSource || working[i].id==*requiredSource))
+        if((gameplay ? ExchangeItemUsable : MissionItemUsable)(working[i],fence.owner) && (!requiredSource || working[i].id==*requiredSource))
             eligible.push_back(i);
     std::ranges::sort(eligible,{},[&](auto i){const auto& v=working[i];return std::tuple{v.placement->storageId,v.placement->anchor,v.id};});
     for(const auto& cost:m.costs)
@@ -122,6 +145,19 @@ std::expected<ItemCommit,E> MakeItemMissionCommit(const ItemCatalog& c,const Ite
     {const ItemStorage storage{i->owner,i->placement->kind,i->placement->storageId};if(std::ranges::find(out.storages,storage,&ItemStorageLayout::storage)!=out.storages.end())continue;
      const auto found=std::ranges::find(layouts,storage,&ItemStorageLayout::storage);if(found==layouts.end())return std::unexpected(E::Invalid);out.storages.push_back(*found);}
     if(!(m.rewardExtension && out.items.empty() && out.wallets.empty()) && !ValidateItemCommit(c,out))return std::unexpected(E::Invalid);return out;
+}
+std::expected<ItemCommit,E> MakeItemMissionCommit(const ItemCatalog& c,const ItemMission& m,ItemMissionProof proof,std::uint16_t level,
+    ItemOwnerFence fence,std::span<const ItemStorageLayout> layouts,std::span<const PersistentItem> inventory,
+    std::span<const ItemWallet> wallets,std::span<const ItemInstanceId> ids,std::uint64_t nowUtcMs,
+    std::optional<ItemInstanceId> requiredSource)
+{
+    return MakeExchangeCommit(c,m,proof,level,fence,layouts,inventory,wallets,ids,nowUtcMs,requiredSource,false);
+}
+std::expected<ItemCommit,E> MakeGameplayItemExchangeCommit(const ItemCatalog& c,const ItemMission& m,ItemMissionProof proof,
+    ItemOwnerFence fence,std::span<const ItemStorageLayout> layouts,std::span<const PersistentItem> inventory,
+    std::span<const ItemWallet> wallets,std::span<const ItemInstanceId> ids,std::uint64_t nowUtcMs)
+{
+    return MakeExchangeCommit(c,m,proof,0,fence,layouts,inventory,wallets,ids,nowUtcMs,{},true);
 }
 std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeItemMissionBoard(const ItemCatalog& c,const ItemMissionBoard* board,
     std::uint32_t npc,std::uint64_t session,std::uint64_t request,ItemMissionStatus status,std::uint32_t selected,std::span<const std::uint32_t> completed)

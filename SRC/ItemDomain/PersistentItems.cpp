@@ -709,8 +709,8 @@ bool SupportsPersistentGrant(const ItemCatalog& c,const ItemCatalogEntry& e) noe
     const auto* seal=std::get_if<ItemCompanionRow>(&e.category);
     return (!seal || seal->kind!=CompanionKind::GrowthPet) && SupportsPersistentItem(c,e);
 }
-bool PlainInventoryItem(const PersistentItem& item,ItemOwner owner) noexcept
-{return item.owner==owner && !item.destroyed && !item.privateShop && item.placement && item.placement->kind==ItemStorageKind::Inventory && (!item.boundTo || item.boundTo==owner) && item.attributes==InstanceAttributes{} && item.stones==decltype(item.stones){} && (!item.accessory || *item.accessory==AccessorySocketState{}) && (!item.automatic || !item.automatic->active) && (!item.toggle || !item.toggle->active) && (!item.soul || !item.soul->active) && !RecallRequested(item) && !item.growthPet && (!item.petSupply || (!item.petSupply->containedSeal && !item.petSupply->equippedSeal));}
+bool PlainInventoryItem(const PersistentItem& item,ItemOwner owner,ItemStorageKind kind) noexcept
+{return item.owner==owner && !item.destroyed && !item.privateShop && item.placement && item.placement->kind==kind && (!item.boundTo || item.boundTo==owner) && item.attributes==InstanceAttributes{} && item.stones==decltype(item.stones){} && (!item.accessory || *item.accessory==AccessorySocketState{}) && (!item.automatic || !item.automatic->active) && (!item.toggle || !item.toggle->active) && (!item.soul || !item.soul->active) && !RecallRequested(item) && !item.growthPet && (!item.petSupply || (!item.petSupply->containedSeal && !item.petSupply->equippedSeal));}
 std::expected<void,E> ValidatePersistentItem(const ItemCatalog& c,const PersistentItem& p)
 {
     const auto* e=c.Find(p.key);if(!e)return std::unexpected(E::MissingItem);

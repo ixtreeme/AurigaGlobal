@@ -284,7 +284,7 @@ ACMD(do_delivery_biologist) {
 		const auto& entries = catalog->Entries();
 		const auto found = std::ranges::find_if(entries, [code](const auto& row) { return row.second.base.contentCode == code; });
 		if (found == entries.end() || found->second.base.retired ||
-			!item::CountMissionItems(inventory->state.items, inventory->state.fence.owner, found->first, 0))
+			!item::CountGameplayExchangeItems(inventory->state.items, inventory->state.fence.owner, found->first, 0))
 			return {};
 		return found->first;
 	};

@@ -160,8 +160,9 @@ static std::expected<void, items::ItemMissionError> RequestTypedItemExchange(ent
 	exchange.goldReward = goldReward;
 	const auto ids = exchange.rewards.empty() ? std::vector<items::ItemInstanceId>{}
 		: items::runtime::PeekInstanceIds(items::MaxItemCommitItems);
-	auto commit = items::MakeItemMissionCommit(*catalog, exchange, proof, 0, fence, state.storages,
-		state.items, state.wallets, ids, TypedItemEffectNow(), sourceId);
+	auto commit = inQuest
+		? items::MakeItemMissionCommit(*catalog, exchange, proof, 0, fence, state.storages, state.items, state.wallets, ids, TypedItemEffectNow(), sourceId)
+		: items::MakeGameplayItemExchangeCommit(*catalog, exchange, proof, fence, state.storages, state.items, state.wallets, ids, TypedItemEffectNow());
 	if (!commit)
 		return std::unexpected(commit.error());
 	if (goldReward && std::ranges::any_of(commit->wallets, [](const auto& change) { return change.after.balance >= GOLD_MAX; }))

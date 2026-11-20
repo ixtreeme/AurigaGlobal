@@ -181,7 +181,7 @@ bool ValidItemStorage(const ItemStorageLayout&) noexcept;
 bool SupportsPersistentItem(const ItemCatalog&,const ItemCatalogEntry&) noexcept;
 // A growth pet's mandatory birth state is produced only by the hatch service.
 bool SupportsPersistentGrant(const ItemCatalog&,const ItemCatalogEntry&) noexcept;
-bool PlainInventoryItem(const PersistentItem&,ItemOwner) noexcept;
+bool PlainInventoryItem(const PersistentItem&,ItemOwner,ItemStorageKind kind=ItemStorageKind::Inventory) noexcept;
 std::expected<void,ItemPersistenceError> ValidatePersistentItem(const ItemCatalog&,const PersistentItem&);
 std::expected<std::vector<std::uint32_t>,ItemPersistenceError> OccupiedItemCells(
     const ItemCatalog&,const PersistentItem&,const ItemStorageLayout&);
