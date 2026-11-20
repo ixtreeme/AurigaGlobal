@@ -99,6 +99,11 @@ namespace marriage
 			void	Update();
 
 		private:
+			void PublishAdd(const TMarriage&);
+			void PublishRemove(uint32_t pid1, uint32_t pid2);
+			void PublishNativeChanges();
+
+			bool m_nativeMarriages = false;
 			std::set<TMarriage *> m_Marriages;
 			std::map<uint32_t, TMarriage *> m_MarriageByPID;
 

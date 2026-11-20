@@ -1,5 +1,16 @@
 #include "stdafx.h"
+#include "../ecs/ResourceAdmission.hpp"
+#include "../ecs/systems/InventorySystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
+#include "../ecs/systems/PointSystem.hpp"
+#include "../item/ItemCatalogRuntime.hpp"
+#include "../item/ItemStore.hpp"
+#include "../item/TypedDrops.hpp"
+#include "../item/TypedInventorySync.hpp"
+#include "../item/TypedRecovery.hpp"
+#include "../network/desc.h"
+#include <item/MarriageItems.hpp>
+#include <openssl/rand.h>
 #include <Core/Logging.hpp>
 #include "wedding.h"
 #include "../ecs/components/social_components.hpp"
@@ -16,6 +27,161 @@
 
 namespace quest
 {
+	namespace
+	{
+	namespace item = auriga::item;
+	namespace player = ecs::PlayerRuntime;
+
+	bool WeddingAttire(entt::entity actor)
+	{
+		const auto* inventory = g_registry.valid(actor) ? g_registry.try_get<ecs::TypedItems>(actor) : nullptr;
+		if (!inventory) return false;
+		return std::ranges::any_of(inventory->state.items, [&](const auto& row) {
+			return !row.destroyed && row.owner == inventory->state.fence.owner && row.placement &&
+				row.placement->kind == item::ItemStorageKind::Equipment && row.key.Category() == item::ItemCategory::Armor &&
+				row.key.LocalId() >= 193 && row.key.LocalId() <= 196;
+		});
+	}
+
+	bool NearMarriageNpc(entt::entity actor, entt::entity npc)
+	{
+		return player::IsPC(actor) && player::IsValid(npc) &&
+			player::GetMapIndex(actor) == player::GetMapIndex(npc) &&
+			DISTANCE_APPROX(player::GetX(actor) - player::GetX(npc), player::GetY(actor) - player::GetY(npc)) < 1000;
+	}
+
+	struct MarriageActor
+	{
+		entt::entity entity;
+		decltype(ecs::TypedItemLogin::token) login;
+	};
+
+	int SettleMarriageItems(lua_State* L, item::MarriageItemAction action)
+	{
+		using Action = item::MarriageItemAction;
+		auto& manager = CQuestManager::instance();
+		const auto* state = manager.GetCurrentState();
+		const auto refuse = [L] {
+			lua_pushboolean(L, false);
+			return 1;
+		};
+		if (!lua_isyieldable(L) || !state || state->co != L || manager.IsInOtherPCBlock()) return refuse();
+
+		const bool engage = action == Action::Engage;
+		const bool solo = action == Action::UnilateralDivorce;
+		const auto initiator = manager.GetCurrentPCEntity();
+		const auto npc = manager.GetCurrentNPCEntity();
+		if (!NearMarriageNpc(initiator, npc)) return refuse();
+		const auto race = player::GetRaceNum(npc);
+		if (engage ? race != 9006 : (race != 11000 && race != 11002 && race != 11004)) return refuse();
+		const auto pid = player::GetPlayerID(initiator);
+		auto& marriages = marriage::CManager::instance();
+		const auto relation = marriages.Get(pid);
+
+		entt::entity partner = entt::null;
+		std::uint32_t partnerPid = 0;
+		if (!solo)
+		{
+			const auto vid = luaL_checkinteger(L, 1);
+			if (vid <= 0 || vid > UINT32_MAX) return refuse();
+			partner = player::FindByVID(static_cast<std::uint32_t>(vid));
+			if (!NearMarriageNpc(partner, npc) || partner == initiator) return refuse();
+			partnerPid = player::GetPlayerID(partner);
+		}
+		if (engage)
+		{
+			const int level = ecs::PointSystem::GetLevel(initiator);
+			const int partnerLevel = ecs::PointSystem::GetLevel(partner);
+			if (relation != entt::null || marriages.IsEngagedOrMarried(partnerPid) ||
+				level < 25 || partnerLevel <= 25 || std::abs(level - partnerLevel) > 15 ||
+				!WeddingAttire(initiator) || !WeddingAttire(partner))
+				return refuse();
+		}
+		else
+		{
+			if (!marriages.IsMarried(pid)) return refuse();
+			const auto spouse = marriage::MarriageSystem::GetOther(relation, pid);
+			if (!spouse || (!solo && partnerPid != spouse)) return refuse();
+			partnerPid = spouse;
+		}
+
+		namespace admission = ecs::resource_admission;
+		const auto operation = auriga::resource_admission::Operation::ItemUse;
+		auto permit = solo ? admission::Enter({initiator}, operation) : admission::Enter({initiator, partner}, operation);
+		const auto catalog = item::runtime::CurrentCatalog();
+		if (!permit || !permit->Current() || !catalog) return refuse();
+
+		std::vector<MarriageActor> actors;
+		std::vector<item::MarriageItemParticipant> participants;
+		std::vector<item::runtime::OwnerRead> reads;
+		for (const auto actor : {initiator, partner})
+		{
+			if (actor == entt::null) continue;
+			if (!player::IsValid(actor) || !InventorySystem::CanHandleItems(actor) || g_registry.all_of<ecs::TypedItemBusy>(actor))
+				return refuse();
+			const auto* login = g_registry.try_get<ecs::TypedItemLogin>(actor);
+			const auto* typed = g_registry.try_get<ecs::TypedItems>(actor);
+			const auto* desc = player::GetDesc(actor);
+			if (!login || !typed || !desc || !desc->IsPhase(PHASE_GAME)) return refuse();
+			const auto& current = typed->state;
+			actors.push_back({actor, login->token});
+			participants.push_back({current.fence, current.storages, current.items, current.wallets});
+			reads.push_back({current.fence.owner, current.fence.sessionGeneration});
+		}
+
+		std::array<std::uint8_t, 16> request{};
+		if (RAND_bytes(request.data(), static_cast<int>(request.size())) != 1) return refuse();
+		const auto ids = engage ? item::runtime::PeekInstanceIds(2) : std::vector<item::ItemInstanceId>{};
+		auto write = item::MakeMarriageItemCommit(*catalog, request, {action, pid, partnerPid}, participants, ids, TypedItemEffectNow());
+		if (!write) return refuse();
+		item::runtime::SpendInstanceIds(static_cast<std::size_t>(std::ranges::count_if(
+			write->items, [](const auto& change) { return !change.before; })));
+
+		for (const auto& actor : actors) g_registry.emplace<ecs::TypedItemBusy>(actor.entity);
+		auto held = std::make_shared<auriga::resource_admission::Permit>(std::move(*permit));
+		const bool queued = item::runtime::RequestCommitMany(std::move(reads), std::move(*write),
+			[actors, pid, coroutine = L, held](item::runtime::MultiCommitOutcome result) mutable {
+				bool resume = false;
+				for (std::size_t i = 0; i < actors.size(); ++i)
+				{
+					const auto [actor, token] = actors[i];
+					const auto* login = g_registry.valid(actor) ? g_registry.try_get<ecs::TypedItemLogin>(actor) : nullptr;
+					if (!login || login->token != token) continue;
+					if (i < result.states.size() && result.states[i])
+						g_registry.emplace_or_replace<ecs::TypedItems>(actor, std::move(*result.states[i]));
+					g_registry.remove<ecs::TypedItemBusy>(actor);
+					if (i == 0) resume = true;
+				}
+				held.reset();
+				if (resume) CQuestManager::instance().ResumeTypedItems(pid, coroutine, result.write.has_value());
+				for (const auto& [actor, token] : actors)
+				{
+					const auto* login = g_registry.valid(actor) ? g_registry.try_get<ecs::TypedItemLogin>(actor) : nullptr;
+					if (login && login->token == token) { SendTypedInventory(actor); PumpTypedItemGrants(actor); }
+				}
+			});
+		if (!queued)
+		{
+			for (const auto& actor : actors)
+				if (g_registry.valid(actor.entity)) g_registry.remove<ecs::TypedItemBusy>(actor.entity);
+			return refuse();
+		}
+		lua_settop(L, 0);
+		lua_pushliteral(L, "typed_items");
+		return lua_yieldk(L, 1, 0, [](lua_State* thread, int, lua_KContext) { return lua_gettop(thread); });
+	}
+	}
+
+	ALUA(marriage_typed_attire)
+	{
+		lua_pushboolean(L, WeddingAttire(CQuestManager::instance().GetCurrentPCEntity()));
+		return 1;
+	}
+
+	ALUA(marriage_typed_engage) { return SettleMarriageItems(L, item::MarriageItemAction::Engage); }
+	ALUA(marriage_typed_mutual_divorce) { return SettleMarriageItems(L, item::MarriageItemAction::MutualDivorce); }
+	ALUA(marriage_typed_unilateral_divorce) { return SettleMarriageItems(L, item::MarriageItemAction::UnilateralDivorce); }
+
 	ALUA(marriage_engage_to)
 	{
 		// migrated from marriage system
@@ -370,6 +536,10 @@ namespace quest
 		luaL_reg marriage_functions[] =
 		{
 			{ "engage_to",		marriage_engage_to	    },
+			{ "typed_attire", marriage_typed_attire },
+			{ "typed_engage", marriage_typed_engage },
+			{ "typed_mutual_divorce", marriage_typed_mutual_divorce },
+			{ "typed_unilateral_divorce", marriage_typed_unilateral_divorce },
 			{ "remove",			marriage_remove		    },
 			{ "find_married_vid",	marriage_find_married_vid   },
 			{ "get_wedding_list",	marriage_get_wedding_list   },

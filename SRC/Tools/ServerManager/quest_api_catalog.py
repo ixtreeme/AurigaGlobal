@@ -62,6 +62,7 @@ FUNCTIONS = {'': ('__fish_real_refine_rod', '__get_empire_priv', '__get_empire_p
           'set_socket', 'set_value', 'start_realtime_expire'),
  'marriage': ('end_wedding', 'engage_to', 'find_married_vid', 'get_married_time',
               'get_wedding_list', 'in_my_wedding', 'join_wedding', 'remove', 'set_to_marriage',
+              'typed_attire', 'typed_engage', 'typed_mutual_divorce', 'typed_unilateral_divorce',
               'warp_to_my_marriage_map', 'wedding_client_command', 'wedding_dark',
               'wedding_is_playing_music', 'wedding_music', 'wedding_snow'),
  'math': ('abs', 'acos', 'asin', 'atan', 'atan2', 'ceil', 'cos', 'cosh', 'deg', 'exp', 'floor',

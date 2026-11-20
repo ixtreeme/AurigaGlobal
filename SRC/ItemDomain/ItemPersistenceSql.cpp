@@ -6,6 +6,7 @@
 #include "PrivateShopsSql.hpp"
 #include "DungeonEntrySql.hpp"
 #include <item/OwnedGround.hpp>
+#include <item/MarriageItems.hpp>
 #include <random>
 #include <SQL/AsyncSQL.h>
 #include <algorithm>
@@ -197,6 +198,27 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
     }
     PrivateShopWriteBefore(tx,r);
     DungeonEntryWriteBefore(tx,r);
+    if(const auto relation=ReadMarriageItemChange(r))
+    {
+        const auto first=(std::min)(relation->initiator,relation->partner);
+        const auto second=(std::max)(relation->initiator,relation->partner);
+        const bool engage=relation->action==MarriageItemAction::Engage;
+        tx.push_back({"SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' "
+            "AND TABLE_NAME IN ('player','marriage','item_marriage_publication') "
+            "HAVING COUNT(*)=3 AND SUM(ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE')=3",{},{},1});
+        tx.push_back({"SELECT id FROM player.player WHERE id IN (?,?) ORDER BY id FOR UPDATE",
+            {U::UInt(first),U::UInt(second)},{},2});
+        if(engage)
+            tx.push_back({"INSERT INTO player.marriage(pid1,pid2,love_point,time,is_married,typed_items) "
+                "SELECT ?,?,0,UNIX_TIMESTAMP(),0,1 FROM DUAL WHERE NOT EXISTS "
+                "(SELECT 1 FROM player.marriage WHERE pid1 IN (?,?) OR pid2 IN (?,?))",
+                {U::UInt(first),U::UInt(second),U::UInt(first),U::UInt(second),U::UInt(first),U::UInt(second)},1,{}});
+        else
+            tx.push_back({"DELETE FROM player.marriage WHERE pid1=? AND pid2=? AND is_married=1 AND time<=UNIX_TIMESTAMP()-86400",
+                {U::UInt(first),U::UInt(second)},1,{}});
+        tx.push_back({"INSERT INTO player.item_marriage_publication(operation_id,pid1,pid2,engage) VALUES(?,?,?,?)",
+            {U::Blob(Bytes(r.operationId)),U::UInt(first),U::UInt(second),U::UInt(engage ? 1 : 0)},1,{}});
+    }
     if(r.currencyDrop){const auto& d=*r.currencyDrop;
         SqlParams identity{U::Blob(Bytes(d.operation)),U::Blob(d.core),U::UInt(d.run),U::UInt(d.owner),U::UInt(d.amount),U::Int(d.map),U::Int(d.x),U::Int(d.y),U::Int(d.z),U::UInt(d.createdAtMs),U::UInt(d.expiresAtMs)};
         if(d.create)tx.push_back({"INSERT INTO player.item_currency_ground(operation_id,core_key,run_generation,owner_id,amount,map_index,x,y,z,created_at_ms,expires_at_ms) VALUES(?,?,?,?,?,?,?,?,?,?,?)",std::move(identity),1,{}});

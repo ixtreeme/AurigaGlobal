@@ -16,6 +16,7 @@
 #include <item/BookRuntime.hpp>
 #include <item/PrivateShops.hpp>
 #include <item/DungeonEntry.hpp>
+#include <item/MarriageItems.hpp>
 
 namespace auriga::item
 {
@@ -886,6 +887,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
     if(r.outcomeCode==QuestGayaChangeOutcome&&!ValidQuestGayaChange(c,r))return std::unexpected(E::InvalidChange);
     if(!ValidPrivateShopWrite(c,r))return std::unexpected(E::InvalidChange);
     if(!ValidDungeonEntryMutation(c,r))return std::unexpected(E::InvalidChange);
+    if(!ValidateMarriageItemWrite(c,r))return std::unexpected(E::InvalidChange);
     if(!ValidCurrencyDropWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==TokenRedemptionOutcome && !ValidTokenRedemptionWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==CostumeTransferOutcome && !ValidCostumeTransferWrite(c,r))return std::unexpected(E::InvalidChange);
