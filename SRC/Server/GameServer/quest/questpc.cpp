@@ -97,6 +97,14 @@ namespace quest
 		return false;
 	}
 
+	void PC::ApplySavedFlagDeletion(const string& name, int64_t previous)
+	{
+		if (GetFlag(name) != previous)
+			return;
+		m_FlagMap.erase(name);
+		m_FlagSaveMap.erase(name);
+	}
+
 	int64_t PC::GetFlag(const string & name)
 	{
 		if (const auto it = m_FlagMap.find(name); it != m_FlagMap.end())

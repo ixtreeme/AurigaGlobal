@@ -8,6 +8,21 @@ inline constexpr std::uint16_t NameScrollOutcome = 0x3B02;
 inline constexpr std::uint16_t EmpireScrollOutcome = 0x3B03;
 inline constexpr std::uint16_t SexScrollOutcome = 0x3B04;
 inline constexpr std::uint16_t GuildMasterScrollOutcome = 0x3B05;
+inline constexpr std::uint16_t DungeonCooldownScrollOutcome = 0x3B06;
+
+inline constexpr std::array<std::string_view, 17> CooldownScrollDungeons{
+    "owl_zone_razor93", "dungeonorchi", "slime_dungeon", "dungeon_spider",
+    "catacombe", "dragonlair_zone", "meleylair_zone", "razador_zone", "nemere_zone",
+    "temple_ochao", "enchanted_forest", "nightmare_zone_razor93_prepare",
+    "dungeonpyramid_razor93", "tritontemple_razor93", "valentine_dungeon",
+    "halloween2022", "vikingdungeon_zone"};
+inline constexpr std::array<std::string_view, 4> CooldownScrollFlags{"cooldown", "disconnect", "idx", "ch"};
+
+struct DungeonCooldownScrollChange
+{
+    std::uint8_t dungeon;
+    std::array<std::int64_t, CooldownScrollFlags.size()> before{};
+};
 
 struct NameScrollChange
 {
@@ -45,7 +60,8 @@ std::optional<NameScrollChange> ReadNameScrollChange(const ItemCommit&);
 std::optional<EmpireScrollChange> ReadEmpireScrollChange(const ItemCommit&);
 std::optional<SexScrollChange> ReadSexScrollChange(const ItemCommit&);
 std::optional<GuildMasterScrollChange> ReadGuildMasterScrollChange(const ItemCommit&);
-bool ValidateIdentityScrollWrite(const ItemCatalog&, const ItemCommit&);
+std::optional<DungeonCooldownScrollChange> ReadDungeonCooldownScrollChange(const ItemCommit&);
+bool ValidateQuestScrollWrite(const ItemCatalog&, const ItemCommit&);
 std::expected<ItemCommit, ItemPersistenceError> MakeNameScrollCommit(const ItemCatalog&,
     std::array<std::uint8_t, 16>, ItemOwnerFence, std::span<const ItemStorageLayout>,
     std::span<const PersistentItem>, ItemInstanceId, std::uint64_t, NameScrollChange);
@@ -58,4 +74,7 @@ std::expected<ItemCommit, ItemPersistenceError> MakeSexScrollCommit(const ItemCa
 std::expected<ItemCommit, ItemPersistenceError> MakeGuildMasterScrollCommit(const ItemCatalog&,
     std::array<std::uint8_t, 16>, ItemOwnerFence, std::span<const ItemStorageLayout>,
     std::span<const PersistentItem>, ItemInstanceId, std::uint64_t, GuildMasterScrollChange);
+std::expected<ItemCommit, ItemPersistenceError> MakeDungeonCooldownScrollCommit(const ItemCatalog&,
+    std::array<std::uint8_t, 16>, ItemOwnerFence, std::span<const ItemStorageLayout>,
+    std::span<const PersistentItem>, ItemInstanceId, std::uint64_t, DungeonCooldownScrollChange);
 }

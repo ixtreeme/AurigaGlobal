@@ -262,6 +262,22 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
             "ON DUPLICATE KEY UPDATE operation_id=VALUES(operation_id)",
             {U::UInt(master->guild), U::Blob(Bytes(r.operationId))}, {}, {}});
     }
+    if (const auto cooldown = ReadDungeonCooldownScrollChange(r))
+    {
+        const auto pid = U::UInt(r.owners.front().owner.id);
+        const auto dungeon = U::Text(std::string(CooldownScrollDungeons[cooldown->dungeon]));
+        tx.push_back({"SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' "
+            "AND TABLE_NAME='quest' AND ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE'", {}, {}, 1});
+        tx.push_back({"SELECT 1 FROM player.quest WHERE dwPID=? AND szName=? AND szState='cooldown' "
+            "AND lValue=? AND lValue>UNIX_TIMESTAMP() FOR UPDATE",
+            {pid, dungeon, U::Int(cooldown->before.front())}, {}, 1});
+        for (std::size_t flag = 1; flag < CooldownScrollFlags.size(); ++flag)
+            tx.push_back({"SELECT 1 WHERE COALESCE((SELECT lValue FROM player.quest "
+                "WHERE dwPID=? AND szName=? AND szState=? FOR UPDATE),0)=?",
+                {pid, dungeon, U::Text(std::string(CooldownScrollFlags[flag])), U::Int(cooldown->before[flag])}, {}, 1});
+        tx.push_back({"DELETE FROM player.quest WHERE dwPID=? AND szName=? AND szState IN ('cooldown','disconnect','idx','ch')",
+            {pid, dungeon}, {}, {}});
+    }
     if(const auto relation=ReadMarriageItemChange(r))
     {
         const auto first=(std::min)(relation->initiator,relation->partner);

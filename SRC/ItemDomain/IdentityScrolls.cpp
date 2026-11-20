@@ -1,6 +1,7 @@
 #include <item/IdentityScrolls.hpp>
 #include <length.h>
 #include <algorithm>
+#include <bit>
 
 namespace auriga::item
 {
@@ -10,6 +11,7 @@ constexpr std::string_view NameScrollCode = "catalog.10.tincture_of_the_name_2cb
 constexpr std::string_view EmpireScrollCode = "catalog.10.tincture_of_kingdoms_83e4f6b6bb83";
 constexpr std::string_view SexScrollCode = "catalog.10.modification_charm_679127259da2";
 constexpr std::string_view GuildMasterScrollCode = "catalog.10.ring_of_successor_3b1ff932cf1c";
+constexpr std::string_view DungeonCooldownScrollCode = "catalog.10.dungeon_cd_reset_0f8f1b52bcef";
 
 bool ValidNames(NameScrollChange names)
 {
@@ -97,7 +99,27 @@ std::optional<GuildMasterScrollChange> ReadGuildMasterScrollChange(const ItemCom
     return change;
 }
 
-bool ValidateIdentityScrollWrite(const ItemCatalog& catalog, const ItemCommit& write)
+std::optional<DungeonCooldownScrollChange> ReadDungeonCooldownScrollChange(const ItemCommit& write)
+{
+    const auto& data = write.result;
+    if (write.outcomeCode != DungeonCooldownScrollOutcome || data.size() != 5 + 8 * CooldownScrollFlags.size() ||
+        data[0] != 'D' || data[1] != 'C' || data[2] != 'R' || data[3] != 1 ||
+        data[4] >= CooldownScrollDungeons.size())
+        return {};
+
+    DungeonCooldownScrollChange change{data[4]};
+    for (std::size_t flag = 0; flag < change.before.size(); ++flag)
+    {
+        std::uint64_t value = 0;
+        for (unsigned byte = 0; byte < 8; ++byte)
+            value |= std::uint64_t{data[5 + 8 * flag + byte]} << (8 * byte);
+        change.before[flag] = std::bit_cast<std::int64_t>(value);
+    }
+    if (change.before.front() <= 0) return {};
+    return change;
+}
+
+bool ValidateQuestScrollWrite(const ItemCatalog& catalog, const ItemCommit& write)
 {
     std::string_view contentCode;
     switch (write.outcomeCode)
@@ -122,6 +144,10 @@ bool ValidateIdentityScrollWrite(const ItemCatalog& catalog, const ItemCommit& w
         contentCode = GuildMasterScrollCode;
         break;
     }
+    case DungeonCooldownScrollOutcome:
+        if (!ReadDungeonCooldownScrollChange(write)) return false;
+        contentCode = DungeonCooldownScrollCode;
+        break;
     default:
         return true;
     }
@@ -193,5 +219,17 @@ std::expected<ItemCommit, ItemPersistenceError> MakeGuildMasterScrollCommit(cons
             receipt.push_back(static_cast<std::uint8_t>(value >> (8 * byte)));
     return MakeScrollCommit(catalog, operation, fence, storages, inventory, source, revision,
         GuildMasterScrollOutcome, std::move(receipt));
+}
+
+std::expected<ItemCommit, ItemPersistenceError> MakeDungeonCooldownScrollCommit(const ItemCatalog& catalog,
+    std::array<std::uint8_t, 16> operation, ItemOwnerFence fence, std::span<const ItemStorageLayout> storages,
+    std::span<const PersistentItem> inventory, ItemInstanceId source, std::uint64_t revision, DungeonCooldownScrollChange change)
+{
+    std::vector<std::uint8_t> receipt{'D', 'C', 'R', 1, change.dungeon};
+    for (const auto value : change.before)
+        for (unsigned byte = 0; byte < 8; ++byte)
+            receipt.push_back(static_cast<std::uint8_t>(std::uint64_t(value) >> (8 * byte)));
+    return MakeScrollCommit(catalog, operation, fence, storages, inventory, source, revision,
+        DungeonCooldownScrollOutcome, std::move(receipt));
 }
 }

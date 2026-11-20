@@ -97,6 +97,7 @@ namespace quest
 			void		SetFlag(const string & name, int64_t value, bool bSkipSave = false);
 			int64_t		GetFlag(const string & name);
 			bool		DeleteFlag(const string & name);
+			void		ApplySavedFlagDeletion(const string& name, int64_t previous);
 
 			const string &	GetCurrentQuestName() const;
 			uint32_t			GetCurrentQuestIndex() const;

@@ -889,7 +889,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
     if(!ValidPrivateShopWrite(c,r))return std::unexpected(E::InvalidChange);
     if(!ValidDungeonEntryMutation(c,r))return std::unexpected(E::InvalidChange);
     if(!ValidateMarriageItemWrite(c,r))return std::unexpected(E::InvalidChange);
-    if(!ValidateIdentityScrollWrite(c,r))return std::unexpected(E::InvalidChange);
+    if(!ValidateQuestScrollWrite(c,r))return std::unexpected(E::InvalidChange);
     if(!ValidCurrencyDropWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==TokenRedemptionOutcome && !ValidTokenRedemptionWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==CostumeTransferOutcome && !ValidCostumeTransferWrite(c,r))return std::unexpected(E::InvalidChange);

@@ -19,6 +19,7 @@
 #include "../core/log.h"
 #include "../social/messenger_manager.h"
 #include "../core/config.h"
+#include "../core/utils.h"
 #include <item/IdentityScrolls.hpp>
 #include <openssl/rand.h>
 
@@ -48,7 +49,7 @@ struct ScrollUse
     std::array<std::uint8_t, 16> operation{};
 };
 
-std::optional<ScrollUse> ReadScrollUse(lua_State* L)
+std::optional<ScrollUse> ReadScrollUse(lua_State* L, bool requireCanWarp = true)
 {
     auto& manager = CQuestManager::instance();
     const auto* quest = manager.GetCurrentState();
@@ -57,7 +58,7 @@ std::optional<ScrollUse> ReadScrollUse(lua_State* L)
 
     const auto actor = manager.GetCurrentPCEntity();
     if (!player::IsPC(actor) || g_registry.any_of<ecs::TypedItemBusy, ecs::DeadTag, ecs::StunTag>(actor) ||
-        !InventorySystem::CanHandleItems(actor) || !player::CanWarp(actor))
+        !InventorySystem::CanHandleItems(actor) || (requireCanWarp && !player::CanWarp(actor)))
         return {};
 
     const auto* inventory = g_registry.try_get<ecs::TypedItems>(actor);
@@ -247,6 +248,46 @@ std::optional<int> SubmitGuildMasterScroll(lua_State* L)
     return std::nullopt;
 }
 
+std::optional<int> SubmitDungeonCooldownScroll(lua_State* L)
+{
+    std::size_t length = 0;
+    const char* name = lua_type(L, 1) == LUA_TSTRING ? lua_tolstring(L, 1, &length) : nullptr;
+    if (!name) return 0;
+    const auto dungeon = std::ranges::find(item::CooldownScrollDungeons, std::string_view(name, length));
+    if (dungeon == item::CooldownScrollDungeons.end()) return 0;
+
+    const auto use = ReadScrollUse(L, false);
+    const auto catalog = item::runtime::CurrentCatalog();
+    auto* pc = CQuestManager::instance().GetCurrentPC();
+    if (!use || !catalog || !pc) return 0;
+
+    item::DungeonCooldownScrollChange change{
+        static_cast<std::uint8_t>(dungeon - item::CooldownScrollDungeons.begin())};
+    std::array<std::string, item::CooldownScrollFlags.size()> flags;
+    for (std::size_t flag = 0; flag < flags.size(); ++flag)
+    {
+        flags[flag] = fmt::format("{}.{}", *dungeon, item::CooldownScrollFlags[flag]);
+        change.before[flag] = pc->GetFlag(flags[flag]);
+    }
+    if (change.before.front() <= get_global_time()) return 0;
+
+    const auto& state = *use->inventory;
+    auto write = item::MakeDungeonCooldownScrollCommit(*catalog, use->operation, state.fence, state.storages, state.items,
+        use->source, use->revision, change);
+    if (!write) return 0;
+
+    pc->Save();
+    if (!QueueScroll(*use, L, std::move(*write), [flags = std::move(flags), change](entt::entity actor) {
+        if (actor == entt::null) return;
+        auto* current = CQuestManager::instance().GetPC(player::GetPlayerID(actor));
+        if (!current) return;
+        for (std::size_t flag = 0; flag < flags.size(); ++flag)
+            current->ApplySavedFlagDeletion(flags[flag], change.before[flag]);
+    }))
+        return 0;
+    return std::nullopt;
+}
+
 template<int Changed, int Refused>
 int FinishScroll(lua_State* L, std::optional<int> status)
 {
@@ -271,4 +312,5 @@ ALUA(pc_typed_change_name) { return FinishScroll<NameChanged, NameRefused>(L, Su
 ALUA(pc_typed_change_empire) { return FinishScroll<EmpireChanged, EmpireRefused>(L, SubmitEmpireScroll(L)); }
 ALUA(pc_typed_change_sex) { return FinishScroll<SexChanged, SexRefused>(L, SubmitSexScroll(L)); }
 ALUA(pc_typed_change_guild_master) { return FinishScroll<GuildChanged, GuildRefused>(L, SubmitGuildMasterScroll(L)); }
+ALUA(pc_typed_reset_dungeon_cooldown) { return FinishScroll<1, 0>(L, SubmitDungeonCooldownScroll(L)); }
 }
