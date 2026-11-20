@@ -163,7 +163,6 @@ int GetItemAccessorySocketGrade(entt::entity item);
 uint16_t GetItemRefineSet(entt::entity item);
 bool IsItemStackable(entt::entity item);
 uint32_t GetItemRefinedVnum(entt::entity item);
-uint32_t GetItemRefineFromVnum(entt::entity item);
 bool IsRealTimeItem(entt::entity item);
 bool IsRealTimeFirstUseItem(entt::entity item);
 bool IsUnlimitedTimeUnique(entt::entity item);
@@ -358,20 +357,6 @@ SpecialItemGroupResult GiveItemFromSpecialItemGroup(entt::entity e, uint32_t gro
 bool GiveItemFromSpecialItemGroup(entt::entity e, uint32_t groupNum, std::vector<uint32_t>& itemVnums,
     std::vector<uint32_t>& itemCounts, std::vector<entt::entity>& itemEntities, int& count);
 
-// Slice E - shop / trade / refine
-struct RefineInput {
-    entt::entity item = entt::null;
-    std::vector<entt::entity> materials;
-};
-
-struct RefineResult {
-    entt::entity resultItem = entt::null;
-    bool success = false;
-};
-
-bool DoRefine(entt::entity e, entt::entity item, bool moneyOnly = false);
-bool DoRefineWithScroll(entt::entity e, entt::entity item);
-bool DoRefineItemSoul(entt::entity e, entt::entity item);
 bool RefineItem(entt::entity e, entt::entity pkItem, entt::entity pkTarget);
 bool CleanAcceAttr(entt::entity e, entt::entity pkItem, entt::entity pkTarget);
 void AutoRecoveryItemProcess(entt::entity e, int type);
@@ -379,7 +364,6 @@ void GiveGold(entt::entity e, int64_t iAmount);
 void ProcessRecallItem(entt::entity e, entt::entity item);
 bool GiveRecallItem(entt::entity e, entt::entity item);
 bool RefineInformation(entt::entity e, uint8_t bCell, uint8_t bType, int iAdditionalCell = -1);
-void TransformRefineItem(entt::entity pkOldItem, entt::entity pkNewItem);
 bool UseItem(entt::entity e, TItemPos Cell, TItemPos DestCell = NPOS);
 bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell);
 bool ItemProcess_Hair(entt::entity e, entt::entity item, int iDestCell);

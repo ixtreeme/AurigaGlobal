@@ -453,24 +453,6 @@ int64_t ComputeRefineFee(entt::entity owner, int64_t cost, int64_t multiply)
     return cost * multiply;
 }
 
-// A tenth of a foreign guild smith's fee is deposited with that guild.
-void PayRefineFee(entt::entity owner, int64_t total)
-{
-    const int64_t fee = total / 10;
-    CGuild* pGuild = ecs::SocialSystem::GetRefineGuild(owner);
-
-    int64_t remain = total;
-
-    if (pGuild && pGuild != ecs::SocialSystem::GetGuild(owner))
-    {
-        ecs::SocialSystem::DepositGuildMoney(
-            owner, *pGuild, fee);
-        remain -= fee;
-    }
-
-    ecs::PointSystem::Change(owner, POINT_GOLD, -remain);
-}
-
 void ClearRefineMode(entt::entity owner)
 {
     if (!g_registry.valid(owner))
@@ -479,7 +461,7 @@ void ClearRefineMode(entt::entity owner)
     {
         state->underRefine = false;
         state->refineNPC = entt::null;
-        // DoRefineWithScroll consumes the selected scroll AFTER closing the mode.
+        // Leave the last selected scroll cell available to compatibility readers.
     }
 }
 

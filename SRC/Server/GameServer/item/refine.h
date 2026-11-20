@@ -25,21 +25,6 @@ enum
 
 
 
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM
-	enum
-	{
-		REFINE_PERCENTAGE_LOW = 5,
-		REFINE_PERCENTAGE_MEDIUM = 10,
-		REFINE_PERCENTAGE_EXTRA = 15,
-		
-		REFINE_VNUM_POTION_LOW = 56001,
-		REFINE_VNUM_POTION_MEDIUM = 56002,
-		REFINE_VNUM_POTION_EXTRA = 56003,	
-		
-	};
-#endif
-
-
 class CRefineManager : public singleton<CRefineManager>
 {
 	typedef std::map<uint32_t, TRefineTable> TRefineRecipeMap;
@@ -52,10 +37,6 @@ class CRefineManager : public singleton<CRefineManager>
 
 
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
-	bool	GetPercentage(entt::entity ch, uint8_t lLow, uint8_t lMedium, uint8_t lExtra, uint8_t total, entt::entity item);
-	void	Increase(entt::entity ch, uint8_t lLow, uint8_t lMedium, uint8_t lExtra);
-	void	Reset(entt::entity ch);
-	void	Reset_percent(entt::entity ch);
 	int		Result(entt::entity ch);
 #endif
 
