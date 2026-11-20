@@ -114,9 +114,7 @@ class CInputMain : public CInputProcessor
 		void		QuickslotAdd(entt::entity character, const char * data);
 		void		QuickslotDelete(entt::entity character, const char * data);
 		void		QuickslotSwap(entt::entity character, const char * data);
-		int			Shop(entt::entity character, const char * data, size_t uiBytes);
 		void		OnClick(entt::entity character, const char * data);
-		void		Exchange(entt::entity character, const char * data);
 		void		Position(entt::entity character, const char * data);
 		void		Move(entt::entity character, const char * data);
         void MountFlight(entt::entity character, const char* data);
@@ -155,7 +153,6 @@ class CInputMain : public CInputProcessor
 
 		void		Fishing(entt::entity character, const char* c_pData);
 		void		Hack(entt::entity character, const char * c_pData);
-		int			MyShop(entt::entity character, const char * c_pData, size_t uiBytes);
 
 
 

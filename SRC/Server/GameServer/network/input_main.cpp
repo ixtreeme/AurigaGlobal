@@ -267,11 +267,6 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 				ItemPickup(character, c_pData);
 			break;
 
-		case HEADER_CG_EXCHANGE:
-			if (!ecs::PlayerRuntime::IsObserverMode(character))
-				Exchange(character, c_pData);
-			break;
-
 		case HEADER_CG_ATTACK:
 		case HEADER_CG_SHOOT:
 			if (!ecs::PlayerRuntime::IsObserverMode(character))
@@ -318,11 +313,6 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 
 		case HEADER_CG_QUICKSLOT_SWAP:
 			QuickslotSwap(character, c_pData);
-			break;
-
-		case HEADER_CG_SHOP:
-			if ((iExtraLen = Shop(character, c_pData, m_iBufferLeft)) < 0)
-				return -1;
 			break;
 
 		case HEADER_CG_MESSENGER:
@@ -500,11 +490,6 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 			break;
 		case HEADER_CG_HACK:
 			Hack(character, c_pData);
-			break;
-
-		case HEADER_CG_MYSHOP:
-			if ((iExtraLen = MyShop(character, c_pData, m_iBufferLeft)) < 0)
-				return -1;
 			break;
 
 #ifdef ENABLE_WHISPER_ADMIN_SYSTEM
