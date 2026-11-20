@@ -134,6 +134,25 @@ namespace quest
 			static_cast<uint32_t>(local.value_or(0)));
 	}
 
+	ALUA(game_typed_item_key)
+	{
+		std::size_t length = 0;
+		const char* value = luaL_checklstring(L, 1, &length);
+		const std::string_view code(value, length);
+		const auto catalog = auriga::item::runtime::CurrentCatalog();
+		if (!catalog)
+			return 0;
+		const auto& definitions = catalog->Entries();
+		const auto found = std::ranges::find_if(definitions, [&](const auto& item) {
+			return !item.second.base.retired && item.second.base.contentCode == code;
+		});
+		if (found == definitions.end())
+			return 0;
+		lua_pushinteger(L, static_cast<std::uint16_t>(found->first.Category()));
+		lua_pushinteger(L, found->first.LocalId());
+		return 2;
+	}
+
 	static int PushTypedItemName(lua_State* L, const auriga::item::ItemCatalogEntry* item, int fallbackIndex)
 	{
 		std::size_t length = 0;
@@ -348,6 +367,7 @@ namespace quest
 		PIXEL_POSITION pos;
 		pos.x = ecs::PlayerRuntime::GetX(chEntity) + number(-200, 200);
 		pos.y = ecs::PlayerRuntime::GetY(chEntity) + number(-200, 200);
+			{ "typed_item_key", game_typed_item_key },
 
 		if (!ItemSystem::PlaceItemOnGround(
 			item, ecs::PlayerRuntime::GetMapIndex(chEntity), pos, 300))
