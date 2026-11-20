@@ -445,20 +445,6 @@ int64_t CalculateConsumeSP(entt::entity lpCharEntity)
 #define ENABLE_ADDSTONE_FAILURE
 int g_nPortalLimitTime = 10;
 
-enum enum_RefineScrolls
-{
-	CHUKBOK_SCROLL = 0,
-	HYUNIRON_CHN = 1,
-	YONGSIN_SCROLL = 2,
-	MUSIN_SCROLL = 3,
-	YAGONG_SCROLL = 4,
-	MEMO_SCROLL = 5,
-	BDRAGON_SCROLL = 6,
-#ifdef ENABLE_SOUL_SYSTEM
-	SOUL_SCROLL = 9,
-#endif
-};
-
 // MYSHOP_PRICE_LIST
 
 void ecs::SocialSystem::SendMyShopPriceListCmd(entt::entity e, uint32_t dwItemVnum, int64_t dwItemPrice)
@@ -1464,265 +1450,35 @@ EVENTFUNC(soul_item_event)
 
 namespace ItemSystem {
 
-// The refine window: what it costs, what it needs and how likely it is.
-bool RefineInformation(entt::entity e, uint8_t bCell, uint8_t bType, int iAdditionalCell)
+// Legacy metin extraction is independent of the retired refinement preview.
+static bool DetachMetinStones(entt::entity owner, entt::entity scroll, entt::entity target)
 {
-	if (bCell > INVENTORY_MAX_NUM)
-		return false;
+    if (!InventorySystem::CanHandleItems(owner) || !IS_SET(GetItemFlags(target), ITEM_FLAG_REFINEABLE))
+        return false;
 
-	const entt::entity item = GetInventoryItem(e, bCell);
+    LogManager::instance().ItemLogEntity(owner, target, "USE_DETACHMENT", GetItemName(target));
+    bool extracted = false;
+    for (int slot = 0; slot < ITEM_SOCKET_MAX_NUM; ++slot)
+    {
+        const auto stone = static_cast<int32_t>(GetItemSocket(target, slot));
+        if (stone <= 2 || stone == ITEM_BROKEN_METIN_VNUM)
+            continue;
 
-
-	if (item == entt::null)
-		return false;
-
-#ifdef ATTR_LOCK
-	if (GetItemLockedAttr(item) != -1)
-	{
+        AutoGiveItemEcs(owner, stone);
+        SetItemSocketEcs(target, slot, ITEM_BROKEN_METIN_VNUM);
+        extracted = true;
+    }
+    if (!extracted)
+    {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 784, "");
+        ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 360, "");
 #endif
-		return false;
-	}
-#endif
+        return false;
+    }
 
-	// REFINE_COST
-	if (bType == REFINE_TYPE_MONEY_ONLY && !ecs::PlayerRuntime::GetQuestFlag(e, "deviltower_zone.can_refine"))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 361, "");
-#endif
-		return false;
-	}
-	// END_OF_REFINE_COST
-
-	TPacketGCRefineInformation p;
-
-	p.header = HEADER_GC_REFINE_INFORMATION;
-	p.pos = bCell;
-	p.src_vnum = GetItemVnum(item);
-	p.result_vnum = GetItemRefinedVnum(item);
-	p.type = bType;
-
-	if (p.result_vnum == 0)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 427, "");
-#endif
-		return false;
-	}
-
-	if (GetItemType(item) == ITEM_USE && GetItemSubType(item) == USE_TUNING)
-	{
-		if (bType == 0)
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 424, "");
-#endif
-			return false;
-		}
-		else
-		{
-			const entt::entity itemScroll = GetInventoryItem(e, iAdditionalCell);
-			if (itemScroll == entt::null || GetItemVnum(item) == GetItemVnum(itemScroll))
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 229, "");
-#endif
-				return false;
-			}
-		}
-	}
-
-#ifdef ENABLE_SOUL_SYSTEM
-	if (bType == REFINE_TYPE_SOUL)
-	{
-		const entt::entity itemScroll = GetInventoryItem(e, iAdditionalCell);
-		if (itemScroll == entt::null)
-			return false;
-
-		p.cost = 0;
-		p.prob = GetItemValue(itemScroll, 1);
-		p.material_count = 0;
-		memset(p.materials, 0, sizeof(p.materials));
-
-		ecs::PlayerRuntime::GetDesc(e)->Packet(&p, sizeof(TPacketGCRefineInformation));
-
-		InventorySystem::SetRefineMode(e, iAdditionalCell);
-		return true;
-	}
-#endif
-
-	CRefineManager& rm = CRefineManager::instance();
-
-	const TRefineTable* prt = rm.GetRefineRecipe(GetItemRefineSet(item));
-
-	if (!prt)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 427, "");
-#endif
-		return false;
-	}
-
-	p.cost = InventorySystem::ComputeRefineFee(e, prt->cost);
-#ifdef NEW_POINT_EXP_DOUBLE_BONUS_RAZOR93
-	int success_prob = prt->prob;
-
-	if (bType != REFINE_TYPE_MONEY_ONLY)
-	{
-		const entt::entity pkScroll = GetInventoryItem(e, iAdditionalCell);
-		if (pkScroll != entt::null && GetItemType(pkScroll) == ITEM_USE && GetItemSubType(pkScroll) == USE_TUNING)
-		{
-			const int scrollType = GetItemValue(pkScroll, 0);
-
-			if (scrollType == YONGSIN_SCROLL || scrollType == YAGONG_SCROLL || scrollType == HYUNIRON_CHN)
-			{
-				const char hyuniron_prob[9] = { 100, 75, 65, 55, 45, 40, 35, 25, 20 };
-				const char yagong_prob[9] = { 100, 100, 90, 80, 70, 60, 50, 30, 20 };
-
-				if (scrollType == YONGSIN_SCROLL)
-					success_prob = hyuniron_prob[MINMAX(0, GetItemRefineLevel(item), 8)];
-				else if (scrollType == YAGONG_SCROLL)
-					success_prob = yagong_prob[MINMAX(0, GetItemRefineLevel(item), 8)];
-				// HYUNIRON_CHN: marad a prt->prob
-			}
-			else if (scrollType == MUSIN_SCROLL)
-			{
-				success_prob += 100;
-				if (success_prob > 100)
-					success_prob = 100;
-			}
-			else if (scrollType == MEMO_SCROLL)
-			{
-				if (GetItemRefineLevel(item) != GetItemValue(pkScroll, 1))
-					return false;
-				success_prob = 100;
-			}
-			else if (scrollType == BDRAGON_SCROLL)
-			{
-				if (GetItemType(item) != ITEM_METIN || GetItemRefineLevel(item) != 4)
-					return false;
-				success_prob = 80;
-			}
-		}
-	}
-
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM
-	success_prob += CRefineManager::instance().Result(e);
-#endif
-
-	success_prob = MINMAX(0, success_prob, 100);
-	p.prob = success_prob;
-#else
-	p.prob = prt->prob;
-#endif
-	if (bType == REFINE_TYPE_MONEY_ONLY)
-	{
-		p.material_count = 0;
-		memset(p.materials, 0, sizeof(p.materials));
-	}
-	else
-	{
-		p.material_count = prt->material_count;
-		memcpy(&p.materials, prt->materials, sizeof(prt->materials));
-	}
-
-	ecs::PlayerRuntime::GetDesc(e)->Packet(&p, sizeof(TPacketGCRefineInformation));
-
-	InventorySystem::SetRefineMode(e, iAdditionalCell);
-	return true;
+    ConsumeItemEcs(scroll);
+    return true;
 }
-
-// Using one item on another: a scroll opens the refine window, a
-// detachment scroll pulls the metin stones back out.
-bool RefineItem(entt::entity e, entt::entity pkItem, entt::entity pkTarget)
-{
-	if (!InventorySystem::CanHandleItems(e))
-		return false;
-
-#ifdef ENABLE_SOUL_SYSTEM
-	uint32_t vnum = GetItemVnum(pkItem);
-	if ((vnum == 70602 || vnum == 70603 || vnum == 88958) && GetItemType(pkTarget) != ITEM_SOUL) {
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 1294, "%s", GetItemName(pkItem));
-#endif
-		return false;
-	}
-#endif
-
-	if (GetItemSubType(pkItem) == USE_TUNING)
-	{
-		// MUSIN_SCROLL
-		if (GetItemValue(pkItem, 0) == MUSIN_SCROLL)
-			RefineInformation(e, GetItemCell(pkTarget), REFINE_TYPE_MUSIN, GetItemCell(pkItem));
-		// END_OF_MUSIN_SCROLL
-
-#ifdef ENABLE_SOUL_SYSTEM
-		else if (GetItemValue(pkItem, 0) == SOUL_SCROLL)
-			RefineInformation(e, GetItemCell(pkTarget), REFINE_TYPE_SOUL, GetItemCell(pkItem));
-#endif
-
-		else if (GetItemValue(pkItem, 0) == HYUNIRON_CHN)
-			RefineInformation(e, GetItemCell(pkTarget), REFINE_TYPE_HYUNIRON, GetItemCell(pkItem));
-		else if (GetItemValue(pkItem, 0) == BDRAGON_SCROLL)
-		{
-			if (GetItemRefineSet(pkTarget) != 702) return false;
-			RefineInformation(e, GetItemCell(pkTarget), REFINE_TYPE_BDRAGON, GetItemCell(pkItem));
-		}
-		else
-		{
-			if (GetItemRefineSet(pkTarget) == 501) return false;
-			RefineInformation(e, GetItemCell(pkTarget), REFINE_TYPE_SCROLL, GetItemCell(pkItem));
-		}
-	}
-	else if (GetItemSubType(pkItem) == USE_DETACHMENT && IS_SET(GetItemFlags(pkTarget), ITEM_FLAG_REFINEABLE))
-	{
-		LogManager::instance().ItemLogEntity(e, pkTarget, "USE_DETACHMENT", GetItemName(pkTarget));
-
-		bool bHasMetinStone = false;
-
-		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; i++)
-		{
-			int32_t socket = GetItemSocket(pkTarget, i);
-			if (socket > 2 && socket != ITEM_BROKEN_METIN_VNUM)
-			{
-				bHasMetinStone = true;
-				break;
-			}
-		}
-
-		if (bHasMetinStone)
-		{
-			for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-			{
-				int32_t socket = GetItemSocket(pkTarget, i);
-				if (socket > 2 && socket != ITEM_BROKEN_METIN_VNUM)
-				{
-					AutoGiveItemEcs(e, socket);
-					//TItemTable* pTable = ITEM_MANAGER::instance().GetTable(GetItemSocket(pkTarget, i));
-					//SetItemSocket(pkTarget, i, pTable->alValues[2]);
-					SetItemSocketEcs(pkTarget, i, ITEM_BROKEN_METIN_VNUM);
-				}
-			}
-			ConsumeItemEcs(pkItem);
-			return true;
-		}
-		else
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 360, "");
-#endif
-			return false;
-		}
-	}
-
-	return false;
-}
-
-} // namespace ItemSystem
-
-namespace ItemSystem {
 
 // Stripping an acce of the attributes it absorbed.
 bool CleanAcceAttr(entt::entity e, entt::entity pkItem, entt::entity pkTarget)
@@ -5485,6 +5241,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 		}
 #endif
 		case USE_TUNING:
+			return false;
 		case USE_DETACHMENT:
 		{
 			entt::entity item2 = entt::null;
@@ -5521,7 +5278,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			{
 				if (GetItemVnum(item) == 71056)
 				{
-					RefineItem(e, item, item2);
+					DetachMetinStones(e, item, item2);
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
@@ -5531,7 +5288,7 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 			else
 			{
-				RefineItem(e, item, item2);
+				DetachMetinStones(e, item, item2);
 			}
 		}
 		break;

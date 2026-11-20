@@ -434,25 +434,6 @@ void SetRefineMode(entt::entity owner, int additionalCell)
     state.underRefine = true;
 }
 
-// What this refine costs. A guild smith takes a tenth off its own members and
-// triples the price for another empire's.
-int64_t ComputeRefineFee(entt::entity owner, int64_t cost, int64_t multiply)
-{
-    CGuild* pGuild = ecs::SocialSystem::GetRefineGuild(owner);
-    if (!pGuild)
-        return cost;
-
-    if (pGuild == ecs::SocialSystem::GetGuild(owner))
-        return cost * multiply * 9 / 10;
-
-    const entt::entity npc = GetRefineNPC(owner);
-    if (ecs::PlayerRuntime::IsValid(npc)
-        && ecs::PlayerRuntime::GetEmpire(npc) != ecs::PlayerRuntime::GetEmpire(owner))
-        return cost * multiply * 3;
-
-    return cost * multiply;
-}
-
 void ClearRefineMode(entt::entity owner)
 {
     if (!g_registry.valid(owner))

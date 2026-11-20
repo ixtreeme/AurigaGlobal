@@ -4,8 +4,6 @@
 #include "constants.h"
 #include <entt/entt.hpp>
 
-#define REFINE_INCREASE "REFINE.INCREASE_PERCENTAGE"
-
 
 enum
 {
@@ -36,9 +34,6 @@ class CRefineManager : public singleton<CRefineManager>
 	const TRefineTable* GetRefineRecipe(uint32_t id);
 
 
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM
-	int		Result(entt::entity ch);
-#endif
 
 
 

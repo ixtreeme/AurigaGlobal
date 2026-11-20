@@ -357,13 +357,11 @@ SpecialItemGroupResult GiveItemFromSpecialItemGroup(entt::entity e, uint32_t gro
 bool GiveItemFromSpecialItemGroup(entt::entity e, uint32_t groupNum, std::vector<uint32_t>& itemVnums,
     std::vector<uint32_t>& itemCounts, std::vector<entt::entity>& itemEntities, int& count);
 
-bool RefineItem(entt::entity e, entt::entity pkItem, entt::entity pkTarget);
 bool CleanAcceAttr(entt::entity e, entt::entity pkItem, entt::entity pkTarget);
 void AutoRecoveryItemProcess(entt::entity e, int type);
 void GiveGold(entt::entity e, int64_t iAmount);
 void ProcessRecallItem(entt::entity e, entt::entity item);
 bool GiveRecallItem(entt::entity e, entt::entity item);
-bool RefineInformation(entt::entity e, uint8_t bCell, uint8_t bType, int iAdditionalCell = -1);
 bool UseItem(entt::entity e, TItemPos Cell, TItemPos DestCell = NPOS);
 bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell);
 bool ItemProcess_Hair(entt::entity e, entt::entity item, int iDestCell);

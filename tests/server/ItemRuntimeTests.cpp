@@ -221,7 +221,6 @@ bool CanConsumeOwnedItem(entt::entity owner, entt::entity item, uint32_t amount,
     return ecs::PlayerRuntime::IsPC(owner) && IsValidItem(item) && GetItemOwner(item) == owner &&
         GetItemCount(item) >= amount && !IsItemEquipped(item) && !IsItemLocked(item) && !IsItemExchanging(item);
 }
-bool RefineInformation(entt::entity, uint8_t, uint8_t, int) { Unexpected(); }
 }
 bool CombatSystem::IsDead(entt::entity e) { return g_registry.get<Actor>(e).dead; }
 bool MountSystem::ReviveHorse(entt::entity) { ++revivals; return true; }

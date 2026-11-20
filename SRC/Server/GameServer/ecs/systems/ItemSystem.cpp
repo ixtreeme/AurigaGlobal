@@ -2939,26 +2939,6 @@ bool CanReceiveItemEcs(entt::entity receiver, entt::entity fromEntity, entt::ent
     if (racenum == 20016 && WoodcuttingRules::IsAxe(GetItemVnum(item))) return true;
     if (racenum == 20016 && HerbalismRules::IsShears(GetItemVnum(item))) return true;
 
-	if (racenum == DEVILTOWER_BLACKSMITH_WEAPON_MOB ||
-		racenum == DEVILTOWER_BLACKSMITH_ARMOR_MOB ||
-		racenum == DEVILTOWER_BLACKSMITH_ACCESSORY_MOB) {
-		bool bCanProced = true;
-
-		for (uint8_t i = 0; i < ITEM_LIMIT_MAX_NUM; ++i) {
-			if (ItemSystem::GetItemLimitType(item, i) == LIMIT_LEVEL && ItemSystem::GetItemLimitValue(item, i) >= 90) {
-				bCanProced = false;
-				break;
-			}
-		}
-
-		if (!bCanProced) {
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 1360, "");
-#endif
-			return false;
-		}
-	}
-
 	switch (racenum)
 	{
 	case fishing::CAMPFIRE_MOB:
@@ -2972,45 +2952,15 @@ bool CanReceiveItemEcs(entt::entity receiver, entt::entity fromEntity, entt::ent
 			return true;
 		break;
 
-	case BLACKSMITH_WEAPON_MOB:
-	case DEVILTOWER_BLACKSMITH_WEAPON_MOB:
-		if (GetItemType(item) == ITEM_WEAPON && GetItemRefineVnum(item)) {
-			return true;
-		}
-		else {
-			return false;
-		}
-		break;
-	case BLACKSMITH_ARMOR_MOB:
-	case DEVILTOWER_BLACKSMITH_ARMOR_MOB:
-		if ((GetItemType(item) == ITEM_BELT || (GetItemType(item) == ITEM_ARMOR && (GetItemSubType(item) == ARMOR_BODY || GetItemSubType(item) == ARMOR_SHIELD || GetItemSubType(item) == ARMOR_HEAD))) && GetItemRefineVnum(item)) {
-			return true;
-		}
-		else {
-			return false;
-		}
-		break;
-	case BLACKSMITH_ACCESSORY_MOB:
-	case DEVILTOWER_BLACKSMITH_ACCESSORY_MOB:
-		if (GetItemType(item) == ITEM_ARMOR && !(GetItemSubType(item) == ARMOR_BODY || GetItemSubType(item) == ARMOR_SHIELD || GetItemSubType(item) == ARMOR_HEAD
-#ifdef ENABLE_PENDANT
-			|| GetItemSubType(item) == ARMOR_PENDANT
-#endif
-			) && GetItemRefineVnum(item)) {
-			return true;
-		}
-		else {
-			return false;
-		}
-		break;
 	case BLACKSMITH_MOB:
 	case BLACKSMITH2_MOB:
-		if (GetItemRefineVnum(item) && GetItemRefineSet(item)) {
-			return true;
-		}
-		else {
-			return false;
-		}
+	case BLACKSMITH_WEAPON_MOB:
+	case BLACKSMITH_ARMOR_MOB:
+	case BLACKSMITH_ACCESSORY_MOB:
+	case DEVILTOWER_BLACKSMITH_WEAPON_MOB:
+	case DEVILTOWER_BLACKSMITH_ARMOR_MOB:
+	case DEVILTOWER_BLACKSMITH_ACCESSORY_MOB:
+		return false; // Refinement uses the typed forge request.
 	case ALCHEMIST_MOB:
 		if (GetItemRefineVnum(item))
 			return true;
@@ -3148,113 +3098,6 @@ bool ReceiveItemEcs(entt::entity receiver, entt::entity fromEntity, entt::entity
 		}
 		break;
 
-		// DEVILTOWER_NPC
-	case DEVILTOWER_BLACKSMITH_WEAPON_MOB:
-	case DEVILTOWER_BLACKSMITH_ARMOR_MOB:
-	case DEVILTOWER_BLACKSMITH_ACCESSORY_MOB: {
-		int set = GetItemRefineSet(item);
-		if (GetItemRefineVnum(item) != 0 && set != 0 /*&& GetItemRefineSet(item) < 500*/
-#ifdef ENABLE_ITEM_EXTRA_PROTO
-			&& set != 1021
-			&& set != 1022
-			&& set != 1023
-			&& set != 1024
-			&& set != 19
-			&& set != 20
-			&& set != 21
-			&& set != 22
-			&& set != 28
-			&& set != 29
-			&& set != 30
-			&& set != 31
-			&& set != 32
-			&& set != 396
-			&& set != 397
-			&& set != 398
-			&& set != 399
-			&& set != 640
-			&& set != 641
-			&& set != 642
-			&& set != 643
-			&& set != 370
-			&& set != 371
-			&& set != 372
-			&& set != 373
-			&& set != 461
-			&& set != 462
-			&& set != 463
-			&& set != 464
-			&& set != 474
-			&& set != 475
-			&& set != 476
-			&& set != 477
-			&& set != 487
-			&& set != 488
-			&& set != 489
-			&& set != 490
-			&& set != 235
-			&& set != 236
-			&& set != 237
-			&& set != 238
-			&& set != 383
-			&& set != 384
-			&& set != 385
-			&& set != 386
-			&& set != 769
-			&& set != 770
-			&& set != 771
-			&& set != 772
-			&& set != 995
-			&& set != 996
-			&& set != 997
-			&& set != 998
-			&& set != 1017
-			&& set != 1018
-			&& set != 1019
-			&& set != 1020
-			&& set != 448
-			&& set != 449
-			&& set != 450
-			&& set != 451
-			&& set != 430
-			&& set != 431
-			&& set != 432
-			&& set != 433
-			&& set != 325
-			&& set != 326
-			&& set != 327
-			&& set != 328
-#endif
-			)
-		{
-			InventorySystem::SetRefineNPC(fromEntity, receiver);
-			ItemSystem::RefineInformation(fromEntity, ItemSystem::GetItemCell(itemEntity), REFINE_TYPE_MONEY_ONLY);
-		}
-#ifdef TEXTS_IMPROVEMENT
-		else {
-			ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 427, "");
-		}
-#endif
-		break;
-	}
-											// END_OF_DEVILTOWER_NPC
-
-	case BLACKSMITH_MOB:
-	case BLACKSMITH2_MOB:
-	case BLACKSMITH_WEAPON_MOB:
-	case BLACKSMITH_ARMOR_MOB:
-	case BLACKSMITH_ACCESSORY_MOB:
-		if (GetItemRefineVnum(item))
-		{
-			InventorySystem::SetRefineNPC(fromEntity, receiver);
-			ItemSystem::RefineInformation(fromEntity, ItemSystem::GetItemCell(itemEntity), REFINE_TYPE_NORMAL);
-		}
-#ifdef TEXTS_IMPROVEMENT
-		else {
-			ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 427, "");
-		}
-#endif
-		break;
 	case 20101:
 	case 20102:
 	case 20103:

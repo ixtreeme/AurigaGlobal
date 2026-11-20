@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
-#include "../ecs/systems/QuestSystem.hpp"
 #include "refine.h"
 
 CRefineManager::CRefineManager()
@@ -12,20 +11,6 @@ CRefineManager::~CRefineManager()
 }
 
 
-
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM
-	int CRefineManager::Result(entt::entity ch)
-	{
-		int uninitialized = 0;
-		int flag = ecs::QuestSystem::GetFlag(ch, REFINE_INCREASE);
-
-		if (flag > 0)
-			return flag;
-		else
-			return uninitialized;
-	}
-
-#endif
 
 bool CRefineManager::Initialize(TRefineTable * table, int size)
 {
