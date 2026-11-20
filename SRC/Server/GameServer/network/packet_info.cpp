@@ -4,10 +4,7 @@
 #include "packet_info.h"
 #include <item/NativeMoneyWire.hpp>
 #include <item/PrivateShopWire.hpp>
-#ifdef __INGAME_WIKI__
-#include <common/in_game_wiki.h>
 #include "../item/TypedWikiSources.hpp"
-#endif
 
 #include <fmt/format.h>
 #include <fstream>
@@ -214,9 +211,7 @@ CPacketInfoCG::CPacketInfoCG()
     Set(HEADER_CG_TYPED_RECOVERY, sizeof(TPacketCGTypedRecovery), "TypedRecovery", true);
 
 
-#ifdef __INGAME_WIKI__
-	Set(InGameWiki::HEADER_CG_WIKI_REFINES, sizeof(InGameWiki::TCGWikiRefines), "WikiRefines", true);
-#endif
+	Set(HEADER_CG_WIKI_RETIRED, 14, "RetiredWiki", true);
 	Set(HEADER_CG_GUILD, sizeof(TPacketCGGuild), "Guild", true);
 	Set(HEADER_CG_ANSWER_MAKE_GUILD, sizeof(TPacketCGAnswerMakeGuild), "AnswerMakeGuild", true);
 

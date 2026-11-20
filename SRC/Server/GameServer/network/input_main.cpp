@@ -90,9 +90,6 @@
 #ifdef ENABLE_WHISPER_ADMIN_SYSTEM
 	#include "whisper_admin.h"
 #endif
-#ifdef __INGAME_WIKI__
-#include "mob_manager.h"
-#endif
 #include <common/CommonDefines.h>
 #include "../item/TypedItemOps.hpp"
 #include "../item/TypedLoot.hpp"
@@ -477,11 +474,8 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		case HEADER_CG_PARTY_PARAMETER:
 			PartyParameter(character, c_pData);
 			break;
-#ifdef __INGAME_WIKI__
-		case InGameWiki::HEADER_CG_WIKI_REFINES:
-			RecvWikiRefines(character, c_pData);
+		case HEADER_CG_WIKI_RETIRED:
 			break;
-#endif
 		case HEADER_CG_ANSWER_MAKE_GUILD:
 #ifdef ENABLE_NEWGUILDMAKE
 			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "<%s> AnswerMakeGuild disabled", __FUNCTION__);

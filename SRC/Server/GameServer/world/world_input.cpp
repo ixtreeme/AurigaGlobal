@@ -40,9 +40,6 @@
 #include "desc_client.h"
 #include "gm.h"
 #include "../ecs/systems/AcceSystem.hpp"
-#include "item_manager.h"
-
-#include <cstring>
 
 void CInputMain::Fishing(entt::entity character, const char* c_pData)
 {
@@ -180,29 +177,5 @@ void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* p
 
 	ecs::MovementSystem::WarpSet(character, coord_x, coord_y);
 
-}
-#endif
-
-#ifdef __INGAME_WIKI__
-void CInputMain::RecvWikiRefines(entt::entity character, const char* data)
-{
-    auto* desc = ecs::PlayerRuntime::GetDesc(character);
-    if (!desc || !data) return;
-
-    InGameWiki::TCGWikiRefines request;
-    std::memcpy(&request, data, sizeof(request));
-    if (request.reservedMob || !request.vnum) return;
-
-    const auto refines = ITEM_MANAGER::instance().GetWikiRefineInfo(request.vnum);
-    InGameWiki::TGCWikiRefines response;
-    response.refineCount = static_cast<std::uint32_t>(refines.size());
-    response.vnum = request.vnum;
-    response.returnId = request.returnId;
-    const auto dataSize = refines.size() * sizeof(CommonWikiData::TWikiRefineInfo);
-    response.size = static_cast<std::uint16_t>(sizeof(response) + dataSize);
-    TEMP_BUFFER buffer;
-    buffer.write(&response, sizeof(response));
-    if (!refines.empty()) buffer.write(refines.data(), dataSize);
-    desc->Packet(buffer.read_peek(), buffer.size());
 }
 #endif

@@ -3,10 +3,6 @@
 
 #include <entt/entity/entity.hpp>
 
-#ifdef __INGAME_WIKI__
-#include <memory>
-#include <common/in_game_wiki.h>
-#endif
 #include <common/CommonDefines.h>
 
 class CSpecialAttrGroup
@@ -178,13 +174,6 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		void			Destroy();
 		void			Update();
 		void			GracefulShutdown();
-#ifdef __INGAME_WIKI__
-		uint32_t											GetWikiItemStartRefineVnum(uint32_t dwVnum);
-		std::string											GetWikiItemBaseRefineName(uint32_t dwVnum);
-		int												GetWikiMaxRefineLevel(uint32_t dwVnum);
-		
-		std::vector<CommonWikiData::TWikiRefineInfo>		GetWikiRefineInfo(uint32_t vnum);
-#endif
 		uint32_t			GetNewID();
 		bool			SetMaxItemID(TItemIDRangeTable range);
 		bool			SetMaxSpareItemID(TItemIDRangeTable range);
@@ -241,8 +230,6 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		std::vector<TItemTable*> m_vec_item_vnum_range_info;
 		std::map<uint32_t, uint32_t>		m_map_ItemRefineFrom;
 		int				m_iTopOfTable;
-#ifdef __INGAME_WIKI__
-#endif
 		ITEM_VID_MAP			m_VIDMap;
 		uint32_t				m_dwVIDCount;
 		uint32_t				m_dwCurrentID;

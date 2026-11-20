@@ -37,9 +37,6 @@
 #ifdef ENABLE_STOLE_COSTUME
 #include <common/stole_length.h>
 #endif
-#ifdef __INGAME_WIKI__
-#include "refine.h"
-#endif
 
 namespace
 {
@@ -1134,112 +1131,5 @@ bool ITEM_MANAGER::IsExtraItem(uint32_t vnum)
 	}
 
 	return false;
-}
-#endif
-
-#ifdef __INGAME_WIKI__
-uint32_t ITEM_MANAGER::GetWikiItemStartRefineVnum(uint32_t dwVnum)
-{
-	auto baseItemName = GetWikiItemBaseRefineName(dwVnum);
-	if (baseItemName.empty())
-		return 0;
-
-	uint32_t manage_vnum = dwVnum;
-	while (!(strcmp(baseItemName.c_str(), GetWikiItemBaseRefineName(manage_vnum).c_str())))
-		--manage_vnum;
-
-	return (manage_vnum + 1);
-}
-
-std::string ITEM_MANAGER::GetWikiItemBaseRefineName(uint32_t dwVnum)
-{
-	auto* tbl = GetTable(dwVnum);
-	if (!tbl)
-		return "";
-
-#ifdef ENABLE_MULTI_NAMES
-	auto* p = const_cast<char*>(strrchr(tbl->szLocaleName[DEFAULT_LANGUAGE], '+'));
-#else
-	auto* p = const_cast<char*>(strrchr(tbl->szLocaleName, '+'));
-#endif
-	if (!p)
-		return "";
-
-#ifdef ENABLE_MULTI_NAMES
-	std::string sFirstItemName(tbl->szLocaleName[DEFAULT_LANGUAGE], (tbl->szLocaleName[DEFAULT_LANGUAGE] + (p - tbl->szLocaleName[DEFAULT_LANGUAGE])));
-#else
-	std::string sFirstItemName(tbl->szLocaleName, (tbl->szLocaleName + (p - tbl->szLocaleName)));
-#endif
-	return sFirstItemName;
-}
-
-int ITEM_MANAGER::GetWikiMaxRefineLevel(uint32_t dwVnum)
-{
-	uint32_t manage_vnum = (GetWikiItemStartRefineVnum(dwVnum) + 1);
-	if (manage_vnum <= 1)
-		return CommonWikiData::MAX_REFINE_COUNT;
-
-	int refine_count = 0;
-	std::string firstName, secondName;
-
-	while (GetRefineFromVnum(manage_vnum) != 0)
-	{
-		firstName = GetWikiItemBaseRefineName(manage_vnum);
-		secondName = GetWikiItemBaseRefineName(dwVnum);
-
-		if (strcmp(firstName.c_str(), secondName.c_str()))
-			break;
-
-		++manage_vnum;
-		++refine_count;
-	}
-
-	return MAX(refine_count, CommonWikiData::MAX_REFINE_COUNT);
-}
-
-std::vector<CommonWikiData::TWikiRefineInfo> ITEM_MANAGER::GetWikiRefineInfo(uint32_t vnum)
-{
-	std::vector<CommonWikiData::TWikiRefineInfo> _rV;
-	_rV.clear();
-
-	auto* tbl = GetTable(vnum);
-	if (!tbl || (tbl->bType != ITEM_WEAPON && tbl->bType != ITEM_ARMOR && tbl->bType != ITEM_BELT) ||
-	    vnum % 10 != 0 || !tbl->dwRefinedVnum)
-		return _rV;
-
-	const TRefineTable* refTbl;
-	auto* tblTemp = tbl;
-	bool success = true;
-	const int maxRefineLevelCount = GetWikiMaxRefineLevel(vnum);
-
-	for (uint8_t i = 0; i < maxRefineLevelCount; ++i)
-	{
-		if (!tblTemp) {
-			success = false;
-			break;
-		}
-
-		refTbl = CRefineManager::instance().GetRefineRecipe(tblTemp->wRefineSet);
-		if (!refTbl) {
-			success = false;
-			break;
-		}
-
-		CommonWikiData::TWikiRefineInfo tmpStruct;
-		tmpStruct.index = i;
-		tmpStruct.mat_count = refTbl->material_count;
-		tmpStruct.price = refTbl->cost;
-
-		for (auto j = 0; j < CommonWikiData::REFINE_MATERIAL_MAX_NUM; ++j)
-		{
-			tmpStruct.materials[j].vnum = refTbl->materials[j].vnum;
-			tmpStruct.materials[j].count = refTbl->materials[j].count;
-		}
-
-		_rV.emplace_back(tmpStruct);
-		tblTemp = GetTable(tblTemp->dwVnum + 1);
-	}
-
-	return (success ? _rV : std::vector<CommonWikiData::TWikiRefineInfo>());
 }
 #endif
