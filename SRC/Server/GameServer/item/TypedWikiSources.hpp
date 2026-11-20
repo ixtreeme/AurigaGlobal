@@ -11,3 +11,6 @@ void HandleTypedWikiLoot(entt::entity player, const char* data);
 
 inline constexpr std::size_t TypedWikiRefinesRequestSize = 12;
 void HandleTypedWikiRefines(entt::entity player, const char* data);
+
+inline constexpr std::size_t TypedWikiCatalogRequestSize = 20;
+void HandleTypedWikiCatalog(entt::entity player, const char* data);
