@@ -393,6 +393,7 @@ public:
     // Every recipe that starts from exactly this item state, in recipe-ID order.
     // Several smiths or scrolls may offer different recipes for the same state.
     std::vector<const RefinementRecipe*> RefinementRecipesFrom(ItemKey source, std::uint16_t level) const;
+    std::span<const MobDropGroup> MobDropGroups() const noexcept { return source_.mobDropGroups; }
     const MobDropGroup* FindMobDropGroup(std::uint32_t id) const noexcept;
     // The drop groups of a mob's rank and of the mob itself, in group-ID order.
     std::vector<const MobDropGroup*> MobDropGroupsFor(std::uint32_t mobVnum, std::uint8_t rank) const;
