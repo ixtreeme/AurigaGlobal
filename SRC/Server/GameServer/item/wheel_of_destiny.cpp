@@ -1,170 +1,111 @@
 #include "stdafx.h"
-#include "../ecs/systems/ItemSystem.hpp"
-#include "../ecs/systems/PlayerRuntimeSystem.hpp"
-#include <Core/Logging.hpp>
-#include "../ecs/AIHelpers.hpp"
-#include "../ecs/systems/PointSystem.hpp"
 #include "wheel_of_destiny.h"
-#include "char_interface.hpp"
-#include "../ecs/CharacterAccessors.hpp"
+#include "TypedQuestItems.hpp"
+#include "ItemCatalogRuntime.hpp"
+#include "../ecs/systems/ChatSystem.hpp"
+#include "../ecs/systems/PlayerRuntimeSystem.hpp"
+#include "utils.h"
 
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
+namespace {
+namespace item = auriga::item;
+constexpr std::uint64_t WheelPrice=1;
+constexpr std::string_view TicketCode="catalog.10.battle_pass_voucher_62352599a800";
 
-static constexpr auto WheelPrice = 1; // 1M
-static constexpr auto WheelItemMax = 16;
-
-//vnum, count(max 255), chance(max 255)
-static constexpr std::tuple<uint32_t, std::uint8_t, std::uint8_t> m_Data[WheelItemMax] =
-{
-	{ 39066, 10, 0 },	 //Gaya
-	{ 39067, 10, 25 },
-	{ 70027, 1, 0 },
-	{ 89007, 1, 0 },
-	{ 99999, 200, 0 }, //Run-pont
-	{ 70027, 3, 0 },
-	{ 70610, 3, 0 },
-	{ 72100, 10, 0 },
-	{ 611586, 1, 25 },
-	{ 30617, 1, 0 },
-	{ 30618, 1, 0 },
-	{ 80008, 5, 0 },
-	{ 89006, 1, 0 },
-	{ 71107, 5, 0 },
-	{ 71129, 5, 0 },
-	{ 71123, 5, 0 },
-
+struct Prize {
+    std::string_view code;
+    unsigned visual;
+    std::uint32_t count;
+    unsigned minimumChance;
 };
 
-CWheelDestiny::CWheelDestiny(entt::entity owner)
-	: m_owner(owner), gift_vnum(0), gift_count(1), turn_count(0)
+// The legacy image identifiers keep the wheel artwork and animation positions.
+constexpr Prize prizes[] = {
+    {"catalog.10.gaya_4dbbae9647e8",39066,10,0},
+    {"catalog.10.voucher_100_dc_03622683353d",39067,10,25},
+    {"catalog.22.mystic_blessing_scroll_b8dbc49e4791",70027,1,0},
+    {"catalog.16.voucher_1000_dc_e316f2658298",89007,1,0},
+    {"catalog.10.dungeon_point_10af51240afa",99999,200,0},
+    {"catalog.22.mystic_blessing_scroll_b8dbc49e4791",70027,3,0},
+    {"catalog.10.battle_pass_voucher_62352599a800",70610,3,0},
+    {"catalog.5.golden_fruit_31fe36387997",72100,10,0},
+    {"catalog.15.hunting_dog_summoner_273f32f08a28",611586,1,25},
+    {"catalog.5.legendary_bonus_043af960ba20",30617,1,0},
+    {"catalog.5.legendary_changer_8e172122f0ec",30618,1,0},
+    {"catalog.16.gold_ingot_400_million_101fc6bbeec7",80008,5,0},
+    {"catalog.16.voucher_500_dc_c5cab7c40efd",89006,1,0},
+    {"catalog.5.fruit_of_life_135bea6f7abb",71107,5,0},
+    {"material.sarkany_karom",71129,5,0},
+    {"material.sarkany_pikkely",71123,5,0},
+};
+
+const item::ItemCatalogEntry* Resolve(const item::ItemCatalog& catalog,std::string_view code)
 {
-	const entt::entity chEntity = m_owner;
-	for (auto i = 0; i < WheelItemMax; i++)
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "BINARY_WHEEL_ICON %u %d %d", std::get<0>(m_Data[i]), std::get<1>(m_Data[i]), i);
-	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "BINARY_WHEEL_OPEN %d %d", WheelPrice, ecs::PlayerRuntime::GetWheelFreeCount(m_owner));
+    const auto& entries=catalog.Entries();
+    const auto at=std::ranges::find_if(entries,[&](const auto& entry){return entry.second.base.contentCode==code;});
+    return at!=entries.end() && !at->second.base.retired ? &at->second : nullptr;
+}
 }
 
-CWheelDestiny::~CWheelDestiny() {
-	if (GetGiftVnum())
-		LOG_INFO("<CWheelDestiny> player({}) didn't get his gift(vnum: {}({}.x))!!", ecs::PlayerRuntime::GetName(m_owner), GetGiftVnum(), GetGiftCount());
-}
-
-template <typename T> std::string NumberToMoneyString(T val)
+CWheelDestiny::CWheelDestiny(entt::entity character) : owner(character)
 {
-	constexpr int comma = 3;
-	auto str = std::to_string(val);
-	auto pos = static_cast<int>(str.length()) - comma;
-
-	while (pos > 0) {
-		str.insert(pos, ".");
-		pos -= comma;
-	}
-
-	return str;
+    for(unsigned i=0;i<std::size(prizes);++i)
+        ecs::ChatSystem::Send(owner,CHAT_TYPE_COMMAND,"BINARY_WHEEL_ICON %u %u %u",prizes[i].visual,prizes[i].count,i);
+    ecs::ChatSystem::Send(owner,CHAT_TYPE_COMMAND,"BINARY_WHEEL_OPEN %u %d",static_cast<unsigned>(WheelPrice),
+        ecs::PlayerRuntime::GetWheelFreeCount(owner));
 }
 
 void CWheelDestiny::TurnWheel()
 {
-	const entt::entity chEntity = m_owner;
+    if(!CanClose())return;
+    const auto catalog=item::runtime::CurrentCatalog();
+    const auto* ticket=catalog ? Resolve(*catalog,TicketCode) : nullptr;
+    if(!ticket)
+    {
+        ecs::ChatSystem::Send(owner,CHAT_TYPE_INFO,"A Szerencsekerék jelenleg nem érhető el.");
+        return;
+    }
 
-	//m_bTurning = true;
+    const unsigned chance=turns>=40 ? 255 : turns>=25 ? 50 : turns>=10 ? 25 : 0;
+    std::vector<unsigned> eligible;
+    for(unsigned i=0;i<std::size(prizes);++i)
+        if(prizes[i].minimumChance<=chance && Resolve(*catalog,prizes[i].code)) eligible.push_back(i);
+    if(eligible.empty())
+    {
+        ecs::ChatSystem::Send(owner,CHAT_TYPE_INFO,"A Szerencsekerék jutalmai jelenleg nem érhetők el.");
+        return;
+    }
+    const auto index=eligible[number(0,static_cast<int>(eligible.size())-1)];
+    const auto prize=prizes[index];
+    const auto* definition=Resolve(*catalog,prize.code);
+    const bool free=ecs::PlayerRuntime::GetWheelFreeCount(owner)>0;
 
-
-
-
-
-	if (GetGiftVnum()) {
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Please wait!");
-		return;
-	}
-
-	const auto WheelFreeCount = ecs::PlayerRuntime::GetWheelFreeCount(m_owner);
-
-	if (WheelFreeCount < 1 && ecs::PointSystem::GetGold(chEntity) < WheelPrice) {
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "You need %s yang for <Turning Wheel>", NumberToMoneyString(WheelPrice).c_str());
-		return;
-	}
-
-	auto Rand = PickAGift();
-	if (Rand == -1) {
-		LOG_ERROR("CWheelDestiny::TurnWheel() Error Pick Gift ({})", ecs::PlayerRuntime::GetName(chEntity));
-		return;
-	}
-
-	if (WheelFreeCount > 0) {
-		ecs::PlayerRuntime::SetWheelFreeCount(m_owner, -1);
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "FREE");
-	}
-	else
-		ecs::PointSystem::Change(chEntity, POINT_GOLD, -WheelPrice);
-
-	//vnum, count, spin count, pos
-	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "BINARY_WHEEL_TURN %u %d %d %d", GetGiftVnum(), GetGiftCount(), number(1, 8), Rand);
-
-	turn_count++;
-}
-
-std::uint8_t CWheelDestiny::GetChance() const
-{
-#undef max
-	const auto TurnCount = GetTurnCount();
-	if (TurnCount >= 10 && TurnCount < 25)
-		return 25;
-	if (TurnCount >= 25 && TurnCount < 40)
-		return 50;
-	if (TurnCount >= 40)
-		return std::numeric_limits<std::uint8_t>::max(); // 255
-	return 0;
-}
-
-int CWheelDestiny::PickAGift()
-{
-	const auto Chance = GetChance();
-
-	while (true) {
-		const auto rand_pos = number(0, WheelItemMax - 1);
-		const auto& [item, count, m_chance] = m_Data[rand_pos];
-
-		if (Chance >= m_chance) {
-			SetGift(item, count);
-			return rand_pos;
-		}
-	}
-	return -1; // error
-}
-
-void CWheelDestiny::SetGift(const uint32_t vnum, const std::uint8_t count)
-{
-	gift_vnum = vnum;
-	gift_count = count;
-}
-
-void CWheelDestiny::GiveMyFuckingGift()
-{
-	const auto GiftVnum = GetGiftVnum();
-
-	if (GiftVnum) {
-		ItemSystem::AutoGiveItemEcs(m_owner, GiftVnum, GetGiftCount());
-		SetGift(0, 1); // reset
-	}
-	else
-		LOG_ERROR("Dude, where is the gift_vnum? <player: {}>", ecs::PlayerRuntime::GetName(m_owner));
-}
-
-uint32_t CWheelDestiny::GetGiftVnum() const
-{
-	return gift_vnum;
-}
-
-std::uint8_t CWheelDestiny::GetGiftCount() const
-{
-	return gift_count;
-}
-
-std::uint16_t CWheelDestiny::GetTurnCount() const
-{
-	return turn_count;
+    pending=true;
+    const std::weak_ptr<CWheelDestiny> wheel=ecs::PlayerRuntime::GetWheelDestiny(owner);
+    const auto queued=RequestTypedGameplayItemExchange(owner,{{ticket->base.key,0,1}},{{definition->base.key,0,prize.count}},
+        free ? 0 : WheelPrice,[wheel,free,index,prize](bool written){
+            const auto session=wheel.lock();
+            if(!session)return;
+            session->pending=false;
+            if(!written)
+            {
+                ecs::ChatSystem::Send(session->owner,CHAT_TYPE_INFO,"A pörgetés sikertelen. A jegy és a Yang visszamaradt.");
+                return;
+            }
+            if(free)
+            {
+                const int remaining=ecs::PlayerRuntime::GetWheelFreeCount(session->owner);
+                if(remaining>0)ecs::PlayerRuntime::SetWheelFreeCount(session->owner,remaining-1);
+            }
+            if(session->turns<40)++session->turns;
+            session->showingResult=true;
+            ecs::ChatSystem::Send(session->owner,CHAT_TYPE_COMMAND,"BINARY_WHEEL_TURN %u %u %d %u",
+                prize.visual,prize.count,number(1,8),index);
+        });
+    if(!queued)
+    {
+        pending=false;
+        ecs::ChatSystem::Send(owner,CHAT_TYPE_INFO,"A pörgetéshez ellenőrizd a jegyet, a Yangot és a szabad leltárhelyet.");
+    }
 }
 #endif
-
-

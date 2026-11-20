@@ -10,3 +10,7 @@ std::expected<void, auriga::item::ItemMissionError> RequestTypedQuestItemExchang
 	std::vector<auriga::item::MissionItemAmount> costs, std::vector<auriga::item::MissionItemAmount> rewards,
 	std::uint64_t goldCost, std::function<void(bool written)> done,
 	quest::TypedItemUseSource source = {}, std::uint64_t goldReward = 0);
+
+std::expected<void, auriga::item::ItemMissionError> RequestTypedGameplayItemExchange(entt::entity character,
+	std::vector<auriga::item::MissionItemAmount> costs, std::vector<auriga::item::MissionItemAmount> rewards,
+	std::uint64_t goldCost, std::function<void(bool written)> done);

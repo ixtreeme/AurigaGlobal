@@ -99,10 +99,10 @@ void Tell(entt::entity character, const char* text)
 }
 } // namespace
 
-std::expected<void, items::ItemMissionError> RequestTypedQuestItemExchange(entt::entity character,
+static std::expected<void, items::ItemMissionError> RequestTypedItemExchange(entt::entity character,
 	std::vector<items::MissionItemAmount> costs, std::vector<items::MissionItemAmount> rewards,
 	std::uint64_t goldCost, std::function<void(bool)> done,
-	quest::TypedItemUseSource source, std::uint64_t goldReward)
+	quest::TypedItemUseSource source, std::uint64_t goldReward, bool inQuest)
 {
 	using Error = items::ItemMissionError;
 	if (!g_registry.valid(character) || g_registry.all_of<ecs::TypedItemBusy>(character))
@@ -113,7 +113,7 @@ std::expected<void, items::ItemMissionError> RequestTypedQuestItemExchange(entt:
 	const auto* login = g_registry.try_get<ecs::TypedItemLogin>(character);
 	const auto* quest = g_registry.try_get<ecs::QuestPCState>(character);
 	auto* desc = ecs::PlayerRuntime::GetDesc(character);
-	if (!catalog || !typed || !login || !quest || !quest->pc || !quest->pc->IsRunning() ||
+	if (!catalog || !typed || !login || !quest || !quest->pc || inQuest!=quest->pc->IsRunning() ||
 		!desc || !desc->IsPhase(PHASE_GAME) || !InventorySystem::CanHandleItems(character))
 		return std::unexpected(Error::Unavailable);
 
@@ -193,6 +193,20 @@ std::expected<void, items::ItemMissionError> RequestTypedQuestItemExchange(entt:
 		return std::unexpected(Error::Unavailable);
 	}
 	return {};
+}
+
+std::expected<void, items::ItemMissionError> RequestTypedQuestItemExchange(entt::entity character,
+	std::vector<items::MissionItemAmount> costs, std::vector<items::MissionItemAmount> rewards,
+	std::uint64_t goldCost, std::function<void(bool)> done, quest::TypedItemUseSource source, std::uint64_t goldReward)
+{
+	return RequestTypedItemExchange(character,std::move(costs),std::move(rewards),goldCost,std::move(done),source,goldReward,true);
+}
+
+std::expected<void, items::ItemMissionError> RequestTypedGameplayItemExchange(entt::entity character,
+	std::vector<items::MissionItemAmount> costs, std::vector<items::MissionItemAmount> rewards,
+	std::uint64_t goldCost, std::function<void(bool)> done)
+{
+	return RequestTypedItemExchange(character,std::move(costs),std::move(rewards),goldCost,std::move(done),{},0,false);
 }
 
 void RequestTypedItemMove(entt::entity character, std::uint64_t itemId, std::uint8_t storageKind, std::uint64_t storageId, std::uint32_t cell)

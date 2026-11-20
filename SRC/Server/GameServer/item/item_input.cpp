@@ -441,7 +441,7 @@ void CInputMain::WheelDestiny(entt::entity character, const char* data)
 		{
 
 
-			if (ecs::PlayerRuntime::GetWheelDestiny(character)->GetGiftVnum())
+			if (!ecs::PlayerRuntime::GetWheelDestiny(character)->CanClose())
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 1307, "");
@@ -464,17 +464,6 @@ void CInputMain::WheelDestiny(entt::entity character, const char* data)
 		}
 		if (ecs::PlayerRuntime::GetWheelDestiny(character))
 		{
-			static const uint32_t WHEEL_TICKET_VNUM = 70610;
-
-			if (ItemSystem::CountItem(character, WHEEL_TICKET_VNUM) < 1)
-			{
-
-				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You don't have a Wheel of Destiny ticket.");
-				return;
-			}
-
-			ItemSystem::RemoveSpecifyItemEcs(character, WHEEL_TICKET_VNUM, 1);
-
 			ecs::PlayerRuntime::GetWheelDestiny(character)->TurnWheel();
 		}
 	}
@@ -484,7 +473,7 @@ void CInputMain::WheelDestiny(entt::entity character, const char* data)
 	{
 		if (ecs::PlayerRuntime::GetWheelDestiny(character))
 		{
-			ecs::PlayerRuntime::GetWheelDestiny(character)->GiveMyFuckingGift();
+			ecs::PlayerRuntime::GetWheelDestiny(character)->FinishAnimation();
 		}
 	}
 	break;
