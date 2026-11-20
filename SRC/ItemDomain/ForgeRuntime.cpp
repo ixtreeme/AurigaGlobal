@@ -18,7 +18,7 @@ std::expected<Prepared,E> Prepare(const ItemCatalog& c,ItemOwner owner,std::span
     const auto* target=Find(all,d.target);const auto* recipe=c.FindRefinementRecipe(d.recipe);
     if(!target || !recipe || !ValidatePersistentItem(c,*target) || target->destroyed || target->owner!=owner || !target->placement || target->placement->kind!=ItemStorageKind::Inventory || target->count!=1 || target->attributes.lockedSlot || !TargetMask(*c.Find(target->key)))return std::unexpected(E::InvalidItem);
     if(target->key!=recipe->source || target->refinementLevel!=recipe->sourceLevel)return std::unexpected(E::InvalidLevel);
-    if(!d.scroll && (!d.context.npcInRange || std::ranges::none_of(d.boosters,[](auto id){return id!=0;})))return std::unexpected(E::RequirementNotMet);
+    if(!d.scroll && !d.context.npcInRange)return std::unexpected(E::RequirementNotMet);
     Prepared p{*recipe,target,{}};std::uint32_t bonus=0;std::set<std::uint64_t> ids{d.target};
     const auto aid=[&](std::uint64_t id,ForgeAidKind kind,unsigned group)->std::expected<const ItemForgeAidRow*,E>{
         if(!ids.insert(id).second)return std::unexpected(E::InvalidChange);const auto* item=Find(all,id);if(!item || !PlainInventoryItem(*item,owner) || !ValidatePersistentItem(c,*item))return std::unexpected(E::InvalidItem);const auto* entry=c.Find(item->key);const auto* r=std::get_if<ItemForgeAidRow>(&entry->category);const auto* use=c.FindUsePolicy(entry->base.usePolicy);

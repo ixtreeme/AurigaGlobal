@@ -36,8 +36,66 @@ if(ecs::PlayerRuntime::GetGMLevel(e)>GM_PLAYER && ecs::PlayerRuntime::GetGMLevel
 #endif
     const auto updated=quest::CQuestManager::instance().GetEventFlag("update_refine_time");if(updated && get_global_time()<updated+300)return false;auto* d=ecs::PlayerRuntime::GetDesc(e);return d && d->IsPhase(PHASE_GAME);
 }
-bool Smith(entt::entity e,std::uint32_t vid){const auto n=CHARACTER_MANAGER::instance().FindEntity(vid);if(!g_registry.valid(n) || ecs::PlayerRuntime::IsPC(n) || ecs::PlayerRuntime::GetMapIndex(e)!=ecs::PlayerRuntime::GetMapIndex(n))return false;const auto race=ecs::PlayerRuntime::GetRaceNum(n);if(race!=BLACKSMITH_MOB && race!=BLACKSMITH2_MOB)return false;const auto dx=std::abs(std::int64_t(ecs::PlayerRuntime::GetX(e))-ecs::PlayerRuntime::GetX(n)),dy=std::abs(std::int64_t(ecs::PlayerRuntime::GetY(e))-ecs::PlayerRuntime::GetY(n));return dx<=2000 && dy<=2000 && DISTANCE_APPROX(static_cast<int>(dx),static_cast<int>(dy))<=2000;}
-std::expected<item::ForgeCommit,item::ItemPersistenceError> Plan(entt::entity e,const TypedForgeSession& s,std::optional<std::uint16_t> roll={}){const auto c=store::CurrentCatalog();const auto* t=g_registry.try_get<ecs::TypedItems>(e);const auto id=item::ItemInstanceId::Create(s.request.target);if(!c || !t || !id)return std::unexpected(item::ItemPersistenceError::InvalidItem);const auto wallet=std::ranges::find(t->state.wallets,item::WalletCurrency::Gold,&item::ItemWallet::currency);if(wallet==t->state.wallets.end())return std::unexpected(item::ItemPersistenceError::InvalidWallet);item::ForgeContext context;context.admitted=Admitted(e);context.alive=!CombatSystem::IsDead(e);context.npcInRange=Smith(e,s.request.npc);context.actor={static_cast<std::uint16_t>(std::max(0,ecs::PointSystem::GetLevel(e))),ecs::PlayerRuntime::GetJob(e),ecs::PlayerRuntime::GetSex(e)};context.actor.inCombat=TypedItemEffectFacts(e).actor.inCombat;return item::MakeForgeCommit(*c,s.operation,t->state.fence,t->state.storages,t->state.items,*wallet,{*id,s.request.scroll,s.request.boosters,s.request.recipe},context,roll);}
+bool SmithAccepts(std::uint32_t race, const item::ItemCatalogEntry& entry)
+{
+    if (race == BLACKSMITH_MOB || race == BLACKSMITH2_MOB)
+        return true;
+    if (race == BLACKSMITH_WEAPON_MOB)
+        return std::holds_alternative<item::ItemWeaponRow>(entry.category);
+
+    if (const auto* armor = std::get_if<item::ItemArmorRow>(&entry.category))
+    {
+        const bool armorSmith = armor->slot == item::EquipmentSlot::Body ||
+            armor->slot == item::EquipmentSlot::Shield || armor->slot == item::EquipmentSlot::Head ||
+            armor->slot == item::EquipmentSlot::Belt;
+        return armorSmith ? race == BLACKSMITH_ARMOR_MOB : race == BLACKSMITH_ACCESSORY_MOB;
+    }
+    const auto* accessory = std::get_if<item::ItemAccessoryRow>(&entry.category);
+    if (!accessory)
+        return false;
+    if (accessory->slot == item::EquipmentSlot::Belt)
+        return race == BLACKSMITH_ARMOR_MOB;
+    return accessory->slot != item::EquipmentSlot::Pendant && race == BLACKSMITH_ACCESSORY_MOB;
+}
+
+bool SmithInRange(entt::entity character, std::uint32_t vid, const item::ItemCatalogEntry& entry)
+{
+    const auto npc = CHARACTER_MANAGER::instance().FindEntity(vid);
+    if (!g_registry.valid(npc) || !ecs::PlayerRuntime::IsValid(npc) ||
+        ecs::PlayerRuntime::IsPC(npc) || ecs::PlayerRuntime::GetMapIndex(character) != ecs::PlayerRuntime::GetMapIndex(npc) ||
+        !SmithAccepts(ecs::PlayerRuntime::GetRaceNum(npc), entry))
+        return false;
+    const auto dx = std::abs(std::int64_t(ecs::PlayerRuntime::GetX(character)) - ecs::PlayerRuntime::GetX(npc));
+    const auto dy = std::abs(std::int64_t(ecs::PlayerRuntime::GetY(character)) - ecs::PlayerRuntime::GetY(npc));
+    return dx <= 2000 && dy <= 2000 && DISTANCE_APPROX(static_cast<int>(dx), static_cast<int>(dy)) <= 2000;
+}
+std::expected<item::ForgeCommit, item::ItemPersistenceError> Plan(
+    entt::entity character, const TypedForgeSession& session, std::optional<std::uint16_t> roll = {})
+{
+    const auto catalog = store::CurrentCatalog();
+    const auto* typed = g_registry.try_get<ecs::TypedItems>(character);
+    const auto id = item::ItemInstanceId::Create(session.request.target);
+    if (!catalog || !typed || !id)
+        return std::unexpected(item::ItemPersistenceError::InvalidItem);
+    const auto& state = typed->state;
+    const auto target = std::ranges::find(state.items, *id, &item::PersistentItem::id);
+    const auto* entry = target == state.items.end() ? nullptr : catalog->Find(target->key);
+    if (!entry)
+        return std::unexpected(item::ItemPersistenceError::InvalidItem);
+    const auto wallet = std::ranges::find(state.wallets, item::WalletCurrency::Gold, &item::ItemWallet::currency);
+    if (wallet == state.wallets.end())
+        return std::unexpected(item::ItemPersistenceError::InvalidWallet);
+
+    item::ForgeContext context;
+    context.admitted = Admitted(character);
+    context.alive = !CombatSystem::IsDead(character);
+    context.npcInRange = SmithInRange(character, session.request.npc, *entry);
+    context.actor = {static_cast<std::uint16_t>(std::max(0, ecs::PointSystem::GetLevel(character))),
+        ecs::PlayerRuntime::GetJob(character), ecs::PlayerRuntime::GetSex(character)};
+    context.actor.inCombat = TypedItemEffectFacts(character).actor.inCombat;
+    return item::MakeForgeCommit(*catalog, session.operation, state.fence, state.storages, state.items, *wallet,
+        {*id, session.request.scroll, session.request.boosters, session.request.recipe}, context, roll);
+}
 bool Same(const Request& a,const Request& b){return a.target==b.target && a.scroll==b.scroll && a.boosters==b.boosters && a.recipe==b.recipe && a.npc==b.npc;}
 bool Fresh(const item::ItemCommit& quote,const item::persistence::LoadedItemOwner& state){for(const auto& ch:quote.items){const auto i=std::ranges::find(state.items,ch.before->id,&item::PersistentItem::id);if(i==state.items.end() || *i!=*ch.before)return false;}for(const auto& w:quote.wallets){const auto i=std::ranges::find(state.wallets,w.before.currency,&item::ItemWallet::currency);if(i==state.wallets.end() || *i!=w.before)return false;}return true;}
 void Reply(entt::entity e,Status status,const Request* echo=nullptr){if(!g_registry.valid(e))return;const auto* s=g_registry.try_get<TypedForgeSession>(e);const Request empty{};const auto& r=echo?*echo:s?s->request:empty;const auto terms=s && s->quote && !echo?s->quote->terms:item::ForgeTerms{};std::vector<std::uint8_t> b;const auto put=[&](std::uint64_t v,unsigned n){for(unsigned j=0;j<n;++j)b.push_back(static_cast<std::uint8_t>(v>>(j*8)));};put(212,1);put(80,4);put(1,1);put(unsigned(status),1);put(s && !echo?s->nonce:r.nonce,8);put(r.target,8);put(r.scroll,8);for(auto id:r.boosters)put(id,8);put(r.recipe,4);put(r.npc,4);put(terms.chanceBp,2);put(unsigned(terms.failure),1);put(terms.failureLevel,2);put(terms.gold,8);put(s && s->quote && !echo?s->quote->commit.items[0].before->refinementLevel:0,2);put(terms.targetLevel,2);assert(b.size()==80);SendTypedInventory(e);if(auto* d=ecs::PlayerRuntime::GetDesc(e))d->Packet(b.data(),static_cast<int>(b.size()));}
