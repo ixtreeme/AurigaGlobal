@@ -20,7 +20,6 @@ entt::entity GetItem(entt::entity e, TItemPos cell);
 entt::entity GetInventoryItem(entt::entity e, uint16_t cell);
 #ifdef ENABLE_EXTRA_INVENTORY
 entt::entity GetExtraInventoryItem(entt::entity e, uint16_t cell);
-void SyncExtraInventoryAll(entt::entity e);
 #endif
 entt::entity FindSpecifyItem(entt::entity e, uint32_t vnum
 #ifdef ENABLE_EXTRA_INVENTORY
@@ -194,16 +193,11 @@ entt::entity GetItemOwner(entt::entity item);
 entt::entity GetItemOwnerEntity(entt::entity item);
 entt::entity RollPartyDropOwnership(entt::entity item, entt::entity initialOwner);
 uint32_t GetItemSocket(entt::entity item, int index);
-bool HasItemSocket(entt::entity item, int index);
 TPlayerItemAttribute GetItemAttribute(entt::entity item, int index);
 int GetItemAttributeType(entt::entity item, int index);
 double GetItemAttributeValue(entt::entity item, int index);
 // Bulk component writes used when restoring persisted item data.
-void SetItemSockets(entt::entity item, const int32_t* sockets);
 void SetItemAttributes(entt::entity item, const TPlayerItemAttribute* attributes);
-#ifdef __ENABLE_CHANGELOOK_SYSTEM__
-void SetItemTransmutation(entt::entity item, uint32_t vnum);
-#endif
 #ifdef ATTR_LOCK
 void SetItemLockedAttr(entt::entity item, short index);
 #endif
@@ -298,7 +292,6 @@ bool CanPutInto(entt::entity item, entt::entity container);
 bool CanPutInto2(entt::entity item, entt::entity container);
 bool CopyAllAttrToEcs(entt::entity source, entt::entity target);
 bool AttrLogEcs(entt::entity item);
-bool SetItemExchanging(entt::entity item, bool flag);
 uint8_t GetItemApplyType(entt::entity item, uint32_t idx);
 double GetItemApplyValue(entt::entity item, uint32_t idx);
 int GetItemSocketCount(entt::entity item);
@@ -314,7 +307,6 @@ bool GetItemSkipSave(entt::entity item);
 void SetItemOwnerEntity(entt::entity item, entt::entity owner);
 uint32_t GetItemLastOwnerPID(entt::entity item);
 void SetItemLastOwnerPID(entt::entity item, uint32_t pid);
-uint32_t GetItemOwnershipPID(entt::entity item);
 void SetItemOwnershipPID(entt::entity item, uint32_t pid);
 bool SetItemSkipSave(entt::entity item, bool flag);
 bool SetItemWindow(entt::entity item, uint8_t window);
@@ -324,7 +316,6 @@ uint8_t GetItemWindow(entt::entity item);
 uint16_t GetItemCell(entt::entity item);
 bool IsItemEquipped(entt::entity item);
 bool IsItemInInventory(entt::entity item);
-bool IsItemInExtraInventory(entt::entity item);
 bool PlaceItemEcs(entt::entity owner, entt::entity item, uint8_t window, uint16_t cell);
 bool RemoveItemEcs(entt::entity item);
 int GetEmptyInventoryPositionEcs(entt::entity owner, entt::entity item);
@@ -346,12 +337,10 @@ bool StartRealTimeExpireEventEcs(entt::entity item);
 #ifdef ENABLE_SOUL_SYSTEM
 bool StartSoulItemEventEcs(entt::entity item);
 #endif
-bool RefreshItemEquippedSlot(entt::entity item);
 bool RefreshItemOwnerPID(entt::entity item);
 // Retire a stale load instance without deleting its DB row. True means this call
 // retired the original entity; surviving items regain their prior save policy.
 bool DestroyLoadedDuplicateItem(entt::entity item);
-bool TransferItemOwnership(entt::entity item, entt::entity from, entt::entity to);
 // owner == null releases the claim. Existing claims are not extended/stolen;
 // true means committed (publication may subsequently move/destroy the item).
 // A detached quest reward may be claimed before ground insertion.

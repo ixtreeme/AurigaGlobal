@@ -693,63 +693,6 @@ entt::entity GetExtraInventoryItem(entt::entity e, uint16_t cell)
     return inventory && IsValidItem(inventory->items[cell]) ? inventory->items[cell] : entt::null;
 }
 
-void SyncExtraInventoryAll(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return;
-
-    const auto* session = g_registry.try_get<ecs::NetworkSession>(e);
-    if (!session || !session->desc)
-        return;
-
-    const auto* inventory = g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(e);
-    if (!inventory)
-        return;
-
-    for (uint16_t cell = 0; cell < EXTRA_INVENTORY_MAX_NUM; ++cell)
-    {
-        const entt::entity item = inventory->items[cell];
-        const TItemPos packetCell(EXTRA_INVENTORY, cell);
-
-        if (IsValidItem(item))
-        {
-            TPacketGCItemSet packet{};
-            packet.header = HEADER_GC_ITEM_SET;
-            packet.Cell = packetCell;
-            packet.count = GetItemCount(item);
-#ifdef ATTR_LOCK
-            if (const auto* locked = g_registry.try_get<ecs::ItemLockedAttribute>(item))
-                packet.lockedattr = locked->index;
-            else
-                packet.lockedattr = -1;
-#endif
-            packet.vnum = GetItemVnum(item);
-            packet.flags = GetItemFlags(item);
-            packet.anti_flags = GetItemAntiFlags(item);
-            packet.highlight = false;
-
-            for (int index = 0; index < ITEM_SOCKET_MAX_NUM; ++index)
-                packet.alSockets[index] = GetItemSocket(item, index);
-            for (int index = 0; index < ITEM_ATTRIBUTE_MAX_NUM; ++index)
-                packet.aAttr[index] = GetItemAttribute(item, index);
-
-            session->desc->Packet(&packet, sizeof(packet));
-        }
-        else
-        {
-            TPacketGCItemDelDeprecated packet{};
-            packet.header = HEADER_GC_ITEM_DEL;
-            packet.Cell = packetCell;
-            packet.count = 0;
-#ifdef ATTR_LOCK
-            packet.lockedattr = -1;
-#endif
-            packet.vnum = 0;
-
-            session->desc->Packet(&packet, sizeof(packet));
-        }
-    }
-}
 #endif
 
 entt::entity FindSpecifyItem(entt::entity e, uint32_t vnum
@@ -1902,12 +1845,6 @@ uint32_t GetItemSocket(entt::entity item, int index)
     return 0;
 }
 
-bool HasItemSocket(entt::entity item, int index)
-{
-    return index >= 0 && index < ITEM_SOCKET_MAX_NUM &&
-           g_registry.try_get<ecs::ItemSockets>(item) != nullptr;
-}
-
 TPlayerItemAttribute GetItemAttribute(entt::entity item, int index)
 {
     if (index < 0 || index >= ITEM_ATTRIBUTE_MAX_NUM)
@@ -1919,16 +1856,6 @@ TPlayerItemAttribute GetItemAttribute(entt::entity item, int index)
     return {};
 }
 
-void SetItemSockets(entt::entity item, const int32_t* sockets)
-{
-    if (!IsValidItem(item) || !sockets)
-        return;
-
-    auto& component = g_registry.get_or_emplace<ecs::ItemSockets>(item);
-    std::copy_n(sockets, ITEM_SOCKET_MAX_NUM, component.sockets.begin());
-    SaveItem(item);
-}
-
 void SetItemAttributes(entt::entity item, const TPlayerItemAttribute* attributes)
 {
     if (!IsValidItem(item) || !attributes)
@@ -1938,18 +1865,6 @@ void SetItemAttributes(entt::entity item, const TPlayerItemAttribute* attributes
     std::copy_n(attributes, ITEM_ATTRIBUTE_MAX_NUM, component.attrs.begin());
     SaveItem(item);
 }
-
-#ifdef __ENABLE_CHANGELOOK_SYSTEM__
-void SetItemTransmutation(entt::entity item, uint32_t vnum)
-{
-    if (!IsValidItem(item))
-        return;
-
-    g_registry.get_or_emplace<ecs::ItemIdentity>(item).transmutationVnum = vnum;
-    ecs::ItemNetworkSystem::SendItemUpdate(g_registry, item);
-    SaveItem(item);
-}
-#endif
 
 int GetItemAttributeType(entt::entity item, int index)
 {
@@ -2034,17 +1949,6 @@ bool ClearItemAttributesEcs(entt::entity item)
     }
 
     SaveItem(item);
-
-    return true;
-}
-
-bool SetItemExchanging(entt::entity item, bool flag)
-{
-    if (item == entt::null || !g_registry.valid(item))
-        return false;
-
-    auto& flags = g_registry.get_or_emplace<ecs::ItemFlags>(item);
-    flags.exchanging = flag;
 
     return true;
 }
@@ -2606,12 +2510,6 @@ void SetItemLastOwnerPID(entt::entity item, uint32_t pid)
     g_registry.get_or_emplace<ecs::ItemOwner>(item).lastOwnerPID = pid;
 }
 
-uint32_t GetItemOwnershipPID(entt::entity item)
-{
-    const auto* owner = g_registry.try_get<ecs::ItemOwner>(item);
-    return owner ? owner->ownershipPID : 0;
-}
-
 void SetItemOwnershipPID(entt::entity item, uint32_t pid)
 {
     if (item == entt::null || !g_registry.valid(item))
@@ -2687,16 +2585,6 @@ bool IsItemEquipped(entt::entity item)
 bool IsItemInInventory(entt::entity item)
 {
     return GetItemWindow(item) == INVENTORY;
-}
-
-bool IsItemInExtraInventory(entt::entity item)
-{
-#ifdef ENABLE_EXTRA_INVENTORY
-    return GetItemWindow(item) == EXTRA_INVENTORY;
-#else
-    (void)item;
-    return false;
-#endif
 }
 
 static uint32_t EntityPlayerID(entt::entity e);
@@ -3026,47 +2914,12 @@ int FindEquipCell(entt::entity ownerEntity, entt::entity item, int iCandidateCel
 }
 
 
-// ItemEquipped::slot is derived from the cell, and several writers set the
-// two independently. This recomputes the slot from the location component.
-bool RefreshItemEquippedSlot(entt::entity item)
-{
-    if (!IsValidItem(item))
-        return false;
-
-    const uint16_t cell = GetItemCell(item);
-    const bool equipped = IsItemEquipped(item);
-    uint8_t slot = 0;
-    if (equipped && cell >= INVENTORY_MAX_NUM)
-        slot = static_cast<uint8_t>(cell - INVENTORY_MAX_NUM);
-
-    g_registry.emplace_or_replace<ecs::ItemEquipped>(
-        item, ecs::ItemEquipped{equipped, slot});
-    return true;
-}
-
 static uint32_t EntityPlayerID(entt::entity e)
 {
     if (const auto* playerID = g_registry.try_get<ecs::PlayerID>(e))
         return playerID->pid;
 
     return 0;
-}
-
-bool TransferItemOwnership(entt::entity item, entt::entity from, entt::entity to)
-{
-    if (item == entt::null || !g_registry.valid(item))
-        return false;
-
-    const uint32_t toPID = EntityPlayerID(to);
-    if (toPID == 0)
-        return false;
-
-    const uint32_t fromPID = EntityPlayerID(from);
-    auto& owner = g_registry.get_or_emplace<ecs::ItemOwner>(item);
-    owner.lastOwnerPID = fromPID != 0 ? fromPID : owner.ownerPID;
-    owner.ownerPID = toPID;
-    owner.ownershipPID = toPID;
-    return true;
 }
 
 bool CanReceiveItemEcs(entt::entity receiver, entt::entity fromEntity, entt::entity item)

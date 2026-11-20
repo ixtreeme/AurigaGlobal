@@ -162,33 +162,6 @@ static ecs::ExtraInventoryRuntimeComponent* EnsureExtraInventoryRuntimeComponent
 
 #endif
 
-static ecs::CubeWindowComponent* EnsureCubeWindowComponent(entt::entity character)
-{
-    if (character == entt::null || !g_registry.valid(character))
-        return nullptr;
-
-    if (auto* comp = g_registry.try_get<ecs::CubeWindowComponent>(character))
-        return comp;
-
-    return &g_registry.emplace<ecs::CubeWindowComponent>(character);
-}
-
-
-
-#ifdef ENABLE_ACCE_SYSTEM
-static ecs::AcceWindowComponent* EnsureAcceWindowComponent(entt::entity character)
-{
-    if (character == entt::null || !g_registry.valid(character))
-        return nullptr;
-
-    if (auto* comp = g_registry.try_get<ecs::AcceWindowComponent>(character))
-        return comp;
-
-    return &g_registry.emplace<ecs::AcceWindowComponent>(character);
-}
-
-#endif
-
 #ifdef ENABLE_SWITCHBOT
 static ecs::SwitchbotRuntimeComponent* EnsureSwitchbotRuntimeComponent(entt::entity character)
 {
@@ -255,14 +228,6 @@ bool IsExtraPotionUseSubtype(uint8_t subtype)
 	}
 
 	return false;
-}
-
-static void FN_copy_item_socket(entt::entity dest, entt::entity src)
-{
-	for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-	{
-		ItemSystem::SetItemSocketEcs(dest, i, ItemSystem::GetItemSocket(src, i));
-	}
 }
 
 #ifdef ENABLE_PVP_ADVANCED
