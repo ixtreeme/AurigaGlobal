@@ -160,9 +160,6 @@ class CInputMain : public CInputProcessor
 		void		MapTeleporter(entt::entity character, TPacketCGMapTeleporter* pPack);
 #endif
 		void		Roulette(entt::entity character, const char* c_pData);
-#ifdef ENABLE_SWITCHBOT
-		int			Switchbot(entt::entity character, const char* data, size_t uiBytes);
-#endif
 #ifdef __SEND_TARGET_INFO__
 		void		TargetInfoLoad(entt::entity character, const char* c_pData);
 #endif

@@ -524,14 +524,6 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 			}
 			break;
 #endif
-#ifdef ENABLE_SWITCHBOT
-		case HEADER_CG_SWITCHBOT:
-			if ((iExtraLen = Switchbot(character, c_pData, m_iBufferLeft)) < 0)
-			{
-				return -1;
-			}
-			break;
-#endif
 #ifdef ENABLE_MAP_TELEPORTER
 		case HEADER_CG_MAP_TELEPORTER:
 			MapTeleporter(character, (TPacketCGMapTeleporter*) c_pData);
