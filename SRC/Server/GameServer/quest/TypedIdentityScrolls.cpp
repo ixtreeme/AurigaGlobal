@@ -9,6 +9,7 @@
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../entity/char.h"
+#include "../guild/guild.h"
 #include "../item/ItemCatalogRuntime.hpp"
 #include "../item/ItemStore.hpp"
 #include "../item/TypedDrops.hpp"
@@ -31,6 +32,7 @@ namespace player = ecs::PlayerRuntime;
 enum NameResult { NamePending, NameMissing, NameInvalid, NameOccupied, NameChanged, NameRefused };
 enum EmpireResult { EmpireRefused, EmpireUnchanged, EmpireHasGuild, EmpireHasMarriage, EmpireChanged = 999 };
 enum SexResult { SexRefused, SexChanged, SexHasBodyCostume, SexHasHairCostume };
+enum GuildResult { GuildRefused, GuildNotLeader, GuildNoSuccessor, GuildChanged, GuildMissing };
 
 static_assert(item::OppositeSexRace(MAIN_RACE_WARRIOR_M) == MAIN_RACE_WARRIOR_W);
 static_assert(item::OppositeSexRace(MAIN_RACE_ASSASSIN_M) == MAIN_RACE_ASSASSIN_W);
@@ -89,7 +91,7 @@ bool QueueScroll(const ScrollUse& use, lua_State* L, item::ItemCommit write,
                 const auto* active = g_registry.valid(actor) ? g_registry.try_get<ecs::TypedItemLogin>(actor) : nullptr;
                 return active && active->token == token;
             };
-            if (result.write) apply(current() ? actor : entt::null, result.write->replay);
+            if (result.write && apply) apply(current() ? actor : entt::null, result.write->replay);
             if (!current()) return;
             if (result.state)
                 g_registry.emplace_or_replace<ecs::TypedItems>(actor, std::move(*result.state));
@@ -221,6 +223,32 @@ std::optional<int> SubmitSexScroll(lua_State* L)
     return std::nullopt;
 }
 
+std::optional<int> SubmitGuildMasterScroll(lua_State* L)
+{
+    std::size_t length = 0;
+    const char* name = lua_type(L, 1) == LUA_TSTRING ? lua_tolstring(L, 1, &length) : nullptr;
+    if (!name || !length || length > CHARACTER_NAME_MAX_LEN ||
+        std::string_view(name, length).find('\0') != std::string_view::npos)
+        return GuildRefused;
+
+    const auto use = ReadScrollUse(L);
+    const auto catalog = item::runtime::CurrentCatalog();
+    if (!use || !catalog) return GuildRefused;
+
+    auto* guild = ecs::SocialSystem::GetGuild(use->actor);
+    if (!guild) return GuildMissing;
+    const auto pid = player::GetPlayerID(use->actor);
+    if (guild->GetMasterPID() != pid) return GuildNotLeader;
+    const auto successor = guild->GetMemberPID(std::string_view(name, length));
+    if (!successor || successor == pid) return GuildNoSuccessor;
+
+    const auto& state = *use->inventory;
+    auto write = item::MakeGuildMasterScrollCommit(*catalog, use->operation, state.fence, state.storages, state.items,
+        use->source, use->revision, {guild->GetID(), successor});
+    if (!write || !QueueScroll(*use, L, std::move(*write), {})) return GuildRefused;
+    return std::nullopt;
+}
+
 template<int Changed, int Refused>
 int FinishScroll(lua_State* L, std::optional<int> status)
 {
@@ -244,4 +272,5 @@ int FinishScroll(lua_State* L, std::optional<int> status)
 ALUA(pc_typed_change_name) { return FinishScroll<NameChanged, NameRefused>(L, SubmitNameScroll(L)); }
 ALUA(pc_typed_change_empire) { return FinishScroll<EmpireChanged, EmpireRefused>(L, SubmitEmpireScroll(L)); }
 ALUA(pc_typed_change_sex) { return FinishScroll<SexChanged, SexRefused>(L, SubmitSexScroll(L)); }
+ALUA(pc_typed_change_guild_master) { return FinishScroll<GuildChanged, GuildRefused>(L, SubmitGuildMasterScroll(L)); }
 }

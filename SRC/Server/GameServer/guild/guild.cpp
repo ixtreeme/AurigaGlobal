@@ -2431,6 +2431,7 @@ void CGuild::SendGuildDataUpdateToAllMember(SQLMsg* pmsg)
 	{
 		SendGuildInfoPacket(*iter);
 		SendAllGradePacket(*iter);
+		SendListPacket(*iter);
 	}
 }
 

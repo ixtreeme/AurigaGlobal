@@ -8,6 +8,7 @@
 #include <item/OwnedGround.hpp>
 #include <item/MarriageItems.hpp>
 #include <item/IdentityScrolls.hpp>
+#include <item/GuildMasterSql.hpp>
 #include <random>
 #include <SQL/AsyncSQL.h>
 #include <algorithm>
@@ -250,6 +251,16 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
                 U::UInt(static_cast<unsigned>(EquipmentSlot::CostumeHair) - 1)}, {}, 0});
         tx.push_back({"UPDATE player.player SET job=? WHERE id=? AND job=?",
             {U::UInt(sex->after), pid, U::UInt(sex->before)}, 1, {}});
+    }
+    if (const auto master = ReadGuildMasterScrollChange(r))
+    {
+        tx.push_back({"SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' "
+            "AND TABLE_NAME IN ('guild','guild_member','item_guild_master_publication') "
+            "HAVING COUNT(*)=3 AND SUM(ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE')=3", {}, {}, 1});
+        WriteGuildMasterChange(tx, master->guild, static_cast<std::uint32_t>(r.owners.front().owner.id), master->successor);
+        tx.push_back({"INSERT INTO player.item_guild_master_publication(guild_id,operation_id) VALUES(?,?) "
+            "ON DUPLICATE KEY UPDATE operation_id=VALUES(operation_id)",
+            {U::UInt(master->guild), U::Blob(Bytes(r.operationId))}, {}, {}});
     }
     if(const auto relation=ReadMarriageItemChange(r))
     {

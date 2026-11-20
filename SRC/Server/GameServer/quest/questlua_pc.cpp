@@ -4516,6 +4516,7 @@ teleport_area:
 
 			{ "change_name",			pc_change_name },
 			{ "typed_change_name",	pc_typed_change_name },
+			{ "typed_change_guild_master", pc_typed_change_guild_master },
 
 			{ "is_dead",				pc_is_dead	},
 

@@ -9,6 +9,7 @@ namespace
 constexpr std::string_view NameScrollCode = "catalog.10.tincture_of_the_name_2cbd51b0aa94";
 constexpr std::string_view EmpireScrollCode = "catalog.10.tincture_of_kingdoms_83e4f6b6bb83";
 constexpr std::string_view SexScrollCode = "catalog.10.modification_charm_679127259da2";
+constexpr std::string_view GuildMasterScrollCode = "catalog.10.ring_of_successor_3b1ff932cf1c";
 
 bool ValidNames(NameScrollChange names)
 {
@@ -79,6 +80,23 @@ std::optional<SexScrollChange> ReadSexScrollChange(const ItemCommit& write)
     return SexScrollChange{data[4], data[5]};
 }
 
+std::optional<GuildMasterScrollChange> ReadGuildMasterScrollChange(const ItemCommit& write)
+{
+    const auto& data = write.result;
+    if (write.outcomeCode != GuildMasterScrollOutcome || data.size() != 12 ||
+        data[0] != 'G' || data[1] != 'M' || data[2] != 'S' || data[3] != 1)
+        return {};
+
+    GuildMasterScrollChange change{};
+    for (unsigned byte = 0; byte < 4; ++byte)
+    {
+        change.guild |= std::uint32_t{data[4 + byte]} << (8 * byte);
+        change.successor |= std::uint32_t{data[8 + byte]} << (8 * byte);
+    }
+    if (!change.guild || change.guild > INT32_MAX || !change.successor) return {};
+    return change;
+}
+
 bool ValidateIdentityScrollWrite(const ItemCatalog& catalog, const ItemCommit& write)
 {
     std::string_view contentCode;
@@ -96,6 +114,14 @@ bool ValidateIdentityScrollWrite(const ItemCatalog& catalog, const ItemCommit& w
         if (!ReadSexScrollChange(write)) return false;
         contentCode = SexScrollCode;
         break;
+    case GuildMasterScrollOutcome:
+    {
+        const auto change = ReadGuildMasterScrollChange(write);
+        if (!change || write.owners.size() != 1 || change->successor == write.owners.front().owner.id)
+            return false;
+        contentCode = GuildMasterScrollCode;
+        break;
+    }
     default:
         return true;
     }
@@ -155,5 +181,17 @@ std::expected<ItemCommit, ItemPersistenceError> MakeSexScrollCommit(const ItemCa
 {
     return MakeScrollCommit(catalog, operation, fence, storages, inventory, source, revision,
         SexScrollOutcome, {'S', 'E', 'X', 1, change.before, change.after});
+}
+
+std::expected<ItemCommit, ItemPersistenceError> MakeGuildMasterScrollCommit(const ItemCatalog& catalog,
+    std::array<std::uint8_t, 16> operation, ItemOwnerFence fence, std::span<const ItemStorageLayout> storages,
+    std::span<const PersistentItem> inventory, ItemInstanceId source, std::uint64_t revision, GuildMasterScrollChange change)
+{
+    std::vector<std::uint8_t> receipt{'G', 'M', 'S', 1};
+    for (const auto value : {change.guild, change.successor})
+        for (unsigned byte = 0; byte < 4; ++byte)
+            receipt.push_back(static_cast<std::uint8_t>(value >> (8 * byte)));
+    return MakeScrollCommit(catalog, operation, fence, storages, inventory, source, revision,
+        GuildMasterScrollOutcome, std::move(receipt));
 }
 }

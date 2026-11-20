@@ -4,6 +4,7 @@
 #include "Main.h"
 #include "ClientManager.h"
 #include "QID.h"
+#include <common/item/GuildMasterSql.hpp>
 #include <math.h>
 
 extern std::string g_stLocale;
@@ -13,6 +14,38 @@ void QueueNativeGuildCurrencyAward(std::string_view login,std::int64_t amount,un
     CDBManager::instance().QueryPrepared(
         "INSERT INTO player.item_currency_award(login,amount,reason_kind) VALUES(LOWER(TRIM(?)),?,?)",
         {SqlParam::Text(std::string(login)),SqlParam::Int(amount),SqlParam::UInt(reason)});
+}
+
+void PublishGuildMasterChanges(time_t now)
+{
+    static bool ready = false;
+    static time_t nextProbe = 0;
+    auto& db = CDBManager::instance();
+    if (!ready)
+    {
+        if (now < nextProbe) return;
+        nextProbe = now + 30;
+        std::unique_ptr<SQLMsg> table(db.DirectQuery(
+            "SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' "
+            "AND TABLE_NAME='item_guild_master_publication' AND ENGINE='InnoDB'"));
+        ready = table && !table->uiSQLErrno && table->Get() && table->Get()->uiNumRows == 1;
+        if (!ready) return;
+    }
+
+    std::unique_ptr<SQLMsg> rows(db.DirectQuery(
+        "SELECT guild_id,HEX(operation_id) FROM player.item_guild_master_publication ORDER BY guild_id LIMIT 32"));
+    if (!rows || rows->uiSQLErrno || !rows->Get()) return;
+    while (auto row = rows->Get()->FetchRow())
+    {
+        TPacketChangeGuildMaster packet{};
+        str_to_number(packet.dwGuildID, row[0]);
+        CClientManager::instance().ForwardPacket(HEADER_DG_ACK_CHANGE_GUILD_MASTER, &packet, sizeof(packet));
+        // An overlapping transfer can replace this row while the notice is sent.
+        std::unique_ptr<SQLMsg> removed(db.DirectQueryPrepared(
+            "DELETE FROM player.item_guild_master_publication WHERE guild_id=? AND operation_id=UNHEX(?)",
+            {SqlParam::UInt(packet.dwGuildID), SqlParam::Text(row[1])}));
+        if (!removed || removed->uiSQLErrno) return;
+    }
 }
 }
 
@@ -264,6 +297,7 @@ void CGuildManager::Update()
 	ProcessReserveWar();
 
 	time_t now = CClientManager::instance().GetCurrentTime();
+	PublishGuildMasterChanges(now);
 
 	if (!m_pqOnWar.empty())
 	{
@@ -1198,23 +1232,13 @@ void CGuildManager::CancelWar(uint32_t GID1, uint32_t GID2)
 
 bool CGuildManager::ChangeMaster(uint32_t dwGID, uint32_t dwFrom, uint32_t dwTo)
 {
-	auto iter = m_map_kGuild.find(dwGID);
-
-	if (iter == m_map_kGuild.end())
+	if (!dwFrom || !dwTo || dwFrom == dwTo || !m_map_kGuild.contains(dwGID))
 		return false;
 
-	char szQuery[1024];
-
-	snprintf(szQuery, sizeof(szQuery), "UPDATE guild%s SET master=%u WHERE id=%u", GetTablePostfix(), dwTo, dwGID);
-	CDBManager::instance().AsyncQuery(szQuery);
-
-	snprintf(szQuery, sizeof(szQuery), "UPDATE guild_member%s SET grade=1 WHERE pid=%u", GetTablePostfix(), dwTo);
-	CDBManager::instance().AsyncQuery(szQuery);
-
-	snprintf(szQuery, sizeof(szQuery), "UPDATE guild_member%s SET grade=15 WHERE pid=%u", GetTablePostfix(), dwFrom);
-	CDBManager::instance().AsyncQuery(szQuery);
-
-	return true;
+	SqlTransaction transaction;
+	auriga::item::WriteGuildMasterChange(transaction, dwGID, dwFrom, dwTo, GetTablePostfix());
+	std::unique_ptr<SQLMsg> result(CDBManager::instance().DirectTransactionPrepared(std::move(transaction)));
+	return result && result->transactionOutcome == SqlTransactionOutcome::Committed;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

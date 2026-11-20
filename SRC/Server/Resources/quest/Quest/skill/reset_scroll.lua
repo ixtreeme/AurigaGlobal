@@ -109,27 +109,27 @@ quest reset_scroll begin
 			end
 		end
 
-		when 71099.use begin
+		when "catalog.10.ring_of_successor_3b1ff932cf1c".typed_use begin
 			if not pc.can_warp() then
 				syschat(gameforge[pc.get_language()].reset_scroll._35)
 				return
 			end
 
-			say_title(string.format("%s:", item_name(item.get_vnum())))
+			say_title(string.format("%s:", item_name(71099)))
 			say("")
-			ResetScroll.ShowRequisites(item.get_vnum());
-			if (not ResetScroll.CheckRequisites(item.get_vnum())) then
+			ResetScroll.ShowRequisites(71099);
+			if (not ResetScroll.CheckRequisites(71099)) then
 				return;
 			end
 
 			local lang = pc.get_language()
 			if (select(gameforge[lang].reset_scroll._1, gameforge[lang].reset_scroll._2) == 1) then
-				say_title(string.format("%s:", item_name(item.get_vnum())))
+				say_title(string.format("%s:", item_name(71099)))
 				say("")
 				say(gameforge[lang].reset_scroll._21)
-				say_title(string.format("%s:[ENTER]", item_name(item.get_vnum())))
+				say_title(string.format("%s:[ENTER]", item_name(71099)))
 				local s = input();
-				say_title(string.format("%s:", item_name(item.get_vnum())))
+				say_title(string.format("%s:", item_name(71099)))
 				say("")
 				if (pc.get_name() == s) then
 					say(gameforge[lang].reset_scroll._22)
@@ -139,7 +139,8 @@ quest reset_scroll begin
 					return
 				end
 
-				local ret = guild.change_master(s)
+				local guild_name = guild.get_name(guild.get_id0())
+				local ret = pc.typed_change_guild_master(s)
 				if (ret == 0 or ret == 1 or ret == 4) then
 					say_reward(string.format(gameforge[lang].reset_scroll._24, ret));
 					return
@@ -149,9 +150,8 @@ quest reset_scroll begin
 					return;
 				end
 
-				pc.remove_item(71099, 1)
 				say(gameforge[lang].reset_scroll._27)
-				big_notice_all(911, string.format("%s#%s#%s", pc.get_name(), guild.get_name(guild.get_id0()), s))
+				big_notice_all(911, string.format("%s#%s#%s", pc.get_name(), guild_name, s))
 			end
 		end
 
