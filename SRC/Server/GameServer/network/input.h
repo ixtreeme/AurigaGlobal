@@ -273,7 +273,7 @@ protected:
 	void		WeddingEnd(TPacketWeddingEnd* p);
 
 #ifdef ENABLE_ITEMSHOP
-	void		ItemShop(LPDESC d, const char* c_pData);
+	void		ItemShop(const char* data);
 #endif
 
 

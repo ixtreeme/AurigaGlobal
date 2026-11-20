@@ -98,16 +98,7 @@ public:
 
 #ifdef ENABLE_ITEMSHOP
 public:
-	bool		InitializeItemShop();
-	void		SendItemShopData(CPeer* pkPeer = nullptr, bool isPacket = false);
-	void		RecvItemShop(CPeer* pkPeer, uint32_t dwHandle, const char* data);
-	int64_t		GetDragonCoin(uint32_t id);
-	bool		DebitDragonCoin(uint32_t id, int64_t amount);
-	void		ItemShopIncreaseSellCount(uint32_t itemID, int itemCount);
-protected:
-	uint64_t			itemShopUpdateTime;
-	std::map<uint8_t, std::map<uint8_t, std::vector<TIShopData>>> m_IShopManager;
-	std::map<uint32_t, std::vector<TIShopLogData>> m_IShopLogManager;
+    void RecvItemShop(const char* data);
 #endif
 
 public:

@@ -1479,12 +1479,6 @@ int CInputDB::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		WeddingRequest((TPacketWeddingRequest*) c_pData);
 		break;
 
-#ifdef ENABLE_ITEMSHOP
-	case HEADER_DG_ITEMSHOP:
-		ItemShop(DESC_MANAGER::instance().FindByHandle(m_dwHandle), c_pData);
-		break;
-#endif
-
 	case HEADER_DG_WEDDING_READY:
 		WeddingReady((TPacketWeddingReady*) c_pData);
 		break;
@@ -1678,6 +1672,12 @@ bool CInputDB::Process(LPDESC d, const void * orig, int bytes, int & r_iBytesPro
                 }
             }
         }
+#ifdef ENABLE_ITEMSHOP
+        else if (bHeader == HEADER_DG_ITEMSHOP)
+        {
+            if (d == db_clientdesc && iSize == 1) ItemShop(pRealData);
+        }
+#endif
         else
         {
             auto *target = DESC_MANAGER::instance().FindByHandle(m_dwHandle);

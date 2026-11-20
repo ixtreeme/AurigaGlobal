@@ -18,6 +18,7 @@
 #include "../ecs/components/social_components.hpp"
 #include "../ecs/systems/NetworkSyncSystem.hpp"
 #include "../item/TypedEquipmentView.hpp"
+#include "../item/TypedItemShop.hpp"
 #include "../ecs/AIHelpers.hpp"
 #include <openssl/evp.h>
 
@@ -3186,29 +3187,30 @@ ACMD(do_ishop)
 	{
 		if (ecs::PlayerRuntime::GetProtectTime(character, "itemshop.load") == 1)
 			return;
-		if (vecArgs.size() < 3) { return; }
-		int updateTime = 0;
-		if (!ParseCommandNumber(vecArgs[2], updateTime))
-			return;
 		ecs::PlayerRuntime::SetProtectTime(character, "itemshop.load", 1);
-		CHARACTER_MANAGER::Instance().LoadItemShopData(character, CHARACTER_MANAGER::Instance().GetItemShopUpdateTime() != updateTime);
+		SendTypedItemShopCatalog(character);
 	}
 	else if (vecArgs[1] == "log")
 	{
+		std::uint32_t offset = 0;
+		if (vecArgs.size() > 3 || (vecArgs.size() == 3 && !ParseCommandNumber(vecArgs[2], offset)))
+			return;
 		if (ecs::PlayerRuntime::GetProtectTime(character, "itemshop.log") == 1)
 			return;
 		ecs::PlayerRuntime::SetProtectTime(character, "itemshop.log", 1);
 
-		CHARACTER_MANAGER::Instance().LoadItemShopLog(character);
+		SendTypedItemShopHistory(character, offset);
 	}
 	else if (vecArgs[1] == "buy")
 	{
-		if (vecArgs.size() < 4) { return; }
-		int itemID = 0, itemCount = 0;
+		if (vecArgs.size() != 5) return;
+		std::uint32_t itemID = 0;
+		std::uint64_t quote = 0;
+		int itemCount = 0;
 		if (!ParseCommandNumber(vecArgs[2], itemID) || !ParseCommandNumber(vecArgs[3], itemCount)
-			|| itemID <= 0 || itemCount < 1 || itemCount > 20)
+			|| !ParseCommandNumber(vecArgs[4], quote) || !itemID || itemCount < 1 || itemCount > 20)
 			return;
-		CHARACTER_MANAGER::Instance().LoadItemShopBuy(character, itemID, itemCount);
+		BeginTypedItemShopBuy(character, itemID, itemCount, quote);
 	}
 }
 #endif

@@ -47,7 +47,7 @@ def main():
             assert db.query(f'SELECT coins FROM account.account WHERE id={account}') == [['0']], 'inbox swept'
             assert db.query(f'SELECT balance FROM player.item_wallet WHERE owner_kind=2 AND owner_id={account} AND currency=2') == [[str(START_COINS - paid)]]
             assert db.query(f'SELECT amount FROM player.item_wallet_legacy_sweep WHERE account_id={account}') == [[str(START_COINS)]], 'one ledger row'
-            assert db.query(f'SELECT itemVnum,itemCount,itemPrice FROM player.ishop_log WHERE accountID={account}') == [[str(c['ConvertedVnum']), str(BUY_COUNT), str(paid)]], 'one logged purchase'
+            assert db.query(f'SELECT shop_id,units,paid FROM player.ishop_native_purchase WHERE account_id={account}') == [[str(c['ShopConverted']), str(BUY_COUNT), str(paid)]], 'one logged purchase'
             units = db.query(f"SELECT COALESCE(SUM(stack_count),0) FROM player.item_instance WHERE owner_kind=1 AND owner_id={pid} AND destroyed=0 AND category_id={c['ConvertedCategory']} AND local_id={c['ConvertedLocal']}")
             assert units == [[str(BUY_COUNT)]], units
             assert db.query(f"SELECT COUNT(*) FROM player.item WHERE owner_id={pid}") == [['0']], 'no legacy item was created'
@@ -63,9 +63,10 @@ def main():
                 for local, cat, kind in ((c['ContentMountFreeLocal'], 15, 1), (c['ContentMountLocal'], 15, 1), (c['ContentStoleLocal'], 19, 2)):
                     got = db.query(f'SELECT storage_kind,COUNT(*) FROM player.item_instance WHERE owner_kind=1 AND owner_id={pid} AND destroyed=0 AND category_id={cat} AND local_id={local} GROUP BY storage_kind')
                     assert got == [[str(kind), '1']], (cat, local, got)
-                vnums = ','.join(str(v) for v in c['ContentVnums'])
-                logged = sorted(db.query(f'SELECT itemVnum,itemCount,itemPrice FROM player.ishop_log WHERE accountID={account} AND itemVnum IN ({vnums})'))
-                expected = sorted([[str(v), '1', str(p)] for v, p in zip(c['ContentVnums'], (0, c['ContentMountPrice'], c['ContentStolePrice']))])
+                offers = (c['ContentMountFree'], c['ContentMount'], c['ContentStole'])
+                ids = ','.join(str(offer) for offer in offers)
+                logged = sorted(db.query(f'SELECT shop_id,units,paid FROM player.ishop_native_purchase WHERE account_id={account} AND shop_id IN ({ids})'))
+                expected = sorted([[str(offer), '1', str(price)] for offer, price in zip(offers, (0, c['ContentMountPrice'], c['ContentStolePrice']))])
                 assert logged == expected, (logged, expected)
                 print(f'ITEMSHOP_CONTENT_SQL=SUCCESS wallet={c["ContentStartCoins"] - paid} stole_equipped=1')
                 return

@@ -26,24 +26,9 @@ void CInputDB::MyshopPricelistRes(LPDESC d, const TPacketMyshopPricelistHeader* 
 }
 
 #ifdef ENABLE_ITEMSHOP
-void CInputDB::ItemShop(LPDESC d, const char* c_pData)
+void CInputDB::ItemShop(const char* data)
 {
-	const uint8_t subIndex = *(uint8_t*)c_pData;
-	c_pData += sizeof(uint8_t);
-
-	if (subIndex == ITEMSHOP_LOAD)
-		CHARACTER_MANAGER::Instance().LoadItemShopData(c_pData);
-	else if (subIndex == ITEMSHOP_LOG)
-	{
-		if (!d)
-			return;
-		CHARACTER_MANAGER::Instance().LoadItemShopLogReal(d->GetEntity(), c_pData);
-	}
-	else if (subIndex == ITEMSHOP_BUY)
-	{
-		if (!d)
-			return;
-		CHARACTER_MANAGER::Instance().LoadItemShopBuyReal(d->GetEntity(), c_pData);
-	}
+    if (static_cast<std::uint8_t>(*data) == ITEMSHOP_RELOAD)
+        CHARACTER_MANAGER::Instance().RefreshItemShop();
 }
 #endif

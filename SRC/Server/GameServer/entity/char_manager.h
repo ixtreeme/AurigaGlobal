@@ -21,18 +21,7 @@ class CHARACTER_MANAGER : public singleton<CHARACTER_MANAGER>
 {
 #ifdef ENABLE_ITEMSHOP
 public:
-	void	LoadItemShopData(const char* c_pData);
-	void	LoadItemShopData(entt::entity character, bool isAll = true);
-	void	LoadItemShopLog(entt::entity character);
-	void	LoadItemShopLogReal(entt::entity character, const char* c_pData);
-	void	LoadItemShopBuy(entt::entity character, int itemID, int itemCount);
-	bool GetItemShopDataByVnum(uint32_t vnum, TIShopData& outData) const;
-	void	LoadItemShopBuyReal(entt::entity character, const char* c_pData);
-	int		GetItemShopUpdateTime() { return itemshopUpdateTime; }
-
-protected:
-	int		itemshopUpdateTime;
-	std::map<uint8_t, std::map<uint8_t, std::vector<TIShopData>>> m_IShopManager;
+    void RefreshItemShop();
 #endif
 
 	public:

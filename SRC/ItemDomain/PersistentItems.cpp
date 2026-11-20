@@ -1,4 +1,5 @@
 #include <item/PersistentItems.hpp>
+#include <item/ItemShopReceipt.hpp>
 #include <item/CostumeTransfer.hpp>
 #include <item/TokenRedemption.hpp>
 #include <item/SpecialBonusRuntime.hpp>
@@ -1014,14 +1015,18 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
         else if(p.destroyed || p.revision!=1 || RecallRequested(p) || r.outcomeCode==CompanionSealOutcome ||
             (p.growthPet && r.outcomeCode!=PetHatchOutcome))return std::unexpected(E::InvalidChange);
         if(!change.before && p.soul){const auto initial=MakeSoulState(c,p.key,p.refinementLevel);if(!initial || *initial!=*p.soul)return std::unexpected(E::InvalidChange);}
-        if(!change.before && r.kind==ItemOperationKind::Grant && r.outcomeCode==1) {
+        if (!change.before && r.kind==ItemOperationKind::Grant && (r.outcomeCode==1 || r.outcomeCode==ItemShopPurchaseOutcome)) {
             const auto* rule=c.FindDefinitionRules(p.key,p.refinementLevel);
-            if(rule && (rule->birthAddon || rule->birthAttributeProfile)){const auto policy=GrantBirthPolicy(r);if(!policy)return std::unexpected(E::InvalidChange);const auto expected=InitialGrantAttributes(c,p.key,p.refinementLevel,r.operationId,p.id.Value(),*policy);if(!expected || p.attributes!=*expected)return std::unexpected(E::InvalidChange);}
+            if(rule && (rule->birthAddon || rule->birthAttributeProfile)){const auto policy=r.outcomeCode==ItemShopPurchaseOutcome ? std::optional{GrantBirthOptions{}} : GrantBirthPolicy(r);if(!policy)return std::unexpected(E::InvalidChange);const auto expected=InitialGrantAttributes(c,p.key,p.refinementLevel,r.operationId,p.id.Value(),*policy);if(!expected || p.attributes!=*expected)return std::unexpected(E::InvalidChange);}
         }
         if(!change.before && p.privateShop)return std::unexpected(E::InvalidChange);
         if(!change.before && p.shopPermitDeadline){
-            if(r.result.size()!=10 || r.result[0]!=static_cast<unsigned>(ItemOperationKind::Grant) || r.result[1]!=4)return std::unexpected(E::InvalidChange);
-            std::uint64_t now=0;for(unsigned n=0;n<8;++n)now|=std::uint64_t{r.result[n+2]}<<(8*n);const auto duration=PrivateShopPermitDuration(c,p.key);
+            std::size_t issuedAt = 2;
+            if (r.outcomeCode == ItemShopPurchaseOutcome && r.result.size() >= ItemShopReceiptPrefix)
+                issuedAt = ItemShopIssuedAtOffset;
+            else if (r.result.size()!=10 || r.result[0]!=static_cast<unsigned>(ItemOperationKind::Grant) || r.result[1]!=4)
+                return std::unexpected(E::InvalidChange);
+            std::uint64_t now=0;for(unsigned n=0;n<8;++n)now|=std::uint64_t{r.result[issuedAt+n]}<<(8*n);const auto duration=PrivateShopPermitDuration(c,p.key);
             if(!now || now>INT64_MAX || !duration || duration>INT64_MAX-now || *p.shopPermitDeadline!=now+duration)return std::unexpected(E::InvalidChange);
         }
         if(!change.before && p.currencyAmount){if(r.result.size()!=10 || r.result[0]!=static_cast<unsigned>(ItemOperationKind::Grant) || r.result[1]!=3)return std::unexpected(E::InvalidChange);std::uint64_t declared=0;for(unsigned n=0;n<8;++n)declared|=std::uint64_t{r.result[n+2]}<<(8*n);if(declared!=*p.currencyAmount)return std::unexpected(E::InvalidChange);}
@@ -1062,7 +1067,8 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
     for(const auto& w:r.wallets)
     {
         if(!Wallet(w.before) || !Wallet(w.after) || w.before.owner!=w.after.owner || w.before.currency!=w.after.currency ||
-           w.before.revision==UINT64_MAX || w.after.revision!=w.before.revision+1 || w.before.balance==w.after.balance ||
+           w.before.revision==UINT64_MAX || w.after.revision!=w.before.revision+1 ||
+           (w.before.balance==w.after.balance && !(r.outcomeCode==ItemShopPurchaseOutcome && w.before.currency==WalletCurrency::DragonCoin)) ||
            !owners.contains(w.before.owner) || !wallets.emplace(w.before.owner,w.before.currency).second)return std::unexpected(E::InvalidWallet);
         usedOwners.insert(w.before.owner);
     }

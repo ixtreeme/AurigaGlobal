@@ -2,6 +2,7 @@
 #include <item/SoulRuntime.hpp>
 #include <item/AmmoRuntime.hpp>
 #include "ItemPersistenceSql.hpp"
+#include <item/ItemShopReceipt.hpp>
 #include "StoragePersistenceSql.hpp"
 #include "PrivateShopsSql.hpp"
 #include "DungeonEntrySql.hpp"
@@ -181,6 +182,30 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
         {U::Blob(r.ground->core),U::UInt(r.ground->run)},{},1});
     tx.push_back({"INSERT INTO player.item_operation_receipt(operation_id,request_sha256,catalog_revision,catalog_sha256,operation_kind,outcome_code,result_payload) VALUES(?,?,?,?,?,?,?)",
         {U::Blob(Bytes(r.operationId)),U::Blob(Bytes(*digest)),U::UInt(r.catalogRevision),U::Blob(Bytes(r.catalogHash)),U::UInt(static_cast<unsigned>(r.kind)),U::UInt(r.outcomeCode),U::Blob(Bytes(r.result))},1,{}});
+    if (r.outcomeCode == ItemShopPurchaseOutcome)
+    {
+        if (r.kind != ItemOperationKind::Grant || r.result.size() <= ItemShopReceiptPrefix ||
+            r.result.size() > MaxItemShopReceipt)
+            return std::unexpected(E::InvalidOperation);
+        const auto read = [&](unsigned offset, unsigned width) {
+            std::uint64_t result = 0;
+            for (unsigned i = 0; i < width; ++i) result |= std::uint64_t{r.result[offset+i]} << (8*i);
+            return result;
+        };
+        const auto account = read(0,4), shop = read(4,4), units = read(8,2), paid = read(10,8);
+        if (!account || !shop || !units || units > 20 ||
+            std::ranges::none_of(r.owners, [account](const auto& owner) {
+                return owner.owner == ItemOwner{ItemOwnerKind::Account, account};
+            }) || r.wallets.size() != 1 || std::ranges::none_of(r.wallets, [paid,account](const auto& wallet) {
+                return wallet.before.owner == ItemOwner{ItemOwnerKind::Account, account} &&
+                    wallet.before.currency == WalletCurrency::DragonCoin && wallet.before.balance >= paid &&
+                    wallet.after.balance == wallet.before.balance - paid;
+            }))
+            return std::unexpected(E::InvalidOperation);
+        tx.push_back({"INSERT INTO player.ishop_native_purchase(operation_id,account_id,shop_id,units,paid,bought_at,purchase_payload) "
+                      "VALUES(?,?,?,?,?,NOW(),?)",
+                      {U::Blob(Bytes(r.operationId)),U::UInt(account),U::UInt(shop),U::UInt(units),U::UInt(paid),U::Blob(Bytes(r.result))},1,{}});
+    }
     const auto soul=SoulReceipt(r);
     if(!soul.empty() && soul[4]==static_cast<unsigned>(SoulAction::Strike)){
         const auto read=[&](unsigned at){std::uint64_t v=0;for(unsigned j=0;j<8;++j)v|=std::uint64_t{soul[at+j]}<<(8*j);return v;};
