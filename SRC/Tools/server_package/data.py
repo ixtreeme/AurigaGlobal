@@ -234,7 +234,9 @@ class DataBuilder:
         if native_quests.is_dir():
             hash_file = native_quests / 'source_hashes.json'
             source_hashes = json.loads(hash_file.read_text(encoding='utf-8')) if hash_file.is_file() else {}
-            for source in sorted(native_quests.glob('*.lua')):
+            sources = (path for path in native_quests.iterdir()
+                       if path.is_file() and path.suffix in {'.lua', '.quest'})
+            for source in sorted(sources):
                 approved_hash = source_hashes.get(source.name)
                 matches = list((data / 'quest/Quest').rglob(source.name))
                 if not matches and approved_hash:
