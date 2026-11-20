@@ -40,6 +40,11 @@ struct PetFeedRule {
 };
 bool ValidPetFeedRule(const PetFeedRule&) noexcept;
 
+struct PetFeedTerms {
+    PetFeedRule rule;
+    std::uint64_t equipmentExperience=0;
+};
+
 struct GrowthPetLife {
     CompanionClock clock{};
     std::uint64_t capacityMs=0,remainingMs=0;
@@ -117,6 +122,7 @@ struct PetFeedPlan {
     std::uint64_t restoredMs=0,catalogRevision=0;
     std::array<std::uint8_t,32> catalogHash{};
     bool revived=false;
+    PetFoodKind kind{};
 };
 enum class PetCareError {
     Forbidden,InvalidOperation,MissingItem,InvalidSnapshot,NotGrowthPet,NotPetEgg,
@@ -124,6 +130,8 @@ enum class PetCareError {
     MissingFeedRule,InvalidService,WrongTargetState,NoEffect,PetStateSource,InvalidProgress,
 };
 class ItemCatalog;
+std::optional<PetFeedTerms> ResolvePetFeedTerms(const ItemCatalog&,ItemKey food,std::uint16_t foodLevel,
+    ItemKey target,PetFeedingService);
 std::expected<GrowthPetLife,PetCareError> MakeGrowthPetLife(const ItemCatalog&,ItemKey);
 std::expected<PetHatchPlan,PetCareError> PlanPetHatch(const ItemCatalog&,const PetHatchRequest&);
 std::expected<PetLifePlan,PetCareError> PlanPetLife(const ItemCatalog&,const PetLifeRequest&);

@@ -379,6 +379,8 @@ std::expected<GrowthPetState,E> ApplyPetProgress(const ItemCatalog& c,const PetC
     if(evolution)
     {
         if(!awards.empty() || !pet.recallRequested)return std::unexpected(E::InvalidChange);
+        // Chest pets need the original recipes, whose item definitions are still deferred.
+        if(c.IsQuestEggGrowthPet(seal.key))return std::unexpected(E::RequirementNotMet);
         const PetCareItemSnapshot snapshot{seal.key,seal.id.Value(),seal.revision,seal.owner.id,seal.count,
             seal.refinementLevel,false,false,false,true,true,seal.id.Value()};
         PetLifecycleRequest request{context,snapshot,seal.revision,evolution->nowUtcMs,pet};
@@ -627,16 +629,15 @@ bool ValidHatchWrite(const ItemCatalog& c,const ItemCommit& r)
             born=&change.after;
             continue;
         }
-        const auto* entry=c.Find(change.before->key);
-        const auto* egg=entry ? std::get_if<ItemContainerRow>(&entry->category) : nullptr;
-        if(!egg || egg->kind!=ContainerKind::PetEgg)
+        const auto* hatch=c.FindPetHatchFor(change.before->key);
+        if(!hatch)
         {
             if(!AccessoryTimeOnly(change))return false;
             continue;
         }
-        if(source || entry->base.retired || !PlainInventoryItem(*change.before,r.owners.front().owner))return false;
+        if(source || !PlainInventoryItem(*change.before,r.owners.front().owner))return false;
         source=&change;
-        profile=c.FindPetHatchProfile(*egg->hatchProfile);
+        profile=hatch;
         auto expected=*change.before;
         expected.revision=change.after.revision;
         if(!--expected.count){expected.destroyed=true;expected.placement.reset();}

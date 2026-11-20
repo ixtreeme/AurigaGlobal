@@ -872,6 +872,21 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
         const auto* pet=target ? std::get_if<ItemCompanionRow>(&target->category) : nullptr;
         if(!pet || pet->kind!=CompanionKind::GrowthPet || target->base.retired)
             return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"pet.hatch_target",profile.target,profile.id));
+
+        // A quest egg keeps its issued ItemKey. The profile opts in by naming that definition.
+        constexpr std::string_view questEggPrefix = "pet_egg.";
+        std::string_view code = profile.code;
+        if (code.starts_with(questEggPrefix))
+        {
+            code.remove_prefix(questEggPrefix.size());
+            const auto egg = std::ranges::find_if(catalog->items_, [&](const auto& entry) {
+                return entry.second.base.contentCode == code;
+            });
+            const auto* quest = egg != catalog->items_.end() ? std::get_if<ItemQuestRow>(&egg->second.category) : nullptr;
+            if (!quest || egg->second.base.retired || quest->dispatch != QuestItemDispatch::FirstHandler ||
+                !quest->groupCode.empty() || !catalog->questPetEggHatches_.emplace(egg->first, profile.id).second)
+                return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile, "pet.hatch_quest_egg", profile.target, profile.id));
+        }
     }
     auto foodKey=[](const PetFeedRule& r){return std::pair{r.key,r.service};};
     std::ranges::sort(source.petFeedRules,{},foodKey);
@@ -1000,6 +1015,23 @@ const ValidatedRefinementProfile* ItemCatalog::FindRefinement(std::uint32_t id) 
 const PetTrainingProfile* ItemCatalog::FindPetTrainingProfile(std::uint32_t id) const noexcept {return FindProfile(source_.petTrainingProfiles,id);}
 const PetSupplyProfile* ItemCatalog::FindPetSupplyProfile(std::uint32_t id) const noexcept {return FindProfile(source_.petSupplyProfiles,id);}
 const PetHatchProfile* ItemCatalog::FindPetHatchProfile(std::uint32_t id) const noexcept { return FindProfile(source_.petHatchProfiles,id); }
+const PetHatchProfile* ItemCatalog::FindPetHatchFor(ItemKey key) const noexcept
+{
+    const auto* entry = Find(key);
+    if (!entry || entry->base.retired) return nullptr;
+    if (const auto* egg = std::get_if<ItemContainerRow>(&entry->category);
+        egg && egg->kind == ContainerKind::PetEgg && egg->hatchProfile)
+        return FindPetHatchProfile(*egg->hatchProfile);
+    const auto questEgg = questPetEggHatches_.find(key);
+    return questEgg != questPetEggHatches_.end() ? FindPetHatchProfile(questEgg->second) : nullptr;
+}
+bool ItemCatalog::IsQuestEggGrowthPet(ItemKey key) const noexcept
+{
+    if (key.Category() != ItemCategory::Companion) return false;
+    return std::ranges::any_of(questPetEggHatches_, [&](const auto& entry) {
+        return FindPetHatchProfile(entry.second)->target == key;
+    });
+}
 const PetFeedRule* ItemCatalog::FindPetFeedRule(ItemKey key,PetFeedingService service) const noexcept {
     const auto wanted=std::pair{key,service};
     const auto projection=[](const PetFeedRule& r){return std::pair{r.key,r.service};};

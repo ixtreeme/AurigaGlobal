@@ -33,8 +33,7 @@ struct Writer
 bool PetHatchAction(const ItemCatalog& catalog, const ItemCatalogEntry& entry)
 {
     if (!SupportsPersistentItem(catalog, entry)) return false;
-    if (const auto* container = std::get_if<ItemContainerRow>(&entry.category))
-        return container->kind == ContainerKind::PetEgg;
+    if (catalog.FindPetHatchFor(entry.base.key)) return true;
     const auto* seal = std::get_if<ItemCompanionRow>(&entry.category);
     return seal && seal->kind == CompanionKind::GrowthPet;
 }

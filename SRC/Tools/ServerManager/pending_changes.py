@@ -5,7 +5,8 @@ from PySide6.QtCore import QLockFile,QObject,Signal
 import backend as api
 import change_review as review
 
-CATALOG_KINDS={'catalog_edit','catalog_socket_edit'}
+CATALOG_KINDS={'catalog_edit','catalog_socket_edit','catalog_pet_chest'}
+ITEM_OPERATIONS={'item','pet_chest'}
 SQL_KINDS={'item','container','bulk_rewards','mob_drop','mob_drop_delete'} | CATALOG_KINDS
 PENDING={'staged','approved','publishing','unconfirmed'}
 _models={}
@@ -75,7 +76,15 @@ def compile_catalog(before,operations):
         packet['sequences']=dict(before['sequences'])
         for base in model.tables['item_base']:
             category=base['category_id'];packet['sequences'][category]=str(max(int(packet['sequences'][category]),int(base['local_id'])+1))
-    source=read_model(before) if model is None else catalog.Catalog(packet,live_drops=True)
+    pet_chests=[op for op in operations if op['type']=='pet_chest']
+    if pet_chests:
+        from pet_chest_catalog import add_pet_chest
+        if len(pet_chests)!=1:raise api.EditorError('A petláda csak egy közös tervezetben tölthető fel.')
+        chest=pet_chests[0]
+        packet['tables']=catalog.copy_tables(packet['tables'])
+        packet['sequences']=dict(packet['sequences'])
+        add_pet_chest(packet,chest['rules'],chest['first_seal'])
+    source=read_model(before) if model is None and not pet_chests else catalog.Catalog(packet,live_drops=True)
     live=copy.copy(source);live.tables=dict(source.tables)
     for name in ('mob_drop_group','mob_drop_entry'):live.tables[name]=list(source.tables[name])
     for op in operations:
@@ -341,15 +350,15 @@ class PendingChanges(QObject):
         if current['hash']!=before['hash'] or current.get('live_drops',{}).get('release')!=before.get('live_drops',{}).get('release'):
             raise api.EditorError('Az éles katalógus vagy dropverzió megváltozott a tervezés óta. A függő csomag nem tölthető fel erre az állapotra.')
         ops=[e['body']['payload']['operation'] for e in entries];after=compile_catalog(before,ops)
-        if any(op['type']=='item' for op in ops) and any(op['type']!='item' for op in ops):
+        if any(op['type'] in ITEM_OPERATIONS for op in ops) and any(op['type'] not in ITEM_OPERATIONS for op in ops):
             import secrets
             tables=dict(after['tables']);tables.update(after['live_drops']['tables']);live=before['live_drops']
             publish=dict(expected_release=live['release'],expected_drop_hash=live['hash'],release_id=secrets.token_hex(16),
                 **{key:after['live_drops'][key] for key in ('container_groups','container_entries')})
             return catalog.commit_tables(self.owner.root,before,tables,dict(pending_items_and_rewards=len(ops)),batch_publish=publish)
-        if any(op['type']=='item' for op in ops):
+        if any(op['type'] in ITEM_OPERATIONS for op in ops):
             current=catalog.commit_tables(self.owner.root,before,after['tables'],dict(pending_items=len(ops)))
-        if any(op['type']!='item' for op in ops):
+        if any(op['type'] not in ITEM_OPERATIONS for op in ops):
             tables=dict(current['tables']);tables.update(after['live_drops']['tables'])
             current=catalog.commit_drop_tables(self.owner.root,current,tables,dict(pending_destinations=len(ops)),
                 containers={key:after['live_drops'][key] for key in ('container_groups','container_entries')})

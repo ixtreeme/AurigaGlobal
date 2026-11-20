@@ -356,6 +356,8 @@ public:
     const AttributeBirthProfile* FindAttributeBirthProfile(std::uint32_t) const noexcept;
     const SocketServiceProfile* FindSocketService(std::uint32_t id) const noexcept;
     const PetHatchProfile* FindPetHatchProfile(std::uint32_t id) const noexcept;
+    const PetHatchProfile* FindPetHatchFor(ItemKey egg) const noexcept;
+    bool IsQuestEggGrowthPet(ItemKey seal) const noexcept;
     const PetFeedRule* FindPetFeedRule(ItemKey key,PetFeedingService service) const noexcept;
     const GrowthPetProfile* FindGrowthPetProfile(std::uint32_t id) const noexcept;
     const CompanionForm* FindCompanionForm(std::uint32_t id) const noexcept;
@@ -412,6 +414,7 @@ private:
     std::map<std::uint32_t, ValidatedAccessorySocketProfile> accessorySockets_;
     std::map<std::uint32_t, ValidatedRecoveryProfile> recoveries_;
     std::map<std::uint32_t, ValidatedLootProfile> loots_;
+    std::map<ItemKey, std::uint32_t> questPetEggHatches_;
     // Indexes into source_.mobDropGroups, each in group-ID order.
     std::map<std::uint32_t, std::vector<std::size_t>> mobDropsByMob_;
     std::array<std::vector<std::size_t>, MaxMobRank + 1> mobDropsByRank_;

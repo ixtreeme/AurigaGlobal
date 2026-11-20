@@ -5,7 +5,7 @@ from PySide6.QtCore import QLockFile,QObject,QTimer
 from PySide6.QtWidgets import QDialog
 import backend as api
 import change_review as review
-from pending_changes import CATALOG_KINDS,compile_catalog
+from pending_changes import CATALOG_KINDS,ITEM_OPERATIONS,compile_catalog
 
 
 class PendingPublisher(QObject):
@@ -55,7 +55,7 @@ class PendingPublisher(QObject):
         sql=[e for e in entries if e['body']['kind'] in CATALOG_KINDS]
         if sql:
             before=self.queue.baseline(sql);ops=[e['body']['payload']['operation'] for e in sql]
-            if state.get('running') and any(op['type']=='item' for op in ops):raise api.EditorError('A tervezetek megmaradtak. A tárgydefiníciók feltöltése előtt állítsd le a játékszervert; a dropok önállóan élőben feltölthetők.')
+            if state.get('running') and any(op['type'] in ITEM_OPERATIONS for op in ops):raise api.EditorError('A tervezetek megmaradtak. A tárgydefiníciók feltöltése előtt állítsd le a játékszervert; a dropok önállóan élőben feltölthetők.')
             current=catalog.request(self.owner.root)
             if current['hash']!=before['hash'] or current['live_drops']['hash']!=before['live_drops']['hash'] or current['live_drops']['release']!=before['live_drops']['release']:
                 raise api.EditorError('Az éles tárgy- vagy dropadatok megváltoztak a tervezet óta. Egyetlen változtatást sem töltöttünk fel.')

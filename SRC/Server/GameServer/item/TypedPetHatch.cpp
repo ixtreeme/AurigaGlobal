@@ -199,14 +199,6 @@ const item::PersistentItem* PetInStorage(const ecs::TypedItems& typed,std::uint6
     return found==typed.state.items.end() ? nullptr : &*found;
 }
 
-const item::PetHatchProfile* HatchProfile(const item::ItemCatalog& catalog, item::ItemKey key)
-{
-    const auto* entry = catalog.Find(key);
-    const auto* egg = entry && !entry->base.retired ? std::get_if<item::ItemContainerRow>(&entry->category) : nullptr;
-    return egg && egg->kind == item::ContainerKind::PetEgg && egg->hatchProfile
-        ? catalog.FindPetHatchProfile(*egg->hatchProfile) : nullptr;
-}
-
 const item::PetTrainingProfile* Training(const item::ItemCatalog& catalog,item::ItemKey key)
 {
     const auto* entry = catalog.Find(key);
@@ -306,7 +298,7 @@ void Reply(entt::entity entity, Status status, std::uint64_t id, std::uint64_t t
             const auto& stage = profile.stages[pet->progress.stage];
             const bool atGate = pet->progress.level == stage.maximumLevel && pet->progress.level < profile.maximumLevel;
             const bool following = PetSystem::LiveTypedSeal(entity)==seal->id.Value();
-            const bool canEvolve = atGate && following && !entry->base.retired &&
+            const bool canEvolve = atGate && following && !entry->base.retired && !catalog->IsQuestEggGrowthPet(seal->key) &&
                 (pet->life.clock==item::CompanionClock::Permanent || elapsed<pet->life.remainingMs);
             packet.Put(pet->progress.mobExperience);
             packet.Put(level.mobExperience);
@@ -445,7 +437,7 @@ void Confirm(entt::entity entity, const TPacketCGTypedPetHatch& packet, PetHatch
     const auto& typed = g_registry.get<ecs::TypedItems>(entity);
     const auto* egg = InBag(typed, packet.itemId);
     const auto* wallet = Gold(typed);
-    const auto* profile = egg ? HatchProfile(catalog, egg->key) : nullptr;
+    const auto* profile = egg ? catalog.FindPetHatchFor(egg->key) : nullptr;
     if (get_dword_time() - session.opened >= 120000u || !egg || *egg != session.egg
         || !wallet || *wallet != session.wallet || !profile || session.catalogHash != catalog.ContentHash())
     {
@@ -646,9 +638,8 @@ bool HandleFeeding(entt::entity entity, Action action, const TPacketCGTypedPetHa
                 continue;
             if(food.growthPet && (item::RecallRequested(food) || food.growthPet->carrierInstanceId || TypedGrowthPetElapsed(entity,food.id.Value()) ||
                 std::ranges::any_of(state.items,[&](const auto& i){return !i.destroyed && i.petSupply && i.petSupply->equippedSeal==food.id.Value();})))continue;
-            const auto* rule = catalog.FindPetFeedRule(food.key,service);
-            if (rule && !catalog.Find(food.key)->base.retired &&
-                (rule->consumption == item::PetFoodConsumption::WholeStack || food.count >= rule->units))
+            const auto terms = item::ResolvePetFeedTerms(catalog, food.key, food.refinementLevel, seal->key, service);
+            if (terms && (terms->rule.consumption == item::PetFoodConsumption::WholeStack || food.count >= terms->rule.units))
                 list.options.push_back(food.id.Value());
         }
         FeedReply(entity,Status::FoodList,packet.itemId,0,list,seal);
@@ -664,8 +655,7 @@ bool HandleFeeding(entt::entity entity, Action action, const TPacketCGTypedPetHa
         ReplyFeedSession(entity,*session,nullptr);
         return true;
     }
-    const auto* rule = food ? catalog.FindPetFeedRule(food->key,service) : nullptr;
-    if (!rule)
+    if (!food)
     {
         FeedReply(entity,Status::Invalid,packet.itemId,confirm ? packet.token : 0);
         return true;
@@ -693,7 +683,7 @@ bool HandleFeeding(entt::entity entity, Action action, const TPacketCGTypedPetHa
         return true;
     }
     const auto& plan = feed->plan;
-    FeedingView view{food->id.Value(),plan.consumeFoodUnits,rule->kind,
+    FeedingView view{food->id.Value(),plan.consumeFoodUnits,plan.kind,
         plan.progress ? plan.progress->after.itemExperience : plan.after.remainingMs};
     if(food->growthPet) {
         view.sacrificeName=food->growthPet->name;view.sacrificeLevel=food->growthPet->progress.level;view.sacrificeStage=food->growthPet->progress.stage;
@@ -796,7 +786,8 @@ void Evolve(entt::entity entity,const TPacketCGTypedPetHatch& packet,const item:
     const auto& row = std::get<item::ItemCompanionRow>(catalog.Find(seal->key)->category);
     const auto& profile = *catalog.FindGrowthPetProfile(*row.growthProfile);
     const auto stage = std::size_t(pet.progress.stage);
-    if (stage+1>=profile.stages.size() || pet.progress.level!=profile.stages[stage].maximumLevel)
+    if (stage+1>=profile.stages.size() || pet.progress.level!=profile.stages[stage].maximumLevel ||
+        catalog.IsQuestEggGrowthPet(seal->key))
     {
         ProgressReply(entity,Status::NoEffect,packet.itemId);
         return;
@@ -1299,7 +1290,7 @@ bool HandleTypedPetHatchPacket(entt::entity entity, const char* data)
         return true;
     }
     const auto* wallet = Gold(typed);
-    const auto* profile = source ? HatchProfile(*catalog, source->key) : nullptr;
+    const auto* profile = source ? catalog->FindPetHatchFor(source->key) : nullptr;
     const auto* target = profile ? catalog->Find(profile->target) : nullptr;
     if (!wallet || !profile || !target || target->base.retired || !item::PlainInventoryItem(*source, typed.state.fence.owner))
     {

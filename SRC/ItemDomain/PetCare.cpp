@@ -96,6 +96,33 @@ bool ValidPetFeedRule(const PetFeedRule& r) noexcept {
     }
     return false;
 }
+std::optional<PetFeedTerms> ResolvePetFeedTerms(const ItemCatalog& c,ItemKey foodKey,std::uint16_t foodLevel,
+    ItemKey target,PetFeedingService service)
+{
+    const auto* food = c.Find(foodKey);
+    if (!food || food->base.retired) return std::nullopt;
+    if (const auto* rule = c.FindPetFeedRule(foodKey, service))
+    {
+        const auto experience = rule->kind == PetFoodKind::EquipmentExperience
+            ? food->base.buyAmount / rule->experiencePriceDivisor : 0;
+        return PetFeedTerms{*rule, experience};
+    }
+    if (service != PetFeedingService::Cube || !c.IsQuestEggGrowthPet(target)) return std::nullopt;
+
+    if (foodKey.Category() == ItemCategory::Quest && c.FindPetHatchFor(foodKey))
+        return PetFeedTerms{{foodKey, service, PetFoodKind::LifetimeFraction, PetFoodConsumption::WholeStack, 0, 300}};
+    if (c.IsQuestEggGrowthPet(foodKey))
+        return PetFeedTerms{{foodKey, service, PetFoodKind::LifetimeFraction, PetFoodConsumption::ExactUnits, 1, 300}};
+    if (foodKey.Category() == ItemCategory::Weapon || foodKey.Category() == ItemCategory::Armor)
+    {
+        // The original feed operation used half the NPC sell value of the exact refinement level.
+        const auto experience = c.LevelPolicy(foodKey, foodLevel).sellAmount / 2;
+        if (experience && experience <= UINT32_MAX)
+            return PetFeedTerms{{foodKey, service, PetFoodKind::EquipmentExperience,
+                PetFoodConsumption::WholeStack, 0, 0, 0, 2}, experience};
+    }
+    return std::nullopt;
+}
 std::expected<GrowthPetLife,PetCareError> MakeGrowthPetLife(const ItemCatalog& c,ItemKey key) {
     const auto* entry=c.Find(key);if(!entry)return std::unexpected(PetCareError::MissingItem);
     const auto* row=Growth(*entry);if(!row)return std::unexpected(PetCareError::NotGrowthPet);
@@ -108,9 +135,9 @@ std::expected<PetHatchPlan,PetCareError> PlanPetHatch(const ItemCatalog& c,const
        !r.newInstanceId || r.newInstanceId==r.egg.instanceId || !r.newInstanceReservedByServer)return std::unexpected(E::InvalidOperation);
     auto source=Snapshot(c,r.egg,r.context.actorId);if(!source)return std::unexpected(source.error());
     if(r.egg.hasPetState || r.egg.containsPet || r.egg.active)return std::unexpected(E::PetStateSource);
-    const auto* egg=std::get_if<ItemContainerRow>(&(*source)->category);
-    if(!egg || egg->kind!=ContainerKind::PetEgg)return std::unexpected(E::NotPetEgg);
-    const auto* hatch=c.FindPetHatchProfile(*egg->hatchProfile);const auto* target=c.Find(hatch->target);
+    const auto* hatch=c.FindPetHatchFor(r.egg.key);
+    if(!hatch)return std::unexpected(E::NotPetEgg);
+    const auto* target=c.Find(hatch->target);
     if(!CanUse(c,(*source)->base,r.context) || !CanUse(c,target->base,r.context))return std::unexpected(E::Forbidden);
     if(!r.nameAcceptedByServer || !ValidName(r.name))return std::unexpected(E::InvalidName);
     if(!r.bornAtUtcMs || r.bornAtUtcMs>INT64_MAX)return std::unexpected(E::InvalidTime);
@@ -151,13 +178,16 @@ std::expected<PetFeedPlan,PetCareError> PlanPetFeed(const ItemCatalog& c,const P
     if(!CanUse(c,(*food)->base,r.context) || !CanUse(c,(*target)->base,r.context))return std::unexpected(E::Forbidden);
     if((r.service==PetFeedingService::Cube)!=r.target.active ||
        (r.target.active && r.life.clock==CompanionClock::ActiveTime && !r.life.remainingMs))return std::unexpected(E::WrongTargetState);
-    const auto* rule=c.FindPetFeedRule(r.food.key,r.service);if(!rule)return std::unexpected(E::MissingFeedRule);
-    if(r.sacrificePet && rule->kind!=PetFoodKind::LifetimeFraction)return std::unexpected(E::PetStateSource);
-    const auto units=rule->consumption==PetFoodConsumption::WholeStack ? r.food.count : rule->units;
+    const auto terms=ResolvePetFeedTerms(c,r.food.key,r.food.refinementLevel,r.target.key,r.service);
+    if(!terms)return std::unexpected(E::MissingFeedRule);
+    const auto& rule=terms->rule;
+    if(r.sacrificePet && rule.kind!=PetFoodKind::LifetimeFraction)return std::unexpected(E::PetStateSource);
+    const auto units=rule.consumption==PetFoodConsumption::WholeStack ? r.food.count : rule.units;
     if(r.food.count<units)return std::unexpected(E::InvalidSnapshot);
     PetFeedPlan plan{r,r.life};plan.consumeFoodUnits=units;plan.catalogRevision=c.Revision();plan.catalogHash=c.ContentHash();
-    if(rule->kind==PetFoodKind::EquipmentExperience) {
-        const auto experience=(*food)->base.buyAmount/rule->experiencePriceDivisor;
+    plan.kind=rule.kind;
+    if(rule.kind==PetFoodKind::EquipmentExperience) {
+        const auto experience=terms->equipmentExperience;
         if(!r.progress)return std::unexpected(E::InvalidProgress);
         if(!experience)return std::unexpected(E::NoEffect);
         GrowthPetRequest progress{r.target.key};progress.progress=*r.progress;progress.instanceId=r.target.instanceId;
@@ -171,10 +201,10 @@ std::expected<PetFeedPlan,PetCareError> PlanPetFeed(const ItemCatalog& c,const P
         plan.progress=*result;return plan;
     }
     if(r.life.clock==CompanionClock::Permanent)return std::unexpected(E::NoEffect);
-    if(rule->kind==PetFoodKind::RefillOrRevive) {
-        plan.after.remainingMs=r.life.remainingMs ? r.life.capacityMs : Fraction(r.life.capacityMs,rule->deadRecoveryBp);
+    if(rule.kind==PetFoodKind::RefillOrRevive) {
+        plan.after.remainingMs=r.life.remainingMs ? r.life.capacityMs : Fraction(r.life.capacityMs,rule.deadRecoveryBp);
     } else {
-        const auto amount=Fraction(r.life.capacityMs,rule->lifetimeFractionBp);
+        const auto amount=Fraction(r.life.capacityMs,rule.lifetimeFractionBp);
         plan.after.remainingMs+=(std::min)(amount,r.life.capacityMs-r.life.remainingMs);
     }
     plan.restoredMs=plan.after.remainingMs-r.life.remainingMs;

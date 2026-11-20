@@ -111,6 +111,8 @@ class PendingPage(QWidget):
             page.loaded(self.queue.overlay_packet(self.queue.baseline([e])))
             if op['type']=='item':self.owner.navigation.setCurrentRow(8);page.open_item(tuple(op['key']))
             elif op['type']=='container':page.show_containers();page.edit_container(key=tuple(op['key']))
+            elif op['type']=='pet_chest':
+                self.owner.navigation.setCurrentRow(8);page.open_item(tuple(op['key']))
             elif op['group'] is not None:page.show_drops();page.open_drop_dialog(page.catalog_model(True).drop_group(str(op['key'])),str(op['key']))
             else:self.owner.error('A törlés tervezete a kijelölés visszavonásával állítható vissza.')
         elif kind.startswith('ssh_profile'):

@@ -232,14 +232,27 @@ class DataBuilder:
         # Native replacements travel with every newly prepared package.
         native_quests = TOOLS.parents[1] / 'config/typed_quests'
         if native_quests.is_dir():
+            hash_file = native_quests / 'source_hashes.json'
+            source_hashes = json.loads(hash_file.read_text(encoding='utf-8')) if hash_file.is_file() else {}
             for source in sorted(native_quests.glob('*.lua')):
+                approved_hash = source_hashes.get(source.name)
                 matches = list((data / 'quest/Quest').rglob(source.name))
+                if not matches and approved_hash:
+                    continue
                 if len(matches) != 1:
                     raise PackageError('Native quest replacement needs one source: ' + source.name)
-                shutil.copy2(source, matches[0])
+                target = matches[0]
+                if approved_hash:
+                    original = target.read_bytes().replace(b'\r\n', b'\n')
+                    if original == source.read_bytes().replace(b'\r\n', b'\n'):
+                        continue
+                    if hashlib.sha256(original).hexdigest() != approved_hash:
+                        self.notes.append('Preserved customized quest: ' + target.relative_to(data).as_posix())
+                        continue
+                shutil.copy2(source, target)
                 key = '@native-quests/' + source.name
                 self.inputs[key] = dict(sha256=digest(source), size=source.stat().st_size)
-                self.operations.append(dict(source=key, target=matches[0].relative_to(self.output).as_posix(), operation='native-replacement'))
+                self.operations.append(dict(source=key, target=target.relative_to(self.output).as_posix(), operation='native-replacement'))
 
     def verify_originals(self):
         for relative, metadata in self.inputs.items():

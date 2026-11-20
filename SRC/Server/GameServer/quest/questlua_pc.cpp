@@ -4211,6 +4211,21 @@ teleport_area:
         return 1;
     }
 
+    ALUA(pc_typed_pet_egg_key)
+    {
+        const std::string_view code = luaL_checkstring(L, 1);
+        const auto catalog = item::runtime::CurrentCatalog();
+        if (!catalog) return 0;
+        const auto& entries = catalog->Entries();
+        const auto egg = std::ranges::find_if(entries, [&](const auto& entry) {
+            return entry.second.base.contentCode == code;
+        });
+        if (egg == entries.end() || !catalog->FindPetHatchFor(egg->first)) return 0;
+        lua_pushinteger(L, static_cast<std::uint16_t>(egg->first.Category()));
+        lua_pushinteger(L, egg->first.LocalId());
+        return 2;
+    }
+
     ALUA(pc_typed_item_grant)
     {
         const auto amount = ReadQuestItem(L, 1, true);
