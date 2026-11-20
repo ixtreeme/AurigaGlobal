@@ -7,6 +7,7 @@
 #include "DungeonEntrySql.hpp"
 #include <item/OwnedGround.hpp>
 #include <item/MarriageItems.hpp>
+#include <item/IdentityScrolls.hpp>
 #include <random>
 #include <SQL/AsyncSQL.h>
 #include <algorithm>
@@ -198,6 +199,21 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
     }
     PrivateShopWriteBefore(tx,r);
     DungeonEntryWriteBefore(tx,r);
+    if (const auto rename = ReadNameScrollChange(r))
+    {
+        tx.push_back({"SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' "
+            "AND TABLE_NAME IN ('player','messenger_list') "
+            "HAVING COUNT(*)=2 AND SUM(ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE')=2", {}, {}, 1});
+        tx.push_back({"SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA='player' "
+            "AND TABLE_NAME='player' AND INDEX_NAME='item_identity_character_name' "
+            "HAVING COUNT(*)=1 AND SUM(NON_UNIQUE=0 AND COLUMN_NAME='name' AND SUB_PART IS NULL)=1", {}, {}, 1});
+        tx.push_back({"UPDATE player.player SET name=? WHERE id=? AND BINARY name=? "
+            "AND NOT EXISTS (SELECT 1 FROM player.guild_member WHERE pid=?)",
+            {U::Text(std::string(rename->after)), U::UInt(r.owners.front().owner.id),
+                U::Text(std::string(rename->before)), U::UInt(r.owners.front().owner.id)}, 1, {}});
+        tx.push_back({"DELETE FROM player.messenger_list WHERE account=? OR companion=?",
+            {U::Text(std::string(rename->before)), U::Text(std::string(rename->before))}, {}, {}});
+    }
     if(const auto relation=ReadMarriageItemChange(r))
     {
         const auto first=(std::min)(relation->initiator,relation->partner);

@@ -255,23 +255,23 @@ quest reset_scroll begin
 			end
 		end
 
-		when 71055.use begin
+		when "catalog.10.tincture_of_the_name_2cbd51b0aa94".typed_use begin
 			if not pc.can_warp() then
 				syschat(gameforge[pc.get_language()].reset_scroll._35)
 				return
 			end
 
-			say_title(string.format("%s:", item_name(item.get_vnum())))
+			say_title(string.format("%s:", item_name(71055)))
 			say("")
-			ResetScroll.ShowRequisites(item.get_vnum());
-			if (not ResetScroll.CheckRequisites(item.get_vnum())) then
+			ResetScroll.ShowRequisites(71055);
+			if (not ResetScroll.CheckRequisites(71055)) then
 				return;
 			end
 
 			local lang = pc.get_language()
 			say(gameforge[lang].reset_scroll._39)
 			local new_name = input()
-			say_title(string.format("%s:", item_name(item.get_vnum())))
+			say_title(string.format("%s:", item_name(71055)))
 			say("")
 			local old_name = pc.get_name();
 			if (new_name == old_name) then
@@ -279,7 +279,7 @@ quest reset_scroll begin
 				return
 			end
 
-			local ret = pc.change_name(new_name);
+			local ret = pc.typed_change_name(new_name);
 			if (ret == 0) then
 				say_reward(gameforge[lang].reset_scroll._41)
 			elseif (ret == 1) then
@@ -289,7 +289,6 @@ quest reset_scroll begin
 			elseif (ret == 3) then
 				say_reward(gameforge[lang].reset_scroll._44)
 			elseif (ret == 4) then
-				pc.remove_item(71055, 1);
 				say_reward(gameforge[lang].reset_scroll._45)
 				say_reward(gameforge[lang].reset_scroll._46)
 			else

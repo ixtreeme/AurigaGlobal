@@ -87,6 +87,7 @@ CREATE TABLE IF NOT EXISTS `player`.`player` (
   `map1_skillmob`     INT                NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `account_id` (`account_id`),
+  UNIQUE KEY `item_identity_character_name` (`name`),
   CHECK (`skill_level` IS NULL OR OCTET_LENGTH(`skill_level`) = 2550),
   CHECK (`quickslot` IS NULL OR OCTET_LENGTH(`quickslot`) = 108)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;

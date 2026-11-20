@@ -313,7 +313,10 @@ void CInputP2P::MessengerRemove(const char * c_pData)
 {
 	TPacketGGMessenger * p = (TPacketGGMessenger *) c_pData;
 	LOG_INFO("P2P: Messenger Remove {} {}", p->szAccount, p->szCompanion);
-	MessengerManager::instance().__RemoveFromList(p->szAccount, p->szCompanion);
+	if (p->szCompanion[0])
+		MessengerManager::instance().__RemoveFromList(p->szAccount, p->szCompanion);
+	else
+		MessengerManager::instance().ApplyRemovedAccountLinks(p->szAccount);
 }
 
 // migrated from p2p CHARACTER handling

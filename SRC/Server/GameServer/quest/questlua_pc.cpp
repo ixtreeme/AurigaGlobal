@@ -3,6 +3,7 @@
 #include "../item/TypedMoney.hpp"
 #include "../item/TypedQuestItems.hpp"
 #include "typed_money_continuation.h"
+#include "TypedIdentityScrolls.hpp"
 #include "stdafx.h"
 #include "../warrior/WarriorSkillSystem.hpp"
 #include <cmath>
@@ -4511,6 +4512,7 @@ teleport_area:
 			{ "set_change_empire_count",	pc_set_change_empire_count	},
 
 			{ "change_name",			pc_change_name },
+			{ "typed_change_name",	pc_typed_change_name },
 
 			{ "is_dead",				pc_is_dead	},
 

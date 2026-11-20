@@ -684,6 +684,28 @@ void MessengerManager::RemoveAllList(keyA account)
 }
 
 
+void MessengerManager::ApplyRemovedAccountLinks(keyA account)
+{
+	const auto relations = m_Relation[account];
+	const auto inverse = m_InverseRelation[account];
+	for (const auto& companion : relations)
+		__RemoveFromList(account, companion);
+	for (const auto& follower : inverse)
+		if (follower != account || !relations.contains(account))
+			__RemoveFromList(follower, account);
+	m_Relation.erase(account);
+	m_InverseRelation.erase(account);
+}
+
+void MessengerManager::PublishRemovedAccountLinks(keyA account)
+{
+	ApplyRemovedAccountLinks(account);
+	TPacketGGMessenger packet{};
+	packet.bHeader = HEADER_GG_MESSENGER_REMOVE;
+	strlcpy(packet.szAccount, account.c_str(), sizeof(packet.szAccount));
+	P2P_MANAGER::instance().Send(&packet, sizeof(packet));
+}
+
 void MessengerManager::SendList(MessengerManager::keyA account)
 {
 	const entt::entity ch = CHARACTER_MANAGER::instance().FindPCEntity(account.c_str());

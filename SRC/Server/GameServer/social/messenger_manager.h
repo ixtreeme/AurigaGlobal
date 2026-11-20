@@ -41,6 +41,8 @@ class MessengerManager : public singleton<MessengerManager>
 		void	RemoveFromList(keyA account, keyA companion);
 
 		void	RemoveAllList(keyA account);
+		void	ApplyRemovedAccountLinks(keyA account);
+		void	PublishRemovedAccountLinks(keyA account);
 
 		void	Initialize();
 
