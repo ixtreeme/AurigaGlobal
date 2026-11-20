@@ -70,6 +70,8 @@ struct Entry
     std::uint64_t ownedId = 0;
     std::optional<items::CurrencyDropIntent> currency;
     std::vector<std::byte> reservedView;
+    std::string reservedClaimName;
+    std::uint64_t reservedClaimMs = 0;
 };
 
 // By ground VID. The entity carries only what clients see (TypedLootView).
@@ -189,6 +191,41 @@ static std::uint32_t CreateLoot(const items::ItemGrant& grant, std::int32_t mapI
 bool DropTypedLoot(const items::ItemGrant& grant,std::int32_t map,std::int32_t x,std::int32_t y,std::int32_t z,entt::entity claimant,std::uint64_t claimMs)
 { return CreateLoot(grant,map,x,y,z,claimant,true,claimMs)!=0; }
 
+std::uint32_t ReserveTypedLoot(const items::ItemGrant& grant, std::int32_t map, std::int32_t x, std::int32_t y,
+    std::int32_t z, entt::entity claimant, std::uint64_t claimMs)
+{
+    const auto vid = CreateLoot(grant, map, x, y, z, claimant, false, claimMs);
+    if (!vid)
+        return 0;
+    auto& entry = Loot().at(vid);
+    if (entry.loot.claimPid)
+        entry.reservedClaimName = ecs::PlayerRuntime::GetName(claimant);
+    entry.reservedClaimMs = claimMs;
+    entry.pending = true;
+    return vid;
+}
+
+bool ResolveReservedTypedLoot(std::uint32_t vid, bool committed)
+{
+    const auto it = Loot().find(vid);
+    if (it == Loot().end() || !it->second.reservedClaimMs)
+        return false;
+    auto& entry = it->second;
+    if (!committed || !g_registry.valid(entry.entity) || !ecs::SectorOf(g_registry, entry.entity))
+    {
+        Retire(vid);
+        return false;
+    }
+    const auto now = NowMs();
+    entry.loot.claimEndsMs = now + entry.reservedClaimMs;
+    entry.loot.expiresMs = now + items::GroundLifetimeMs;
+    g_registry.emplace<ecs::TypedLootView>(entry.entity, vid, std::move(entry.reservedView), std::move(entry.reservedClaimName));
+    entry.reservedClaimMs = 0;
+    entry.pending = false;
+    ecs::SpatialService::UpdateSectree(g_registry, entry.entity);
+    return true;
+}
+
 namespace
 {
 void ExpireOwned(std::uint32_t vid);
@@ -299,7 +336,7 @@ void TickTypedLoot()
 			if (!entry.pending) { if(entry.ownedId) ExpireOwned(vid); else gone.push_back(vid); }
 			continue;
 		}
-		if (entry.loot.claimPid && !items::GroundClaimActive(entry.loot, now))
+		if (!entry.reservedClaimMs && entry.loot.claimPid && !items::GroundClaimActive(entry.loot, now))
 			ClearClaim(entry);
 	}
 	for (const auto vid : gone)

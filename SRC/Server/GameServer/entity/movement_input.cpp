@@ -2,6 +2,7 @@
 #include "../story/SpyQuestSystem.hpp"
 #include "../warrior/WarriorMobility.hpp"
 #include "../story/CaravanQuestSystem.hpp"
+#include "../item/TypedGathering.hpp"
 #include <Core/Logging.hpp>
 #include "input.h"
 #include "../ecs/Registry.hpp"
@@ -59,7 +60,10 @@ void CInputMain::OnClick(entt::entity character, const char* data)
     memcpy(&request, data, sizeof(request));
     const entt::entity target = CHARACTER_MANAGER::instance().FindEntity(request.vid);
     if (ecs::PlayerRuntime::IsValid(target))
-        ecs::PlayerRuntime::OnClick(target, character);
+    {
+        if (!TryStartTypedMining(character, target))
+            ecs::PlayerRuntime::OnClick(target, character);
+    }
     else if (test_server)
         LOG_ERROR("OnClick {}: missing VID {}", ecs::PlayerRuntime::GetName(character), request.vid);
 }

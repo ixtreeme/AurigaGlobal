@@ -6,6 +6,11 @@
 namespace auriga::item
 {
 struct GatheringReward { ItemKey key;std::uint32_t count=0,weight=0; };
+struct MiningRules
+{
+    // The mission pass still identifies ore objectives independently of item keys.
+    std::uint32_t missionSubject=0;
+};
 // World content, like typed crafting workshops. Item references are ItemKeys.
 struct GatheringSite
 {
@@ -13,9 +18,10 @@ struct GatheringSite
     std::uint32_t range=0,durationMs=0,minimumPower=0,powerStep=1;
     std::uint16_t baseChance=0,powerChance=0,baitChance=0;
     std::vector<GatheringReward> rewards;
+    std::optional<MiningRules> mining;
 };
 enum class ResourceError:std::uint8_t { Invalid,Forbidden,WrongTool,NoBait,NoRoom,Unavailable,InvalidDecision,NotCompleted };
-struct ResourceRequest { ItemInstanceId tool;ToolRuntimeActor actor;bool completed=false,eligible=true; std::uint64_t nowUtcMs=0;std::optional<std::uint32_t> selectedRewardRoll; };
+struct ResourceRequest { ItemInstanceId tool;ToolRuntimeActor actor;bool completed=false,eligible=true; std::uint64_t nowUtcMs=0;std::optional<std::uint32_t> selectedRewardRoll;std::uint8_t miningSkill=0; };
 const GatheringReward* SelectGatheringReward(const GatheringSite&,std::uint32_t roll);
 struct ResourcePlan { ItemCommit commit;bool success=false;std::uint32_t points=0,bait=0;std::vector<FishingYield> yields; };
 std::expected<void,ResourceError> ValidateGatheringSites(const ItemCatalog&,std::span<const GatheringSite>);
@@ -32,6 +38,7 @@ struct ResourceView
     std::uint16_t chance=0;const ResourcePlan* result=nullptr;
     const FishingRuntimeView* fishing=nullptr;
     std::optional<ItemKey> predictedReward;
+    std::uint32_t durationMs=0;
 };
 std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeResourceGathering(const ItemCatalog&,const ResourceView&);
 }

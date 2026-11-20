@@ -13,7 +13,7 @@ std::expected<ResourcePlan,E> Build(const ItemCatalog& c,const GatheringSite& si
 {
  std::vector<PersistentItem> working(items.begin(),items.end());auto tool=std::ranges::find(working,request.tool,&PersistentItem::id);if(tool==working.end())return std::unexpected(E::Invalid);
  ResourcePlan out;out.success=reward!=nullptr;
- if(reward)
+ if(reward || (site.mining && request.eligible))
  {
   auto actor=request.actor;actor.completedResourceAction=true;actor.fishingActive=false;
   auto practice=MakeToolRuntimeCommit(c,op,fence,layouts,items,{tool->id,{},ToolRuntimeAction::Practice,actor,practiceRoll});
@@ -23,9 +23,12 @@ std::expected<ResourcePlan,E> Build(const ItemCatalog& c,const GatheringSite& si
  out.points=tool->tool->trainingPoints;out.bait=tool->tool->baitPower;
  if(reward)
  {
-  auto grant=MakeGrantCommit(c,op,fence,layouts,working,{reward->key,0,reward->count,{},{},{},request.nowUtcMs},ids);
-  if(!grant)return std::unexpected(grant.error()==ItemPersistenceError::InvalidPlacement ? E::NoRoom : E::Unavailable);
-  for(const auto& change:grant->items)if(change.before)*std::ranges::find(working,change.after.id,&PersistentItem::id)=change.after;else working.push_back(change.after);
+  if(!site.mining)
+  {
+   auto grant=MakeGrantCommit(c,op,fence,layouts,working,{reward->key,0,reward->count,{},{},{},request.nowUtcMs},ids);
+   if(!grant)return std::unexpected(grant.error()==ItemPersistenceError::InvalidPlacement ? E::NoRoom : E::Unavailable);
+   for(const auto& change:grant->items)if(change.before)*std::ranges::find(working,change.after.id,&PersistentItem::id)=change.after;else working.push_back(change.after);
+  }
   out.yields.push_back({reward->key,reward->count});
  }
  auto& commit=out.commit;commit.operationId=op;commit.catalogRevision=c.Revision();commit.catalogHash=c.ContentHash();commit.kind=ItemOperationKind::Service;commit.owners={fence};commit.outcomeCode=out.success ? 0x2521 : 0x2522;
@@ -51,6 +54,8 @@ std::expected<void,ResourceError> ValidateGatheringSites(const ItemCatalog& c,st
   if(!s.id || !ids.insert(s.id).second || !s.map || (!s.race && s.kind!=ToolKind::Rod) || !matches.emplace(s.map,s.race,s.kind,s.pool).second || s.name.empty() || s.name.size()>128 || std::ranges::any_of(s.name,[](unsigned char ch){return ch<32 || ch==127;}) ||
    s.kind<ToolKind::Pick || s.kind>ToolKind::Shears || (s.kind==ToolKind::Rod ? s.pool!=FishingPool::First && s.pool!=FishingPool::Second : s.pool!=FishingPool::None) ||
    !s.range || s.range>1000 || s.durationMs<(!s.race ? 5000u : 1000u) || s.durationMs>120000 || s.minimumPower>INT32_MAX || !s.powerStep || s.powerStep>INT32_MAX || s.baseChance>10000 || s.powerChance>10000 || s.baitChance>10000 || (s.kind!=ToolKind::Rod && s.baitChance) || s.rewards.empty() || s.rewards.size()>32)return std::unexpected(E::Invalid);
+  if(s.mining && (s.kind!=ToolKind::Pick || !s.mining->missionSubject || s.rewards.size()!=1 || s.rewards.front().count!=25))
+   return std::unexpected(E::Invalid);
   std::uint64_t total=0;std::set<ItemKey> rewards;
   for(const auto& r:s.rewards)
   {const auto* entry=c.Find(r.key);if(!entry || entry->base.retired || !SupportsPersistentGrant(c,*entry) || !r.count || r.count>10000 || !r.weight || !rewards.insert(r.key).second)return std::unexpected(E::Invalid);total+=r.weight;}
@@ -66,7 +71,9 @@ std::expected<std::uint16_t,ResourceError> CheckResourceGathering(const ItemCata
  const auto* tool=std::get_if<ItemToolRow>(&c.Find(i->key)->category);if(!tool || !i->tool || tool->kind!=site.kind || (!tool->allWaterPools && tool->fishingPool!=site.pool))return std::unexpected(E::WrongTool);
  const auto& level=c.FindToolProfile(tool->profile)->levels[i->refinementLevel];if(level.power<site.minimumPower)return std::unexpected(E::WrongTool);
  if(tool->kind==ToolKind::Rod && !i->tool->baitPower)return std::unexpected(E::NoBait);
- return static_cast<std::uint16_t>(std::min<std::uint64_t>(10000,std::uint64_t{site.baseChance}+level.gatherBonusBp+std::uint64_t{level.power/site.powerStep}*site.powerChance+std::uint64_t{i->tool->baitPower}*site.baitChance));
+ const unsigned skill=site.mining ? std::min<unsigned>(r.miningSkill,40) : 0;
+ const unsigned miningBonus=skill==40 ? 1100 : skill ? (1+(skill-1)/4)*100 : 0;
+ return static_cast<std::uint16_t>(std::min<std::uint64_t>(10000,std::uint64_t{site.baseChance}+level.gatherBonusBp+miningBonus+std::uint64_t{level.power/site.powerStep}*site.powerChance+std::uint64_t{i->tool->baitPower}*site.baitChance));
 }
 const GatheringReward* SelectGatheringReward(const GatheringSite& site,std::uint32_t roll)
 {for(const auto& reward:site.rewards){if(roll<reward.weight)return &reward;roll-=reward.weight;}return nullptr;}
@@ -81,15 +88,25 @@ std::expected<ResourcePlan,ResourceError> MakeResourceGatheringCommit(const Item
  const auto probeRoll=training && level.practiceNumerator<level.practiceDenominator ? 1u : 0u;
  if(r.selectedRewardRoll && (site.kind!=ToolKind::Rod || !SelectGatheringReward(site,*r.selectedRewardRoll)))return std::unexpected(E::InvalidDecision);
  if(r.eligible)for(const auto& reward:site.rewards)if(auto probe=Build(c,site,op,fence,layouts,items,r,&reward,ids,probeRoll);!probe)return std::unexpected(probe.error());
- if(auto probe=Build(c,site,op,fence,layouts,items,r,nullptr,ids,0);!probe)return std::unexpected(probe.error());
+ if(auto probe=Build(c,site,op,fence,layouts,items,r,nullptr,ids,site.mining && r.eligible ? probeRoll : 0);!probe)return std::unexpected(probe.error());
  bool bad=false;std::vector<std::pair<std::uint32_t,std::uint32_t>> decisions;const auto roll=[&](std::uint32_t n){if(!draw || !n){bad=true;return 0u;}auto v=draw(n);if(v>=n){bad=true;return 0u;}decisions.emplace_back(n,v);return v;};
  const bool success=r.eligible && (*chance==10000 || (*chance && roll(10000)<*chance));const GatheringReward* reward=nullptr;std::uint32_t practice=0;
  if(success)
  {
   std::uint32_t total=0;for(const auto& reward:site.rewards)total+=reward.weight;const auto selected=r.selectedRewardRoll ? *r.selectedRewardRoll : site.rewards.size()==1 ? 0u : roll(total);
   if(r.selectedRewardRoll)decisions.emplace_back(total,selected);reward=SelectGatheringReward(site,selected);
-  if(training && level.practiceNumerator<level.practiceDenominator)practice=roll(level.practiceDenominator)+1;
  }
+ std::optional<GatheringReward> ore;
+ if(site.mining && reward)
+ {
+  // In the original table the first two bands exhaust the 100-point roll.
+  const bool common=roll(100)<70;
+  ore=*reward;
+  ore->count=10+roll(common ? 11 : 16);
+  reward=&*ore;
+ }
+ if((reward || (site.mining && r.eligible)) && training && level.practiceNumerator<level.practiceDenominator)
+  practice=roll(level.practiceDenominator)+1;
  if(bad)return std::unexpected(E::InvalidDecision);auto result=Build(c,site,op,fence,layouts,items,r,reward,ids,practice);if(!result)return result;
  auto& saved=result->commit.result;saved.insert(saved.end(),{'R','N','G',1,static_cast<std::uint8_t>(decisions.size())});
  for(auto [bound,value]:decisions)for(auto n:{bound,value})for(unsigned i=0;i<4;++i)saved.push_back(static_cast<std::uint8_t>(n>>(i*8)));
@@ -101,9 +118,9 @@ std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeResourceGath
  std::vector<ItemGrant> extra;if(v.site)for(const auto& r:v.site->rewards)extra.push_back({r.key,0,1});auto metadata=EncodeTypedItemDetails(c,v.tool ? std::span(v.tool,1) : std::span<const PersistentItem>{},false,extra);if(!metadata)return std::unexpected(metadata.error());
  std::vector<std::byte> b;const auto put=[&](std::uint64_t n,unsigned bytes){for(unsigned i=0;i<bytes;++i)b.push_back(std::byte((n>>(8*i))&255));};const auto key=[&](ItemKey k){put(static_cast<unsigned>(k.Category()),2);put(k.LocalId(),4);};
  if(v.predictedReward && (!v.fishing || !v.site || v.status!=ResourceStatus::Running || std::ranges::none_of(v.site->rewards,[&](const auto& r){return r.key==*v.predictedReward;})))return std::unexpected(W::BadValue);
- put(254,1);put(0,4);put(v.predictedReward ? 6 : v.fishing ? 4 : 3,1);put(static_cast<unsigned>(v.status),1);put(v.error,1);put(v.nonce,8);put(v.tool ? v.tool->id.Value() : 0,8);put(v.tool ? v.tool->revision : 0,8);
+ put(254,1);put(0,4);put(v.predictedReward ? 6 : v.fishing ? 4 : v.site && v.site->mining ? 7 : 3,1);put(static_cast<unsigned>(v.status),1);put(v.error,1);put(v.nonce,8);put(v.tool ? v.tool->id.Value() : 0,8);put(v.tool ? v.tool->revision : 0,8);
  if(v.tool)key(v.tool->key);else put(0,6);put(v.tool ? v.tool->refinementLevel : 0,2);put(v.tool && v.tool->tool ? v.tool->tool->trainingPoints : 0,4);put(v.tool && v.tool->tool ? v.tool->tool->baitPower : 0,4);
- put(v.site ? v.site->id : 0,4);put(v.target,4);put(v.site ? static_cast<unsigned>(v.site->kind) : 0,1);put(v.site ? v.site->durationMs : 0,4);put(v.remainingMs,4);put(v.chance,2);
+ put(v.site ? v.site->id : 0,4);put(v.target,4);put(v.site ? static_cast<unsigned>(v.site->kind) : 0,1);put(v.durationMs ? v.durationMs : v.site ? v.site->durationMs : 0,4);put(v.remainingMs,4);put(v.chance,2);
  if(v.fishing){const auto& f=*v.fishing;put(f.state.seed,4);put(f.elapsedMs,4);put(f.state.need,1);put(f.state.hits,1);put(f.state.misses,1);put(f.state.sequence,4);put(static_cast<unsigned>(f.state.input),1);put(static_cast<std::uint32_t>(f.castX),4);put(static_cast<std::uint32_t>(f.castY),4);}
  if(v.predictedReward)key(*v.predictedReward);
  const std::string name=v.site ? v.site->name : "";put(name.size(),2);for(unsigned char ch:name)put(ch,1);
