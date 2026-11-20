@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "../item/TypedDungeonEntry.hpp"
 #include "../item/TypedDungeonActions.hpp"
+#include "../item/TypedDrops.hpp"
+#include "../item/TypedLoot.hpp"
 #include "../mission_pass/MissionPassEvents.hpp"
 #include "../ecs/systems/InventorySystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
@@ -24,7 +26,6 @@
 #include "sectree_manager.h"
 #include "dungeon.h"
 #include "item.h"
-#include "item_manager.h"
 #include "questmanager.h"
 #include "event.h"
 #include "../ecs/systems/ItemSystem.hpp"
@@ -297,24 +298,21 @@ namespace
         return ItemSystem::ConsumeOwnedItemCosts(owner, std::span(&cost, 1));
     }
 
-    void DropItemOnGround(entt::entity victimEntity, entt::entity owner, uint32_t vnum, uint32_t count)
+    void DropProgressionItem(entt::entity victim, entt::entity owner, auriga::item::DungeonUseRole role)
     {
-        if (!ecs::PlayerRuntime::IsValid(victimEntity))
+        const auto key = FindTypedDungeonUseKey(role);
+        if (!key)
+        {
+            LOG_ERROR("Bloody Cathedral: missing typed progression item for role {}", static_cast<unsigned>(role));
             return;
+        }
 
-        const entt::entity item = ITEM_MANAGER::instance().CreateItem(vnum, count);
-        if (!ItemSystem::IsValidItem(item))
-            return;
-
-        PIXEL_POSITION pos;
-        pos.x = ecs::PlayerRuntime::GetX(victimEntity) + number(-200, 200);
-        pos.y = ecs::PlayerRuntime::GetY(victimEntity) + number(-200, 200);
-        pos.z = ecs::PlayerRuntime::GetZ(victimEntity);
-
-        ItemSystem::PlaceItemOnGround(item, ecs::PlayerRuntime::GetMapIndex(victimEntity), pos);
-
-        if (owner != entt::null)
-            ItemSystem::SetGroundOwnership(item, owner, 60 * 3);
+        const auriga::item::ItemGrant grant{*key, 0, 1};
+        if (!DropTypedLoot(grant, ecs::PlayerRuntime::GetMapIndex(victim),
+                ecs::PlayerRuntime::GetX(victim) + number(-200, 200),
+                ecs::PlayerRuntime::GetY(victim) + number(-200, 200),
+                ecs::PlayerRuntime::GetZ(victim), owner, 180000))
+            QueueTypedItemGrant(owner, grant);
     }
 
     bool IsEntryMapForEmpire(entt::entity ch)
@@ -943,13 +941,13 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
         if (bossCount <= 2)
         {
             DungeonSystem::SetFlag(d, kFlagCanDestroyStatue, 1);
-            DropItemOnGround(victim, killer, kStatueItemVnum, 1);
+            DropProgressionItem(victim, killer, auriga::item::DungeonUseRole::CathedralCross);
             NoticeMap(idx, "<Bloody cathedral> Use the dropped item on an Angel Statue.");
         }
         else
         {
             DungeonSystem::SetFlag(d, kFlagCanActivateSeal, 1);
-            DropItemOnGround(victim, killer, kActivateItemVnum, 1);
+            DropProgressionItem(victim, killer, auriga::item::DungeonUseRole::CathedralSeal);
             NoticeMap(idx, "<Bloody cathedral> Use the dropped item on the next seal.");
         }
         return;
@@ -994,7 +992,7 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
             else
             {
                 DungeonSystem::SetFlag(d, kFlagCanActivateSeal, 1);
-                DropItemOnGround(victim, killer, kActivateItemVnum, 1);
+                DropProgressionItem(victim, killer, auriga::item::DungeonUseRole::CathedralSeal);
                 NoticeMap(idx, "<Bloody cathedral> Use the dropped item on the next seal.");
             }
         }
@@ -1006,7 +1004,7 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
     {
         DungeonSystem::SetFlag(d, kFlagCanKillSecondBoss, 0);
         DungeonSystem::SetFlag(d, kFlagCanFillCalyx, 1);
-        DropItemOnGround(victim, killer, kSecondFloorItem, 1);
+        DropProgressionItem(victim, killer, auriga::item::DungeonUseRole::CathedralBlood);
         NoticeMap(idx, "<Bloody cathedral> You got the required item. Fill a calyx now.");
         return;
     }
@@ -1019,7 +1017,7 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
         {
             DungeonSystem::SetFlag(d, kFlagCanDestroySecondFloorStone, 0);
             DungeonSystem::SetFlag(d, kFlagCanFillCalyx, 1);
-            DropItemOnGround(victim, killer, kSecondFloorItem, 1);
+            DropProgressionItem(victim, killer, auriga::item::DungeonUseRole::CathedralBlood);
             NoticeMap(idx, "<Bloody cathedral> You may fill another calyx now.");
             return;
         }
@@ -1032,7 +1030,7 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
                 DungeonSystem::SetFlag(d, kFlagCanDestroySecondFloorStone, 0);
                 DungeonSystem::SetFlag(d, kFlagCanFillCalyx, 1);
                 DungeonSystem::ClearRegen(d);
-                DropItemOnGround(victim, killer, kSecondFloorItem, 1);
+                DropProgressionItem(victim, killer, auriga::item::DungeonUseRole::CathedralBlood);
                 NoticeMap(idx, "<Bloody cathedral> You destroyed all required stones. Fill another calyx.");
             }
             return;
@@ -1051,7 +1049,7 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
             DungeonSystem::SetFlag(d, kFlagCanFillCalyx, 1);
             DungeonSystem::ClearRegen(d);
             DungeonSystem::KillAllMonsters(d);
-            DropItemOnGround(victim, killer, kSecondFloorItem, 1);
+            DropProgressionItem(victim, killer, auriga::item::DungeonUseRole::CathedralBlood);
             NoticeMap(idx, "<Bloody cathedral> You killed all monsters. Fill another calyx.");
         }
         return;
@@ -1111,7 +1109,10 @@ DungeonSystem::SetFlag(d, kFlagCanDestroyStatue, 0);
         else
         {
             DungeonSystem::SetFlag(d, kFlagCanActivateSeal, 1);
-            ItemSystem::AutoGiveItemEcs(from, kActivateItemVnum, 1);
+            if (const auto key = FindTypedDungeonUseKey(R::CathedralSeal))
+                QueueTypedItemGrant(from, {*key, 0, 1});
+            else
+                LOG_ERROR("Bloody Cathedral: missing typed Vampire Amulet");
             NoticeMap(idx, "<Bloody cathedral> Use the item on the first seal.");
         }
 }};}

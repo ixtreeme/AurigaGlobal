@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "../item/TypedDungeonEntry.hpp"
 #include "../item/TypedDungeonActions.hpp"
+#include "../item/TypedDrops.hpp"
 #include "../mission_pass/MissionPassEvents.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
@@ -1459,7 +1460,13 @@ void CVikingDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 
     if (floor == 1 && vnum == kFloor1LowBossVnum)
     {
-        ItemSystem::AutoGiveItemEcs(killer, kFloor1ItemVnum, 1);
+        const auto key = FindTypedDungeonUseKey(auriga::item::DungeonUseRole::VikingFire);
+        if (!key)
+        {
+            LOG_ERROR("Viking dungeon: missing typed Frost Fire");
+            return;
+        }
+        QueueTypedItemGrant(killer, {*key, 0, 1});
         NoticeMap(idx, "<Frostbane Fortress> %s received the required item. Use it on the compass.", ecs::PlayerRuntime::GetName(killer).data());
         return;
     }
@@ -1510,7 +1517,13 @@ void CVikingDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
         {
             DungeonSystem::SetFlag(d, kFlagCanKillFloor3Boss, 0);
             DungeonSystem::SetFlag(d, kFlagCanUseRune, 1);
-            ItemSystem::AutoGiveItemEcs(killer, kFloor3ItemVnum, 1);
+            const auto key = FindTypedDungeonUseKey(auriga::item::DungeonUseRole::VikingRune);
+            if (!key)
+            {
+                LOG_ERROR("Viking dungeon: missing typed Frostbite Runestone");
+                return;
+            }
+            QueueTypedItemGrant(killer, {*key, 0, 1});
             NoticeMap(idx, "<Frostbane Fortress> %s received the rune item. Use it on the memorial.", ecs::PlayerRuntime::GetName(killer).data());
         }
         return;

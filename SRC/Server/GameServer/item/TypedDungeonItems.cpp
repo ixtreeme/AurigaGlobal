@@ -62,6 +62,19 @@ bool TryUseTypedDungeonKey(entt::entity e,const item::PersistentItem& source,con
  else if(role>=item::DungeonUseRole::CathedralCross)CHalloween2022Dungeon::instance().OnUseTypedItem(e,source,catalog);
  else CLostCastleDungeon::instance().OnUseTypedItem(e,source,catalog);return true;
 }
+std::optional<item::ItemKey> FindTypedDungeonUseKey(item::DungeonUseRole role)
+{
+    const auto catalog = item::runtime::CurrentCatalog();
+    if (!catalog)
+        return {};
+    const auto binding = std::ranges::find(item::DungeonUseBindings, role, &item::DungeonUseBinding::role);
+    if (binding == item::DungeonUseBindings.end())
+        return {};
+    const auto key = item::DungeonItemKey(*catalog, binding->code);
+    const auto* definition = key ? catalog->Find(*key) : nullptr;
+    return definition && !definition->base.retired ? key : std::nullopt;
+}
+
 void QueueTypedDungeonCleanup(entt::entity e,std::string_view code,std::uint32_t maximum){if(!maximum || !g_registry.valid(e) || !g_registry.all_of<ecs::TypedItems>(e))return;auto& q=g_registry.get_or_emplace<PendingCleanup>(e).entries;if(q.size()<16)q.push_back({std::string(code),maximum});Pump(e);}
 void TickTypedDungeonCleanup(){std::vector<entt::entity> owners;for(auto e:g_registry.view<PendingCleanup>())owners.push_back(e);for(auto e:owners)Pump(e);}
 
