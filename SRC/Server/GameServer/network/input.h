@@ -168,9 +168,6 @@ class CInputMain : public CInputProcessor
 		void		Hack(entt::entity character, const char * c_pData);
 		int			MyShop(entt::entity character, const char * c_pData, size_t uiBytes);
 
-#ifdef ENABLE_CUBE_RENEWAL_WORLDARD
-		void 		CubeRenewalSend(entt::entity character, const char* data);
-#endif
 
 
 		void		Refine(entt::entity character, const char* c_pData);

@@ -7,7 +7,6 @@
 #include <common/tables.h>
 
 #include "../../core/typedef.h"
-#include "../../item/cuberenewal.h"
 #include "../../item/attr_transfer.h"
 #include "../../world/event.h"
 #include "item_components.hpp"
@@ -50,7 +49,7 @@ struct ExtraInventoryRuntimeComponent {
 #endif
 
 struct CubeWindowComponent {
-    std::array<entt::entity, CUBE_MAX_NUM> items;
+    std::array<entt::entity, 24> items;
     entt::entity npc { entt::null };
 
     CubeWindowComponent() { items.fill(entt::null); }

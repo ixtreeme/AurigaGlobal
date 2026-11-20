@@ -496,7 +496,6 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
 #ifdef ENABLE_EXTRA_INVENTORY
     reg.emplace_or_replace<ecs::ExtraInventoryRuntimeComponent>(entity, ecs::ExtraInventoryRuntimeComponent {});
 #endif
-    reg.emplace_or_replace<ecs::CubeWindowComponent>(entity, ecs::CubeWindowComponent {});
 #ifdef __ATTR_TRANSFER_SYSTEM__
     reg.emplace_or_replace<ecs::AttrTransferWindowComponent>(entity, ecs::AttrTransferWindowComponent {});
 #endif

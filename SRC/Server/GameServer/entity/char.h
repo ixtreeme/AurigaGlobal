@@ -15,11 +15,6 @@
 #include "constants.h"
 #include "affect.h"
 #include "affect_flag.h"
-#ifndef ENABLE_CUBE_RENEWAL_WORLDARD
-#include "cube.h"
-#else
-#include "cuberenewal.h"
-#endif
 #include "mining.h"
 #include "../ecs/VIDRegistry.hpp"
 #include "../ecs/systems/AffectSystem.hpp"

@@ -611,11 +611,6 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 			MapTeleporter(character, (TPacketCGMapTeleporter*) c_pData);
 			break;
 #endif
-#ifdef ENABLE_CUBE_RENEWAL_WORLDARD
-		case HEADER_CG_CUBE_RENEWAL:
-			CubeRenewalSend(character, c_pData);
-			break;
-#endif
 #ifdef ENABLE_NEW_FISHING_SYSTEM
 		case HEADER_CG_FISHING_NEW:
 			{

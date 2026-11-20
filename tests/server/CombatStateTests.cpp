@@ -433,7 +433,7 @@ CSkillProto * CSkillManager::Get(unsigned int) { UnexpectedService(__func__); }
 bool CGuild::UnderWar(unsigned int) { UnexpectedService(__func__); }
 unsigned int CGuild::UnderAnyWar(unsigned char) { UnexpectedService(__func__); }
 void BroadcastNotice(char const *,bool) { UnexpectedService(__func__); }
-void Cube_close(entt::entity) { UnexpectedService(__func__); }
+void CloseTypedCraft(entt::entity) { UnexpectedService(__func__); }
 bool AttrTransfer_is_open(entt::entity) { UnexpectedService(__func__); }
 void AttrTransfer_close(entt::entity) { UnexpectedService(__func__); }
 unsigned char ecs::PlayerRuntime::GetGMLevel(entt::entity) { UnexpectedService(__func__); }
@@ -447,7 +447,6 @@ bool MountSystem::StopRiding(entt::entity) { UnexpectedService(__func__); }
 uint32_t MountSystem::GetMountVnum(entt::entity) { UnexpectedService(__func__); }
 void MountSystem::SetMountVnum(entt::entity,uint32_t) { UnexpectedService(__func__); }
 bool ecs::SessionSystem::IsCubeOpen(entt::entity) { UnexpectedService(__func__); }
-void ecs::SessionSystem::SetCubeNPC(entt::entity,entt::entity) { UnexpectedService(__func__); }
 uint32_t ecs::PlayerRuntime::GetExp(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).exp; }
 void ecs::PlayerRuntime::SetExp(entt::entity e,uint32_t value) { AssertActor(e);g_registry.get<BattleFixture>(e).exp=value; }
 void AffectSystem::ClearAffect(entt::entity,bool) { UnexpectedService(__func__); }

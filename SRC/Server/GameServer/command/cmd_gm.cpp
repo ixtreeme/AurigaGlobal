@@ -2229,7 +2229,7 @@ ACMD(do_reload)
 				break;
 				//END_RELOAD_ADMIN
 			case 'c':	// cube
-				Cube_init ();
+				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Crafting recipes are loaded at server startup.");
 				break;
 		}
 	}

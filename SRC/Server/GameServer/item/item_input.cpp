@@ -26,7 +26,6 @@
 #include "item.h"
 #include "safebox.h"
 #include "refine.h"
-#include "cuberenewal.h"
 #include "unique_item.h"
 #include "belt_inventory_helper.h"
 #include "../ecs/components/dirty_components.hpp"
@@ -360,49 +359,6 @@ void CInputMain::Acce(entt::entity character, const char* c_pData)
 }
 #endif
 
-#ifdef ENABLE_CUBE_RENEWAL_WORLDARD
-void CInputMain::CubeRenewalSend(entt::entity character, const char* data)
-{
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate CubeRenewalSend handler ECS
-// DUAL-PATH: legacy only during migration window
-	struct packet_send_cube_renewal * pinfo = (struct packet_send_cube_renewal *) data;
-	switch (pinfo->subheader)
-	{
-		case CUBE_RENEWAL_SUB_HEADER_MAKE_ITEM:
-		{
-
-			if (pinfo->index_item > static_cast<uint32_t>(INT_MAX) ||
-				pinfo->count_item == 0 ||
-				pinfo->count_item > static_cast<uint32_t>(g_bItemCountLimit))
-			{
-				return;
-			}
-
-			int index_item_improve = -1;
-			if (pinfo->index_item_improve != UINT32_MAX)
-			{
-				if (pinfo->index_item_improve >= INVENTORY_MAX_NUM)
-					return;
-				index_item_improve = static_cast<int>(pinfo->index_item_improve);
-			}
-
-			Cube_Make(
-				character,
-				static_cast<int>(pinfo->index_item),
-				static_cast<int>(pinfo->count_item),
-				index_item_improve);
-		}
-		break;
-
-		case CUBE_RENEWAL_SUB_HEADER_CLOSE:
-		{
-			Cube_close(character);
-		}
-		break;
-	}
-}
-#endif
 
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
 void CInputMain::WheelDestiny(entt::entity character, const char* data)

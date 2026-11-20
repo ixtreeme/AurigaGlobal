@@ -634,14 +634,6 @@ bool IsCubeOpen(entt::entity character)
     return cube && g_registry.valid(cube->npc);
 }
 
-void SetCubeNPC(entt::entity character, entt::entity npc)
-{
-    if (!g_registry.valid(character))
-        return;
-    g_registry.get_or_emplace<ecs::CubeWindowComponent>(character).npc =
-        g_registry.valid(npc) ? npc : entt::null;
-}
-
 int GetSafeboxSize(entt::entity character)
 {
     if (character == entt::null || !g_registry.valid(character))

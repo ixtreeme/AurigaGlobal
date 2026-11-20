@@ -514,7 +514,6 @@ int main(int argc, char **argv)
 	CGuildManager::instance().Initialize();
 	fishing::Initialize();
 	OXEvent_manager.Initialize();
-	Cube_init();
 	Blend_Item_init();
 
 	// Phase 15E-final.LPENTITY.4-architect.D.3: connect the

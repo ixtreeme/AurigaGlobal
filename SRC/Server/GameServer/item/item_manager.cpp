@@ -36,11 +36,6 @@
 #include "../ecs/ItemRegistry.hpp"
 
 #include <common/VnumHelper.h>
-#ifndef ENABLE_CUBE_RENEWAL_WORLDARD
-#include "cube.h"
-#else
-#include "cuberenewal.h"
-#endif
 #ifdef ENABLE_STOLE_COSTUME
 #include <common/stole_length.h>
 #endif

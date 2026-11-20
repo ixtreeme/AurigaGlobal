@@ -1,4 +1,5 @@
 #include "../item/TypedBooks.hpp"
+#include "../item/TypedCraft.hpp"
 #include "../item/ItemCatalogRuntime.hpp"
 #include "../item/ItemStore.hpp"
 #include "../item/TypedQuestItems.hpp"
@@ -2682,30 +2683,16 @@ ACMD(do_stonecraft)
 #endif
 
 
-#ifdef ENABLE_CUBE_RENEWAL_WORLDARD
 ACMD(do_cube)
 {
-	const char *line;
-	char arg1[256], arg2[256], arg3[256];
-	line = two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
-	one_argument(line, arg3, sizeof(arg3));
+    char action[256];
+    one_argument(argument, action, sizeof(action));
+    if (LOWER(action[0]) != 'o')
+        return;
 
-	if (0 == arg1[0])
-	{
-		return;
-	}
-
-	switch (LOWER(arg1[0]))
-	{
-		case 'o':	// open
-			Cube_open(character);
-			break;
-
-		default:
-			return;
-	}
+    if (!TryOpenTypedCraft(character, ecs::PlayerRuntime::GetQuestNPC(character)))
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Talk to a workshop NPC to open crafting.");
 }
-#endif
 
 
 void open_in_game_mall(entt::entity character)

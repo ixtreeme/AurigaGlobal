@@ -1,4 +1,5 @@
 #include "../../item/TypedBooks.hpp"
+#include "../../item/TypedCraft.hpp"
 #include "../../mission/TypedMissionRuntime.hpp"
 #include "../../item/TypedSoulClock.hpp"
 #include "../../core/stdafx.h"
@@ -2693,7 +2694,7 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 #endif
 
 	if (ecs::SessionSystem::IsCubeOpen(victim))
-		ecs::SessionSystem::SetCubeNPC(victim, entt::null);
+		CloseTypedCraft(victim);
 
 #ifdef ENABLE_ACCE_SYSTEM
 	if (ecs::PlayerRuntime::IsPC(victim))
@@ -2957,7 +2958,7 @@ void DeathPenalty(entt::entity e, uint8_t bTown)
 
 	LOG_INFO("DEATH_PERNALY_CHECK({}) town({})", ecs::PlayerRuntime::GetName(e).data(), bTown);
 
-	Cube_close(e);
+	CloseTypedCraft(e);
 #ifdef __ATTR_TRANSFER_SYSTEM__
 	AttrTransfer_close(e);
 #endif

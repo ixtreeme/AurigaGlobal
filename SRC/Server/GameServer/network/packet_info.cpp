@@ -273,7 +273,7 @@ CPacketInfoCG::CPacketInfoCG()
 #endif
 
 #ifdef ENABLE_CUBE_RENEWAL_WORLDARD
-	Set(HEADER_CG_CUBE_RENEWAL, sizeof(TPacketCGCubeRenewalSend), "CubeRenewalSend", true);
+	Set(HEADER_CG_CUBE_RENEWAL, sizeof(TPacketCGCubeRenewalSend), "RetiredCubeRenewal", true);
 #endif
 #ifdef ENABLE_WHISPER_ADMIN_SYSTEM
 	Set(HEADER_CG_WHISPER_ADMIN, sizeof(TPacketCGWhisperAdmin), "TPacketCGWhisperAdmin", true);

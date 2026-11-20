@@ -746,7 +746,6 @@ CMob const * CMobManager::Get(char const *,bool) { Unexpected(); }
 CMob const * ecs::PlayerRuntime::GetProto(entt::entity) { Unexpected(); }
 unsigned int CombatSystem::GetRealAlignment(entt::entity) { Unexpected(); }
 void CombatSystem::UpdateAlignment(entt::entity,int64_t) { Unexpected(); }
-void Cube_init(void) { Unexpected(); }
 bool InventorySystem::AddToCharacter(entt::entity,entt::entity,SItemPos,bool) { Unexpected(); }
 bool InventorySystem::EquipTo(entt::entity,entt::entity,unsigned char) { Unexpected(); }
 unsigned int ecs::PlayerRuntime::GetPlayerID(entt::entity e) { Check(IsPC(e), "invalid PID lookup"); return 7; }
