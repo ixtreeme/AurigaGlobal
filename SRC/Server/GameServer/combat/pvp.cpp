@@ -7,6 +7,7 @@
 #include "../ecs/systems/QuestSystem.hpp"
 #include "../ecs/systems/MountSystem.hpp"
 #include "../ecs/systems/NetworkSyncSystem.hpp"
+#include "../item/TypedEquipmentView.hpp"
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/systems/PointSystem.hpp"
@@ -681,7 +682,7 @@ void CPVPManager::Insert(entt::entity character, entt::entity victim)
 		ecs::ChatSystem::Send(victim, CHAT_TYPE_COMMAND, "%s", command.c_str());
 
 		if (PVP_BLOCK_VIEW_EQUIPMENT < 1)
-			NetworkSyncSystem::SendEquipmentToViewer(g_registry, character, victim);
+			SendTypedEquipmentView(character, victim, EquipmentViewContext::Duel);
 	}
 }
 #endif

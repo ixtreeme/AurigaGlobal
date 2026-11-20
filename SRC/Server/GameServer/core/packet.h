@@ -334,24 +334,6 @@ typedef struct SEquipmentItemSet
 	TPlayerItemAttribute aAttr[ITEM_ATTRIBUTE_MAX_NUM];
 } TEquipmentItemSet;
 
-typedef struct pakcet_view_equip
-{
-	uint8_t	header;
-	uint32_t	vid;
-	struct
-	{
-		uint32_t	vnum;
-		uint8_t	count;
-		int32_t	alSockets[ITEM_SOCKET_MAX_NUM];
-		TPlayerItemAttribute aAttr[ITEM_ATTRIBUTE_MAX_NUM];
-	}
-#ifdef EQUIP_ENABLE_VIEW_SASH
-	equips[23];
-#else
-	equips[16];	
-#endif
-} TPacketViewEquip;
-
 typedef struct
 {
 	uint32_t	dwID;

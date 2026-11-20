@@ -17,6 +17,7 @@
 #include "../ecs/systems/SessionSystem.hpp"
 #include "../ecs/components/social_components.hpp"
 #include "../ecs/systems/NetworkSyncSystem.hpp"
+#include "../item/TypedEquipmentView.hpp"
 #include "../ecs/AIHelpers.hpp"
 #include <openssl/evp.h>
 
@@ -1687,13 +1688,13 @@ ACMD(do_pvp_advanced)
 		ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "BINARY_Duel_GetInfo %d %s %s %d %d %d %lld %lld", m_Vid, m_Name, g->GetName(), m_Level, m_Race, m_PlayTime, static_cast<long long>(m_MaxHP), static_cast<long long>(m_MaxSP));
 
 		if (statusEq < 1)
-			NetworkSyncSystem::SendEquipmentToViewer(g_registry, victim, character);
+			SendTypedEquipmentView(victim, character, EquipmentViewContext::Duel);
 	}
 	else {
 		ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "BINARY_Duel_GetInfo %d %s %s %d %d %d %lld %lld", m_Vid, m_Name, m_GuildName, m_Level, m_Race, m_PlayTime, static_cast<long long>(m_MaxHP), static_cast<long long>(m_MaxSP));
 
 		if (statusEq < 1)
-			NetworkSyncSystem::SendEquipmentToViewer(g_registry, victim, character);
+			SendTypedEquipmentView(victim, character, EquipmentViewContext::Duel);
 	}
 }
 
@@ -2327,7 +2328,7 @@ ACMD(do_view_equip)
 		if (!ecs::PlayerRuntime::IsPC(tch))
 			return;
 
-		NetworkSyncSystem::SendEquipmentToViewer(g_registry, tch, character);
+		SendTypedEquipmentView(tch, character, EquipmentViewContext::GameMaster);
 	}
 }
 
