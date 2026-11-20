@@ -103,10 +103,12 @@ static std::expected<void, items::ItemMissionError> RequestTypedItemExchange(ent
 	std::vector<items::MissionItemAmount> costs, std::vector<items::MissionItemAmount> rewards,
 	std::uint64_t goldCost, std::function<void(bool)> done,
 	quest::TypedItemUseSource source, std::uint64_t goldReward, bool inQuest,
-	items::WalletCurrency currency = items::WalletCurrency::Gold)
+	items::WalletCurrency currency = items::WalletCurrency::Gold, bool includeSpecialInventory = false)
 {
 	using Error = items::ItemMissionError;
 	if (!g_registry.valid(character) || g_registry.all_of<ecs::TypedItemBusy>(character))
+	if (source.id && includeSpecialInventory)
+		return std::unexpected(Error::Invalid);
 		return std::unexpected(Error::Unavailable);
 
 	const auto catalog = items::runtime::CurrentCatalog();
@@ -161,7 +163,7 @@ static std::expected<void, items::ItemMissionError> RequestTypedItemExchange(ent
 	exchange.goldReward = goldReward;
 	const auto ids = exchange.rewards.empty() ? std::vector<items::ItemInstanceId>{}
 		: items::runtime::PeekInstanceIds(items::MaxItemCommitItems);
-	auto commit = inQuest
+	auto commit = inQuest && !includeSpecialInventory
 		? items::MakeItemMissionCommit(*catalog, exchange, proof, 0, fence, state.storages, state.items, state.wallets, ids, TypedItemEffectNow(), sourceId)
 		: items::MakeGameplayItemExchangeCommit(*catalog, exchange, proof, fence, state.storages, state.items, state.wallets, ids, TypedItemEffectNow(), currency);
 	if (!commit)
@@ -199,9 +201,11 @@ static std::expected<void, items::ItemMissionError> RequestTypedItemExchange(ent
 
 std::expected<void, items::ItemMissionError> RequestTypedQuestItemExchange(entt::entity character,
 	std::vector<items::MissionItemAmount> costs, std::vector<items::MissionItemAmount> rewards,
-	std::uint64_t goldCost, std::function<void(bool)> done, quest::TypedItemUseSource source, std::uint64_t goldReward)
+	std::uint64_t goldCost, std::function<void(bool)> done, quest::TypedItemUseSource source, std::uint64_t goldReward,
+	bool includeSpecialInventory)
 {
-	return RequestTypedItemExchange(character,std::move(costs),std::move(rewards),goldCost,std::move(done),source,goldReward,true);
+	return RequestTypedItemExchange(character,std::move(costs),std::move(rewards),goldCost,std::move(done),
+		source,goldReward,true,items::WalletCurrency::Gold,includeSpecialInventory);
 }
 
 std::expected<void, items::ItemMissionError> RequestTypedGameplayItemExchange(entt::entity character,

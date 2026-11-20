@@ -42,7 +42,7 @@ def ore_spawns(data, races):
 def prepare(data, packet, conversion, deferred):
     raw_ores = {
         int(race): int(raw)
-        for race, raw in re.findall(r'\{\s*((?:200[45]\d|3030[1-6]))\s*,\s*(506\d\d)\s*,\s*506\d\d\s*\}',
+        for race, raw in re.findall(r'\{\s*((?:200[45]\d|3030[1-6]))\s*,\s*(506\d\d)\s*\}',
                                     MINING_SOURCE.read_text(encoding='utf-8'))
     }
     if len(raw_ores) != 19 or len(set(raw_ores.values())) != len(raw_ores):

@@ -37,7 +37,6 @@
 #include "war_map.h"
 #include "start_position.h"
 #include "marriage.h"
-#include "mining.h"
 #include "p2p.h"
 #include "polymorph.h"
 #include "desc_client.h"
@@ -2166,73 +2165,6 @@ namespace quest
 		return 0;
 	}
 
-	ALUA(pc_diamond_refine)
-	{
-		if (!lua_isnumber(L, 1))
-		{
-			lua_pushboolean(L, 0);
-			return 1;
-		}
-
-		int cost = (int) lua_tonumber(L, 1);
-		int pct = (int)lua_tonumber(L, 2);
-
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		const entt::entity npcEntity = CQuestManager::instance().GetCurrentNPCEntity();
-		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
-
-		if (ItemSystem::IsValidItem(item))
-			lua_pushboolean(L, mining::OreRefine(
-				chEntity,
-				npcEntity,
-				item,
-				cost,
-				pct,
-				entt::null));
-		else
-			lua_pushboolean(L, 0);
-
-		return 1;
-	}
-
-	ALUA(pc_ore_refine)
-	{
-		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3) || !lua_isnumber(L, 4))
-		{
-			lua_pushboolean(L, 0);
-			return 1;
-		}
-
-		int cost = (int)lua_tonumber(L, 1);
-		int pct = (int)lua_tonumber(L, 2);
-		int inv_type = (int)lua_tonumber(L, 3);
-		int cell = (int)lua_tonumber(L, 4);
-
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		const entt::entity npcEntity = CQuestManager::instance().GetCurrentNPCEntity();
-		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
-		entt::entity metinstoneItem = entt::null;
-
-		if (inv_type == EXTRA_INVENTORY)
-			metinstoneItem = ItemSystem::GetExtraInventoryItem(chEntity, cell);
-		else
-			metinstoneItem = ItemSystem::GetInventoryItem(chEntity, cell);
-
-		if (ItemSystem::IsValidItem(item) && ItemSystem::IsValidItem(metinstoneItem))
-			lua_pushboolean(L, mining::OreRefine(
-				chEntity,
-				npcEntity,
-				item,
-				cost,
-				pct,
-				metinstoneItem));
-		else
-			lua_pushboolean(L, 0);
-
-		return 1;
-	}
-
-
 	ALUA(pc_clear_skill)
 	{
 		SkillSystem::ClearSkill(CQuestManager::instance().GetCurrentPCEntity());
@@ -4256,6 +4188,11 @@ teleport_area:
         }
     }
 
+    static bool IncludeSpecialInventory(lua_State* L)
+    {
+        return lua_isboolean(L, 4) && lua_toboolean(L, 4);
+    }
+
     ALUA(pc_typed_item_count)
     {
         const auto value = ReadQuestItem(L, 1, false);
@@ -4264,8 +4201,10 @@ teleport_area:
         if (!value || !typed || g_registry.all_of<ecs::TypedItemBusy>(entity))
             lua_pushnil(L);
         else
-            lua_pushinteger(L, item::CountMissionItems(typed->state.items, typed->state.fence.owner,
-                value->key, value->level));
+        {
+            const auto count = IncludeSpecialInventory(L) ? item::CountGameplayExchangeItems : item::CountMissionItems;
+            lua_pushinteger(L, count(typed->state.items, typed->state.fence.owner, value->key, value->level));
+        }
         return 1;
     }
 
@@ -4305,7 +4244,8 @@ teleport_area:
         const auto result = RequestTypedQuestItemExchange(entity, std::move(costs), std::move(rewards),
             static_cast<uint64_t>(goldCost),
             [pid, coroutine = L](bool ok) { CQuestManager::instance().ResumeTypedItems(pid, coroutine, ok); },
-            useSelectedItem ? state->typedItemUse : TypedItemUseSource{}, static_cast<uint64_t>(goldReward));
+            useSelectedItem ? state->typedItemUse : TypedItemUseSource{}, static_cast<uint64_t>(goldReward),
+            !useSelectedItem && IncludeSpecialInventory(L));
         if (!result)
         {
             switch (result.error())
@@ -4485,8 +4425,6 @@ teleport_area:
 			{ "is_gm",			pc_is_gm		},
 			{ "get_gm_level",		pc_get_gm_level		},
 			{ "mining",			pc_mining		},
-			{ "ore_refine",		pc_ore_refine		},
-			{ "diamond_refine",		pc_diamond_refine	},
 
 			// RESET_ONE_SKILL
 			{ "clear_one_skill",        pc_clear_one_skill      },

@@ -1,11 +1,9 @@
 #include "stdafx.h"
 #include "../mission_pass/MissionPassEvents.hpp"
-#include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/SkillSystem.hpp"
 #include "../ecs/systems/ActivitySystem.hpp"
-#include "../ecs/systems/SocialSystem.hpp"
 #include <Core/Logging.hpp>
 #include "mining.h"
 #include "char_interface.hpp"
@@ -29,37 +27,35 @@ namespace mining
 	{
 		MAX_ORE = 19,
 		MAX_FRACTION_COUNT = 9,
-		ORE_COUNT_FOR_REFINE = 100,
 	};
 
 	struct SInfo
 	{
 		uint32_t dwLoadVnum;
 		uint32_t dwRawOreVnum;
-		uint32_t dwRefineVnum;
 	};
 
 	SInfo info[MAX_ORE] =
 	{
-		{ 20047, 50601, 50621 },
-		{ 20048, 50602, 50622 },
-		{ 20049, 50603, 50623 },
-		{ 20050, 50604, 50624 },
-		{ 20051, 50605, 50625 },
-		{ 20052, 50606, 50626 },
-		{ 20053, 50607, 50627 },
-		{ 20054, 50608, 50628 },
-		{ 20055, 50609, 50629 },
-		{ 20056, 50610, 50630 },
-		{ 20057, 50611, 50631 },
-		{ 20058, 50612, 50632 },
-		{ 20059, 50613, 50633 },
-		{ 30301, 50614, 50634 },
-		{ 30302, 50615, 50635 },
-		{ 30303, 50616, 50636 },
-		{ 30304, 50617, 50637 },
-		{ 30305, 50618, 50638 },
-		{ 30306, 50619, 50639 },
+		{ 20047, 50601 },
+		{ 20048, 50602 },
+		{ 20049, 50603 },
+		{ 20050, 50604 },
+		{ 20051, 50605 },
+		{ 20052, 50606 },
+		{ 20053, 50607 },
+		{ 20054, 50608 },
+		{ 20055, 50609 },
+		{ 20056, 50610 },
+		{ 20057, 50611 },
+		{ 20058, 50612 },
+		{ 20059, 50613 },
+		{ 30301, 50614 },
+		{ 30302, 50615 },
+		{ 30303, 50616 },
+		{ 30304, 50617 },
+		{ 30305, 50618 },
+		{ 30306, 50619 },
 	};
 
 	int fraction_info[MAX_FRACTION_COUNT][3] =
@@ -102,16 +98,6 @@ namespace mining
 		{
 			if (info[i].dwLoadVnum == dwLoadVnum)
 				return info[i].dwRawOreVnum;
-		}
-		return 0;
-	}
-
-	uint32_t GetRefineFromRawOre(uint32_t dwRawOreVnum)
-	{
-		for (int i = 0; i < MAX_ORE; ++i)
-		{
-			if (info[i].dwRawOreVnum == dwRawOreVnum)
-				return info[i].dwRefineVnum;
 		}
 		return 0;
 	}
@@ -451,96 +437,6 @@ namespace mining
 		info->vid_load = ecs::PlayerRuntime::GetPacketVID(load);
 
 		return event_create(mining_event, info, PASSES_PER_SEC(2 * count));
-	}
-
-	int64_t ComputeOreRefineFee(entt::entity character, entt::entity npc, int64_t cost)
-	{
-		CGuild* refineGuild = ecs::SocialSystem::GetGuild(npc);
-		if (!refineGuild)
-			return cost;
-
-		if (refineGuild == ecs::SocialSystem::GetGuild(character))
-			return cost * 9 / 10;
-
-		if (ecs::PlayerRuntime::GetEmpire(npc) !=
-			ecs::PlayerRuntime::GetEmpire(character))
-			return cost * 3;
-
-		return cost;
-	}
-
-	void PayOreRefineFee(entt::entity character, entt::entity npc, int64_t total)
-	{
-		const int64_t guildFee = total / 10;
-		int64_t remaining = total;
-		CGuild* refineGuild = ecs::SocialSystem::GetGuild(npc);
-		if (refineGuild && refineGuild != ecs::SocialSystem::GetGuild(character))
-		{
-			ecs::SocialSystem::DepositGuildMoney(
-				character, *refineGuild, guildFee);
-			remaining -= guildFee;
-		}
-
-		ecs::PointSystem::Change(character, POINT_GOLD, -remaining);
-	}
-
-	bool OreRefine(entt::entity character, entt::entity npcEntity,
-		entt::entity itemEntity, int cost, int pct,
-		entt::entity metinstoneItemEntity)
-	{
-		if (character == entt::null || npcEntity == entt::null ||
-			!g_registry.valid(character) || !g_registry.valid(npcEntity))
-			return false;
-
-		if (!ItemSystem::IsValidItem(itemEntity))
-			return false;
-
-		if (ItemSystem::GetItemOwnerEntity(itemEntity) != character)
-		{
-			LOG_ERROR("wrong owner");
-			return false;
-		}
-
-		if (metinstoneItemEntity != entt::null &&
-			(!ItemSystem::IsValidItem(metinstoneItemEntity) ||
-			 ItemSystem::GetItemOwnerEntity(metinstoneItemEntity) != character))
-		{
-			LOG_ERROR("wrong metinstone owner");
-			return false;
-		}
-
-		if (ItemSystem::GetItemCount(itemEntity) < ORE_COUNT_FOR_REFINE)
-		{
-			LOG_ERROR("not enough count");
-			return false;
-		}
-
-		uint32_t dwRefinedVnum = GetRefineFromRawOre(ItemSystem::GetItemVnum(itemEntity));
-
-		if (dwRefinedVnum == 0)
-			return false;
-
-		const int64_t iCost = ComputeOreRefineFee(character, npcEntity, cost);
-
-		if (ecs::PointSystem::GetGold(character) < iCost)
-			return false;
-
-		if (!ItemSystem::ConsumeItemEcs(itemEntity, ORE_COUNT_FOR_REFINE))
-			return false;
-
-		PayOreRefineFee(character, npcEntity, iCost);
-
-		if (metinstoneItemEntity != entt::null &&
-			!ItemSystem::DestroyItemEntityEcs(metinstoneItemEntity, "REMOVE (MELT)"))
-			return false;
-
-		if (number(1, 100) <= pct)
-		{
-			ItemSystem::AutoGiveItemEcs(character, dwRefinedVnum, 1);
-			return true;
-		}
-
-		return false;
 	}
 
 	bool IsVeinOfOre (uint32_t vnum)

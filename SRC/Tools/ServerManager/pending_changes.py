@@ -172,9 +172,16 @@ class PendingChanges(QObject):
         previous=next((e for e in self.entries() if slot and e.get('slot')==slot),None)
         if previous and previous['state']!='staged':raise api.EditorError('Ennek a módosításnak a korábbi feltöltése bizonytalan. Előbb ellenőrizd a szerver állapotát.')
         if previous and kind=='file':
-            original=previous['body']['payload'];payload=dict(payload,expected_hash=original['expected_hash'],base_data=original.get('base_data',payload.get('base_data')))
-            rows=review.text_rows(Path(payload['relative']).name,base64.b64decode(payload['base_data']).decode(payload.get('encoding','utf-8')),
-                                  base64.b64decode(payload['data']).decode(payload.get('encoding','utf-8')),payload['relative'].endswith('.json')) if payload.get('base_data') else merged_rows(previous['body']['rows'],rows)
+            original=previous['body']['payload']
+            base_encoding=original.get('base_encoding') or payload.get('base_encoding') or original.get('encoding','utf-8')
+            payload=dict(payload,expected_hash=original['expected_hash'],
+                         base_data=original.get('base_data',payload.get('base_data')),base_encoding=base_encoding)
+            if payload.get('base_data'):
+                before=base64.b64decode(payload['base_data']).decode(base_encoding)
+                after=base64.b64decode(payload['data']).decode(payload.get('encoding','utf-8'))
+                rows=review.text_rows(Path(payload['relative']).name,before,after,payload['relative'].endswith('.json'))
+            else:
+                rows=merged_rows(previous['body']['rows'],rows)
         elif kind in ('ssh_profile','ssh_profile_delete'):
             old=previous['body']['payload'] if previous else payload
             original=old.get('previous',old.get('removed'));profile=payload.get('profile') or payload['removed']

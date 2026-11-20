@@ -7,8 +7,6 @@ namespace mining
 {
 	LPEVENT CreateMiningEvent(entt::entity character, entt::entity load, int count);
 	uint32_t GetRawOreFromLoad(uint32_t dwLoadVnum);
-	bool OreRefine(entt::entity character, entt::entity npc, entt::entity item,
-		int cost, int pct, entt::entity metinstone_item);
 	int GetFractionCount();
 
 	// REFINE_PICK
