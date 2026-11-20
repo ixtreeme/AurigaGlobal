@@ -2,6 +2,7 @@
 #include "TypedWikiSources.hpp"
 #include "ItemCatalogRuntime.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
+#include "../entity/char.h"
 #include "../network/desc.h"
 
 #include <Headers/Header_GC.h>
@@ -74,6 +75,102 @@ std::optional<std::uint16_t> FirstAvailableLevel(const items::ItemCatalog& catal
     }
     return {};
 }
+
+enum class PreviewKind : std::uint8_t { None, Creature, Weapon, Body, Hair, Back };
+constexpr std::size_t MaxPreviewAsset = 512;
+
+struct ItemPreview
+{
+    PreviewKind kind = PreviewKind::None;
+    std::uint32_t race = 0;
+    std::string_view asset;
+};
+
+std::uint32_t CompanionPreviewRace(const items::ItemCatalog& catalog, const items::ItemCatalogEntry& entry)
+{
+    using namespace items;
+    const CompanionForm* form = nullptr;
+    if (const auto* companion = std::get_if<ItemCompanionRow>(&entry.category))
+        form = catalog.FindCompanionForm(companion->form);
+    else if (const auto* costume = std::get_if<ItemCostumeRow>(&entry.category); costume && costume->companionForm)
+        form = catalog.FindCompanionForm(*costume->companionForm);
+    else if (const auto* hatch = catalog.FindPetHatchFor(entry.base.key))
+    {
+        const auto* target = catalog.Find(hatch->target);
+        if (target && FirstAvailableLevel(catalog, target->base))
+        {
+            if (const auto* hatched = std::get_if<ItemCompanionRow>(&target->category))
+                form = catalog.FindCompanionForm(hatched->form);
+        }
+    }
+    return form ? form->mobTemplateId : 0;
+}
+
+ItemPreview BrowsePreview(const items::ItemCatalog& catalog, const items::ItemCatalogEntry& entry)
+{
+    using namespace items;
+    if (const auto race = CompanionPreviewRace(catalog, entry); race >= MAIN_RACE_MAX_NUM)
+        return {PreviewKind::Creature, race, {}};
+
+    const auto* costume = std::get_if<ItemCostumeRow>(&entry.category);
+    const auto* armor = std::get_if<ItemArmorRow>(&entry.category);
+    const auto* regalia = std::get_if<ItemRegaliaRow>(&entry.category);
+    PreviewKind kind = PreviewKind::None;
+    if (costume)
+    {
+        switch (costume->kind)
+        {
+        case CostumeKind::Weapon: kind = PreviewKind::Weapon; break;
+        case CostumeKind::Body: kind = PreviewKind::Body; break;
+        case CostumeKind::Hair: kind = PreviewKind::Hair; break;
+        default: return {};
+        }
+    }
+    else if (std::holds_alternative<ItemWeaponRow>(entry.category) || std::holds_alternative<ItemToolRow>(entry.category))
+        kind = PreviewKind::Weapon;
+    else if (armor && armor->slot == EquipmentSlot::Body)
+        kind = PreviewKind::Body;
+    else if (regalia && (regalia->kind == RegaliaKind::Stole || regalia->kind == RegaliaKind::AbsorptionSash))
+        kind = PreviewKind::Back;
+    else
+        return {};
+
+    const auto* policy = catalog.FindUsePolicy(entry.base.usePolicy);
+    if (!policy) return {};
+    const auto* appearance = entry.base.appearanceProfile ? catalog.FindAppearance(*entry.base.appearanceProfile) : nullptr;
+    constexpr std::uint32_t wearerRaces[4][2] = {
+        {MAIN_RACE_WARRIOR_M, MAIN_RACE_WARRIOR_W},
+        {MAIN_RACE_ASSASSIN_M, MAIN_RACE_ASSASSIN_W},
+        {MAIN_RACE_SURA_M, MAIN_RACE_SURA_W},
+        {MAIN_RACE_SHAMAN_M, MAIN_RACE_SHAMAN_W}
+    };
+    for (std::uint8_t job = 0; job < 4; ++job)
+    {
+        if (!(policy->allowedClasses & (1u << job))) continue;
+        for (std::uint8_t sex = 0; sex < 2; ++sex)
+        {
+            if (!(policy->allowedSexes & (1u << sex))) continue;
+            std::string_view asset = appearance ? std::string_view{appearance->modelAsset} : std::string_view{};
+            if (costume)
+            {
+                const auto* visual = catalog.FindCostumeVisual(entry.base.key, job + 1, sex + 1);
+                if (!visual) continue;
+                asset = visual->modelAsset;
+            }
+            if (!asset.empty() && asset.size() <= MaxPreviewAsset)
+                return {kind, wearerRaces[job][sex], asset};
+        }
+    }
+    return {};
+}
+
+std::uint64_t ReadLittleEndian(const std::uint8_t* bytes, unsigned width)
+{
+    std::uint64_t value = 0;
+    for (unsigned i = 0; i < width; ++i)
+        value |= std::uint64_t{bytes[i]} << (8 * i);
+    return value;
+}
 }
 
 void HandleTypedWikiCatalog(entt::entity player, const char* data)
@@ -83,12 +180,7 @@ void HandleTypedWikiCatalog(entt::entity player, const char* data)
     if (!desc) return;
 
     const auto* request = reinterpret_cast<const std::uint8_t*>(data);
-    const auto read = [&](std::size_t offset, unsigned size) {
-        std::uint64_t value = 0;
-        for (unsigned i = 0; i < size; ++i)
-            value |= std::uint64_t{request[offset + i]} << (8 * i);
-        return value;
-    };
+    const auto read = [&](std::size_t offset, unsigned size) { return ReadLittleEndian(request + offset, size); };
     const auto id = read(2, 4);
     const auto prior = read(6, 8);
     const auto category = static_cast<std::uint16_t>(read(14, 2));
@@ -188,4 +280,42 @@ void HandleTypedWikiCatalog(entt::entity player, const char* data)
         desc->LargePacket(packet.data(), static_cast<int>(packet.size()));
     else
         desc->Packet(packet.data(), static_cast<int>(packet.size()));
+}
+
+void HandleTypedWikiPreview(entt::entity player, const char* data)
+{
+    if (!ecs::PlayerRuntime::IsPC(player)) return;
+    auto* desc = ecs::PlayerRuntime::GetDesc(player);
+    if (!desc) return;
+
+    const auto* request = reinterpret_cast<const std::uint8_t*>(data);
+    const auto id = ReadLittleEndian(request + 2, 4);
+    const auto category = static_cast<std::uint16_t>(ReadLittleEndian(request + 6, 2));
+    const auto local = static_cast<std::uint32_t>(ReadLittleEndian(request + 8, 4));
+    const auto key = items::ItemKey::Create(category, local);
+    if (request[1] != 1 || !id || !key) return;
+
+    const auto catalog = items::runtime::CurrentCatalog();
+    const auto* entry = catalog ? catalog->Find(*key) : nullptr;
+    const auto preview = entry && FirstAvailableLevel(*catalog, entry->base) ? BrowsePreview(*catalog, *entry) : ItemPreview{};
+
+    constexpr std::size_t headerSize = 23;
+    std::vector<std::uint8_t> packet;
+    packet.reserve(headerSize + preview.asset.size());
+    const auto put = [&](std::uint64_t value, unsigned width) {
+        for (unsigned i = 0; i < width; ++i)
+            packet.push_back(static_cast<std::uint8_t>(value >> (8 * i)));
+    };
+    put(HEADER_GC_TYPED_WIKI_PREVIEW, 1);
+    put(headerSize + preview.asset.size(), 4);
+    put(1, 1);
+    put(id, 4);
+    put(category, 2);
+    put(local, 4);
+    put(static_cast<std::uint8_t>(preview.kind), 1);
+    put(preview.race, 4);
+    put(preview.asset.size(), 2);
+    if (!preview.asset.empty())
+        packet.insert(packet.end(), preview.asset.begin(), preview.asset.end());
+    desc->Packet(packet.data(), static_cast<int>(packet.size()));
 }
