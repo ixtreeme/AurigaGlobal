@@ -4,7 +4,6 @@
 #include "../../entity/char.h"
 #include "../../core/config.h"
 #include "../../core/locale_service.h"
-#include "../../core/FileHandle.h"
 #include "../../core/JsonFile.h"
 #include "../../quest/questmanager.h"
 #include "../../item/ItemCatalogRuntime.hpp"
@@ -19,41 +18,17 @@
 
 #include <fmt/format.h>
 #include <nlohmann/json.hpp>
-#include <fstream>
 #include <random>
-#include <sstream>
 #include <string>
 #include <vector>
 
 namespace
 {
 
-std::string GayaStateFilePath(entt::entity pc)
-{
-	return fmt::format("{}/gaya/{}_gaya_system.txt", LocaleService_GetBasePath(), ecs::PlayerRuntime::GetName(pc));
-}
-
-struct GayaShopEntry
-{
-	int value_1 { 0 };
-	int value_2 { 0 };
-	int value_3 { 0 };
-	int value_4 { 0 };
-	int value_5 { 0 };
-	int value_6 { 0 };
-};
-
 struct GayaLoadEntry
 {
-	uint32_t items { 0 };
-	uint32_t gaya { 0 };
-	uint32_t count { 0 };
 	uint32_t glimmerstone { 0 };
-	uint32_t gaya_expansion { 0 };
-	uint32_t gaya_refresh { 0 };
 	uint32_t glimmerstone_count { 0 };
-	uint32_t gaya_expansion_count { 0 };
-	uint32_t gaya_refresh_count { 0 };
 	uint32_t grade_stone { 0 };
 	uint32_t give_gaya { 0 };
 	uint32_t prob_gaya { 0 };
@@ -62,11 +37,7 @@ struct GayaLoadEntry
 
 struct GayaRuntimeState
 {
-	std::vector<GayaShopEntry> infoItems;
-	std::vector<GayaShopEntry> infoSlots;
-	std::vector<GayaLoadEntry> loadItems;
 	GayaLoadEntry config;
-	LPEVENT updateEvent;
 };
 
 GayaRuntimeState* GetGayaRuntime(entt::entity e)
@@ -81,41 +52,6 @@ void MarkDirty(entt::entity e)
 {
 	if (e != entt::null && g_registry.valid(e))
 		g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-}
-
-EVENTINFO(gaya_market_event_info)
-{
-	uint32_t playerID { 0 };
-};
-
-EVENTFUNC(check_time_market_event)
-{
-	auto* info = dynamic_cast<gaya_market_event_info*>(event->info);
-	if (info == nullptr)
-	{
-		LOG_ERROR("check_time_market_event> <Factor> Null pointer");
-		return 0;
-	}
-
-	const entt::entity e = ecs::PlayerRuntime::FindByPlayerID(info->playerID);
-	if (e == entt::null || !g_registry.valid(e))
-		return 0;
-
-	if (ecs::PlayerRuntime::IsNPC(e))
-		return 0;
-	if (GayaSystem::GetState(e, "system_gaya.gaya_time_world_4") - init_gayaTime() <= 0)
-	{
-		GayaSystem::SetState(e, "system_gaya.gaya_time_world_4", init_gayaTime() + (60 * 60 * 5));
-		ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "GayaMarketTime %lld", static_cast<long long>(GayaSystem::GetState(e, "system_gaya.gaya_time_world_4") - init_gayaTime()));
-		GayaSystem::RefreshItemsMarket(e);
-		GayaSystem::InfoMarket(e);
-	}
-	else
-	{
-		ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "GayaMarketTime %lld", static_cast<long long>(GayaSystem::GetState(e, "system_gaya.gaya_time_world_4") - init_gayaTime()));
-	}
-
-	return PASSES_PER_SEC(2);
 }
 
 } // namespace
@@ -245,7 +181,6 @@ void Load(entt::entity pc)
 
 	char file_name[256 + 1];
 
-	state->loadItems.clear();
 	state->config = {};
 
 	snprintf(file_name, sizeof(file_name), "%s/gaya.json", LocaleService_GetBasePath().c_str());
@@ -258,228 +193,17 @@ void Load(entt::entity pc)
 		return;
 	}
 
-	if (doc.contains("items") && doc.at("items").is_array())
-	{
-		for (const auto& entry : doc.at("items"))
-		{
-			GayaLoadEntry gayaValues {};
-			gayaValues.items = entry.value("item", 0);
-			gayaValues.gaya = entry.value("gaya", 0);
-			gayaValues.count = entry.value("count", 0);
-			state->loadItems.push_back(gayaValues);
-		}
-	}
-
 	if (doc.contains("config") && doc.at("config").is_object())
 	{
 		const auto& config = doc.at("config");
 		state->config.glimmerstone = config.value("glimmerstone", 0);
-		state->config.gaya_expansion = config.value("gaya_expansion", 0);
-		state->config.gaya_refresh = config.value("gaya_refresh", 0);
 		state->config.glimmerstone_count = config.value("glimmerstone_count", 0);
 		state->config.grade_stone = config.value("grade_stone", 0);
 		state->config.give_gaya = config.value("give_gaya", 0);
 		state->config.prob_gaya = config.value("prob_gaya", 0);
 		state->config.cost_gaya_yang = config.value("cost_gaya_yang", 0);
-		state->config.gaya_expansion_count = config.value("gaya_expansion_count", 0);
-		state->config.gaya_refresh_count = config.value("gaya_refresh_count", 0);
 	}
 
-	MarkDirty(pc);
-}
-
-bool CheckItemsFull(entt::entity pc)
-{
-	if (pc == entt::null || !g_registry.valid(pc))
-		return false;
-
-	return auriga::FileExists(GayaStateFilePath(pc));
-}
-
-void ClearMarket(entt::entity pc)
-{
-	auto* state = GetGayaRuntime(pc);
-	if (!state)
-		return;
-
-	state->infoItems.clear();
-	state->infoSlots.clear();
-	MarkDirty(pc);
-}
-
-void InfoMarket(entt::entity pc)
-{
-	auto* state = GetGayaRuntime(pc);
-	if (!state)
-		return;
-
-	ClearMarket(pc);
-	UpdateItems0(pc);
-	ecs::ChatSystem::Send(pc, CHAT_TYPE_COMMAND, "GayaMarketClear");
-
-	for (int i = 0; i < static_cast<int>(state->infoItems.size()); ++i)
-	{
-		ecs::ChatSystem::Send(pc, CHAT_TYPE_COMMAND, "GayaMarketItems %d %d %d", state->infoItems[i].value_1, state->infoItems[i].value_2, state->infoItems[i].value_3);
-	}
-
-	if (state->infoSlots.empty())
-		return;
-
-	ecs::ChatSystem::Send(pc, CHAT_TYPE_COMMAND, "GayaMarketSlotsDesblock %d %d %d %d %d %d",
-		state->infoSlots[0].value_1, state->infoSlots[0].value_2, state->infoSlots[0].value_3,
-		state->infoSlots[0].value_4, state->infoSlots[0].value_5, state->infoSlots[0].value_6);
-}
-
-bool CheckSlot(entt::entity pc, int slot)
-{
-	auto* state = GetGayaRuntime(pc);
-	if (!state || state->infoSlots.empty())
-		return false;
-
-	if (slot == 3) { return state->infoSlots[0].value_1 != 0; }
-	else if (slot == 4) { return state->infoSlots[0].value_2 != 0; }
-	else if (slot == 5) { return state->infoSlots[0].value_3 != 0; }
-	else if (slot == 6) { return state->infoSlots[0].value_4 != 0; }
-	else if (slot == 7) { return state->infoSlots[0].value_5 != 0; }
-	else if (slot == 8) { return state->infoSlots[0].value_6 != 0; }
-	return false;
-}
-
-void BuyItems(entt::entity pc, int slot)
-{
-	auto* state = GetGayaRuntime(pc);
-	if (!state || slot < 0 || slot >= static_cast<int>(state->infoItems.size()))
-		return;
-
-	const auto& entry = state->infoItems[slot];
-	if (ecs::PointSystem::Get(pc, POINT_GAYA) >= entry.value_2)
-	{
-		ecs::PointSystem::Change(pc, POINT_GAYA, -entry.value_2);
-		ItemSystem::AutoGiveItemEcs(pc, entry.value_1, entry.value_3);
-		MarkDirty(pc);
-	}
-	else
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(pc, CHAT_TYPE_INFO, 524, "");
-#endif
-		return;
-	}
-}
-
-void RefreshItemsMarket(entt::entity pc)
-{
-	auto* state = GetGayaRuntime(pc);
-	if (!state || state->loadItems.size() < 2)
-		return;
-
-	std::ofstream file(GayaStateFilePath(pc));
-
-	if (!file)
-		return;
-
-	for (int i = 0; i < 9; ++i)
-	{
-		const int rnd = number(1, static_cast<int>(state->loadItems.size()) - 1);
-		file << fmt::format("Item\t{}\t{}\t{}\n", state->loadItems[rnd].items, state->loadItems[rnd].gaya, state->loadItems[rnd].count);
-	}
-
-	if (!state->infoSlots.empty())
-		file << fmt::format("Slots_Desblock\t{}\t{}\t{}\t{}\t{}\t{}\n",
-			state->infoSlots[0].value_1, state->infoSlots[0].value_2, state->infoSlots[0].value_3,
-			state->infoSlots[0].value_4, state->infoSlots[0].value_5, state->infoSlots[0].value_6);
-
-	MarkDirty(pc);
-}
-
-void UpdateSlot(entt::entity pc, int slot)
-{
-	auto* state = GetGayaRuntime(pc);
-	if (!state || state->infoSlots.empty() || state->infoItems.size() < 9)
-		return;
-
-	std::ofstream file(GayaStateFilePath(pc));
-
-	if (!file)
-		return;
-
-	for (int i = 0; i < 9; ++i)
-		file << fmt::format("Item\t{}\t{}\t{}\n", state->infoItems[i].value_1, state->infoItems[i].value_2, state->infoItems[i].value_3);
-
-	if (slot == 3) { state->infoSlots[0].value_1 = 1; }
-	else if (slot == 4) { state->infoSlots[0].value_2 = 1; }
-	else if (slot == 5) { state->infoSlots[0].value_3 = 1; }
-	else if (slot == 6) { state->infoSlots[0].value_4 = 1; }
-	else if (slot == 7) { state->infoSlots[0].value_5 = 1; }
-	else if (slot == 8) { state->infoSlots[0].value_6 = 1; }
-
-	file << fmt::format("Slots_Desblock\t{}\t{}\t{}\t{}\t{}\t{}\n",
-		state->infoSlots[0].value_1, state->infoSlots[0].value_2, state->infoSlots[0].value_3,
-		state->infoSlots[0].value_4, state->infoSlots[0].value_5, state->infoSlots[0].value_6);
-
-	InfoMarket(pc);
-}
-
-void UpdateItems0(entt::entity pc)
-{
-	auto* state = GetGayaRuntime(pc);
-	if (!state)
-		return;
-
-	std::ifstream file(GayaStateFilePath(pc));
-
-	if (!file)
-		return;
-
-	std::string line;
-
-	while (std::getline(file, line))
-	{
-		if (line.empty() || line[0] == '#')
-			continue;
-
-		std::istringstream ins(line);
-		std::string token;
-
-		if (!(ins >> token))
-			continue;
-
-		if (token == "Item")
-		{
-			GayaShopEntry marketItem {};
-			ins >> marketItem.value_1 >> marketItem.value_2 >> marketItem.value_3;
-			state->infoItems.push_back(marketItem);
-		}
-		else if (token == "Slots_Desblock")
-		{
-			GayaShopEntry marketSlots {};
-			ins >> marketSlots.value_1 >> marketSlots.value_2 >> marketSlots.value_3
-				>> marketSlots.value_4 >> marketSlots.value_5 >> marketSlots.value_6;
-			state->infoSlots.push_back(marketSlots);
-		}
-	}
-
-	MarkDirty(pc);
-}
-
-void UpdateItems(entt::entity pc)
-{
-	auto* state = GetGayaRuntime(pc);
-	if (!state || state->loadItems.size() < 2)
-		return;
-
-	std::ofstream file(GayaStateFilePath(pc), std::ios::app);
-
-	if (!file)
-		return;
-
-	for (int i = 0; i < 9; ++i)
-	{
-		const int rnd = number(1, static_cast<int>(state->loadItems.size()) - 1);
-		file << fmt::format("Item\t{}\t{}\t{}\n", state->loadItems[rnd].items, state->loadItems[rnd].gaya, state->loadItems[rnd].count);
-	}
-
-	file << "Slots_Desblock\t0\t0\t0\t0\t0\t0\n";
 	MarkDirty(pc);
 }
 
@@ -548,120 +272,6 @@ void CraftItems(entt::entity pc, int slot)
 	ecs::PointSystem::Change(pc, POINT_GOLD, -costYang);
 	ItemSystem::ConsumeItemEcs(item);
 	ecs::ChatSystem::Send(pc, CHAT_TYPE_COMMAND, "GayaCheck");
-	MarkDirty(pc);
-}
-
-void MarketItems(entt::entity pc, int slot)
-{
-	auto* state = GetGayaRuntime(pc);
-	if (!state || !CheckItemsFull(pc))
-		return;
-
-	if (slot < 0 || slot > 8)
-		return;
-
-	const uint32_t expansionVnum = state->config.gaya_expansion;
-	const uint32_t expansionCount = state->config.gaya_expansion_count;
-
-	if (slot >= 3)
-	{
-		if (CheckSlot(pc, slot) == false)
-		{
-			if (ItemSystem::CountItem(pc, expansionVnum) >= static_cast<int>(expansionCount))
-			{
-				ItemSystem::RemoveSpecifyItemEcs(pc, expansionVnum, expansionCount);
-				UpdateSlot(pc, slot);
-				return;
-			}
-			else
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(pc, CHAT_TYPE_INFO, 525, "%d#%s", expansionCount,
-					ItemSystem::GetItemNameByVnum(expansionVnum));
-#endif
-				return;
-			}
-		}
-		else
-		{
-			BuyItems(pc, slot);
-			return;
-		}
-	}
-	else
-	{
-		BuyItems(pc, slot);
-		return;
-	}
-}
-
-void RefreshItems(entt::entity pc)
-{
-	auto* state = GetGayaRuntime(pc);
-	if (!state || !CheckItemsFull(pc))
-		return;
-
-	const uint32_t refreshVnum = state->config.gaya_refresh;
-	const uint32_t refreshCount = state->config.gaya_refresh_count;
-
-	if (ItemSystem::CountItem(pc, refreshVnum) < static_cast<int>(refreshCount))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(pc, CHAT_TYPE_INFO, 525, "%d#%s", refreshCount,
-			ItemSystem::GetItemNameByVnum(refreshVnum));
-#endif
-		return;
-	}
-
-	ItemSystem::RemoveSpecifyItemEcs(pc, refreshVnum, refreshCount);
-	SetState(pc, "system_gaya.gaya_time_world_4", init_gayaTime() - (GetState(pc, "system_gaya.gaya_time_world_4") - init_gayaTime()));
-	MarkDirty(pc);
-}
-
-int GetState(entt::entity pc, std::string_view state)
-{
-	if (pc == entt::null || !g_registry.valid(pc))
-		return 0;
-
-	quest::CQuestManager& q = quest::CQuestManager::instance();
-	quest::PC* pPC = q.GetPC(ecs::PlayerRuntime::GetPlayerID(pc));
-
-	if (!pPC)
-	{
-		LOG_ERROR("Nullpointer in CHARACTER::GetQuestFlag {}", ecs::PlayerRuntime::GetPlayerID(pc));
-		return 0;
-	}
-
-	return pPC->GetFlag(std::string(state));
-}
-
-void SetState(entt::entity pc, std::string_view state, int value)
-{
-	if (pc == entt::null || !g_registry.valid(pc))
-		return;
-
-	quest::CQuestManager& q = quest::CQuestManager::instance();
-	quest::PC* pPC = q.GetPC(ecs::PlayerRuntime::GetPlayerID(pc));
-
-	if (!pPC)
-	{
-		LOG_ERROR("Nullpointer in CHARACTER::GetQuestFlag {}", ecs::PlayerRuntime::GetPlayerID(pc));
-		return;
-	}
-
-	pPC->SetFlag(std::string(state), value);
-	MarkDirty(pc);
-}
-
-void StartCheckTimeMarket(entt::entity pc)
-{
-	auto* state = GetGayaRuntime(pc);
-	if (!state || state->updateEvent)
-		return;
-
-	auto* info = AllocEventInfo<gaya_market_event_info>();
-	info->playerID = ecs::PlayerRuntime::GetPlayerID(pc);
-	state->updateEvent = event_create(check_time_market_event, info, 1);
 	MarkDirty(pc);
 }
 
