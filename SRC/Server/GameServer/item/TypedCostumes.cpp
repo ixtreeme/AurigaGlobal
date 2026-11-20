@@ -68,11 +68,12 @@ void ProjectTypedCostumes(entt::entity owner,std::vector<item::PersistentItem>& 
     const auto c=store::CurrentCatalog();if(!c)return;const auto elapsed=TypedCostumeElapsed(owner);const auto now=TypedItemEffectNow();
     for(auto& p:items)if(!p.destroyed && p.regalia){const auto& row=std::get<item::ItemRegaliaRow>(c->Find(p.key)->category);const auto debt=std::ranges::find(elapsed,p.id.Value(),&item::CostumeElapsed::instance);p.regalia=item::AdvanceRegalia(row,*p.regalia,debt==elapsed.end() ? 0 : debt->elapsedMs);}
     for(auto& p:items)if(!p.destroyed && p.costume) {
-        const auto row=item::FindWearableClock(*c,p.key);const auto debt=std::ranges::find(elapsed,p.id.Value(),&item::CostumeElapsed::instance);
+        const auto row=item::FindPersistentItemClock(*c,p.key);const auto debt=std::ranges::find(elapsed,p.id.Value(),&item::CostumeElapsed::instance);
         const auto spent=debt==elapsed.end() ? 0 : debt->elapsedMs;const bool worn=p.placement && p.placement->kind==item::ItemStorageKind::Equipment;
         const auto plan=row ? item::AdvanceItemClock(*row,*p.costume,{now,spent,worn || spent!=0,false}) : std::unexpected(item::CostumeLifetimeError::InvalidDefinition);
         const auto* policy=c->FindUsePolicy(c->Find(p.key)->base.usePolicy);
-        const bool allowed=policy && (policy->allowedClasses&(1u<<ecs::PlayerRuntime::GetJob(owner))) && (policy->allowedSexes&(1u<<ecs::PlayerRuntime::GetSex(owner)));
+        const bool allowed=p.key.Category()==item::ItemCategory::Quest ||
+            (policy && (policy->allowedClasses&(1u<<ecs::PlayerRuntime::GetJob(owner))) && (policy->allowedSexes&(1u<<ecs::PlayerRuntime::GetSex(owner))));
         if(!plan || plan->removeItem || !allowed){p.destroyed=true;p.count=0;p.placement.reset();if(plan)p.costume=plan->after;}
         else p.costume=plan->after;
     }
@@ -88,7 +89,7 @@ void UpdateTypedCostumes(entt::entity owner) {
         const bool runeClock=rune && rune->kind==item::RegaliaKind::Rune && rune->slot<7;
         if(rune && !runeClock && !p.costume)continue;
         if(runeClock && !p.regalia->remainingMs)continue; // No tail debt can spend below zero.
-        const auto clockKind=runeClock ? item::CostumeClock::EquippedTime : item::FindWearableClock(*c,p.key)->clock;
+        const auto clockKind=runeClock ? item::CostumeClock::EquippedTime : item::FindPersistentItemClock(*c,p.key)->clock;
         if(clockKind==item::CostumeClock::Permanent)continue;
         auto& clock=clocks[Identity(typed->state.fence,p.id.Value())];if(!clock){if(!shared)shared=std::make_shared<item::persistence::LoadedItemOwner>(typed->state);clock=std::make_shared<WearClock>(WearClock{shared,p.id.Value(),login->token});}
         if(!clock->stopped)Worn(*clock,online && p.placement->kind==item::ItemStorageKind::Equipment && (!runeClock || p.regalia->active),clockKind==item::CostumeClock::EquippedTime);
@@ -118,7 +119,7 @@ void TickTypedCostumes() {
         if(clock->pending){++it;continue;}const auto* p=Costume(*clock);const auto elapsed=Elapsed(*clock);
         if(!p || (clock->stopped && !elapsed)){for(auto& waiter:clock->waiters)resume.push_back(std::move(waiter));it=clocks.erase(it);continue;}++it;
         const auto now=TypedItemEffectNow();const auto* rune=p->costume ? nullptr : std::get_if<item::ItemRegaliaRow>(&c->Find(p->key)->category);
-        const auto kind=rune ? item::CostumeClock::EquippedTime : item::FindWearableClock(*c,p->key)->clock;
+        const auto kind=rune ? item::CostumeClock::EquippedTime : item::FindPersistentItemClock(*c,p->key)->clock;
         const auto remaining=rune ? p->regalia->remainingMs : p->costume->remainingMs;
         const bool due=kind==item::CostumeClock::EquippedTime ? elapsed && (!clock->worn || elapsed>=5000 || elapsed>=remaining) : p->costume->started && now>=p->costume->deadlineUtcMs;
         if(!due || (!clock->stopped && g_registry.all_of<ecs::TypedItemBusy>(owner)))continue;

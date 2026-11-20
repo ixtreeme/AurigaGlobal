@@ -116,7 +116,8 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
             if (const auto* quest = std::get_if<ItemQuestRow>(&entry->category);
                 quest && quest->dispatch == QuestItemDispatch::FirstHandler &&
                 (BuiltinQuestHandler(quest->groupCode) != BuiltinQuestItem::None ||
-                 (quest->groupCode.empty() && std::ranges::find(scriptedUse, key) != scriptedUse.end())))
+                 ((quest->groupCode.empty() || FindTimedQuestPetSealClock(c, key)) &&
+                  std::ranges::find(scriptedUse, key) != scriptedUse.end())))
                 actions |= TypedActionUse;
             if (key.Category() == ItemCategory::Accessory && std::ranges::find(scriptedUse, key) != scriptedUse.end())
                 actions |= TypedActionUse;

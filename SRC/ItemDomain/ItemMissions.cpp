@@ -39,6 +39,22 @@ bool ExchangeItemUsable(const PersistentItem& item,ItemOwner owner)
 }
 bool MissionItemUsable(const PersistentItem& item,ItemOwner owner)
 {return PlainInventoryItem(item,owner);}
+std::optional<CompanionState> CarryTimedQuestPetSeal(const ItemCatalog& catalog,const PersistentItem& source,ItemKey target)
+{
+    const auto clock=FindTimedQuestPetSealClock(catalog,source.key);
+    if(!clock || !source.costume || source.costume->expired || source.count!=1 || source.refinementLevel ||
+       !MissionItemUsable(source,source.owner) || !ValidItemClock(*clock,*source.costume))return {};
+    const auto& quest=std::get<ItemQuestRow>(catalog.Find(source.key)->category);
+    const auto* reward=catalog.Find(target);
+    const auto* row=reward ? std::get_if<ItemCompanionRow>(&reward->category) : nullptr;
+    if(!row || reward->base.retired || quest.groupCode!=reward->base.contentCode || row->kind!=CompanionKind::Pet ||
+       static_cast<unsigned>(row->clock)!=static_cast<unsigned>(clock->clock) || row->durationMs!=clock->durationMs)
+        return {};
+    CompanionState result;
+    result.lifetime.started=source.costume->started;
+    result.lifetime.deadlineUtcMs=source.costume->deadlineUtcMs;
+    return ValidCompanionState(*row,result) ? std::optional{result} : std::nullopt;
+}
 std::uint64_t CountMissionItems(std::span<const PersistentItem> items,ItemOwner owner,ItemKey key,std::uint16_t level)
 {std::uint64_t count=0;for(const auto& i:items)if(i.key==key && i.refinementLevel==level && MissionItemUsable(i,owner))count+=i.count;return count;}
 std::uint64_t CountGameplayExchangeItems(std::span<const PersistentItem> items,ItemOwner owner,ItemKey key,std::uint16_t level)
@@ -103,6 +119,8 @@ static std::expected<ItemCommit,E> MakeExchangeCommit(const ItemCatalog& c,const
     std::set<ItemInstanceId> unique;for(const auto& i:inventory)if(i.owner!=fence.owner || !unique.insert(i.id).second || !ValidatePersistentItem(c,i))return std::unexpected(E::Invalid);
     for(const auto* list:{&m.requirements,&m.costs})for(const auto& v:*list)
         if((gameplay ? CountGameplayExchangeItems : CountMissionItems)(inventory,fence.owner,v.key,v.level)<v.count)return std::unexpected(E::Requirements);
+    const PersistentItem* timedSeal=nullptr;
+    std::optional<CompanionState> carriedClock;
     if (requiredSource)
     {
         const auto source = std::ranges::find(inventory, *requiredSource, &PersistentItem::id);
@@ -110,6 +128,19 @@ static std::expected<ItemCommit,E> MakeExchangeCommit(const ItemCatalog& c,const
             source->key != m.costs.front().key || source->refinementLevel != m.costs.front().level ||
             source->count < m.costs.front().count)
             return std::unexpected(E::Requirements);
+        const bool issuingTimedSeal=std::ranges::any_of(m.rewards,[&](const auto& reward){
+            return c.Find(reward.key)->base.contentCode.starts_with("companion.timed.");
+        });
+        if(issuingTimedSeal || FindTimedQuestPetSealClock(c,source->key))
+        {
+            if(m.costs.front().count!=1 || m.rewards.size()!=1 || m.rewards.front().count!=1 ||
+               m.rewards.front().level || !m.requirements.empty() || m.goldCost || m.goldReward)
+                return std::unexpected(E::Invalid);
+            carriedClock=CarryTimedQuestPetSeal(c,*source,m.rewards.front().key);
+            if(!carriedClock || !nowUtcMs || (carriedClock->lifetime.started && carriedClock->lifetime.deadlineUtcMs<=nowUtcMs))
+                return std::unexpected(E::Requirements);
+            timedSeal=&*source;
+        }
     }
     const ItemWallet* wallet=nullptr;for(const auto& w:wallets)if(w.owner==fence.owner && w.currency==currency)
     {if(wallet || !w.revision || w.revision==UINT64_MAX || w.balance>INT64_MAX)return std::unexpected(E::Invalid);wallet=&w;}
@@ -134,7 +165,21 @@ static std::expected<ItemCommit,E> MakeExchangeCommit(const ItemCatalog& c,const
         const auto grant=MakeGrantCommit(c,*op,fence,layouts,working,{reward.key,reward.level,reward.count,{},{},{},nowUtcMs},ids.subspan(usedIds));
         if(!grant)return std::unexpected(grant.error()==ItemPersistenceError::InvalidPlacement ? E::NoRoom : grant.error()==ItemPersistenceError::LimitExceeded ? E::Unavailable : E::Invalid);
         for(const auto& change:grant->items)
-        {if(change.before)*std::ranges::find(working,change.after.id,&PersistentItem::id)=change.after;else{working.push_back(change.after);++usedIds;}}
+        {
+            if(change.before)
+                *std::ranges::find(working,change.after.id,&PersistentItem::id)=change.after;
+            else
+            {
+                auto reward=change.after;
+                if(timedSeal)
+                {
+                    reward.companion=carriedClock;
+                    if(timedSeal->boundTo)reward.boundTo=timedSeal->boundTo;
+                }
+                working.push_back(std::move(reward));
+                ++usedIds;
+            }
+        }
     }
     ItemCommit out;out.operationId=*op;out.catalogRevision=c.Revision();out.catalogHash=c.ContentHash();out.kind=ItemOperationKind::Service;
     out.owners={fence};out.outcomeCode=ItemMissionOutcome;out.result=*receipt;

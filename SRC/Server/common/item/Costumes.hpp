@@ -55,6 +55,8 @@ class ItemCatalog;
 // Costumes and the independent six-bonus stole share the same persisted clock.
 // Permanent stoles retain their historical, clock-free instance representation.
 std::optional<CostumeClockDefinition> FindWearableClock(const ItemCatalog&,ItemKey);
+std::optional<CostumeClockDefinition> FindTimedQuestPetSealClock(const ItemCatalog&,ItemKey);
+std::optional<CostumeClockDefinition> FindPersistentItemClock(const ItemCatalog&,ItemKey);
 bool ValidItemClock(CostumeClockDefinition,const CostumeLifetimeState&,bool equipped=false) noexcept;
 struct CostumeLifetimePlan
 {

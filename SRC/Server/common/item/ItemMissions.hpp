@@ -20,6 +20,7 @@ enum class ItemMissionError { Invalid, Requirements, NoMoney, NoRoom, Unavailabl
 enum class ItemMissionStatus : std::uint8_t { Closed,Ready,Completed,AlreadyCompleted,Pending,Busy,Invalid,Denied,Requirements,NoMoney,NoRoom,Failed,Stale,Level };
 struct ItemMissionProof { ItemOwner owner;ItemCatalogDigest action{}; };
 bool MissionItemUsable(const PersistentItem&,ItemOwner);
+std::optional<CompanionState> CarryTimedQuestPetSeal(const ItemCatalog&,const PersistentItem& source,ItemKey target);
 std::uint64_t CountMissionItems(std::span<const PersistentItem>,ItemOwner,ItemKey,std::uint16_t);
 std::uint64_t CountGameplayExchangeItems(std::span<const PersistentItem>,ItemOwner,ItemKey,std::uint16_t);
 std::expected<void,ItemMissionError> ValidateItemMission(const ItemCatalog&,const ItemMission&);

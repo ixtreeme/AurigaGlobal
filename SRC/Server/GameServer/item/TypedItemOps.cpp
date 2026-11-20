@@ -528,7 +528,8 @@ bool TryUseTypedQuestScript(entt::entity character, const items::PersistentItem&
 	// A few original dungeon puzzle props were catalogued as accessories.
 	const bool dungeonProp = !script && source.key.Category() == items::ItemCategory::Accessory &&
 		g_registry.valid(CDungeonManager::instance().FindByMapIndex(ecs::PlayerRuntime::GetMapIndex(character)));
-	if (!dungeonProp && (!script || script->dispatch != items::QuestItemDispatch::FirstHandler || !script->groupCode.empty()))
+	if (!dungeonProp && (!script || script->dispatch != items::QuestItemDispatch::FirstHandler ||
+		(!script->groupCode.empty() && !items::FindTimedQuestPetSealClock(catalog, source.key))))
 		return false;
 
 	const auto* policy = catalog.FindUsePolicy(entry->base.usePolicy);

@@ -18,6 +18,7 @@
 #include <item/DungeonEntry.hpp>
 #include <item/MarriageItems.hpp>
 #include <item/IdentityScrolls.hpp>
+#include <item/ItemMissions.hpp>
 
 namespace auriga::item
 {
@@ -792,11 +793,11 @@ std::expected<void,E> ValidatePersistentItem(const ItemCatalog& c,const Persiste
         if(p.destroyed && tool->operation==SpecialBonusOperation::RuneCharge && !state.remainingBp)state.remainingBp=1;
         if(!ValidBonusToolState(*tool,state))return std::unexpected(E::InvalidItem);
     } else if(p.bonusTool)return std::unexpected(E::InvalidItem);
-    const auto wearableClock=FindWearableClock(c,p.key);
-    const bool needsClock=wearableClock && (p.key.Category()==ItemCategory::Costume || wearableClock->clock!=CostumeClock::Permanent);
-    if(needsClock) {
-        if(!p.costume || (!p.destroyed && p.count!=1) || !ValidItemClock(*wearableClock,*p.costume,p.placement && p.placement->kind==ItemStorageKind::Equipment) || (p.costume->expired && !p.destroyed))return std::unexpected(E::InvalidItem);
-    } else if(p.costume)return std::unexpected(E::InvalidItem);
+    const auto clock=FindPersistentItemClock(c,p.key);
+    const bool needsClock=clock && (p.key.Category()==ItemCategory::Costume || clock->clock!=CostumeClock::Permanent);
+    if(p.costume) {
+        if(!needsClock || (!p.destroyed && p.count!=1) || !ValidItemClock(*clock,*p.costume,p.placement && p.placement->kind==ItemStorageKind::Equipment) || (p.costume->expired && !p.destroyed))return std::unexpected(E::InvalidItem);
+    } else if(needsClock && p.key.Category()!=ItemCategory::Quest)return std::unexpected(E::InvalidItem);
     const auto* seal=std::get_if<ItemCompanionRow>(&e->category);
     if(seal && seal->kind==CompanionKind::GrowthPet)
     {
@@ -896,6 +897,29 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
     if(r.outcomeCode==CostumeTransferOutcome && !ValidCostumeTransferWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==AbsorptionSashOutcome && !ValidAbsorptionSashWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==CostumeOutcome && !ValidCostumeWrite(c,r))return std::unexpected(E::InvalidChange);
+    const ItemChange* carriedSeal=nullptr;
+    if(r.outcomeCode==ItemMissionOutcome)
+    {
+        const auto consumed=std::ranges::find_if(r.items,[&](const auto& change){
+            return change.before && change.after.destroyed && FindTimedQuestPetSealClock(c,change.before->key);
+        });
+        if(consumed!=r.items.end())
+        {
+            const auto issued=std::ranges::find_if(r.items,[](const auto& change){return !change.before;});
+            if(r.kind!=ItemOperationKind::Service || r.owners.size()!=1 || r.items.size()!=2 ||
+               !r.wallets.empty() || issued==r.items.end() || issued->after.count!=1 || issued->after.refinementLevel ||
+               issued->after.owner!=consumed->before->owner || issued->after.owner!=r.owners.front().owner ||
+               !issued->after.placement || issued->after.placement->kind!=ItemStorageKind::Inventory)
+                return std::unexpected(E::InvalidChange);
+            const auto expected=CarryTimedQuestPetSeal(c,*consumed->before,issued->after.key);
+            if(!expected || issued->after.companion!=expected)
+                return std::unexpected(E::InvalidChange);
+            auto binding=consumed->before->boundTo;
+            if(!binding && c.Find(issued->after.key)->base.binding==BindingPolicy::OnAcquire)binding=issued->after.owner;
+            if(issued->after.boundTo!=binding)return std::unexpected(E::InvalidChange);
+            carriedSeal=&*issued;
+        }
+    }
     std::set<ItemOwner> owners;
     for(const auto& o:r.owners)if(!ValidItemOwner(o.owner) || !o.sessionGeneration || !o.revision || o.revision==UINT64_MAX || !owners.insert(o.owner).second)return std::unexpected(E::InvalidFence);
     std::map<ItemStorage,ItemStorageLayout> layouts;
@@ -1009,8 +1033,9 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
             const auto initial=InitialPetSupplyState(c,p.key,p.petSupply->createdAtUtcMs);
             if(!initial || *initial!=*p.petSupply)return std::unexpected(E::InvalidChange);
         }
+        if(!change.before && !p.costume && FindTimedQuestPetSealClock(c,p.key))return std::unexpected(E::InvalidChange);
         if(!change.before && p.costume) {
-            const auto row=FindWearableClock(c,p.key);if(!row)return std::unexpected(E::InvalidChange);
+            const auto row=FindPersistentItemClock(c,p.key);if(!row)return std::unexpected(E::InvalidChange);
             if(row->clock==CostumeClock::SinceCreation && p.costume->deadlineUtcMs<=row->durationMs)return std::unexpected(E::InvalidChange);
             const auto created=row->clock==CostumeClock::SinceCreation ? p.costume->deadlineUtcMs-row->durationMs : 0;
             auto initial=MakeItemClock(*row,created);
@@ -1023,7 +1048,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
             }
             if(!initial || *initial!=*p.costume)return std::unexpected(E::InvalidChange);
         }
-        if(!change.before && p.companion) {
+        if(!change.before && p.companion && &change!=carriedSeal) {
             const auto& row=std::get<ItemCompanionRow>(c.Find(p.key)->category);
             const auto deadline=p.companion->lifetime.deadlineUtcMs;
             if(row.clock==CompanionClock::SinceCreation && deadline<=row.durationMs)return std::unexpected(E::InvalidChange);
@@ -1766,7 +1791,7 @@ std::expected<ItemCommit,E> MakeGrantCommit(const ItemCatalog& c,std::array<std:
     if(const auto* soul=std::get_if<ItemSoulRow>(&entry->category);soul && soul->kind==SoulKind::Core){const auto initial=MakeSoulState(c,grant.key,grant.refinementLevel);if(!initial)return std::unexpected(E::InvalidItem);fresh.soul=*initial;}
     if(const auto* regalia=std::get_if<ItemRegaliaRow>(&entry->category)){if(regalia->kind==RegaliaKind::AbsorptionSash){const auto* profile=c.FindAbsorptionSash(fresh.key);if(!profile)return std::unexpected(E::InvalidItem);fresh.sash=InitialAbsorptionSash(*profile,operationId,fresh.id.Value());}else fresh.regalia=InitialRegalia(*regalia,operationId,fresh.id.Value());}
     if(const auto* tool=std::get_if<ItemBonusToolRow>(&entry->category))fresh.bonusTool=InitialBonusTool(*tool,operationId,fresh.id.Value());
-    if(const auto clock=FindWearableClock(c,grant.key);clock && (grant.key.Category()==ItemCategory::Costume || clock->clock!=CostumeClock::Permanent)) {
+    if(const auto clock=FindPersistentItemClock(c,grant.key);clock && (grant.key.Category()==ItemCategory::Costume || clock->clock!=CostumeClock::Permanent)) {
         if(clock->clock==CostumeClock::SinceCreation && !grant.createdAtUtcMs)return std::unexpected(E::InvalidItem);
         const auto initial=MakeItemClock(*clock,grant.createdAtUtcMs);if(!initial)return std::unexpected(E::InvalidItem);fresh.costume=*initial;
     }

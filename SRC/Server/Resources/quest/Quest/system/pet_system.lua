@@ -117,6 +117,94 @@ quest pet_system begin
 			pet_system.exchange_fixed_seal("companion.fixed.bold_black_giant_orc_12f7ce370dd0")
 		end
 
+		when "catalog.10.noname_9f7fd3f181e8".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.noname_9f7fd3f181e8")
+		end
+		when "catalog.10.mini_lilith_24h_2f83fee88a5a".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.mini_lilith_24h_2f83fee88a5a")
+		end
+		when "catalog.10.mini_lilith_10d_2fe919e828e0".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.mini_lilith_10d_2fe919e828e0")
+		end
+		when "catalog.10.noname_6084f80d94af".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.noname_6084f80d94af")
+		end
+		when "catalog.10.noname_f60234176e90".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.noname_f60234176e90")
+		end
+		when "catalog.10.noname_37601ffbccf0".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.noname_37601ffbccf0")
+		end
+		when "catalog.10.noname_cfa68c011968".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.noname_cfa68c011968")
+		end
+		when "catalog.10.leonidas_signet_e61c2df3342b".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.leonidas_signet_e61c2df3342b")
+		end
+		when "catalog.10.khan_signet_d827fb39ed6e".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.khan_signet_d827fb39ed6e")
+		end
+		when "catalog.10.porky_signet_e8134b357132".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.porky_signet_e8134b357132")
+		end
+		when "catalog.10.rufus_signet_4606541c41fa".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.rufus_signet_4606541c41fa")
+		end
+		when "catalog.10.noname_631e65f4269a".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.noname_631e65f4269a")
+		end
+		when "catalog.10.noname_c6aabbc03782".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.noname_c6aabbc03782")
+		end
+		when "catalog.10.boney_5508bca0b5f9".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.boney_5508bca0b5f9")
+		end
+		when "catalog.10.jade_phoenix_signet_97e64cf1c212".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.jade_phoenix_signet_97e64cf1c212")
+		end
+		when "catalog.10.cooper_a511ae36623b".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.cooper_a511ae36623b")
+		end
+		when "catalog.10.flame_ghost_e299dc43c764".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.flame_ghost_e299dc43c764")
+		end
+		when "catalog.10.flame_ghost_588560361426".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.flame_ghost_588560361426")
+		end
+		when "catalog.10.leonidas_signet_permanent_1670a6d90e3f".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.leonidas_signet_permanent_1670a6d90e3f")
+		end
+		when "catalog.10.nogai_signet_15g_802a7e823842".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.nogai_signet_15g_802a7e823842")
+		end
+		when "catalog.10.nogai_signet_30_c9eb455a2471".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.nogai_signet_30_c9eb455a2471")
+		end
+		when "catalog.10.donnie_15g_65e21768e6eb".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.donnie_15g_65e21768e6eb")
+		end
+		when "catalog.10.donnie_30g_ddb996295cc3".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.donnie_30g_ddb996295cc3")
+		end
+		when "catalog.10.frank_15g_223d7c15ae00".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.frank_15g_223d7c15ae00")
+		end
+		when "catalog.10.frank_30g_f238510448b5".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.frank_30g_f238510448b5")
+		end
+		when "catalog.10.bonsai_087c02b3711d".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.bonsai_087c02b3711d")
+		end
+		when "catalog.10.nogai_bc3e8922998b".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.nogai_bc3e8922998b")
+		end
+		when "catalog.10.baby_santa_claus_7g_c93a40d497d3".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.baby_santa_claus_7g_c93a40d497d3")
+		end
+		when "catalog.10.christmas_reindeer_7g_49c94c6c148d".typed_use begin
+			pet_system.exchange_fixed_seal("companion.timed.christmas_reindeer_7g_49c94c6c148d")
+		end
+
 		function get_pet_info(itemVnum)
 			if pet_system.pet_info_map==nil then
 				pet_system.pet_info_map = {
@@ -125,32 +213,14 @@ quest pet_system begin
 					-- [53002] = {34002, pet_system.petname_34002, 0}, --		 	+1500 HP e +15% danno, Permette di droppare le calze se lo si tiene al proprio fianco mentre si uccidono mob.				20giorni
 					--[53003] = {34003, pet_system.petname_34003, 0}, --			no bonus	120giorni
 					-- [53005] = {34004, pet_system.petname_34004, 1}, --			+1500 HP e +15% di danno, se il PG si trova dal 2° piano della Torre dei Demoni in su, o se si trova all'interno delle Catacombe del Diavolo	30giorni
-					[53006] = {34009}, --			+1500 HP e +15% di danno, se il PG si trova dal 2° piano della Torre dei Demoni in su, o se si trova all'interno delle Catacombe del Diavolo	200giorni(non implementato sull offy ma c'è)
-					[53007] = {34010}, --			+1500 HP e +15% danno, Permette di droppare le calze se lo si tiene al proprio fianco mentre si uccidono mob.				20giorni
-					[53008] = {34011}, --			+1500 HP e +15% di danno	30giorni
-					[53009] = {34012}, --			+1500 HP e +15% di danno	30giorni
-					[53010] = {34008}, --			+1500 HP e +15% di danno	30giorni
-					[53011] = {34007}, --			+1500 HP e +15% di danno	120giorni
-					[53012] = {34005}, --			+15% danno e +1500 HP		30giorni
-					[53013] = {34006}, --			+1500 HP e +15% di danno	30giorni
-					[53014] = {34013}, --			+1500 HP e +15% di danno	30giorni
-					[53015] = {34014}, --			+1500 HP e +15% di danno	30giorni
-					[53016] = {34015}, --			+1500 HP e +15% di danno	30giorni
-					[53017] = {34016}, --			+30% di Exp e +15% di Danno	120giorni
-					[53018] = {34020}, --			+1500 HP e +15% di danno	30giorni
 					[53019] = {34019}, --			+1500 HP e +15% di danno	30giorni
 					[53020] = {34017}, --			+1500 HP e +15% di danno	30giorni
 					[53021] = {34018}, --			+1500 HP, +15% Forte contro Mostri	30giorni
 					[53022] = {34021}, --			+1500 HP e +15% di danno	30giorni
 					[53023] = {34022}, --			+1500 HP e +15% di danno	30giorni
 					[53024] = {34023}, --			+1500 HP, +5% Trafiggente, +5% Resistenza Abilità		7giorni
-					[53026] = {34008}, --
 
 
-					[53027] = {34008}, --
-					[53028] = {34008}, --
-					[53029] = {34094}, --
-					[53030] = {34094}, --
 					[53218] = {34023}, --			+1500 HP, +5% Trafiggente, +5% Resistenza Abilità		30giorni
 					[53219] = {34023}, --			+1500 HP, +5% Trafiggente, +5% Resistenza Abilità		120giorni
 					[53220] = {34024}, --			+1500 HP e +5% Critico, +10% Resistenza ai Danni Medi	30giorni
@@ -181,19 +251,8 @@ quest pet_system begin
 					--[53247] = {34070, pet_system.petname_34070, 0}, --			+5% colpi critici e +5% Possibilità di Svenimento		30giorni	Equipaggiandolo con il Vestito da festa+, il Copricapo+ o il Basco+ si riceveranno, in aggiunta, due bonus del set. Aggiungendo un Anello della Felicità, si riceverà un altro bonus del set.
 					-- [53248] = {34071, pet_system.petname_34071, 0}, --			+5% colpi trafiggenti e +5% Possibilità di Svenimento	1giorno		Equipaggiandolo con il Vestito da festa+, il Copricapo+ o il Basco+ si riceveranno, in aggiunta, due bonus del set. Aggiungendo un Anello della Felicità, si riceverà un altro bonus del set.
 					--[53249] = {34072, pet_system.petname_34072, 0}, --			no bonus												30giorni	Equipaggiandolo con il vestito da festa, il copricapo o il basco si riceveranno, in aggiunta, un bonus del set. Aggiungendo un Anello della Felicità, si riceverà un altro bonus del set.
-					[53248] = {34084}, --			Donnie ???
-					[53249] = {34084}, --			Donnie ???
-					[53251] = {34085}, --					Frank ???
-					[53252] = {34085}, --					Frank ???
-					[53256] = {34066}, --			no bonus							3600giorni
-					[53264] = {34094}, --			no bonus							3600giorni
 					[53284] = {34116}, --			no bonus							3600giorni
 					-- GF specials
-					[38201] = {34006}, --			Sigillo Rufus ???
-					[48301] = {34100},
-					[48311] = {34100},
-					[60102] = {34118},
-					[60104] = {34119},
 
 
 				}
@@ -213,16 +272,11 @@ quest pet_system begin
 			return pet_system.effect_table[idx]
 		end
 
-		when 38201.use or 53006.use or 53007.use or 53008.use or 53009.use or 53010.use or
-			53011.use or 53012.use or 53013.use or 53014.use or 53015.use or 53016.use or
-			53017.use or 53018.use or 53019.use or 53020.use or 53021.use or 53022.use or
-			53023.use or 53024.use or 53218.use or 53219.use or 53220.use or 53221.use or
-			53222.use or 53223.use or 53224.use or 53225.use or 53226.use or 53227.use or
-			53228.use or 53229.use or 53230.use or 53231.use or 53232.use or 53233.use or
-			53234.use or 53235.use or 53236.use or 53237.use or 53240.use or 53241.use or
-			53256.use or 53264.use or 53284.use or 53026.use or 53027.use or 53028.use or
-			53029.use or 53030.use or 53248.use or 53249.use or 53251.use or 53252.use or
-			48301.use or 48311.use or 60102.use or 60104.use or 53297.use
+		when 53019.use or 53020.use or 53021.use or 53022.use or 53023.use or 53024.use or
+			53218.use or 53219.use or 53220.use or 53221.use or 53222.use or 53223.use or
+			53224.use or 53225.use or 53226.use or 53227.use or 53228.use or 53229.use or
+			53230.use or 53231.use or 53232.use or 53233.use or 53234.use or 53235.use or
+			53236.use or 53237.use or 53240.use or 53241.use or 53284.use or 53297.use
 			begin
 			if not pc.can_warp() then
 				syschat(gameforge[pc.get_language()].reset_scroll._35)

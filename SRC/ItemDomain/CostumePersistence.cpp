@@ -6,6 +6,8 @@
 namespace auriga::item {
 namespace {
 using E=ItemPersistenceError;
+std::optional<CostumeClockDefinition> Clock(const ItemCatalog& catalog,ItemKey key,unsigned mode)
+{return mode==3 ? FindPersistentItemClock(catalog,key) : FindWearableClock(catalog,key);}
 struct Proof {unsigned mode=0;std::uint64_t main=0,now=0;EquipContext who;std::optional<WeaponSubtype> weapon;std::map<std::uint64_t,std::uint64_t> elapsed;};
 void Put(std::vector<std::uint8_t>& b,std::uint64_t v,unsigned n){for(unsigned i=0;i<n;++i)b.push_back(static_cast<std::uint8_t>(v>>(8*i)));}
 std::optional<Proof> Read(const ItemCommit& c) {
@@ -22,7 +24,7 @@ bool AccessoryDebit(const ItemChange& ch) {
     auto expected=*ch.before;expected.revision=ch.after.revision;expected.accessory=ch.after.accessory;return expected==ch.after;
 }
 std::expected<PersistentItem,E> Time(const ItemCatalog& c,const PersistentItem& before,const Proof& p) {
-    const auto found=p.elapsed.find(before.id.Value());const auto row=FindWearableClock(c,before.key);
+    const auto found=p.elapsed.find(before.id.Value());const auto row=Clock(c,before.key,p.mode);
     if(!row || found==p.elapsed.end() || (found->second && row->clock!=CostumeClock::EquippedTime))return std::unexpected(E::InvalidChange);
     if(!before.costume){if(row->clock!=CostumeClock::Permanent || (before.key.Category()!=ItemCategory::Regalia && before.key.Category()!=ItemCategory::Accessory))return std::unexpected(E::InvalidItem);auto after=before;++after.revision;return after;}
     const bool worn=before.placement && before.placement->kind==ItemStorageKind::Equipment;
@@ -112,7 +114,8 @@ bool ValidCostumeWrite(const ItemCatalog& c,const ItemCommit& commit) {
     if(commit.outcomeCode!=CostumeOutcome || commit.kind!=ItemOperationKind::Service || commit.owners.size()!=1 || !commit.wallets.empty() || commit.ground || commit.recovery || commit.learning || commit.petStudyCooldown)return false;
     const auto proof=Read(commit);if(!proof)return false;const auto& p=*proof;
     const auto main=std::ranges::find(commit.items,p.main,[](const auto& ch){return ch.after.id.Value();});if(main==commit.items.end() || !main->before || !main->before->placement)return false;
-    const auto& before=*main->before;const auto* entry=c.Find(before.key);const auto definition=FindWearableClock(c,before.key);if(!entry || !definition)return false;auto slot=WearSlot(c,before.key);
+    const auto& before=*main->before;const auto* entry=c.Find(before.key);const auto definition=Clock(c,before.key,p.mode);if(!entry || !definition)return false;
+    auto slot=p.mode==1 ? WearSlot(c,before.key) : 0;
     if((p.mode==1 && before.placement->kind!=ItemStorageKind::Inventory) || (p.mode==2 && before.placement->kind!=ItemStorageKind::Equipment) || (p.mode==3 && p.elapsed.size()!=1))return false;
     if(p.mode==1 && !AdmittedUse(c,before,p))return false;
     const auto mainTimed=Time(c,before,p);if(!mainTimed)return false;
@@ -123,7 +126,7 @@ bool ValidCostumeWrite(const ItemCatalog& c,const ItemCommit& commit) {
     }
     std::size_t seen=0;
     for(const auto& change:commit.items) {
-        if(!change.before || !FindWearableClock(c,change.before->key)) {if(!AccessoryDebit(change))return false;continue;}
+        if(!change.before || !Clock(c,change.before->key,p.mode)) {if(!AccessoryDebit(change))return false;continue;}
         ++seen;auto expected=Time(c,*change.before,p);if(!expected)return false;
         if(!expected->destroyed) {
             if(change.after.id.Value()==p.main) {

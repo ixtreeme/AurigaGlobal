@@ -55,6 +55,21 @@ std::optional<CostumeClockDefinition> FindWearableClock(const ItemCatalog& catal
     }
     return {};
 }
+std::optional<CostumeClockDefinition> FindTimedQuestPetSealClock(const ItemCatalog& catalog,ItemKey key)
+{
+    const auto* entry=key.Category()==ItemCategory::Quest ? catalog.Find(key) : nullptr;
+    const auto* quest=entry ? std::get_if<ItemQuestRow>(&entry->category) : nullptr;
+    if(!quest || quest->dispatch!=QuestItemDispatch::FirstHandler || entry->base.maxStack!=1 ||
+       !quest->groupCode.starts_with("companion.timed."))return {};
+    const auto* rule=catalog.FindDefinitionRules(key,0);
+    if(!rule || (rule->clock!=CostumeClock::SinceCreation && rule->clock!=CostumeClock::SinceFirstUse) ||
+       !rule->durationMs)return {};
+    return CostumeClockDefinition{rule->clock,rule->durationMs};
+}
+std::optional<CostumeClockDefinition> FindPersistentItemClock(const ItemCatalog& catalog,ItemKey key)
+{
+    return key.Category()==ItemCategory::Quest ? FindTimedQuestPetSealClock(catalog,key) : FindWearableClock(catalog,key);
+}
 bool ValidItemClock(CostumeClockDefinition definition,const CostumeLifetimeState& state,bool equipped) noexcept
 {
     return ValidClock(definition) && ValidState(definition,state,equipped) &&
