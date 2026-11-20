@@ -37,6 +37,14 @@ bool PetHatchAction(const ItemCatalog& catalog, const ItemCatalogEntry& entry)
     const auto* seal = std::get_if<ItemCompanionRow>(&entry.category);
     return seal && seal->kind == CompanionKind::GrowthPet;
 }
+
+bool PetServiceAction(const ItemCatalog& catalog, const ItemCatalogEntry& entry)
+{
+    const auto* row = std::get_if<ItemPetSupplyRow>(&entry.category);
+    const auto* profile = row ? catalog.FindPetSupplyProfile(row->profile) : nullptr;
+    return !entry.base.retired && profile && (profile->kind == PetSupplyKind::ExtendLife ||
+        profile->kind == PetSupplyKind::PermanentLife || profile->kind == PetSupplyKind::Enchant);
+}
 }
 std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDetails(
     const ItemCatalog& c, std::span<const PersistentItem> items, bool ownedDropEnabled,
@@ -68,7 +76,13 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
         if(keys.size()>65535 || states.size()>65535 || recipes.size()>65535) throw TooLarge{};
         const bool wide=std::ranges::any_of(keys,[&](auto key){const auto* e=c.Find(key);const auto* r=e ? std::get_if<ItemConsumableRow>(&e->category) : nullptr;const auto* p=r ? c.FindRecovery(r->recoveryProfile) : nullptr;return (e && (PetHatchAction(c,*e) || std::holds_alternative<ItemToolRow>(e->category) || std::holds_alternative<ItemFishingRow>(e->category) || std::holds_alternative<ItemPolymorphRow>(e->category) || std::holds_alternative<ItemSkillBookRow>(e->category))) || (r && (c.FindCharacterService(key) || r->bookAidProfile || r->attributeServiceProfile || r->timedEffectProfile || r->toggleEffectProfile || (p && (p->Data().Delivery()==RecoveryDelivery::Reserve || p->Data().Delivery()==RecoveryDelivery::Periodic || p->Data().Delivery()==RecoveryDelivery::Automatic))));});
         const bool forge=std::ranges::any_of(keys,[](auto key){return key.Category()==ItemCategory::ForgeAid;});
-        const bool special=forge || std::ranges::any_of(keys,[](auto key){return key.Category()==ItemCategory::Soul || key.Category()==ItemCategory::Regalia || key.Category()==ItemCategory::BonusTool;});
+        const bool special = forge || std::ranges::any_of(keys, [&](ItemKey key) {
+            if (key.Category() == ItemCategory::Soul || key.Category() == ItemCategory::Regalia ||
+                key.Category() == ItemCategory::BonusTool) return true;
+            if (key.Category() != ItemCategory::Special) return false;
+            const auto* entry = c.Find(key);
+            return entry && PetServiceAction(c, *entry);
+        });
         const bool levelPolicies=std::ranges::any_of(states,[&](const auto& state){const auto* e=c.Find(state.first);const auto* p=e?c.FindRefinement(e->base.refinementProfile):nullptr;const auto* s=p?p->FindLevel(state.second):nullptr;return s && (s->minimumLevel || s->buyAmount || s->sellAmount);});
         Writer w; w.Put(TypedItemDetailsHeader,1); w.Put(0,4); w.Put(levelPolicies ? 5 : forge ? 4 : special ? 3 : wide ? 2 : 1,1); w.Put(c.Revision(),8);
         for(auto b:c.ContentHash()) w.Put(b,1);
@@ -118,6 +132,7 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
             const bool hatch = PetHatchAction(c, *entry);
             if (companion && SupportsPersistentItem(c,*entry)) actions|=TypedActionUse;
             if (hatch) actions|=TypedActionPetHatch;
+            if (PetServiceAction(c, *entry)) actions|=TypedActionPetService;
             if(DungeonItemUseRole(c,key)!=DungeonUseRole::None)actions|=TypedActionUse;
             if(const auto* costume=std::get_if<ItemCostumeRow>(&entry->category))slot=CostumeSlot(costume->kind);
             if(const auto* r=std::get_if<ItemRegaliaRow>(&entry->category))slot=RegaliaSlot(*r);

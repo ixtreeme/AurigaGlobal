@@ -935,10 +935,23 @@ void HandleService(entt::entity entity,Action action,const TPacketCGTypedPetHatc
     if(action==Action::ServiceList) {
         g_registry.remove<PetServiceSession>(entity);ServiceView view;
         for(const auto& source:state.items) {
-            if(!profile(source) || source.destroyed || source.owner!=fence.owner || !source.placement || source.placement->kind!=item::ItemStorageKind::Inventory)continue;
+            if((packet.token && source.id.Value()!=packet.token) || source.destroyed || source.owner!=fence.owner ||
+                !source.placement || source.placement->kind!=item::ItemStorageKind::Inventory)continue;
+            const auto* rule=profile(source);
+            if(!rule)continue;
+            using Kind=item::PetSupplyKind;
+            std::uint16_t allowed=0;
+            switch(rule->kind) {
+            case Kind::ExtendLife: allowed=1u<<0;break;
+            case Kind::PermanentLife: allowed=1u<<1;break;
+            case Kind::Enchant: allowed=(1u<<2)|(1u<<3)|(1u<<4);break;
+            case Kind::Carrier: if(!packet.token)allowed=(1u<<5)|(1u<<6);break;
+            case Kind::Skin: if(!packet.token)allowed=(1u<<7)|(1u<<8);break;
+            default: break;
+            }
             std::uint16_t mask=0;
             for(std::uint8_t mode=0;mode<9;++mode)
-                if(item::MakePetServiceCommit(catalog,fence,state.storages,state.items,context,source.id,seal->id,terms(source,mode)))mask|=1u<<mode;
+                if((allowed&(1u<<mode)) && item::MakePetServiceCommit(catalog,fence,state.storages,state.items,context,source.id,seal->id,terms(source,mode)))mask|=1u<<mode;
             if(mask)view.options.emplace_back(source.id.Value(),mask);
         }
         reply(Status::ServiceList,0,view,true);return;
@@ -1209,7 +1222,7 @@ bool HandleTypedPetHatchPacket(entt::entity entity, const char* data)
         || (action == Action::Confirm && !packet.nameLength)
         || (studyPreview && (packet.nameLength!=1 || packet.name[0]<'1' || packet.name[0]>(action==Action::StudyPreview ? '6' : '5') || !packet.token))
         || (servicePreview && (packet.nameLength!=1 || packet.name[0]<'A' || packet.name[0]>'I' || !packet.token))
-        || (action==Action::ServiceList && packet.token) || (action==Action::ServiceConfirm && !packet.token)
+        || (action==Action::ServiceConfirm && !packet.token)
         || ((action==Action::StudyList || action==Action::ResetList) && packet.token) || ((action==Action::StudyConfirm || action==Action::ResetConfirm) && !packet.token)
         || ((action == Action::Preview || action == Action::Inspect || action == Action::FoodList || action == Action::Progress) && packet.token)
         || ((action == Action::FeedPreview || action == Action::FeedConfirm) && !packet.token)
