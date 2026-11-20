@@ -12,6 +12,9 @@
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
 #include "../ecs/systems/ItemSystem.hpp"
+#include "../item/ItemCatalogRuntime.hpp"
+#include "../item/ItemStore.hpp"
+#include "../item/TypedQuestItems.hpp"
 #include "../ecs/AIHelpers.hpp"
 #include <common/service.h>
 #include <common/CommonDefines.h>
@@ -206,6 +209,17 @@ ACMD(do_stat2)
 }
 
 #ifdef ENABLE_BIOLOGIST_UI
+namespace {
+constexpr std::array<std::string_view, 16> BiologistSpecimens{
+    "material.orkfog", "material.atokkonyv", "material.demon_emlektargy", "material.jegmarvany",
+    "material.zelkova_ag", "material.tugy_tablaja", "material.voros_szellemfa_ag", "material.vezetoi_jegyzetek",
+    "material.rosszindulatu_ekszer", "material.bolcsesseg_ekszer", "material.sotet_pafrany", "material.chaegirab_gyuruje",
+    "material.metin_kristaly", "material.tisztitott_mag", "material.sarkanyfog", "material.voros_sarkanykarom",
+};
+constexpr std::string_view BiologistElixir = "catalog.6.researcher_s_elixir_27e7eeaa51fc";
+constexpr std::string_view BiologistElixirPlus = "catalog.6.researcher_s_elixir_7f2fb2106e29";
+}
+
 ACMD(do_open_biologist) {
 	if (!ecs::PlayerRuntime::IsValid(character))
 		return;
@@ -242,7 +256,7 @@ ACMD(do_delivery_biologist) {
 		return;
 
 	int stat = ecs::QuestSystem::GetFlag(character, "biologist.stat");
-	if (stat > 15) {
+	if (stat < 0 || stat > 15) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 867, "");
 #endif
@@ -261,8 +275,21 @@ ACMD(do_delivery_biologist) {
 		return;
 	}
 
-	int vnum = static_cast<int>(biologistMissionInfo[stat][0]);
-	if (ItemSystem::CountItem(character, vnum) <= 0) {
+	namespace item = auriga::item;
+	const auto catalog = item::runtime::CurrentCatalog();
+	const auto* inventory = g_registry.try_get<ecs::TypedItems>(character);
+	if (!catalog || !inventory || g_registry.all_of<ecs::TypedItemBusy>(character))
+		return;
+	const auto owned = [&](std::string_view code) -> std::optional<item::ItemKey> {
+		const auto& entries = catalog->Entries();
+		const auto found = std::ranges::find_if(entries, [code](const auto& row) { return row.second.base.contentCode == code; });
+		if (found == entries.end() || found->second.base.retired ||
+			!item::CountMissionItems(inventory->state.items, inventory->state.fence.owner, found->first, 0))
+			return {};
+		return found->first;
+	};
+	const auto specimen = owned(BiologistSpecimens[stat]);
+	if (!specimen) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 866, "");
 #endif
@@ -288,53 +315,42 @@ ACMD(do_delivery_biologist) {
 		return;
 	}
 
-	uint32_t item = elisir == true ? 40144 : 0;
-	if (item == 0) {
-		item = potion == true ? 40143 : 0;
-	}
-
-	if (item != 0) {
-		if (ItemSystem::CountItem(character, item) <= 0) {
+	std::vector<item::MissionItemAmount> costs{{*specimen, 0, 1}};
+	if (elisir || potion) {
+		const auto aid = owned(potion ? BiologistElixirPlus : BiologistElixir);
+		if (!aid) {
 #ifdef TEXTS_IMPROVEMENT
-			if (item == 40143) {
-				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 863, "");
-			} else {
-				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 862, "");
-			}
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, potion ? 863 : 862, "");
 #endif
 			return;
 		}
-
-		ItemSystem::RemoveSpecifyItemEcs(character, item, 1);
+		costs.push_back({*aid, 0, 1});
 	}
 
-	ItemSystem::RemoveSpecifyItemEcs(character, vnum, 1);
-
-	int success = potion == true ? 100 : static_cast<int>(biologistMissionInfo[stat][13]);
-	int waittime = static_cast<int>(biologistMissionInfo[stat][2]) + get_global_time();
-	if (number(1, 100) <= success) {
-		if (waittime != 0 && count + 1 >= static_cast<int>(biologistMissionInfo[stat][1])) {
-			waittime = get_global_time();
-		}
-
-		ecs::QuestSystem::SetFlag(character, "biologist.delivered", count + 1);
+	const int chance = potion ? 100 : static_cast<int>(biologistMissionInfo[stat][13]);
+	const int required = static_cast<int>(biologistMissionInfo[stat][1]);
+	const int cooldown = static_cast<int>(biologistMissionInfo[stat][2]);
+	const auto exchange = RequestTypedGameplayItemExchange(character, std::move(costs), {}, 0,
+		[character, count, required, cooldown, success = number(1, 100) <= chance](bool written) {
+			if (!written) {
+				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "A biológus leadását nem sikerült menteni.");
+				return;
+			}
+			const int delivered = count + (success ? 1 : 0);
+			const bool completed = delivered >= required;
+			const int remaining = completed ? 0 : cooldown;
+			const int until = get_global_time() + remaining;
+			if (success)
+				ecs::QuestSystem::SetFlag(character, "biologist.delivered", delivered);
+			ecs::QuestSystem::SetFlag(character, "biologist.time", until);
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 865, "");
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, success ? 865 : 864, "");
 #endif
-		if (waittime != 0 && count + 1 >= static_cast<int>(biologistMissionInfo[stat][1])) {
-			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologist_delivered 1#%d#%d", count + 1, (int)(waittime - get_global_time()));
-		} else {
-			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologist_delivered 0#%d#%d", count + 1, (int)(waittime - get_global_time()));
-		}
-	}
-	else {
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 864, "");
-#endif
-		ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologist_delivered 0#%d#%d", count, (int)(waittime - get_global_time()));
-	}
-	ecs::QuestSystem::SetFlag(character, "biologist.time", waittime);
-	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologist_time %d", waittime);
+			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologist_delivered %d#%d#%d", completed ? 1 : 0, delivered, remaining);
+			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologist_time %d", until);
+		});
+	if (!exchange)
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "A leadás jelenleg nem elérhető. Próbáld újra.");
 }
 
 ACMD(do_reward_biologist) {
