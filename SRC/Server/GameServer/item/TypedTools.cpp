@@ -36,11 +36,15 @@ std::optional<std::uint32_t> Roll(std::uint32_t bound)
 {if(!bound)return {};const auto range=std::uint64_t(UINT32_MAX)+1,limit=range-range%bound;std::uint32_t n;do{if(RAND_bytes(reinterpret_cast<unsigned char*>(&n),4)!=1)return {};}while(n>=limit);return n%bound+1;}
 const item::ItemToolRow* ToolRow(const item::ItemCatalog& c,const item::PersistentItem& i)
 {const auto* e=c.Find(i.key);return e ? std::get_if<item::ItemToolRow>(&e->category) : nullptr;}
+constexpr std::uint32_t Deokbae = 20015;
 bool Service(entt::entity e,entt::entity npc,item::ToolKind kind)
 {
     if(!g_registry.valid(npc) || !ecs::PlayerRuntime::IsValid(npc) || ecs::PlayerRuntime::IsPC(npc) || CombatSystem::IsDead(npc) || ecs::PlayerRuntime::GetMapIndex(e)!=ecs::PlayerRuntime::GetMapIndex(npc))return false;
     const auto race=ecs::PlayerRuntime::GetRaceNum(npc);
-    if(kind==item::ToolKind::Rod ? race!=fishing::FISHER_MOB : race!=BLACKSMITH_MOB && race!=BLACKSMITH2_MOB)return false;
+    const bool canRefine = kind == item::ToolKind::Rod ? race == fishing::FISHER_MOB :
+        race == BLACKSMITH_MOB || race == BLACKSMITH2_MOB || (kind == item::ToolKind::Pick && race == Deokbae);
+    if (!canRefine)
+        return false;
     const auto x=std::abs(std::int64_t(ecs::PlayerRuntime::GetX(e))-ecs::PlayerRuntime::GetX(npc));const auto y=std::abs(std::int64_t(ecs::PlayerRuntime::GetY(e))-ecs::PlayerRuntime::GetY(npc));return std::max(x,y)+std::min(x,y)/2<1000;
 }
 item::ToolRuntimeActor Actor(entt::entity e,const TypedToolsSession& s)
