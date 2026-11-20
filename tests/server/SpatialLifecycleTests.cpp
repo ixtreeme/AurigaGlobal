@@ -351,7 +351,7 @@ bool ecs::PlayerRuntime::IsValid(entt::entity) { Unexpected(); }
 entt::entity building::CManager::FindObjectByVID(uint32_t) { Unexpected(); }
 entt::entity CHARACTER_MANAGER::FindEntity(uint32_t) { Unexpected(); }
 void LogManager::HackLog(const char*, entt::entity) { Unexpected(); }
-bool ITEM_MANAGER::CreateDropItemVector(entt::entity, entt::entity, std::vector<TargetInfoItem>&) { Unexpected(); }
+void SendTypedMobDropPreview(entt::entity, entt::entity, std::uint32_t) { Unexpected(); }
 timeval* timediff(const timeval*, const timeval*) { Unexpected(); }
 #ifdef _WIN32
 void gettimeofday(timeval*, timezone*) { Unexpected(); }

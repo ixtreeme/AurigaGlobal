@@ -95,6 +95,8 @@ struct ItemGrant;
 // item's definition policy, matching the legacy mob-drop default.
 ItemGrant MakeMobDropGrant(const MobDrop&);
 enum class MobDropError { InvalidContext, DrawOutOfRange };
+// Candidate drops for this player and target, without drawing or granting.
+std::vector<MobDrop> PreviewMobDrops(const ItemCatalog&, const MobDropContext&);
 // Every group of the mob's rank (not for stones) and of the mob itself, in
 // group order; see IC-035 for each roll's legacy rule. Nothing is granted here.
 std::expected<std::vector<MobDrop>, MobDropError> PlanMobDrops(const ItemCatalog&, const MobDropContext&, const MobDropDraw&);

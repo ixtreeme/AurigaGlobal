@@ -12,6 +12,9 @@
 #include <item/MobDrops.hpp>
 #include <item/PersistentItems.hpp>
 
+auriga::item::MobDropContext MakeTypedMobDropContext(entt::entity victim, entt::entity killer);
+void SendTypedMobDropPreview(entt::entity player, entt::entity target, std::uint32_t requestedVid);
+
 // The kill's drops from the catalog tables; empty while typed drops are off.
 // Draws come from the legacy number() source, as the legacy tables' did.
 std::vector<auriga::item::MobDrop> RollTypedMobDrops(const auriga::item::MobDropContext& kill);

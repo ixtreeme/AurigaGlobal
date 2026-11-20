@@ -3811,19 +3811,9 @@ static std::vector<entt::entity> DropContributors(entt::entity victim)
 static void GiveTypedMobDrops(entt::entity victim, entt::entity killer, double deltaPercent, int randRange)
 {
 	namespace items = auriga::item;
-	items::MobDropContext kill;
-	kill.mobVnum = ecs::PlayerRuntime::GetRaceNum(victim);
-	kill.mobRank = static_cast<uint8_t>(ecs::PlayerRuntime::GetMobRank(victim));
-	kill.stone = ecs::PlayerRuntime::IsStone(victim);
-	kill.killerLevel = static_cast<uint16_t>(std::clamp(ecs::PointSystem::GetLevel(killer), 1, 65535));
+	auto kill = MakeTypedMobDropContext(victim, killer);
 	kill.deltaPercent = deltaPercent;
 	kill.randomRange = randRange > 0 ? static_cast<uint32_t>(randRange) : 0;
-	kill.doubleDrop = ecs::PlayerRuntime::GetPremiumRemainSeconds(killer, PREMIUM_ITEM) > 0 ||
-		ItemSystem::IsEquipUniqueGroup(killer, UNIQUE_GROUP_DOUBLE_ITEM)
-#ifdef ENABLE_NEW_COMMON_BONUSES
-		|| ecs::PointSystem::GetPrecise(killer, POINT_DOUBLE_DROP_ITEM) > 0
-#endif
-		;
 	const auto drops = RollTypedMobDrops(kill);
 	if (drops.empty())
 		return;

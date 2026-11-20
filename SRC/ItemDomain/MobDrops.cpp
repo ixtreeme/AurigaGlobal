@@ -20,6 +20,28 @@ namespace
 {
 using E = MobDropGroupError;
 bool Chanced(MobDropRoll roll) noexcept { return roll != MobDropRoll::OneInKills; }
+
+bool CanRollGroup(const MobDropGroup& group, const MobDropContext& kill)
+{
+    if (kill.stone && (group.target == MobDropTarget::Rank ||
+        group.roll == MobDropRoll::DoubleDrop || group.roll == MobDropRoll::LevelGated))
+        return false;
+    if (group.roll == MobDropRoll::DoubleDrop)
+        return kill.doubleDrop;
+    if (group.roll == MobDropRoll::LevelGated)
+        return kill.killerLevel >= group.minimumKillerLevel;
+    return true;
+}
+
+bool InKillerLevelWindow(const MobDropEntry& entry, const MobDropContext& kill)
+{
+    return kill.killerLevel >= entry.killerLevelMin && kill.killerLevel <= entry.killerLevelMax;
+}
+
+MobDrop MakeDrop(const MobDropGroup& group, const MobDropEntry& entry)
+{
+    return {group.id, entry.entry, entry.item, entry.refinementLevel, entry.amount, entry.rareAttributeChanceBp};
+}
 }
 
 std::string_view MobDropGroupErrorName(MobDropGroupError e) noexcept
@@ -91,6 +113,19 @@ std::expected<void, MobDropGroupError> ValidateMobDropItems(const MobDropGroup& 
     return {};
 }
 
+std::vector<MobDrop> PreviewMobDrops(const ItemCatalog& catalog, const MobDropContext& kill)
+{
+    std::vector<MobDrop> drops;
+    for (const auto* group : catalog.MobDropGroupsFor(kill.mobVnum, kill.mobRank))
+    {
+        if (!CanRollGroup(*group, kill)) continue;
+        for (const auto& entry : group->entries)
+            if (InKillerLevelWindow(entry, kill))
+                drops.push_back(MakeDrop(*group, entry));
+    }
+    return drops;
+}
+
 std::expected<std::vector<MobDrop>, MobDropError> PlanMobDrops(const ItemCatalog& catalog, const MobDropContext& kill, const MobDropDraw& draw)
 {
     if (!kill.randomRange || !kill.killerLevel || !std::isfinite(kill.deltaPercent))
@@ -102,25 +137,20 @@ std::expected<std::vector<MobDrop>, MobDropError> PlanMobDrops(const ItemCatalog
         return value;
     };
     const auto give = [&](const MobDropGroup& group, const MobDropEntry& entry) {
-        drops.push_back({group.id, entry.entry, entry.item, entry.refinementLevel, entry.amount, entry.rareAttributeChanceBp});
+        drops.push_back(MakeDrop(group, entry));
     };
     // Legacy: (dwPct * delta / 100) >= number(1, range), with dwPct = ppb / 250.
     const auto scaled = [&](std::uint32_t ppb) { return ppb * kill.deltaPercent / 25'000.0; };
-    const auto inWindow = [&](const MobDropEntry& entry) {
-        return kill.killerLevel >= entry.killerLevelMin && kill.killerLevel <= entry.killerLevelMax;
-    };
     for (const auto* group : catalog.MobDropGroupsFor(kill.mobVnum, kill.mobRank))
     {
-        if (group->target == MobDropTarget::Rank && kill.stone) continue;
+        if (!CanRollGroup(*group, kill)) continue;
         switch (group->roll)
         {
         case MobDropRoll::DoubleDrop:
-            if (kill.stone || !kill.doubleDrop) break;
-            [[fallthrough]];
         case MobDropRoll::EachEntry:
             for (const auto& entry : group->entries)
             {
-                if (!inWindow(entry)) continue;
+                if (!InKillerLevelWindow(entry, kill)) continue;
                 const auto value = roll(kill.randomRange); if (!value) return std::unexpected(value.error());
                 if (scaled(entry.chancePpb) >= *value) give(*group, entry);
             }
@@ -136,15 +166,14 @@ std::expected<std::vector<MobDrop>, MobDropError> PlanMobDrops(const ItemCatalog
             const auto pick = roll(total); if (!pick) return std::unexpected(pick.error());
             std::uint32_t cumulative = 0;
             for (const auto& entry : group->entries)
-                if ((cumulative += entry.weight) >= *pick) { if (inWindow(entry)) give(*group, entry); break; }
+                if ((cumulative += entry.weight) >= *pick) { if (InKillerLevelWindow(entry, kill)) give(*group, entry); break; }
             break;
         }
         case MobDropRoll::LevelGated:
             // Legacy: dwPct >= number(1, 1000000), unscaled; here ppb >= [1, 1e9].
-            if (kill.stone || kill.killerLevel < group->minimumKillerLevel) break;
             for (const auto& entry : group->entries)
             {
-                if (!inWindow(entry)) continue;
+                if (!InKillerLevelWindow(entry, kill)) continue;
                 const auto value = roll(MobDropChanceScale); if (!value) return std::unexpected(value.error());
                 if (entry.chancePpb >= *value) give(*group, entry);
             }

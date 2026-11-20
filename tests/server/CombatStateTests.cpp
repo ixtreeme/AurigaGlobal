@@ -597,6 +597,7 @@ event_struct_ const * CHARACTER_MANAGER::CheckEventIsActive(unsigned char,unsign
 entt::entity ITEM_MANAGER::CreateItem(unsigned int,unsigned int,unsigned int,bool,int,bool) { UnexpectedService(__func__); }
 bool ITEM_MANAGER::CreateDropItem(entt::entity,entt::entity,std::vector<entt::entity,std::allocator<entt::entity> > &,int,int,bool) { UnexpectedService(__func__); }
 bool ITEM_MANAGER::GetDropPct(entt::entity,entt::entity,int&,int&) { UnexpectedService(__func__); }
+auriga::item::MobDropContext MakeTypedMobDropContext(entt::entity, entt::entity) { UnexpectedService(__func__); }
 std::vector<auriga::item::MobDrop> RollTypedMobDrops(const auriga::item::MobDropContext&) { UnexpectedService(__func__); }
 void QueueTypedItemGrant(entt::entity,const auriga::item::ItemGrant&) { UnexpectedService(__func__); }
 bool auriga::item::runtime::TypedDropsEnabled() noexcept { return false; }

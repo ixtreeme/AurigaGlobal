@@ -6,6 +6,11 @@
 #include "TypedRecovery.hpp"
 #include "TypedInventorySync.hpp"
 #include "TypedLoot.hpp"
+#include "unique_item.h"
+#include "../ecs/systems/ItemSystem.hpp"
+#include "../ecs/systems/PointSystem.hpp"
+#include "../network/desc.h"
+#include <Headers/Header_GC.h>
 #include "../core/utils.h"
 #include "../ecs/Registry.hpp"
 #include "../ecs/systems/ChatSystem.hpp"
@@ -16,6 +21,7 @@
 
 #include <algorithm>
 #include <climits>
+#include <limits>
 #include <random>
 #include <string>
 
@@ -77,6 +83,94 @@ void Refused(entt::entity owner, const items::ItemGrant& grant, TypedGrantRefusa
 	}
 }
 } // namespace
+
+items::MobDropContext MakeTypedMobDropContext(entt::entity victim, entt::entity killer)
+{
+	items::MobDropContext kill;
+	kill.mobVnum = ecs::PlayerRuntime::GetRaceNum(victim);
+	kill.mobRank = static_cast<std::uint8_t>(ecs::PlayerRuntime::GetMobRank(victim));
+	kill.stone = ecs::PlayerRuntime::IsStone(victim);
+	kill.killerLevel = static_cast<std::uint16_t>(std::clamp(ecs::PointSystem::GetLevel(killer), 1, 65535));
+	kill.doubleDrop = ecs::PlayerRuntime::GetPremiumRemainSeconds(killer, PREMIUM_ITEM) > 0 ||
+		ItemSystem::IsEquipUniqueGroup(killer, UNIQUE_GROUP_DOUBLE_ITEM)
+#ifdef ENABLE_NEW_COMMON_BONUSES
+		|| ecs::PointSystem::GetPrecise(killer, POINT_DOUBLE_DROP_ITEM) > 0
+#endif
+		;
+	return kill;
+}
+
+void SendTypedMobDropPreview(entt::entity player, entt::entity target, std::uint32_t requestedVid)
+{
+	auto* desc = ecs::PlayerRuntime::GetDesc(player);
+	if (!desc) return;
+	const auto catalog = items::runtime::TypedDropsEnabled() ? items::runtime::CurrentDropCatalog() : nullptr;
+	const auto race = target != entt::null && catalog ? ecs::PlayerRuntime::GetRaceNum(target) : 0;
+
+	// GC frame: byte header, uint32 size, byte version, uint32 VID,
+	// uint32 race (zero when unavailable), uint16 row count, byte flags.
+	std::vector<std::uint8_t> packet;
+	const auto put = [&](std::uint32_t value, unsigned bytes) {
+		for (unsigned i = 0; i < bytes; ++i)
+			packet.push_back(static_cast<std::uint8_t>(value >> (i * 8)));
+	};
+	const auto putText = [&](const std::string& text) {
+		put(static_cast<std::uint32_t>(text.size()), 2);
+		packet.insert(packet.end(), text.begin(), text.end());
+	};
+
+	put(HEADER_GC_TYPED_MOB_DROP_PREVIEW, 1);
+	put(0, 4);
+	put(1, 1);
+	put(requestedVid, 4);
+	put(race, 4);
+	put(0, 2);
+	put(0, 1);
+	constexpr std::size_t maxFrame = 1 << 20;
+	constexpr auto maxShort = std::numeric_limits<std::uint16_t>::max();
+	std::uint16_t count = 0;
+	bool truncated = false;
+	if (race != 0)
+	{
+		for (const auto& drop : items::PreviewMobDrops(*catalog, MakeTypedMobDropContext(target, player)))
+		{
+			const auto* entry = catalog->Find(drop.item);
+			if (!entry) continue;
+			const auto& base = entry->base;
+			if (base.nameKey.size() > maxShort || base.contentCode.size() > maxShort ||
+				base.iconAsset.size() > maxShort || base.descriptionKey.size() > maxShort)
+			{
+				truncated = true;
+				continue;
+			}
+			const auto rowSize = 20 + base.nameKey.size() + base.contentCode.size() +
+				base.iconAsset.size() + base.descriptionKey.size();
+			if (count == maxShort || packet.size() + rowSize > maxFrame)
+			{
+				truncated = true;
+				break;
+			}
+			put(static_cast<std::uint16_t>(drop.item.Category()), 2);
+			put(drop.item.LocalId(), 4);
+			put(drop.refinementLevel, 2);
+			put(drop.amount, 4);
+			putText(base.nameKey);
+			putText(base.contentCode);
+			putText(base.iconAsset);
+			putText(base.descriptionKey);
+			++count;
+		}
+	}
+	for (unsigned i = 0; i < 4; ++i)
+		packet[1 + i] = static_cast<std::uint8_t>(packet.size() >> (i * 8));
+	packet[14] = static_cast<std::uint8_t>(count);
+	packet[15] = static_cast<std::uint8_t>(count >> 8);
+	packet[16] = truncated ? 1 : 0;
+	if (packet.size() > 65535)
+		desc->LargePacket(packet.data(), static_cast<int>(packet.size()));
+	else
+		desc->Packet(packet.data(), static_cast<int>(packet.size()));
+}
 
 std::vector<items::MobDrop> RollTypedMobDrops(const items::MobDropContext& kill)
 {

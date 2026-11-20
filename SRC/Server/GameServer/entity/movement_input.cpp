@@ -43,7 +43,8 @@
 #include "../ecs/systems/MountSystem.hpp"
 #include "../ecs/systems/ViewSystem.hpp"
 #include "OXEvent.h"
-#include "item_manager.h"
+#include "../item/TypedDrops.hpp"
+#include "../ecs/components/visibility_components.hpp"
 #include "../ecs/systems/MountFlightSystem.hpp"
 
 void CInputMain::MountFlight(entt::entity character, const char* data)
@@ -438,29 +439,17 @@ void CInputMain::Target(entt::entity character, const char * pcData)
 #ifdef __SEND_TARGET_INFO__
 void CInputMain::TargetInfoLoad(entt::entity character, const char* c_pData)
 {
-	if (!ecs::IsCharacter(character))
+	if (!ecs::IsCharacter(character) || !ecs::PlayerRuntime::IsPC(character))
 		return;
 
 	const auto* request = reinterpret_cast<const TPacketCGTargetInfoLoad*>(c_pData);
-	const entt::entity targetEntity = CHARACTER_MANAGER::instance().FindEntity(request->dwVID);
-
-	if (!ecs::IsCharacter(targetEntity) || (ecs::PlayerRuntime::GetCharType(targetEntity) != CHAR_TYPE_MONSTER && !ecs::PlayerRuntime::IsStone(targetEntity)))
-		return;
-
-	std::vector<TargetInfoItem> items;
-	if (!ITEM_MANAGER::instance().CreateDropItemVector(targetEntity, character, items))
-		return;
-
-	TPacketGCTargetInfo info{};
-	info.header = HEADER_GC_TARGET_INFO;
-	info.dwVID = ecs::PlayerRuntime::GetPacketVID(targetEntity);
-	info.race = ecs::PlayerRuntime::GetRaceNum(targetEntity);
-
-	for (const TargetInfoItem& item : items)
-	{
-		info.dwVnum = item.vnum;
-		info.count = item.count;
-		ecs::PlayerRuntime::GetDesc(character)->Packet(&info, sizeof(info));
-	}
+	if (!request->dwVID) return;
+	const entt::entity target = CHARACTER_MANAGER::instance().FindEntity(request->dwVID);
+	const auto* view = g_registry.try_get<ecs::ViewMap>(character);
+	const bool available = ecs::IsCharacter(target) && view && view->visible.contains(target) &&
+		ecs::PlayerRuntime::GetMapIndex(character) == ecs::PlayerRuntime::GetMapIndex(target) &&
+		!CombatSystem::IsDead(target) &&
+		(ecs::PlayerRuntime::GetCharType(target) == CHAR_TYPE_MONSTER || ecs::PlayerRuntime::IsStone(target));
+	SendTypedMobDropPreview(character, available ? target : entt::null, request->dwVID);
 }
 #endif
