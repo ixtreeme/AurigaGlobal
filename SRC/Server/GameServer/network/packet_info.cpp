@@ -201,6 +201,7 @@ CPacketInfoCG::CPacketInfoCG()
     Set(HEADER_CG_TYPED_MISSION, 216, "TypedMission", true);
     Set(HEADER_CG_TYPED_FORGE,58,"TypedForge",true);
     Set(HEADER_CG_TYPED_WIKI_SOURCES, TypedWikiSourcesRequestSize, "TypedWikiSources", true);
+    Set(HEADER_CG_TYPED_WIKI_LOOT, TypedWikiLootRequestSize, "TypedWikiLoot", true);
     Set(HEADER_CG_TYPED_SOUL, 28, "TypedSpecialBonuses", true);
     Set(HEADER_CG_TYPED_ATTRIBUTES, sizeof(TPacketCGTypedAttributes), "TypedAttributes", true);
     Set(HEADER_CG_TYPED_EFFECTS,sizeof(TPacketCGTypedRecovery),"TypedEffects",true);
