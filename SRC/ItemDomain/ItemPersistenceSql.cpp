@@ -278,6 +278,19 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
         tx.push_back({"DELETE FROM player.quest WHERE dwPID=? AND szName=? AND szState IN ('cooldown','disconnect','idx','ch')",
             {pid, dungeon}, {}, {}});
     }
+    if (r.outcomeCode == LevelResetScrollOutcome)
+    {
+        tx.push_back({"SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' "
+            "AND TABLE_NAME IN ('player','item_book_learning') "
+            "HAVING COUNT(*)=2 AND SUM(ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE')=2", {}, {}, 1});
+        SqlParams parameters{U::UInt(static_cast<unsigned>(ItemOwnerKind::Character)),
+            U::UInt(r.owners.front().owner.id), U::UInt(static_cast<unsigned>(ItemStorageKind::Equipment))};
+        for (const auto slot : LevelResetEquipmentSlots)
+            parameters.push_back(U::UInt(static_cast<unsigned>(slot) - 1));
+        tx.push_back({"SELECT 1 FROM player.item_instance WHERE owner_kind=? AND owner_id=? "
+            "AND storage_kind=? AND storage_id=1 AND anchor_cell IN (?,?,?,?) AND destroyed=0 LIMIT 1 FOR UPDATE",
+            std::move(parameters), {}, 0});
+    }
     if(const auto relation=ReadMarriageItemChange(r))
     {
         const auto first=(std::min)(relation->initiator,relation->partner);

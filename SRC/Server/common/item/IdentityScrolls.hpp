@@ -9,6 +9,11 @@ inline constexpr std::uint16_t EmpireScrollOutcome = 0x3B03;
 inline constexpr std::uint16_t SexScrollOutcome = 0x3B04;
 inline constexpr std::uint16_t GuildMasterScrollOutcome = 0x3B05;
 inline constexpr std::uint16_t DungeonCooldownScrollOutcome = 0x3B06;
+inline constexpr std::uint16_t LevelResetScrollOutcome = 0x3B07;
+inline constexpr std::uint16_t LevelBeforeReset = 66, LevelAfterReset = 65;
+inline constexpr std::int32_t LevelResetMap = 41;
+inline constexpr std::array LevelResetEquipmentSlots{
+    EquipmentSlot::Feet, EquipmentSlot::Wrist, EquipmentSlot::Neck, EquipmentSlot::Ear};
 
 inline constexpr std::array<std::string_view, 17> CooldownScrollDungeons{
     "owl_zone_razor93", "dungeonorchi", "slime_dungeon", "dungeon_spider",
@@ -77,4 +82,9 @@ std::expected<ItemCommit, ItemPersistenceError> MakeGuildMasterScrollCommit(cons
 std::expected<ItemCommit, ItemPersistenceError> MakeDungeonCooldownScrollCommit(const ItemCatalog&,
     std::array<std::uint8_t, 16>, ItemOwnerFence, std::span<const ItemStorageLayout>,
     std::span<const PersistentItem>, ItemInstanceId, std::uint64_t, DungeonCooldownScrollChange);
+bool CanPayLevelReset(const BookCharacter&);
+std::expected<ItemCommit, ItemPersistenceError> MakeLevelResetScrollCommit(const ItemCatalog&,
+    std::array<std::uint8_t, 16>, ItemOwnerFence, std::span<const ItemStorageLayout>,
+    std::span<const PersistentItem>, ItemInstanceId, std::uint64_t, const BookLearning&,
+    const BookCharacter&, std::uint16_t randomHP, std::uint16_t randomSP);
 }

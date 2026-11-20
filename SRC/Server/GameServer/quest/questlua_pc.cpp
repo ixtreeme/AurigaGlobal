@@ -4518,6 +4518,7 @@ teleport_area:
 			{ "typed_change_name",	pc_typed_change_name },
 			{ "typed_change_guild_master", pc_typed_change_guild_master },
 			{ "typed_reset_dungeon_cooldown", pc_typed_reset_dungeon_cooldown },
+			{ "typed_reset_level", pc_typed_reset_level },
 
 			{ "is_dead",				pc_is_dead	},
 

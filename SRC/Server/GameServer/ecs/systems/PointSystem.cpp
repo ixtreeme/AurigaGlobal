@@ -400,6 +400,42 @@ int GetRandomSP(entt::entity e)
 	return points ? points->base.iRandomSP : 0;
 }
 
+static void PublishLevelChange(entt::entity e, int64_t level)
+{
+	const auto playStart = ecs::PlayerRuntime::GetPlayStartTime(e);
+	const auto pid = ecs::PlayerRuntime::GetPlayerID(e);
+	quest::CQuestManager::instance().LevelUp(pid);
+	if (!IsReadableEntity(e)) return;
+
+	LogManager::instance().LevelLog(e, level, GetReal(e, POINT_PLAYTIME) + (get_dword_time() - playStart) / 60000);
+	if (auto* guild = ecs::SocialSystem::GetGuild(e))
+		guild->LevelChange(pid, GetLevel(e));
+	const auto party = ecs::SocialSystem::GetParty(e);
+	if (party != entt::null)
+		PartySystem::RequestSetMemberLevel(party, pid, GetLevel(e));
+}
+
+static void FinishQuestLevelChange(entt::entity e)
+{
+	if (!IsReadableEntity(e)) return;
+	Compute(e);
+	Change(e, POINT_HP, static_cast<int64_t>(GetMaxHP(e)) - Get(e, POINT_HP));
+	Change(e, POINT_SP, static_cast<int64_t>(GetMaxSP(e)) - Get(e, POINT_SP));
+	NetworkSyncSystem::PointsPacket(e);
+	SkillSystem::SendSkillLevelPacket(e);
+	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+	g_dispatcher.trigger(ecs::EvLevelUp { e, GetLevel(e) });
+}
+
+void PublishSavedQuestLevelChange(entt::entity e)
+{
+	if (!IsReadableEntity(e)) return;
+	Change(e, POINT_LEVEL, 0);
+	if (!IsReadableEntity(e)) return;
+	PublishLevelChange(e, GetLevel(e));
+	FinishQuestLevelChange(e);
+}
+
 bool SetLevelFromQuest(entt::entity e, int newLevel)
 {
 	if (!IsReadableEntity(e))
@@ -416,13 +452,7 @@ bool SetLevelFromQuest(entt::entity e, int newLevel)
 		JobInitialPoints[job].hp_per_lv_begin, JobInitialPoints[job].hp_per_lv_end));
 	SetRandomSP(e, (newLevel - 1) * number(
 		JobInitialPoints[job].sp_per_lv_begin, JobInitialPoints[job].sp_per_lv_end));
-	Compute(e);
-	Change(e, POINT_HP, GetMaxHP(e) - Get(e, POINT_HP));
-	Change(e, POINT_SP, GetMaxSP(e) - Get(e, POINT_SP));
-	NetworkSyncSystem::PointsPacket(e);
-	SkillSystem::SendSkillLevelPacket(e);
-	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-	g_dispatcher.trigger(ecs::EvLevelUp { e, GetLevel(e) });
+	FinishQuestLevelChange(e);
 	return true;
 }
 
@@ -639,24 +669,8 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 #endif
 		if (amount)
 		{
-			uint32_t playStart = 0;
-			playStart = ecs::PlayerRuntime::GetPlayStartTime(e);
-			quest::CQuestManager::instance().LevelUp(ecs::PlayerRuntime::GetPlayerID(e));
+			PublishLevelChange(e, val);
 			if (!IsReadableEntity(e)) return;
-
-			LogManager::instance().LevelLog(e, val, GetReal(e, POINT_PLAYTIME) + (get_dword_time() - playStart) / 60000);
-
-			if (auto* guild = ecs::SocialSystem::GetGuild(e))
-			{
-				guild->LevelChange(ecs::PlayerRuntime::GetPlayerID(e), GetLevel(e));
-			}
-
-			const entt::entity party = ::ecs::SocialSystem::GetParty(e);
-
-			if (party != entt::null)
-			{
-				PartySystem::RequestSetMemberLevel(party, ecs::PlayerRuntime::GetPlayerID(e), GetLevel(e));
-			}
 		}
 		break;
 

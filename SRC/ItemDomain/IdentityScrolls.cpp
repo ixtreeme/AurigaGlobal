@@ -12,6 +12,7 @@ constexpr std::string_view EmpireScrollCode = "catalog.10.tincture_of_kingdoms_8
 constexpr std::string_view SexScrollCode = "catalog.10.modification_charm_679127259da2";
 constexpr std::string_view GuildMasterScrollCode = "catalog.10.ring_of_successor_3b1ff932cf1c";
 constexpr std::string_view DungeonCooldownScrollCode = "catalog.10.dungeon_cd_reset_0f8f1b52bcef";
+constexpr std::string_view LevelResetScrollCode = "catalog.10.level_reset_66_to_65_c0f8a197800f";
 
 bool ValidNames(NameScrollChange names)
 {
@@ -30,7 +31,7 @@ bool ValidEmpires(EmpireScrollChange change)
 std::expected<ItemCommit, ItemPersistenceError> MakeScrollCommit(const ItemCatalog& catalog,
     std::array<std::uint8_t, 16> operation, ItemOwnerFence fence, std::span<const ItemStorageLayout> storages,
     std::span<const PersistentItem> inventory, ItemInstanceId source, std::uint64_t revision,
-    std::uint16_t outcome, std::vector<std::uint8_t> receipt)
+    std::uint16_t outcome, std::vector<std::uint8_t> receipt, std::optional<ItemLearningChange> learning = {})
 {
     auto write = MakeConsumeCommit(catalog, operation, fence, storages, inventory, source, 1);
     if (!write) return std::unexpected(write.error());
@@ -39,8 +40,30 @@ std::expected<ItemCommit, ItemPersistenceError> MakeScrollCommit(const ItemCatal
 
     write->outcomeCode = outcome;
     write->result = std::move(receipt);
+    write->learning = std::move(learning);
     if (auto valid = ValidateItemCommit(catalog, *write); !valid) return std::unexpected(valid.error());
     return write;
+}
+
+bool ValidLevelReset(const ItemCommit& write)
+{
+    const auto& data = write.result;
+    if (data.size() != 11 || data[0] != 'L' || data[1] != 'R' || data[2] != 'S' || data[3] != 1 ||
+        data[4] > 3 || !write.learning || write.owners.size() != 1)
+        return false;
+
+    const auto& change = *write.learning;
+    const auto& character = change.after.character;
+    if (change.owner != write.owners.front().owner || !character.progression ||
+        change.before.chanceTokens != change.after.chanceTokens ||
+        change.before.bypassTokens != change.after.bypassTokens || change.before.progress != change.after.progress)
+        return false;
+
+    const auto word = [&](std::size_t offset) { return unsigned(data[offset]) | (unsigned(data[offset + 1]) << 8); };
+    const auto& progress = *character.progression;
+    return progress.level == LevelAfterReset && progress.step == data[4] &&
+        unsigned(character.points[0]) + 1 == word(5) && unsigned(character.points[1]) + 1 == word(7) &&
+        unsigned(progress.statPoints) + 3 - progress.step == word(9);
 }
 }
 
@@ -148,6 +171,10 @@ bool ValidateQuestScrollWrite(const ItemCatalog& catalog, const ItemCommit& writ
         if (!ReadDungeonCooldownScrollChange(write)) return false;
         contentCode = DungeonCooldownScrollCode;
         break;
+    case LevelResetScrollOutcome:
+        if (!ValidLevelReset(write)) return false;
+        contentCode = LevelResetScrollCode;
+        break;
     default:
         return true;
     }
@@ -155,7 +182,8 @@ bool ValidateQuestScrollWrite(const ItemCatalog& catalog, const ItemCommit& writ
     if (write.kind != ItemOperationKind::Consume ||
         write.owners.size() != 1 || write.owners.front().owner.kind != ItemOwnerKind::Character ||
         write.owners.front().owner.id > UINT32_MAX || write.items.size() != 1 ||
-        !write.wallets.empty() || write.ground || write.recovery || write.learning || write.petStudyCooldown ||
+        !write.wallets.empty() || write.ground || write.recovery || write.petStudyCooldown ||
+        (write.learning && write.outcomeCode != LevelResetScrollOutcome) ||
         write.currencyAward || write.nativeAward || write.currencyDrop || write.privateShop || write.dungeonEntry)
         return false;
 
@@ -231,5 +259,41 @@ std::expected<ItemCommit, ItemPersistenceError> MakeDungeonCooldownScrollCommit(
             receipt.push_back(static_cast<std::uint8_t>(std::uint64_t(value) >> (8 * byte)));
     return MakeScrollCommit(catalog, operation, fence, storages, inventory, source, revision,
         DungeonCooldownScrollOutcome, std::move(receipt));
+}
+
+bool CanPayLevelReset(const BookCharacter& live)
+{
+    if (!live.progression || live.progression->step > 3) return false;
+    return live.points[0] >= 1 && live.points[1] >= 1 && live.progression->statPoints >= 3 - live.progression->step;
+}
+
+std::expected<ItemCommit, ItemPersistenceError> MakeLevelResetScrollCommit(const ItemCatalog& catalog,
+    std::array<std::uint8_t, 16> operation, ItemOwnerFence fence, std::span<const ItemStorageLayout> storages,
+    std::span<const PersistentItem> inventory, ItemInstanceId source, std::uint64_t revision, const BookLearning& before,
+    const BookCharacter& live, std::uint16_t randomHP, std::uint16_t randomSP)
+{
+    if (!ValidBookLearning(before) || before.revision == UINT64_MAX || !ValidBookCharacter(live) ||
+        !live.progression || live.progression->level != LevelBeforeReset || !CanPayLevelReset(live))
+        return std::unexpected(ItemPersistenceError::RequirementNotMet);
+
+    auto after = before;
+    ++after.revision;
+    after.character = live;
+    --after.character.points[0];
+    --after.character.points[1];
+    auto& progress = *after.character.progression;
+    progress.level = LevelAfterReset;
+    progress.statPoints -= static_cast<std::uint16_t>(3 - progress.step);
+    progress.randomHP = randomHP;
+    progress.randomSP = randomSP;
+
+    std::vector<std::uint8_t> receipt{'L', 'R', 'S', 1, static_cast<std::uint8_t>(progress.step)};
+    for (const auto value : {live.points[0], live.points[1], live.progression->statPoints})
+    {
+        receipt.push_back(static_cast<std::uint8_t>(value));
+        receipt.push_back(static_cast<std::uint8_t>(value >> 8));
+    }
+    return MakeScrollCommit(catalog, operation, fence, storages, inventory, source, revision,
+        LevelResetScrollOutcome, std::move(receipt), ItemLearningChange{fence.owner, before, std::move(after)});
 }
 }

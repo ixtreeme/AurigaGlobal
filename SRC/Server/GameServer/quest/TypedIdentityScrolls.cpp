@@ -7,11 +7,13 @@
 #include "../ecs/systems/InventorySystem.hpp"
 #include "../ecs/systems/NetworkSyncSystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
+#include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../entity/char.h"
 #include "../guild/guild.h"
 #include "../item/ItemCatalogRuntime.hpp"
 #include "../item/ItemStore.hpp"
+#include "../item/TypedBooks.hpp"
 #include "../item/TypedDrops.hpp"
 #include "../item/TypedInventorySync.hpp"
 #include "../network/db.h"
@@ -19,6 +21,7 @@
 #include "../core/log.h"
 #include "../social/messenger_manager.h"
 #include "../core/config.h"
+#include "../core/constants.h"
 #include "../core/utils.h"
 #include <item/IdentityScrolls.hpp>
 #include <openssl/rand.h>
@@ -34,6 +37,7 @@ enum NameResult { NamePending, NameMissing, NameInvalid, NameOccupied, NameChang
 enum EmpireResult { EmpireRefused, EmpireUnchanged, EmpireHasGuild, EmpireHasMarriage, EmpireChanged = 999 };
 enum SexResult { SexRefused, SexChanged, SexHasBodyCostume, SexHasHairCostume };
 enum GuildResult { GuildRefused, GuildNotLeader, GuildNoSuccessor, GuildChanged, GuildMissing };
+enum LevelResetResult { LevelResetRefused, LevelResetChanged, LevelResetEquipped, LevelResetWrongMap, LevelResetWrongLevel, LevelResetPoints };
 
 static_assert(item::OppositeSexRace(MAIN_RACE_WARRIOR_M) == MAIN_RACE_WARRIOR_W);
 static_assert(item::OppositeSexRace(MAIN_RACE_ASSASSIN_M) == MAIN_RACE_ASSASSIN_W);
@@ -84,21 +88,35 @@ bool QueueScroll(const ScrollUse& use, lua_State* L, item::ItemCommit write,
     const auto pid = player::GetPlayerID(actor);
     const auto token = g_registry.get<ecs::TypedItemLogin>(actor).token;
     const auto fence = write.owners.front();
+    const auto checkpoint = write.learning
+        ? HoldTypedBookCheckpoint(actor, std::exchange(apply, {})) : std::function<void(bool, bool)>{};
+    if (write.learning && !checkpoint) return false;
     auto held = std::make_shared<auriga::resource_admission::Permit>(std::move(*permit));
     g_registry.emplace<ecs::TypedItemBusy>(actor);
     if (item::runtime::RequestCommit(fence.owner, fence.sessionGeneration, std::move(write),
-        [actor, token, pid, coroutine = L, apply = std::move(apply), held](item::runtime::CommitOutcome result) mutable {
+        [actor, token, pid, coroutine = L, apply = std::move(apply), checkpoint, held](item::runtime::CommitOutcome result) mutable {
             const auto current = [&] {
                 const auto* active = g_registry.valid(actor) ? g_registry.try_get<ecs::TypedItemLogin>(actor) : nullptr;
                 return active && active->token == token;
             };
+            if (current())
+            {
+                if (result.state)
+                    g_registry.emplace_or_replace<ecs::TypedItems>(actor, std::move(*result.state));
+                g_registry.remove<ecs::TypedItemBusy>(actor);
+                if (checkpoint && !result.state)
+                {
+                    held.reset();
+                    if (auto* desc = player::GetDesc(actor)) desc->SetPhase(PHASE_CLOSE);
+                    checkpoint(false, false);
+                    return;
+                }
+            }
+            held.reset();
+            if (checkpoint) checkpoint(result.write.has_value() && result.state.has_value(), true);
             // A recovered receipt is also the first completion of this request.
             if (result.write && apply) apply(current() ? actor : entt::null);
             if (!current()) return;
-            if (result.state)
-                g_registry.emplace_or_replace<ecs::TypedItems>(actor, std::move(*result.state));
-            g_registry.remove<ecs::TypedItemBusy>(actor);
-            held.reset();
             SendTypedInventory(actor);
             if (current()) CQuestManager::instance().ResumeTypedItems(pid, coroutine, result.write.has_value());
             if (current()) PumpTypedItemGrants(actor);
@@ -106,6 +124,7 @@ bool QueueScroll(const ScrollUse& use, lua_State* L, item::ItemCommit write,
         return true;
 
     g_registry.remove<ecs::TypedItemBusy>(actor);
+    if (checkpoint) checkpoint(false, true);
     return false;
 }
 
@@ -288,6 +307,46 @@ std::optional<int> SubmitDungeonCooldownScroll(lua_State* L)
     return std::nullopt;
 }
 
+std::optional<int> SubmitLevelResetScroll(lua_State* L)
+{
+    const auto use = ReadScrollUse(L, false);
+    const auto catalog = item::runtime::CurrentCatalog();
+    if (!use || !catalog) return LevelResetRefused;
+
+    const auto& state = *use->inventory;
+    const auto equipped = [&](const item::PersistentItem& row) {
+        return !row.destroyed && row.owner == state.fence.owner && row.placement &&
+            row.placement->kind == item::ItemStorageKind::Equipment &&
+            std::ranges::any_of(item::LevelResetEquipmentSlots, [&](item::EquipmentSlot slot) {
+                return item::FitsEquipmentSlot(slot, row.placement->anchor);
+            });
+    };
+    if (std::ranges::any_of(state.items, equipped)) return LevelResetEquipped;
+    if (player::GetMapIndex(use->actor) != item::LevelResetMap) return LevelResetWrongMap;
+    if (ecs::PointSystem::GetLevel(use->actor) != item::LevelBeforeReset) return LevelResetWrongLevel;
+
+    const auto live = TypedBookCharacter(use->actor);
+    if (!live) return LevelResetRefused;
+    if (!item::CanPayLevelReset(*live)) return LevelResetPoints;
+
+    const auto job = player::GetJob(use->actor);
+    if (job >= JOB_MAX_NUM) return LevelResetRefused;
+    const auto& initial = JobInitialPoints[job];
+    const auto randomHP = static_cast<std::uint16_t>((item::LevelAfterReset - 1) *
+        number(initial.hp_per_lv_begin, initial.hp_per_lv_end));
+    const auto randomSP = static_cast<std::uint16_t>((item::LevelAfterReset - 1) *
+        number(initial.sp_per_lv_begin, initial.sp_per_lv_end));
+    auto write = item::MakeLevelResetScrollCommit(*catalog, use->operation, state.fence, state.storages, state.items,
+        use->source, use->revision, state.learning, *live, randomHP, randomSP);
+    if (!write || !QueueScroll(*use, L, std::move(*write), [](entt::entity actor) {
+        LogManager::instance().QuestRewardLog("leveldown_66_to_65", player::GetPlayerID(actor),
+            item::LevelBeforeReset, item::LevelAfterReset, 0);
+        ecs::PointSystem::PublishSavedQuestLevelChange(actor);
+    }))
+        return LevelResetRefused;
+    return std::nullopt;
+}
+
 template<int Changed, int Refused>
 int FinishScroll(lua_State* L, std::optional<int> status)
 {
@@ -313,4 +372,5 @@ ALUA(pc_typed_change_empire) { return FinishScroll<EmpireChanged, EmpireRefused>
 ALUA(pc_typed_change_sex) { return FinishScroll<SexChanged, SexRefused>(L, SubmitSexScroll(L)); }
 ALUA(pc_typed_change_guild_master) { return FinishScroll<GuildChanged, GuildRefused>(L, SubmitGuildMasterScroll(L)); }
 ALUA(pc_typed_reset_dungeon_cooldown) { return FinishScroll<1, 0>(L, SubmitDungeonCooldownScroll(L)); }
+ALUA(pc_typed_reset_level) { return FinishScroll<LevelResetChanged, LevelResetRefused>(L, SubmitLevelResetScroll(L)); }
 }

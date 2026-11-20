@@ -35,6 +35,7 @@ void SetGaya(entt::entity e, int value);
 int GetRandomHP(entt::entity e);
 int GetRandomSP(entt::entity e);
 bool SetLevelFromQuest(entt::entity e, int newLevel);
+void PublishSavedQuestLevelChange(entt::entity e);
 bool ResetStat(entt::entity e, int statIndex);
 bool ResetAllPoints(entt::entity e, int level);
 void Compute(entt::entity e);
