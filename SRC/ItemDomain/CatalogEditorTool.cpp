@@ -246,7 +246,7 @@ void AddBatches(SqlTransaction& plan,const db::TableSpec& spec,const db::Rows& r
         plan.push_back({std::move(query),{SqlParam::Text(payload.dump())},payload.size(),{}});
     }
 }
-void Commit(CAsyncSQL& sql,const db::CapturedCatalog& before,const db::Snapshot& after,const Json* liveRequest=nullptr) {
+void Commit(CAsyncSQL& sql,const db::CapturedCatalog& before,const db::Snapshot& after,const ItemCatalog& validated,const Json* liveRequest) {
     // Parents before children. Deletes use the reverse order. The UI edits
     // profile contents without changing their category/delivery discriminator.
     constexpr T order[]={T::UsePolicies,T::TradePolicies,T::Appearances,T::Attacks,T::AmmoPolicies,T::Resistances,
@@ -270,11 +270,19 @@ void Commit(CAsyncSQL& sql,const db::CapturedCatalog& before,const db::Snapshot&
     const auto oldItems=Index(before.rows[T::Items],2),newItems=Index(after[T::Items],2);
     Require(newItems.size()>=oldItems.size(),"Targyat kivezetessel torolj; tartos kulcsot nem torlunk fizikailag.");
     for(const auto& [key,row]:oldItems)Require(newItems.contains(key),"A targykulcs nem torolheto vagy modosithato.");
-    unsigned added=0;
-    for(const auto& [key,row]:newItems)if(!oldItems.contains(key)) {
-        Require(++added<=1,"Egyszerre egy uj targy hozhato letre.");
-        plan.push_back({"SELECT 1 FROM protos.item_local_id_sequence WHERE category_id=? AND next_local_id=? FOR UPDATE",Parameters(key),{},1});
-        plan.push_back({"UPDATE protos.item_local_id_sequence SET next_local_id=next_local_id+1 WHERE category_id=? AND next_local_id=?",Parameters(key),1,{}});
+    std::map<std::uint16_t,std::vector<std::uint32_t>> newLocalIds;
+    for(const auto& [key,entry]:validated.Entries()) {
+        if(!before.catalog->Find(key))
+            newLocalIds[static_cast<std::uint16_t>(key.Category())].push_back(key.LocalId());
+    }
+    for(auto& [category,ids]:newLocalIds) {
+        std::ranges::sort(ids);
+        const auto first=ids.front();
+        const auto next=static_cast<std::uint64_t>(ids.back())+1;
+        Require(next-first==ids.size(),"Az uj targyazonositoknak kategorian belul folytonosnak kell lenniuk.");
+        // The guarded update reserves this range and locks the counter until the item rows commit.
+        plan.push_back({"UPDATE protos.item_local_id_sequence SET next_local_id=? WHERE category_id=? AND next_local_id=?",
+            {SqlParam::UInt(next),SqlParam::UInt(category),SqlParam::UInt(first)},1,{}});
     }
     for(T table:order) {
         const auto& spec=db::Tables()[static_cast<std::size_t>(table)];
@@ -374,7 +382,7 @@ Json Run(const Json& request) {
     }
     if(action!="commit_catalog_batch" && Hash(current.catalog->ContentHash())==Hash(validated->ContentHash()))return Result(sql,current);
     Require(request.at("expected_hash").get<std::string>()==Hash(current.catalog->ContentHash()),"Az adatokat masik szerkeszto modositotta. Frissitsd a listat.");
-    Commit(sql,current,next,action=="commit_catalog_batch"?&request:nullptr);
+    Commit(sql,current,next,*validated,action=="commit_catalog_batch"?&request:nullptr);
     auto saved=Capture(sql);
     Require(saved.catalog->ContentHash()==validated->ContentHash(),"A visszaolvasott allapot elter. Frissites szukseges.");
     return Result(sql,saved);
