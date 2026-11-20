@@ -8,6 +8,7 @@ namespace
 {
 constexpr std::string_view NameScrollCode = "catalog.10.tincture_of_the_name_2cbd51b0aa94";
 constexpr std::string_view EmpireScrollCode = "catalog.10.tincture_of_kingdoms_83e4f6b6bb83";
+constexpr std::string_view SexScrollCode = "catalog.10.modification_charm_679127259da2";
 
 bool ValidNames(NameScrollChange names)
 {
@@ -68,6 +69,16 @@ std::optional<EmpireScrollChange> ReadEmpireScrollChange(const ItemCommit& write
     return change;
 }
 
+std::optional<SexScrollChange> ReadSexScrollChange(const ItemCommit& write)
+{
+    const auto& data = write.result;
+    if (write.outcomeCode != SexScrollOutcome || data.size() != 6 ||
+        data[0] != 'S' || data[1] != 'E' || data[2] != 'X' || data[3] != 1 ||
+        OppositeSexRace(data[4]) != data[5])
+        return {};
+    return SexScrollChange{data[4], data[5]};
+}
+
 bool ValidateIdentityScrollWrite(const ItemCatalog& catalog, const ItemCommit& write)
 {
     std::string_view contentCode;
@@ -80,6 +91,10 @@ bool ValidateIdentityScrollWrite(const ItemCatalog& catalog, const ItemCommit& w
     case EmpireScrollOutcome:
         if (!ReadEmpireScrollChange(write)) return false;
         contentCode = EmpireScrollCode;
+        break;
+    case SexScrollOutcome:
+        if (!ReadSexScrollChange(write)) return false;
+        contentCode = SexScrollCode;
         break;
     default:
         return true;
@@ -132,5 +147,13 @@ std::expected<ItemCommit, ItemPersistenceError> MakeEmpireScrollCommit(const Ite
         receipt.push_back(static_cast<std::uint8_t>(change.account >> (8 * byte)));
     return MakeScrollCommit(catalog, operation, fence, storages, inventory, source, revision,
         EmpireScrollOutcome, std::move(receipt));
+}
+
+std::expected<ItemCommit, ItemPersistenceError> MakeSexScrollCommit(const ItemCatalog& catalog,
+    std::array<std::uint8_t, 16> operation, ItemOwnerFence fence, std::span<const ItemStorageLayout> storages,
+    std::span<const PersistentItem> inventory, ItemInstanceId source, std::uint64_t revision, SexScrollChange change)
+{
+    return MakeScrollCommit(catalog, operation, fence, storages, inventory, source, revision,
+        SexScrollOutcome, {'S', 'E', 'X', 1, change.before, change.after});
 }
 }

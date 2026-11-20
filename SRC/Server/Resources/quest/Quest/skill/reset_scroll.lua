@@ -74,25 +74,25 @@ quest reset_scroll begin
 			end
 		end
 
-		when 71048.use begin
+		when "catalog.10.modification_charm_679127259da2".typed_use begin
 			if not pc.can_warp() then
 				syschat(gameforge[pc.get_language()].reset_scroll._35)
 				return
 			end
 
-			say_title(string.format("%s:", item_name(item.get_vnum())))
+			say_title(string.format("%s:", item_name(71048)))
 			say("")
 			local lang = pc.get_language()
 			say(gameforge[lang].reset_scroll._48)
 			if (select(gameforge[lang].reset_scroll._1, gameforge[lang].reset_scroll._2) == 1) then
-				say_title(string.format("%s:", item_name(item.get_vnum())))
+				say_title(string.format("%s:", item_name(71048)))
 				say("")
 				if pc.is_polymorphed() then
 					say(gameforge[lang].reset_scroll._18)
 					return
 				end
 
-				local change = pc.change_sex()
+				local change = pc.typed_change_sex()
 				if change == 3 then
 					say(gameforge[lang].reset_scroll._49)
 					return
@@ -104,7 +104,6 @@ quest reset_scroll begin
 					return
 				end
 
-				pc.remove_item(71048, 1)
 				pc.polymorph(20032)
 				say(gameforge[lang].reset_scroll._19)
 			end

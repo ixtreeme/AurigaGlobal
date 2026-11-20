@@ -5,6 +5,7 @@
 #include <Core/Logging.hpp>
 #include <common/event_flag.h>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
+#include "../ecs/systems/PersistentRace.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
@@ -1624,9 +1625,8 @@ ACMD(do_set)
 						dwRace = (mySex==SEX_MALE)?MAIN_RACE_SHAMAN_M:MAIN_RACE_SHAMAN_W;
 						break;
 				}
-				if (dwRace!=ecs::PlayerRuntime::GetRaceNum(tch))
+				if (dwRace != ecs::PlayerRuntime::GetRaceNum(tch) && ecs::PlayerRuntime::SaveRaceChange(tch, dwRace))
 				{
-					ecs::PlayerRuntime::SetRace(tch, dwRace);
 					SkillSystem::ClearSkill(tch);
 					SkillSystem::SetSkillGroup(tch, 0);
 					// quick mesh change workaround begin
@@ -1644,9 +1644,8 @@ ACMD(do_set)
 				int amount = 0;
 				str_to_number(amount, arg3);
 				amount = MINMAX(SEX_MALE, amount, SEX_FEMALE);
-				if (amount != ecs::PlayerRuntime::GetSex(tch))
+				if (amount != ecs::PlayerRuntime::GetSex(tch) && ecs::PlayerRuntime::ChangeSex(tch))
 				{
-					ecs::PlayerRuntime::ChangeSex(tch);
 					// quick mesh change workaround begin
 					AffectSystem::SetPolymorph(tch, 101);
 					AffectSystem::SetPolymorph(tch, 0);

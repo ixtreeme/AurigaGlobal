@@ -19,6 +19,7 @@
 #include "SocialSystem.hpp"
 
 #include "PlayerRuntimeSystem.hpp"
+#include "PersistentRace.hpp"
 #include <common/DragonCoinWallet.h>
 #include <Core/Time.h>
 #include "SkillSystem.hpp"
@@ -1221,6 +1222,21 @@ bool SetRace(entt::entity e, uint8_t race)
 	return true;
 }
 
+bool SaveRaceChange(entt::entity e, uint8_t race)
+{
+	if (!IsPC(e)) return SetRace(e, race);
+	if (race >= MAIN_RACE_MAX_NUM || g_registry.all_of<ecs::TypedItemBusy>(e)) return false;
+	const auto* current = g_registry.try_get<ecs::RaceState>(e);
+	if (!current) return false;
+	if (current->baseRace == race) return true;
+
+	// Explicit race changes own job. Delayed Database saves cannot overwrite it.
+	const auto sql = fmt::format("UPDATE player{} SET job=? WHERE id=? AND job=?", get_table_postfix());
+	std::unique_ptr<SQLMsg> result(DBManager::instance().DirectQueryPrepared(sql.c_str(),
+		{SqlParam::UInt(race), SqlParam::UInt(GetPlayerID(e)), SqlParam::UInt(current->baseRace)}));
+	return result && !result->uiSQLErrno && result->Get() && result->Get()->uiAffectedRows == 1 && SetRace(e, race);
+}
+
 bool SetCostumeHidden(entt::entity e, uint8_t part, bool hidden, bool skipPersistence)
 {
 	if (e == entt::null || !g_registry.valid(e) || part < 1 || part > 4)
@@ -1355,7 +1371,7 @@ bool ChangeSex(entt::entity e)
 	default: return false;
 	}
 
-	return SetRace(e, targetRace);
+	return SaveRaceChange(e, targetRace);
 }
 
 namespace {

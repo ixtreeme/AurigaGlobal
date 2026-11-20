@@ -9,7 +9,6 @@ uint64_t CreatePlayerSaveQuery(char * pszQuery, uint64_t querySize, TPlayerTable
 
 	queryLen = snprintf(pszQuery, querySize,
 			"UPDATE player%s SET "
-			"job = %d, "
 			"voice = %d, "
 			"dir = %d, "
 			"x = %d, "
@@ -84,7 +83,6 @@ uint64_t CreatePlayerSaveQuery(char * pszQuery, uint64_t querySize, TPlayerTable
 			"r19 = %lld, "
 #endif
 		, GetTablePostfix(),
-		pkTab->job,
 		pkTab->voice,
 		pkTab->dir,
 		pkTab->x,

@@ -237,6 +237,20 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
         tx.push_back({"UPDATE player.change_empire SET change_count=change_count+1,last_change=NOW() WHERE account_id=?",
             {account}, 1, {}});
     }
+    if (const auto sex = ReadSexScrollChange(r))
+    {
+        const auto pid = U::UInt(r.owners.front().owner.id);
+        tx.push_back({"SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' "
+            "AND TABLE_NAME='player' AND ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE'", {}, {}, 1});
+        tx.push_back({"SELECT 1 FROM player.item_instance WHERE owner_kind=? AND owner_id=? "
+            "AND storage_kind=? AND storage_id=1 AND anchor_cell IN (?,?) AND destroyed=0 LIMIT 1 FOR UPDATE",
+            {U::UInt(static_cast<unsigned>(ItemOwnerKind::Character)), pid,
+                U::UInt(static_cast<unsigned>(ItemStorageKind::Equipment)),
+                U::UInt(static_cast<unsigned>(EquipmentSlot::CostumeBody) - 1),
+                U::UInt(static_cast<unsigned>(EquipmentSlot::CostumeHair) - 1)}, {}, 0});
+        tx.push_back({"UPDATE player.player SET job=? WHERE id=? AND job=?",
+            {U::UInt(sex->after), pid, U::UInt(sex->before)}, 1, {}});
+    }
     if(const auto relation=ReadMarriageItemChange(r))
     {
         const auto first=(std::min)(relation->initiator,relation->partner);

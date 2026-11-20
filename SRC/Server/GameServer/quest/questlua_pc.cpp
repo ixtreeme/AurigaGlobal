@@ -9,6 +9,7 @@
 #include <cmath>
 #include <Core/Logging.hpp>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
+#include "../ecs/systems/PersistentRace.hpp"
 #include "../ecs/systems/AcceSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
@@ -3281,9 +3282,9 @@ teleport_area:
                 dwRace = (mySex==SEX_MALE)?MAIN_RACE_SHAMAN_M:MAIN_RACE_SHAMAN_W;
                 break;
         }
-		if (dwRace != ecs::PlayerRuntime::GetRaceNum(chEntity))
+		if (dwRace != ecs::PlayerRuntime::GetRaceNum(chEntity) &&
+			ecs::PlayerRuntime::SaveRaceChange(chEntity, static_cast<uint8_t>(dwRace)))
         {
-			ecs::PlayerRuntime::SetRace(chEntity, static_cast<uint8_t>(dwRace));
 			SkillSystem::ClearSkill(chEntity);
 			SkillSystem::SetSkillGroup(chEntity, 0);
 			AffectSystem::SetPolymorph(chEntity, 101);
@@ -4358,6 +4359,7 @@ teleport_area:
 			{ "get_job",		pc_get_job		},
 			{ "get_race",		pc_get_race		},
 			{ "change_sex",		pc_change_sex	},
+			{ "typed_change_sex",	pc_typed_change_sex },
 			{ "gethp",			pc_get_hp		},
 			{ "get_hp",			pc_get_hp		},
 			{ "getmaxhp",		pc_get_max_hp		},

@@ -177,13 +177,14 @@ bool CClientManager::QUERY_PLAYER_LOAD(CPeer *peer, uint32_t dwHandle, TPlayerLo
 		TPlayerTable* pTab = c->Get();
         if (pTab->id != packet->player_id) { FailPlayerLoad(peer, *loadInfo); return false; }
 
-        // A typed rename commits directly to SQL. A cached player save never writes name.
-        const auto nameQuery = fmt::format("SELECT name FROM player{} WHERE id=? AND account_id=?", GetTablePostfix());
-        std::unique_ptr<SQLMsg> name(CDBManager::instance().DirectQueryPrepared(nameQuery.c_str(),
+        // Identity changes commit directly to SQL while other player fields may be cached.
+        const auto identityQuery = fmt::format("SELECT name,job FROM player{} WHERE id=? AND account_id=?", GetTablePostfix());
+        std::unique_ptr<SQLMsg> identity(CDBManager::instance().DirectQueryPrepared(identityQuery.c_str(),
             {SqlParam::UInt(packet->player_id), SqlParam::UInt(packet->account_id)}));
-        MYSQL_ROW nameRow = name && !name->uiSQLErrno && name->Get()->uiNumRows == 1 ? name->Get()->FetchRow() : nullptr;
-        if (!nameRow || !nameRow[0]) { FailPlayerLoad(peer, *loadInfo); return false; }
-        strlcpy(pTab->name, nameRow[0], sizeof(pTab->name));
+        MYSQL_ROW identityRow = identity && !identity->uiSQLErrno && identity->Get()->uiNumRows == 1 ? identity->Get()->FetchRow() : nullptr;
+        if (!identityRow || !identityRow[0] || !identityRow[1]) { FailPlayerLoad(peer, *loadInfo); return false; }
+        strlcpy(pTab->name, identityRow[0], sizeof(pTab->name));
+        str_to_number(pTab->job, identityRow[1]);
 
         if (!m_playerSessions.TakePart(*lease, HEADER_DG_PLAYER_LOAD_SUCCESS)) return false;
 		pkLD->SetPlay(true);

@@ -2,12 +2,13 @@
 #include "TypedIdentityScrolls.hpp"
 #include "questmanager.h"
 #include "../ecs/ResourceAdmission.hpp"
+#include "../ecs/components/status_components.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
 #include "../ecs/systems/InventorySystem.hpp"
 #include "../ecs/systems/NetworkSyncSystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
-#include "../entity/char_manager.h"
+#include "../entity/char.h"
 #include "../item/ItemCatalogRuntime.hpp"
 #include "../item/ItemStore.hpp"
 #include "../item/TypedDrops.hpp"
@@ -29,6 +30,12 @@ namespace player = ecs::PlayerRuntime;
 
 enum NameResult { NamePending, NameMissing, NameInvalid, NameOccupied, NameChanged, NameRefused };
 enum EmpireResult { EmpireRefused, EmpireUnchanged, EmpireHasGuild, EmpireHasMarriage, EmpireChanged = 999 };
+enum SexResult { SexRefused, SexChanged, SexHasBodyCostume, SexHasHairCostume };
+
+static_assert(item::OppositeSexRace(MAIN_RACE_WARRIOR_M) == MAIN_RACE_WARRIOR_W);
+static_assert(item::OppositeSexRace(MAIN_RACE_ASSASSIN_M) == MAIN_RACE_ASSASSIN_W);
+static_assert(item::OppositeSexRace(MAIN_RACE_SURA_M) == MAIN_RACE_SURA_W);
+static_assert(item::OppositeSexRace(MAIN_RACE_SHAMAN_M) == MAIN_RACE_SHAMAN_W);
 
 struct ScrollUse
 {
@@ -47,9 +54,8 @@ std::optional<ScrollUse> ReadScrollUse(lua_State* L)
         return {};
 
     const auto actor = manager.GetCurrentPCEntity();
-    if (!player::IsPC(actor) || g_registry.all_of<ecs::TypedItemBusy>(actor) ||
-        !InventorySystem::CanHandleItems(actor) || !player::CanWarp(actor) ||
-        ecs::SocialSystem::GetParty(actor) != entt::null)
+    if (!player::IsPC(actor) || g_registry.any_of<ecs::TypedItemBusy, ecs::DeadTag, ecs::StunTag>(actor) ||
+        !InventorySystem::CanHandleItems(actor) || !player::CanWarp(actor))
         return {};
 
     const auto* inventory = g_registry.try_get<ecs::TypedItems>(actor);
@@ -112,7 +118,8 @@ std::optional<int> SubmitNameScroll(lua_State* L)
 
     const auto use = ReadScrollUse(L);
     const auto catalog = item::runtime::CurrentCatalog();
-    if (!use || !catalog || ecs::SocialSystem::GetGuild(use->actor)) return NameRefused;
+    if (!use || !catalog || ecs::SocialSystem::GetGuild(use->actor) ||
+        ecs::SocialSystem::GetParty(use->actor) != entt::null) return NameRefused;
     if (!player::GetPendingName(use->actor).empty()) return NamePending;
 
     const std::string before(player::GetName(use->actor));
@@ -148,7 +155,8 @@ std::optional<int> SubmitEmpireScroll(lua_State* L)
     const auto empire = luaL_checkinteger(L, 1);
     const auto use = ReadScrollUse(L);
     const auto catalog = item::runtime::CurrentCatalog();
-    if (empire < 1 || empire > 3 || !use || !catalog || AffectSystem::IsPolymorphed(use->actor))
+    if (empire < 1 || empire > 3 || !use || !catalog || AffectSystem::IsPolymorphed(use->actor) ||
+        ecs::SocialSystem::GetParty(use->actor) != entt::null)
         return EmpireRefused;
 
     const item::EmpireScrollChange change{
@@ -183,6 +191,36 @@ std::optional<int> SubmitEmpireScroll(lua_State* L)
     return std::nullopt;
 }
 
+std::optional<int> SubmitSexScroll(lua_State* L)
+{
+    const auto use = ReadScrollUse(L);
+    const auto catalog = item::runtime::CurrentCatalog();
+    if (!use || !catalog || AffectSystem::IsPolymorphed(use->actor)) return SexRefused;
+
+    const auto& state = *use->inventory;
+    const auto equipped = [&](item::EquipmentSlot slot) {
+        const item::ItemPlacement placement{item::ItemStorageKind::Equipment, 1, static_cast<unsigned>(slot) - 1};
+        return std::ranges::any_of(state.items, [&](const auto& row) {
+            return row.owner == state.fence.owner && !row.destroyed && row.placement == placement;
+        });
+    };
+    if (equipped(item::EquipmentSlot::CostumeBody)) return SexHasBodyCostume;
+    if (equipped(item::EquipmentSlot::CostumeHair)) return SexHasHairCostume;
+
+    const auto before = player::GetRaceNum(use->actor);
+    const auto after = item::OppositeSexRace(before);
+    if (!after) return SexRefused;
+    auto write = item::MakeSexScrollCommit(*catalog, use->operation, state.fence, state.storages, state.items,
+        use->source, use->revision, {static_cast<std::uint8_t>(before), *after});
+    if (!write) return SexRefused;
+
+    if (!QueueScroll(*use, L, std::move(*write), [race = *after](entt::entity actor, bool) {
+        if (actor != entt::null) player::SetRace(actor, race);
+    }))
+        return SexRefused;
+    return std::nullopt;
+}
+
 template<int Changed, int Refused>
 int FinishScroll(lua_State* L, std::optional<int> status)
 {
@@ -205,4 +243,5 @@ int FinishScroll(lua_State* L, std::optional<int> status)
 
 ALUA(pc_typed_change_name) { return FinishScroll<NameChanged, NameRefused>(L, SubmitNameScroll(L)); }
 ALUA(pc_typed_change_empire) { return FinishScroll<EmpireChanged, EmpireRefused>(L, SubmitEmpireScroll(L)); }
+ALUA(pc_typed_change_sex) { return FinishScroll<SexChanged, SexRefused>(L, SubmitSexScroll(L)); }
 }
