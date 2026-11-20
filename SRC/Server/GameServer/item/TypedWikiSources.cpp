@@ -9,6 +9,7 @@
 #include <item/ItemCatalog.hpp>
 
 #include <algorithm>
+#include <array>
 #include <limits>
 #include <map>
 #include <memory>
@@ -94,6 +95,32 @@ std::shared_ptr<const SourceIndex> GetIndex(const std::shared_ptr<const items::I
     {
         std::ranges::sort(sources);
         sources.erase(std::unique(sources.begin(), sources.end()), sources.end());
+    }
+    indexedCatalog = catalog;
+    cachedIndex = index;
+    return index;
+}
+
+using RefinementIndex = std::map<items::ItemKey, std::vector<const items::RefinementRecipe*>>;
+
+std::shared_ptr<const RefinementIndex> GetRefinementIndex(const std::shared_ptr<const items::ItemCatalog>& catalog)
+{
+    static std::mutex mutex;
+    static std::weak_ptr<const items::ItemCatalog> indexedCatalog;
+    static std::shared_ptr<const RefinementIndex> cachedIndex;
+    std::lock_guard lock(mutex);
+    if (cachedIndex && indexedCatalog.lock() == catalog)
+        return cachedIndex;
+
+    auto index = std::make_shared<RefinementIndex>();
+    for (const auto& recipe : catalog->RefinementRecipes())
+        (*index)[recipe.source].push_back(&recipe);
+    for (auto& [key, recipes] : *index)
+    {
+        std::ranges::sort(recipes, [](const auto* left, const auto* right) {
+            if (left->sourceLevel != right->sourceLevel) return left->sourceLevel < right->sourceLevel;
+            return left->id < right->id;
+        });
     }
     indexedCatalog = catalog;
     cachedIndex = index;
@@ -319,6 +346,117 @@ void HandleTypedWikiLoot(entt::entity player, const char* data)
     packet[11] = static_cast<std::uint8_t>(status);
     packet[18] = static_cast<std::uint8_t>(count);
     packet[19] = static_cast<std::uint8_t>(count >> 8);
+    if (packet.size() > 65535)
+        desc->LargePacket(packet.data(), static_cast<int>(packet.size()));
+    else
+        desc->Packet(packet.data(), static_cast<int>(packet.size()));
+}
+
+void HandleTypedWikiRefines(entt::entity player, const char* data)
+{
+    if (!ecs::PlayerRuntime::IsPC(player)) return;
+    auto* desc = ecs::PlayerRuntime::GetDesc(player);
+    if (!desc) return;
+
+    const auto* request = reinterpret_cast<const std::uint8_t*>(data);
+    const auto read = [&](std::size_t offset, unsigned bytes) {
+        std::uint32_t value = 0;
+        for (unsigned i = 0; i < bytes; ++i)
+            value |= std::uint32_t{request[offset + i]} << (8 * i);
+        return value;
+    };
+    const auto id = read(2, 4);
+    const auto category = static_cast<std::uint16_t>(read(6, 2));
+    const auto local = read(8, 4);
+    if (request[1] != 1 || !id || !category || !local) return;
+
+    const auto key = items::ItemKey::Create(category, local);
+    const auto catalog = items::runtime::CurrentCatalog();
+    const auto* source = catalog && key ? catalog->Find(*key) : nullptr;
+    Status status = !catalog ? Status::Unavailable : !source || source->base.retired ? Status::UnknownTarget : Status::Ready;
+
+    std::vector<std::uint8_t> packet;
+    const auto put = [&](std::uint64_t value, unsigned bytes) {
+        for (unsigned i = 0; i < bytes; ++i)
+            packet.push_back(static_cast<std::uint8_t>(value >> (8 * i)));
+    };
+    constexpr auto maxShort = std::numeric_limits<std::uint16_t>::max();
+    const auto putDefinition = [&](items::ItemKey itemKey) {
+        const auto* entry = catalog->Find(itemKey);
+        if (!entry || entry->base.retired) return false;
+        const auto& base = entry->base;
+        for (const auto value : std::array<std::string_view, 4>{base.nameKey, base.contentCode, base.iconAsset, base.descriptionKey})
+        {
+            if (value.size() > maxShort) return false;
+            put(value.size(), 2);
+            packet.insert(packet.end(), value.begin(), value.end());
+        }
+        return true;
+    };
+
+    put(HEADER_GC_TYPED_WIKI_REFINES, 1);
+    put(0, 4);
+    put(1, 1);
+    put(id, 4);
+    put(0, 1);
+    put(category, 2);
+    put(local, 4);
+    put(0, 2);
+
+    std::uint16_t count = 0;
+    if (status == Status::Ready)
+    {
+        const auto index = GetRefinementIndex(catalog);
+        if (const auto found = index->find(*key); found != index->end())
+        {
+            for (const auto* recipe : found->second)
+            {
+                if (count == maxShort)
+                {
+                    status = Status::Truncated;
+                    break;
+                }
+                const auto start = packet.size();
+                put(recipe->sourceLevel, 2);
+                put(static_cast<std::uint16_t>(recipe->target.Category()), 2);
+                put(recipe->target.LocalId(), 4);
+                put(recipe->targetLevel, 2);
+                put(recipe->goldCost, 8);
+                put(recipe->successChanceBp, 2);
+                put(static_cast<std::uint8_t>(recipe->failure), 1);
+                put(recipe->failureLevel.value_or(0), 2);
+                put(recipe->ingredients.size(), 1);
+                bool complete = putDefinition(recipe->target);
+                for (const auto& ingredient : recipe->ingredients)
+                {
+                    if (!complete || packet.size() > (1 << 20)) break;
+                    put(static_cast<std::uint16_t>(ingredient.key.Category()), 2);
+                    put(ingredient.key.LocalId(), 4);
+                    put(ingredient.refinementLevel, 2);
+                    put(ingredient.count, 4);
+                    complete = putDefinition(ingredient.key);
+                }
+                if (packet.size() > (1 << 20))
+                {
+                    packet.resize(start);
+                    status = Status::Truncated;
+                    break;
+                }
+                if (!complete)
+                {
+                    packet.resize(start);
+                    status = Status::Truncated;
+                    continue;
+                }
+                ++count;
+            }
+        }
+    }
+    for (unsigned i = 0; i < 4; ++i)
+        packet[1 + i] = static_cast<std::uint8_t>(packet.size() >> (8 * i));
+    packet[10] = static_cast<std::uint8_t>(status);
+    packet[17] = static_cast<std::uint8_t>(count);
+    packet[18] = static_cast<std::uint8_t>(count >> 8);
     if (packet.size() > 65535)
         desc->LargePacket(packet.data(), static_cast<int>(packet.size()));
     else
