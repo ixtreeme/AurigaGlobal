@@ -38,8 +38,6 @@
 #include "item.h"
 #include "item_manager.h"
 #include "cmd.h"
-#include "shop.h"
-#include "shop_manager.h"
 #include "safebox.h"
 #include "regen.h"
 #include "battle.h"
@@ -282,24 +280,6 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		case HEADER_CG_SKILL_COLOR:
 			SetSkillColor(character, c_pData);
 			break;
-#endif
-#ifdef ENABLE_OPENSHOP_PACKET
-		case HEADER_CG_OPENSHOP: {
-				TPacketOpenShop* p = reinterpret_cast<TPacketOpenShop*>((void*)c_pData);
-				if (p->shopid > 0) {
-					if (!(ecs::PlayerRuntime::IsObserverMode(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsCubeOpen(character) || CombatSystem::IsStun(character) || CombatSystem::IsDead(character)
-#ifdef __ATTR_TRANSFER_SYSTEM__
-						 || AttrTransfer_is_open(character)
-#endif
-					)) {
-						const entt::entity shop = CShopManager::instance().Get(p->shopid);
-						if (shop != entt::null) {
-							ShopSystem::AddGuest(shop, character, 0, false);
-							ecs::SocialSystem::SetShopOwner(character, entt::null);
-						}
-					}
-				}
-			} break;
 #endif
 		case HEADER_CG_QUICKSLOT_ADD:
 			QuickslotAdd(character, c_pData);

@@ -117,60 +117,7 @@ entt::entity CShopManager::GetByNPCVnum(uint32_t dwVnum)
 // Start shopping.
 bool CShopManager::StartShopping(entt::entity pkChr, entt::entity pkChrShopKeeper, int iShopVnum)
 {
-    if (TryOpenTypedShop(pkChr, pkChrShopKeeper,static_cast<std::uint32_t>(iShopVnum))) return true;
-#ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ecs::PlayerRuntime::GetGMLevel(pkChr) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(pkChr) < GM_IMPLEMENTOR) {
-		return false;
-	}
-#endif
-	if (ecs::SocialSystem::GetShopOwner(pkChr) == pkChrShopKeeper)
-		return false;
-	// this method is only for NPC
-
-	if (ecs::PlayerRuntime::IsPC(pkChrShopKeeper))
-		return false;
-
-	//PREVENT_TRADE_WINDOW
-	if (ecs::SessionSystem::IsSafeboxOpen(pkChr) || ecs::SocialSystem::HasExchange(pkChr)
-		|| ecs::SocialSystem::GetMyShop(pkChr) != entt::null || ecs::SessionSystem::IsCubeOpen(pkChr))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(pkChr, CHAT_TYPE_INFO, 294, "");
-#endif
-		return false;
-	}
-	//END_PREVENT_TRADE_WINDOW
-
-	int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(pkChr) - ecs::PlayerRuntime::GetX(pkChrShopKeeper), ecs::PlayerRuntime::GetY(pkChr) - ecs::PlayerRuntime::GetY(pkChrShopKeeper));
-
-	if (distance >= SHOP_MAX_DISTANCE)
-	{
-		LOG_INFO("SHOP: TOO_FAR: {} distance {}", ecs::PlayerRuntime::GetName(pkChr).data(), distance);
-		return false;
-	}
-
-	entt::entity pkShop = entt::null;
-
-	if (iShopVnum)
-		pkShop = Get(iShopVnum);
-	else
-		pkShop = GetByNPCVnum(ecs::PlayerRuntime::GetRaceNum(pkChrShopKeeper));
-
-	if (pkShop == entt::null)
-	{
-		LOG_INFO("SHOP: NO SHOP");
-		return false;
-	}
-
-	bool bOtherEmpire = false;
-
-	if (ecs::PlayerRuntime::GetEmpire(pkChr) != ecs::PlayerRuntime::GetEmpire(pkChrShopKeeper))
-		bOtherEmpire = true;
-
-	ShopSystem::AddGuest(pkShop, pkChr, ecs::PlayerRuntime::GetPacketVID(pkChrShopKeeper), bOtherEmpire);
-	ecs::SocialSystem::SetShopOwner(pkChr, pkChrShopKeeper);
-	LOG_INFO("SHOP: START: {}", ecs::PlayerRuntime::GetName(pkChr).data());
-	return true;
+    return TryOpenTypedShop(pkChr, pkChrShopKeeper, static_cast<std::uint32_t>(iShopVnum));
 }
 
 entt::entity CShopManager::FindPCShop(uint32_t dwVID)
