@@ -182,7 +182,7 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
         {U::Blob(r.ground->core),U::UInt(r.ground->run)},{},1});
     tx.push_back({"INSERT INTO player.item_operation_receipt(operation_id,request_sha256,catalog_revision,catalog_sha256,operation_kind,outcome_code,result_payload) VALUES(?,?,?,?,?,?,?)",
         {U::Blob(Bytes(r.operationId)),U::Blob(Bytes(*digest)),U::UInt(r.catalogRevision),U::Blob(Bytes(r.catalogHash)),U::UInt(static_cast<unsigned>(r.kind)),U::UInt(r.outcomeCode),U::Blob(Bytes(r.result))},1,{}});
-    if (r.outcomeCode == ItemShopPurchaseOutcome)
+    if (IsItemShopPurchaseOutcome(r.outcomeCode))
     {
         if (r.kind != ItemOperationKind::Grant || r.result.size() <= ItemShopReceiptPrefix ||
             r.result.size() > MaxItemShopReceipt)

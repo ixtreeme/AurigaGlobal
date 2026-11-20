@@ -23,6 +23,15 @@
 
 namespace auriga::item
 {
+bool UsesItemShopCostumeBirthMagic(const ItemCatalog& catalog, ItemKey key, std::uint16_t level) noexcept
+{
+    if (key.Category() != ItemCategory::Costume) return false;
+    const auto* item = catalog.Find(key);
+    const auto* rule = catalog.FindDefinitionRules(key, level);
+    return item && !item->base.retired && item->base.maxStack == 1 && rule && rule->available &&
+        rule->allowAcquire && rule->birthMagicChanceBp && rule->birthAttributeProfile;
+}
+
 bool RecallRequested(const PersistentItem& item)
 {
     return (item.companion && item.companion->recallRequested) ||
@@ -68,6 +77,8 @@ constexpr std::uint16_t PetHatchOutcome=0x2602;
 struct GrantBirthOptions {bool magic=false;std::optional<std::uint16_t> chance;};
 std::optional<GrantBirthOptions> GrantBirthPolicy(const ItemCommit& r)
 {
+    if (IsItemShopPurchaseOutcome(r.outcomeCode))
+        return GrantBirthOptions{r.outcomeCode == ItemShopCostumeBirthOutcome, std::nullopt};
     const auto& b=r.result;
     if(b.empty() || b==std::vector<std::uint8_t>{static_cast<std::uint8_t>(ItemOperationKind::Grant)} || b==std::vector<std::uint8_t>{'D','L','V',1})return GrantBirthOptions{};
     if(b.size()!=5 || b[0]!=static_cast<std::uint8_t>(ItemOperationKind::Grant) || b[1]!=2 || b[2]>1)return {};
@@ -881,6 +892,15 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
     if((r.items.empty() && r.wallets.empty() && !r.recovery && !r.learning && !r.privateShop && !r.dungeonEntry) || !r.outcomeCode || r.kind<ItemOperationKind::Grant || r.kind>ItemOperationKind::Trade ||
        (r.petStudyCooldown && r.outcomeCode!=PetStudyOutcome) ||
        std::ranges::all_of(r.operationId,[](auto n){return !n;}))return std::unexpected(E::InvalidOperation);
+    if (r.outcomeCode == ItemShopCostumeBirthOutcome)
+    {
+        if (r.kind != ItemOperationKind::Grant || r.items.size() != 1 || r.items.front().before ||
+            r.items.front().after.count != 1)
+            return std::unexpected(E::InvalidChange);
+        const auto& granted = r.items.front().after;
+        if (!UsesItemShopCostumeBirthMagic(c, granted.key, granted.refinementLevel))
+            return std::unexpected(E::InvalidChange);
+    }
     if((r.outcomeCode==StorageOutcome || r.outcomeCode==AccountWalletOutcome) && !ValidStorageWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==ForgeOutcome && !ValidForgeWrite(c,r))return std::unexpected(E::InvalidChange);
     if(r.outcomeCode==AmmoShotOutcome && !ValidAmmoShotWrite(c,r))return std::unexpected(E::InvalidChange);
@@ -1015,14 +1035,21 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
         else if(p.destroyed || p.revision!=1 || RecallRequested(p) || r.outcomeCode==CompanionSealOutcome ||
             (p.growthPet && r.outcomeCode!=PetHatchOutcome))return std::unexpected(E::InvalidChange);
         if(!change.before && p.soul){const auto initial=MakeSoulState(c,p.key,p.refinementLevel);if(!initial || *initial!=*p.soul)return std::unexpected(E::InvalidChange);}
-        if (!change.before && r.kind==ItemOperationKind::Grant && (r.outcomeCode==1 || r.outcomeCode==ItemShopPurchaseOutcome)) {
-            const auto* rule=c.FindDefinitionRules(p.key,p.refinementLevel);
-            if(rule && (rule->birthAddon || rule->birthAttributeProfile)){const auto policy=r.outcomeCode==ItemShopPurchaseOutcome ? std::optional{GrantBirthOptions{}} : GrantBirthPolicy(r);if(!policy)return std::unexpected(E::InvalidChange);const auto expected=InitialGrantAttributes(c,p.key,p.refinementLevel,r.operationId,p.id.Value(),*policy);if(!expected || p.attributes!=*expected)return std::unexpected(E::InvalidChange);}
+        if (!change.before && r.kind == ItemOperationKind::Grant && (r.outcomeCode == 1 || IsItemShopPurchaseOutcome(r.outcomeCode)))
+        {
+            const auto* rule = c.FindDefinitionRules(p.key, p.refinementLevel);
+            if (rule && (rule->birthAddon || rule->birthAttributeProfile))
+            {
+                const auto policy = GrantBirthPolicy(r);
+                if (!policy) return std::unexpected(E::InvalidChange);
+                const auto expected = InitialGrantAttributes(c, p.key, p.refinementLevel, r.operationId, p.id.Value(), *policy);
+                if (!expected || p.attributes != *expected) return std::unexpected(E::InvalidChange);
+            }
         }
         if(!change.before && p.privateShop)return std::unexpected(E::InvalidChange);
         if(!change.before && p.shopPermitDeadline){
             std::size_t issuedAt = 2;
-            if (r.outcomeCode == ItemShopPurchaseOutcome && r.result.size() >= ItemShopReceiptPrefix)
+            if (IsItemShopPurchaseOutcome(r.outcomeCode) && r.result.size() >= ItemShopReceiptPrefix)
                 issuedAt = ItemShopIssuedAtOffset;
             else if (r.result.size()!=10 || r.result[0]!=static_cast<unsigned>(ItemOperationKind::Grant) || r.result[1]!=4)
                 return std::unexpected(E::InvalidChange);
@@ -1068,7 +1095,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
     {
         if(!Wallet(w.before) || !Wallet(w.after) || w.before.owner!=w.after.owner || w.before.currency!=w.after.currency ||
            w.before.revision==UINT64_MAX || w.after.revision!=w.before.revision+1 ||
-           (w.before.balance==w.after.balance && !(r.outcomeCode==ItemShopPurchaseOutcome && w.before.currency==WalletCurrency::DragonCoin)) ||
+           (w.before.balance==w.after.balance && !(IsItemShopPurchaseOutcome(r.outcomeCode) && w.before.currency==WalletCurrency::DragonCoin)) ||
            !owners.contains(w.before.owner) || !wallets.emplace(w.before.owner,w.before.currency).second)return std::unexpected(E::InvalidWallet);
         usedOwners.insert(w.before.owner);
     }

@@ -110,7 +110,9 @@ bool AddMember(Product& product, const item::ItemCatalog& catalog, MYSQL_ROW row
     if (!entry || entry->base.retired || !quantity || quantity > 128 ||
         !catalog.RefinedBaseStats(*key, level) || !item::SupportsPersistentGrant(catalog, *entry)) return false;
     if (const auto* rule = catalog.FindDefinitionRules(*key, level); rule && (!rule->available || !rule->allowAcquire)) return false;
-    product.members.push_back({*key, level, quantity});
+    item::ItemGrant grant{*key, level, quantity};
+    grant.tryMagic = product.title.empty() && item::UsesItemShopCostumeBirthMagic(catalog, *key, level);
+    product.members.push_back(grant);
     product.stackable = entry->base.maxStack > 1;
     return true;
 }
@@ -123,6 +125,8 @@ std::uint64_t Quote(const Product& product)
     value.Put(product.discount, 1);
     value.Text(product.title);
     value.Members(product.members);
+    if (product.members.size() == 1 && product.members.front().tryMagic)
+        value.Put(1, 1);
     std::uint64_t hash = 14695981039346656037ull;
     for (const auto byte : value.data) { hash ^= byte; hash *= 1099511628211ull; }
     return hash;
@@ -234,7 +238,8 @@ std::expected<item::ItemCommit, Error> PlanPurchase(const item::ItemCatalog& cat
     out.catalogRevision = catalog.Revision();
     out.catalogHash = catalog.ContentHash();
     out.kind = item::ItemOperationKind::Grant;
-    out.outcomeCode = item::ItemShopPurchaseOutcome;
+    out.outcomeCode = product.members.size() == 1 && product.members.front().tryMagic
+        ? item::ItemShopCostumeBirthOutcome : item::ItemShopPurchaseOutcome;
     out.owners = {character.fence};
     auto working = character.items;
     std::size_t used = 0;
