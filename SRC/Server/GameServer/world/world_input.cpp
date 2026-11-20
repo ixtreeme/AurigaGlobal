@@ -42,6 +42,8 @@
 #include "../ecs/systems/AcceSystem.hpp"
 #include "item_manager.h"
 
+#include <cstring>
+
 void CInputMain::Fishing(entt::entity character, const char* c_pData)
 {
 	TPacketCGFishing* p = (TPacketCGFishing*)c_pData;
@@ -182,107 +184,25 @@ void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* p
 #endif
 
 #ifdef __INGAME_WIKI__
-void CInputMain::RecvWikiPacket(entt::entity character, const char * c_pData)
+void CInputMain::RecvWikiRefines(entt::entity character, const char* data)
 {
-    // Acquisition sources use the independent typed wiki request.
-	if (!ecs::PlayerRuntime::GetDesc(character))
-		return;
+    auto* desc = ecs::PlayerRuntime::GetDesc(character);
+    if (!desc || !data) return;
 
-	if (!c_pData)
-		return;
+    InGameWiki::TCGWikiRefines request;
+    std::memcpy(&request, data, sizeof(request));
+    if (request.reservedMob || !request.vnum) return;
 
-	InGameWiki::TCGWikiPacket * p = nullptr;
-	if (!(p = (InGameWiki::TCGWikiPacket *) c_pData))
-		return;
-
-	InGameWiki::TGCWikiPacket pack;
-	pack.set_data_type(!p->is_mob ? InGameWiki::LOAD_WIKI_ITEM : InGameWiki::LOAD_WIKI_MOB);
-	pack.increment_data_size(uint16_t(sizeof(InGameWiki::TGCWikiPacket)));
-
-	if (pack.is_data_type(InGameWiki::LOAD_WIKI_ITEM))
-	{
-		const std::vector<CSpecialItemGroup::CSpecialItemInfo> _gV = ITEM_MANAGER::instance().GetWikiChestInfo(p->vnum);
-		const std::vector<CommonWikiData::TWikiRefineInfo> _rV = ITEM_MANAGER::instance().GetWikiRefineInfo(p->vnum);
-		const CommonWikiData::TWikiInfoTable* _wif = ITEM_MANAGER::instance().GetItemWikiInfo(p->vnum);
-
-		if (!_wif)
-			return;
-
-		const size_t chest_info_count = _wif->chest_info_count;
-		const size_t refine_infos_count = _wif->refine_infos_count;
-		const size_t buf_data_dize = sizeof(InGameWiki::TGCItemWikiPacket) +
-								(chest_info_count * sizeof(CommonWikiData::TWikiChestInfo)) +
-								(refine_infos_count * sizeof(CommonWikiData::TWikiRefineInfo));
-
-		if (chest_info_count != _gV.size()) {
-			LOG_ERROR("Item Vnum : {} || ERROR TYPE -> 1", p->vnum);
-			return;
-		}
-
-		if (refine_infos_count != _rV.size()) {
-			LOG_ERROR("Item Vnum : {} || ERROR TYPE -> 2", p->vnum);
-			return;
-		}
-
-		pack.increment_data_size(uint16_t(buf_data_dize));
-
-		TEMP_BUFFER buf;
-		buf.write(&pack, sizeof(InGameWiki::TGCWikiPacket));
-
-		InGameWiki::TGCItemWikiPacket data_packet;
-		data_packet.mutable_wiki_info(*_wif);
-		data_packet.set_vnum(p->vnum);
-		data_packet.set_ret_id(p->ret_id);
-		buf.write(&data_packet, sizeof(data_packet));
-
-		{
-			if (chest_info_count > 0) {
-				for (int idx = 0; idx < (int)chest_info_count; ++idx) {
-					CommonWikiData::TWikiChestInfo write_struct(_gV[idx].vnum, _gV[idx].count);
-					buf.write(&write_struct, sizeof(CommonWikiData::TWikiChestInfo));
-				}
-			}
-
-			if (refine_infos_count > 0)
-				for (int idx = 0; idx < (int)refine_infos_count; ++idx)
-					buf.write(&(_rV[idx]), sizeof(CommonWikiData::TWikiRefineInfo));
-		}
-
-		ecs::PlayerRuntime::GetDesc(character)->Packet(buf.read_peek(), buf.size());
-	}
-	else
-	{
-		CMobManager::TMobWikiInfoVector& mobVec = CMobManager::instance().GetMobWikiInfo(p->vnum);
-		const size_t _mobVec_size = mobVec.size();
-
-		if (!_mobVec_size) {
-			if (test_server)
-				LOG_INFO("Mob Vnum: {} : || LOG TYPE -> 1", p->vnum);
-			return;
-		}
-
-		const size_t buf_data_dize = (sizeof(InGameWiki::TGCMobWikiPacket) + (_mobVec_size * sizeof(CommonWikiData::TWikiMobDropInfo)));
-		pack.increment_data_size(uint16_t(buf_data_dize));
-
-		TEMP_BUFFER buf;
-		buf.write(&pack, sizeof(InGameWiki::TGCWikiPacket));
-
-		InGameWiki::TGCMobWikiPacket data_packet;
-		data_packet.set_drop_info_count(_mobVec_size);
-		data_packet.set_vnum(p->vnum);
-		data_packet.set_ret_id(p->ret_id);
-		buf.write(&data_packet, sizeof(InGameWiki::TGCMobWikiPacket));
-
-		{
-			if (_mobVec_size) {
-				for (int idx = 0; idx < (int)_mobVec_size; ++idx) {
-					CommonWikiData::TWikiMobDropInfo write_struct(mobVec[idx].vnum, mobVec[idx].count);
-					buf.write(&write_struct, sizeof(CommonWikiData::TWikiMobDropInfo));
-				}
-			}
-		}
-
-		ecs::PlayerRuntime::GetDesc(character)->Packet(buf.read_peek(), buf.size());
-	}
+    const auto refines = ITEM_MANAGER::instance().GetWikiRefineInfo(request.vnum);
+    InGameWiki::TGCWikiRefines response;
+    response.refineCount = static_cast<std::uint32_t>(refines.size());
+    response.vnum = request.vnum;
+    response.returnId = request.returnId;
+    const auto dataSize = refines.size() * sizeof(CommonWikiData::TWikiRefineInfo);
+    response.size = static_cast<std::uint16_t>(sizeof(response) + dataSize);
+    TEMP_BUFFER buffer;
+    buffer.write(&response, sizeof(response));
+    if (!refines.empty()) buffer.write(refines.data(), dataSize);
+    desc->Packet(buffer.read_peek(), buffer.size());
 }
 #endif

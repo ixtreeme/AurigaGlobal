@@ -1197,50 +1197,14 @@ int ITEM_MANAGER::GetWikiMaxRefineLevel(uint32_t dwVnum)
 	return MAX(refine_count, CommonWikiData::MAX_REFINE_COUNT);
 }
 
-CommonWikiData::TWikiInfoTable* ITEM_MANAGER::GetItemWikiInfo(uint32_t vnum)
-{
-	auto it = m_wikiInfoMap.find(vnum);
-	if (it != m_wikiInfoMap.end())
-		return it->second.get();
-
-	auto* tbl = GetTable(vnum);
-	if (!tbl)
-		return nullptr;
-
-	auto newTable = new CommonWikiData::TWikiInfoTable();
-	newTable->chest_info_count = 0;
-	m_wikiInfoMap.insert(std::make_pair(vnum, std::unique_ptr<CommonWikiData::TWikiInfoTable>(newTable)));
-
-	if ((tbl->bType == ITEM_WEAPON || tbl->bType == ITEM_ARMOR || tbl->bType == ITEM_BELT) && vnum % 10 == 0 && tbl->dwRefinedVnum)
-		newTable->refine_infos_count = GetWikiMaxRefineLevel(vnum);
-	//else if (tbl->bType == ITEM_GIFTBOX || (tbl->bType == ITEM_USE && tbl->bSubType == USE_SPECIAL))
-	else if (tbl->bType == ITEM_GIFTBOX || (tbl->dwVnum >= 10960 && tbl->dwVnum <= 10968))
-	{
-		CSpecialItemGroup* ptr = nullptr;
-		auto it = m_map_pkSpecialItemGroup.find(vnum);
-		if (it == m_map_pkSpecialItemGroup.end())
-		{
-			it = m_map_pkQuestItemGroup.find(vnum);
-			if (it != m_map_pkQuestItemGroup.end())
-				ptr = it->second;
-		}
-		else
-			ptr = it->second;
-
-		if (ptr)
-			newTable->chest_info_count = ptr->m_vecItems.size();
-	}
-
-	return newTable;
-}
-
 std::vector<CommonWikiData::TWikiRefineInfo> ITEM_MANAGER::GetWikiRefineInfo(uint32_t vnum)
 {
 	std::vector<CommonWikiData::TWikiRefineInfo> _rV;
 	_rV.clear();
 
 	auto* tbl = GetTable(vnum);
-	if (!tbl)
+	if (!tbl || (tbl->bType != ITEM_WEAPON && tbl->bType != ITEM_ARMOR && tbl->bType != ITEM_BELT) ||
+	    vnum % 10 != 0 || !tbl->dwRefinedVnum)
 		return _rV;
 
 	const TRefineTable* refTbl;
@@ -1277,36 +1241,5 @@ std::vector<CommonWikiData::TWikiRefineInfo> ITEM_MANAGER::GetWikiRefineInfo(uin
 	}
 
 	return (success ? _rV : std::vector<CommonWikiData::TWikiRefineInfo>());
-}
-std::vector<CSpecialItemGroup::CSpecialItemInfo> ITEM_MANAGER::GetWikiChestInfo(uint32_t vnum)
-{
-	std::vector<CSpecialItemGroup::CSpecialItemInfo> _rV;
-	_rV.clear();
-
-	auto* tbl = GetTable(vnum);
-	if (!tbl)
-		return _rV;
-
-	//if (tbl->bType == ITEM_GIFTBOX || (tbl->bType == ITEM_USE && tbl->bSubType == USE_SPECIAL))
-	if (tbl->bType == ITEM_GIFTBOX || (tbl->dwVnum >= 10960 && tbl->dwVnum <= 10968))
-	{
-		CSpecialItemGroup* ptr = nullptr;
-		auto it = m_map_pkSpecialItemGroup.find(vnum);
-		if (it == m_map_pkSpecialItemGroup.end()) {
-			it = m_map_pkQuestItemGroup.find(vnum);
-			if (it != m_map_pkQuestItemGroup.end())
-				ptr = it->second;
-		}
-		else {
-			ptr = it->second;
-		}
-
-		if (ptr) {
-			_rV.assign(ptr->m_vecItems.begin(), ptr->m_vecItems.end());
-		}
-	}
-
-	return _rV;
-
 }
 #endif

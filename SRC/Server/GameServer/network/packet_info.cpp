@@ -214,7 +214,7 @@ CPacketInfoCG::CPacketInfoCG()
 
 
 #ifdef __INGAME_WIKI__
-	Set(InGameWiki::HEADER_CG_WIKI, sizeof(InGameWiki::TCGWikiPacket), "RecvWikiPacket", true);
+	Set(InGameWiki::HEADER_CG_WIKI_REFINES, sizeof(InGameWiki::TCGWikiRefines), "WikiRefines", true);
 #endif
 	Set(HEADER_CG_GUILD, sizeof(TPacketCGGuild), "Guild", true);
 	Set(HEADER_CG_ANSWER_MAKE_GUILD, sizeof(TPacketCGAnswerMakeGuild), "AnswerMakeGuild", true);

@@ -146,7 +146,7 @@ class CInputMain : public CInputProcessor
 		void		PartyUseSkill(entt::entity character, const char * c_pData);
 		void		PartyParameter(entt::entity character, const char * c_pData);
 #ifdef __INGAME_WIKI__
-		void		RecvWikiPacket(entt::entity character, const char * c_pData);
+		void		RecvWikiRefines(entt::entity character, const char * c_pData);
 #endif
 		int			Guild(entt::entity character, const char * data, size_t uiBytes);
 		void		AnswerMakeGuild(entt::entity character, const char* c_pData);

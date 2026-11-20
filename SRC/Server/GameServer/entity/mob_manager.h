@@ -1,8 +1,5 @@
 #pragma once
 
-#ifdef __INGAME_WIKI__
-#include <common/in_game_wiki.h>
-#endif
 
 typedef struct SMobSplashAttackInfo
 {
@@ -134,13 +131,6 @@ class CMobManager : public singleton<CMobManager>
 		const iterator	end()	{ return m_map_pkMobByVnum.end();	}
 
 		void RebindMobProto(entt::entity chEntity);
-#ifdef __INGAME_WIKI__
-		typedef std::vector<CommonWikiData::TWikiMobDropInfo> TMobWikiInfoVector;
-		typedef std::map<uint32_t, TMobWikiInfoVector> TMobWikiInfoMap;
-		
-		TMobWikiInfoMap&	GetMobWikiInfoMap() { return m_wikiInfoMap; }
-		TMobWikiInfoVector&	GetMobWikiInfo(uint32_t vnum) { return m_wikiInfoMap[vnum]; }
-#endif
 		void			IncRegenCount(uint8_t bRegenType, uint32_t dwVnum, int iCount, int iTime);
 		void			DumpRegenCount(const char* c_szFilename);
 
@@ -152,7 +142,4 @@ class CMobManager : public singleton<CMobManager>
 		std::map<uint32_t, CMobGroupGroup *> m_map_pkMobGroupGroup;
 
 		std::map<uint32_t, double> m_mapRegenCount;
-#ifdef __INGAME_WIKI__
-		TMobWikiInfoMap	m_wikiInfoMap;
-#endif
 };

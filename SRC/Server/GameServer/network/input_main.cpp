@@ -475,8 +475,8 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 			PartyParameter(character, c_pData);
 			break;
 #ifdef __INGAME_WIKI__
-		case InGameWiki::HEADER_CG_WIKI:
-			RecvWikiPacket(character, c_pData);
+		case InGameWiki::HEADER_CG_WIKI_REFINES:
+			RecvWikiRefines(character, c_pData);
 			break;
 #endif
 		case HEADER_CG_ANSWER_MAKE_GUILD:
