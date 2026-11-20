@@ -107,9 +107,22 @@ void TickTypedDungeonCleanup(){std::vector<entt::entity> owners;for(auto e:g_reg
 
 namespace {
 struct DungeonActionPending {};
-struct DungeonActionGuard {entt::entity lock=entt::null;bool completed=false;~DungeonActionGuard(){if(g_registry.valid(lock))g_registry.remove<DungeonActionPending>(lock);}};
 }
+struct TypedDungeonActionLease
+{
+ explicit TypedDungeonActionLease(entt::entity dungeon): dungeon(dungeon) {}
+ ~TypedDungeonActionLease(){if(g_registry.valid(dungeon))g_registry.remove<DungeonActionPending>(dungeon);}
+ entt::entity dungeon;
+ bool completed=false;
+};
 bool TypedDungeonActionPending(entt::entity e){return g_registry.valid(e)&&g_registry.all_of<DungeonActionPending>(e);}
+std::shared_ptr<TypedDungeonActionLease> AcquireTypedDungeonAction(entt::entity dungeon)
+{
+ if(!g_registry.valid(dungeon) || TypedDungeonActionPending(dungeon))return {};
+ auto guard=std::make_shared<TypedDungeonActionLease>(dungeon);
+ g_registry.emplace<DungeonActionPending>(dungeon);
+ return guard;
+}
 bool UseTypedDungeonAction(entt::entity e,const item::PersistentItem& source,const item::ItemCatalog& catalog,TypedDungeonPlanner planner,bool targetRequired){
  namespace P=ecs::PlayerRuntime;
  const auto refuse=[&]{ecs::ChatSystem::Send(e,CHAT_TYPE_INFO,"Ez a tárgy most nem használható. Állj a megfelelő kazamataobjektum mellé.");return false;};
@@ -134,7 +147,7 @@ bool UseTypedDungeonAction(entt::entity e,const item::PersistentItem& source,con
  const auto fence=state.fence;const auto pid=P::GetPlayerID(e);const auto token=g_registry.get<ecs::TypedItemLogin>(e).token;
  auto permit=ecs::resource_admission::Enter({e},auriga::resource_admission::Operation::ItemUse);if(!permit||!permit->Current()||!g_registry.valid(e))return false;
  const auto* currentLogin=g_registry.try_get<ecs::TypedItemLogin>(e);const auto* currentItems=g_registry.try_get<ecs::TypedItems>(e);if(!currentLogin||currentLogin->token!=token||!currentItems||currentItems->state.fence!=fence)return false;
- auto guard=std::make_shared<DungeonActionGuard>();guard->lock=lock;g_registry.emplace<DungeonActionPending>(lock);
+ auto guard=AcquireTypedDungeonAction(lock);if(!guard)return refuse();
  auto held=std::make_shared<auriga::resource_admission::Permit>(std::move(*permit));
  g_registry.emplace_or_replace<ecs::TypedItemBusy>(e);
  const bool queued=item::runtime::RequestCommit(fence.owner,fence.sessionGeneration,std::move(*commit),[pid,token,map,target,targetRequired,plan=std::move(*plan),planner=std::move(planner),guard,held](item::runtime::CommitOutcome out)mutable{

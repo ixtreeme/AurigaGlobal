@@ -53,15 +53,17 @@ quest deviltower_zone begin
 			end
 		end
 
-		when 20366.take with pc.in_dungeon() and item.get_vnum() == 30304 begin
+		when "catalog.3.zin_bong_in_key_f29d442e6a2e".typed_use with pc.in_dungeon() and pc.get_map_index() >= 660000 and pc.get_map_index() < 670000 begin
 			local idx = pc.get_map_index()
 			if idx >= 660000 and idx < 670000 then
 				if d.getf(idx, "floor") == 12 then
+					if not d.typed_item_target(20366) then return end
+					if not pc.typed_dungeon_item_redeem({}, 0) then return end
 					npc.purge()
 					d.setf(idx, "floor", 13)
 					d.clear_regen(idx)
 					d.kill_all(idx)
-					pc.remove_item(30304, pc.count_item(30304))
+					d.typed_item_cleanup("catalog.3.zin_bong_in_key_f29d442e6a2e")
 					d.spawn_mob(idx, 1093, 647, 157)
 					d.notice(idx, 1032, "", true)
 					d.notice(idx, 1033, "", true)
@@ -77,18 +79,19 @@ quest deviltower_zone begin
 				if d.getf(idx, "floor") == 11 then
 					if number(1, 100) > 95 then -- 5%
 						d.setf(idx, "floor", 12)
-						game.drop_item(30304, 1)
+						game.drop_typed_item(3, 678, 0, 1)
 					end
 				end
 			end
 		end
 
-		when 30302.use with pc.in_dungeon() begin
+		when "catalog.10.zin_sa_gui_tower_map_cbbc4093c677".typed_use with pc.in_dungeon() and pc.get_map_index() >= 660000 and pc.get_map_index() < 670000 begin
 			local idx = pc.get_map_index()
 			if idx >= 660000 and idx < 670000 then
 				if d.getf(idx, "floor") == 10 then
+					if not pc.typed_dungeon_item_redeem({}, 0) then return end
 					d.setf(idx, "floor", 11)
-					pc.remove_item(30302, pc.count_item(30302))
+					d.typed_item_cleanup("catalog.10.zin_sa_gui_tower_map_cbbc4093c677")
 					d.spawn_mob(idx, 20366, 640, 460, 60)
 					d.set_regen_file(idx, "data/dungeon/deviltower/regen8.json")
 					d.notice(idx, 1029, "", true)
@@ -104,7 +107,7 @@ quest deviltower_zone begin
 				if d.getf(idx, "was_completed") != 0 then return end
 				if d.getf(idx, "floor") == 9 then
 					d.setf(idx, "floor", 10)
-					game.drop_item(30302, 1)
+					game.drop_typed_item(10, 901, 0, 1)
 				end
 			end
 		end
@@ -166,12 +169,13 @@ quest deviltower_zone begin
 			end
 		end
 
-		when 20073.take with pc.in_dungeon() and item.get_vnum() == 50084 begin
+		when "catalog.3.key_stone_badd05f88eeb".typed_use with pc.in_dungeon() and pc.get_map_index() >= 660000 and pc.get_map_index() < 670000 begin
 			local idx = pc.get_map_index()
 			if idx >= 660000 and idx < 670000 then
 				if d.getf(idx, "floor") == 5 then
+					if not d.typed_item_target(20073) then return end
+					if not pc.typed_dungeon_item_redeem({}, 0) then return end
 					npc.purge()
-					item.remove()
 
 					local c = d.getf(idx, "count2") + 1
 					if c == 5 then
@@ -180,7 +184,7 @@ quest deviltower_zone begin
 						d.kill_all(idx)
 						d.spawn_mob(idx, 1092, 418, 208)
 
-						pc.remove_item(50084, pc.count_item(50084))
+						d.typed_item_cleanup("catalog.3.key_stone_badd05f88eeb")
 
 						d.notice(idx, 1021, "", true)
 						d.notice(idx, 1022, "", true)
@@ -205,7 +209,7 @@ quest deviltower_zone begin
 					local c = d.getf(idx, "count1") + 1
 					if c == 8 then
 						d.setf(idx, "count1", 0)
-						game.drop_item(50084, 1)
+						game.drop_typed_item(3, 694, 0, 1)
 					else
 						d.setf(idx, "count1", c)
 					end
@@ -466,7 +470,7 @@ quest deviltower_zone begin
 				end
 
 				myname = pc.get_name()
-				result, cooldown, name = d.check_entrance(40, 140, 0, 0, 1, "deviltower_zone.cooldown")
+				result, cooldown, name = d.typed_check_entrance()
 				if result == 0 then
 					say(gameforge[lang].common.unknownerr)
 				elseif result == 2 then
@@ -516,9 +520,9 @@ quest deviltower_zone begin
 				elseif result == 1 then
 					say(gameforge[lang].common.dungeon_21)
 					wait()
-					d.remove_item(0, 0, 0, 0, 50084, 255, 30302, 255, 30303, 255, 30304, 255, 0, 0, 0, 0, 0, "deviltower_zone")
-					game.set_event_flag(string.format("ww_66_%d", pc.get_channel_id()), get_global_time() + 5)
-					d.join_cords(66, 3774, 27040)
+					if not d.typed_enter() then
+						say(gameforge[lang].common.unknownerr)
+					end
 				end
 			end
 		end

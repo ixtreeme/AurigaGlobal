@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "../dungeon/DungeonUiEvents.hpp"
+#include "../dungeon/dungeon.h"
 #include "TypedItemOps.hpp"
 #include "TypedQuestItems.hpp"
 #include "TypedMoney.hpp"
@@ -35,10 +36,12 @@
 #include "../ecs/components/social_components.hpp"
 #include "../ecs/components/quest_components.hpp"
 #include "../quest/questpc.h"
+#include "../quest/TypedIdentityScrolls.hpp"
 #include "../network/desc.h"
 #include "../entity/char_manager.h"
 #include "../combat/pvp.h"
 #include "../quest/questmanager.h"
+#include <item/IdentityScrolls.hpp>
 #include "../world/arena.h"
 #include "../world/war_map.h"
 #include "../social/marriage.h"
@@ -106,9 +109,9 @@ static std::expected<void, items::ItemMissionError> RequestTypedItemExchange(ent
 	items::WalletCurrency currency = items::WalletCurrency::Gold, bool includeSpecialInventory = false)
 {
 	using Error = items::ItemMissionError;
-	if (!g_registry.valid(character) || g_registry.all_of<ecs::TypedItemBusy>(character))
 	if (source.id && includeSpecialInventory)
 		return std::unexpected(Error::Invalid);
+	if (!g_registry.valid(character) || g_registry.all_of<ecs::TypedItemBusy>(character))
 		return std::unexpected(Error::Unavailable);
 
 	const auto catalog = items::runtime::CurrentCatalog();
@@ -512,17 +515,31 @@ bool TryUseTypedQuestScript(entt::entity character, const items::PersistentItem&
 	const auto* entry = catalog.Find(source.key);
 	const auto* script = entry ? std::get_if<items::ItemQuestRow>(&entry->category) : nullptr;
 	auto& quests = quest::CQuestManager::instance();
-	if (!script || script->dispatch != items::QuestItemDispatch::FirstHandler || !script->groupCode.empty() ||
-		!quests.HasTypedItemUse(entry->base.contentCode))
+	if (entry && !entry->base.retired && entry->base.contentCode == items::RuneCooldownStoneCode)
+	{
+		if (UtilityAdmitted(character))
+			quest::UseTypedRuneCooldownStone(character, source);
+		else
+			Tell(character, "A Zeusz köve most nem használható.");
+		return true;
+	}
+	if (!entry || !quests.HasTypedItemUse(entry->base.contentCode))
+		return false;
+	// A few original dungeon puzzle props were catalogued as accessories.
+	const bool dungeonProp = !script && source.key.Category() == items::ItemCategory::Accessory &&
+		g_registry.valid(CDungeonManager::instance().FindByMapIndex(ecs::PlayerRuntime::GetMapIndex(character)));
+	if (!dungeonProp && (!script || script->dispatch != items::QuestItemDispatch::FirstHandler || !script->groupCode.empty()))
 		return false;
 
 	const auto* policy = catalog.FindUsePolicy(entry->base.usePolicy);
 	const auto facts = RecoveryAdmission(character, {}, source.count);
-	const bool admitted = UtilityAdmitted(character) && items::MissionItemUsable(source, source.owner) &&
+	const bool admitted = !entry->base.retired && UtilityAdmitted(character) && items::MissionItemUsable(source, source.owner) &&
 		policy && (policy->allowedClasses & (1u << facts.classIndex)) && (policy->allowedSexes & (1u << facts.sexIndex));
-	const auto plan = items::PlanQuestItemUse(catalog, {source.key, source.count, facts.level,
-		static_cast<items::QuestItemContext>(facts.context), false, facts.inCombat, admitted, true});
-	if (!plan || !quests.UseTypedQuestItem(character, entry->base.contentCode, {source.id.Value(), source.revision}))
+	const bool allowed = dungeonProp
+		? admitted && facts.level >= entry->base.minimumLevel && (!facts.inCombat || policy->useDuringCombat)
+		: items::PlanQuestItemUse(catalog, {source.key, source.count, facts.level,
+			static_cast<items::QuestItemContext>(facts.context), false, facts.inCombat, admitted, true}).has_value();
+	if (!allowed || !quests.UseTypedQuestItem(character, entry->base.contentCode, {source.id.Value(), source.revision}))
 		Tell(character, "Ez a küldetéstárgy most nem használható.");
 	return true;
 }

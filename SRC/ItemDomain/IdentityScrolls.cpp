@@ -168,9 +168,13 @@ bool ValidateQuestScrollWrite(const ItemCatalog& catalog, const ItemCommit& writ
         break;
     }
     case DungeonCooldownScrollOutcome:
-        if (!ReadDungeonCooldownScrollChange(write)) return false;
-        contentCode = DungeonCooldownScrollCode;
+    {
+        const auto change = ReadDungeonCooldownScrollChange(write);
+        if (!change) return false;
+        contentCode = CooldownScrollDungeons[change->dungeon] == RuneDungeonCooldownQuest
+            ? RuneCooldownStoneCode : DungeonCooldownScrollCode;
         break;
+    }
     case LevelResetScrollOutcome:
         if (!ValidLevelReset(write)) return false;
         contentCode = LevelResetScrollCode;

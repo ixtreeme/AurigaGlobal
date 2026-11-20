@@ -32,14 +32,15 @@ quest meleylair_zone begin
 			meleylair_zone.clear(get_server_timer_arg())
 		end
 
-		when 6118.take with pc.in_dungeon() and item.get_vnum() == 30341 begin
+		when "catalog.10.dragonfire_ring_3859d8ae6073".typed_use with pc.in_dungeon() and pc.get_map_index() >= 2120000 and pc.get_map_index() < 2130000 begin
 			local idx = pc.get_map_index()
 			if idx >= 2120000 and idx < 2130000 then
 				if d.getf(idx, "floor") == 19 then
-					local vid = npc.get_vid()
+					local vid = d.typed_item_target(6118)
+					if not vid then return end
 					if d.getf(idx, string.format("a_%d", vid)) != 1 then
+						if not pc.typed_dungeon_item_redeem({}, 0) then return end
 						d.setf(idx, string.format("a_%d", vid), 1)
-						item.remove()
 						d.set_meley_last_statue(idx, vid)
 						d.setf(idx, "killed_count", d.getf(idx, "killed_count") + 1)
 					end
@@ -51,7 +52,7 @@ quest meleylair_zone begin
 			-- local idx = pc.get_map_index()
 			-- if idx >= 2120000 and idx < 2130000 then
 				-- if number(1, 100) > 94 then -- 6%
-					-- game.drop_item(30341, 1)
+					-- game.drop_typed_item(10, 918, 0, 1)
 				-- end
 			-- end
 		-- end
@@ -359,6 +360,7 @@ quest meleylair_zone begin
 		end
 
 		when 20420.chat."Reward" with pc.in_dungeon() begin
+			local reward_name = lang == "hu" and "Meley királynő ládája" or "Queen Meley’s Chest"
 			local idx = pc.get_map_index()
 			local lang = pc.get_language()
 			say_title(string.format("%s:", mob_name(20420)))
@@ -388,16 +390,19 @@ quest meleylair_zone begin
 						say(gameforge[lang].meleylair_zone._3)
 						say(gameforge[lang].meleylair_zone._4)
 						say("")
-						local reward_menu = select(item_name(50270), gameforge[lang].common.close)
+						local reward_menu = select(reward_name, gameforge[lang].common.close)
 						if reward_menu == 1 then
 							say_title(string.format("%s:", mob_name(20420)))
 							say("")
-							say(string.format(gameforge[lang].meleylair_zone._5, item_name(50270)))
+							say(string.format(gameforge[lang].meleylair_zone._5, reward_name))
 							say("")
 							local agree = select(gameforge[lang].common.yes, gameforge[lang].common.no)
 							if agree == 1 then
+								if not pc.typed_dungeon_item_exchange({}, {{8, 425, 0, 1}}, 0) then
+									syschat("A jutalom most nem vehető át. Próbáld újra.")
+									return
+								end
 								d.setf(idx, string.format(pc.get_player_id()), 1)
-								pc.give_item2(50270, 1)
 								say_title(string.format("%s:", mob_name(20420)))
 								say("")
 								say(gameforge[lang].meleylair_zone._6)
@@ -521,19 +526,19 @@ quest meleylair_zone begin
 						server_timer("meleylair_prepare", 1, idx)
 						d.setf(idx, "was_completed", 0)
 						d.setf(idx, "guild_id", guild.get_id())
-						game.drop_item(30341, 1)
-						game.drop_item(30341, 1)
-						game.drop_item(30341, 1)
-						game.drop_item(30341, 1)
+						game.drop_typed_item(10, 918, 0, 1)
+						game.drop_typed_item(10, 918, 0, 1)
+						game.drop_typed_item(10, 918, 0, 1)
+						game.drop_typed_item(10, 918, 0, 1)
 					else
 						if party.is_party() then
 							d.setf(idx, "floor", 1)
 							server_timer("meleylair_prepare", 1, idx)
 							d.setf(idx, "was_completed", 0)
-							game.drop_item(30341, 1)
-							game.drop_item(30341, 1)
-							game.drop_item(30341, 1)
-							game.drop_item(30341, 1)
+							game.drop_typed_item(10, 918, 0, 1)
+							game.drop_typed_item(10, 918, 0, 1)
+							game.drop_typed_item(10, 918, 0, 1)
+							game.drop_typed_item(10, 918, 0, 1)
 						end
 					end
 				end
@@ -600,7 +605,7 @@ quest meleylair_zone begin
 				say(gameforge[lang].common.dungeon_5)
 				say_reward(string.format(gameforge[lang].common.dungeon_6, 120))
 				say_reward(string.format(gameforge[lang].common.dungeon_7, 140))
-				say_reward(string.format("- %s: %d", item_name(71130), 1))
+				say_reward(string.format("- %s: %d", d.typed_ticket_name(), 1))
 				if party.is_party() then
 					say_reward(gameforge[lang].common.dungeon_8)
 				end
@@ -614,7 +619,7 @@ quest meleylair_zone begin
 				end
 
 				myname = pc.get_name()
-				result, cooldown, name = d.check_entrance(120, 140, 71130, 0, 1, "meleylair_zone.cooldown")
+				result, cooldown, name = d.typed_check_entrance()
 				if result == 0 then
 					say(gameforge[lang].common.unknownerr)
 				elseif result == 2 then
@@ -639,9 +644,9 @@ quest meleylair_zone begin
 					end
 				elseif result == 6 or result == 7 then
 					if myname == name then
-						say(string.format(gameforge[lang].common.dungeon_18, 1, item_name(71130)))
+						say(string.format(gameforge[lang].common.dungeon_18, 1, d.typed_ticket_name()))
 					else
-						say(string.format(gameforge[lang].common.dungeon_17, name, 1, item_name(71130)))
+						say(string.format(gameforge[lang].common.dungeon_17, name, 1, d.typed_ticket_name()))
 					end
 				elseif result == 8 then
 					local h = math.floor(cooldown / 3600)
@@ -663,12 +668,9 @@ quest meleylair_zone begin
 				elseif result == 1 then
 					say(gameforge[lang].common.dungeon_21)
 					wait()
-						d.remove_item(71130, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "")
-
-						d.remove_item_meley(30341, 2400, "meleylair_zone")
-						d.join_cords(212, 3200, 15290)
-
-
+					if not d.typed_enter() then
+						say(gameforge[lang].common.unknownerr)
+					end
 				end
 			end
 		end

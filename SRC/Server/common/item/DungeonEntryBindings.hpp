@@ -25,7 +25,11 @@ inline constexpr std::array DungeonEntryBindings{
  DungeonEntryBinding{352,"dungeon.nemere.entry","catalog.10.nemere_ticket_1cbf08edd8cf"},
  DungeonEntryBinding{351,"dungeon.razador.entry","catalog.10.razador_ticket_24917d334e09"},
  DungeonEntryBinding{27,"dungeon.slime.entry","catalog.10.piece_of_menhir_slime_93d26b69b81c"},
- DungeonEntryBinding{209,"dungeon.temple_ochao.entry","catalog.3.ochao_ticket_cf52bd498aaf"}
+ DungeonEntryBinding{209,"dungeon.temple_ochao.entry","catalog.3.ochao_ticket_cf52bd498aaf"},
+ DungeonEntryBinding{18,"dungeon.owl.entry","catalog.10.owl_pass_a71005b2ac06"},
+ DungeonEntryBinding{25,"dungeon.christmas_extreme.entry","catalog.10.christmas_dungeon_extreme_d211aaddcf78"},
+ DungeonEntryBinding{26,"dungeon.christmas_medium.entry","catalog.10.christmas_dungeon_medium_76e6f89b09a8"},
+ DungeonEntryBinding{212,"dungeon.meley.entry","catalog.10.meley_erlaubnis_6bc641881c2a"}
 };
 inline const DungeonEntryBinding* DungeonEntryForMap(std::uint32_t map){for(const auto& b:DungeonEntryBindings)if(b.map==map)return &b;return nullptr;}
 inline std::string DungeonEntryCountCommand(std::uint32_t map,std::uint64_t count){if(!map || count>INT32_MAX)return {};return "nx_dungeon_item 1 "+std::to_string(map)+" "+std::to_string(count);}

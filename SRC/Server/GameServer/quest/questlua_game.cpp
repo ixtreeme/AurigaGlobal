@@ -3,17 +3,13 @@
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/EntityFactory.hpp"
-#include "../ecs/systems/SocialSystem.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/GayaSystem.hpp"
 #include "../ecs/Registry.hpp"
 #include "questlua.h"
 #include "questmanager.h"
 #include "desc_client.h"
 #include "char_interface.hpp"
-#include "item_manager.h"
-#include "item.h"
 #include "cmd.h"
 #include "packet.h"
 #include "../ecs/quest_helpers.hpp"
@@ -30,9 +26,6 @@
 	#endif
 #endif
 
-#ifdef ENABLE_DICE_SYSTEM
-#include "party.h"
-#endif
 #ifdef ENABLE_EVENT_MANAGER
 #include "char_manager.h"
 #include "../ecs/CharacterAccessors.hpp"
@@ -119,6 +112,13 @@ namespace quest
 		return 0;
 	}
 
+	ALUA(game_drop_item)
+	{
+		LOG_ERROR("QUEST {}: legacy drop API requires a typed quest drop",
+			CQuestManager::instance().GetCurrentQuestName());
+		return 0;
+	}
+
 	static std::optional<lua_Integer> QuestItemInteger(lua_State* L, int index, lua_Integer minimum, lua_Integer maximum)
 	{
 		int valid = 0;
@@ -201,52 +201,12 @@ namespace quest
 		return PushTypedItemName(L, source == items.end() ? nullptr : catalog->Find(source->key), 1);
 	}
 
-	ALUA(game_drop_item)
-	{
-		// migrated from CHARACTER::DropItem
-		// DUAL-PATH: legacy only during migration window
-		//
-		// Syntax: game.drop_item(50050, 1)
-		//
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		uint32_t item_vnum = (uint32_t) lua_tonumber(L, 1);
-		int count = (int) lua_tonumber(L, 2);
-		int32_t x = ecs::PlayerRuntime::GetX(chEntity);
-		int32_t y = ecs::PlayerRuntime::GetY(chEntity);
-
-		const entt::entity item = ITEM_MANAGER::instance().CreateItem(item_vnum, count);
-
-		if (!ItemSystem::IsValidItem(item))
-		{
-			sys_err("cannot create item vnum {} count {}", item_vnum, count);
-			return 0;
-		}
-
-		PIXEL_POSITION pos;
-		pos.x = x + number(-200, 200);
-		pos.y = y + number(-200, 200);
-
-		if (!ItemSystem::PlaceItemOnGround(
-			item, ecs::PlayerRuntime::GetMapIndex(chEntity), pos, 300))
-			ItemSystem::DestroyItemEntityEcs(item, "QUEST_DROP_GROUND_FAILED");
-
-		return 0;
-	}
-
-	ALUA(game_drop_typed_item_with_ownership)
+	static int DropQuestItem(lua_State* L, bool claim)
 	{
 		namespace item = auriga::item;
-		const auto integer = [L](int index, lua_Integer minimum, lua_Integer maximum) {
-			int valid = 0;
-			const auto value = lua_tointegerx(L, index, &valid);
-			return valid && value >= minimum && value <= maximum ? std::optional{value} : std::nullopt;
-		};
-		const auto category = integer(1, 1, UINT16_MAX);
-		const auto local = integer(2, 1, UINT32_MAX);
-		const auto level = integer(3, 0, 255);
-		const auto count = integer(4, 1, 50000);
-		const auto key = item::ItemKey::Create(static_cast<uint16_t>(category.value_or(0)),
-			static_cast<uint32_t>(local.value_or(0)));
+		const auto level = QuestItemInteger(L, 3, 0, 255);
+		const auto count = QuestItemInteger(L, 4, 1, 50000);
+		const auto key = QuestItemKey(L);
 		const auto catalog = item::runtime::CurrentCatalog();
 		const auto* definition = catalog && key ? catalog->Find(*key) : nullptr;
 		const auto player = CQuestManager::instance().GetCurrentPCEntity();
@@ -258,124 +218,20 @@ namespace quest
 			const auto map = ecs::PlayerRuntime::GetMapIndex(player);
 			const auto x = ecs::PlayerRuntime::GetX(player);
 			const auto y = ecs::PlayerRuntime::GetY(player);
+			const auto z = ecs::PlayerRuntime::GetZ(player);
+			const auto claimant = claim ? player : entt::null;
 			const item::ItemGrant grant{*key, static_cast<uint16_t>(*level), static_cast<uint32_t>(*count)};
-			// Preserve the old per-player claim time and ground lifetime for quest drops.
-			placed = DropTypedLoot(grant, map, x + number(-200, 200), y + number(-200, 200), 0, player, 10000) ||
-				DropTypedLoot(grant, map, x, y, 0, player, 10000);
+			placed = DropTypedLoot(grant, map, x + number(-200, 200), y + number(-200, 200), z, claimant, 10000) ||
+				DropTypedLoot(grant, map, x, y, z, claimant, 10000);
 		}
 		if (!placed)
-			LOG_ERROR("QUEST {}: could not place a typed event reward", CQuestManager::instance().GetCurrentQuestName());
+			LOG_ERROR("QUEST {}: could not place typed loot", CQuestManager::instance().GetCurrentQuestName());
 		lua_pushboolean(L, placed);
 		return 1;
 	}
 
-	ALUA(game_drop_item_with_ownership)
-	{
-		// migrated from CHARACTER::DropItemWithOwnership
-		// DUAL-PATH: legacy only during migration window
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		entt::entity item = entt::null;
-		switch (lua_gettop(L))
-		{
-		case 1:
-			item = ITEM_MANAGER::instance().CreateItem((uint32_t) lua_tonumber(L, 1));
-			break;
-		case 2:
-		case 3:
-			item = ITEM_MANAGER::instance().CreateItem((uint32_t) lua_tonumber(L, 1), (int) lua_tonumber(L, 2));
-			break;
-		default:
-			return 0;
-		}
-
-		if (!ItemSystem::IsValidItem(item))
-		{
-			return 0;
-		}
-
-		if (lua_isnumber(L, 3))
-		{
-			int sec = (int) lua_tonumber(L, 3);
-			if (sec <= 0)
-			{
-				ItemSystem::SetGroundOwnership(item, chEntity);
-			}
-			else
-			{
-				ItemSystem::SetGroundOwnership(item, chEntity, sec);
-			}
-		}
-		else
-			ItemSystem::SetGroundOwnership(item, chEntity);
-
-		PIXEL_POSITION pos;
-		pos.x = ecs::PlayerRuntime::GetX(chEntity) + number(-200, 200);
-		pos.y = ecs::PlayerRuntime::GetY(chEntity) + number(-200, 200);
-
-		if (!ItemSystem::PlaceItemOnGround(
-			item, ecs::PlayerRuntime::GetMapIndex(chEntity), pos, 300))
-			ItemSystem::DestroyItemEntityEcs(item, "QUEST_OWNED_DROP_GROUND_FAILED");
-
-		return 0;
-	}
-
-#ifdef ENABLE_DICE_SYSTEM
-	ALUA(game_drop_item_with_ownership_and_dice)
-	{
-		// migrated from CHARACTER::DropItemWithOwnership
-		// DUAL-PATH: legacy only during migration window
-		entt::entity item = entt::null;
-		switch (lua_gettop(L))
-		{
-		case 1:
-			item = ITEM_MANAGER::instance().CreateItem((uint32_t) lua_tonumber(L, 1));
-			break;
-		case 2:
-		case 3:
-			item = ITEM_MANAGER::instance().CreateItem((uint32_t) lua_tonumber(L, 1), (int) lua_tonumber(L, 2));
-			break;
-		default:
-			return 0;
-		}
-
-		if (!ItemSystem::IsValidItem(item))
-		{
-			return 0;
-		}
-
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-
-		entt::entity owner = chEntity;
-		if (ecs::SocialSystem::GetParty(chEntity) != entt::null)
-			owner = ItemSystem::RollPartyDropOwnership(item, chEntity);
-
-		if (lua_isnumber(L, 3))
-		{
-			int sec = (int) lua_tonumber(L, 3);
-			if (sec <= 0)
-			{
-				ItemSystem::SetGroundOwnership(item, owner);
-			}
-			else
-			{
-				ItemSystem::SetGroundOwnership(item, owner, sec);
-			}
-		}
-		else
-			ItemSystem::SetGroundOwnership(item, owner);
-
-		PIXEL_POSITION pos;
-		pos.x = ecs::PlayerRuntime::GetX(chEntity) + number(-200, 200);
-		pos.y = ecs::PlayerRuntime::GetY(chEntity) + number(-200, 200);
-			{ "typed_item_key", game_typed_item_key },
-
-		if (!ItemSystem::PlaceItemOnGround(
-			item, ecs::PlayerRuntime::GetMapIndex(chEntity), pos, 300))
-			ItemSystem::DestroyItemEntityEcs(item, "QUEST_DICE_DROP_GROUND_FAILED");
-
-		return 0;
-	}
-#endif
+	ALUA(game_drop_typed_item) { return DropQuestItem(L, false); }
+	ALUA(game_drop_typed_item_with_ownership) { return DropQuestItem(L, true); }
 
 	ALUA(game_web_mall)
 	{
@@ -508,8 +364,10 @@ namespace quest
 			{ "get_event_flag_string", game_get_event_flag_string },
 			{ "set_event_flag",				game_set_event_flag				},
 			{ "drop_item",					game_drop_item					},
-			{ "drop_item_with_ownership",	game_drop_item_with_ownership	},
+			{ "drop_item_with_ownership",	game_drop_item	},
+			{ "drop_typed_item", game_drop_typed_item },
 			{ "drop_typed_item_with_ownership", game_drop_typed_item_with_ownership },
+			{ "typed_item_key", game_typed_item_key },
 			{ "typed_item_name", game_typed_item_name },
 			{ "typed_item_use_name", game_typed_item_use_name },
 #ifdef ADVANCED_GUILD_INFO
@@ -518,7 +376,7 @@ namespace quest
 			{ "reset_guild_war_stats",		game_reset_guild_war_stats		},
 #endif
 #ifdef ENABLE_DICE_SYSTEM
-			{ "drop_item_with_ownership_and_dice",	game_drop_item_with_ownership_and_dice	},
+			{ "drop_item_with_ownership_and_dice",	game_drop_item	},
 #endif
 			{ "open_web_mall",				game_web_mall					},
 #ifdef ENABLE_GAYA_SYSTEM

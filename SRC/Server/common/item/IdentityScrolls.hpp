@@ -15,12 +15,14 @@ inline constexpr std::int32_t LevelResetMap = 41;
 inline constexpr std::array LevelResetEquipmentSlots{
     EquipmentSlot::Feet, EquipmentSlot::Wrist, EquipmentSlot::Neck, EquipmentSlot::Ear};
 
-inline constexpr std::array<std::string_view, 17> CooldownScrollDungeons{
+inline constexpr std::string_view RuneDungeonCooldownQuest = "rune_zone";
+inline constexpr std::string_view RuneCooldownStoneCode = "catalog.10.zeus_stone_4e582e552369";
+inline constexpr std::array<std::string_view, 18> CooldownScrollDungeons{
     "owl_zone_razor93", "dungeonorchi", "slime_dungeon", "dungeon_spider",
     "catacombe", "dragonlair_zone", "meleylair_zone", "razador_zone", "nemere_zone",
     "temple_ochao", "enchanted_forest", "nightmare_zone_razor93_prepare",
     "dungeonpyramid_razor93", "tritontemple_razor93", "valentine_dungeon",
-    "halloween2022", "vikingdungeon_zone"};
+    "halloween2022", "vikingdungeon_zone", RuneDungeonCooldownQuest};
 inline constexpr std::array<std::string_view, 4> CooldownScrollFlags{"cooldown", "disconnect", "idx", "ch"};
 
 struct DungeonCooldownScrollChange

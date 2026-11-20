@@ -3,6 +3,7 @@
 #include <item/BonusRegistry.hpp>
 #include <item/AccessoryRuntime.hpp>
 #include <item/DungeonItems.hpp>
+#include <item/IdentityScrolls.hpp>
 #include <limits>
 #include <set>
 #include <algorithm>
@@ -103,6 +104,10 @@ std::expected<std::vector<std::byte>, TypedInventoryWireError> EncodeTypedItemDe
                 quest && quest->dispatch == QuestItemDispatch::FirstHandler &&
                 (BuiltinQuestHandler(quest->groupCode) != BuiltinQuestItem::None ||
                  (quest->groupCode.empty() && std::ranges::find(scriptedUse, key) != scriptedUse.end())))
+                actions |= TypedActionUse;
+            if (key.Category() == ItemCategory::Accessory && std::ranges::find(scriptedUse, key) != scriptedUse.end())
+                actions |= TypedActionUse;
+            if (entry->base.contentCode == RuneCooldownStoneCode)
                 actions |= TypedActionUse;
             if(const auto* fish=std::get_if<ItemFishingRow>(&entry->category);fish && (fish->kind==FishingKind::LiveFish || (fish->kind==FishingKind::DeadFish && fish->grillResult)))actions|=TypedActionFish;
             if(const auto* tool=std::get_if<ItemToolRow>(&entry->category)){if(tool->kind==ToolKind::Detector)actions|=TypedActionUse;else{slot=1;actions|=TypedActionTool;}}

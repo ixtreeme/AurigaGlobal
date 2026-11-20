@@ -33,27 +33,27 @@ quest underwater_zone begin
 					d.setf(idx, "was_completed", 1)
 					d.complete(3962, 3600, 67, "underwater_zone")
 					if party.is_party() then
-							pc.give_item2(50203, 1)--Hidra ládája
-							pc.give_item2(39068, 2)--coin
-							pc.give_item2(27992, 5)--f gyö
-							pc.give_item2(27993, 5)--k gy
-							pc.give_item2(27994, 5)--v gy
-							pc.give_item2(30271, 50)--Metin ko szilánk
-							pc.give_item2(71084, 200)--1-5 fori 20db
-							pc.give_item2(2842, 2)--Aqua krist�ly
-							pc.give_item2(2844, 2)--Istenek Itala
+							pc.typed_item_grant(8, 424, 0, 1)--Hidra ládája
+							pc.typed_item_grant(10, 965, 0, 2)--coin
+							pc.typed_item_grant(6, 117, 0, 5)--f gyö
+							pc.typed_item_grant(6, 118, 0, 5)--k gy
+							pc.typed_item_grant(6, 119, 0, 5)--v gy
+							pc.typed_item_grant(6, 346, 0, 50)--Metin ko szilánk
+							pc.typed_item_grant(5, 346, 0, 200)--1-5 fori 20db
+							pc.typed_item_grant(6, 39, 0, 2)--Aqua krist�ly
+							pc.typed_item_grant(6, 41, 0, 2)--Istenek Itala
 						--notice_all(1064, pc.get_name())
 						notice_all(2092, party.get_leader_name())
 					else
-						pc.give_item2(50203, 1)--Hidra ládája
-						pc.give_item2(39068, 1)--coin
-						pc.give_item2(27992, 2)--f gyö
-						pc.give_item2(27993, 2)--k gy
-						pc.give_item2(27994, 2)--v gy
-						pc.give_item2(30271, 25)--Metin ko szilánk
-						pc.give_item2(71084, 100)--1-5 fori 20db
-						pc.give_item2(2842, 1)--Aqua krist�ly
-						pc.give_item2(2844, 1)--Istenek Itala
+						pc.typed_item_grant(8, 424, 0, 1)--Hidra ládája
+						pc.typed_item_grant(10, 965, 0, 1)--coin
+						pc.typed_item_grant(6, 117, 0, 2)--f gyö
+						pc.typed_item_grant(6, 118, 0, 2)--k gy
+						pc.typed_item_grant(6, 119, 0, 2)--v gy
+						pc.typed_item_grant(6, 346, 0, 25)--Metin ko szilánk
+						pc.typed_item_grant(5, 346, 0, 100)--1-5 fori 20db
+						pc.typed_item_grant(6, 39, 0, 1)--Aqua krist�ly
+						pc.typed_item_grant(6, 41, 0, 1)--Istenek Itala
 						notice_all(2093, pc.get_name())
 					end
 					d.kill_all(idx)
@@ -65,15 +65,17 @@ quest underwater_zone begin
 			end
 		end
 
-		when 20362.take with pc.in_dungeon() and item.get_vnum() == 30304 begin
+		when "catalog.3.zin_bong_in_key_f29d442e6a2e".typed_use with pc.in_dungeon() and pc.get_map_index() >= 670000 and pc.get_map_index() < 680000 begin
 			local idx = pc.get_map_index()
 			if idx >= 670000 and idx < 680000 then
 				if d.getf(idx, "floor") == 12 then
+					if not d.typed_item_target(20362) then return end
+					if not pc.typed_dungeon_item_redeem({}, 0) then return end
 					npc.purge()
 					d.setf(idx, "floor", 13)
 					d.clear_regen(idx)
 					d.kill_all(idx)
-					pc.remove_item(30304, pc.count_item(30304))
+					d.typed_item_cleanup("catalog.3.zin_bong_in_key_f29d442e6a2e")
 					d.spawn_mob(idx, 3962, 175, 188)
 					d.set_regen_file(idx, "data/dungeon/water/regenboss.json")
 					d.notice(idx, 1032, "", true)--A pecsétet felnyitották
@@ -90,18 +92,19 @@ quest underwater_zone begin
 				if d.getf(idx, "floor") == 11 then
 					if number(1, 100) > 95 then -- 5%
 						d.setf(idx, "floor", 12)
-						game.drop_item(30304, 1)
+						game.drop_typed_item(3, 678, 0, 1)
 					end
 				end
 			end
 		end
 
-		when 30302.use with pc.in_dungeon() begin
+		when "catalog.10.zin_sa_gui_tower_map_cbbc4093c677".typed_use with pc.in_dungeon() and pc.get_map_index() >= 670000 and pc.get_map_index() < 680000 begin
 			local idx = pc.get_map_index()
 			if idx >= 670000 and idx < 680000 then
 				if d.getf(idx, "floor") == 10 then
+					if not pc.typed_dungeon_item_redeem({}, 0) then return end
 					d.setf(idx, "floor", 11)
-					pc.remove_item(30302, pc.count_item(30302))
+					d.typed_item_cleanup("catalog.10.zin_sa_gui_tower_map_cbbc4093c677")
 					d.spawn_mob(idx, 20362, 397, 192, 60)
 					d.set_regen_file(idx, "data/dungeon/water/regen8.json")
 					d.notice(idx, 1029, "", true)--Megtalálta a helyes térképet,
@@ -117,7 +120,7 @@ quest underwater_zone begin
 				if d.getf(idx, "was_completed") != 0 then return end
 				if d.getf(idx, "floor") == 9 then
 					d.setf(idx, "floor", 10)
-					game.drop_item(30302, 1)
+					game.drop_typed_item(10, 901, 0, 1)
 				end
 			end
 		end
@@ -178,12 +181,13 @@ quest underwater_zone begin
 			end
 		end
 
-		when 9425.take with pc.in_dungeon() and item.get_vnum() == 50089 begin
+		when "catalog.3.key_stone_b7ab7bf48f31".typed_use with pc.in_dungeon() and pc.get_map_index() >= 670000 and pc.get_map_index() < 680000 begin
 			local idx = pc.get_map_index()
 			if idx >= 670000 and idx < 680000 then
 				if d.getf(idx, "floor") == 5 then
+					if not d.typed_item_target(9425) then return end
+					if not pc.typed_dungeon_item_redeem({}, 0) then return end
 					npc.purge()
-					item.remove()
 
 					local c = d.getf(idx, "count2") + 1
 					if c == 5 then
@@ -192,7 +196,7 @@ quest underwater_zone begin
 						d.kill_all(idx)
 						d.spawn_mob(idx, 3956, 387, 426)
 
-						pc.remove_item(50089, pc.count_item(50089))
+						d.typed_item_cleanup("catalog.3.key_stone_b7ab7bf48f31")
 
 						d.notice(idx, 1021, "", true)--Minden pecsétet felnyitottak.
 						d.notice(idx, 1022, "", true)--Hamarosan a következo emeletre teleportálnak.
@@ -217,7 +221,7 @@ quest underwater_zone begin
 					local c = d.getf(idx, "count1") + 1
 					if c == 8 then
 						d.setf(idx, "count1", 0)
-						game.drop_item(50089, 1)
+						game.drop_typed_item(3, 695, 0, 1)
 					else
 						d.setf(idx, "count1", c)
 					end
@@ -479,7 +483,7 @@ quest underwater_zone begin
 				end
 
 				myname = pc.get_name()
-				result, cooldown, name = d.check_entrance(140, 140, 0, 0, 1, "underwater_zone.cooldown")
+				result, cooldown, name = d.typed_check_entrance()
 				if result == 0 then
 					say(gameforge[lang].common.unknownerr)
 				elseif result == 2 then
@@ -529,9 +533,9 @@ quest underwater_zone begin
 				elseif result == 1 then
 					say(gameforge[lang].common.dungeon_21)
 					wait()
-					d.remove_item(0, 0, 0, 0, 50089, 255, 30302, 255, 30303, 255, 30304, 255, 0, 0, 0, 0, 3600, "underwater_zone")
-					game.set_event_flag(string.format("ww_67_%d", pc.get_channel_id()), get_global_time() + 5)
-					d.join_cords(67, 5037, 630)
+					if not d.typed_enter() then
+						say(gameforge[lang].common.unknownerr)
+					end
 				end
 			end
 		end

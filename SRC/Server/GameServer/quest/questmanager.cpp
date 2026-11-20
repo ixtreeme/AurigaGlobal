@@ -757,6 +757,7 @@ namespace quest
 		if (handler == m_typedItemUses.end())
 			return false;
 		SetCurrentItem(entt::null);
+		ecs::PlayerRuntime::SetQuestNPC(character, entt::null);
 		return handler->second.OnTypedItemUse(*pc, source);
 	}
 

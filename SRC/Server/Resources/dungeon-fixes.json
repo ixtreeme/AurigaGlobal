@@ -9,18 +9,21 @@
     },
     "quest/Quest/dungeon/christmas_zone1.lua": {
       "previous_sha256": "8356a97e63fc5ac62e4ddf6021df8ea2e9285e669572baa719cadb73b96267d8",
-      "fixed_sha256": "66fdf2d802fd24d2ada7d6ca91e1f66e56d03ebc078d866ad9d2cf9b9260e2f2",
-      "previous_lf_sha256": "3438b6462fb6a886c6b63197dd13b128a4f7b082aa368c540d7c133b15acb5bb"
+      "fixed_sha256": "1719c359f2b9456d992bacfeb8442e3e984205feba77b8287b65a1751a10e800",
+      "previous_lf_sha256": "3438b6462fb6a886c6b63197dd13b128a4f7b082aa368c540d7c133b15acb5bb",
+      "previous_fixed_sha256": "66fdf2d802fd24d2ada7d6ca91e1f66e56d03ebc078d866ad9d2cf9b9260e2f2"
     },
     "quest/Quest/dungeon/christmas_zone2.lua": {
       "previous_sha256": "3755fcfda8b358d8cf044844c1736f79329f046fe3c4d233ff75cb2c39f5d0b2",
-      "fixed_sha256": "12fdcf69e13845a5869710feb40510d7965a2ce087cacec6026f93a1c8e4c2fd",
-      "previous_lf_sha256": "384eee69d4b91eef106476f1f2726aded2c476bc3fb002905cd55f598009475f"
+      "fixed_sha256": "793d9a30aed7823cb917761e64c6c1057a049c310d491bfc5f54c6ae7ce33901",
+      "previous_lf_sha256": "384eee69d4b91eef106476f1f2726aded2c476bc3fb002905cd55f598009475f",
+      "previous_fixed_sha256": "12fdcf69e13845a5869710feb40510d7965a2ce087cacec6026f93a1c8e4c2fd"
     },
     "quest/Quest/dungeon/deviltower_zone.lua": {
       "previous_sha256": "29f845f337a707444d830cbb141adf88e41e1b77a7cb846fb01ff7f2189c9e50",
-      "fixed_sha256": "b1f7a76f9343f4eb6409736c6f5401def959da5580140511c4190f5d594d2b8b",
-      "previous_lf_sha256": "29f845f337a707444d830cbb141adf88e41e1b77a7cb846fb01ff7f2189c9e50"
+      "fixed_sha256": "b1a8241084302e1d15e2611454ccf8881dce9118a1b0f3e4308d56ef4aebc067",
+      "previous_lf_sha256": "29f845f337a707444d830cbb141adf88e41e1b77a7cb846fb01ff7f2189c9e50",
+      "previous_fixed_sha256": "b1f7a76f9343f4eb6409736c6f5401def959da5580140511c4190f5d594d2b8b"
     },
     "quest/Quest/dungeon/dragonlair_zone.lua": {
       "previous_sha256": "5a04eb64bc56acde417b6eab87f361b60f09adaf4e073af73ec6c46cb21ee4a4",
@@ -42,13 +45,15 @@
     },
     "quest/Quest/dungeon/meleylair_zone.lua": {
       "previous_sha256": "6e28bcdd19ad467b88cc6a533c7a2d79091af7bd9e1edc7941c6de4c66b9b5be",
-      "fixed_sha256": "eb5a580cc7497fa637c06bc193f073852002130a51e9a9d8ac660db7b7632cee",
-      "previous_lf_sha256": "bc196a0994de5ebdd9151d4d9a634bf498e68b340827074e618b5af562a45551"
+      "fixed_sha256": "22475168c8b76c50d10baef56c53909b1bbf58000d15032dc9818bff461570e2",
+      "previous_lf_sha256": "bc196a0994de5ebdd9151d4d9a634bf498e68b340827074e618b5af562a45551",
+      "previous_fixed_sha256": "eb5a580cc7497fa637c06bc193f073852002130a51e9a9d8ac660db7b7632cee"
     },
     "quest/Quest/dungeon/monkey_tower_razor93.lua": {
       "previous_sha256": "328b1db01e1400f5f7a3b01d7c8ba5a66b23355caf0b3a55f62498c75987fe29",
-      "fixed_sha256": "c57b2969ef37bd5e8383a0a9b61c18acef16b2f76fccb3ed30e01550155129bd",
-      "previous_lf_sha256": "69e5524702aa768b77e9d4f4952db021a6298182b9c9f8ef7925657b82b667b5"
+      "fixed_sha256": "a403bf7592098ab3e408fb7741bd3a1fe833291b9cb3b825dc55cd7edc3b91d8",
+      "previous_lf_sha256": "69e5524702aa768b77e9d4f4952db021a6298182b9c9f8ef7925657b82b667b5",
+      "previous_fixed_sha256": "c57b2969ef37bd5e8383a0a9b61c18acef16b2f76fccb3ed30e01550155129bd"
     },
     "quest/Quest/dungeon/nemere_zone.lua": {
       "previous_sha256": "7551505d79bf2cd90e050cb30e4aff7b2373bd0361925d0381e252492e230bb1",
@@ -58,8 +63,9 @@
     },
     "quest/Quest/dungeon/owl_zone_razor93.lua": {
       "previous_sha256": "55156e262171260aaa78302797e19590e87f668c47bf7349192f8a5f8f66eff9",
-      "fixed_sha256": "6dc6eca4279b6e5fed323533176e735165f4b8a06db505f972583fce2d247a60",
-      "previous_lf_sha256": "18533f0ed2c1d5f73316aba6d9a5c0985e1842534d34c39cba250c89721ed9ea"
+      "fixed_sha256": "1e385e42a3813f59f60fc77921c82f5f3f8df0f9ceffb427838491b755bb4615",
+      "previous_lf_sha256": "18533f0ed2c1d5f73316aba6d9a5c0985e1842534d34c39cba250c89721ed9ea",
+      "previous_fixed_sha256": "6dc6eca4279b6e5fed323533176e735165f4b8a06db505f972583fce2d247a60"
     },
     "quest/Quest/dungeon/razador_zone.lua": {
       "previous_sha256": "2a70493e4b9fd12b29dd084be6d07ca647310a65ff2b32f15531dc1b5e452c57",
@@ -81,8 +87,9 @@
     },
     "quest/Quest/dungeon/underwater_zone.lua": {
       "previous_sha256": "440614b2cdbc19add33df59d496bd623352ec91543515bf20cc0fed867923d4d",
-      "fixed_sha256": "9506bdf74c9fa9b33e2e177652e4028d43da74419dcd57cd7b2c642cce04bed4",
-      "previous_lf_sha256": "440614b2cdbc19add33df59d496bd623352ec91543515bf20cc0fed867923d4d"
+      "fixed_sha256": "ee67a04518c652635322bcd2b3649359726ab961219d87bca813531abfb33426",
+      "previous_lf_sha256": "440614b2cdbc19add33df59d496bd623352ec91543515bf20cc0fed867923d4d",
+      "previous_fixed_sha256": "9506bdf74c9fa9b33e2e177652e4028d43da74419dcd57cd7b2c642cce04bed4"
     }
   }
 }

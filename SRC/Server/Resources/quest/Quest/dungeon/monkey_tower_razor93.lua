@@ -174,26 +174,26 @@ quest monkey_tower_razor93 begin
 			local idx = pc.get_map_index()
 			if idx < 3670000 or idx >= 3680000 or d.getf(idx, "was_completed") != 0 then return end
 			if d.getf(idx, "floor") == 5 and number(1, 100) > 85 then
-				game.drop_item(50090, 1)
+				game.drop_typed_item(3, 696, 0, 1)
 			elseif d.getf(idx, "floor") == 13 then
 				monkey_tower_razor93.check_floor(idx)
 			end
 		end
 
-		when 20460.take with pc.in_dungeon() and item.get_vnum() == 50090 begin
+		when "catalog.3.spear_838a41a65ce1".typed_use with pc.in_dungeon() and pc.get_map_index() >= 3670000 and pc.get_map_index() < 3680000 begin
 			local idx = pc.get_map_index()
 			if idx < 3670000 or idx >= 3680000 or d.getf(idx, "was_completed") != 0 then return end
 			if d.getf(idx, "floor") != 5 then return end
 			local statue = d.getf(idx, "boss_vid")
-			if statue == 0 or npc.get_vid() != statue then return end
+			if statue == 0 or not d.typed_item_target(20460, statue) then return end
 			local hits = d.getf(idx, "statue_hits")
 			if hits >= 5 then return end
 			-- Shared by every party member. The fifth spear finishes the stage;
 			-- do not reduce HP to zero while the statue is still invincible.
+			if not pc.typed_dungeon_item_redeem({}, 0) then return end
 			if hits < 4 and not npc.npc_decrease_hp_by_percent_razor93(statue, 20) then return end
 			hits = hits + 1
 			d.setf(idx, "statue_hits", hits)
-			item.remove()
 			if hits == 5 then
 				d.setf(idx, "floor", 13)
 				d.clear_regen(idx)
@@ -206,7 +206,7 @@ quest monkey_tower_razor93 begin
 				d.setf(idx, "boss_vid_monkey", boss)
 				d.setf(idx, "boss_unlocked", 0)
 				d.regen_file(idx, "data/dungeon/monkey_razor/boss.json")
-				pc.remove_item(50090, pc.count_item(50090))
+				d.typed_item_cleanup("catalog.3.spear_838a41a65ce1")
 				d.notice(idx, 2162, "", true)
 				d.notice(idx, 2163, "", true)
 				server_timer("monkey_tower_razor93_warp", 10, idx)
@@ -361,7 +361,7 @@ quest monkey_tower_razor93 begin
 				end
 
 				myname = pc.get_name()
-				result, cooldown, name = d.check_entrance(30, 50, 0, 0, 1, "monkey_tower_razor93.cooldown")
+				result, cooldown, name = d.typed_check_entrance()
 				if result == 0 then
 					say(gameforge[lang].common.unknownerr)
 				elseif result == 2 then
@@ -411,9 +411,9 @@ quest monkey_tower_razor93 begin
 				elseif result == 1 then
 					say(gameforge[lang].common.dungeon_21)
 					wait()
-					d.remove_item(0, 0, 0, 0, 50090, 255, 30708, 255, 30303, 255, 30707, 255, 0, 0, 0, 0, 0, "monkey_tower_razor93")
-					game.set_event_flag(string.format("ww_567_%d", pc.get_channel_id()), get_global_time() + 5)
-					d.join_cords(367, 6118, 447)
+					if not d.typed_enter() then
+						say(gameforge[lang].common.unknownerr)
+					end
 				end
 			end
 		end

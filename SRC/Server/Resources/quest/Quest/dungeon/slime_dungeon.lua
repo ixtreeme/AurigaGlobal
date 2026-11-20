@@ -147,7 +147,7 @@ quest slime_dungeon begin
 				say(gameforge[lang].common.dungeon_5)
 				say_reward(string.format(gameforge[lang].common.dungeon_6, 45))
 				say_reward(string.format(gameforge[lang].common.dungeon_7, 65))
-				say_reward(string.format("- %s: %d", item_name(30625), 1))
+				say_reward(string.format("- %s: %d", d.typed_ticket_name(), 1))
 				if party.is_party() then
 					say_reward(gameforge[lang].common.dungeon_8)
 				end
@@ -169,7 +169,7 @@ quest slime_dungeon begin
 				end
 
 				myname = pc.get_name()
-				result, cooldown, name = d.check_entrance(45, 65, 30625, 0, 1, "slime_dungeon.cooldown")
+				result, cooldown, name = d.typed_check_entrance()
 				if result == 0 then
 					say(gameforge[lang].common.unknownerr)
 				elseif result == 2 then
@@ -194,9 +194,9 @@ quest slime_dungeon begin
 					end
 				elseif result == 6 or result == 7 then
 					if myname == name then
-						say(string.format(gameforge[lang].common.dungeon_18, 1, item_name(30625)))
+						say(string.format(gameforge[lang].common.dungeon_18, 1, d.typed_ticket_name()))
 					else
-						say(string.format(gameforge[lang].common.dungeon_17, name, 1, item_name(30625)))
+						say(string.format(gameforge[lang].common.dungeon_17, name, 1, d.typed_ticket_name()))
 					end
 				elseif result == 8 then
 					local h = math.floor(cooldown / 3600)
@@ -218,9 +218,9 @@ quest slime_dungeon begin
 				elseif result == 1 then
 					say(gameforge[lang].common.dungeon_21)
 					wait()
-					d.remove_item(30625, 1, 0, 0, 30623, 255, 30624, 255, 0, 0, 0, 0, 0, 0, 0, 0, 900, "slime_dungeon")
-					game.set_event_flag(string.format("ww_27_%d", pc.get_channel_id()), get_global_time() + 5)
-					d.join_cords(27, 9420, 1277)
+					if not d.typed_enter() then
+						say(gameforge[lang].common.unknownerr)
+					end
 				end
 			end
 		end

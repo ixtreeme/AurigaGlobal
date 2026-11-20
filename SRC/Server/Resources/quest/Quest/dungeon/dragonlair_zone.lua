@@ -184,7 +184,7 @@ quest dragonlair_zone begin
 				say(gameforge[lang].common.dungeon_5)
 				say_reward(string.format(gameforge[lang].common.dungeon_6, 60))
 				say_reward(string.format(gameforge[lang].common.dungeon_7, 100))
-				say_reward(string.format("- %s: %d", item_name(30179), 1))
+				say_reward(string.format("- %s: %d", d.typed_ticket_name(), 1))
 				if party.is_party() then
 					say_reward(gameforge[lang].common.dungeon_8)
 				end
@@ -206,7 +206,7 @@ quest dragonlair_zone begin
 				end
 
 				myname = pc.get_name()
-				result, cooldown, name = d.check_entrance(60, 100, 30179, 0, 1, "dragonlair_zone.cooldown")
+				result, cooldown, name = d.typed_check_entrance()
 				if result == 0 then
 					say(gameforge[lang].common.unknownerr)
 				elseif result == 2 then
@@ -231,9 +231,9 @@ quest dragonlair_zone begin
 					end
 				elseif result == 6 or result == 7 then
 					if myname == name then
-						say(string.format(gameforge[lang].common.dungeon_18, 1, item_name(30179)))
+						say(string.format(gameforge[lang].common.dungeon_18, 1, d.typed_ticket_name()))
 					else
-						say(string.format(gameforge[lang].common.dungeon_17, name, 1, item_name(30179)))
+						say(string.format(gameforge[lang].common.dungeon_17, name, 1, d.typed_ticket_name()))
 					end
 				elseif result == 8 then
 					local h = math.floor(cooldown / 3600)
@@ -255,9 +255,9 @@ quest dragonlair_zone begin
 				elseif result == 1 then
 					say(gameforge[lang].common.dungeon_21)
 					wait()
-					d.remove_item(30179, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1800, "dragonlair_zone")
-					game.set_event_flag(string.format("ww_208_%d", pc.get_channel_id()), get_global_time() + 5)
-					d.join_cords(208, 8435, 10668)
+					if not d.typed_enter() then
+						say(gameforge[lang].common.unknownerr)
+					end
 				end
 			end
 		end

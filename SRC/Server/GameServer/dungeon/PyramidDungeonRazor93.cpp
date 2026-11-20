@@ -293,13 +293,16 @@ namespace
             if (!ecs::PlayerRuntime::IsPC(mEntity))
                 return;
 
-            if(!HasTypedDungeonInventory(mEntity))ItemSystem::RemoveSpecifyItemEcs(mEntity, kEntryItemVnum, 1);
-
             // remove "remove_all" item(s) if present (up to 255 as in quests)
-            if(!HasTypedDungeonInventory(mEntity))QueueTypedDungeonCleanup(mEntity,auriga::item::OrcKeyCode,255);
-            const int32_t cnt = ItemSystem::CountItem(mEntity, kRemoveAllItem);
-            if (cnt > 0)
-                ItemSystem::RemoveSpecifyItemEcs(mEntity, kRemoveAllItem, static_cast<uint32_t>(cnt > 255 ? 255 : cnt));
+            if (HasTypedDungeonInventory(mEntity))
+                QueueTypedDungeonCleanup(mEntity, auriga::item::OrcKeyCode, 255);
+            else
+            {
+                ItemSystem::RemoveSpecifyItemEcs(mEntity, kEntryItemVnum, 1);
+                const int32_t cnt = ItemSystem::CountItem(mEntity, kRemoveAllItem);
+                if (cnt > 0)
+                    ItemSystem::RemoveSpecifyItemEcs(mEntity, kRemoveAllItem, static_cast<uint32_t>(cnt > 255 ? 255 : cnt));
+            }
 
             ecs::QuestSystem::SetFlag(mEntity, kQfCooldown, get_global_time() + kCooldownSeconds);
         }

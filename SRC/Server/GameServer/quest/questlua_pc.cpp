@@ -2,6 +2,9 @@
 #include "../item/ItemStore.hpp"
 #include "../item/TypedMoney.hpp"
 #include "../item/TypedQuestItems.hpp"
+#include "../item/TypedDungeonActions.hpp"
+#include "../item/TypedDrops.hpp"
+#include "../item/ItemCatalogRuntime.hpp"
 #include "typed_money_continuation.h"
 #include "TypedIdentityScrolls.hpp"
 #include "stdafx.h"
@@ -4208,7 +4211,22 @@ teleport_area:
         return 1;
     }
 
-    static int RunTypedItemExchange(lua_State* L, bool useSelectedItem)
+    ALUA(pc_typed_item_grant)
+    {
+        const auto amount = ReadQuestItem(L, 1, true);
+        const auto catalog = item::runtime::CurrentCatalog();
+        const auto* definition = catalog && amount ? catalog->Find(amount->key) : nullptr;
+        if (!definition || definition->base.retired || !item::SupportsPersistentGrant(*catalog, *definition) ||
+            !catalog->RefinedBaseStats(amount->key, amount->level))
+        {
+            sys_err("Invalid typed quest reward");
+            return 0;
+        }
+        QueueTypedItemGrant(CQuestManager::instance().GetCurrentPCEntity(), {amount->key, amount->level, amount->count});
+        return 0;
+    }
+
+    static int RunTypedItemExchange(lua_State* L, bool useSelectedItem, bool inDungeon = false)
     {
         const auto refused = [L](const char* reason) {
             lua_pushboolean(L, false);
@@ -4241,9 +4259,24 @@ teleport_area:
 
         const auto entity = quest.GetCurrentCharacter();
         const auto pid = ecs::PlayerRuntime::GetPlayerID(entity);
+        const auto map = ecs::PlayerRuntime::GetMapIndex(entity);
+        const auto dungeon = inDungeon ? CDungeonManager::instance().FindByMapIndex(map) : entt::null;
+        auto dungeonAction = inDungeon ? AcquireTypedDungeonAction(dungeon) : nullptr;
+        if (inDungeon && !dungeonAction)
+            return refused("unavailable");
+        const auto target = useSelectedItem && dungeonAction ? quest.GetCurrentNPCEntity() : entt::null;
         const auto result = RequestTypedQuestItemExchange(entity, std::move(costs), std::move(rewards),
             static_cast<uint64_t>(goldCost),
-            [pid, coroutine = L](bool ok) { CQuestManager::instance().ResumeTypedItems(pid, coroutine, ok); },
+            [entity, pid, coroutine = L, map, dungeon, target, dungeonAction = std::move(dungeonAction)](bool ok) {
+                if (ok && dungeonAction && (!g_registry.valid(entity) ||
+                    ecs::PlayerRuntime::GetMapIndex(entity) != map ||
+                    CDungeonManager::instance().FindByMapIndex(map) != dungeon))
+                    ok = false;
+                if (ok && target != entt::null && (!g_registry.valid(target) || CombatSystem::IsDead(target) ||
+                    ecs::PlayerRuntime::GetMapIndex(target) != map || !ecs::PlayerRuntime::SetQuestNPC(entity, target)))
+                    ok = false;
+                CQuestManager::instance().ResumeTypedItems(pid, coroutine, ok);
+            },
             useSelectedItem ? state->typedItemUse : TypedItemUseSource{}, static_cast<uint64_t>(goldReward),
             !useSelectedItem && IncludeSpecialInventory(L));
         if (!result)
@@ -4283,6 +4316,8 @@ teleport_area:
     // Exchange inventory requirements, or redeem exactly the item used to start this handler.
     ALUA(pc_typed_item_exchange) { return RunTypedItemExchange(L, false); }
     ALUA(pc_typed_item_redeem) { return RunTypedItemExchange(L, true); }
+    ALUA(pc_typed_dungeon_item_exchange) { return RunTypedItemExchange(L, false, true); }
+    ALUA(pc_typed_dungeon_item_redeem) { return RunTypedItemExchange(L, true, true); }
 
 	void RegisterPCFunctionTable()
 	{
@@ -4358,8 +4393,11 @@ teleport_area:
 			{ "give_item2_select",		pc_give_or_drop_item_and_select	},
 			{ "give_gold",		pc_give_gold		},
 			{ "typed_item_count", pc_typed_item_count },
+            { "typed_item_grant", pc_typed_item_grant },
             { "typed_item_exchange", pc_typed_item_exchange },
             { "typed_item_redeem", pc_typed_item_redeem },
+            { "typed_dungeon_item_exchange", pc_typed_dungeon_item_exchange },
+            { "typed_dungeon_item_redeem", pc_typed_dungeon_item_redeem },
             { "typed_mission_status", pc_typed_mission_status },
             { "typed_mission_action", pc_typed_mission_action },
             { "count_item",		pc_count_item		},

@@ -45,7 +45,7 @@ namespace quest
                 const auto event = manager.m_mapEventName.find(handler.event);
                 if (event == manager.m_mapEventName.end()) continue; // validated at startup
                 const int state = definition.states.at(handler.state);
-                if (handler.argument.empty()) {
+                if (handler.argument.empty() && event->second != QUEST_TYPED_ITEM_USE_EVENT) {
                     auto& code = m_mapOwnQuest[event->second][questIndex][state].m_code;
                     const std::string body = source::HandlerCode(handler);
                     code.insert(code.end(), body.begin(), body.end());
@@ -183,16 +183,21 @@ namespace quest
 	{
 		auto& manager = CQuestManager::instance();
 		RuntimeScope scope(manager, manager.CurrentRuntime(), true);
-		for (const auto& [questIndex, states] : m_mapOwnQuest[QUEST_TYPED_ITEM_USE_EVENT])
+		for (const auto& [questIndex, states] : m_mapOwnArgQuest[QUEST_TYPED_ITEM_USE_EVENT])
 		{
 			const auto progress = pc.quest_find(questIndex);
 			const auto state = progress == pc.quest_end() ? QUEST_START_STATE_INDEX : progress->second.st;
 			const auto script = states.find(state);
 			if (script == states.end() || (progress == pc.quest_end() && !manager.CanStartQuest(questIndex, pc)))
 				continue;
-			manager.ExecuteQuestScript(pc, manager.GetQuestNameByIndex(questIndex), state,
-				script->second.GetCode(), script->second.GetSize(), nullptr, true, source);
-			return true;
+			for (const auto& action : script->second)
+			{
+				if (!IsScriptTrue(action.when_condition.data(), static_cast<int>(action.when_condition.size())))
+					continue;
+				manager.ExecuteQuestScript(pc, manager.GetQuestNameByIndex(questIndex), state,
+					action.script.GetCode(), action.script.GetSize(), nullptr, true, source);
+				return true;
+			}
 		}
 		return false;
 	}

@@ -750,12 +750,15 @@ bool CTritonTempleDungeon::OnClickNpc(entt::entity character)
             if (!ecs::PlayerRuntime::IsPC(m))
                 return;
 
-            ConsumeEntryTicket(m);
-
-            if(!HasTypedDungeonInventory(m))QueueTypedDungeonCleanup(m,auriga::item::OrcKeyCode);
-            const int32_t rmAll = ItemSystem::CountItem(m, kRemoveAllItem);
-            if (rmAll > 0)
-                ItemSystem::RemoveSpecifyItemEcs(m, kRemoveAllItem, rmAll);
+            if (HasTypedDungeonInventory(m))
+                QueueTypedDungeonCleanup(m, auriga::item::OrcKeyCode);
+            else
+            {
+                ConsumeEntryTicket(m);
+                const int32_t rmAll = ItemSystem::CountItem(m, kRemoveAllItem);
+                if (rmAll > 0)
+                    ItemSystem::RemoveSpecifyItemEcs(m, kRemoveAllItem, rmAll);
+            }
 
             ecs::QuestSystem::SetFlag(m, kQfDisconnect, 0);
             ecs::QuestSystem::SetFlag(m, kQfIdx, DungeonSystem::GetMapIndex(d));

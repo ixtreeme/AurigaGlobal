@@ -184,7 +184,7 @@ quest catacombe begin
 				say(gameforge[lang].common.dungeon_5)
 				say_reward(string.format(gameforge[lang].common.dungeon_6, 85))
 				say_reward(string.format(gameforge[lang].common.dungeon_7, 100))
-				say_reward(string.format("- %s: %d", item_name(30320), 1))
+				say_reward(string.format("- %s: %d", d.typed_ticket_name(), 1))
 				if party.is_party() then
 					say_reward(gameforge[lang].common.dungeon_8)
 				end
@@ -206,7 +206,7 @@ quest catacombe begin
 				end
 
 				myname = pc.get_name()
-				result, cooldown, name = d.check_entrance(85, 100, 30320, 30321, 1, "catacombe.cooldown")
+				result, cooldown, name = d.typed_check_entrance()
 				if result == 0 then
 					say(gameforge[lang].common.unknownerr)
 				elseif result == 2 then
@@ -231,9 +231,9 @@ quest catacombe begin
 					end
 				elseif result == 6 or result == 7 then
 					if myname == name then
-						say(string.format(gameforge[lang].common.dungeon_18, 1, item_name(30320)))
+						say(string.format(gameforge[lang].common.dungeon_18, 1, d.typed_ticket_name()))
 					else
-						say(string.format(gameforge[lang].common.dungeon_17, name, 1, item_name(30320)))
+						say(string.format(gameforge[lang].common.dungeon_17, name, 1, d.typed_ticket_name()))
 					end
 				elseif result == 8 then
 					local h = math.floor(cooldown / 3600)
@@ -255,9 +255,9 @@ quest catacombe begin
 				elseif result == 1 then
 					say(gameforge[lang].common.dungeon_21)
 					wait()
-					d.remove_item(30320, 1, 30321, 1, 30312, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1800, "catacombe")
-					game.set_event_flag(string.format("ww_216_%d", pc.get_channel_id()), get_global_time() + 5)
-					d.join_cords(216, 4434, 12698)
+					if not d.typed_enter() then
+						say(gameforge[lang].common.unknownerr)
+					end
 				end
 			end
 		end

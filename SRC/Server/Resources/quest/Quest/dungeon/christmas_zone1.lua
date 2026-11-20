@@ -52,13 +52,14 @@ quest christmas_zone1 begin
 			end
 		end
 
-		when 9298.take with pc.in_dungeon() and item.get_vnum() == 30777 begin
+		when "catalog.10.gold_snowflake_key_4e56472cd3f1".typed_use with pc.in_dungeon() and pc.get_map_index() >= 260000 and pc.get_map_index() < 270000 begin
 			local idx = pc.get_map_index()
 			if idx >= 260000 and idx < 270000 then
 				if d.getf(idx, "floor") == 3 and d.getf(idx, "step") == 7 then
+					if not d.typed_item_target(9298) then return end
+					if not pc.typed_dungeon_item_redeem({}, 0) then return end
 					d.setf(idx, "step", 8)
 					npc.kill()
-					item.remove()
 					d.clear_regen(idx)
 					d.notice(idx, 1332, "", true)
 					d.spawn_mob(idx, 4081, 1050, 428)
@@ -67,6 +68,7 @@ quest christmas_zone1 begin
 		end
 
 		when 9293.chat."Hei!" with pc.in_dungeon() begin
+			local key_name = lang == "hu" and "Arany hópehely kulcs" or "Gold Snowflake Key"
 			local idx = pc.get_map_index()
 			local lang = pc.get_language()
 			if idx >= 260000 and idx < 270000 then
@@ -105,7 +107,7 @@ quest christmas_zone1 begin
 						say("[ENTER][ENTER]")
 						say_title(string.format("%s:", mob_name(9293)))
 						say("")
-						say(string.format(gameforge[lang].christmas_zone1._2, mob_name(9298), item_name(30777)))
+						say(string.format(gameforge[lang].christmas_zone1._2, mob_name(9298), key_name))
 						wait()
 						addimage(25, 10, "christmas2019_bg04.tga")
 						addimage(225, 150, "santa.tga")
@@ -122,22 +124,23 @@ quest christmas_zone1 begin
 						d.notice(idx, 1315, "", true)
 						server_loop_timer("christmas_zone1_loop", 2, idx)
 					elseif s == 6 then
-						if pc.count_item(30774) > 0 and pc.count_item(30775) > 0 and pc.count_item(30776) > 0 then
-							pc.remove_item(30774, 1)
-							pc.remove_item(30775, 1)
-							pc.remove_item(30776, 1)
+						local exchanged, reason = pc.typed_dungeon_item_exchange(
+							{{10, 928, 0, 1}, {10, 929, 0, 1}, {10, 930, 0, 1}},
+							{{10, 931, 0, 1}}, 0)
+						if exchanged then
 							d.setf(idx, "step", 7)
 							d.notice(idx, 1331, "", true)
-							pc.give_item2(30777, 1)
 							setskin(NOWINDOW)
 							npc.purge()
-						else
+						elseif reason == "inventory_full" then
+							syschat("Szabadíts fel egy helyet a leltárban, majd próbáld újra.")
+						elseif reason == "materials" then
 							addimage(25, 10, "christmas2019_bg04.tga")
 							addimage(225, 150, "santa.tga")
 							say("[ENTER][ENTER]")
 							say_title(string.format("%s:", mob_name(9293)))
 							say("")
-							say(string.format(gameforge[lang].christmas_zone1._2, mob_name(9298), item_name(30777)))
+							say(string.format(gameforge[lang].christmas_zone1._2, mob_name(9298), key_name))
 							wait()
 							addimage(25, 10, "christmas2019_bg04.tga")
 							addimage(225, 150, "santa.tga")
@@ -154,7 +157,7 @@ quest christmas_zone1 begin
 						say("[ENTER][ENTER]")
 						say_title(string.format("%s:", mob_name(9293)))
 						say("")
-						say(string.format(gameforge[lang].christmas_zone1._2, mob_name(9298), item_name(30777)))
+						say(string.format(gameforge[lang].christmas_zone1._2, mob_name(9298), key_name))
 						wait()
 						addimage(25, 10, "christmas2019_bg04.tga")
 						addimage(225, 150, "santa.tga")
@@ -186,7 +189,7 @@ quest christmas_zone1 begin
 					if s == 3 then
 						d.setf(idx, "step", 4)
 						d.spawn_mob(idx, 4079, 1050, 428)
-						game.drop_item(30774, 1)
+						game.drop_typed_item(10, 928, 0, 1)
 						d.notice(idx, 1326, "", true)
 						d.notice(idx, 1327, "", true)
 					elseif s == 5 then
@@ -194,7 +197,7 @@ quest christmas_zone1 begin
 						d.setf(idx, "tokill", c)
 						if c == 0 then
 							d.setf(idx, "step", 6)
-							game.drop_item(30776, 1)
+							game.drop_typed_item(10, 930, 0, 1)
 							d.notice(idx, 1330, "", true)
 						end
 					end
@@ -241,13 +244,14 @@ quest christmas_zone1 begin
 			end
 		end
 
-		when 9296.take with pc.in_dungeon() and item.get_vnum() == 30773 begin
+		when "catalog.10.stolen_gift_cf17b7030083".typed_use with pc.in_dungeon() and pc.get_map_index() >= 260000 and pc.get_map_index() < 270000 begin
 			local idx = pc.get_map_index()
 			if idx >= 260000 and idx < 270000 then
 				local f = d.getf(idx, "floor")
 				if f == 2 then
 					if d.getf(idx, "step") == 4 then
-						item.remove()
+						if not d.typed_item_target(9296) then return end
+						if not pc.typed_dungeon_item_redeem({}, 0) then return end
 						local g = d.getf(idx, "gift") - 1
 						if g <= 0 then
 							d.clear_regen(idx)
@@ -274,7 +278,7 @@ quest christmas_zone1 begin
 				local f = d.getf(idx, "floor")
 				if f == 2 then
 					if d.getf(idx, "step") == 4 then
-						game.drop_item(30773, 1)
+						game.drop_typed_item(10, 927, 0, 1)
 						d.notice(idx, 1318, "", true)
 					end
 				end
@@ -302,7 +306,7 @@ quest christmas_zone1 begin
 						d.kill_all_monsters(idx)
 						d.clear_regen(idx)
 						d.regen_file(idx, "data/dungeon/christmas_zone1/regen_3floor_2.json")
-						game.drop_item(30775, 1)
+						game.drop_typed_item(10, 929, 0, 1)
 						d.notice(idx, 1328, "", true)
 						d.notice(idx, 1329, "", true)
 					end
@@ -378,15 +382,16 @@ quest christmas_zone1 begin
 			end
 		end
 
-		when 9294.take with pc.in_dungeon() and item.get_vnum() == 30772 begin
+		when "catalog.10.wonderland_key_1fa029282087".typed_use with pc.in_dungeon() and pc.get_map_index() >= 260000 and pc.get_map_index() < 270000 begin
 			local idx = pc.get_map_index()
 			if idx >= 260000 and idx < 270000 then
 				if d.getf(idx, "step") == 3 then
+					if not d.typed_item_target(9294) then return end
+					if not pc.typed_dungeon_item_redeem({}, 0) then return end
 					d.setf(idx, "floor", 2)
 					d.setf(idx, "step", 1)
 					d.setf(idx, "unique_vid", 0)
 					npc.kill()
-					item.remove()
 					d.clear_regen(idx)
 					d.notice(idx, 1003, "", true)
 					server_timer("christmas_zone1_warp", 2, idx)
@@ -402,7 +407,7 @@ quest christmas_zone1 begin
 					if d.getf(idx, "step") == 2 then
 						if number(1, 100) > 98 then -- 2%
 							d.setf(idx, "step", 3)
-							game.drop_item(30772, 1)
+							game.drop_typed_item(10, 926, 0, 1)
 							d.kill_all_monsters(idx)
 							d.notice(idx, 1312, "", true)
 						end
@@ -586,7 +591,7 @@ quest christmas_zone1 begin
 				say(gameforge[lang].common.dungeon_5)
 				say_reward(string.format(gameforge[lang].common.dungeon_6, 40))
 				say_reward(string.format(gameforge[lang].common.dungeon_7, 140))
-				say_reward(string.format("- %s: %d", item_name(78207), 1))
+				say_reward(string.format("- %s: %d", d.typed_ticket_name(), 1))
 				if party.is_party() then
 					say_reward(gameforge[lang].common.dungeon_8)
 				end
@@ -608,7 +613,7 @@ quest christmas_zone1 begin
 				end
 
 				myname = pc.get_name()
-				result, cooldown, name = d.check_entrance(40, 140, 78207, 0, 1, "christmas_zone1.cooldown")
+				result, cooldown, name = d.typed_check_entrance()
 				if result == 0 then
 					say("Szólj Razornak. Hibakód: 003 ")
 					say(gameforge[lang].common.unknownerr)
@@ -634,9 +639,9 @@ quest christmas_zone1 begin
 					end
 				elseif result == 6 or result == 7 then
 					if myname == name then
-						say(string.format(gameforge[lang].common.dungeon_18, 1, item_name(78207)))
+						say(string.format(gameforge[lang].common.dungeon_18, 1, d.typed_ticket_name()))
 					else
-						say(string.format(gameforge[lang].common.dungeon_17, name, 1, item_name(78207)))
+						say(string.format(gameforge[lang].common.dungeon_17, name, 1, d.typed_ticket_name()))
 					end
 				elseif result == 8 then
 					local h = math.floor(cooldown / 3600)
@@ -658,9 +663,9 @@ quest christmas_zone1 begin
 				elseif result == 1 then
 					say(gameforge[lang].common.dungeon_21)
 					wait()
-					d.remove_item(78207, 1, 0, 0, 30771, 255, 30772, 255, 30773, 255, 30774, 255, 30775, 255, 30776, 255, 0, "christmas_zone1")
-					game.set_event_flag(string.format("ww_26_%d", pc.get_channel_id()), get_global_time() + 5)
-					d.join_cords(26, 545, 22680)
+					if not d.typed_enter() then
+						say(gameforge[lang].common.unknownerr)
+					end
 				end
 			end
 		end

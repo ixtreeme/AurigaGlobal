@@ -50,15 +50,17 @@ quest owl_zone_razor93 begin
 			end
 		end
 
-		when 20366.take with pc.in_dungeon() and item.get_vnum() == 30707 begin
+		when "catalog.10.silver_key_3c893d53572a".typed_use with pc.in_dungeon() and pc.get_map_index() >= 180000 and pc.get_map_index() < 190000 begin
 			local idx = pc.get_map_index()
 			if idx >= 180000 and idx < 190000 then
 				if d.getf(idx, "floor") == 12 then
+					if not d.typed_item_target(20366) then return end
+					if not pc.typed_dungeon_item_redeem({}, 0) then return end
 					npc.purge()
 					d.setf(idx, "floor", 13)
 					d.clear_regen(idx)
 					d.kill_all(idx)
-					pc.remove_item(30707, pc.count_item(30707))
+					d.typed_item_cleanup("catalog.10.silver_key_3c893d53572a")
 					d.spawn_mob(idx, 719, 587, 551)
 					d.spawn_mob(idx, 714, 587, 551)
 					d.spawn_mob(idx, 714, 583, 551)
@@ -91,18 +93,19 @@ quest owl_zone_razor93 begin
 				if d.getf(idx, "was_completed") != 0 then return end
 				if d.getf(idx, "floor") == 11 then
 					d.setf(idx, "floor", 12)
-					game.drop_item(30707, 1)
+					game.drop_typed_item(10, 921, 0, 1)
 
 				end
 			end
 		end
 
-		when 30708.use with pc.in_dungeon() begin
+		when "catalog.10.infinity_key_f8335a813d82".typed_use with pc.in_dungeon() and pc.get_map_index() >= 180000 and pc.get_map_index() < 190000 begin
 			local idx = pc.get_map_index()
 			if idx >= 180000 and idx < 190000 then
 				if d.getf(idx, "floor") == 10 then
+					if not pc.typed_dungeon_item_redeem({}, 0) then return end
 					d.setf(idx, "floor", 11)
-					pc.remove_item(30708, pc.count_item(30708))
+					d.typed_item_cleanup("catalog.10.infinity_key_f8335a813d82")
 					d.spawn_mob(idx, 20366, 198, 588, 60)
 					d.set_regen_file(idx, "data/dungeon/owl_dungeon/floor_2b.json")
 					d.notice(idx, 1029, "", true)--Megtalálta a helyes kulcsot,
@@ -118,7 +121,7 @@ quest owl_zone_razor93 begin
 				if d.getf(idx, "was_completed") != 0 then return end
 				if d.getf(idx, "floor") == 9 then
 					d.setf(idx, "floor", 10)
-					game.drop_item(30708, 1)
+					game.drop_typed_item(10, 922, 0, 1)
 				end
 			end
 		end
@@ -181,12 +184,13 @@ quest owl_zone_razor93 begin
 			end
 		end
 
-		when 9226.take with pc.in_dungeon() and item.get_vnum() == 30709 begin
+		when "catalog.10.owl_gemstone_fc661e004674".typed_use with pc.in_dungeon() and pc.get_map_index() >= 180000 and pc.get_map_index() < 190000 begin
 			local idx = pc.get_map_index()
 			if idx >= 180000 and idx < 190000 then
 				if d.getf(idx, "floor") == 5 then
+					if not d.typed_item_target(9226) then return end
+					if not pc.typed_dungeon_item_redeem({}, 0) then return end
 					npc.purge()
-					item.remove()
 
 					local c = d.getf(idx, "count2") + 1
 					if c == 5 then
@@ -195,7 +199,7 @@ quest owl_zone_razor93 begin
 						d.kill_all(idx)
 						d.spawn_mob(idx, 718, 214, 152)
 
-						pc.remove_item(30709, pc.count_item(30709))
+						d.typed_item_cleanup("catalog.10.owl_gemstone_fc661e004674")
 
 						d.notice(idx, 1021, "", true)--Minden pecsétet felnyitottak.
 						d.notice(idx, 1022, "", true)--Hamarosan a következo emeletre teleportálnak.
@@ -220,7 +224,7 @@ quest owl_zone_razor93 begin
 					local c = d.getf(idx, "count1") + 1
 					if c == 8 then
 						d.setf(idx, "count1", 0)
-						game.drop_item(30709, 1)
+						game.drop_typed_item(10, 923, 0, 1)
 					else
 						d.setf(idx, "count1", c)
 					end
@@ -460,7 +464,7 @@ quest owl_zone_razor93 begin
 				say(gameforge[lang].common.dungeon_5)
 				say_reward(string.format(gameforge[lang].common.dungeon_6, 92))
 				say_reward(string.format(gameforge[lang].common.dungeon_7, 112))
-				say_reward(string.format("- %s: %d", item_name(30713), 1))
+				say_reward(string.format("- %s: %d", d.typed_ticket_name(), 1))
 				if party.is_party() then
 					say_reward(gameforge[lang].common.dungeon_8)
 				end
@@ -482,7 +486,7 @@ quest owl_zone_razor93 begin
 				end
 
 				myname = pc.get_name()
-				result, cooldown, name = d.check_entrance(92, 112, 30713, 0, 1, "owl_zone_razor93.cooldown")
+				result, cooldown, name = d.typed_check_entrance()
 				if result == 0 then
 					say(gameforge[lang].common.unknownerr)
 				elseif result == 2 then
@@ -508,9 +512,9 @@ quest owl_zone_razor93 begin
 				elseif result == 6 or result == 7 then
 					say(gameforge[lang].common.unknownerr)
 					if myname == name then
-						say(string.format(gameforge[lang].common.dungeon_18, 1, item_name(30713)))
+						say(string.format(gameforge[lang].common.dungeon_18, 1, d.typed_ticket_name()))
 					else
-						say(string.format(gameforge[lang].common.dungeon_17, name, 1, item_name(30713)))
+						say(string.format(gameforge[lang].common.dungeon_17, name, 1, d.typed_ticket_name()))
 					end
 				elseif result == 8 then
 					local h = math.floor(cooldown / 3600)
@@ -532,9 +536,9 @@ quest owl_zone_razor93 begin
 				elseif result == 1 then
 					say(gameforge[lang].common.dungeon_21)
 					wait()
-					d.remove_item(30713, 1, 0, 0, 30709, 255, 30708, 255, 30303, 255, 30707, 255, 0, 0, 0, 0, 900, "owl_zone_razor93")
-					game.set_event_flag(string.format("ww_566_%d", pc.get_channel_id()), get_global_time() + 5)
-					d.join_cords(18, 15943, 1187)
+					if not d.typed_enter() then
+						say(gameforge[lang].common.unknownerr)
+					end
 				end
 			end
 		end

@@ -1320,12 +1320,18 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
         if (!ecs::PlayerRuntime::IsValid(pc))
             return;
 
+        if (HasTypedDungeonInventory(pc))
+        {
+            QueueTypedDungeonCleanup(pc, "catalog.10.ticket_of_the_runes_78bafde9234a");
+            QueueTypedDungeonCleanup(pc, auriga::item::RuneFragmentCode);
+            QueueTypedDungeonCleanup(pc, auriga::item::RuneFloorKeyCode);
+            return;
+        }
+
         // Entry item (1x)
         ConsumeEntryTicket(pc);
 
         // Leftovers (Lua: d.remove_item / pc.remove_item)
-        if(!HasTypedDungeonInventory(pc))QueueTypedDungeonCleanup(pc,auriga::item::RuneFragmentCode);
-        if(!HasTypedDungeonInventory(pc))QueueTypedDungeonCleanup(pc,auriga::item::RuneFloorKeyCode);
         const int32_t c = ItemSystem::CountItem(pc, kRemoveAllItem);
         if (c > 0)
             ItemSystem::RemoveSpecifyItemEcs(pc, kRemoveAllItem, c);

@@ -145,7 +145,7 @@ quest nemere_zone begin
 				say(gameforge[lang].common.dungeon_5)
 				say_reward(string.format(gameforge[lang].common.dungeon_6, 42))
 				say_reward(string.format(gameforge[lang].common.dungeon_7, 65))
-				say_reward(string.format("- %s: %d", item_name(71175), 1))
+				say_reward(string.format("- %s: %d", d.typed_ticket_name(), 1))
 				if party.is_party() then
 					say_reward(gameforge[lang].common.dungeon_8)
 				end
@@ -167,7 +167,7 @@ quest nemere_zone begin
 				end
 
 				myname = pc.get_name()
-				result, cooldown, name = d.check_entrance(42, 65, 71175, 0, 1, "nemere_zone.cooldown")
+				result, cooldown, name = d.typed_check_entrance()
 				if result == 0 then
 					say(gameforge[lang].common.unknownerr)
 				elseif result == 2 then
@@ -192,9 +192,9 @@ quest nemere_zone begin
 					end
 				elseif result == 6 or result == 7 then
 					if myname == name then
-						say(string.format(gameforge[lang].common.dungeon_18, 1, item_name(71175)))
+						say(string.format(gameforge[lang].common.dungeon_18, 1, d.typed_ticket_name()))
 					else
-						say(string.format(gameforge[lang].common.dungeon_17, name, 1, item_name(71175)))
+						say(string.format(gameforge[lang].common.dungeon_17, name, 1, d.typed_ticket_name()))
 					end
 				elseif result == 8 then
 					local h = math.floor(cooldown / 3600)
@@ -216,9 +216,9 @@ quest nemere_zone begin
 				elseif result == 1 then
 					say(gameforge[lang].common.dungeon_21)
 					wait()
-					d.remove_item(71175, 1, 0, 0, 30331, 255, 30332, 255, 0, 0, 0, 0, 0, 0, 0, 0, 2400, "nemere_zone")
-					game.set_event_flag(string.format("ww_352_%d", pc.get_channel_id()), get_global_time() + 5)
-					d.join_cords(352, 6047, 1926)
+					if not d.typed_enter() then
+						say(gameforge[lang].common.unknownerr)
+					end
 				end
 			end
 		end

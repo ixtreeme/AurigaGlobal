@@ -4,6 +4,7 @@
 #include "../ecs/ResourceAdmission.hpp"
 #include "../ecs/components/status_components.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
+#include "../ecs/systems/ChatSystem.hpp"
 #include "../ecs/systems/InventorySystem.hpp"
 #include "../ecs/systems/NetworkSyncSystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
@@ -53,29 +54,31 @@ struct ScrollUse
     std::array<std::uint8_t, 16> operation{};
 };
 
-std::optional<ScrollUse> ReadScrollUse(lua_State* L, bool requireCanWarp = true)
+std::optional<ScrollUse> ReadScrollUse(entt::entity actor, TypedItemUseSource selected, bool requireCanWarp)
 {
-    auto& manager = CQuestManager::instance();
-    const auto* quest = manager.GetCurrentState();
-    if (!lua_isyieldable(L) || !quest || quest->co != L || !quest->typedItemUse.id || manager.IsInOtherPCBlock())
-        return {};
-
-    const auto actor = manager.GetCurrentPCEntity();
     if (!player::IsPC(actor) || g_registry.any_of<ecs::TypedItemBusy, ecs::DeadTag, ecs::StunTag>(actor) ||
         !InventorySystem::CanHandleItems(actor) || (requireCanWarp && !player::CanWarp(actor)))
         return {};
 
     const auto* inventory = g_registry.try_get<ecs::TypedItems>(actor);
     const auto* desc = player::GetDesc(actor);
-    const auto source = item::ItemInstanceId::Create(quest->typedItemUse.id);
+    const auto source = item::ItemInstanceId::Create(selected.id);
     const auto pid = player::GetPlayerID(actor);
     if (!g_registry.all_of<ecs::TypedItemLogin>(actor) || !inventory || !desc || !desc->IsPhase(PHASE_GAME) ||
         !source || !pid || inventory->state.fence.owner != item::ItemOwner{item::ItemOwnerKind::Character, pid})
         return {};
 
-    ScrollUse use{actor, &inventory->state, *source, quest->typedItemUse.revision};
+    ScrollUse use{actor, &inventory->state, *source, selected.revision};
     if (RAND_bytes(use.operation.data(), static_cast<int>(use.operation.size())) != 1) return {};
     return use;
+}
+
+std::optional<ScrollUse> ReadScrollUse(lua_State* L, bool requireCanWarp = true)
+{
+    auto& manager = CQuestManager::instance();
+    const auto* quest = manager.GetCurrentState();
+    if (!lua_isyieldable(L) || !quest || quest->co != L || manager.IsInOtherPCBlock()) return {};
+    return ReadScrollUse(manager.GetCurrentPCEntity(), quest->typedItemUse, requireCanWarp);
 }
 
 bool QueueScroll(const ScrollUse& use, lua_State* L, item::ItemCommit write,
@@ -118,7 +121,10 @@ bool QueueScroll(const ScrollUse& use, lua_State* L, item::ItemCommit write,
             if (result.write && apply) apply(current() ? actor : entt::null);
             if (!current()) return;
             SendTypedInventory(actor);
-            if (current()) CQuestManager::instance().ResumeTypedItems(pid, coroutine, result.write.has_value());
+            if (current() && coroutine)
+                CQuestManager::instance().ResumeTypedItems(pid, coroutine, result.write.has_value());
+            if (current() && !coroutine && !result.write)
+                ecs::ChatSystem::Send(actor, CHAT_TYPE_INFO, "A Zeusz köve most nem használható.");
             if (current()) PumpTypedItemGrants(actor);
         }))
         return true;
@@ -267,6 +273,35 @@ std::optional<int> SubmitGuildMasterScroll(lua_State* L)
     return std::nullopt;
 }
 
+bool QueueDungeonCooldownScroll(const ScrollUse& use, lua_State* L, const item::ItemCatalog& catalog,
+    std::uint8_t dungeon, PC& pc)
+{
+    item::DungeonCooldownScrollChange change{dungeon};
+    std::array<std::string, item::CooldownScrollFlags.size()> flags;
+    for (std::size_t flag = 0; flag < flags.size(); ++flag)
+    {
+        flags[flag] = fmt::format("{}.{}", item::CooldownScrollDungeons[dungeon], item::CooldownScrollFlags[flag]);
+        change.before[flag] = pc.GetFlag(flags[flag]);
+    }
+    if (change.before.front() <= get_global_time()) return false;
+
+    const auto& state = *use.inventory;
+    auto write = item::MakeDungeonCooldownScrollCommit(catalog, use.operation, state.fence, state.storages, state.items,
+        use.source, use.revision, change);
+    if (!write) return false;
+
+    pc.Save();
+    return QueueScroll(use, L, std::move(*write), [flags = std::move(flags), change, direct = L == nullptr](entt::entity actor) {
+        if (actor == entt::null) return;
+        auto* current = CQuestManager::instance().GetPC(player::GetPlayerID(actor));
+        if (!current) return;
+        for (std::size_t flag = 0; flag < flags.size(); ++flag)
+            current->ApplySavedFlagDeletion(flags[flag], change.before[flag]);
+        if (direct)
+            ecs::ChatSystem::Send(actor, CHAT_TYPE_INFO, "A Rúna kazamata várakozási ideje törölve.");
+    });
+}
+
 std::optional<int> SubmitDungeonCooldownScroll(lua_State* L)
 {
     std::size_t length = 0;
@@ -278,32 +313,8 @@ std::optional<int> SubmitDungeonCooldownScroll(lua_State* L)
     const auto use = ReadScrollUse(L, false);
     const auto catalog = item::runtime::CurrentCatalog();
     auto* pc = CQuestManager::instance().GetCurrentPC();
-    if (!use || !catalog || !pc) return 0;
-
-    item::DungeonCooldownScrollChange change{
-        static_cast<std::uint8_t>(dungeon - item::CooldownScrollDungeons.begin())};
-    std::array<std::string, item::CooldownScrollFlags.size()> flags;
-    for (std::size_t flag = 0; flag < flags.size(); ++flag)
-    {
-        flags[flag] = fmt::format("{}.{}", *dungeon, item::CooldownScrollFlags[flag]);
-        change.before[flag] = pc->GetFlag(flags[flag]);
-    }
-    if (change.before.front() <= get_global_time()) return 0;
-
-    const auto& state = *use->inventory;
-    auto write = item::MakeDungeonCooldownScrollCommit(*catalog, use->operation, state.fence, state.storages, state.items,
-        use->source, use->revision, change);
-    if (!write) return 0;
-
-    pc->Save();
-    if (!QueueScroll(*use, L, std::move(*write), [flags = std::move(flags), change](entt::entity actor) {
-        if (actor == entt::null) return;
-        auto* current = CQuestManager::instance().GetPC(player::GetPlayerID(actor));
-        if (!current) return;
-        for (std::size_t flag = 0; flag < flags.size(); ++flag)
-            current->ApplySavedFlagDeletion(flags[flag], change.before[flag]);
-    }))
-        return 0;
+    const auto index = static_cast<std::uint8_t>(dungeon - item::CooldownScrollDungeons.begin());
+    if (!use || !catalog || !pc || !QueueDungeonCooldownScroll(*use, L, *catalog, index, *pc)) return 0;
     return std::nullopt;
 }
 
@@ -365,6 +376,28 @@ int FinishScroll(lua_State* L, std::optional<int> status)
         return 1;
     });
 }
+}
+
+void UseTypedRuneCooldownStone(entt::entity actor, const auriga::item::PersistentItem& source)
+{
+    const auto use = ReadScrollUse(actor, {source.id.Value(), source.revision}, false);
+    const auto catalog = item::runtime::CurrentCatalog();
+    auto* pc = use ? CQuestManager::instance().GetPC(actor) : nullptr;
+    if (!use || !catalog || !pc || !pc->IsLoaded())
+    {
+        ecs::ChatSystem::Send(actor, CHAT_TYPE_INFO, "A Zeusz köve most nem használható.");
+        return;
+    }
+    if (pc->GetFlag("rune_zone.cooldown") <= get_global_time())
+    {
+        ecs::ChatSystem::Send(actor, CHAT_TYPE_INFO, "A Rúna kazamatának nincs aktív várakozási ideje.");
+        return;
+    }
+
+    constexpr auto dungeon = static_cast<std::uint8_t>(item::CooldownScrollDungeons.size() - 1);
+    static_assert(item::CooldownScrollDungeons[dungeon] == item::RuneDungeonCooldownQuest);
+    if (!QueueDungeonCooldownScroll(*use, nullptr, *catalog, dungeon, *pc))
+        ecs::ChatSystem::Send(actor, CHAT_TYPE_INFO, "A Zeusz köve most nem használható.");
 }
 
 ALUA(pc_typed_change_name) { return FinishScroll<NameChanged, NameRefused>(L, SubmitNameScroll(L)); }

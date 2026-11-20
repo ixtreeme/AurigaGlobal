@@ -53,18 +53,23 @@ quest christmas_zone2 begin
 			end
 		end
 
-		when 9430.take with pc.in_dungeon() and item.get_vnum() == 30892 begin
+		when "catalog.10.christmas_decoration_28debbd9e5af".typed_use with pc.in_dungeon() and pc.get_map_index() >= 250000 and pc.get_map_index() < 260000 begin
 			local idx = pc.get_map_index()
 			if idx >= 250000 and idx < 260000 then
 				if d.getf(idx, "floor") == 2 and d.getf(idx, "can") == 1 then
 					local s = d.getf(idx, "step")
 					if s >= 4 and s < 8 then
+						local vid = d.typed_item_target(9430)
+						if not vid then return end
+						local known = false
+						for tree = 1, 4 do
+							if vid == d.getf(idx, string.format("treevid_%d", tree)) then known = true end
+						end
+						if not known then return end
+						if not pc.typed_dungeon_item_redeem({}, 0) then return end
 						d.setf(idx, "step", s + 1)
 						d.setf(idx, "can", 0)
 
-						item.remove()
-
-						local vid = npc.get_vid()
 						if vid == d.getf(idx, "treevid_1") then
 							npc.purge()
 							d.spawn_mob(idx, 9431, 844, 907, 90)
@@ -100,17 +105,17 @@ quest christmas_zone2 begin
 				if d.getf(idx, "floor") == 2 and d.getf(idx, "step") == 3 then
 					d.setf(idx, "step", 4)
 					d.setf(idx, "can", 1)
-					game.drop_item(30892, 1)
+					game.drop_typed_item(10, 941, 0, 1)
 					d.notice(idx, 1355, "", true)
 				end
 			end
 		end
 
-		when 30891.use with pc.in_dungeon() begin
+		when "catalog.10.tree_uncoverer_42b826c90009".typed_use with pc.in_dungeon() and pc.get_map_index() >= 250000 and pc.get_map_index() < 260000 begin
 			local idx = pc.get_map_index()
 			if idx >= 250000 and idx < 260000 then
 				if d.getf(idx, "floor") == 2 and d.getf(idx, "step") == 2 then
-					pc.remove_item(30891, 1)
+					if not pc.typed_dungeon_item_redeem({}, 0) then return end
 					d.setf(idx, "step", 3)
 
 					local treepos = {
@@ -132,16 +137,17 @@ quest christmas_zone2 begin
 			end
 		end
 
-		when 9425.take with pc.in_dungeon() and item.get_vnum() == 30890 begin
+		when "catalog.10.snow_spell_f737b6d42417".typed_use with pc.in_dungeon() and pc.get_map_index() >= 250000 and pc.get_map_index() < 260000 and d.getf(pc.get_map_index(), "step") == 5 begin
 			local idx = pc.get_map_index()
 			if idx >= 250000 and idx < 260000 then
 				local f = d.getf(idx, "floor")
 				if f == 1 then
 					local s = d.getf(idx, "step")
 					if s == 5 then
+						if not d.typed_item_target(9425) then return end
+						if not pc.typed_dungeon_item_redeem({}, 0) then return end
 						d.setf(idx, "step", 6)
-						item.remove()
-						game.drop_item(30890, 1)
+						game.drop_typed_item(10, 939, 0, 1)
 						d.spawn_mob(idx, 9426, 664, 529, 270)
 						npc.kill()
 						d.clear_regen(idx)
@@ -171,17 +177,16 @@ quest christmas_zone2 begin
 			end
 		end
 
-		when 9424.take with pc.in_dungeon() and item.get_vnum() == 30889 begin
+		when "catalog.10.magical_snowflake_1d120744a830".typed_use with pc.in_dungeon() and pc.get_map_index() >= 250000 and pc.get_map_index() < 260000 begin
 			local idx = pc.get_map_index()
 			if idx >= 250000 and idx < 260000 then
 				local f = d.getf(idx, "floor")
 				if f == 1 then
-					local vid = npc.get_vid()
-					--if vid == d.getf(idx, "unique_vid") then
 					local s = d.getf(idx, "step")
 					if s == 3 then
+						if not d.typed_item_target(9424) then return end
+						if not pc.typed_dungeon_item_redeem({}, 0) then return end
 						d.setf(idx, "step", 4)
-						item.remove()
 						--local bossvid = 0
 						--if d.getf("door_1") == vid then
 						--	bossvid = d.spawn_mob(idx, 4477, 846, 505)
@@ -205,15 +210,16 @@ quest christmas_zone2 begin
 			end
 		end
 
-		when 9426.take with pc.in_dungeon() and item.get_vnum() == 30890 begin
+		when "catalog.10.snow_spell_f737b6d42417".typed_use with pc.in_dungeon() and pc.get_map_index() >= 250000 and pc.get_map_index() < 260000 and d.getf(pc.get_map_index(), "step") == 7 begin
 			local idx = pc.get_map_index()
 			if idx >= 250000 and idx < 260000 then
 				local f = d.getf(idx, "floor")
 				if f == 1 then
 					local s = d.getf(idx, "step")
 					if s == 7 then
+						if not d.typed_item_target(9426) then return end
+						if not pc.typed_dungeon_item_redeem({}, 0) then return end
 						d.setf(idx, "step", 8)
-						item.remove()
 						d.spawn_mob(idx, 9427, 664, 529, 270)
 						npc.kill()
 						d.clear_regen(idx)
@@ -248,7 +254,7 @@ quest christmas_zone2 begin
 					if d.getf(idx, "floor") == 2 and d.getf(idx, "step") == 1 then
 						d.setf(idx, "step", 2)
 						d.kill_all_monsters(idx)
-						game.drop_item(30891, 1)
+						game.drop_typed_item(10, 940, 0, 1)
 						d.notice(idx, 1351, "", true)
 						d.notice(idx, 1352, "", true)
 					end
@@ -258,16 +264,17 @@ quest christmas_zone2 begin
 			end
 		end
 
-		when 9427.take with pc.in_dungeon() and item.get_vnum() == 30890 begin
+		when "catalog.10.snow_spell_f737b6d42417".typed_use with pc.in_dungeon() and pc.get_map_index() >= 250000 and pc.get_map_index() < 260000 and d.getf(pc.get_map_index(), "step") == 9 begin
 			local idx = pc.get_map_index()
 			if idx >= 250000 and idx < 260000 then
 				local f = d.getf(idx, "floor")
 				if f == 1 then
 					local s = d.getf(idx, "step")
 					if s == 9 then
+						if not d.typed_item_target(9427) then return end
+						if not pc.typed_dungeon_item_redeem({}, 0) then return end
 						d.setf(idx, "floor", 2)
 						d.setf(idx, "step", 1)
-						item.remove()
 						npc.kill()
 						d.clear_regen(idx)
 						d.kill_all_monsters(idx)
@@ -305,7 +312,7 @@ quest christmas_zone2 begin
 				local f = d.getf(idx, "floor")
 				if f == 2 and d.getf(idx, "dropped") == 0 then
 					d.setf(idx, "dropped", 1)
-					game.drop_item(30892, 1)
+					game.drop_typed_item(10, 941, 0, 1)
 				end
 			end
 		end
@@ -363,8 +370,8 @@ quest christmas_zone2 begin
 							d.clear_regen(idx)
 							d.kill_all_monsters(idx)
 							d.regen_file(idx, "data/dungeon/christmas_zone2/regen_1f_mobs.json")
-							game.drop_item(30890, 1)
-							game.drop_item(30889, 1)
+							game.drop_typed_item(10, 939, 0, 1)
+							game.drop_typed_item(10, 938, 0, 1)
 							d.notice(idx, 1337, "", true)
 							d.notice(idx, 1338, "", true)
 							d.notice(idx, 1339, "", true)
@@ -376,7 +383,7 @@ quest christmas_zone2 begin
 						if c == 0 then
 							d.setf(idx, "step", 9)
 							d.clear_regen(idx)
-							game.drop_item(30890, 1)
+							game.drop_typed_item(10, 939, 0, 1)
 							d.notice(idx, 1348, "", true)
 						end
 					end
@@ -511,7 +518,7 @@ quest christmas_zone2 begin
 				say(gameforge[lang].common.dungeon_5)
 				say_reward(string.format(gameforge[lang].common.dungeon_6, 30))
 				say_reward(string.format(gameforge[lang].common.dungeon_7, 140))
-				say_reward(string.format("- %s: %d", item_name(78208), 1))
+				say_reward(string.format("- %s: %d", d.typed_ticket_name(), 1))
 				if party.is_party() then
 					say_reward(gameforge[lang].common.dungeon_8)
 				end
@@ -533,7 +540,7 @@ quest christmas_zone2 begin
 				end
 
 				myname = pc.get_name()
-				result, cooldown, name = d.check_entrance(30, 140, 78208, 0, 1, "christmas_zone2.cooldown")
+				result, cooldown, name = d.typed_check_entrance()
 				if result == 0 then
 					say("Szólj Razornak. Hibakód: 004 ")
 					say(gameforge[lang].common.unknownerr)
@@ -559,9 +566,9 @@ quest christmas_zone2 begin
 					end
 				elseif result == 6 or result == 7 then
 					if myname == name then
-						say(string.format(gameforge[lang].common.dungeon_18, 1, item_name(78208)))
+						say(string.format(gameforge[lang].common.dungeon_18, 1, d.typed_ticket_name()))
 					else
-						say(string.format(gameforge[lang].common.dungeon_17, name, 1, item_name(78208)))
+						say(string.format(gameforge[lang].common.dungeon_17, name, 1, d.typed_ticket_name()))
 					end
 				elseif result == 8 then
 					local h = math.floor(cooldown / 3600)
@@ -583,9 +590,9 @@ quest christmas_zone2 begin
 				elseif result == 1 then
 					say(gameforge[lang].common.dungeon_21)
 					wait()
-					d.remove_item(78208, 1, 0, 0, 30889, 255, 30890, 255, 30891, 255, 30892, 255, 0, 0, 0, 0, 0, "christmas_zone2")
-					game.set_event_flag(string.format("ww_25_%d", pc.get_channel_id()), get_global_time() + 5)
-					d.join_cords(25, 23206, 30778)
+					if not d.typed_enter() then
+						say(gameforge[lang].common.unknownerr)
+					end
 				end
 			end
 		end
