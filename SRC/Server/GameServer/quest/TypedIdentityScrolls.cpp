@@ -74,7 +74,7 @@ std::optional<ScrollUse> ReadScrollUse(lua_State* L)
 }
 
 bool QueueScroll(const ScrollUse& use, lua_State* L, item::ItemCommit write,
-    std::function<void(entt::entity, bool)> apply)
+    std::function<void(entt::entity)> apply)
 {
     const auto actor = use.actor;
     auto permit = ecs::resource_admission::Enter({actor}, auriga::resource_admission::Operation::ItemUse);
@@ -91,7 +91,8 @@ bool QueueScroll(const ScrollUse& use, lua_State* L, item::ItemCommit write,
                 const auto* active = g_registry.valid(actor) ? g_registry.try_get<ecs::TypedItemLogin>(actor) : nullptr;
                 return active && active->token == token;
             };
-            if (result.write && apply) apply(current() ? actor : entt::null, result.write->replay);
+            // A recovered receipt is also the first completion of this request.
+            if (result.write && apply) apply(current() ? actor : entt::null);
             if (!current()) return;
             if (result.state)
                 g_registry.emplace_or_replace<ecs::TypedItems>(actor, std::move(*result.state));
@@ -139,13 +140,10 @@ std::optional<int> SubmitNameScroll(lua_State* L)
     const auto pid = player::GetPlayerID(use->actor);
     const std::string host = player::GetDesc(use->actor)->GetHostName();
     if (!QueueScroll(*use, L, std::move(*write),
-        [pid, before, after, host](entt::entity actor, bool replay) {
+        [pid, before, after, host](entt::entity actor) {
             if (actor != entt::null) player::SetPendingName(actor, after);
-            if (!replay)
-            {
-                LogManager::instance().ChangeNameLog(pid, before.c_str(), after.c_str(), host.c_str());
-                MessengerManager::instance().PublishRemovedAccountLinks(before);
-            }
+            LogManager::instance().ChangeNameLog(pid, before.c_str(), after.c_str(), host.c_str());
+            MessengerManager::instance().PublishRemovedAccountLinks(before);
         }))
         return NameRefused;
     return std::nullopt;
@@ -183,7 +181,7 @@ std::optional<int> SubmitEmpireScroll(lua_State* L)
     if (!write) return EmpireRefused;
 
     if (!QueueScroll(*use, L, std::move(*write),
-        [empire = change.after](entt::entity actor, bool) {
+        [empire = change.after](entt::entity actor) {
             if (actor == entt::null) return;
             player::SetEmpire(actor, empire);
             if (auto* desc = player::GetDesc(actor)) desc->GetAccountTable().bEmpire = empire;
@@ -216,7 +214,7 @@ std::optional<int> SubmitSexScroll(lua_State* L)
         use->source, use->revision, {static_cast<std::uint8_t>(before), *after});
     if (!write) return SexRefused;
 
-    if (!QueueScroll(*use, L, std::move(*write), [race = *after](entt::entity actor, bool) {
+    if (!QueueScroll(*use, L, std::move(*write), [race = *after](entt::entity actor) {
         if (actor != entt::null) player::SetRace(actor, race);
     }))
         return SexRefused;
