@@ -82,7 +82,6 @@ ACMD(do_set);
 ACMD(do_cmd);
 ACMD(do_reset);
 ACMD(do_greset);
-ACMD(do_fishing);
 ACMD(do_refine_rod);
 
 // REFINE_PICK

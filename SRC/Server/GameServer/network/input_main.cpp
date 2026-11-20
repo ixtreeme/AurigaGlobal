@@ -475,9 +475,6 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 				return -1;
 			break;
 
-		case HEADER_CG_FISHING:
-			Fishing(character, c_pData);
-			break;
 		case HEADER_CG_HACK:
 			Hack(character, c_pData);
 			break;
@@ -517,13 +514,6 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 #ifdef ENABLE_MAP_TELEPORTER
 		case HEADER_CG_MAP_TELEPORTER:
 			MapTeleporter(character, (TPacketCGMapTeleporter*) c_pData);
-			break;
-#endif
-#ifdef ENABLE_NEW_FISHING_SYSTEM
-		case HEADER_CG_FISHING_NEW:
-			{
-				FishingNew(character, c_pData);
-			}
 			break;
 #endif
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)

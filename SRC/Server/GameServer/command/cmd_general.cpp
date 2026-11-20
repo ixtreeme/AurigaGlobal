@@ -12,7 +12,6 @@
 #include "../ecs/systems/QuestSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/MountSystem.hpp"
-#include "../ecs/systems/ActivitySystem.hpp"
 #include "../ecs/systems/SkillSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
@@ -612,18 +611,6 @@ ACMD(do_cmd)
 			}
 			break;
 	}
-}
-
-ACMD(do_fishing)
-{
-	char arg1[256];
-	one_argument(argument, arg1, sizeof(arg1));
-
-	if (!*arg1)
-		return;
-
-	ecs::MovementSystem::SetRotation(character, atof(arg1));
-	ActivitySystem::Fishing(character);
 }
 
 ACMD(do_console)

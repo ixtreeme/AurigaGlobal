@@ -30,7 +30,6 @@
 #include "BattleArena.h"
 #include "building.h"
 #include "../ecs/components/dirty_components.hpp"
-#include "../ecs/systems/ActivitySystem.hpp"
 #include "../ecs/systems/InventorySystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
 #include "../ecs/systems/NetworkSyncSystem.hpp"
@@ -41,14 +40,6 @@
 #include "gm.h"
 #include "../ecs/systems/AcceSystem.hpp"
 
-void CInputMain::Fishing(entt::entity character, const char* c_pData)
-{
-	TPacketCGFishing* p = (TPacketCGFishing*)c_pData;
-	ecs::MovementSystem::SetRotation(character, p->dir * 5);
-	ActivitySystem::Fishing(character);
-	return;
-}
-
 void CInputMain::Warp(entt::entity character, const char * pcData)
 {
 // migrated from CHARACTER handler
@@ -56,42 +47,6 @@ void CInputMain::Warp(entt::entity character, const char * pcData)
 // DUAL-PATH: legacy only during migration window
 	ecs::MovementSystem::WarpEnd(character);
 }
-
-#ifdef ENABLE_NEW_FISHING_SYSTEM
-void CInputMain::FishingNew(entt::entity character, const char* c_pData)
-{
-	if (!ecs::PlayerRuntime::IsValid(character))
-		return;
-
-	TPacketFishingNew* p = (TPacketFishingNew*)c_pData;
-	switch (p->subheader) {
-		case FISHING_SUBHEADER_NEW_START:
-			{
-				ecs::MovementSystem::SetRotation(character, p->dir * 5);
-				ActivitySystem::StartFishing(character, get_dword_time());
-			}
-			break;
-		case FISHING_SUBHEADER_NEW_STOP:
-			{
-				ecs::MovementSystem::SetRotation(character, p->dir * 5);
-				ActivitySystem::StopFishing(character);
-			}
-			break;
-		case FISHING_SUBHEADER_NEW_CATCH:
-			{
-				ActivitySystem::CatchFishing(character, get_dword_time());
-			}
-			break;
-		case FISHING_SUBHEADER_NEW_CATCH_FAILED:
-			{
-				ActivitySystem::CatchFishingFailed(character);
-			}
-			break;
-		default:
-			return;
-	}
-}
-#endif
 
 #ifdef ENABLE_MAP_TELEPORTER
 void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* pPack)

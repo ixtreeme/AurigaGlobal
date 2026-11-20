@@ -148,7 +148,6 @@ class CInputMain : public CInputProcessor
 		int			Guild(entt::entity character, const char * data, size_t uiBytes);
 		void		AnswerMakeGuild(entt::entity character, const char* c_pData);
 
-		void		Fishing(entt::entity character, const char* c_pData);
 		void		Hack(entt::entity character, const char * c_pData);
 
 
@@ -163,9 +162,6 @@ class CInputMain : public CInputProcessor
 #ifdef ENABLE_MULTI_LANGUAGE
 		void	ChangeLanguage(entt::entity character, uint8_t bLanguage);
 		void	RequestLanguage(entt::entity character, const char* targetName);
-#endif
-#ifdef ENABLE_NEW_FISHING_SYSTEM
-		void FishingNew(entt::entity character, const char* c_pData);
 #endif
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
 		void WheelDestiny(entt::entity character, const char* data);
