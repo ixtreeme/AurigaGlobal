@@ -1,0 +1,6 @@
+-- Keep the quest identity for installed quest lists and saved quest state.
+-- The Moonlight Treasure Chest was retired in the typed inventory cutover.
+quest drop3 begin
+    state start begin
+    end
+end
