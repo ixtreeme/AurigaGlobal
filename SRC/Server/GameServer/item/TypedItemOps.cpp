@@ -56,6 +56,7 @@
 
 #include <algorithm>
 #include <array>
+#include <charconv>
 #include <chrono>
 #include <cstdlib>
 #include <random>
@@ -1042,35 +1043,84 @@ std::expected<void, TypedGrantRefusal> RequestTypedItemGrant(entt::entity charac
 	return {};
 }
 
-// /typed_give <category> <local id> [count] [level]: GM test grant (C7a); drops queue through TypedDrops (C7b-3).
+namespace
+{
+template <typename T>
+bool ParseGrantNumber(std::string_view arg, T& value)
+{
+    const auto result = std::from_chars(arg.data(), arg.data() + arg.size(), value);
+    return result.ec == std::errc{} && result.ptr == arg.data() + arg.size();
+}
+
+void GrantFromCommand(entt::entity character, items::ItemKey key, std::string_view count, std::string_view level)
+{
+    items::ItemGrant grant{key, 0, 1};
+    if ((!count.empty() && !ParseGrantNumber(count, grant.count)) ||
+        (!level.empty() && !ParseGrantNumber(level, grant.refinementLevel)))
+    {
+        Tell(character, "Érvénytelen darabszám vagy fejlesztési szint.");
+        return;
+    }
+
+    const auto queued = RequestTypedItemGrant(character, grant);
+    if (queued) return;
+    switch (queued.error())
+    {
+    case TypedGrantRefusal::NotEnabled: Tell(character, "A típusos leltár még nem érhető el."); break;
+    case TypedGrantRefusal::Busy: Tell(character, "Az előző tárgyművelet még folyamatban van."); break;
+    case TypedGrantRefusal::Invalid: Tell(character, "Nincs ilyen elérhető tárgy, vagy érvénytelen a darabszám vagy a szint."); break;
+    case TypedGrantRefusal::NoRoom: Tell(character, "Nincs elég hely a leltárban."); break;
+    case TypedGrantRefusal::NoIds: Tell(character, "Nincs lefoglalt tárgyazonosító. Nézd meg a szervernaplót."); break;
+    }
+}
+}
+
+ACMD(do_item)
+{
+    char code[256], count[32], level[32];
+    const char* rest = one_argument(argument, code, sizeof(code));
+    two_arguments(rest, count, sizeof(count), level, sizeof(level));
+    if (!*code)
+    {
+        Tell(character, "Használat: /item <katalóguskód> [darab] [fejlesztési szint]");
+        return;
+    }
+
+    const auto catalog = items::runtime::CurrentCatalog();
+    if (!catalog)
+    {
+        Tell(character, "A tárgykatalógus még nem érhető el.");
+        return;
+    }
+    const auto& entries = catalog->Entries();
+    const auto entry = std::ranges::find_if(entries, [&](const auto& pair) {
+        return pair.second.base.contentCode == code;
+    });
+    if (entry == entries.end() || entry->second.base.retired)
+    {
+        Tell(character, "Nincs ilyen elérhető katalóguskód. Használat: /item <katalóguskód> [darab] [fejlesztési szint]");
+        return;
+    }
+    GrantFromCommand(character, entry->first, count, level);
+}
+
+// GM grant by composite key, sharing the same inventory and persistence path as /item.
 ACMD(do_typed_give)
 {
-	char category[32], local[32], count[32], level[32];
-	const char* rest = two_arguments(argument, category, sizeof(category), local, sizeof(local));
-	two_arguments(rest, count, sizeof(count), level, sizeof(level));
-	std::optional<items::ItemKey> key;
-	if (*category && *local)
-		if (const auto made = items::ItemKey::Create(static_cast<std::uint16_t>(std::strtoul(category, nullptr, 10)),
-				static_cast<std::uint32_t>(std::strtoul(local, nullptr, 10))))
-			key = *made;
-	if (!key)
-	{
-		Tell(character, "Használat: /typed_give <kategória> <helyi azonosító> [darab] [szint]  (új tárgyrendszer)");
-		return;
-	}
-	const items::ItemGrant grant { *key, static_cast<std::uint16_t>(*level ? std::strtoul(level, nullptr, 10) : 0),
-		static_cast<std::uint32_t>(*count ? std::strtoul(count, nullptr, 10) : 1) };
-	const auto queued = RequestTypedItemGrant(character, grant);
-	if (queued)
-		return;
-	switch (queued.error())
-	{
-	case TypedGrantRefusal::NotEnabled: Tell(character, "Az új tárgyrendszer ennél a karakternél nincs bekapcsolva."); break;
-	case TypedGrantRefusal::Busy: Tell(character, "Az előző tárgyművelet még folyamatban van."); break;
-	case TypedGrantRefusal::Invalid: Tell(character, "Nincs ilyen tárgy, vagy érvénytelen a darabszám vagy a szint."); break;
-	case TypedGrantRefusal::NoRoom: Tell(character, "Nincs elég hely az inventoryban."); break;
-	case TypedGrantRefusal::NoIds: Tell(character, "Nincs lefoglalt tárgyazonosító; nézd meg a szervernaplót."); break;
-	}
+    char category[32], local[32], count[32], level[32];
+    const char* rest = two_arguments(argument, category, sizeof(category), local, sizeof(local));
+    two_arguments(rest, count, sizeof(count), level, sizeof(level));
+    std::uint16_t categoryId = 0;
+    std::uint32_t localId = 0;
+    if (*category && *local && ParseGrantNumber(category, categoryId) && ParseGrantNumber(local, localId))
+    {
+        if (const auto key = items::ItemKey::Create(categoryId, localId))
+        {
+            GrantFromCommand(character, *key, count, level);
+            return;
+        }
+    }
+    Tell(character, "Használat: /typed_give <kategória> <helyi azonosító> [darab] [fejlesztési szint]");
 }
 
 // /typed_refine <inventory cell> [recipe]: refine at the nearest normal smith (C6 test command).
