@@ -227,6 +227,7 @@ ACMD(do_break_marriage);
 ACMD(do_oxevent_show_quiz);
 ACMD(do_oxevent_log);
 ACMD(do_oxevent_get_attender);
+ACMD(do_oxevent_typed_reward);
 
 ACMD(do_effect);
 
@@ -684,6 +685,7 @@ struct command_info cmd_info[] =
 	{ "show_quiz",			do_oxevent_show_quiz,	0,	POS_DEAD,	GM_IMPLEMENTOR	},
 	{ "log_oxevent",		do_oxevent_log,			0,	POS_DEAD,	GM_IMPLEMENTOR	},
 	{ "get_oxevent_att",	do_oxevent_get_attender,0,	POS_DEAD,	GM_IMPLEMENTOR	},
+	{ "ox_reward",       do_oxevent_typed_reward,0, POS_DEAD, GM_IMPLEMENTOR },
 
 	{ "effect",				do_effect,				0,	POS_DEAD,	GM_IMPLEMENTOR	},
 #ifdef __ATTR_TRANSFER_SYSTEM__

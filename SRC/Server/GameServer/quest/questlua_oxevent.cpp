@@ -165,6 +165,21 @@ namespace quest
 		return 0;
 	}
 
+	ALUA(oxevent_give_typed_item)
+	{
+		std::size_t size=0;
+		const char* code=lua_tolstring(L,1,&size);
+		int validLevel=0, validCount=0;
+		const auto level=lua_tointegerx(L,2,&validLevel);
+		const auto count=lua_tointegerx(L,3,&validCount);
+		const bool valid=code && size && validLevel && level>=0 && level<=UINT16_MAX &&
+			validCount && count>0 && count<=UINT32_MAX;
+		lua_pushboolean(L, valid && COXEventManager::instance().QueueTypedReward(
+			CQuestManager::instance().GetCurrentPCEntity(),std::string_view(code,size),
+			static_cast<std::uint16_t>(level),static_cast<std::uint32_t>(count)));
+		return 1;
+	}
+
 	void RegisterOXEventFunctionTable()
 	{
 		luaL_reg oxevent_functions[] =
@@ -177,6 +192,7 @@ namespace quest
 			{	"end_event",	oxevent_end_event	},
 			{	"end_event_force",	oxevent_end_event_force	},
 			{	"give_item",	oxevent_give_item	},
+			{ "give_typed_item", oxevent_give_typed_item },
 #ifdef ENABLE_NEWSTUFF
 			{	"get_oxquiz_fn",	oxevent_get_oxquiz_fn	}, // [return lua string]
 			{	"set_oxquiz_fn",	oxevent_set_oxquiz_fn	}, // [return nothing]

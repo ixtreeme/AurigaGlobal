@@ -2,6 +2,12 @@
 #include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/ViewSystem.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
+#include "../ecs/systems/ChatSystem.hpp"
+#include "../item/ItemStore.hpp"
+#include "../item/ItemCatalogRuntime.hpp"
+#include <NativeAwardsSql.hpp>
+#include <openssl/rand.h>
+#include <sstream>
 #include <Core/Logging.hpp>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
@@ -429,4 +435,73 @@ uint32_t COXEventManager::GetAttenderCount()
 {
     std::erase_if(m_attenders, [](entt::entity character) { return !IsOXPlayer(character); });
     return static_cast<uint32_t>(m_attenders.size());
+}
+
+bool COXEventManager::QueueTypedReward(entt::entity issuer,std::string_view contentCode,std::uint16_t refinement,std::uint32_t count)
+{
+    namespace item=auriga::item;
+    namespace Player=ecs::PlayerRuntime;
+    if (!IsOXPlayer(issuer) || Player::GetGMLevel(issuer)<GM_IMPLEMENTOR ||
+        GetStatus()!=OXEVENT_CLOSE || m_rewarding || m_closing || !count)
+        return false;
+
+    const auto catalog=item::runtime::CurrentCatalog();
+    if (!catalog) return false;
+    const auto& entries=catalog->Entries();
+    const auto entry=std::ranges::find_if(entries,[contentCode](const auto& row){return row.second.base.contentCode==contentCode;});
+    if (entry==entries.end() || entry->second.base.retired) return false;
+
+    std::vector<std::uint32_t> recipients;
+    for (const auto character:m_attenders)
+    {
+        if (!IsOXPlayer(character)) continue;
+#ifdef ENABLE_BLOCK_MULTIFARM
+        if (!AffectSystem::FindAffect(character,AFFECT_DROP_UNBLOCK,APPLY_NONE)) continue;
+#endif
+        if (const auto pid=Player::GetPlayerID(character)) recipients.push_back(pid);
+    }
+    if (recipients.empty()) return false;
+    std::array<std::uint8_t,16> request{};
+    if (RAND_bytes(request.data(),static_cast<int>(request.size()))!=1) return false;
+
+    const auto key=entry->first;
+    m_rewarding=true;
+    const bool submitted=item::runtime::ItemStore::Instance().Submit(
+        [this,issuer,key,refinement,count,request,recipients=std::move(recipients)](CAsyncSQL& sql,const item::ItemCatalog& current)
+            -> item::runtime::ItemStore::Completion
+        {
+            const auto result=item::persistence::EnqueueCharacterNativeAwards(sql,current,recipients,request,key,refinement,count);
+            return [this,issuer,result]
+            {
+                m_rewarding=false;
+                if (result)
+                {
+                    LOG_INFO("OX typed reward: {} account awards queued",*result);
+                    if (Player::IsValid(issuer))
+                        ecs::ChatSystem::Send(issuer,CHAT_TYPE_INFO,"OX: %u jutalom került az ajándéktárolóba.",*result);
+                }
+                else
+                {
+                    LOG_ERROR("OX typed reward failed: {}",static_cast<int>(result.error()));
+                    if (Player::IsValid(issuer))
+                        ecs::ChatSystem::Send(issuer,CHAT_TYPE_INFO,"Az OX-jutalom mentése nem sikerült.");
+                }
+            };
+        });
+    if (!submitted) m_rewarding=false;
+    return submitted;
+}
+
+ACMD(do_oxevent_typed_reward)
+{
+    std::istringstream args{argument};
+    std::string code, extra;
+    unsigned refinement=0, count=0;
+    if (!(args>>code>>refinement>>count) || (args>>extra) || refinement>UINT16_MAX || !count)
+    {
+        ecs::ChatSystem::Send(character,CHAT_TYPE_INFO,"Használat: /ox_reward tárgykód fejlesztési_szint darabszám");
+        return;
+    }
+    if (!COXEventManager::instance().QueueTypedReward(character,code,static_cast<std::uint16_t>(refinement),count))
+        ecs::ChatSystem::Send(character,CHAT_TYPE_INFO,"Az OX-jutalom nem indítható. Ellenőrizd a tárgyat és az esemény állapotát.");
 }

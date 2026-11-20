@@ -1,6 +1,7 @@
 #pragma once
 
 #include <set>
+#include <string_view>
 #include <entt/entity/entity.hpp>
 
 
@@ -70,6 +71,7 @@ class COXEventManager : public singleton<COXEventManager>
 		uint8_t 
 #endif
 		count);
+		bool QueueTypedReward(entt::entity issuer,std::string_view contentCode,std::uint16_t refinement,std::uint32_t count);
 
 		bool CheckAnswer(bool answer);
 		void WarpToAudience();
