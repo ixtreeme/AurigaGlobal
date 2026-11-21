@@ -1,60 +1,27 @@
 #include "../../core/stdafx.h"
 
 #include "GayaSystem.hpp"
-#include "../../entity/char.h"
-#include "../../core/config.h"
 #include "../../core/locale_service.h"
 #include "../../core/JsonFile.h"
+#include "../../core/utils.h"
 #include "../../quest/questmanager.h"
 #include "../../item/ItemCatalogRuntime.hpp"
 #include "../../item/TypedQuestItems.hpp"
-#include "ItemSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
-#include "PointSystem.hpp"
 #include "../Registry.hpp"
-#include "../components/dirty_components.hpp"
-#include "../components/identity_components.hpp"
+#include "../../network/desc.h"
+#include <Headers/Header_GC.h>
+#include <item/ItemWireCodec.hpp>
+#include <item/TypedItemDetails.hpp>
 #include <Core/Logging.hpp>
 
+#include <algorithm>
 #include <fmt/format.h>
 #include <nlohmann/json.hpp>
 #include <random>
+#include <stdexcept>
 #include <string>
 #include <vector>
-
-namespace
-{
-
-struct GayaLoadEntry
-{
-	uint32_t glimmerstone { 0 };
-	uint32_t glimmerstone_count { 0 };
-	uint32_t grade_stone { 0 };
-	uint32_t give_gaya { 0 };
-	uint32_t prob_gaya { 0 };
-	uint32_t cost_gaya_yang { 0 };
-};
-
-struct GayaRuntimeState
-{
-	GayaLoadEntry config;
-};
-
-GayaRuntimeState* GetGayaRuntime(entt::entity e)
-{
-	if (e == entt::null || !g_registry.valid(e))
-		return nullptr;
-
-	return &g_registry.get_or_emplace<GayaRuntimeState>(e);
-}
-
-void MarkDirty(entt::entity e)
-{
-	if (e != entt::null && g_registry.valid(e))
-		g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-}
-
-} // namespace
 
 namespace GayaSystem {
 
@@ -66,7 +33,6 @@ struct TypedMarketOffer
 {
     item::MissionItemAmount reward;
     std::uint32_t price;
-    std::uint32_t iconId;
 };
 struct TypedMarketState
 {
@@ -74,6 +40,42 @@ struct TypedMarketState
     std::uint64_t period;
     std::vector<TypedMarketOffer> offers;
 };
+
+// GC 206 v1: envelope, session, three offers in slot order, public item details.
+std::vector<std::byte> EncodeMarket(const item::ItemCatalog& catalog, std::uint64_t session,
+    std::span<const TypedMarketOffer, OpenMarketSlots> offers)
+{
+    std::vector<item::ItemGrant> rewards;
+    rewards.reserve(offers.size());
+    for (const auto& offer : offers)
+        rewards.push_back({offer.reward.key, offer.reward.level, offer.reward.count});
+    const auto details = item::EncodeTypedItemDetails(catalog, {}, false, rewards);
+    if (!details) return {};
+
+    constexpr std::size_t PrefixSize = 1 + 4 + 1 + 8 + OpenMarketSlots * (6 + 2 + 4 + 4);
+    const auto size = PrefixSize + details->size();
+    if (size > (1u << 20)) return {};
+    std::vector<std::byte> packet;
+    packet.reserve(size);
+    const auto put = [&](std::uint64_t value, unsigned width) {
+        for (unsigned i = 0; i < width; ++i)
+            packet.push_back(static_cast<std::byte>((value >> (8 * i)) & 0xff));
+    };
+    put(HEADER_GC_TYPED_GAYA_MARKET, 1);
+    put(size, 4);
+    put(1, 1);
+    put(session, 8);
+    for (const auto& offer : offers)
+    {
+        const auto key = item::EncodeItemKey(offer.reward.key);
+        packet.insert(packet.end(), key.begin(), key.end());
+        put(offer.reward.level, 2);
+        put(offer.reward.count, 4);
+        put(offer.price, 4);
+    }
+    packet.insert(packet.end(), details->begin(), details->end());
+    return packet;
+}
 
 std::uint64_t CurrentMarketPeriod()
 {
@@ -90,6 +92,8 @@ bool MarketEnabled(entt::entity pc)
 void OpenTypedMarket(entt::entity pc)
 {
     if (!MarketEnabled(pc)) return;
+    auto* desc = ecs::PlayerRuntime::GetDesc(pc);
+    if (!desc || !desc->IsPhase(PHASE_GAME)) return;
     const auto catalog = item::runtime::CurrentCatalog();
     nlohmann::json config;
     const auto path = fmt::format("{}/gaya.json", LocaleService_GetBasePath());
@@ -111,13 +115,12 @@ void OpenTypedMarket(entt::entity pc)
             const auto level = row.at("refinement").get<std::uint16_t>();
             const auto count = row.at("count").get<std::uint32_t>();
             const auto price = row.at("gaya").get<std::uint32_t>();
-            const auto icon = row.at("icon").get<std::uint32_t>();
             const auto* definition = key ? catalog->Find(*key) : nullptr;
             if (!definition || definition->base.retired || !item::SupportsPersistentGrant(*catalog, *definition) ||
                 !catalog->RefinedBaseStats(*key, level) || !count || count > definition->base.maxStack ||
-                !price || price > item::MaxNativeGayaBalance || !icon)
+                !price || price > item::MaxNativeGayaBalance)
                 throw std::runtime_error("invalid typed offer");
-            offers.push_back({{*key, level, count}, price, icon});
+            offers.push_back({{*key, level, count}, price});
         }
     }
     catch (const std::exception& error)
@@ -135,15 +138,15 @@ void OpenTypedMarket(entt::entity pc)
     offers.erase(offers.begin() + OpenMarketSlots, offers.end());
     static std::uint64_t nextSession = 0;
     const auto session = ++nextSession;
-    auto& state = g_registry.emplace_or_replace<TypedMarketState>(pc, session, period, std::move(offers));
-    ecs::ChatSystem::Send(pc, CHAT_TYPE_COMMAND, "GayaTypedMarketBegin %llu", static_cast<unsigned long long>(session));
-    for (std::size_t i = 0; i < state.offers.size(); ++i)
+    const auto packet = EncodeMarket(*catalog, session, std::span<const TypedMarketOffer, OpenMarketSlots>(offers));
+    if (packet.empty())
     {
-        const auto& offer = state.offers[i];
-        ecs::ChatSystem::Send(pc, CHAT_TYPE_COMMAND, "GayaTypedMarketOffer %llu %u %u %u %u",
-            static_cast<unsigned long long>(session), static_cast<unsigned>(i), offer.iconId, offer.reward.count, offer.price);
+        LOG_ERROR("Typed Gaya market: could not encode offers");
+        ecs::ChatSystem::Send(pc, CHAT_TYPE_INFO, "A Gaya-piac kínálata jelenleg nem elérhető.");
+        return;
     }
-    ecs::ChatSystem::Send(pc, CHAT_TYPE_COMMAND, "GayaTypedMarketOpen %llu", static_cast<unsigned long long>(session));
+    g_registry.emplace_or_replace<TypedMarketState>(pc, session, period, std::move(offers));
+    desc->LargePacket(packet.data(), static_cast<int>(packet.size()));
 }
 
 void BuyTypedMarketOffer(entt::entity pc,std::uint64_t session,std::uint32_t slot)
@@ -171,108 +174,6 @@ void BuyTypedMarketOffer(entt::entity pc,std::uint64_t session,std::uint32_t slo
         else
             ecs::ChatSystem::Send(pc, CHAT_TYPE_INFO, "A Gaya-piac vásárlása most nem érhető el.");
     }
-}
-
-void Load(entt::entity pc)
-{
-	auto* state = GetGayaRuntime(pc);
-	if (!state)
-		return;
-
-	char file_name[256 + 1];
-
-	state->config = {};
-
-	snprintf(file_name, sizeof(file_name), "%s/gaya.json", LocaleService_GetBasePath().c_str());
-
-	nlohmann::json doc;
-
-	if (!JsonFile::Load(file_name, doc))
-	{
-		LOG_ERROR("Gaya: Error, it's not possible load {} !", file_name);
-		return;
-	}
-
-	if (doc.contains("config") && doc.at("config").is_object())
-	{
-		const auto& config = doc.at("config");
-		state->config.glimmerstone = config.value("glimmerstone", 0);
-		state->config.glimmerstone_count = config.value("glimmerstone_count", 0);
-		state->config.grade_stone = config.value("grade_stone", 0);
-		state->config.give_gaya = config.value("give_gaya", 0);
-		state->config.prob_gaya = config.value("prob_gaya", 0);
-		state->config.cost_gaya_yang = config.value("cost_gaya_yang", 0);
-	}
-
-	MarkDirty(pc);
-}
-
-void CraftItems(entt::entity pc, int slot)
-{
-	auto* state = GetGayaRuntime(pc);
-	if (!state)
-		return;
-
-
-#ifdef ENABLE_EXTRA_INVENTORY
-	const entt::entity item = ItemSystem::GetItem(pc, TItemPos(EXTRA_INVENTORY, slot));
-#else
-	const entt::entity item = ItemSystem::GetItem(pc, TItemPos(INVENTORY, slot));
-#endif
-	if (!ItemSystem::IsValidItem(item)) {
-		return;
-	}
-
-	const uint32_t glimmerstoneVnum = state->config.glimmerstone;
-	const uint32_t glimmerstoneCount = state->config.glimmerstone_count;
-	const int gradeStone = state->config.grade_stone;
-	const int pointGaya = state->config.give_gaya;
-	const int randomPointGaya = number(1, 100);
-	const int probabilityGaya = state->config.prob_gaya;
-	const int costYang = state->config.cost_gaya_yang;
-
-	if (ItemSystem::GetItemType(item) != ITEM_METIN ||
-		ItemSystem::GetItemRefineLevel(item) > gradeStone) {
-		return;
-	}
-
-	if (ItemSystem::CountItem(pc, glimmerstoneVnum) < static_cast<int>(glimmerstoneCount))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(pc, CHAT_TYPE_INFO, 525, "%d#%s", glimmerstoneCount,
-			ItemSystem::GetItemNameByVnum(glimmerstoneVnum));
-#endif
-		return;
-	}
-
-	if (ecs::PointSystem::GetGold(pc) < costYang) {
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(pc, CHAT_TYPE_INFO, 232, "");
-#endif
-		return;
-	}
-
-	if (randomPointGaya <= probabilityGaya) {
-#ifdef ENABLE_RANKING
-		ecs::PlayerRuntime::SetRankPoints(
-			pc, 11, ecs::PlayerRuntime::GetRankPoints(pc, 11) + pointGaya);
-#endif
-		ecs::PointSystem::Change(pc, POINT_GAYA, pointGaya);
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(pc, CHAT_TYPE_INFO, 526, "");
-#endif
-	}
-#ifdef TEXTS_IMPROVEMENT
-	else {
-		ecs::ChatSystem::SendNew(pc, CHAT_TYPE_INFO, 527, "");
-	}
-#endif
-
-	ItemSystem::RemoveSpecifyItemEcs(pc, glimmerstoneVnum, glimmerstoneCount);
-	ecs::PointSystem::Change(pc, POINT_GOLD, -costYang);
-	ItemSystem::ConsumeItemEcs(item);
-	ecs::ChatSystem::Send(pc, CHAT_TYPE_COMMAND, "GayaCheck");
-	MarkDirty(pc);
 }
 
 } // namespace GayaSystem

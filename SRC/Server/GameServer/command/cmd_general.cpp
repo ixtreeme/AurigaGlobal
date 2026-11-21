@@ -2880,22 +2880,8 @@ ACMD(do_gaya_system)
 	char arg3[256];
 	three_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2), arg3, sizeof(arg3));
 
-	if (!*arg1)
-		return;
-
-	if (0 == arg1[0])
-		return;
-
-	std::string_view strArg1(arg1);
-	if (strArg1 == "craft")
-	{
-		if (0 == arg2[0])
-			return;
-
-		int slot = atoi(arg2);
-		GayaSystem::CraftItems(character, slot);
-	}
-	else if (strArg1 == "market")
+	const std::string_view strArg1(arg1);
+	if (strArg1 == "market")
 	{
 		GayaSystem::OpenTypedMarket(character);
 	}
