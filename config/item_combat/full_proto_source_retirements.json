@@ -5,6 +5,13 @@
   "review_if_user_prefers_locked_inventory": true,
   "items": [
     {
+      "source_id": 70611,
+      "source_row_hash": "425d69f1e0112159cd07584c7bd60b272aff2b39644a6ae61d1cd5e2bd01e25e",
+      "reason": "retired_legacy_season_activation",
+      "name": "Korábbi szezonaktiváló tárgy",
+      "scope": "unused_item_with_no_gameplay_handler"
+    },
+    {
       "source_id": 72320,
       "source_row_hash": "6b5a35bb8e619ed677e02411d9899c46806dfc8d3c01889ee0302f5976c2b7da",
       "reason": "superseded_by_fully_unlocked_typed_inventory",

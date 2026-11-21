@@ -10,7 +10,7 @@
 #include <tuple>
 #include <vector>
 
-// Independent domain model. No Lua, ECS, client packets, SQL or legacy battle pass.
+// Independent domain model. No Lua, ECS, client packets or SQL.
 // Callers must serialize events per account and atomically persist the returned
 // state with its sequence BEFORE acknowledging it. This header never grants items.
 namespace AurigaMissionPass {

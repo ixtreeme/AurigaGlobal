@@ -68,6 +68,7 @@ def disabled_source(row):
     return None
 
 def content_code(row,category):
+    if row['vnum']==70610:return 'wheel.fortune_ticket'
     name=row.get('locale_name_en') or row.get('name') or row.get('locale_name_hu') or 'unnamed'
     name=unicodedata.normalize('NFKD',name).encode('ascii','ignore').decode().lower()
     name=re.sub('[^a-z0-9]+','_',name).strip('_') or 'item'
@@ -182,11 +183,11 @@ class FullCatalogCompiler:
         category=6 if kind in (5,14) else 10
         doc,icon=self.base(row,category,ignore_bonuses=True)
         if category==6:doc['child']['material_kind']=str(sub+1 if kind==5 and sub<=4 else 6)
-        if category==10 and kind==18:
+        quest_use=category==10 and kind==18 and row['vnum']!=70610
+        if quest_use:
             # Quest-use intent is separate from its external quest implementation.
-            # No fake intrinsic effect or automatic item consumption is invented.
             doc['child'].update(dispatch_kind='3' if row['flag']&2048 else '2',group_code='',allowed_contexts='1',allow_observer='0')
-        self.finish(row,doc,icon,[],'material' if category==6 else 'quest_script' if kind==18 else 'passive_token')
+        self.finish(row,doc,icon,[],'material' if category==6 else 'quest_script' if quest_use else 'passive_token')
         self.accepted[row['vnum']]['inactive_source_fields']=dict(applies=[(row['applytype'+str(i)],row['applyvalue'+str(i)]) for i in range(5)],immuneflag=row['immuneflag'],extra=copy.deepcopy(self.extra.get(row['vnum'])))
         return True
 

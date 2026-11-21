@@ -10,7 +10,7 @@
 namespace {
 namespace item = auriga::item;
 constexpr std::uint64_t WheelPrice=1;
-constexpr std::string_view TicketCode="catalog.10.battle_pass_voucher_62352599a800";
+constexpr std::string_view TicketCode="wheel.fortune_ticket";
 
 struct Prize {
     std::string_view code;
@@ -27,7 +27,7 @@ constexpr Prize prizes[] = {
     {"catalog.16.voucher_1000_dc_e316f2658298",89007,1,0},
     {"catalog.10.dungeon_point_10af51240afa",99999,200,0},
     {"catalog.22.mystic_blessing_scroll_b8dbc49e4791",70027,3,0},
-    {"catalog.10.battle_pass_voucher_62352599a800",70610,3,0},
+    {TicketCode,70610,3,0},
     {"catalog.5.golden_fruit_31fe36387997",72100,10,0},
     {"catalog.15.hunting_dog_summoner_273f32f08a28",611586,1,25},
     {"catalog.5.legendary_bonus_043af960ba20",30617,1,0},

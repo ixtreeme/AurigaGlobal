@@ -58,7 +58,6 @@ CREATE TABLE IF NOT EXISTS `player`.`player` (
   `horse_skill_point` SMALLINT           NOT NULL DEFAULT 0,
   `typed_book_revision` BIGINT UNSIGNED  NOT NULL DEFAULT 0,
   `envanter`          INT                NOT NULL DEFAULT 0,
-  `battle_pass_end`   DATETIME           NULL     DEFAULT NULL,
   `r0`                BIGINT             NOT NULL DEFAULT 0,
   `r1`                BIGINT             NOT NULL DEFAULT 0,
   `r2`                BIGINT             NOT NULL DEFAULT 0,
@@ -790,20 +789,6 @@ CREATE TABLE IF NOT EXISTS `player`.`new_petsystem` (
   `minAge`     INT UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `idx_name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
-CREATE TABLE IF NOT EXISTS `player`.`battle_pass` (
-  `player_id`      INT UNSIGNED NOT NULL,
-  `mission_id`     INT UNSIGNED NOT NULL,
-  `battle_pass_id` INT UNSIGNED NOT NULL DEFAULT 0,
-  `extra_info`     INT UNSIGNED NOT NULL DEFAULT 0,
-  `completed`      TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  PRIMARY KEY (`player_id`, `mission_id`, `battle_pass_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
-CREATE TABLE IF NOT EXISTS `player`.`battle_pass_ranking` (
-  `player_name`    VARCHAR(25) NOT NULL DEFAULT '',
-  `battle_pass_id` TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  `finish_time`    DATETIME    NOT NULL,
-  PRIMARY KEY (`player_name`, `battle_pass_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 CREATE TABLE IF NOT EXISTS `player`.`dungeon_ranking` (
   `acc_id`        INT UNSIGNED NOT NULL DEFAULT 0,

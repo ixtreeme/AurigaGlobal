@@ -907,7 +907,6 @@
     "item.catalog.10.baby_baashido_s_egg_b39f47097c09.name": "Kis Baashido tojás",
     "item.catalog.10.baby_santa_claus_7g_c93a40d497d3.name": "Mikulás baba (7G)",
     "item.catalog.10.bandage_1dc403aaec9e.name": "Kötés",
-    "item.catalog.10.battle_pass_voucher_62352599a800.name": "Battle Pass utalvány",
     "item.catalog.10.blue_dragon_egg_84ea722ed564.name": "Kék sárkánytojás",
     "item.catalog.10.blue_sock_f1bed3a905cd.name": "Kék zokni",
     "item.catalog.10.bold_black_giant_orc_12f7ce370dd0.name": "Bátor fekete ork óriás",
@@ -6434,7 +6433,8 @@
     "item.weapon.veres_zodiakus_tor.name": "Véres Zodiákus Tőr",
     "item.weapon.villam_kes.name": "Villám Kés",
     "item.weapon.vizi_legyezo.name": "Vizi Legyező",
-    "item.weapon.vorosvas_penge.name": "Vörösvas Penge"
+    "item.weapon.vorosvas_penge.name": "Vörösvas Penge",
+    "item.wheel.fortune_ticket.name": "Szerencsejegy"
   },
   "mobs": {
     "101": {
