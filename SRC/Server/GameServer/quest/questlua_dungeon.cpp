@@ -972,11 +972,13 @@ ALUA(dungeon_update_rank)
 
 		// Coordinates, level limits and cooldowns from the existing entrance quests.
 		constexpr QuestDungeonEntrance QuestEntrances[] = {
-			{216, 20367, 4434, 12698, 85, 100, 1800, "catacombe", "Zsugorított fej"},
+			{216, 20367, 4434, 12698, 85, 100, 1800, "catacombe", "Zsugorított fej",
+				{"catalog.3.grimace_totem_70167e34baa5"}},
 			{208, 30121, 8435, 10668, 60, 100, 1800, "dragonlair_zone", "Csavart kulcs"},
 			{217, 30130, 879, 6147, 120, 140, 900, "dungeon_spider", "Pók-kulcs"},
 			{210, 20412, 7824, 15021, 92, 112, 2400, "enchanted_forest", "Tündérek köve"},
-			{352, 20395, 6047, 1926, 42, 65, 2400, "nemere_zone", "Belépési engedély"},
+			{352, 20395, 6047, 1926, 42, 65, 2400, "nemere_zone", "Belépési engedély",
+				{"catalog.10.frost_key_acf1fafd561d", "catalog.10.north_star_2f46eb5f23d3"}},
 			{351, 20394, 8109, 6867, 102, 140, 2400, "razador_zone", "Belépési engedély"},
 			{27, 9236, 9420, 1277, 45, 65, 900, "slime_dungeon", "Egy Darab menhir iszap"},
 			{209, 20408, 8836, 14498, 92, 112, 1800, "temple_ochao", "Ochao jegy"},
