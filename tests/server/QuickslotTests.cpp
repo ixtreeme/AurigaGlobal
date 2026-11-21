@@ -723,7 +723,6 @@ void MountSystem::UpdateMountSkin(entt::entity) { Unexpected(); }
 void MountSystem::MountUnsummon(entt::entity, entt::entity) { Unexpected(); }
 void MountSystem::UpdatePetSkin(entt::entity) { Unexpected(); }
 void MountSystem::MountSummon(entt::entity, entt::entity) { Unexpected(); }
-bool PetInventorySystem::RemovePetInventoryItemByEntity(entt::entity, entt::entity, bool) { Unexpected(); }
 void MountSystem::MountCostume(entt::entity, entt::entity) { Unexpected(); }
 bool ItemSystem::IsExtraItem(entt::entity e) { return Meta(e).extra; }
 bool ItemSystem::IsRideItem(entt::entity e) { Meta(e); return false; }
