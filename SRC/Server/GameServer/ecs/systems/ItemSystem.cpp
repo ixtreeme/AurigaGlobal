@@ -534,22 +534,7 @@ bool PickupItem(entt::entity character, uint32_t vid)
             ecs::PlayerRuntime::IsPC(character) && !CombatSystem::IsDead(character) &&
             !ecs::PlayerRuntime::IsObserverMode(character) && ecs::PlayerRuntime::IsPC(owner);
     };
-    if (!current() || selectOwner() != owner || !ground()) return false;
-    if (GetItemType(item) == ITEM_ELK) {
-        const uint32_t count = GetItemCount(item);
-        if (!DestroyItemEntityEcs(item, "PICKUP_GOLD")) return false;
-        // Snapshot the amount before retirement; never read a deleted stack.
-        if (ecs::PlayerRuntime::IsPC(owner)) {
-            GiveGold(owner, count);
-#ifdef ENABLE_RANKING
-            if (ecs::PlayerRuntime::IsPC(owner))
-                ecs::PlayerRuntime::SetRankPoints(owner, 10, ecs::PlayerRuntime::GetRankPoints(owner, 10) + count);
-#endif
-            if (ecs::PlayerRuntime::IsPC(owner)) ecs::SessionSystem::Save(owner);
-        }
-        return true;
-    }
-
+    if (!current() || selectOwner() != owner || !ground() || GetItemType(item) == ITEM_ELK) return false;
     const uint32_t vnum = GetItemVnum(item);
     const auto nameForOwner = [&](entt::entity source) {
         auto* desc = ecs::PlayerRuntime::GetDesc(owner);

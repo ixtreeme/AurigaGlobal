@@ -1704,10 +1704,6 @@ void CommitItemDropRate(entt::entity owner, int64_t pulse) {
     ++limit.itemDropCount;
 #endif
 }
-bool GoldDropRate(entt::entity owner, uint32_t now) {
-    const auto* limit = g_registry.valid(owner) ? g_registry.try_get<ecs::DropLimiter>(owner) : nullptr;
-    return limit && (!g_GoldDropTimeLimitValue || uint32_t(now - limit->lastGoldDropTime) >= g_GoldDropTimeLimitValue);
-}
 struct PreparedGroundTimer {
     LPEVENT timer;
     ~PreparedGroundTimer() { if (timer) event_cancel(&timer); }
@@ -1860,56 +1856,6 @@ bool DropItemImpl(entt::entity owner, TItemPos source, int requested)
     if (ecs::PlayerRuntime::IsPC(owner)) ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 321, "%d", seconds);
 #endif
     return true;
-}
-
-bool DropGoldImpl(entt::entity owner, int64_t amount)
-{
-    if (amount <= 0 || amount > INT_MAX || !ecs::PlayerRuntime::IsPC(owner)) return false;
-    const auto permission = ecs::resource_admission::Enter({owner}, auriga::resource_admission::Operation::GroundDrop);
-    if (!permission || !permission->Current() || !ecs::PlayerRuntime::IsPC(owner)) return false;
-    const MoveAction action(owner);
-    if (!action.entered || !EnsureComponent<ecs::DropLimiter>(owner) || !EnsureComponent<ecs::DirtyTag>(owner) ||
-        !g_registry.all_of<ecs::GoldAmount, ecs::PlayerID>(owner)) return false;
-    const DropOrigin origin(owner);
-    const auto balance = g_registry.get<ecs::GoldAmount>(owner).amount;
-    if (!origin.Current(owner) || balance < amount || !GoldDropRate(owner, get_dword_time())) return false;
-    PreparedSplit prepared;
-    prepared.item = ITEM_MANAGER::instance().CreateItem(1, uint32_t(amount));
-    const auto item = prepared.item;
-    if (!ItemSystem::IsValidItem(item) || !PrepareSplit(item) || !Unowned(item) ||
-        ItemSystem::GetItemWindow(item) != RESERVED_WINDOW || ItemSystem::GetItemType(item) != ITEM_ELK ||
-        ItemSystem::GetItemVnum(item) != 1 || ItemSystem::GetItemCount(item) != uint32_t(amount)) return false;
-    const SplitPayload payload(item);
-#ifdef ENABLE_NEWSTUFF
-    const int seconds = g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPGOLD];
-#else
-    const int seconds = 300;
-#endif
-    return DropGround(item, origin, seconds, [&] {
-        if (!permission->Current() || !origin.Current(owner) || !payload.Unchanged(item) ||
-            !g_registry.all_of<ecs::GoldAmount, ecs::DropLimiter, ecs::DirtyTag>(owner) ||
-            g_registry.get<ecs::GoldAmount>(owner).amount != balance || !GoldDropRate(owner, get_dword_time())) return false;
-        const auto& detached = g_registry.get<ecs::ItemOwner>(item);
-        if (detached.owner != entt::null || detached.ownerPID || ItemSystem::GetItemWindow(item) != RESERVED_WINDOW ||
-            ItemSystem::IsItemConsumptionPending(item) || ItemSystem::IsItemLocked(item) || ItemSystem::IsItemExchanging(item)) return false;
-        g_registry.get<ecs::GoldAmount>(owner).amount = balance - amount;
-        g_registry.get<ecs::DropLimiter>(owner).lastGoldDropTime = get_dword_time();
-        prepared.committed = true;
-        return true;
-    }, [&] {
-        if (ecs::PlayerRuntime::IsPC(owner)) {
-            TPacketGCPointChange packet{};
-            packet.header = HEADER_GC_CHARACTER_POINT_CHANGE;
-            packet.dwVID = ecs::PlayerRuntime::GetPacketVID(owner); packet.type = POINT_GOLD;
-            packet.amount = -amount; packet.value = ecs::PointSystem::GetGold(owner);
-            if (auto* desc = ecs::PlayerRuntime::GetDesc(owner)) desc->Packet(&packet, sizeof(packet));
-        }
-        if (ecs::PlayerRuntime::IsPC(owner)) ecs::SessionSystem::Save(owner);
-        if (ecs::PlayerRuntime::IsPC(owner) && amount > 1000) LogManager::instance().CharLog(owner, amount, "DROP_GOLD", "");
-#ifdef TEXTS_IMPROVEMENT
-        if (ecs::PlayerRuntime::IsPC(owner)) ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 321, "%d", seconds);
-#endif
-    });
 }
 
 namespace {
@@ -2602,11 +2548,6 @@ bool DropItem(entt::entity owner, TItemPos source,
 {
     return InventorySystem::DropItemImpl(owner, source, count);
 }
-bool DropGold(entt::entity owner, int64_t amount)
-{
-    return InventorySystem::DropGoldImpl(owner, amount);
-}
-
 entt::entity GetWearItem(entt::entity owner, uint8_t slot)
 {
     // The retired deck positions are outside the ordinary wear range.

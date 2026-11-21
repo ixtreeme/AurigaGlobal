@@ -151,7 +151,6 @@ bool DropItem(entt::entity e, TItemPos Cell,
     uint8_t
 #endif
     bCount = 0);
-bool DropGold(entt::entity e, int64_t gold);
 bool GiveItem(entt::entity e, entt::entity victim, TItemPos Cell);
 // Takes up to count of the inventory items of one type, skipping any on sale.
 void ModifyPoints(entt::entity item, bool bAdd);

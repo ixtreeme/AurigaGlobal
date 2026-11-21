@@ -47,7 +47,6 @@ entt::registry g_registry;
 entt::dispatcher g_dispatcher;
 int g_bItemCountLimit = 200;
 int g_aiItemDestroyTime[ITEM_DESTROY_TIME_MAX] = {300, 150, 30};
-uint32_t g_GoldDropTimeLimitValue = 0;
 uint32_t g_BuySellTimeLimitValue = 0;
 
 namespace {
@@ -157,7 +156,7 @@ void Send(entt::entity owner, Packet packet) {
 }
 entt::entity Reset() {
     trading = rejectTradePreparation = rejectTradeCleanup = false; tradeRetirements.clear(); g_BuySellTimeLimitValue = 0;
-    dropping = rejectDropInsertion = missingDropQuest = false; dropClock = 10000; g_GoldDropTimeLimitValue = 0;
+    dropping = rejectDropInsertion = missingDropQuest = false; dropClock = 10000;
     dropLogs = dropSaves = dropFlushes = dropHacks = 0; goldPackets.clear(); onDropPreparation = {}; onGoldPacket = {};
     onOwnershipPacket = {}; onTimerCreate = {}; onGroundRetire = {};
     rejectTimer = rejectGroundRetirement = false; groundRetired = 0; timerPulse = 1000;
@@ -3068,7 +3067,7 @@ void GroundDropFailures() {
         DropFixture fixture;
         const auto key = MoveAdmissionKey(fixture.owner);
         auto pause = ecs::resource_admission::Prepare(fixture.owner, key, key.request);
-        Check(pause && !fixture.Drop(3) && !ItemSystem::DropGold(fixture.owner, 10), "paused drop reached preparation");
+        Check(pause && !fixture.Drop(3), "paused drop reached preparation");
         fixture.Unchanged();
         pause.reset();
         Check(fixture.Drop(3), "released drop was not retryable");
@@ -3174,7 +3173,7 @@ void GroundDropCallbacks() {
             int callbacks = 0;
             const auto callback = [&] {
                 ++callbacks;
-                Check(!fixture.Drop(3) && !ItemSystem::DropGold(fixture.owner, 10) &&
+                Check(!fixture.Drop(3) &&
                     !InventorySystem::MoveItem(fixture.owner, fixture.source, TItemPos(INVENTORY, 2), 0),
                     "preparing drop reentered another resource operation");
                 Check(!ecs::resource_admission::Prepare(fixture.owner, key, key.request), "drop callback captured an active source");
@@ -3215,63 +3214,6 @@ void GroundDropCallbacks() {
         ItemSystem::GetItem(other, TItemPos(INVENTORY, 9)) != entt::null,
         "committed drop was refunded or stolen after callback pickup");
 }
-void GroundGoldDrops() {
-    for (int failure = 0; failure < 5; ++failure) {
-        DropFixture fixture;
-        if (failure == 0) onCreate = [](uint32_t, uint32_t) { return entt::entity(entt::null); };
-        if (failure == 1) rejectGround = true;
-        if (failure == 2) rejectTimer = true;
-        if (failure == 3) rejectDropInsertion = true;
-        if (failure == 4) {
-            const auto create = onCreate;
-            onCreate = [create](uint32_t vnum, uint32_t count) { const auto item = create(vnum, count); g_registry.get<ecs::ItemCount>(item).count = 9; return item; };
-        }
-        Check(!ItemSystem::DropGold(fixture.owner, 10), "failed gold drop reported successful");
-        fixture.Unchanged();
-        Check(dropSaves == 0 && g_registry.get<ecs::DropLimiter>(fixture.owner).lastGoldDropTime == 0,
-            "failed gold drop saved or consumed its cooldown");
-        for (auto clone : fixture.created) Check(!g_registry.valid(clone), "failed gold drop leaked an unplaced item");
-    }
-    for (int64_t amount : {int64_t(-1), int64_t(0), int64_t(INT_MAX) + 1, int64_t(101)}) {
-        DropFixture fixture;
-        Check(!ItemSystem::DropGold(fixture.owner, amount), "invalid/unrepresentable gold drop accepted"); fixture.Unchanged();
-    }
-    {
-        DropFixture fixture; g_GoldDropTimeLimitValue = 5000;
-        onGoldPacket = [&] { Check(fixture.Ground() != entt::null, "gold packet preceded ground commit"); };
-        Check(ItemSystem::DropGold(fixture.owner, 10) && g_registry.get<ecs::GoldAmount>(fixture.owner).amount == 90 &&
-            ItemSystem::GetItemCount(fixture.Ground()) == 10 && goldPackets.size() == 1 && dropSaves == 1,
-            "gold drop did not debit/place/publish exactly once");
-        Check(!ItemSystem::DropGold(fixture.owner, 10), "gold cooldown ignored");
-        dropClock += 5000;
-        Check(ItemSystem::DropGold(fixture.owner, 10) && g_registry.get<ecs::GoldAmount>(fixture.owner).amount == 80,
-            "gold cooldown did not expire");
-    }
-    {
-        DropFixture fixture; g_GoldDropTimeLimitValue = 50;
-        g_registry.emplace<ecs::DropLimiter>(fixture.owner).lastGoldDropTime = UINT32_MAX - 25;
-        dropClock = 10;
-        Check(!ItemSystem::DropGold(fixture.owner, 10), "wrapped gold clock bypassed cooldown");
-        dropClock = 30;
-        Check(ItemSystem::DropGold(fixture.owner, 10), "wrapped gold cooldown never expired");
-    }
-    for (bool cancel : {false, true}) {
-        DropFixture fixture;
-        onDropPreparation = [&](entt::entity) {
-            if (cancel) ecs::resource_admission::Invalidate(fixture.owner);
-            else g_registry.get<ecs::GoldAmount>(fixture.owner).amount = 97;
-        };
-        Check(!ItemSystem::DropGold(fixture.owner, 10) && fixture.Ground() == entt::null &&
-            g_registry.get<ecs::GoldAmount>(fixture.owner).amount == (cancel ? 100 : 97),
-            "stale gold plan overwrote a callback's balance");
-    }
-    {
-        DropFixture fixture;
-        onGoldPacket = [&] { g_registry.get<ecs::GoldAmount>(fixture.owner).amount += 7; };
-        Check(ItemSystem::DropGold(fixture.owner, 10) && g_registry.get<ecs::GoldAmount>(fixture.owner).amount == 97,
-            "post-commit gold callback was overwritten/refunded");
-    }
-}
 }
 int main() {
     try {
@@ -3289,7 +3231,7 @@ int main() {
         EquipmentAdmissionGuards();
         NpcTransactions();
         NpcMergesAndPayments(); NpcCallbacksAndCleanup();
-        GroundDropFailures(); GroundDropQuantities(); GroundDropCallbacks(); GroundGoldDrops();
+        GroundDropFailures(); GroundDropQuantities(); GroundDropCallbacks();
         GroundPlacementAndRemoval(); GroundClaims(); GroundClaimValidation(); GroundClaimCallbacks(); GroundDestroyTimers();
         MovePreparationSignals(); NativeMoves(); MoveRejections(); MoveSpecialWindows(); NativeSplits(); SplitFailuresAndCallbacks(); MoveCallbacksAndDispatch();
         CompanionSplitTransactions();

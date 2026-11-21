@@ -25,10 +25,8 @@ struct ItemLoadState {
     bool loaded { false };
 };
 
-// Drop rate limits: gold drops are g_GoldDropTimeLimitValue apart, and with
-// ENABLE_ANTICHEAT more than four item drops within 25 pulses disconnect.
+// ENABLE_ANTICHEAT disconnects players dropping more than four items within 25 pulses.
 struct DropLimiter {
-    uint32_t lastGoldDropTime { 0 };
     int32_t lastItemDropPulse { 0 };
     int32_t itemDropCount { 0 };
 };

@@ -27,7 +27,6 @@ uint32_t GetPlayerID(entt::entity e);
 uint32_t GetAccountID(entt::entity e);
 #ifdef ENABLE_ITEMSHOP
 int64_t GetDragonCoin(entt::entity e);
-void SetDragonCoin(entt::entity e, int64_t amount);
 // Atomic credit (>0) or debit (<0) of the native account wallet; false if refused.
 bool AddDragonCoin(entt::entity e, int64_t delta);
 void SetProtectTime(entt::entity e, std::string_view flag, int value);

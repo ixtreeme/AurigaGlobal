@@ -1981,14 +1981,6 @@ bool AddDragonCoin(entt::entity e, int64_t delta)
     return done;
 }
 
-void SetDragonCoin(entt::entity e, int64_t amount)
-{
-    // Legacy absolute API: applied as the difference, so a concurrent change is kept.
-    if (amount < 0)
-        amount = 0;
-    AddDragonCoin(e, amount - GetDragonCoin(e));
-}
-
 void SetProtectTime(entt::entity e, std::string_view flag, int value)
 {
     if (g_registry.valid(e))

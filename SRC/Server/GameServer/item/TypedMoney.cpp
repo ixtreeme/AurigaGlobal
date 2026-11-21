@@ -17,6 +17,8 @@
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../quest/questpc.h"
 #include "../entity/char_manager.h"
+#include "../core/config.h"
+#include <algorithm>
 #include "../network/desc.h"
 #include <SQL/AsyncSQL.h>
 #include <Core/Logging.hpp>
@@ -121,11 +123,14 @@ bool HandleTypedMoneyPacket(entt::entity e,const char* data){
     const auto& state=g_registry.get<ecs::TypedItems>(e).state;const auto* w=Gold(state);const auto c=store::CurrentCatalog();const auto run=store::ItemStore::Instance().GroundRun();const auto now=Utc();
     if(state.fence!=s->fence && OnlyTypedAccessoryClockChanges(s->fence,state.fence))s->fence=state.fence;
     if(!w || !c || !run || state.fence!=s->fence || now>=s->expires){s->status=Stale;Reply(e,Stale);return true;}
-    item::CurrencyDropIntent intent{s->operation,run->core,run->run,ecs::PlayerRuntime::GetPlayerID(e),s->amount,now,now+item::GroundLifetimeMs,now,static_cast<std::int32_t>(ecs::PlayerRuntime::GetMapIndex(e)),ecs::PlayerRuntime::GetX(e),ecs::PlayerRuntime::GetY(e),ecs::PlayerRuntime::GetZ(e),true};
+    const auto lifetimeMs = std::clamp<std::int64_t>(
+        static_cast<std::int64_t>(g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPGOLD]) * 1000, 1000, item::GroundLifetimeMs);
+    item::CurrencyDropIntent intent{s->operation,run->core,run->run,ecs::PlayerRuntime::GetPlayerID(e),s->amount,now,now+lifetimeMs,now,static_cast<std::int32_t>(ecs::PlayerRuntime::GetMapIndex(e)),ecs::PlayerRuntime::GetX(e),ecs::PlayerRuntime::GetY(e),ecs::PlayerRuntime::GetZ(e),true};
     auto commit=item::MakeCurrencyDropCommit(*c,s->operation,state.fence,*w,intent);if(!commit){s->status=Invalid;Reply(e,Invalid);return true;}
     const auto pid=ecs::PlayerRuntime::GetPlayerID(e);const auto token=g_registry.get<ecs::TypedItemLogin>(e).token;const auto nonce=s->nonce;const auto fence=state.fence;
     static std::unordered_map<std::uint32_t,std::uint64_t> nextDrop;
-    if(nextDrop[intent.owner]>now || !ReserveTypedCurrencyDrop(intent)){s->status=Denied;Reply(e,Denied);return true;}nextDrop[intent.owner]=now+250;
+    if(nextDrop[intent.owner]>now || !ReserveTypedCurrencyDrop(intent)){s->status=Denied;Reply(e,Denied);return true;}
+    nextDrop[intent.owner]=now+std::max(250u,g_GoldDropTimeLimitValue);
     s=Current(pid,token)==e?g_registry.try_get<TypedMoneySession>(e):nullptr;
     const auto* currentState=Current(pid,token)==e?g_registry.try_get<ecs::TypedItems>(e):nullptr;
     if(!s || s->nonce!=nonce || !currentState || currentState->state.fence!=fence || !permission->Current()){CancelTypedCurrencyDrop(intent);return true;}
