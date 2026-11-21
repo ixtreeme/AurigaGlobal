@@ -515,11 +515,4 @@ EVENTINFO(drop_event_info) {
 };
 #endif
 
-#ifdef ENABLE_NEW_FISHING_SYSTEM
-EVENTINFO(fishingnew_event_info)
-{
-	uint32_t pid, vnum, chance, sec;
-	fishingnew_event_info() : pid(0), vnum(0), chance(0), sec(0) {}
-};
-#endif
 #endif

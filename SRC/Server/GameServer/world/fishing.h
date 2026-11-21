@@ -43,10 +43,3 @@ namespace fishing
 	extern bool RefinableRod(entt::entity rod);
 	extern int RealRefineRod(entt::entity ch, entt::entity rod);
 }
-
-#ifdef ENABLE_NEW_FISHING_SYSTEM
-namespace fishingnew
-{
-	extern uint32_t GetFishCatchedVnum(uint8_t normal_chance, uint8_t rare_chance, bool second);
-}
-#endif
