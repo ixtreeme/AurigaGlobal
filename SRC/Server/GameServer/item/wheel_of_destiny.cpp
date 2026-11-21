@@ -22,7 +22,7 @@ struct Prize {
 // The legacy image identifiers keep the wheel artwork and animation positions.
 constexpr Prize prizes[] = {
     {"catalog.10.gaya_4dbbae9647e8",39066,10,0},
-    {"catalog.10.voucher_100_dc_03622683353d",39067,10,25},
+    {"catalog.16.voucher_100_dc_03622683353d",39067,10,25},
     {"catalog.22.mystic_blessing_scroll_b8dbc49e4791",70027,1,0},
     {"catalog.16.voucher_1000_dc_e316f2658298",89007,1,0},
     {"catalog.10.dungeon_point_10af51240afa",99999,200,0},

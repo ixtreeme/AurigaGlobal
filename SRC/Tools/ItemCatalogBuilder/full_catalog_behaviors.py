@@ -77,13 +77,16 @@ def convert_behavior(c,row):
         if doc['bonuses']:raise MigrationError('unexpected_pet_carrier_bonus')
         doc['supply']['supply_kind']='7';doc['base']['max_stack']='1'
         c.finish(row,doc,icon,[],'growth_pet_carrier');return True
-    if kind==3 and sub==10 and row['vnum'] in (39069,80003,80004,80005,80006,80007,80008,39065,89003,89004,89005,89006,89007):
+    legacy_dc_voucher = (row['vnum'], kind, sub) == (39067, 18, 0)
+    if legacy_dc_voucher or (kind==3 and sub==10 and row['vnum'] in (39069,80003,80004,80005,80006,80007,80008,39065,89003,89004,89005,89006,89007)):
         unused_values(row)
-        if row['shop_buy_price']<=0:raise MigrationError('currency_token_has_no_redemption_value')
+        # This voucher has a fixed redemption value independent of its NPC sell price.
+        amount = 100 if legacy_dc_voucher else row['shop_buy_price']
+        if amount<=0:raise MigrationError('currency_token_has_no_redemption_value')
         doc,icon=c.base(row,16)
         if doc['bonuses']:raise MigrationError('unexpected_currency_token_bonus')
-        account=row['vnum'] in (39065,89003,89004,89005,89006,89007)
-        doc['child'].update(wallet_currency='2' if account else '1',amount_per_unit=str(row['shop_buy_price']))
+        account=legacy_dc_voucher or row['vnum'] in (39065,89003,89004,89005,89006,89007)
+        doc['child'].update(wallet_currency='2' if account else '1',amount_per_unit=str(amount))
         c.finish(row,doc,icon,[],'account_currency_voucher' if account else 'gold_currency_token');return True
     if kind==3 and sub in (43,44):
         unused_values(row,(0,) if sub==43 else ())

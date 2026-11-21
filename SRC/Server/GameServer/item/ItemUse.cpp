@@ -8,39 +8,11 @@
 
 #include "../ecs/systems/ItemSystem.hpp"
 
-#include <algorithm>
 #include <stdint.h>
 #include <common/length.h>
 #include "VikingDungeon.h"
 namespace
 {
-	// Adds Dragon Coins safely (clamped to uint32 max) and prints an English message.
-	void AddDragonCoinSafe(entt::entity chEntity, uint32_t amount)
-	{
-		if (!ecs::PlayerRuntime::IsValid(chEntity) || amount == 0)
-			return;
-
-		const int64_t cur = ecs::PlayerRuntime::GetDragonCoin(chEntity);
-		const int64_t maxCoins = static_cast<int64_t>(UINT32_MAX);
-
-		if (cur >= maxCoins)
-		{
-			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "You cannot receive more Dragon Coins.");
-			return;
-		}
-
-		const int64_t canAdd = std::min<int64_t>(static_cast<int64_t>(amount), maxCoins - cur);
-		if (canAdd == 0)
-			return;
-
-		if (!ecs::PlayerRuntime::AddDragonCoin(chEntity, canAdd))
-		{
-			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "The Dragon Coin wallet is unavailable right now.");
-			return;
-		}
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "You received %lld Dragon Coins.", static_cast<long long>(canAdd));
-	}
-
 	inline bool CheckCanUseNow(entt::entity ch)
 	{
 		if (!ecs::PlayerRuntime::IsValid(ch))
@@ -107,20 +79,6 @@ namespace item_change
 				return true;
 			}
 
-
-			// 39067: +100 Dragon Coin (consumes 1)
-			case 39067:
-			{
-				if (!CheckCanUseNow(chEntity))
-					return true;
-
-				if (ItemSystem::GetItemCount(item) < 1)
-					return true;
-
-				if (ItemSystem::ConsumeItemEcs(item))
-					AddDragonCoinSafe(chEntity, 100);
-				return true;
-			}
 
 			// 39068: +10,000,000 gold (consumes 1)
 			case 39068:
