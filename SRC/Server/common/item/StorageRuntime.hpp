@@ -29,6 +29,7 @@ struct StorageChoice {
     std::uint64_t subject=0;std::uint32_t units=0,cell=UINT32_MAX,recipient=0;
     bool operator==(const StorageChoice&)const=default;
 };
+bool CanMintAccountVoucher(const ItemCatalogEntry&) noexcept;
 bool CanStoreInCollection(const ItemCatalog&, const PersistentItem&, StorageRoute);
 struct StoragePlan {ItemCommit commit;std::uint64_t amount=0;std::uint32_t units=0;};
 // Every shared-owner write includes the authenticated character's session fence.

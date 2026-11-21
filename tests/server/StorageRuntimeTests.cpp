@@ -1,5 +1,6 @@
 #include "PersistentItemFixture.hpp"
 #include <item/StorageRuntime.hpp>
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -22,8 +23,38 @@ void Run(const std::filesystem::path& golden){const auto c=BuildItemCatalog(f::C
     StorageChoice send{StorageRoute::Mail,StorageCommand::Send,1,0,UINT32_MAX,88};auto mail=make(send);Check(mail && mail->commit.items[0].after.owner==recipient && mail->commit.items[0].after.placement->kind==ItemStorageKind::Mail,"mail transfers directly to recipient owner");all[0].boundTo=actor;Check(!make(send),"bound mail denied");all[0]=sword;
     for(auto route:{StorageRoute::Mall,StorageRoute::Mail,StorageRoute::Awards}){auto saved=all[0];all[0].owner=route==StorageRoute::Mall?account:actor;all[0].placement=ItemPlacement{route==StorageRoute::Mall?ItemStorageKind::Mall:route==StorageRoute::Mail?ItemStorageKind::Mail:ItemStorageKind::PendingAward,1,0};if(route==StorageRoute::Mall)all[0].boundTo=account;auto take=make({route,StorageCommand::Withdraw,1});Check(take && take->commit.items[0].after.owner==actor && take->commit.items[0].after.id==sword.id,"delivery retains exact instance");if(route==StorageRoute::Mall)Check(take->commit.items[0].after.boundTo==actor,"mall acquire binding follows first claiming character");all[0]=saved;Check(!make({route,StorageCommand::Deposit,1}),"delivery stores refuse player deposits");}
     auto redeem=make({StorageRoute::Wallet,StorageCommand::Redeem,3,2});Check(redeem && redeem->amount==200 && redeem->commit.wallets[0].after.balance==400 && redeem->commit.items[0].after.count==3,"voucher credits account rather than character");auto mint=make({StorageRoute::Wallet,StorageCommand::Mint,p::CoinVoucher().LocalId(),1});Check(mint && mint->commit.wallets[0].after.balance==100 && mint->commit.items[0].after.count==6,"wallet mints an equivalent voucher without duplicating balance");Check(!make({StorageRoute::Wallet,StorageCommand::Mint,p::CoinVoucher().LocalId(),3}),"overdraft refuses item grant");
+    auto rewardCatalogSource=f::Catalog();
+    const auto rewardKey=ItemKey::Create(16,24).value();
+    auto rewardDefinition=*std::ranges::find(rewardCatalogSource.items,p::CoinVoucher(),&ItemBaseRow::key);
+    rewardDefinition.key=rewardKey;
+    rewardDefinition.contentCode="catalog.16.voucher_100_dc_03622683353d";
+    rewardDefinition.sellAmount=300000;
+    rewardCatalogSource.items.push_back(rewardDefinition);
+    rewardCatalogSource.currencyTokens.push_back({rewardKey,WalletCurrency::DragonCoin,100});
+    const auto rewardCatalog=BuildItemCatalog(rewardCatalogSource).value();
+    const auto regularMint=MakeStorageCommit(*rewardCatalog,{36},fences,layouts,all,wallets,a,
+        {StorageRoute::Wallet,StorageCommand::Mint,p::CoinVoucher().LocalId(),1},ids);
+    Check(regularMint.has_value(),"regular 100-coin denomination stays mintable");
+    Check(!MakeStorageCommit(*rewardCatalog,{37},fences,layouts,all,wallets,a,
+        {StorageRoute::Wallet,StorageCommand::Mint,rewardKey.LocalId(),1},ids),
+        "the 100-coin reward voucher cannot be minted through the wallet");
+    auto rewardItems=all;
+    rewardItems.back().key=rewardKey;
+    const auto rewardRedeem=MakeStorageCommit(*rewardCatalog,{38},fences,layouts,rewardItems,wallets,a,
+        {StorageRoute::Wallet,StorageCommand::Redeem,3,2},ids);
+    Check(rewardRedeem && rewardRedeem->commit.wallets[0].after.balance==400 &&
+        rewardRedeem->commit.items[0].after.count==3,"two reward vouchers redeem for exactly 200 account coins");
+
     auto altered=redeem->commit;altered.wallets[0].after.balance++;Check(!ValidateItemCommit(*c,altered),"wallet credit tampering denied");altered=deposited->commit;altered.items[0].after.attributes={};Check(!ValidateItemCommit(*c,altered),"storage payload tampering denied");for(unsigned n=0;n<redeem->commit.result.size();n++){altered=redeem->commit;altered.result.resize(n);Check(!ValidateItemCommit(*c,altered),"truncated storage decision denied");}
-    StorageSnapshot view;view.actor=a;view.route=StorageRoute::Bank;view.owner=account;view.items={stored};view.layouts={layouts[1]};view.canDeposit=view.canWithdraw=true;view.coins=200;view.walletRevision=1;auto wire=EncodeStorageSnapshot(*c,view);Check(wire && (*wire)[0]==std::byte{201},"native storage snapshot");if(!golden.empty()){std::filesystem::create_directories(golden);std::ofstream out(golden/"typed_storage_v1.hex");for(auto b:*wire)out<<std::hex<<std::setfill('0')<<std::setw(2)<<std::to_integer<unsigned>(b);out<<'\n';Check(out.good(),"storage golden");}
+    StorageSnapshot view;view.actor=a;view.route=StorageRoute::Bank;view.owner=account;view.items={stored};view.layouts={layouts[1]};view.canDeposit=view.canWithdraw=true;view.coins=200;view.walletRevision=1;auto wire=EncodeStorageSnapshot(*c,view);Check(wire && (*wire)[0]==std::byte{201},"native storage snapshot");
+    const auto rewardWire=EncodeStorageSnapshot(*rewardCatalog,view);
+    constexpr std::size_t denominationOffset=72, denominationListSize=2+12;
+    Check(rewardWire && wire->size()>=denominationOffset+denominationListSize &&
+        rewardWire->size()>=denominationOffset+denominationListSize &&
+        std::ranges::equal(std::span(*wire).subspan(denominationOffset,denominationListSize),
+            std::span(*rewardWire).subspan(denominationOffset,denominationListSize)),
+        "reward-only denomination is not advertised in the storage snapshot");
+    if(!golden.empty()){std::filesystem::create_directories(golden);std::ofstream out(golden/"typed_storage_v1.hex");for(auto b:*wire)out<<std::hex<<std::setfill('0')<<std::setw(2)<<std::to_integer<unsigned>(b);out<<'\n';Check(out.good(),"storage golden");}
 }
 }
 int main(int argc,char** argv){try{Run(argc==3 && std::string_view(argv[1])=="--write-golden"?std::filesystem::path(argv[2]):std::filesystem::path{});std::cout<<"STORAGE_RUNTIME_TESTS=SUCCESS checks="<<checks<<'\n';return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
