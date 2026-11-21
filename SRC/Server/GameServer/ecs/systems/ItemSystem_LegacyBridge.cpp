@@ -3679,54 +3679,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 			}
 			break;
 
-			// --------------------------------------------------------------
-			// 80008: ShopBuyPrice alapjan Dragon Coin (account.coins) jovairas
-			// --------------------------------------------------------------
-			case 39065:
-			case 89003:
-			case 89004:
-			case 89005:
-			case 89006:
-			case 89007:
-
-			{
-#ifdef ENABLE_ITEMSHOP
-				const uint32_t count = GetItemCount(item);
-				if (count == 0)
-					break;
-
-				const uint64_t unitPrice = (uint64_t)GetItemShopBuyPrice(item);
-				if (unitPrice == 0)
-					break;
-
-				const uint64_t total = unitPrice * (uint64_t)count;
-
-				if (ecs::PlayerRuntime::GetDesc(e) == nullptr)
-					break;
-
-				const int64_t curCoins = ecs::PlayerRuntime::GetDragonCoin(e);
-				const int64_t maxCoins = static_cast<int64_t>(UINT32_MAX);
-
-				if (curCoins >= maxCoins)
-					break;
-
-				const int64_t canAdd = (curCoins + static_cast<int64_t>(total) > maxCoins) ? (maxCoins - curCoins) : static_cast<int64_t>(total);
-				if (canAdd == 0)
-					break;
-
-				if (!ecs::PlayerRuntime::AddDragonCoin(e, canAdd))
-					break; // wallet refused: the item stays
-
-				ConsumeItemEcs(itemEntity, count); // teljes stack felhasznalasa
-				ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "Kaptal %lld Sarkanyermet.", static_cast<long long>(canAdd));
-#else
-				ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "ItemShop ki van kapcsolva.");
-#endif
-			}
-			break;
-
-			// --------------------------------------------------------------
-			// --------------------------------------------------------------
 			case 71107:
 			case 39032:
 			{
@@ -3799,56 +3751,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "+10.000.");
 			}
 			break;
-			break;
-			case 39069:
-			case 80003:
-			case 80004:
-			case 80005:
-			case 80006:
-			case 80007:
-			case 80008:
-			{
-				const uint32_t count = GetItemCount(item);
-				if (count == 0)
-					break;
-
-				const uint64_t unitPrice = (uint64_t)GetItemShopBuyPrice(item);
-				if (unitPrice == 0)
-					break;
-
-				const uint64_t curGold = (uint64_t)ecs::PointSystem::GetGold(e);
-				const uint64_t maxGold = (uint64_t)GOLD_MAX;
-
-				if (curGold >= maxGold)
-					break;
-
-				const uint64_t freeSpace = maxGold - curGold;
-				if (freeSpace < unitPrice)
-					break;
-
-
-				uint32_t canUse = (uint32_t)(freeSpace / unitPrice);
-				if (canUse > count)
-					canUse = count;
-
-				if (canUse == 0)
-					break;
-
-				const uint64_t canAdd = unitPrice * (uint64_t)canUse;
-
-
-				GiveGold(e, (long long)canAdd);
-
-
-				ConsumeItemEcs(itemEntity, canUse);
-			}
-			break;
-
-
-//					val = (25000000 - CombatSystem::GetAlignment(e)) / 10;
-//				pPC->SetFlag("mythical_peach.last_use_time", get_global_time());
-//
-//				snprintf(buf, sizeof(buf), "%u %u", old_alignment, CombatSystem::GetAlignment(e) / 10);
 
 			case 71109:
 			case 72719:
@@ -4198,13 +4100,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 				ConsumeItemEcs(itemEntity);
 				break;
 
-			case ITEM_ELK_VNUM:
-			{
-				int iGold = GetItemSocket(item, 0);
-				ITEM_MANAGER::instance().RemoveItem(itemEntity);
-				ecs::PointSystem::Change(e, POINT_GOLD, iGold);
-			}
-			break;
 			case 27995:
 			{
 			}

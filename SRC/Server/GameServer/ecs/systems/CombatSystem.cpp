@@ -3814,7 +3814,25 @@ static void GiveTypedMobDrops(entt::entity victim, entt::entity killer, double d
 	auto kill = MakeTypedMobDropContext(victim, killer);
 	kill.deltaPercent = deltaPercent;
 	kill.randomRange = randRange > 0 ? static_cast<uint32_t>(randRange) : 0;
-	const auto drops = RollTypedMobDrops(kill);
+	auto drops = RollTypedMobDrops(kill);
+#ifdef ENABLE_EVENT_MANAGER
+    if (items::runtime::TypedDropsEnabled() && CHARACTER_MANAGER::instance().RollAurigaCoinEvent(killer))
+    {
+        const auto catalog = items::runtime::CurrentDropCatalog();
+        if (catalog)
+        {
+            const auto& entries = catalog->Entries();
+            const auto coin = std::ranges::find_if(entries, [](const auto& row) {
+                const auto* token = std::get_if<items::ItemCurrencyTokenRow>(&row.second.category);
+                return row.second.base.contentCode == "catalog.16.auriga_coin_10m_yang_fa8097313261" &&
+                    !row.second.base.retired && token && token->currency == items::WalletCurrency::Gold &&
+                    token->amountPerUnit == 10'000'000;
+            });
+            if (coin != entries.end())
+                drops.push_back({0, 0, coin->first, 0, 1, 0});
+        }
+    }
+#endif
 	if (drops.empty())
 		return;
 	const auto give = [](entt::entity owner, const items::MobDrop& drop) {

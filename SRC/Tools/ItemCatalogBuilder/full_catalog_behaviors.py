@@ -77,17 +77,32 @@ def convert_behavior(c,row):
         if doc['bonuses']:raise MigrationError('unexpected_pet_carrier_bonus')
         doc['supply']['supply_kind']='7';doc['base']['max_stack']='1'
         c.finish(row,doc,icon,[],'growth_pet_carrier');return True
-    legacy_dc_voucher = (row['vnum'], kind, sub) == (39067, 18, 0)
-    if legacy_dc_voucher or (kind==3 and sub==10 and row['vnum'] in (39069,80003,80004,80005,80006,80007,80008,39065,89003,89004,89005,89006,89007)):
+    purse_step = {30094: 5000, 30095: 10000, 30096: 15000}.get(row['vnum'])
+    if (kind, sub) == (18, 0) and purse_step is not None:
+        unused_values(row)
+        doc, icon = c.base(row, 8)
+        if doc['bonuses']:
+            raise MigrationError('unexpected_yang_purse_bonus')
+        # change_yang.lua draws one of three equal outcomes.
+        doc['child'].update(container_kind='1', lock_id='0')
+        doc['loot'] = dict(pick_mode='1', entries=[
+            dict(entry_no=str(n), reward_kind='2', item_category_id=None, item_local_id=None,
+                 amount=str(n * purse_step), weight='1', rare_attribute_chance_bp='0', refinement_level='0')
+            for n in range(1, 4)
+        ])
+        c.finish(row, doc, icon, [], 'yang_purse')
+        return True
+    fixed_quest_voucher = {39067: (2, 100), 39068: (1, 10000000)}.get(row['vnum']) if (kind, sub) == (18, 0) else None
+    if fixed_quest_voucher is not None or (kind==3 and sub==10 and row['vnum'] in (39069,80003,80004,80005,80006,80007,80008,39065,89003,89004,89005,89006,89007)):
         unused_values(row)
         # This voucher has a fixed redemption value independent of its NPC sell price.
-        amount = 100 if legacy_dc_voucher else row['shop_buy_price']
+        wallet, amount = fixed_quest_voucher or (2 if row['vnum'] in (39065,89003,89004,89005,89006,89007) else 1, row['shop_buy_price'])
         if amount<=0:raise MigrationError('currency_token_has_no_redemption_value')
         doc,icon=c.base(row,16)
         if doc['bonuses']:raise MigrationError('unexpected_currency_token_bonus')
-        account=legacy_dc_voucher or row['vnum'] in (39065,89003,89004,89005,89006,89007)
-        doc['child'].update(wallet_currency='2' if account else '1',amount_per_unit=str(amount))
-        c.finish(row,doc,icon,[],'account_currency_voucher' if account else 'gold_currency_token');return True
+        doc['child'].update(wallet_currency=str(wallet), amount_per_unit=str(amount))
+        c.finish(row, doc, icon, [], 'account_currency_voucher' if wallet == 2 else 'gold_currency_token')
+        return True
     if kind==3 and sub in (43,44):
         unused_values(row,(0,) if sub==43 else ())
         doc,icon=c.base(row,17)

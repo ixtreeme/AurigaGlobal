@@ -1504,6 +1504,13 @@ const TEventManagerData* CHARACTER_MANAGER::CheckEventIsActive(uint8_t eventInde
 	}
 	return nullptr;
 }
+bool CHARACTER_MANAGER::RollAurigaCoinEvent(entt::entity killer)
+{
+    if (!ecs::PlayerRuntime::IsPC(killer))
+        return false;
+    const auto* event = CheckEventIsActive(COIN_EVENT, ecs::PlayerRuntime::GetEmpire(killer));
+    return event && RollEventChance(event->value[3]);
+}
 void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity killer, std::vector<entt::entity>& vec_item)
 {
 	if (!ecs::PlayerRuntime::IsValid(character) || !ecs::PlayerRuntime::IsPC(killer))
@@ -1745,15 +1752,6 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 	if (eventPtr && RollEventChance(eventPtr->value[3]))
 	{
 		//CSAK FLAG A NAPTARBA
-	}
-	eventPtr = CheckEventIsActive(COIN_EVENT, killerEmpire);
-	if (eventPtr && RollEventChance(eventPtr->value[3]))
-	{
-
-		// If your moonlight item vnum is different change 50011!
-		const entt::entity item = ITEM_MANAGER::Instance().CreateItem(39068, 1, 0, true);
-		if (ItemSystem::IsValidItem(item)) vec_item.emplace_back(item);
-
 	}
 	eventPtr = CheckEventIsActive(DUPLA_BOSS_PONT_EVENT, killerEmpire);
 	if (eventPtr && RollEventChance(eventPtr->value[3]))

@@ -1,15 +1,11 @@
 #include "stdafx.h"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/AIHelpers.hpp"
-#include "../ecs/systems/PointSystem.hpp"
 
 #include "ItemUse.h"
-#include "char.h" // POINT_GOLD constants; item use does not access CHARACTER.
 
 #include "../ecs/systems/ItemSystem.hpp"
 
-#include <stdint.h>
-#include <common/length.h>
 #include "VikingDungeon.h"
 namespace
 {
@@ -80,70 +76,6 @@ namespace item_change
 			}
 
 
-			// 39068: +10,000,000 gold (consumes 1)
-			case 39068:
-			{
-				if (!CheckCanUseNow(chEntity))
-					return true;
-
-				const int32_t count = ItemSystem::GetItemCount(item);
-				if (count <= 0)
-					return true;
-
-				const int64_t kYangPerItem = 10000000LL;
-				const int64_t maxGold = (int64_t)GOLD_MAX;
-
-				const int64_t beforeGold = (int64_t)ecs::PointSystem::GetGold(chEntity);
-				const int64_t freeSpace = maxGold - beforeGold;
-
-				if (freeSpace <= 0)
-				{
-					ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "You can't receive more Yang (gold cap reached).");
-					return true; // semmit nem vesz el
-				}
-
-				 
-				int32_t wantUse = (int32_t)(freeSpace / kYangPerItem);
-				if (wantUse <= 0)
-				{
-					ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Not enough Yang capacity to redeem even 1 item.");
-					return true; // semmit nem vesz el
-				}
-
-				if (wantUse > count)
-					wantUse = count;
-
-				const int64_t wantAdd = kYangPerItem * (int64_t)wantUse;
-
-				 
-				ecs::PointSystem::Change(chEntity, POINT_GOLD, wantAdd, true);
-
-				 
-				const int64_t afterGold = (int64_t)ecs::PointSystem::GetGold(chEntity);
-				int64_t realAdded = afterGold - beforeGold;
-
-				if (realAdded <= 0)
-				{
-					ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "You can't receive more Yang (gold cap reached).");
-					return true; // semmit nem vesz el
-				}
-
-				 
-				int32_t realUse = (int32_t)(realAdded / kYangPerItem);
-				if (realUse <= 0)
-				{
-					ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "You can't receive more Yang (gold cap reached).");
-					return true; // semmit nem vesz el
-				}
-				if (realUse > count)
-					realUse = count;
-
-				 
-				ItemSystem::ConsumeItemEcs(item, realUse);
-
-				ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "You received %lld Yang.", (long long)(kYangPerItem * (int64_t)realUse));
-				return true;
-			}
 		}
 
 		return false;
