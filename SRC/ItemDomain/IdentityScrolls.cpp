@@ -13,6 +13,7 @@ constexpr std::string_view SexScrollCode = "catalog.10.modification_charm_679127
 constexpr std::string_view GuildMasterScrollCode = "catalog.10.ring_of_successor_3b1ff932cf1c";
 constexpr std::string_view DungeonCooldownScrollCode = "catalog.10.dungeon_cd_reset_0f8f1b52bcef";
 constexpr std::string_view LevelResetScrollCode = "catalog.10.level_reset_66_to_65_c0f8a197800f";
+constexpr std::string_view PerfectSoulStoneCode = "catalog.10.perfect_soul_stone_211da47ac32f";
 
 bool ValidNames(NameScrollChange names)
 {
@@ -43,6 +44,22 @@ std::expected<ItemCommit, ItemPersistenceError> MakeScrollCommit(const ItemCatal
     write->learning = std::move(learning);
     if (auto valid = ValidateItemCommit(catalog, *write); !valid) return std::unexpected(valid.error());
     return write;
+}
+
+bool ValidPerfectSoulStone(const ItemCommit& write)
+{
+    const auto& data = write.result;
+    if (!write.learning || write.owners.size() != 1 ||
+        data.size() != 6 || data[0] != 'P' || data[1] != 'S' || data[2] != 'S' || data[3] != 1 ||
+        !data[4] || data[5] < 30 || data[5] >= SKILL_MAX_LEVEL)
+        return false;
+
+    const auto& change = *write.learning;
+    const auto& skills = change.after.character.skills;
+    return change.owner == write.owners.front().owner && data[4] < skills.size() &&
+        skills[data[4]].level == SKILL_MAX_LEVEL && skills[data[4]].mastery == SKILL_PERFECT_MASTER &&
+        change.before.chanceTokens == change.after.chanceTokens &&
+        change.before.bypassTokens == change.after.bypassTokens && change.before.progress == change.after.progress;
 }
 
 bool ValidLevelReset(const ItemCommit& write)
@@ -179,6 +196,10 @@ bool ValidateQuestScrollWrite(const ItemCatalog& catalog, const ItemCommit& writ
         if (!ValidLevelReset(write)) return false;
         contentCode = LevelResetScrollCode;
         break;
+    case PerfectSoulStoneOutcome:
+        if (!ValidPerfectSoulStone(write)) return false;
+        contentCode = PerfectSoulStoneCode;
+        break;
     default:
         return true;
     }
@@ -187,7 +208,7 @@ bool ValidateQuestScrollWrite(const ItemCatalog& catalog, const ItemCommit& writ
         write.owners.size() != 1 || write.owners.front().owner.kind != ItemOwnerKind::Character ||
         write.owners.front().owner.id > UINT32_MAX || write.items.size() != 1 ||
         !write.wallets.empty() || write.ground || write.recovery || write.petStudyCooldown ||
-        (write.learning && write.outcomeCode != LevelResetScrollOutcome) ||
+        (write.learning && write.outcomeCode != LevelResetScrollOutcome && write.outcomeCode != PerfectSoulStoneOutcome) ||
         write.currencyAward || write.nativeAward || write.currencyDrop || write.privateShop || write.dungeonEntry)
         return false;
 
@@ -299,5 +320,28 @@ std::expected<ItemCommit, ItemPersistenceError> MakeLevelResetScrollCommit(const
     }
     return MakeScrollCommit(catalog, operation, fence, storages, inventory, source, revision,
         LevelResetScrollOutcome, std::move(receipt), ItemLearningChange{fence.owner, before, std::move(after)});
+}
+
+std::expected<ItemCommit, ItemPersistenceError> MakePerfectSoulStoneCommit(const ItemCatalog& catalog,
+    std::array<std::uint8_t, 16> operation, ItemOwnerFence fence, std::span<const ItemStorageLayout> storages,
+    std::span<const PersistentItem> inventory, ItemInstanceId source, std::uint64_t revision, const BookLearning& before,
+    const BookCharacter& live, std::uint8_t skill)
+{
+    if (!ValidBookLearning(before) || before.revision == UINT64_MAX || !ValidBookCharacter(live) ||
+        !skill || skill >= live.skills.size())
+        return std::unexpected(ItemPersistenceError::RequirementNotMet);
+
+    const auto previousLevel = live.skills[skill].level;
+    if (previousLevel < 30 || previousLevel >= SKILL_MAX_LEVEL)
+        return std::unexpected(ItemPersistenceError::RequirementNotMet);
+
+    auto after = before;
+    ++after.revision;
+    after.character = live;
+    after.character.skills[skill].level = SKILL_MAX_LEVEL;
+    after.character.skills[skill].mastery = SKILL_PERFECT_MASTER;
+    return MakeScrollCommit(catalog, operation, fence, storages, inventory, source, revision,
+        PerfectSoulStoneOutcome, {'P', 'S', 'S', 1, skill, previousLevel},
+        ItemLearningChange{fence.owner, before, std::move(after)});
 }
 }

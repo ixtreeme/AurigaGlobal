@@ -10,6 +10,7 @@ inline constexpr std::uint16_t SexScrollOutcome = 0x3B04;
 inline constexpr std::uint16_t GuildMasterScrollOutcome = 0x3B05;
 inline constexpr std::uint16_t DungeonCooldownScrollOutcome = 0x3B06;
 inline constexpr std::uint16_t LevelResetScrollOutcome = 0x3B07;
+inline constexpr std::uint16_t PerfectSoulStoneOutcome = 0x3B08;
 inline constexpr std::uint16_t LevelBeforeReset = 66, LevelAfterReset = 65;
 inline constexpr std::int32_t LevelResetMap = 41;
 inline constexpr std::array LevelResetEquipmentSlots{
@@ -89,4 +90,8 @@ std::expected<ItemCommit, ItemPersistenceError> MakeLevelResetScrollCommit(const
     std::array<std::uint8_t, 16>, ItemOwnerFence, std::span<const ItemStorageLayout>,
     std::span<const PersistentItem>, ItemInstanceId, std::uint64_t, const BookLearning&,
     const BookCharacter&, std::uint16_t randomHP, std::uint16_t randomSP);
+std::expected<ItemCommit, ItemPersistenceError> MakePerfectSoulStoneCommit(const ItemCatalog&,
+    std::array<std::uint8_t, 16>, ItemOwnerFence, std::span<const ItemStorageLayout>,
+    std::span<const PersistentItem>, ItemInstanceId, std::uint64_t, const BookLearning&,
+    const BookCharacter&, std::uint8_t skill);
 }

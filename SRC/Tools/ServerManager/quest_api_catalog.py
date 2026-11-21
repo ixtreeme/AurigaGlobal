@@ -130,7 +130,7 @@ FUNCTIONS = {'': ('__fish_real_refine_rod', '__get_empire_priv', '__get_empire_p
         'teleport', 'typed_dungeon_item_exchange', 'typed_dungeon_item_redeem',
         'typed_change_empire', 'typed_change_guild_master', 'typed_change_name', 'typed_change_sex', 'typed_item_count', 'typed_item_exchange',
         'typed_item_grant', 'typed_item_redeem', 'typed_mission_action', 'typed_pet_egg_key',
-        'typed_mission_status', 'typed_reset_dungeon_cooldown', 'typed_reset_level', 'unequip_slot0', 'unmount', 'upgrade_polymorph_book', 'warp',
+        'typed_mission_status', 'typed_reset_dungeon_cooldown', 'typed_reset_level', 'typed_perfect_soul_stone', 'unequip_slot0', 'unmount', 'upgrade_polymorph_book', 'warp',
         'warp_exit', 'warp_local', 'warp_to_guild_war_observer_position'),
  'pet': ('count_summoned', 'is_summon', 'spawn_effect', 'summon', 'unsummon'),
  'q': ('begin_other_pc_block', 'done', 'end_other_pc_block', 'getcurrentquestindex',

@@ -21,7 +21,8 @@ quest pda_perf_quest begin
 				return
 			end
 
-			say_title(string.format("%s:", item_name(50525)))
+			local title = game.typed_item_use_name("Tökéletes lélekkő")
+			say_title(string.format("%s:", title))
 			say("")
 			local lang = pc.get_language()
 			if pc.get_skill_group() == 0 then
@@ -29,7 +30,7 @@ quest pda_perf_quest begin
 				return
 			end
 
-			local vnum_list, name_list = pda_perf_quest.GetSkillList(1)
+			local vnum_list, name_list = pda_perf_quest.GetSkillList()
 			say(gameforge[lang].pda_perf_quest._2)
 			say(gameforge[lang].pda_perf_quest._3)
 			say(gameforge[lang].pda_perf_quest._4)
@@ -39,35 +40,33 @@ quest pda_perf_quest begin
 			end
 
 			select(gameforge[lang].common.wait)
-			say_title(string.format("%s:", item_name(50525)))
+			say_title(string.format("%s:", title))
 			say("")
 			say(gameforge[lang].pda_perf_quest._5)
 			table.insert(name_list, gameforge[lang].pda_perf_quest._7)
 			local s = select_table(name_list)
-			if s == table.getn(name_list) then
+			if not vnum_list[s] then
 				return
 			end
 
 			local skill_name = name_list[s]
 			local skill_vnum = vnum_list[s]
-			say_title(string.format("%s:", item_name(50525)))
+			say_title(string.format("%s:", title))
 			say("")
 			say(string.format(gameforge[lang].pda_perf_quest._8, skill_name))
 			say(gameforge[lang].pda_perf_quest._9)
 			local a = select(gameforge[lang].common.yes, gameforge[lang].common.no)
-			if a == 2 then
+			if a ~= 1 then
 				return
 			end
 
-			say_title(string.format("%s:", item_name(50525)))
+			say_title(string.format("%s:", title))
 			say("")
-			say(string.format(gameforge[lang].pda_perf_quest._10, skill_name))
-			local saved = pc.typed_item_redeem({}, 0)
-			if not saved then
-				say("A targy most nem hasznalhato. / This item cannot be used now.")
+			if pc.typed_perfect_soul_stone(skill_vnum) ~= 1 then
+				say("A tárgy most nem használható. / This item cannot be used now.")
 				return
 			end
-			pc.set_skill_level (skill_vnum, 40)
+			say(string.format(gameforge[lang].pda_perf_quest._10, skill_name))
 		end
 	end
 end

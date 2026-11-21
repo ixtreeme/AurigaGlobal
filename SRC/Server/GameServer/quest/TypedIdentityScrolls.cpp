@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "TypedIdentityScrolls.hpp"
 #include "questmanager.h"
+#include "../combat/skill.h"
 #include "../ecs/ResourceAdmission.hpp"
 #include "../ecs/components/status_components.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
@@ -9,6 +10,7 @@
 #include "../ecs/systems/NetworkSyncSystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
+#include "../ecs/systems/SkillSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../entity/char.h"
 #include "../guild/guild.h"
@@ -358,6 +360,37 @@ std::optional<int> SubmitLevelResetScroll(lua_State* L)
     return std::nullopt;
 }
 
+std::optional<int> SubmitPerfectSoulStone(lua_State* L)
+{
+    int isInteger = 0;
+    const auto skill = lua_tointegerx(L, 1, &isInteger);
+    if (!isInteger || skill <= 0 || skill >= SKILL_MAX_NUM) return 0;
+
+    const auto use = ReadScrollUse(L);
+    const auto catalog = item::runtime::CurrentCatalog();
+    if (!use || !catalog) return 0;
+
+    const auto job = player::GetJob(use->actor);
+    const auto group = SkillSystem::GetSkillGroup(use->actor);
+    if (job >= JOB_MAX_NUM || group < 1 || group > 2) return 0;
+
+    const int firstSkill = 1 + job * 30 + (group - 1) * 15;
+    bool inGroup = skill >= firstSkill && skill <= firstSkill + 5;
+#ifdef ENABLE_NEW_PASSIVE_SKILLS
+    inGroup = inGroup || skill == SKILL_HELP_PALBANG + job + (group - 1) * JOB_MAX_NUM;
+    if (inGroup && !SkillSystem::CanIncreaseSkill(use->actor, static_cast<std::uint32_t>(skill))) return 0;
+#endif
+    if (!inGroup) return 0;
+
+    const auto live = TypedBookCharacter(use->actor);
+    if (!live) return 0;
+    const auto& state = *use->inventory;
+    auto write = item::MakePerfectSoulStoneCommit(*catalog, use->operation, state.fence, state.storages, state.items,
+        use->source, use->revision, state.learning, *live, static_cast<std::uint8_t>(skill));
+    if (!write || !QueueScroll(*use, L, std::move(*write), {})) return 0;
+    return std::nullopt;
+}
+
 template<int Changed, int Refused>
 int FinishScroll(lua_State* L, std::optional<int> status)
 {
@@ -406,4 +439,5 @@ ALUA(pc_typed_change_sex) { return FinishScroll<SexChanged, SexRefused>(L, Submi
 ALUA(pc_typed_change_guild_master) { return FinishScroll<GuildChanged, GuildRefused>(L, SubmitGuildMasterScroll(L)); }
 ALUA(pc_typed_reset_dungeon_cooldown) { return FinishScroll<1, 0>(L, SubmitDungeonCooldownScroll(L)); }
 ALUA(pc_typed_reset_level) { return FinishScroll<LevelResetChanged, LevelResetRefused>(L, SubmitLevelResetScroll(L)); }
+ALUA(pc_typed_perfect_soul_stone) { return FinishScroll<1, 0>(L, SubmitPerfectSoulStone(L)); }
 }
