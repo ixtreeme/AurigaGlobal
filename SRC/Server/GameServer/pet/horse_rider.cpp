@@ -278,6 +278,7 @@ void FeedHorse(entt::entity rider) {
     Horse(rider)->healthDropTime = NextHealthDrop();
     ChangeHorseHealth(rider, 1);
     if (Alive(rider)) ChangeHorseStamina(rider, 1);
+    if (Horse(rider)) Dirty(rider);
 }
 void HorseDie(entt::entity rider) {
     if (!Horse(rider)) return;
