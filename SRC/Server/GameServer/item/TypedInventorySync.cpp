@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "TypedInventorySync.hpp"
+#include "TypedStoneExchange.hpp"
 #include "ItemCatalogRuntime.hpp"
 #include "ItemStore.hpp"
 #include "TypedDrops.hpp"
@@ -165,4 +166,5 @@ void SendTypedInventory(entt::entity character)
 		desc->Packet(bytes->data(), size);
 	SendTypedEquipment(character);
     SendTypedCostumeAppearance(character,character);
+    RefreshTypedStoneExchange(character);
 }

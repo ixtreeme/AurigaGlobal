@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../item/TypedStoneExchange.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
@@ -383,22 +384,7 @@ int OnClickVikingDungeon(TRIGGERPARAM)
 #ifdef ENABLE_NEW_CRAFT_SYSTEM_RAZOR93
 int OnClickStoneCraft(TRIGGERPARAM)
 {
-	if (causer == entt::null || !ecs::PlayerRuntime::IsPC(causer))
-		return 0;
-
-	if (ch == entt::null || (ecs::PlayerRuntime::GetRaceNum(ch)) != 9005)
-		return 0;
-
-	if (ecs::SocialSystem::HasExchange(causer)
-		|| ecs::SocialSystem::GetMyShop(causer) != entt::null
-		|| ecs::SocialSystem::GetShopOwner(causer) != entt::null
-		|| ecs::SessionSystem::IsSafeboxOpen(causer)
-		|| ecs::SessionSystem::IsCubeOpen(causer))
-		return 0;
-
-	ecs::PlayerRuntime::SetQuestNPC(causer, ch);
-	ecs::ChatSystem::Send(causer, CHAT_TYPE_COMMAND, "stone_craft_open");
-	return 1;
+    return TryOpenTypedStoneExchange(causer, ch) ? 1 : 0;
 }
 #endif
 

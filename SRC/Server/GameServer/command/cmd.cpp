@@ -31,7 +31,6 @@ ACMD(do_eclipseraid);
 ACMD(do_user_horse_back);
 ACMD(do_user_horse_feed);
 #ifdef ENABLE_NEW_CRAFT_SYSTEM_RAZOR93
-ACMD(do_stonecraft);
 #endif
 
 
@@ -452,7 +451,6 @@ struct command_info cmd_info[] =
 	{ "group",		do_group,		0,			POS_DEAD,	GM_HIGH_WIZARD	},
 	{ "grrandom",	do_group_random,	0,			POS_DEAD,	GM_IMPLEMENTOR	},
 #ifdef ENABLE_NEW_CRAFT_SYSTEM_RAZOR93
-	{ "stonecraft",			do_stonecraft,			0,	POS_DEAD,	GM_PLAYER	},
 #endif
 
 	{ "set",		do_set,			0,			POS_DEAD,	GM_IMPLEMENTOR	},

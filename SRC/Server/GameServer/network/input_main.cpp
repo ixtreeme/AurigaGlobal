@@ -94,6 +94,7 @@
 #include "../item/TypedShop.hpp"
 #include "../item/TypedTrade.hpp"
 #include "../item/TypedCraft.hpp"
+#include "../item/TypedStoneExchange.hpp"
 #include "../item/TypedItemMissions.hpp"
 #include "../item/TypedContainerOpening.hpp"
 #include "../item/TypedWikiSources.hpp"
@@ -417,6 +418,9 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
             break;
 		case HEADER_CG_TYPED_ITEM_MISSION:
             HandleTypedItemMissionPacket(character, c_pData);
+            break;
+        case HEADER_CG_TYPED_STONE_EXCHANGE:
+            HandleTypedStoneExchangePacket(character, c_pData);
             break;
         case HEADER_CG_TYPED_CRAFT:
 			HandleTypedCraftPacket(character, c_pData);

@@ -5,6 +5,7 @@
 #include "../ecs/EntityFactory.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
 #include "../ecs/systems/GayaSystem.hpp"
+#include "../item/TypedStoneExchange.hpp"
 #include "../ecs/Registry.hpp"
 #include "questlua.h"
 #include "questmanager.h"
@@ -258,7 +259,8 @@ namespace quest
 			return 0;
 		}
 
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "OpenGuiGaya");
+        if (!TryOpenTypedStoneExchange(chEntity, ecs::PlayerRuntime::GetQuestNPC(chEntity)))
+            ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "A kőbeváltáshoz keresd fel a kereskedőt.");
 		return 0;
 	}
 
