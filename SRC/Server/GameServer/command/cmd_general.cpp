@@ -211,36 +211,42 @@ ACMD(do_user_horse_feed)
 		return;
 	}
 
-	uint32_t dwFood = MountSystem::GetHorseGrade(character) + 50054 - 1;
+    using namespace auriga::item;
+    constexpr std::array<std::string_view, 3> foodCodes{
+        "catalog.10.hay_10f7018a1aa3",
+        "catalog.10.carrot_05f523cb483e",
+        "catalog.10.red_ginseng_ca16ea853b85",
+    };
+    const auto grade = MountSystem::GetHorseGrade(character);
+    const auto catalog = runtime::CurrentCatalog();
+    if (grade < 1 || grade > static_cast<int>(foodCodes.size()) || !catalog ||
+        MountSystem::GetHorseHealth(character) <= 0)
+        return;
 
-
-	if (ItemSystem::CountItem(character, dwFood) > 0)
-	{
-		ItemSystem::RemoveSpecifyItemEcs(character, dwFood, 1);
-		MountSystem::FeedHorse(character);
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 112, "%s",
-#ifdef ENABLE_MULTI_NAMES
-		ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName[ecs::PlayerRuntime::GetDesc(character)->GetLanguage()]
-#else
-		ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName
-#endif
-		);
-#endif
-	}
-	else
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 111, "%s",
-#ifdef ENABLE_MULTI_NAMES
-		ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName[ecs::PlayerRuntime::GetDesc(character)->GetLanguage()]
-#else
-		ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName
-#endif
-		);
-#endif
-	}
-
+    const auto& entries = catalog->Entries();
+    const auto food = std::ranges::find_if(entries, [&](const auto& row) {
+        return !row.second.base.retired && row.second.base.contentCode == foodCodes[grade - 1];
+    });
+    if (food == entries.end())
+        return;
+    const auto& definition = food->second.base;
+    const auto exchange = RequestTypedGameplayItemExchange(character, {{definition.key, 0, 1}}, {}, 0,
+        [character, nameKey = definition.nameKey](bool written) {
+            if (!ecs::PlayerRuntime::IsValid(character))
+                return;
+            if (written) {
+                MountSystem::FeedHorse(character);
+                ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "typed_horse_food 112 %s", nameKey.c_str());
+            }
+            else
+                ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "typed_horse_food 0");
+        });
+    if (!exchange) {
+        if (exchange.error() == ItemMissionError::Requirements)
+            ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "typed_horse_food 111 %s", definition.nameKey.c_str());
+        else
+            ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "typed_horse_food 0");
+    }
 }
 
 #define MAX_REASON_LEN		128
