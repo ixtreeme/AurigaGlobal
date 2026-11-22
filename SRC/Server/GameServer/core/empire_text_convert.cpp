@@ -12,6 +12,7 @@ namespace
 		uint8_t aacJaum[50][2];
 		uint8_t aacMoum[50][2];
 	} g_aTextConvTable[3];
+	bool g_textConvertReady[3]{};
 }
 
 bool LoadEmpireTextConvertTable(uint32_t dwEmpireID, const char* c_szFileName)
@@ -30,14 +31,13 @@ bool LoadEmpireTextConvertTable(uint32_t dwEmpireID, const char* c_szFileName)
 
 	STextConvertTable& rkTextConvTable=g_aTextConvTable[dwEmpireID-1];
 
-	fread(rkTextConvTable.acUpper, 1, dwEngCount, fp.get());
-	fread(rkTextConvTable.acLower, 1, dwEngCount, fp.get());
-	fread(rkTextConvTable.aacHan, 1, dwHanSize, fp.get());
-
-	fread(rkTextConvTable.aacJaum, 1, 60, fp.get());
-	fread(rkTextConvTable.aacMoum, 1, 42, fp.get());
-
-	return true;
+	auto& ready = g_textConvertReady[dwEmpireID - 1];
+	ready = fread(rkTextConvTable.acUpper, 1, dwEngCount, fp.get()) == dwEngCount &&
+		fread(rkTextConvTable.acLower, 1, dwEngCount, fp.get()) == dwEngCount &&
+		fread(rkTextConvTable.aacHan, 1, dwHanSize, fp.get()) == dwHanSize &&
+		fread(rkTextConvTable.aacJaum, 1, 60, fp.get()) == 60 &&
+		fread(rkTextConvTable.aacMoum, 1, 42, fp.get()) == 42;
+	return ready;
 }
 
 #ifdef ENABLE_NEWSTUFF
@@ -49,7 +49,7 @@ void ConvertEmpireText(uint32_t dwEmpireID, char* szText, size_t len, int iPct)
 	if(g_bGlobalShoutEnable || g_bDisableEmpireLanguageCheck)
 		return;
 #endif
-	if (dwEmpireID < 1 || dwEmpireID > 3 || len == 0)
+	if (dwEmpireID < 1 || dwEmpireID > 3 || len == 0 || !g_textConvertReady[dwEmpireID - 1])
 		return;
 
 	const STextConvertTable& rkTextConvTable = g_aTextConvTable[dwEmpireID - 1];
@@ -68,6 +68,8 @@ void ConvertEmpireText(uint32_t dwEmpireID, char* szText, size_t len, int iPct)
                 continue;
             }
         }
+		if ((*pbText & 0x80) && (len < 2 || pbText[1] == 0))
+			break;
 		if (number(1,100) > iPct)
 		{
 			if (*pbText & 0x80)

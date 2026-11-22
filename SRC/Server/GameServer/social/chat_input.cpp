@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../item/TypedLanguageRing.hpp"
 #include "SocialActions.hpp"
 #include "SocialHistory.hpp"
 #include "TypedChatLinks.hpp"
@@ -417,8 +418,8 @@ int HandleWhisper(entt::entity character, const char* data, uint64_t uiBytes, bo
 
 			const std::string historyBody(buf,buflen);
 			if (g_bEmpireWhisper)
-				if (!ItemSystem::IsEquipUniqueGroup(character, UNIQUE_GROUP_RING_OF_LANGUAGE))
-					if (!ItemSystem::IsEquipUniqueGroup(chr, UNIQUE_GROUP_RING_OF_LANGUAGE))
+				if (!HasTypedLanguageRing(character))
+					if (!HasTypedLanguageRing(chr))
 						if (bOpponentEmpire != ecs::PlayerRuntime::GetEmpire(character) && ecs::PlayerRuntime::GetEmpire(character) && bOpponentEmpire
 								&& ecs::PlayerRuntime::GetGMLevel(character) == GM_PLAYER && gm_get_level(pinfo->szNameTo) == GM_PLAYER)
 						{
@@ -521,7 +522,7 @@ struct FEmpireChatPacket
         const char* message = orig_msg;
         if (desc->GetEmpire() != bEmpire && bEmpire != 0 &&
             ecs::PlayerRuntime::GetGMLevel(recipient) == GM_PLAYER &&
-            !ItemSystem::IsEquipUniqueGroup(recipient, UNIQUE_GROUP_RING_OF_LANGUAGE))
+            !HasTypedLanguageRing(recipient))
         {
             const size_t len = std::min(size_t(strlcpy(converted_msg, orig_msg, sizeof(converted_msg))),
                 sizeof(converted_msg) - 1);
@@ -858,7 +859,7 @@ int HandleChat(entt::entity character, const char* data, uint32_t uiBytes, bool 
 								chatbuf,
 								len,
 								(ecs::PlayerRuntime::GetGMLevel(character) > GM_PLAYER ||
-								 ItemSystem::IsEquipUniqueGroup(character, UNIQUE_GROUP_RING_OF_LANGUAGE)) ? 0 : ecs::PlayerRuntime::GetEmpire(character),
+								 HasTypedLanguageRing(character)) ? 0 : ecs::PlayerRuntime::GetEmpire(character),
 								ecs::PlayerRuntime::GetMapIndex(character), strlen(ecs::PlayerRuntime::GetName(character).data())));
 #ifdef ENABLE_CHAT_LOGGING
 					if (ecs::PlayerRuntime::IsGM(character))

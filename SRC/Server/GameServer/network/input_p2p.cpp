@@ -1,4 +1,5 @@
 #include "../pet/AccountCollectionSystem.hpp"
+#include "../item/TypedLanguageRing.hpp"
 #include "stdafx.h"
 #include "../social/SocialActions.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
@@ -109,7 +110,7 @@ int CInputP2P::Relay(LPDESC d, const char * c_pData, size_t uiBytes)
 		if(p2->bType == 0x0F) {
 			p2->bType = WHISPER_TYPE_SYSTEM;
 		} else {
-			if (!ItemSystem::IsEquipUniqueGroup(chr, UNIQUE_GROUP_RING_OF_LANGUAGE))
+			if (!HasTypedLanguageRing(chr))
 				if (bToEmpire >= 1 && bToEmpire <= 3 && ecs::PlayerRuntime::GetEmpire(chr) != bToEmpire)
 				{
 					ConvertEmpireText(bToEmpire,
