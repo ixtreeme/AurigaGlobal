@@ -79,9 +79,6 @@ void CInputMain::QuickslotSwap(entt::entity character, const char* data)
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
 void CInputMain::WheelDestiny(entt::entity character, const char* data)
 {
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate WheelDestiny handler ECS
-// DUAL-PATH: legacy only during migration window
 	if (!ecs::IsCharacter(character))
 	{
 		return;
@@ -99,34 +96,34 @@ void CInputMain::WheelDestiny(entt::entity character, const char* data)
 	{
 	case OPEN:
 	{
-
-		if (!ecs::PlayerRuntime::GetWheelDestiny(character))
-		{
-			ecs::PlayerRuntime::SetWheelDestiny(character, std::make_shared<CWheelDestiny>(character));
-		}
-	}
-	break;
-	case CLOSE:
-
-	{
-		if (ecs::PlayerRuntime::GetWheelDestiny(character))
-		{
-
-
-			if (!ecs::PlayerRuntime::GetWheelDestiny(character)->CanClose())
-			{
+        if (auto wheel = ecs::PlayerRuntime::GetWheelDestiny(character))
+        {
+            wheel->Open();
+            break;
+        }
+        auto wheel = std::make_shared<CWheelDestiny>(character);
+        if (wheel->Open())
+            ecs::PlayerRuntime::SetWheelDestiny(character, std::move(wheel));
+        else
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "A Szerencsekerék jelenleg nem érhető el.");
+        break;
+    }
+    case CLOSE:
+    {
+        if (auto wheel = ecs::PlayerRuntime::GetWheelDestiny(character))
+        {
+            if (!wheel->CanClose())
+            {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 1307, "");
+                ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 1307, "");
 #endif
-			}
-			else
-			{
-				ecs::PlayerRuntime::SetWheelDestiny(character, nullptr);
-				ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "BINARY_WHEEL_CLOSE");
-			}
-		}
-	}
-	break;
+                break;
+            }
+            wheel->Close();
+            ecs::PlayerRuntime::SetWheelDestiny(character, nullptr);
+        }
+        break;
+    }
 	case TURN:
 	{
 		if (ecs::SocialSystem::GetDungeon(character) != entt::null || ecs::PlayerRuntime::GetMapIndex(character) >= 10000)
