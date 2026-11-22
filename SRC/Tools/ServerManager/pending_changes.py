@@ -53,6 +53,38 @@ def rebind_profiles(document,current):
     visit(result,current);return result
 
 
+class PublicationSnapshot:
+    """Compare the data an operation edits, using each draft's saved baseline."""
+
+    def __init__(self, packet):
+        from reward_catalog import Rewards
+
+        self.model = read_model(packet)
+        self.rewards = Rewards(packet, model=self.model)
+        self.accessories = {(int(row['category_id']), int(row['local_id'])): row['socket_profile_id']
+                            for row in self.model.tables['item_accessory']}
+        self.mob_groups = {row['group_id'] for row in self.model.tables['mob_drop_group']}
+
+    def target(self, operation):
+        kind = operation['type']
+        if kind == 'mob':
+            key = str(operation['key'])
+            return self.model.drop_group(key) if key in self.mob_groups else None
+        key = tuple(operation['key'])
+        base = self.rewards.bases.get(key)
+        if base is None:
+            return None
+        identity = (base['content_code'], base['retired'])
+        if kind == 'container':
+            box = self.rewards.boxes.get(key, {})
+            mode = box.get('container_kind')
+            loot = self.rewards.loot(key) if mode in ('1', '2') else None
+            return identity, mode, loot
+        if operation.get('socket_profile_only'):
+            return identity, self.model.socket_profile_document(self.accessories.get(key))
+        return self.model.item(key)
+
+
 def compile_catalog(before,operations):
     import item_catalog as catalog
     from reward_catalog import Rewards
@@ -200,6 +232,11 @@ class PendingChanges(QObject):
             payload=dict(payload);payload['before_ref']=self.store_baseline(payload.pop('before'))
         previous=next((e for e in self.entries() if slot and e.get('slot')==slot),None)
         if previous and previous['state']!='staged':raise api.EditorError('Ennek a módosításnak a korábbi feltöltése bizonytalan. Előbb ellenőrizd a szerver állapotát.')
+        if previous and kind in CATALOG_KINDS:
+            original=previous['body']['payload']
+            payload={key:value for key,value in payload.items() if key not in ('before','before_ref')}
+            baseline_key='before_ref' if 'before_ref' in original else 'before'
+            payload[baseline_key]=original[baseline_key]
         if kind=='catalog_edit' and previous and previous['body']['kind']=='catalog_socket_edit':
             kind='catalog_socket_edit'
         if previous and kind=='file':
@@ -248,7 +285,7 @@ class PendingChanges(QObject):
         import item_catalog as catalog
         from reward_catalog import Rewards,target_text
         from content_names import item_name
-        before=payload['before'];baseline=self.baseline() or before.get('_pending_base',before)
+        before=payload['before'];baseline=before.get('_pending_base',before)
         operations=[]
         if kind=='item':
             doc=payload['document'];key=[int(doc['base']['category_id']),int(doc['base']['local_id'])]
@@ -311,9 +348,15 @@ class PendingChanges(QObject):
     def overlay_packet(self,packet):
         entries=self.catalog_entries(include_pet_evolution=False)
         if not entries:return packet.get('_pending_base',packet)
-        key=(review.encoded(review.scope(self.owner)),self.revision)
+        before=packet.get('_pending_base',packet)
+        live=before['live_drops']
+        key=(review.encoded(review.scope(self.owner)),self.revision,before['hash'],live['hash'],live['release'])
         if key not in self.overlay_cache:
-            self.overlay_cache[key]=compile_catalog(self.baseline(entries),[e['body']['payload']['operation'] for e in entries])
+            operations=[e['body']['payload']['operation'] for e in entries]
+            try:self.overlay_cache={key:compile_catalog(before,operations)}
+            except api.EditorError:
+                # Incompatible drafts can still be opened against their saved contents.
+                self.overlay_cache={key:compile_catalog(self.baseline(entries),operations)}
         return self.overlay_cache[key]
 
     def overlay_document(self,document):
@@ -344,28 +387,51 @@ class PendingChanges(QObject):
         for e in entries:result.extend(e['body']['rows'])
         return result
 
-    def rebase_remaining(self,packet):
-        entries=self.catalog_entries()
-        if not entries:return
-        editor_entries=self.catalog_entries(include_pet_evolution=False)
-        if editor_entries:compile_catalog(packet,[e['body']['payload']['operation'] for e in editor_entries])
-        for e in entries:
-            if e['state']!='staged':continue
-            payload=dict(e['body']['payload'],before=packet)
-            self.put(e['body']['title'],e['body']['kind'],payload,e['body']['rows'])
+    def publication_conflicts(self, entries, current):
+        from pet_evolution_catalog import V56, is_empty_schema_upgrade
+
+        conflicts = {}
+        snapshots = {}
+        live = current['live_drops']
+        for entry in entries:
+            operation = entry['body']['payload']['operation']
+            kind = operation['type']
+            before = self.baseline([entry])
+            old_live = before['live_drops']
+            catalog_changed = before['hash'] != current['hash']
+            drop_changed = (old_live['hash'], old_live['release']) != (live['hash'], live['release'])
+            if kind == 'pet_evolution' and current['tables']['catalog_format'] != V56:
+                conflicts[entry['id']] = 'Az 56-os tárgykatalógus szükséges.'
+            elif kind in ('pet_chest', 'pet_evolution'):
+                if catalog_changed and not is_empty_schema_upgrade(before, current):
+                    conflicts[entry['id']] = 'A több tárgyat és profilt létrehozó tervezet új ellenőrzést igényel.'
+            elif catalog_changed or drop_changed:
+                for packet in (before, current):
+                    if id(packet) not in snapshots:
+                        snapshots[id(packet)] = PublicationSnapshot(packet)
+                original = snapshots[id(before)].target(operation)
+                actual = snapshots[id(current)].target(operation)
+                if original is None and actual is not None:
+                    conflicts[entry['id']] = 'A tervezett új bejegyzés helyét időközben másik élő bejegyzés foglalta el.'
+                elif original != actual:
+                    conflicts[entry['id']] = 'Az érintett élő adat megváltozott a tervezet mentése óta.'
+        return conflicts
 
     def publication_baseline(self, entries):
         import item_catalog as catalog
-        from pet_evolution_catalog import V56, is_empty_schema_upgrade
-        before=self.baseline(entries);current=catalog.request(self.owner.root)
-        if any(e['body']['kind']=='catalog_pet_evolution' for e in entries) and current['tables']['catalog_format']!=V56:
-            raise api.EditorError('A petfejlesztési tervezet megmaradt. Feltöltéséhez az 56-os tárgykatalógus szükséges.')
-        old_live,new_live=before['live_drops'],current['live_drops']
-        if current['hash']==before['hash'] and new_live['hash']==old_live['hash'] and new_live['release']==old_live['release']:
-            return current
-        if is_empty_schema_upgrade(before,current):
-            return current
-        raise api.EditorError('Az éles katalógus vagy dropverzió megváltozott a tervezés óta. A függő csomag nem tölthető fel erre az állapotra.')
+
+        current = catalog.request(self.owner.root)
+        conflicts = self.publication_conflicts(entries, current)
+        if conflicts:
+            rows = [entry['body']['title'] + ' · ' + conflicts[entry['id']]
+                    for entry in entries if entry['id'] in conflicts]
+            details = '\n'.join(rows[:8])
+            if len(rows) > 8:
+                details += '\nTovábbi %d ütközés.' % (len(rows) - 8)
+            raise api.EditorError(
+                'A teljes kijelölés függőben maradt. Az „Ütközések ellenőrzése” megmutatja az érintett tervezeteket.\n\n'
+                + details)
+        return current
 
     def publish_catalog(self,entries):
         import item_catalog as catalog

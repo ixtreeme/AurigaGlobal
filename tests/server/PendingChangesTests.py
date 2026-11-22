@@ -345,10 +345,67 @@ class PendingTests(unittest.TestCase):
         self.assertEqual(len(writer.call_args.kwargs['containers']['container_groups']),2)
 
     def test_preflight_conflict_blocks_all_writes_and_keeps_drafts(self):
-        self.bulk(copy.deepcopy(self.packet));changed=copy.deepcopy(self.packet);changed['hash']='changed'
+        self.bulk(copy.deepcopy(self.packet));changed=copy.deepcopy(self.packet)
+        columns=changed['columns']['mob_drop_entry']
+        changed['live_drops']['tables']['mob_drop_entry'][0][columns.index('amount')]='9'
+        changed['live_drops']['hash']='changed'
+        title=next(e['body']['title'] for e in self.queue.entries() if e['slot']=='mob:1')
         with mock.patch.object(review.ChangeReviewDialog,'exec',return_value=QDialog.DialogCode.Accepted),mock.patch.object(catalog,'request',return_value=changed),mock.patch.object(catalog,'commit_drop_tables') as write:
             self.view.pending_page.publisher.start(self.queue.entries());self.wait()
         write.assert_not_called();self.assertEqual(len(self.queue.entries()),3);self.assertTrue(all(e['state']=='staged' for e in self.queue.entries()));self.assertTrue(self.errors)
+        self.assertIn(title,self.errors[-1])
+
+    def test_unrelated_release_and_item_change_allow_approved_rewards(self):
+        self.bulk(copy.deepcopy(self.packet))
+        changed=copy.deepcopy(self.packet)
+        changed['live_drops']['release']='new-release'
+        changed['live_drops']['hash']='new-drops'
+        changed['hash']='new-catalog'
+        columns=changed['columns']['item_base']
+        row=next(row for row in changed['tables']['item_base'] if tuple(map(int,row[:2]))==self.material)
+        row[columns.index('min_level')]='24'
+        with mock.patch.object(review.ChangeReviewDialog,'exec',return_value=QDialog.DialogCode.Accepted), \
+                mock.patch.object(catalog,'request',return_value=changed),mock.patch.object(catalog,'helper',return_value=fixtures.TOOL), \
+                mock.patch.object(catalog,'commit_drop_tables',return_value=changed) as writer:
+            self.view.pending_page.publisher.start(self.queue.entries());self.wait()
+        writer.assert_called_once()
+        self.assertIs(writer.call_args.args[1],changed)
+        self.assertEqual(self.queue.entries(),[])
+        self.assertEqual(self.errors,[])
+
+    def test_own_publication_does_not_replace_an_unselected_conflicting_baseline(self):
+        self.update_item(self.material,11)
+        self.update_item(self.other,22)
+        first,second=self.queue.entries()
+        live=copy.deepcopy(self.packet)
+        live['hash']='changed-other-item'
+        columns=live['columns']['item_base']
+        row=next(row for row in live['tables']['item_base'] if tuple(map(int,row[:2]))==self.other)
+        row[columns.index('min_level')]='31'
+        with mock.patch.object(review.ChangeReviewDialog,'exec',return_value=QDialog.DialogCode.Accepted), \
+                mock.patch.object(catalog,'request',return_value=live),mock.patch.object(catalog,'helper',return_value=fixtures.TOOL), \
+                mock.patch.object(catalog,'commit_tables',return_value=live) as writer:
+            self.view.pending_page.publisher.start([first]);self.wait()
+        writer.assert_called_once()
+        remaining=self.queue.entries()
+        self.assertEqual([e['id'] for e in remaining],[second['id']])
+        self.assertIn(second['id'],self.queue.publication_conflicts(remaining,live))
+
+    def test_local_conflict_check_marks_the_row_without_creating_approval(self):
+        self.file('a.json',2)
+        self.file('b.json',3)
+        (self.root/'data/b.json').write_text('{"external":true}')
+        page=self.view.pending_page
+        with mock.patch.object(review.ChangeReviewDialog,'exec') as approval,mock.patch.object(self.view,'job') as writer:
+            page.check_conflicts();self.wait()
+        approval.assert_not_called();writer.assert_not_called()
+        self.assertEqual((self.root/'data/a.json').read_text(),'{"value":1}')
+        conflict=next(e for e in self.queue.entries() if e['slot']=='file:data/b.json')
+        self.assertIn('data/b.json',page.conflicts[conflict['id']])
+        self.assertIn('1 / 2',page.status.text())
+        page.search.setText('b.json')
+        page.select_clear()
+        self.assertEqual([e['slot'] for e in page.selected()],['file:data/a.json'])
 
     def test_failed_write_stops_once_and_is_not_automatically_retried(self):
         self.bulk(copy.deepcopy(self.packet));publisher=self.view.pending_page.publisher

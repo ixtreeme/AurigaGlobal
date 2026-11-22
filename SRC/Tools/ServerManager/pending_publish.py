@@ -10,7 +10,7 @@ from pending_changes import CATALOG_KINDS,ITEM_OPERATIONS,compile_catalog
 
 class PendingPublisher(QObject):
     def __init__(self,owner,queue,page):
-        super().__init__(page);self.owner=owner;self.queue=queue;self.page=page;self.task=None;self.entries=[];self.groups=[];self.batch=None;self.begun=[];self.applied=[];self.catalog_result=None;self.lock=None
+        super().__init__(page);self.owner=owner;self.queue=queue;self.page=page;self.task=None;self.entries=[];self.groups=[];self.batch=None;self.begun=[];self.applied=[];self.lock=None
 
     def background(self,function,done,failed):
         from item_page import Task
@@ -23,6 +23,44 @@ class PendingPublisher(QObject):
                 try:done(outcome.get('value'))
                 except Exception as error:failed(str(error))
         task.finished.connect(finished);task.start()
+
+    def check_local(self, entries):
+        """Inspect the same live targets as publication without approving a batch."""
+        if not entries or self.owner.busy() or self.owner.is_remote():
+            return
+        root = self.owner.root
+        self.queue.active = True
+        self.page.selection_changed()
+        self.page.status.setText('Az érintett élő adatok ellenőrzése…')
+
+        def check():
+            import item_catalog as catalog
+
+            sql = [e for e in entries if e['body']['kind'] in CATALOG_KINDS]
+            conflicts = self.queue.publication_conflicts(sql, catalog.request(root)) if sql else {}
+            for entry in entries:
+                body = entry['body']
+                if body['kind'] == 'file':
+                    data = body['payload']
+                    try:
+                        actual = api.Document(root, data['relative'], allow_invalid_json=True).digest
+                    except (api.EditorError, OSError, ValueError):
+                        actual = None
+                    if actual != data['expected_hash']:
+                        conflicts[entry['id']] = 'Az élő fájl megváltozott vagy hiányzik. ' + data['relative']
+            return conflicts
+
+        def finished(conflicts=None, error=None):
+            self.queue.active = False
+            self.owner.refresh()
+            if error:
+                self.page.fill()
+                self.page.status.setText(error)
+                self.owner.error(error)
+                return
+            self.page.show_conflicts(conflicts, {entry['id'] for entry in entries})
+
+        self.background(check, finished, lambda error: finished(error=error))
 
     def start(self,entries):
         if self.queue.active:return
@@ -38,7 +76,7 @@ class PendingPublisher(QObject):
             dialog=review.ChangeReviewDialog(self.owner,self.batch)
             accepted=dialog.exec()==QDialog.DialogCode.Accepted;dialog.deleteLater()
             if not accepted:self.lock.unlock();self.lock=None;self.page.status.setText('A szerkesztések továbbra is függőben vannak. Nem történt feltöltés.');return
-            self.batch.approve(self.owner);self.entries=entries;self.applied=[];self.begun=[];self.catalog_result=None
+            self.batch.approve(self.owner);self.entries=entries;self.applied=[];self.begun=[]
             self.queue.active=True;self.owner.refresh();self.page.selection_changed();self.page.status.setText('A teljes jóváhagyott csomag ellenőrzése feltöltés előtt…')
             self.background(self.preflight,lambda _:self.remote_preflight(),lambda error:self.finish(False,error,preflight=True))
         except (api.EditorError,OSError,ValueError) as error:
@@ -55,8 +93,9 @@ class PendingPublisher(QObject):
         sql=[e for e in entries if e['body']['kind'] in CATALOG_KINDS]
         if sql:
             ops=[e['body']['payload']['operation'] for e in sql]
-            if state.get('running') and any(op['type'] in ITEM_OPERATIONS for op in ops):raise api.EditorError('A tervezetek megmaradtak. A tárgydefiníciók feltöltése előtt állítsd le a játékszervert; a dropok önállóan élőben feltölthetők.')
             before=self.queue.publication_baseline(sql)
+            if state.get('running') and any(op['type'] in ITEM_OPERATIONS for op in ops):
+                raise api.EditorError('A tárgydefiníciók leállított játékszervernél tölthetők fel. A dropokat külön kijelölve futás közben is feltöltheted.')
             after=compile_catalog(before,ops);model=catalog.Catalog(after,live_drops=True);rewards=Rewards(after)
             for base in rewards.containers():
                 key=(int(base['category_id']),int(base['local_id']))
@@ -122,8 +161,8 @@ class PendingPublisher(QObject):
             self.page.fill()
             self.page.status.setText('Feltöltés: '+group[0]['body']['title'])
             if group[0]['body']['kind'] in CATALOG_KINDS:
-                def done(packet):self.catalog_result=packet;self.completed(group,True)
-                self.background(lambda:self.queue.publish_catalog(group),done,lambda error:self.completed(group,False,error))
+                self.background(lambda:self.queue.publish_catalog(group),lambda _:self.completed(group,True),
+                                lambda error:self.completed(group,False,error))
             else:self.dispatch(group[0],lambda ok,error='':self.completed(group,ok,error))
         except Exception as error:self.completed(group,False,str(error))
 
@@ -179,8 +218,6 @@ class PendingPublisher(QObject):
             try:self.batch.state('applied' if ok else 'validation_failed' if preflight else 'unconfirmed')
             except (api.EditorError,OSError,ValueError):pass
         self.queue.active=False;self.queue.revision+=1;self.queue.overlay_cache={};self.queue.changed.emit()
-        if self.catalog_result:
-            self.queue.rebase_remaining(self.catalog_result);self.owner.item_page.loaded(self.catalog_result)
         if self.lock:self.lock.unlock();self.lock=None
         self.owner.remote_page.notify_profiles();self.owner.refresh_pending_views();self.owner.refresh();self.page.fill()
         prefix=('%d szerkesztés már feltöltve. '%len(self.applied)) if not ok and self.applied else ''

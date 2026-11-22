@@ -1,6 +1,6 @@
 """One place to inspect, discard and approve several durable edits."""
 import datetime
-from PySide6.QtCore import Qt,QTimer
+from PySide6.QtCore import QItemSelection,QItemSelectionModel,Qt,QTimer
 from PySide6.QtWidgets import (QAbstractItemView,QComboBox,QDialog,QDialogButtonBox,QHBoxLayout,QHeaderView,QLabel,QLineEdit,QMessageBox,
     QPushButton,QSplitter,QTableWidget,QTableWidgetItem,QVBoxLayout,QWidget)
 import backend as api
@@ -13,7 +13,7 @@ STATES={'staged':'Feltöltésre vár','approved':'Jóváhagyva','publishing':'Fe
 
 class PendingPage(QWidget):
     def __init__(self,owner,queue):
-        super().__init__();self.owner=owner;self.queue=queue;self.signature=None;self.visible_entries=[]
+        super().__init__();self.owner=owner;self.queue=queue;self.signature=None;self.visible_entries=[];self.conflicts={};self.checked=set()
         self.publisher=PendingPublisher(owner,queue,self)
         layout=QVBoxLayout(self);hint=QLabel('A szerkesztők ide mentik az ideiglenes változatokat. Több szerkesztés után egy közös összesítőben hagyhatod jóvá a feltöltést. Az adatok addig a szerveren változatlanok.');hint.setWordWrap(True);hint.setObjectName('Subtle');layout.addWidget(hint)
         bar=QHBoxLayout();self.search=QLineEdit();self.search.setPlaceholderText('Keresés a függő módosítások neve és tartalma szerint…');self.search.textChanged.connect(self.fill)
@@ -34,19 +34,24 @@ class PendingPage(QWidget):
         self.check_button=QPushButton('Feltöltési eredmény ellenőrzése');self.check_button.clicked.connect(self.reconcile);bar.addWidget(self.check_button);bar.addStretch();layout.addLayout(bar)
         bar=QHBoxLayout();self.selected_button=QPushButton('Kijelöltek átnézése…');self.selected_button.clicked.connect(lambda:self.approve(True));bar.addWidget(self.selected_button)
         self.approve_button=QPushButton('Összes átnézése és feltöltése…');self.approve_button.setProperty('role','success');self.approve_button.clicked.connect(lambda:self.approve(False));bar.addWidget(self.approve_button);bar.addStretch();layout.addLayout(bar)
+        self.conflicts_button=QPushButton('Ütközések ellenőrzése')
+        self.conflicts_button.clicked.connect(self.check_conflicts);bar.insertWidget(0,self.conflicts_button)
+        self.select_clear_button=QPushButton('Ütközésmentesek kijelölése')
+        self.select_clear_button.clicked.connect(self.select_clear);bar.insertWidget(1,self.select_clear_button)
+        self.select_clear_button.hide()
         self.status=QLabel('Még nincs függő módosítás.');self.status.setWordWrap(True);layout.addWidget(self.status)
         self.legacy_button=QPushButton('Korábbi ideiglenes mentések…');self.legacy_button.clicked.connect(self.legacy);layout.addWidget(self.legacy_button,alignment=Qt.AlignmentFlag.AlignLeft)
         queue.changed.connect(self.changed)
 
     def changed(self):
-        self.signature=None
+        self.signature=None;self.checked.clear();self.conflicts={}
         if self.isVisible():self.fill()
         try:count=len(self.queue.entries(current=False))
         except (api.EditorError,OSError,ValueError) as error:self.status.setText(str(error));return
         self.owner.navigation.item(11).setText('Függő módosítások'+(' (%d)'%count if count else ''))
 
     def reload(self):
-        self.queue._loaded_root=None;self.signature=None;self.fill()
+        self.queue._loaded_root=None;self.signature=None;self.checked.clear();self.conflicts={};self.fill()
 
     def tick(self):
         signature=(review.encoded(review.scope(self.owner)),self.queue.revision)
@@ -61,8 +66,11 @@ class PendingPage(QWidget):
         self.table.blockSignals(True);self.table.setRowCount(len(self.visible_entries))
         for row,e in enumerate(self.visible_entries):
             created=datetime.datetime.fromisoformat(e['created']).astimezone().strftime('%Y-%m-%d %H:%M') if e['created'] else ''
-            for col,value in enumerate((e['body']['title'],str(len(e['body']['rows'])),STATES[e['state']],created,e['body']['destination'])):
+            conflict=self.conflicts.get(e['id'])
+            status='Ellenőrzést igényel' if conflict else STATES[e['state']]
+            for col,value in enumerate((e['body']['title'],str(len(e['body']['rows'])),status,created,e['body']['destination'])):
                 cell=QTableWidgetItem(value);cell.setData(Qt.ItemDataRole.UserRole,e['id']);self.table.setItem(row,col,cell)
+                if conflict:cell.setToolTip(conflict)
             if e['id'] in selected:self.table.selectRow(row)
         self.table.blockSignals(False)
         self.table.setColumnHidden(4,self.scope_filter.currentIndex()==0)
@@ -83,6 +91,34 @@ class PendingPage(QWidget):
         self.open_button.setEnabled(idle and can_edit and ready);self.discard_button.setEnabled(idle and bool(selected) and ready)
         self.selected_button.setEnabled(idle and bool(selected) and ready);self.approve_button.setEnabled(idle and bool(self.queue.entries()) and all(e['state']=='staged' for e in self.queue.entries()))
         self.check_button.setEnabled(idle and any(e['state']!='staged' for e in selected));self.refresh_button.setEnabled(idle)
+        self.conflicts_button.setEnabled(idle and not self.owner.is_remote() and any(e['state']=='staged' for e in self.queue.entries()))
+        self.select_clear_button.setVisible(not self.owner.is_remote() and bool(self.conflicts) and bool(self.checked-self.conflicts.keys()))
+        self.select_clear_button.setEnabled(idle)
+
+    def check_conflicts(self):
+        self.publisher.check_local([e for e in self.queue.entries() if e['state']=='staged'])
+
+    def show_conflicts(self, conflicts, checked):
+        self.conflicts=conflicts;self.checked=checked
+        self.fill()
+        if conflicts:
+            self.status.setText('%d / %d tervezet ellenőrzést igényel. Az okot az Állapot mező fölé mutatva láthatod.'%(len(conflicts),len(checked)))
+        else:
+            self.status.setText('%d tervezetnél egyezik az ellenőrzött élő adat a mentett alappal.'%len(checked))
+
+    def select_clear(self):
+        self.search.clear()
+        self.scope_filter.setCurrentIndex(0)
+        selection=QItemSelection()
+        model=self.table.model()
+        ready=self.checked-self.conflicts.keys()
+        scope=review.scope(self.owner)
+        for row,entry in enumerate(self.visible_entries):
+            if entry['id'] in ready and entry['scope']==scope and entry['state']=='staged':
+                selection.select(model.index(row,0),model.index(row,self.table.columnCount()-1))
+        mode=QItemSelectionModel.SelectionFlag
+        self.table.selectionModel().select(selection,mode.ClearAndSelect|mode.Rows)
+        self.status.setText('%d ellenőrzött tervezet kijelölve.'%len(self.selected()))
 
     def approve(self,selected):
         entries=self.selected() if selected else self.queue.entries()
@@ -110,7 +146,7 @@ class PendingPage(QWidget):
             if editor.load(relative):self.owner.navigation.setCurrentRow(page)
         elif kind in CATALOG_KINDS:
             page=self.owner.item_page;op=data['operation']
-            page.loaded(self.queue.overlay_packet(self.queue.baseline([e])))
+            page.loaded(page.packet or self.queue.baseline([e]))
             if op['type']=='item':self.owner.navigation.setCurrentRow(8);page.open_item(tuple(op['key']))
             elif op['type']=='container':page.show_containers();page.edit_container(key=tuple(op['key']))
             elif op['type']=='pet_chest':
