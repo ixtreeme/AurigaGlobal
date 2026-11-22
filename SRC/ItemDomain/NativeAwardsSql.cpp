@@ -26,19 +26,27 @@ std::optional<std::uint64_t> Number(const char* text)
 bool ValidNativeAward(const ItemCatalog& catalog,std::array<std::uint8_t,16> request,ItemKey key,
     std::uint16_t level,std::uint32_t count)
 {
+    return std::ranges::any_of(request,[](auto b){return b!=0;}) && CanQueueNativeItemAward(catalog,key,level,count);
+}
+}
+
+bool CanQueueNativeItemAward(const ItemCatalog& catalog,ItemKey key,std::uint16_t level,std::uint32_t count)
+{
     const auto* entry=catalog.Find(key);
-    if (!entry || entry->base.retired || !count || !SupportsPersistentGrant(catalog,*entry) ||
-        std::ranges::all_of(request,[](auto b){return b==0;}))
+    if (!entry || entry->base.retired || !count || !SupportsPersistentGrant(catalog,*entry))
         return false;
-    const auto slots=(std::uint64_t(count)+(std::max)(1u,entry->base.maxStack)-1)/(std::max)(1u,entry->base.maxStack);
-    if(slots>MaxItemCommitItems) return false;
+    const auto stack=(std::max)(1u,entry->base.maxStack);
+    const auto slots=(std::uint64_t(count)+stack-1)/stack;
+    if (slots>MaxItemCommitItems) return false;
     std::vector<ItemInstanceId> probeIds;
-    for(std::uint64_t n=1;n<=slots;++n)probeIds.push_back(ItemInstanceId::Create(n).value());
+    for (std::uint64_t n=1;n<=slots;++n) probeIds.push_back(ItemInstanceId::Create(n).value());
     const ItemOwner probeOwner{ItemOwnerKind::Account,1};
     const std::array layouts{ItemStorageLayout{{probeOwner,ItemStorageKind::Mall,1},9,5,3}};
-    ItemGrant probe{key,level,count};probe.createdAtUtcMs=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    return MakeGrantCommit(catalog,request,{probeOwner,1,1},layouts,{},probe,probeIds,ItemStorageKind::Mall).has_value();
-}
+    std::array<std::uint8_t,16> operation{};
+    operation.front()=1;
+    ItemGrant probe{key,level,count};
+    probe.createdAtUtcMs=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    return MakeGrantCommit(catalog,operation,{probeOwner,1,1},layouts,{},probe,probeIds,ItemStorageKind::Mall).has_value();
 }
 
 std::expected<unsigned,E> EnqueueGuildNativeAwards(CAsyncSQL& db,const ItemCatalog& catalog,

@@ -3,6 +3,7 @@
 #include "SocialActions.hpp"
 #include "SocialHistory.hpp"
 #include "TypedChatLinks.hpp"
+#include "TypedQuiz.hpp"
 #include <Core/Logging.hpp>
 #include "input.h"
 #include "../ecs/Registry.hpp"
@@ -37,13 +38,11 @@
 #include "log.h"
 #include "packet.h"
 #include "protocol.h"
-#include "questmanager.h"
 #include "skill.h"
 #include "spam.h"
 #include "utils.h"
 #include "../ecs/systems/MountSystem.hpp"
 #include "guild.h"
-#include "item_manager.h"
 #include "p2p.h"
 #include "shop.h"
 #include "unique_item.h"
@@ -605,120 +604,8 @@ int HandleChat(entt::entity character, const char* data, uint32_t uiBytes, bool 
 	if (pinfo->type == CHAT_TYPE_SHOUT) {
 
 #ifdef ENABLE_EVENT_QUIZ_RAZOR93
-		do
-		{
-			quest::CQuestManager& qm = quest::CQuestManager::instance();
-			// csak glob?is (SHOUT) chat
-			const uint8_t chatType = pinfo->type; // vagy: pinfo->bType
-			if (chatType != CHAT_TYPE_SHOUT)
-				break;
-
-			// Event akt??
-			if (qm.GetEventFlag("quiz_active") != 1)
-				break;
-
-			// Trim
-			char* p = buf;
-			while (*p == ' ' || *p == '\t') ++p;
-			char* q = p + strlen(p);
-			while (q > p && (q[-1] == ' ' || q[-1] == '\t' || q[-1] == '\r' || q[-1] == '\n')) --q;
-			*q = '\0';
-			if (*p == '\0') break;
-
-			// tiszta integer (opcion?is +/-)
-			const char* s = p;
-			if (*s == '+' || *s == '-') ++s;
-			if (*s == '\0') break;
-			bool numeric = true;
-			for (; *s; ++s)
-				if (*s < '0' || *s > '9') { numeric = false; break; }
-			if (!numeric) break;
-
-			long long typed = strtoll(p, nullptr, 10);
-			int  answer = qm.GetEventFlag("quiz_answer");
-			if (typed != (long long)answer)
-				break;
-
-			// race guard + lez??
-			if (qm.GetEventFlag("quiz_active") != 1)
-				break;
-			qm.SetEventFlag("quiz_active", 0);
-
-			// Jutalom
-			int vnum = qm.GetEventFlag("quiz_item");
-			int count = qm.GetEventFlag("quiz_count");
-			if (count <= 0) count = 1;
-
-			ItemSystem::AutoGiveItemEcs(character, vnum, count);
-
-			// T?gyn?
-			const TItemTable* pTable = ITEM_MANAGER::instance().GetTable(vnum);
-			const char* itemName = nullptr;
-#ifdef ENABLE_MULTI_NAMES
-			itemName = (pTable ? pTable->szLocaleName[0] : "item");
-#else
-			itemName = (pTable ? (pTable->szLocaleName ? pTable->szLocaleName : pTable->szName) : "item");
+        CheckTypedQuizAnswer(character,std::string_view(buf,buflen));
 #endif
-
-			// === Broadcast mindenkinek ===
-#ifdef TEXTS_IMPROVEMENT
-
-			//	"%s#%d#",
-			//	ecs::PlayerRuntime::GetName(character).data(),            // %s (winner)
-			//	answer                   // %d (correct answer)
-			//	//(itemName ? itemName : "item"), // %s
-			//	//count                     // %d
-			//);
-			//	//
-			//
-			//}
-
-			BroadcastNoticeNew(CHAT_TYPE_INFO, 0,0,2181,
-				"%s#%d#",
-				ecs::PlayerRuntime::GetName(character).data(),            // %s (winner)
-				answer                   // %d (correct answer)
-				//(itemName ? itemName : "item"), // %s
-				//count                     // %d
-			);
-#else
-			const char* C_BLUE = "|cFF0000FF";
-			const char* C_RED = "|cFFFF0000";
-			const char* C_GOLD = "|cFFFFD700";
-			const char* C_GRN = "|cFF00FF00";
-			const char* C_RST = "|r";
-
-			char msg[256];
-			snprintf(msg, sizeof(msg),
-				"%s[Quiz]%s %s%s%s won! %sCorrect answer:%s %s%d%s. %sReward sent:%s %s%s%s x %s%d%s",
-				C_BLUE, C_RST,
-				C_RED, ecs::PlayerRuntime::GetName(character).data(), C_RST,
-				C_GOLD, C_RST, C_GRN, answer, C_RST,
-				C_GOLD, C_RST, C_BLUE, (itemName ? itemName : "item"), C_RST, C_GRN, count, C_RST);
-
-			const DESC_MANAGER::DESC_SET& cset = DESC_MANAGER::instance().GetClientSet();
-			for (DESC_MANAGER::DESC_SET::const_iterator it = cset.begin(); it != cset.end(); ++it)
-			{
-				LPDESC d = *it;
-				if (!d) continue;
-                const auto recipient = d->GetEntity();
-                if (!ecs::PlayerRuntime::IsPC(recipient) || ecs::PlayerRuntime::GetDesc(recipient) != d)
-                    continue;
-                ecs::ChatSystem::Send(recipient, CHAT_TYPE_INFO, "%s", msg);
-			}
-#endif
-
-			qm.SetEventFlag("quiz_answer", 0);
-			qm.SetEventFlag("quiz_item", 0);
-			qm.SetEventFlag("quiz_count", 0);
-			qm.SetEventFlag("quiz_active", 0);
-
-			qm.RequestSetEventFlag("quiz_answer", 0);
-			qm.RequestSetEventFlag("quiz_item", 0);
-			qm.RequestSetEventFlag("quiz_count", 0);
-			qm.RequestSetEventFlag("quiz_active", 0);
-
-		} while (0);
-#endif // ENABLE_EVENT_QUIZ_RAZOR93
 #ifdef ENABLE_FAKE_SHOP_HEADER
 		const char* mountColor = "";
 		char mountTitleWithCount[64];

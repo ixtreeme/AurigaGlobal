@@ -3,6 +3,8 @@
 
 namespace auriga::item::persistence
 {
+// Checks that a typed reward can be delivered to an empty account Mall.
+bool CanQueueNativeItemAward(const ItemCatalog&,ItemKey,std::uint16_t level,std::uint32_t count);
 // Trusted server-authored guild rewards. The request ID is fixed before queueing
 // SQL; repeated submission cannot produce a second award for the same member.
 std::expected<unsigned,ItemPersistenceError> EnqueueGuildNativeAwards(CAsyncSQL&,const ItemCatalog&,

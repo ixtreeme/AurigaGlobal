@@ -222,6 +222,10 @@ ACMD(do_oxevent_show_quiz);
 ACMD(do_oxevent_log);
 ACMD(do_oxevent_get_attender);
 ACMD(do_oxevent_typed_reward);
+#ifdef ENABLE_EVENT_QUIZ_RAZOR93
+ACMD(do_quiz_start);
+ACMD(do_quiz_cancel);
+#endif
 
 ACMD(do_effect);
 
@@ -660,6 +664,10 @@ struct command_info cmd_info[] =
 	{ "log_oxevent",		do_oxevent_log,			0,	POS_DEAD,	GM_IMPLEMENTOR	},
 	{ "get_oxevent_att",	do_oxevent_get_attender,0,	POS_DEAD,	GM_IMPLEMENTOR	},
 	{ "ox_reward",       do_oxevent_typed_reward,0, POS_DEAD, GM_IMPLEMENTOR },
+#ifdef ENABLE_EVENT_QUIZ_RAZOR93
+    { "quiz_start",       do_quiz_start,0,POS_DEAD,GM_IMPLEMENTOR },
+    { "quiz_cancel",      do_quiz_cancel,0,POS_DEAD,GM_IMPLEMENTOR },
+#endif
 
 	{ "effect",				do_effect,				0,	POS_DEAD,	GM_IMPLEMENTOR	},
 #ifdef __ATTR_TRANSFER_SYSTEM__
