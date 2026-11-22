@@ -377,9 +377,10 @@ void NpcShopLifecycle() {
     Check(ShopSystem::GetNPCVnum(shop) == 501, "shopkeeper vnum wrong");
     Check(!ShopSystem::IsPCShop(shop), "NPC shop counted as personal shop");
 
-    Check(ShopSystem::GetNumberByVnum(shop, 13001) == 5, "item count wrong");
-    Check(ShopSystem::GetNumberByVnum(shop, 13002) == 2, "second item count wrong");
-    Check(ShopSystem::GetNumberByVnum(shop, 13003) == 0, "unknown item counted");
+    const auto& stock = g_registry.get<ecs::ShopData>(shop).items;
+    Check(stock.size() >= 2, "NPC stock rows missing");
+    Check(stock[0].vnum == 13001 && stock[0].count == 5, "first item stock wrong");
+    Check(stock[1].vnum == 13002 && stock[1].count == 2, "second item stock wrong");
     Check(!ShopSystem::IsSellingItem(shop, 13001), "prototype shop reports item identity");
 
     // Second initialize on a populated manager is refused.
@@ -545,7 +546,7 @@ void DestroyReleasesEveryGuest() {
     Check(!ShopSystem::IsValid(shop), "destroy left the shop");
     ShopSystem::Destroy(shop);
     ShopSystem::RemoveGuest(shop, guests.front());
-    Check(ShopSystem::GetNumberByVnum(shop, 13001) == 0, "stale handle answered items");
+    Check(!ShopSystem::IsSellingItem(shop, 13001), "stale handle answered items");
 }
 
 auriga::player_session::Key NativeKey(entt::entity actor) {

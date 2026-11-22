@@ -163,7 +163,7 @@ bool PrepareTypedChatLinks(entt::entity sender, std::string_view message, std::s
     });
     if (prism == definitions.end())
     {
-        Tell(sender, "A tárgylink küldéséhez szükséges Prizma nem érhető el.");
+        Tell(sender, "A tárgylink küldéséhez szükséges Betekintés üvege nem érhető el.");
         return true;
     }
     const auto write = RequestTypedGameplayItemExchange(sender, {{prism->first, 0, links}}, {}, 0,
@@ -175,7 +175,7 @@ bool PrepareTypedChatLinks(entt::entity sender, std::string_view message, std::s
         });
     if (!write)
         Tell(sender, write.error() == items::ItemMissionError::Requirements
-            ? "A tárgylink küldéséhez Prizma szükséges." : "A tárgylink küldése most nem sikerült.");
+            ? "A tárgylink küldéséhez Betekintés üvege szükséges." : "A tárgylink küldése most nem sikerült.");
     return true;
 }
 

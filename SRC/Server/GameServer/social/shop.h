@@ -122,7 +122,6 @@ namespace ShopSystem
 #endif
 
 	void BroadcastUpdateItem(entt::entity shop, uint8_t pos);
-	int GetNumberByVnum(entt::entity shop, uint32_t dwVnum);
 	bool IsSellingItem(entt::entity shop, uint32_t itemID);
 }
 

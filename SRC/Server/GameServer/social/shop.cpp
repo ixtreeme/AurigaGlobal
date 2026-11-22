@@ -1148,27 +1148,6 @@ namespace ShopSystem
 		Broadcast(shopEntity, *shop, buf.read_peek(), buf.size());
 	}
 
-	int GetNumberByVnum(entt::entity shopEntity, uint32_t dwVnum)
-	{
-		ecs::ShopData* shop = Find(shopEntity);
-		if (!shop)
-			return 0;
-
-		int itemNumber = 0;
-
-		for (uint32_t i = 0; i < shop->items.size() && i < SHOP_HOST_ITEM_MAX_NUM; ++i)
-		{
-			const ecs::ShopItem & item = shop->items[i];
-
-			if (item.vnum == dwVnum)
-			{
-				itemNumber += item.count;
-			}
-		}
-
-		return itemNumber;
-	}
-
 	bool IsSellingItem(entt::entity shopEntity, uint32_t itemID)
 	{
 		ecs::ShopData* shop = Find(shopEntity);
