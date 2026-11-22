@@ -56,6 +56,18 @@ void ConvertEmpireText(uint32_t dwEmpireID, char* szText, size_t len, int iPct)
 
 	for (uint8_t* pbText = reinterpret_cast<uint8_t*>(szText) ; len > 0 && *pbText != '\0' ; --len, ++pbText)
 	{
+        const std::string_view remaining(reinterpret_cast<const char*>(pbText), len);
+        if (remaining.starts_with("|Hti:"))
+        {
+            const auto payloadEnd = remaining.find("|h", 5);
+            const auto labelEnd = payloadEnd == std::string_view::npos ? payloadEnd : remaining.find("|h", payloadEnd + 2);
+            if (labelEnd != std::string_view::npos)
+            {
+                pbText += labelEnd + 1;
+                len -= labelEnd + 1;
+                continue;
+            }
+        }
 		if (number(1,100) > iPct)
 		{
 			if (*pbText & 0x80)

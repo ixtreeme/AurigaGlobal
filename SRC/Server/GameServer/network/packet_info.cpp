@@ -5,6 +5,7 @@
 #include <item/NativeMoneyWire.hpp>
 #include <item/PrivateShopWire.hpp>
 #include "../item/TypedWikiSources.hpp"
+#include "../social/TypedChatLinks.hpp"
 
 #include <fmt/format.h>
 #include <fstream>
@@ -202,6 +203,7 @@ CPacketInfoCG::CPacketInfoCG()
     Set(HEADER_CG_TYPED_WIKI_LOOT, TypedWikiLootRequestSize, "TypedWikiLoot", true);
     Set(HEADER_CG_TYPED_WIKI_REFINES, TypedWikiRefinesRequestSize, "TypedWikiRefines", true);
     Set(HEADER_CG_TYPED_WIKI_CATALOG, TypedWikiCatalogRequestSize, "TypedWikiCatalog", true);
+    Set(HEADER_CG_TYPED_CHAT_ITEM, TypedChatItemRequestSize, "TypedChatItem", true);
     Set(HEADER_CG_TYPED_WIKI_PREVIEW, TypedWikiPreviewRequestSize, "TypedWikiPreview", true);
     Set(HEADER_CG_TYPED_SOUL, 28, "TypedSpecialBonuses", true);
     Set(HEADER_CG_TYPED_ATTRIBUTES, sizeof(TPacketCGTypedAttributes), "TypedAttributes", true);

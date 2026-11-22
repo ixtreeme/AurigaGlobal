@@ -16,7 +16,7 @@ target_link_libraries(GameServer PRIVATE EnTT::EnTT)
 # Typed item catalog (item system F4): read and validated at boot when enabled.
 target_link_libraries(GameServer PRIVATE AurigaItemCatalogSql AurigaItemPersistenceSql)
 target_sources(GameServer PRIVATE world/AtlasActions.cpp item/TypedWorldUtilities.cpp item/TypedDungeonItems.cpp item/TypedCostumeTransfer.cpp)
-target_sources(GameServer PRIVATE social/SocialActions.cpp item/TypedStoneExchange.cpp)
+target_sources(GameServer PRIVATE social/SocialActions.cpp social/TypedChatLinks.cpp item/TypedStoneExchange.cpp)
 target_sources(GameServer PRIVATE social/SocialHistory.cpp social/SocialHistoryCrypto.cpp)
 target_sources(GameServer PRIVATE dungeon/DungeonUi.cpp)
 target_sources(GameServer PRIVATE combat/DeathRecap.cpp)

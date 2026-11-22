@@ -98,6 +98,7 @@
 #include "../item/TypedItemMissions.hpp"
 #include "../item/TypedContainerOpening.hpp"
 #include "../item/TypedWikiSources.hpp"
+#include "../social/TypedChatLinks.hpp"
 #include "../item/TypedTokenRedemption.hpp"
 #include "../item/TypedMoney.hpp"
 #include "../item/TypedPrivateShops.hpp"
@@ -355,6 +356,9 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		case HEADER_CG_TYPED_ITEM_REFINE:
 			HandleTypedItemRefinePacket(character, c_pData);
 			break;
+        case HEADER_CG_TYPED_CHAT_ITEM:
+            HandleTypedChatItem(character, c_pData);
+            break;
         case HEADER_CG_TYPED_WIKI_PREVIEW:
             HandleTypedWikiPreview(character, c_pData);
             break;

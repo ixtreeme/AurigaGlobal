@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "SocialActions.hpp"
 #include "SocialHistory.hpp"
+#include "TypedChatLinks.hpp"
 #include <Core/Logging.hpp>
 #include "input.h"
 #include "../ecs/Registry.hpp"
@@ -185,117 +186,31 @@ static bool SpamBlockCheck(entt::entity chEntity, const char* const buf, const s
 	return false;
 }
 
-enum
+namespace
 {
-	TEXT_TAG_PLAIN,
-	TEXT_TAG_TAG, // ||
-	TEXT_TAG_COLOR, // |cffffffff
-	TEXT_TAG_HYPERLINK_START, // |H
-	TEXT_TAG_HYPERLINK_END, // |h ex) |Hitem:1234:1:1:1|h
-	TEXT_TAG_RESTORE_COLOR,
-};
-
-int GetTextTag(const char * src, int maxLen, int & tagLen, std::string & extraInfo)
+template <std::size_t Size>
+void CopyChatBody(char (&buffer)[Size], const char* body, std::size_t bodySize)
 {
-	tagLen = 1;
-
-	if (maxLen < 2 || *src != '|')
-		return TEXT_TAG_PLAIN;
-
-	const char * cur = ++src;
-
-	if (*cur == '|')
-	{
-		tagLen = 2;
-		return TEXT_TAG_TAG;
-	}
-	else if (*cur == 'c') // color |cffffffffblahblah|r
-	{
-		tagLen = 2;
-		return TEXT_TAG_COLOR;
-	}
-	else if (*cur == 'H')
-	{
-		tagLen = 2;
-		return TEXT_TAG_HYPERLINK_START;
-	}
-	else if (*cur == 'h') // end of hyperlink
-	{
-		tagLen = 2;
-		return TEXT_TAG_HYPERLINK_END;
-	}
-
-	return TEXT_TAG_PLAIN;
+    const auto length = std::min(bodySize, Size - 1);
+    std::memcpy(buffer, body, length);
+    buffer[length] = '\0';
 }
 
-
-void GetTextTagInfo(const char * src, int src_len, int & hyperlinks, bool & colored)
+template <typename Packet>
+std::vector<char> ChatPacketWithBody(Packet header, const std::string& text)
 {
-	colored = false;
-	hyperlinks = 0;
-
-	int len;
-	std::string extraInfo;
-
-	for (int i = 0; i < src_len;)
-	{
-		int tag = GetTextTag(&src[i], src_len - i, len, extraInfo);
-
-		if (tag == TEXT_TAG_HYPERLINK_START)
-			++hyperlinks;
-
-		if (tag == TEXT_TAG_COLOR)
-			colored = true;
-
-		i += len;
-	}
+    std::vector<char> packet(sizeof(header) + text.size() + 1);
+    if constexpr (std::is_same_v<Packet, TPacketCGChat>)
+        header.size = static_cast<std::uint16_t>(packet.size());
+    else
+        header.wSize = static_cast<std::uint16_t>(packet.size());
+    std::memcpy(packet.data(), &header, sizeof(header));
+    std::memcpy(packet.data() + sizeof(header), text.c_str(), text.size() + 1);
+    return packet;
 }
 
-static int ProcessTextTag(entt::entity character, const char * c_pszText, uint64_t len)
-{
-	if (!ecs::PlayerRuntime::IsPC(character))
-		return 4;
-	int hyperlinks;
-	bool colored;
+int HandleWhisper(entt::entity character, const char* data, uint64_t uiBytes, bool prepared)
 
-	GetTextTagInfo(c_pszText, len, hyperlinks, colored);
-
-	if (colored == true && hyperlinks == 0)
-		return 4;
-
-#ifdef ENABLE_NEWSTUFF
-	if (g_bDisablePrismNeed)
-		return 0;
-#endif
-	int nPrismCount = ItemSystem::CountItem(character, ITEM_PRISM);
-
-	if (nPrismCount < hyperlinks)
-		return 1;
-
-
-	if (ecs::SocialSystem::GetMyShop(character) == entt::null)
-	{
-		if (hyperlinks > 0 && !ItemSystem::RemoveSpecifyItemEcs(character, ITEM_PRISM, hyperlinks))
-			return 1;
-		return 0;
-	} else
-	{
-		int sellingNumber = ShopSystem::GetNumberByVnum(ecs::SocialSystem::GetMyShop(character), ITEM_PRISM);
-		if(nPrismCount - sellingNumber < hyperlinks)
-		{
-			return 2;
-		} else
-		{
-			if (hyperlinks > 0 && !ItemSystem::RemoveSpecifyItemEcs(character, ITEM_PRISM, hyperlinks))
-				return 1;
-			return 0;
-		}
-	}
-
-	return 4;
-}
-
-int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBytes)
 {
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Whisper handler ECS
@@ -369,7 +284,6 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 		if (pkCCI)
 		{
 			pkDesc = pkCCI->pkDesc;
-			pkDesc->SetRelay(pinfo->szNameTo);
 			bOpponentEmpire = pkCCI->bEmpire;
 
 			if (test_server)
@@ -392,32 +306,18 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 			if (get_dword_time() - ecs::ChatSystem::GetLastOfflineMessageTime(character) > bDelay * 1000)
 			{
 				char buf[CHAT_MAX_LEN + 1];
-				strlcpy(buf, data + sizeof(TPacketCGWhisper), MIN(iExtraLen + 1, sizeof(buf)));
+				CopyChatBody(buf, data + sizeof(TPacketCGWhisper), iExtraLen);
 				const uint64_t buflen = strlen(buf);
-				CBanwordManager::instance().ConvertString(buf, buflen);
-				int processReturn = ProcessTextTag(character, buf, buflen);
-
-				if (0 != processReturn)
-				{
-					TItemTable* pTable = ITEM_MANAGER::instance().GetTable(ITEM_PRISM);
-					if (pTable) {
-#ifdef ENABLE_MULTI_NAMES
-						int Lang = ecs::IsCharacter(character) && ecs::PlayerRuntime::GetDesc(character) ? ecs::PlayerRuntime::GetDesc(character)->GetLanguage() : 0;
-#endif
-#ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 823, "%s",
-#ifdef ENABLE_MULTI_NAMES
-						pTable->szLocaleName[Lang]
-#else
-						pTable->szLocaleName
-#endif
-						);
-#endif
-					}
-
-					return (iExtraLen);
-				}
-
+                if (!prepared)
+                {
+                    CBanwordManager::instance().ConvertString(buf, buflen);
+                    if (PrepareTypedChatLinks(character, std::string_view(buf, buflen), CHAT_MAX_LEN - 1,
+                        [character, packet = *pinfo](std::string text) {
+                            const auto wire = ChatPacketWithBody(packet, text);
+                            HandleWhisper(character, wire.data(), wire.size(), true);
+                        }))
+                        return iExtraLen;
+                }
 				if (buflen > 0)
 				{
 					if(!SavePrivateHistory(character,pinfo->szNameTo,std::string(buf,buflen)))return iExtraLen;
@@ -487,10 +387,10 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 			uint8_t bType = WHISPER_TYPE_NORMAL;
 
 			char buf[CHAT_MAX_LEN + 1];
-			strlcpy(buf, data + sizeof(TPacketCGWhisper), MIN(iExtraLen + 1, sizeof(buf)));
+			CopyChatBody(buf, data + sizeof(TPacketCGWhisper), iExtraLen);
 			const uint64_t buflen = strlen(buf);
 
-			if (true == SpamBlockCheck(character, buf, buflen))
+			if (!prepared && SpamBlockCheck(character, buf, buflen))
 			{
 				if (chr == entt::null)
 				{
@@ -504,7 +404,16 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 				return iExtraLen;
 			}
 
-			CBanwordManager::instance().ConvertString(buf, buflen);
+            if (!prepared)
+            {
+                CBanwordManager::instance().ConvertString(buf, buflen);
+                if (PrepareTypedChatLinks(character, std::string_view(buf, buflen), CHAT_MAX_LEN - 1,
+                    [character, packet = *pinfo](std::string text) {
+                        const auto wire = ChatPacketWithBody(packet, text);
+                        HandleWhisper(character, wire.data(), wire.size(), true);
+                    }))
+                    return iExtraLen;
+            }
 
 			const std::string historyBody(buf,buflen);
 			if (g_bEmpireWhisper)
@@ -523,32 +432,6 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 							}
 						}
 
-			int processReturn = ProcessTextTag(character, buf, buflen);
-			if (0!=processReturn)
-			{
-				if (ecs::PlayerRuntime::GetDesc(character))
-				{
-					TItemTable * pTable = ITEM_MANAGER::instance().GetTable(ITEM_PRISM);
-
-					if (pTable)
-					{
-#ifdef ENABLE_MULTI_NAMES
-						int Lang = ecs::IsCharacter(character) && ecs::PlayerRuntime::GetDesc(character) ? ecs::PlayerRuntime::GetDesc(character)->GetLanguage() : 0;
-#endif
-						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 823, "%s",
-#ifdef ENABLE_MULTI_NAMES
-						pTable->szLocaleName[Lang]
-#else
-						pTable->szLocaleName
-#endif
-						);
-					}
-				}
-
-				pkDesc->SetRelay("");
-				return (iExtraLen);
-			}
-
 			if (ecs::PlayerRuntime::IsGM(character))
 				bType = (bType & 0xF0) | WHISPER_TYPE_GM;
 
@@ -566,6 +449,8 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 				tmpbuf.write(&pack, sizeof(pack));
 				tmpbuf.write(buf, buflen);
 
+                if (chr == entt::null)
+                    pkDesc->SetRelay(pinfo->szNameTo);
 				pkDesc->Packet(tmpbuf.read_peek(), tmpbuf.size());
 
 				// @warme006
@@ -653,7 +538,7 @@ struct FEmpireChatPacket
     }
 };
 
-int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes)
+int HandleChat(entt::entity character, const char* data, uint32_t uiBytes, bool prepared)
 {
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Chat handler ECS
@@ -673,7 +558,7 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 	}
 
 	char buf[CHAT_MAX_LEN - (CHARACTER_NAME_MAX_LEN + 3) + 1];
-	strlcpy(buf, data + sizeof(TPacketCGChat), MIN(iExtraLen + 1, sizeof(buf)));
+	CopyChatBody(buf, data + sizeof(TPacketCGChat), iExtraLen);
 	const uint64_t buflen = strlen(buf);
 
 	if (buflen > 1 && *buf == '/')
@@ -697,40 +582,19 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 		return iExtraLen;
 	}
 
-	if (true == SpamBlockCheck(character, buf, buflen))
-	{
-		return iExtraLen;
-	}
-
-	// @fixme133 begin
-	CBanwordManager::instance().ConvertString(buf, buflen);
-
-	int processReturn = ProcessTextTag(character, buf, buflen);
-	if (0!=processReturn)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		const TItemTable* pTable = ITEM_MANAGER::instance().GetTable(ITEM_PRISM);
-		if (nullptr != pTable)
-		{
-#ifdef ENABLE_MULTI_NAMES
-			int lang = 0;
-			if (ecs::IsCharacter(character)) {
-				LPDESC desc = ecs::PlayerRuntime::GetDesc(character);
-				lang = desc != nullptr ? desc->GetLanguage() : 0;
-			}
-#endif
-			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 642, "%s",
-#ifdef ENABLE_MULTI_NAMES
-			pTable->szLocaleName[lang]
-#else
-			pTable->szLocaleName
-#endif
-			);
-		}
-#endif
-		return iExtraLen;
-	}
-	// @fixme133 end
+    if (!prepared)
+    {
+        if (SpamBlockCheck(character, buf, buflen))
+            return iExtraLen;
+        CBanwordManager::instance().ConvertString(buf, buflen);
+        // Space for the channel, speaker name and rank labels added below.
+        if (PrepareTypedChatLinks(character, std::string_view(buf, buflen), CHAT_MAX_LEN - 128,
+            [character, packet = *pinfo](std::string text) {
+                const auto wire = ChatPacketWithBody(packet, text);
+                HandleChat(character, wire.data(), static_cast<std::uint32_t>(wire.size()), true);
+            }))
+            return iExtraLen;
+    }
 
 	char chatbuf[CHAT_MAX_LEN + 1];
 	//static const char* colorbuf[] = {"|cFFffa200|H|h[Staff]|h|r", "|cFFff0000|H|h[Shinsoo]|h|r", "|cFFffc700|H|h[Chunjo]|h|r", "|cFF000bff|H|h[Jinno]|h|r"};
@@ -1065,4 +929,16 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 	}
 
 	return (iExtraLen);
+}
+
+} // namespace
+
+int CInputMain::Whisper(entt::entity character, const char* data, uint64_t size)
+{
+    return HandleWhisper(character, data, size, false);
+}
+
+int CInputMain::Chat(entt::entity character, const char* data, uint32_t size)
+{
+    return HandleChat(character, data, size, false);
 }
