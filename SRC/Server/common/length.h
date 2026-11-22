@@ -1061,11 +1061,10 @@ enum biologAffect {
 	AFFECT_BIOLOGIST_16 = 666
 };
 
-static const double biologistMissionInfo[16][15] =
+static const double biologistMissionInfo[16][14] =
 {
 	// missioneID: 0
 	{
-		30006,						// il vnum del item richiesto per la missione.
 		10,							// il contaggio dei item richiesti per completare la missione.
 		900,
 		APPLY_MAX_HP,				// il primo bonus ricompensa.
@@ -1076,14 +1075,13 @@ static const double biologistMissionInfo[16][15] =
 		0,							// il terzo valore del bonus ricompensa.
 		APPLY_NONE,					// il quarto bonus ricompensa.
 		0,							// il quarto valore del bonus ricompensa.
-		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus (piu avra la posibilita di cambiarlo tramite: 164401).
+		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus.
 		30,							// il livello minimo per fare la missione.
 		75,							// % di successo per la consegna.
 		AFFECT_BIOLOGIST_1,			// l'affetto su cui va stoccato il bonus.
 	},
 	// missioneID: 1
 	{
-		30047,						// il vnum del item richiesto per la missione.
 		15,							// il contaggio dei item richiesti per completare la missione.
 		900,
 		APPLY_DEF_GRADE_BONUS,		// il primo bonus ricompensa.
@@ -1094,14 +1092,13 @@ static const double biologistMissionInfo[16][15] =
 		0,							// il terzo valore del bonus ricompensa.
 		APPLY_NONE,					// il quarto bonus ricompensa.
 		0,							// il quarto valore del bonus ricompensa.
-		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus (piu avra la posibilita di cambiarlo tramite: 164401).
+		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus.
 		40,							// il livello minimo per fare la missione.
 		70,							// % di successo per la consegna.
 		AFFECT_BIOLOGIST_2,			// l'affetto su cui va stoccato il bonus.
 	},
 	// missioneID: 2
 	{
-		30015,						// il vnum del item richiesto per la missione.
 		15,							// il contaggio dei item richiesti per completare la missione.
 		900,						// il tempo d'attessa per consegnare l'item (in secondi).
 		APPLY_ATT_GRADE_BONUS,		// il primo bonus ricompensa.
@@ -1112,14 +1109,13 @@ static const double biologistMissionInfo[16][15] =
 		0,							// il terzo valore del bonus ricompensa.
 		APPLY_NONE,					// il quarto bonus ricompensa.
 		0,							// il quarto valore del bonus ricompensa.
-		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus (piu avra la posibilita di cambiarlo tramite: 164401).
+		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus.
 		50,							// il livello minimo per fare la missione.
 		65,							// % di successo per la consegna.
 		AFFECT_BIOLOGIST_3,			// l'affetto su cui va stoccato il bonus.
 	},
 	// missioneID: 3
 	{
-		30050,						// il vnum del item richiesto per la missione.
 		20,							// il contaggio dei item richiesti per completare la missione.
 		900,						// il tempo d'attessa per consegnare l'item (in secondi).
 #ifdef ENABLE_MEDI_PVM
@@ -1134,14 +1130,13 @@ static const double biologistMissionInfo[16][15] =
 		0,							// il terzo valore del bonus ricompensa.
 		APPLY_NONE,					// il quarto bonus ricompensa.
 		0,							// il quarto valore del bonus ricompensa.
-		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus (piu avra la posibilita di cambiarlo tramite: 164401).
+		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus.
 		60,							// il livello minimo per fare la missione.
 		50,							// % di successo per la consegna.
 		AFFECT_BIOLOGIST_4,			// l'affetto su cui va stoccato il bonus.
 	},
 	// missioneID: 4
 	{
-		30165,						// il vnum del item richiesto per la missione.
 		20,							// il contaggio dei item richiesti per completare la missione.
 		1800,						// il tempo d'attessa per consegnare l'item (in secondi).
 		APPLY_ATTBONUS_MONSTER,		// il primo bonus ricompensa.
@@ -1152,14 +1147,13 @@ static const double biologistMissionInfo[16][15] =
 		0,							// il terzo valore del bonus ricompensa.
 		APPLY_NONE,					// il quarto bonus ricompensa.
 		0,							// il quarto valore del bonus ricompensa.
-		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus (piu avra la posibilita di cambiarlo tramite: 164401).
+		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus.
 		70,							// il livello minimo per fare la missione.
 		50,							// % di successo per la consegna.
 		AFFECT_BIOLOGIST_5,			// l'affetto su cui va stoccato il bonus.
 	},
 	// missioneID: 5
 	{
-		30166,						// il vnum del item richiesto per la missione.
 		25,							// il contaggio dei item richiesti per completare la missione.
 		1800,						// il tempo d'attessa per consegnare l'item (in secondi).
 #ifdef ENABLE_STRONG_METIN
@@ -1174,14 +1168,13 @@ static const double biologistMissionInfo[16][15] =
 		0,							// il terzo valore del bonus ricompensa.
 		APPLY_NONE,					// il quarto bonus ricompensa.
 		0,							// il quarto valore del bonus ricompensa.
-		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus (piu avra la posibilita di cambiarlo tramite: 164401).
+		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus.
 		80,							// il livello minimo per fare la missione.
 		50,							// % di successo per la consegna.
 		AFFECT_BIOLOGIST_6,			// l'affetto su cui va stoccato il bonus.
 	},
 	// missioneID: 6
 	{
-		30167,						// il vnum del item richiesto per la missione.
 		30,							// il contaggio dei item richiesti per completare la missione.
 		3000,						// il tempo d'attessa per consegnare l'item (in secondi).
 #ifdef ENABLE_STRONG_BOSS
@@ -1196,14 +1189,13 @@ static const double biologistMissionInfo[16][15] =
 		0,							// il terzo valore del bonus ricompensa.
 		APPLY_NONE,					// il quarto bonus ricompensa.
 		0,							// il quarto valore del bonus ricompensa.
-		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus (piu avra la posibilita di cambiarlo tramite: 164401).
+		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus.
 		85,							// il livello minimo per fare la missione.
 		50,							// % di successo per la consegna.
 		AFFECT_BIOLOGIST_7,			// l'affetto su cui va stoccato il bonus.
 	},
 	// missioneID: 7
 	{
-		30168,						// il vnum del item richiesto per la missione.
 		30,							// il contaggio dei item richiesti per completare la missione.
 		3000,						// il tempo d'attessa per consegnare l'item (in secondi).
 #ifdef ENABLE_RESIST_MONSTER
@@ -1218,14 +1210,13 @@ static const double biologistMissionInfo[16][15] =
 		0,							// il terzo valore del bonus ricompensa.
 		APPLY_NONE,					// il quarto bonus ricompensa.
 		0,							// il quarto valore del bonus ricompensa.
-		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus (piu avra la posibilita di cambiarlo tramite: 164401).
+		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus.
 		90,							// il livello minimo per fare la missione.
 		50,							// % di successo per la consegna.
 		AFFECT_BIOLOGIST_8,			// l'affetto su cui va stoccato il bonus.
 	},
 	// missioneID: 8
 	{
-		30251,						// il vnum del item richiesto per la missione.
 		30,							// il contaggio dei item richiesti per completare la missione.
 		7200,						// il tempo d'attessa per consegnare l'item (in secondi).
 		APPLY_ATTBONUS_WARRIOR,		// il primo bonus ricompensa.
@@ -1236,14 +1227,13 @@ static const double biologistMissionInfo[16][15] =
 		3,							// il terzo valore del bonus ricompensa.
 		APPLY_ATTBONUS_SHAMAN,		// il quarto bonus ricompensa.
 		3,							// il quarto valore del bonus ricompensa.
-		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus (piu avra la posibilita di cambiarlo tramite: 164401).
+		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus.
 		95,							// il livello minimo per fare la missione.
 		50,							// % di successo per la consegna.
 		AFFECT_BIOLOGIST_9,			// l'affetto su cui va stoccato il bonus.
 	},
 	// missioneID: 9
 	{
-		30252,						// il vnum del item richiesto per la missione.
 		35,							// il contaggio dei item richiesti per completare la missione.
 		7200,						// il tempo d'attessa per consegnare l'item (in secondi).
 		APPLY_RESIST_WARRIOR,		// il primo bonus ricompensa.
@@ -1254,14 +1244,13 @@ static const double biologistMissionInfo[16][15] =
 		3,							// il terzo valore del bonus ricompensa.
 		APPLY_RESIST_SHAMAN,		// il quarto bonus ricompensa.
 		3,							// il quarto valore del bonus ricompensa.
-		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus (piu avra la posibilita di cambiarlo tramite: 164401).
+		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus.
 		100,						// il livello minimo per fare la missione.
 		50,							// % di successo per la consegna.
 		AFFECT_BIOLOGIST_10,		// l'affetto su cui va stoccato il bonus.
 	},
 	// missioneID: 10
 	{
-		30002,						// il vnum del item richiesto per la missione.
 		35,							// il contaggio dei item richiesti per completare la missione.
 		10800,						// il tempo d'attessa per consegnare l'item (in secondi).
 		APPLY_MAX_HP,				// il primo bonus ricompensa.
@@ -1272,14 +1261,13 @@ static const double biologistMissionInfo[16][15] =
 		20,							// il terzo valore del bonus ricompensa.
 		APPLY_NONE,					// il quarto bonus ricompensa.
 		0,							// il quarto valore del bonus ricompensa.
-		1,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus (piu avra la posibilita di cambiarlo tramite: 164401).
+		1,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus.
 		105,						// il livello minimo per fare la missione.
 		50,							// % di successo per la consegna.
 		AFFECT_BIOLOGIST_11,		// l'affetto su cui va stoccato il bonus.
 	},
 	// missioneID: 11
 	{
-		30003,						// il vnum del item richiesto per la missione.
 		35,							// il contaggio dei item richiesti per completare la missione.
 		10800,						// il tempo d'attessa per consegnare l'item (in secondi).
 		APPLY_MAX_HP,				// il primo bonus ricompensa.
@@ -1290,14 +1278,13 @@ static const double biologistMissionInfo[16][15] =
 		20,							// il terzo valore del bonus ricompensa.
 		APPLY_NONE,					// il quarto bonus ricompensa.
 		0,							// il quarto valore del bonus ricompensa.
-		1,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus (piu avra la posibilita di cambiarlo tramite: 164401).
+		1,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus.
 		110,						// il livello minimo per fare la missione.
 		50,							// % di successo per la consegna.
 		AFFECT_BIOLOGIST_12,		// l'affetto su cui va stoccato il bonus.
 	},
 	// missioneID: 12
 	{
-		30004,						// il vnum del item richiesto per la missione.
 		40,							// il contaggio dei item richiesti per completare la missione.
 		14400,						// il tempo d'attessa per consegnare l'item (in secondi).
 		APPLY_ATTBONUS_HUMAN,		// il primo bonus ricompensa.
@@ -1308,14 +1295,13 @@ static const double biologistMissionInfo[16][15] =
 		0,							// il terzo valore del bonus ricompensa.
 		APPLY_NONE,					// il quarto bonus ricompensa.
 		0,							// il quarto valore del bonus ricompensa.
-		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus (piu avra la posibilita di cambiarlo tramite: 164401).
+		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus.
 		115,						// il livello minimo per fare la missione.
 		50,							// % di successo per la consegna.
 		AFFECT_BIOLOGIST_13,		// l'affetto su cui va stoccato il bonus.
 	},
 	// missioneID: 13
 	{
-		30005,						// il vnum del item richiesto per la missione.
 		45,							// il contaggio dei item richiesti per completare la missione.
 		18000,						// il tempo d'attessa per consegnare l'item (in secondi).
 		APPLY_ATTBONUS_MONSTER,		// il primo bonus ricompensa.
@@ -1330,14 +1316,13 @@ static const double biologistMissionInfo[16][15] =
 		0,							// il terzo valore del bonus ricompensa.
 		APPLY_NONE,					// il quarto bonus ricompensa.
 		0,							// il quarto valore del bonus ricompensa.
-		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus (piu avra la posibilita di cambiarlo tramite: 164401).
+		0,							// 0 = tutti i bonus verrano dati al player | 1 = il player deve scegliere uno bonus.
 		120,						// il livello minimo per fare la missione.
 		50,							// % di successo per la consegna.
 		AFFECT_BIOLOGIST_14,		// l'affetto su cui va stoccato il bonus.
 	},
 	// missioneID: 14
 	{
-		8883,						// required item vnum
 			50,							// required count
 			21600,						// wait time (6 ora)
 			APPLY_ATTBONUS_METIN,		// 1. bonus
@@ -1355,7 +1340,6 @@ static const double biologistMissionInfo[16][15] =
 	},
 	// missioneID: 15
 	{
-		8884,						// required item vnum
 		55,							// required count
 		25200,						// wait time (7 ora)
 		APPLY_ATTBONUS_HUMAN,		// 1. bonus

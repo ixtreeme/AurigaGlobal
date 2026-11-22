@@ -3990,12 +3990,12 @@ teleport_area:
 			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologistch_clear");
 			int type = APPLY_NONE, last = 0;
 			for (int i = 0; i < 16; i++) {
-				if (static_cast<int>(biologistMissionInfo[i][11]) == 1) {
+				if (static_cast<int>(biologistMissionInfo[i][10]) == 1) {
 					if (ecs::QuestSystem::GetFlag(character, "biologist.stat") > i) {
 						for (int j = 0; j < 4; j++) {
-							type = biologistMissionInfo[i][3 + (j * 2)];
+							type = biologistMissionInfo[i][2 + (j * 2)];
 							if (type != APPLY_NONE) {
-								CAffect * pkAff = AffectSystem::FindAffect(character, static_cast<int>(biologistMissionInfo[i][14]), aApplyInfo[type].bPointType);
+								CAffect * pkAff = AffectSystem::FindAffect(character, static_cast<int>(biologistMissionInfo[i][13]), aApplyInfo[type].bPointType);
 								if (pkAff) {
 									continue;
 								}
@@ -4004,7 +4004,7 @@ teleport_area:
 									last = 1;
 								}
 
-								ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologistch_append %d#%d#%.3f#%d", i, type, biologistMissionInfo[i][4 + (j * 2)], j);
+								ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologistch_append %d#%d#%.3f#%d", i, type, biologistMissionInfo[i][3 + (j * 2)], j);
 							}
 						}
 					}

@@ -15,6 +15,11 @@
 #include "../item/ItemCatalogRuntime.hpp"
 #include "../item/ItemStore.hpp"
 #include "../item/TypedQuestItems.hpp"
+#include "../network/desc.h"
+#include <Headers/Header_GC.h>
+#include <item/ItemWireCodec.hpp>
+#include <item/TypedItemDetails.hpp>
+#include <cmath>
 #include "../ecs/AIHelpers.hpp"
 #include <common/service.h>
 #include <common/CommonDefines.h>
@@ -218,6 +223,71 @@ constexpr std::array<std::string_view, 16> BiologistSpecimens{
 };
 constexpr std::string_view BiologistElixir = "catalog.6.researcher_s_elixir_27e7eeaa51fc";
 constexpr std::string_view BiologistElixirPlus = "catalog.6.researcher_s_elixir_7f2fb2106e29";
+constexpr std::string_view BiologistBonusChanger = "catalog.10.magic_of_the_biologist_ed2ba53b116d";
+
+const auriga::item::ItemCatalogEntry* FindBiologistItem(const auriga::item::ItemCatalog& catalog, std::string_view code)
+{
+    const auto& entries = catalog.Entries();
+    const auto entry = std::ranges::find_if(entries, [&](const auto& row) { return row.second.base.contentCode == code; });
+    return entry != entries.end() && !entry->second.base.retired && catalog.RefinedBaseStats(entry->first, 0)
+        ? &entry->second : nullptr;
+}
+
+void SendTypedBiologist(entt::entity character, int mission, bool open)
+{
+    namespace item = auriga::item;
+    auto* desc = ecs::PlayerRuntime::GetDesc(character);
+    const auto catalog = item::runtime::CurrentCatalog();
+    if (!catalog || !desc || !desc->IsPhase(PHASE_GAME))
+        return;
+
+    const auto& row = biologistMissionInfo[mission];
+    const int required = static_cast<int>(row[0]);
+    const int delivered = std::clamp<std::int64_t>(ecs::QuestSystem::GetFlag(character, "biologist.delivered"), 0, required);
+    const auto waitUntil = std::max<std::int64_t>(0, ecs::QuestSystem::GetFlag(character, "biologist.time"));
+
+    std::vector<std::byte> bytes;
+    const auto put = [&](std::uint64_t value, unsigned width) {
+        for (unsigned i = 0; i < width; ++i)
+            bytes.push_back(static_cast<std::byte>((value >> (8 * i)) & 0xff));
+    };
+    put(HEADER_GC_TYPED_BIOLOGIST, 1);
+    put(0, 4);
+    put(1, 1);
+    put(open, 1);
+    put(mission, 1);
+    put(required, 2);
+    put(delivered, 2);
+    put(waitUntil, 8);
+    put(static_cast<int>(row[10]), 1);
+    for (int i = 0; i < 4; ++i)
+    {
+        put(static_cast<int>(row[2 + i * 2]), 2);
+        put(static_cast<std::uint32_t>(std::lround(row[3 + i * 2] * 1000.0)), 4);
+    }
+
+    std::vector<item::ItemGrant> preview;
+    for (const auto code : {BiologistSpecimens[mission], BiologistElixir, BiologistElixirPlus})
+    {
+        const auto* definition = FindBiologistItem(*catalog, code);
+        if (!definition)
+        {
+            put(0, 6);
+            continue;
+        }
+        const auto key = definition->base.key;
+        const auto encoded = item::EncodeItemKey(key);
+        bytes.insert(bytes.end(), encoded.begin(), encoded.end());
+        preview.push_back({key, 0, 1});
+    }
+    const auto details = item::EncodeTypedItemDetails(*catalog, {}, false, preview);
+    if (!details || bytes.size() + details->size() > (1u << 20))
+        return;
+    bytes.insert(bytes.end(), details->begin(), details->end());
+    for (unsigned i = 0; i < 4; ++i)
+        bytes[1 + i] = static_cast<std::byte>((bytes.size() >> (8 * i)) & 0xff);
+    desc->LargePacket(bytes.data(), static_cast<int>(bytes.size()));
+}
 }
 
 ACMD(do_open_biologist) {
@@ -225,24 +295,20 @@ ACMD(do_open_biologist) {
 		return;
 
 	int stat = ecs::QuestSystem::GetFlag(character, "biologist.stat");
-	if (stat > 15) {
+	if (stat < 0 || stat >= static_cast<int>(BiologistSpecimens.size())) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 867, "");
 #endif
 		return;
 	}
-	int min = static_cast<int>(biologistMissionInfo[stat][12]);
+	int min = static_cast<int>(biologistMissionInfo[stat][11]);
 	if ((ecs::PointSystem::GetLevel(character)) < min) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 861, "%d", min);
 #endif
 		return;
 	}
-	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologist_reward %d#%d#%.3f#%d#%.3f#%d#%.3f#%d#%.3f", static_cast<int>(biologistMissionInfo[stat][11]), static_cast<int>(biologistMissionInfo[stat][3]), biologistMissionInfo[stat][4], static_cast<int>(biologistMissionInfo[stat][5]), biologistMissionInfo[stat][6], static_cast<int>(biologistMissionInfo[stat][7]), biologistMissionInfo[stat][8], static_cast<int>(biologistMissionInfo[stat][9]), biologistMissionInfo[stat][10]);
-	int time = ecs::QuestSystem::GetFlag(character, "biologist.time");
-	time = time > 0 ? time : 0;
-	int count = ecs::QuestSystem::GetFlag(character, "biologist.delivered");
-	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologist %d#%d#%d#%d#%d#%d#%d", stat, static_cast<int>(biologistMissionInfo[stat][0]), static_cast<int>(biologistMissionInfo[stat][1]), count, static_cast<int>(biologistMissionInfo[stat][2]), time, static_cast<int>(biologistMissionInfo[stat][1])-count > 0 ? 0 : 1);
+	SendTypedBiologist(character, stat, true);
 }
 
 ACMD(do_delivery_biologist) {
@@ -262,7 +328,7 @@ ACMD(do_delivery_biologist) {
 #endif
 		return;
 	}
-	int min = static_cast<int>(biologistMissionInfo[stat][12]);
+	int min = static_cast<int>(biologistMissionInfo[stat][11]);
 	if ((ecs::PointSystem::GetLevel(character)) < min) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 861, "%d", min);
@@ -271,7 +337,7 @@ ACMD(do_delivery_biologist) {
 	}
 
 	int count = ecs::QuestSystem::GetFlag(character, "biologist.delivered");
-	if (count >= static_cast<int>(biologistMissionInfo[stat][1])) {
+	if (count >= static_cast<int>(biologistMissionInfo[stat][0])) {
 		return;
 	}
 
@@ -327,9 +393,9 @@ ACMD(do_delivery_biologist) {
 		costs.push_back({*aid, 0, 1});
 	}
 
-	const int chance = potion ? 100 : static_cast<int>(biologistMissionInfo[stat][13]);
-	const int required = static_cast<int>(biologistMissionInfo[stat][1]);
-	const int cooldown = static_cast<int>(biologistMissionInfo[stat][2]);
+	const int chance = potion ? 100 : static_cast<int>(biologistMissionInfo[stat][12]);
+	const int required = static_cast<int>(biologistMissionInfo[stat][0]);
+	const int cooldown = static_cast<int>(biologistMissionInfo[stat][1]);
 	const auto exchange = RequestTypedGameplayItemExchange(character, std::move(costs), {}, 0,
 		[character, count, required, cooldown, success = number(1, 100) <= chance](bool written) {
 			if (!written) {
@@ -364,22 +430,22 @@ ACMD(do_reward_biologist) {
 		return;
 
 	int stat = ecs::QuestSystem::GetFlag(character, "biologist.stat");
-	if (stat > 15) {
+	if (stat < 0 || stat >= static_cast<int>(BiologistSpecimens.size())) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 867, "");
 #endif
 		return;
 	}
 	int count = ecs::QuestSystem::GetFlag(character, "biologist.delivered");
-	if (static_cast<int>(biologistMissionInfo[stat][1])-count > 0) {
+	if (static_cast<int>(biologistMissionInfo[stat][0])-count > 0) {
 		return;
 	}
 
 	int iarg1 = 0;
 	str_to_number(iarg1, arg1);
-	if (static_cast<int>(biologistMissionInfo[stat][11]) == 0 && iarg1 != 999) {
+	if (static_cast<int>(biologistMissionInfo[stat][10]) == 0 && iarg1 != 999) {
 		return;
-	} else if (static_cast<int>(biologistMissionInfo[stat][11]) == 1) {
+	} else if (static_cast<int>(biologistMissionInfo[stat][10]) == 1) {
 		if (iarg1 < 0 || iarg1 > 3) {
 			return;
 		}
@@ -390,28 +456,28 @@ ACMD(do_reward_biologist) {
 	ecs::QuestSystem::SetFlag(character, "biologist.time", 0);
 	ecs::QuestSystem::SetFlag(character, "biologist.delivered", 0);
 	if (newstat == 16) {
-		if (static_cast<int>(biologistMissionInfo[stat][11]) == 0) {
+		if (static_cast<int>(biologistMissionInfo[stat][10]) == 0) {
 			int j = 0;
 			for (int i = 0; i < 4; i++) {
 				j += 2;
-				uint8_t bApplyOn = biologistMissionInfo[stat][j + 1];
-				double lApplyValue = biologistMissionInfo[stat][j + 2];
+				uint8_t bApplyOn = biologistMissionInfo[stat][j];
+				double lApplyValue = biologistMissionInfo[stat][j + 1];
 				if (bApplyOn == APPLY_NONE || lApplyValue == 0) {
 					continue;
 				}
 				else {
 					bApplyOn = aApplyInfo[bApplyOn].bPointType;
-					AffectSystem::AddAffect(character, static_cast<int>(biologistMissionInfo[stat][14]), bApplyOn, lApplyValue, 0, 315360000, 0, false);
+					AffectSystem::AddAffect(character, static_cast<int>(biologistMissionInfo[stat][13]), bApplyOn, lApplyValue, 0, 315360000, 0, false);
 				}
 			}
 		} else {
 			iarg1 += 1;
 			int j = 2 * iarg1;
-			uint8_t bApplyOn = biologistMissionInfo[stat][j + 1];
-			double lApplyValue = biologistMissionInfo[stat][j + 2];
+			uint8_t bApplyOn = biologistMissionInfo[stat][j];
+			double lApplyValue = biologistMissionInfo[stat][j + 1];
 			if (bApplyOn != APPLY_NONE || lApplyValue != 0) {
 				bApplyOn = aApplyInfo[bApplyOn].bPointType;
-				AffectSystem::AddAffect(character, static_cast<int>(biologistMissionInfo[stat][14]), bApplyOn, lApplyValue, 0, 315360000, 0, false);
+				AffectSystem::AddAffect(character, static_cast<int>(biologistMissionInfo[stat][13]), bApplyOn, lApplyValue, 0, 315360000, 0, false);
 			}
 		}
 #ifdef TEXTS_IMPROVEMENT
@@ -430,7 +496,7 @@ ACMD(do_reward_biologist) {
 		ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologist_close");
 		return;
 	} else {
-		int min = static_cast<int>(biologistMissionInfo[newstat][12]);
+		int min = static_cast<int>(biologistMissionInfo[newstat][11]);
 		if ((ecs::PointSystem::GetLevel(character)) < min) {
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 869, "%d", min);
@@ -438,39 +504,35 @@ ACMD(do_reward_biologist) {
 			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologist_close");
 			return;
 		} else {
-			if (static_cast<int>(biologistMissionInfo[stat][11]) == 0) {
+			if (static_cast<int>(biologistMissionInfo[stat][10]) == 0) {
 				int j = 0;
 				for (int i = 0; i < 4; i++) {
 					j += 2;
-					uint8_t bApplyOn = biologistMissionInfo[stat][j + 1];
-					double lApplyValue = biologistMissionInfo[stat][j + 2];
+					uint8_t bApplyOn = biologistMissionInfo[stat][j];
+					double lApplyValue = biologistMissionInfo[stat][j + 1];
 					if (bApplyOn == APPLY_NONE || lApplyValue == 0) {
 						continue;
 					}
 					else {
 						bApplyOn = aApplyInfo[bApplyOn].bPointType;
-						AffectSystem::AddAffect(character, static_cast<int>(biologistMissionInfo[stat][14]), bApplyOn, lApplyValue, 0, 315360000, 0, false);
+						AffectSystem::AddAffect(character, static_cast<int>(biologistMissionInfo[stat][13]), bApplyOn, lApplyValue, 0, 315360000, 0, false);
 					}
 				}
 			} else {
 				iarg1 += 1;
 				int j = 2 * iarg1;
-				uint8_t bApplyOn = biologistMissionInfo[stat][j + 1];
-				double lApplyValue = biologistMissionInfo[stat][j + 2];
+				uint8_t bApplyOn = biologistMissionInfo[stat][j];
+				double lApplyValue = biologistMissionInfo[stat][j + 1];
 				if (bApplyOn != APPLY_NONE || lApplyValue != 0) {
 					bApplyOn = aApplyInfo[bApplyOn].bPointType;
-					AffectSystem::AddAffect(character, static_cast<int>(biologistMissionInfo[stat][14]), bApplyOn, lApplyValue, 0, 315360000, 0, false);
+					AffectSystem::AddAffect(character, static_cast<int>(biologistMissionInfo[stat][13]), bApplyOn, lApplyValue, 0, 315360000, 0, false);
 				}
 			}
 
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 870, "");
 #endif
-			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologist_reward %d#%d#%.3f#%d#%.3f#%d#%.3f#%d#%.3f", static_cast<int>(biologistMissionInfo[newstat][11]), static_cast<int>(biologistMissionInfo[newstat][3]), biologistMissionInfo[newstat][4], static_cast<int>(biologistMissionInfo[newstat][5]), biologistMissionInfo[newstat][6], static_cast<int>(biologistMissionInfo[newstat][7]), biologistMissionInfo[newstat][8], static_cast<int>(biologistMissionInfo[newstat][9]), biologistMissionInfo[newstat][10]);
-			int time = ecs::QuestSystem::GetFlag(character, "biologist.time");
-			time = time > 0 ? time - get_global_time() : 0;
-			int count = ecs::QuestSystem::GetFlag(character, "biologist.delivered");
-			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologist_next %d#%d#%d#%d#%d#%d#%d", newstat, static_cast<int>(biologistMissionInfo[newstat][0]), static_cast<int>(biologistMissionInfo[newstat][1]), count, static_cast<int>(biologistMissionInfo[newstat][2]), time, static_cast<int>(biologistMissionInfo[newstat][1])-count > 0 ? 0 : 1);
+			SendTypedBiologist(character, newstat, false);
 		}
 	}
 }
@@ -492,7 +554,7 @@ ACMD(do_change_biologist) {
 		return;
 	}
 
-	if (static_cast<int>(biologistMissionInfo[iarg1][11]) != 1) {
+	if (static_cast<int>(biologistMissionInfo[iarg1][10]) != 1) {
 		return;
 	}
 
@@ -506,26 +568,33 @@ ACMD(do_change_biologist) {
 	if (stat <= iarg1)
 		return;
 
-	iarg2 = 3 + (iarg2 * 2);
-	int type =  aApplyInfo[static_cast<int>(biologistMissionInfo[iarg1][iarg2])].bPointType;
-	int idx = static_cast<int>(biologistMissionInfo[iarg1][14]);
-	CAffect * pkAff = AffectSystem::FindAffect(character, idx, type);
-	if (pkAff) {
-		return;
-	}
-	else {
-		if (ItemSystem::CountItem(character, 164401) <= 0) {
-			return;
-		}
+    const auto& row = biologistMissionInfo[iarg1];
+    const int apply = static_cast<int>(row[2 + iarg2 * 2]);
+    const double amount = row[3 + iarg2 * 2];
+    const int affect = static_cast<int>(row[13]);
+    if (apply == APPLY_NONE || amount == 0)
+        return;
+    const auto point = aApplyInfo[apply].bPointType;
+    if (point == POINT_NONE || AffectSystem::FindAffect(character, affect, point))
+        return;
 
-		ItemSystem::RemoveSpecifyItemEcs(character, 164401, 1);
-		AffectSystem::RemoveAffect(character, idx);
-		AffectSystem::AddAffect(character, idx, type, biologistMissionInfo[iarg1][iarg2 + 1], 0, 315360000, 0, false);
+    const auto catalog = auriga::item::runtime::CurrentCatalog();
+    const auto* changer = catalog ? FindBiologistItem(*catalog, BiologistBonusChanger) : nullptr;
+    if (!changer)
+        return;
+    const auto exchange = RequestTypedGameplayItemExchange(character, {{changer->base.key, 0, 1}}, {}, 0,
+        [character, affect, point, amount](bool written) {
+            if (!written || !ecs::PlayerRuntime::IsValid(character))
+                return;
+            AffectSystem::RemoveAffect(character, affect);
+            AffectSystem::AddAffect(character, affect, point, amount, 0, 315360000, 0, false);
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 873, "");
+            ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 873, "");
 #endif
-		ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologistch_close");
-	}
+            ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologistch_close");
+        });
+    if (!exchange)
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "A bónuszcseréhez szükséges tárgy vagy művelet nem érhető el.");
 }
 #endif
 

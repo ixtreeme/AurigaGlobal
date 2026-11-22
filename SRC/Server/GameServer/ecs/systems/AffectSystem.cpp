@@ -807,29 +807,29 @@ void CheckBiologistReward(entt::entity e) {
 	int stat = ecs::PlayerRuntime::GetQuestFlag(e, "biologist.stat");
 	if (stat > 0) {
 		for (int i = 0; i < stat; i++) {
-			if (AffectSystem::FindAffect(e, static_cast<int>(biologistMissionInfo[i][14]))) {
+			if (AffectSystem::FindAffect(e, static_cast<int>(biologistMissionInfo[i][13]))) {
 				continue;
 			}
 
-			if (static_cast<int>(biologistMissionInfo[i][11]) == 0) {
+			if (static_cast<int>(biologistMissionInfo[i][10]) == 0) {
 				int j = 0;
 				for (int w = 0; w < 4; w++) {
 					j += 2;
-					uint8_t bApplyOn = biologistMissionInfo[i][j + 1];
-					double lApplyValue = biologistMissionInfo[i][j + 2];
+					uint8_t bApplyOn = biologistMissionInfo[i][j];
+					double lApplyValue = biologistMissionInfo[i][j + 1];
 					if (bApplyOn == APPLY_NONE || lApplyValue == 0) {
 						continue;
 					} else {
 						bApplyOn = aApplyInfo[bApplyOn].bPointType;
-						AffectSystem::AddAffect(e, static_cast<int>(biologistMissionInfo[i][14]), bApplyOn, lApplyValue, 0, 315360000, 0, false);
+						AffectSystem::AddAffect(e, static_cast<int>(biologistMissionInfo[i][13]), bApplyOn, lApplyValue, 0, 315360000, 0, false);
 					}
 				}
 			} else {
-				uint8_t bApplyOn = static_cast<int>(biologistMissionInfo[i][7]);
-				double lApplyValue = biologistMissionInfo[i][8];
+				uint8_t bApplyOn = static_cast<int>(biologistMissionInfo[i][6]);
+				double lApplyValue = biologistMissionInfo[i][7];
 				if (bApplyOn != APPLY_NONE || lApplyValue != 0) {
 					bApplyOn = aApplyInfo[bApplyOn].bPointType;
-					AffectSystem::AddAffect(e, static_cast<int>(biologistMissionInfo[i][14]), bApplyOn, lApplyValue, 0, 315360000, 0, false);
+					AffectSystem::AddAffect(e, static_cast<int>(biologistMissionInfo[i][13]), bApplyOn, lApplyValue, 0, 315360000, 0, false);
 				}
 			}
 		}
