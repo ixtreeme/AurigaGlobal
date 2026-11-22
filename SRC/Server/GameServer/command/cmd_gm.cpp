@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "../benchmark/BenchmarkSession.hpp"
+#include "../item/TypedMoney.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/InventorySystem.hpp"
 #include <Core/Logging.hpp>
@@ -1614,23 +1615,36 @@ ACMD(do_set)
 			break;
 
 #ifdef ENABLE_GAYA_SYSTEM
-		case DoSetTypes::GAYA: //gaya
-		{
-			if (!ecs::IsCharacter(tch))
-				return;
-			int gaya = 0;
-			str_to_number(gaya, arg3);
-			int before_gaya = ecs::PointSystem::GetGaya(tch);
-			ecs::PointSystem::Change(tch, POINT_GAYA, gaya, true);
-			if (!ecs::PlayerRuntime::IsValid(tch))
-				return;
-			int after_gaya = ecs::PointSystem::GetGaya(tch);
-			if (0 == after_gaya && 0 != before_gaya)
-			{
-				LogManager::instance().CharLog(tch, gaya, "ZERO_GAYA", "GM");
-			}
-		}
-		break;
+        case DoSetTypes::GAYA:
+        {
+            const std::string_view amount(arg3);
+            const bool hasPlus = amount.starts_with('+');
+            std::int64_t delta = 0;
+            if (!ParseGMNumber(hasPlus ? amount.substr(1) : amount, delta) || delta == 0 || (hasPlus && delta < 0))
+            {
+                ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Adj meg egy pozitív vagy negatív Gaya-változást.");
+                return;
+            }
+            const auto before = ecs::PointSystem::GetGaya(tch);
+            if (!RequestTypedAdminGayaChange(character, tch, delta, [character, tch, before, delta](bool applied) {
+                if (!applied)
+                {
+                    if (g_registry.valid(character))
+                        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "A Gaya-változást nem sikerült menteni.");
+                    return;
+                }
+                if (!g_registry.valid(tch))
+                    return;
+                const auto balance = ecs::PointSystem::GetGaya(tch);
+                if (balance == 0 && before != 0)
+                    LogManager::instance().CharLog(tch, static_cast<int>(delta), "ZERO_GAYA", "GM");
+                if (g_registry.valid(character))
+                    ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s új Gaya-egyenlege: %d.",
+                        ecs::PlayerRuntime::GetName(tch).data(), balance);
+            }))
+                ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "A Gaya nem módosítható. Ellenőrizd az egyenleget és a folyamatban lévő tárgyműveleteket.");
+            return;
+        }
 #endif
 
 	}

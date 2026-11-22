@@ -86,21 +86,74 @@ bool RequestTypedQuestGoldChange(entt::entity e,std::int64_t delta,std::function
         if(done)done(result.write.has_value());if(Current(pid,token)==e)PumpTypedItemGrants(e);
     })){if(Current(pid,token)==e)g_registry.remove<ecs::TypedItemBusy>(e);return false;}return true;
 }
-bool RequestTypedQuestGayaChange(entt::entity e,std::int64_t delta,std::function<void(bool)> done){
-    const auto c=store::CurrentCatalog();const auto* typed=g_registry.valid(e)?g_registry.try_get<ecs::TypedItems>(e):nullptr;const auto* login=g_registry.valid(e)?g_registry.try_get<ecs::TypedItemLogin>(e):nullptr;
-    const auto* q=g_registry.valid(e)?g_registry.try_get<ecs::QuestPCState>(e):nullptr;auto* d=g_registry.valid(e)?ecs::PlayerRuntime::GetDesc(e):nullptr;
-    if(!c||!typed||!login||!q||!q->pc||!q->pc->IsRunning()||!d||!d->IsPhase(PHASE_GAME)||g_registry.all_of<ecs::TypedItemBusy>(e))return false;
-    const auto found=std::ranges::find(typed->state.wallets,item::WalletCurrency::Gaya,&item::ItemWallet::currency);if(found==typed->state.wallets.end())return false;const auto* wallet=&*found;
-    auto commit=item::MakeQuestGayaChange(*c,Operation(),typed->state.fence,*wallet,delta,GAYA_MAX-1);if(!commit)return false;
-    const auto pid=ecs::PlayerRuntime::GetPlayerID(e);const auto token=login->token;const auto fence=typed->state.fence;
-    auto permission=ecs::resource_admission::Enter({e},auriga::resource_admission::Operation::ItemUse);if(!permission||!permission->Current()||Current(pid,token)!=e)return false;
-    auto held=std::make_shared<auriga::resource_admission::Permit>(std::move(*permission));g_registry.emplace_or_replace<ecs::TypedItemBusy>(e);
-    if(!store::RequestCommit(fence.owner,fence.sessionGeneration,std::move(*commit),[pid,token,done=std::move(done),held](store::CommitOutcome result)mutable{
-        auto e=Current(pid,token);if(e==entt::null)return;if(result.state)g_registry.emplace_or_replace<ecs::TypedItems>(e,std::move(*result.state));if(Current(pid,token)!=e)return;
-        g_registry.remove<ecs::TypedItemBusy>(e);held.reset();SendTypedInventory(e);if(Current(pid,token)!=e)return;
-        if(done)done(result.write.has_value());if(Current(pid,token)==e)PumpTypedItemGrants(e);
-    })){if(Current(pid,token)==e)g_registry.remove<ecs::TypedItemBusy>(e);return false;}return true;
+namespace {
+bool RequestGayaChange(entt::entity character, std::int64_t delta, std::function<void(bool)> done)
+{
+    if (!g_registry.valid(character) || !ecs::PlayerRuntime::IsPC(character) ||
+        g_registry.all_of<ecs::TypedItemBusy>(character))
+        return false;
+    const auto catalog = store::CurrentCatalog();
+    const auto* items = g_registry.try_get<ecs::TypedItems>(character);
+    const auto* login = g_registry.try_get<ecs::TypedItemLogin>(character);
+    const auto* desc = ecs::PlayerRuntime::GetDesc(character);
+    if (!catalog || !items || !login || !desc || !desc->IsPhase(PHASE_GAME))
+        return false;
+    const auto& wallets = items->state.wallets;
+    const auto wallet = std::ranges::find(wallets, item::WalletCurrency::Gaya, &item::ItemWallet::currency);
+    if (wallet == wallets.end())
+        return false;
+    const auto fence = items->state.fence;
+    auto commit = item::MakeQuestGayaChange(*catalog, Operation(), fence, *wallet, delta, GAYA_MAX - 1);
+    if (!commit)
+        return false;
+
+    const auto pid = ecs::PlayerRuntime::GetPlayerID(character);
+    const auto token = login->token;
+    auto permission = ecs::resource_admission::Enter({character}, auriga::resource_admission::Operation::ItemUse);
+    if (!permission || !permission->Current() || Current(pid, token) != character)
+        return false;
+    auto held = std::make_shared<auriga::resource_admission::Permit>(std::move(*permission));
+    g_registry.emplace_or_replace<ecs::TypedItemBusy>(character);
+    if (store::RequestCommit(fence.owner, fence.sessionGeneration, std::move(*commit),
+        [pid, token, done = std::move(done), held](store::CommitOutcome result) mutable {
+            const auto current = Current(pid, token);
+            if (current == entt::null)
+                return;
+            if (result.state)
+                g_registry.emplace_or_replace<ecs::TypedItems>(current, std::move(*result.state));
+            if (Current(pid, token) != current)
+                return;
+            g_registry.remove<ecs::TypedItemBusy>(current);
+            held.reset();
+            SendTypedInventory(current);
+            if (Current(pid, token) != current)
+                return;
+            if (done)
+                done(result.write.has_value());
+            if (Current(pid, token) == current)
+                PumpTypedItemGrants(current);
+        }))
+        return true;
+    if (Current(pid, token) == character)
+        g_registry.remove<ecs::TypedItemBusy>(character);
+    return false;
 }
+}
+
+bool RequestTypedQuestGayaChange(entt::entity character, std::int64_t delta, std::function<void(bool)> done)
+{
+    const auto* quest = g_registry.valid(character) ? g_registry.try_get<ecs::QuestPCState>(character) : nullptr;
+    return quest && quest->pc && quest->pc->IsRunning() && RequestGayaChange(character, delta, std::move(done));
+}
+
+bool RequestTypedAdminGayaChange(entt::entity gm, entt::entity target, std::int64_t delta, std::function<void(bool)> done)
+{
+    if (!ecs::PlayerRuntime::IsPC(gm) || ecs::PlayerRuntime::GetGMLevel(gm) < GM_IMPLEMENTOR)
+        return false;
+    const auto* desc = ecs::PlayerRuntime::GetDesc(gm);
+    return desc && desc->IsPhase(PHASE_GAME) && RequestGayaChange(target, delta, std::move(done));
+}
+
 bool HandleTypedMoneyPacket(entt::entity e,const char* data){
     const auto decoded=item::DecodeNativeMoneyRequest(std::as_bytes(std::span(data,item::NativeMoneyRequestBodySize)));if(!decoded)return false;
     const auto r=*decoded;if(!g_registry.valid(e))return true;auto* s=g_registry.try_get<TypedMoneySession>(e);
