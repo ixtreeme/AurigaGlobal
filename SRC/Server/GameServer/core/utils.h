@@ -55,9 +55,6 @@ inline uint16_t MAKEWORD(uint8_t a, uint8_t b)
 #endif
 extern void set_global_time(time_t t);
 extern time_t get_global_time();
-#ifdef ENABLE_GAYA_SYSTEM
-extern time_t init_gayaTime();
-#endif
 
 #include <string>
 //std::string mysql_hash_password(const char* tmp_pwd);

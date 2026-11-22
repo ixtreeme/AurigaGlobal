@@ -14,13 +14,6 @@ time_t get_global_time()
 	return static_cast<time_t>(auriga::time::UnixSeconds() + global_time_gap);
 }
 
-#ifdef ENABLE_GAYA_SYSTEM
-time_t init_gayaTime()
-{
-	return static_cast<time_t>(auriga::time::UnixSeconds() + global_time_gap);
-}
-#endif
-
 void set_global_time(time_t t)
 {
 	global_time_gap = static_cast<int64_t>(t) - auriga::time::UnixSeconds();
