@@ -17,6 +17,10 @@
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/systems/QuestSystem.hpp"
 #include "LostCastleDungeon.h"
+#include "LostCastleLayout.hpp"
+#include "JsonFile.h"
+
+#include <nlohmann/json.hpp>
 
 #include <unordered_map>
 #include <vector>
@@ -59,18 +63,6 @@ namespace
     constexpr int32_t  kMinLevel = 40;
     constexpr int32_t  kMaxLevel = 140;
 
-    // BasePosition: 307200 / 332800  -> base global cell: 3072 / 3328
-    constexpr int32_t kBaseCellX = 3072;
-    constexpr int32_t kBaseCellY = 3328;
-
-    // Debug: Local Position (281 x 112)  -> local cell
-    constexpr int32_t kEnterLocalX = 281;
-    constexpr int32_t kEnterLocalY = 112;
-
-    // JOIN coords must be GLOBAL CELL on your core (same as /warp)
-    constexpr int32_t kJoinGlobalX = kBaseCellX + kEnterLocalX; // 3353
-    constexpr int32_t kJoinGlobalY = kBaseCellY + kEnterLocalY; // 3440
-
     // Floor1
     constexpr uint32_t kMetinVnum = 8001;
     constexpr int32_t  kFloor1TimeSec = 600;
@@ -83,23 +75,18 @@ namespace
     // Floor2
     constexpr uint32_t kStatueVnum = 20433;
     constexpr int32_t  kFloor2TimeSec = 180;
-    constexpr int32_t  kFloor2CenterX = kEnterLocalX;
-    constexpr int32_t  kFloor2CenterY = kEnterLocalY;
     constexpr const char* kFloor2Regen = "data/dungeon/elveszett_kastely/floor2.json";
 
     // Floor3
     constexpr uint32_t kCloneBaseMobVnum = 136;
-    constexpr int32_t  kFloor3CenterX = kEnterLocalX;
-    constexpr int32_t  kFloor3CenterY = kEnterLocalY;
+    constexpr int32_t  kFloor3CenterX = LostCastleLayout::Entrance.x;
+    constexpr int32_t  kFloor3CenterY = LostCastleLayout::Entrance.y;
 
     // Floor4
     constexpr const char* kFloor4Regen = "data/dungeon/elveszett_kastely/floor4.json";
     constexpr uint32_t kTotemVnum = 9298;
     constexpr int32_t  kTileDropChancePct = 3;
-    constexpr int32_t  kFloor4CenterX = kEnterLocalX;
-    constexpr int32_t  kFloor4CenterY = kEnterLocalY;
-
-    constexpr int32_t  kTileStages = 10;
+    constexpr int32_t  kTileStages = static_cast<int32_t>(LostCastleLayout::Tiles.size());
 
     // Dungeon flags
     constexpr const char* kFlagFloor = "lc_floor";
@@ -126,6 +113,79 @@ namespace
     };
 
     constexpr int32_t kMetinPosCount = (int32_t)(sizeof(kMetinPos) / sizeof(kMetinPos[0]));
+
+    bool CastleRegensFit(const char* path, int width, int height)
+    {
+        nlohmann::json document;
+        if (!JsonFile::Load(path, document) || !document.contains("regens"))
+            return false;
+
+        const auto& regens = document["regens"];
+        if (!regens.is_array() || regens.empty())
+            return false;
+
+        for (const auto& row : regens)
+        {
+            if (!row.is_object())
+                return false;
+            const auto coordinate = [&](const char* field) {
+                const auto position = row.find(field);
+                return position != row.end() && position->is_number_integer()
+                    ? position->get<std::int64_t>() : -1;
+            };
+            const auto x = coordinate("x"), y = coordinate("y");
+            const auto rx = coordinate("range_x"), ry = coordinate("range_y");
+            if (rx < 0 || ry < 0 || x < rx || y < ry
+                || x >= width || y >= height || rx >= width - x || ry >= height - y)
+                return false;
+        }
+        return true;
+    }
+
+    bool CastleLayoutAvailable(int32_t mapIndex)
+    {
+        auto& maps = SECTREE_MANAGER::instance();
+        const auto* map = maps.GetMap(mapIndex);
+        if (!map)
+            return false;
+
+        const auto& bounds = map->m_setting;
+        const int width = bounds.iWidth / 100;
+        const int height = bounds.iHeight / 100;
+        if (!LostCastleLayout::Fits(width, height) || !CastleRegensFit(kFloor2Regen, width, height)
+            || !CastleRegensFit(kFloor4Regen, width, height))
+            return false;
+
+        const auto movable = [&](LostCastleLayout::Point point) {
+            return maps.IsMovablePosition(mapIndex, bounds.iBaseX + point.x * 100, bounds.iBaseY + point.y * 100);
+        };
+        for (const auto point : {LostCastleLayout::Entrance, LostCastleLayout::KeyRoomEntrance,
+                LostCastleLayout::Statue, LostCastleLayout::TileRoomEntrance, LostCastleLayout::Totem})
+            if (!movable(point))
+                return false;
+
+        for (int i = 0; i < kFloor1MetinCount; ++i)
+            if (!movable({kMetinPos[i][0], kMetinPos[i][1]}))
+                return false;
+
+        // The temporary tiles may only cover initially free cells. Otherwise
+        // opening one would remove collision belonging to the base map.
+        for (const auto& tile : LostCastleLayout::Tiles)
+            for (int y = tile.start.y * 100; y < tile.end.y * 100; y += CELL_SIZE)
+                for (int x = tile.start.x * 100; x < tile.end.x * 100; x += CELL_SIZE)
+                    if (!maps.IsMovablePosition(mapIndex, bounds.iBaseX + x, bounds.iBaseY + y))
+                        return false;
+        return true;
+    }
+
+    void JumpToRoom(entt::entity dungeon, int32_t mapIndex, LostCastleLayout::Point local)
+    {
+        const auto* map = SECTREE_MANAGER::instance().GetMap(mapIndex);
+        if (!map)
+            return;
+        const auto world = LostCastleLayout::WorldCell(local, map->m_setting.iBaseX, map->m_setting.iBaseY);
+        DungeonSystem::JumpAll(dungeon, mapIndex, world.x, world.y);
+    }
 
     struct FForEachPC
     {
@@ -191,33 +251,16 @@ namespace
             Player::GetZ(victim), claimant, 180000);
     }
 
-    // Block rect (cell coords) - TODO: set real block rects for your floor4 map
-    struct Rect { int32_t sx, sy, ex, ey; };
-
-    const Rect kBlockRects[kTileStages] =
-    {
-        { 1200, 1100, 1220, 1120 },
-        { 1230, 1100, 1250, 1120 },
-        { 1260, 1100, 1280, 1120 },
-        { 1290, 1100, 1310, 1120 },
-        { 1320, 1100, 1340, 1120 },
-        { 1350, 1100, 1370, 1120 },
-        { 1380, 1100, 1400, 1120 },
-        { 1410, 1100, 1430, 1120 },
-        { 1440, 1100, 1460, 1120 },
-        { 1470, 1100, 1490, 1120 },
-    };
-
-    bool ApplyBlockRect(int32_t mapIndex, const Rect& r, bool block)
+    bool ApplyBlockRect(int32_t mapIndex, const LostCastleLayout::Tile& tile, bool block)
     {
         LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(mapIndex);
         if (!map)
             return false;
 
-        const int32_t sx = map->m_setting.iBaseX + r.sx * 100;
-        const int32_t sy = map->m_setting.iBaseY + r.sy * 100;
-        const int32_t ex = map->m_setting.iBaseX + r.ex * 100;
-        const int32_t ey = map->m_setting.iBaseY + r.ey * 100;
+        const int32_t sx = map->m_setting.iBaseX + tile.start.x * 100;
+        const int32_t sy = map->m_setting.iBaseY + tile.start.y * 100;
+        const int32_t ex = map->m_setting.iBaseX + tile.end.x * 100;
+        const int32_t ey = map->m_setting.iBaseY + tile.end.y * 100;
 
         return SECTREE_MANAGER::instance().ForAttrRegion(
             mapIndex,
@@ -462,8 +505,12 @@ void ClearClonesOnMap(int32_t mapIndex)
             DungeonSystem::KillAll(d);
             DungeonSystem::ClearRegen(d);
 
-            for (int i = 0; i < kTileStages; ++i)
-                ApplyBlockRect(mapIndex, kBlockRects[i], false);
+            if (DungeonSystem::GetFlag(d, kFlagFloor) == 4)
+            {
+                const auto opened = DungeonSystem::GetFlag(d, kFlagTileStage);
+                for (int i = opened; i < kTileStages; ++i)
+                    ApplyBlockRect(mapIndex, LostCastleLayout::Tiles[i], false);
+            }
 
             DungeonSystem::ExitAllLobby(d, 1);
         }
@@ -558,9 +605,10 @@ void ClearClonesOnMap(int32_t mapIndex)
             DungeonSystem::SetFlag(d, kFlagKeyMask, 0);
             DungeonSystem::SetFlag(d, kFlagStatueVid, 0);
 
-            DungeonSystem::JumpAll(d, mapIndex, kFloor2CenterX, kFloor2CenterY);
+            JumpToRoom(d, mapIndex, LostCastleLayout::KeyRoomEntrance);
 
-            const entt::entity statue = DungeonSystem::SpawnMob(d, (int32_t)kStatueVnum, kFloor2CenterX, kFloor2CenterY);
+            const auto point = LostCastleLayout::Statue;
+            const entt::entity statue = DungeonSystem::SpawnMob(d, kStatueVnum, point.x, point.y);
             if (statue != entt::null)
 	DungeonSystem::SetFlag(d, kFlagStatueVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(statue));
 
@@ -583,7 +631,7 @@ void ClearClonesOnMap(int32_t mapIndex)
         DungeonSystem::SetFlag(d, kFlagFloor, 3);
         DungeonSystem::SetFlag(d, kFlagClonesRemain, 0);
 
-        DungeonSystem::JumpAll(d, mapIndex, kFloor3CenterX, kFloor3CenterY);
+        JumpToRoom(d, mapIndex, {kFloor3CenterX, kFloor3CenterY});
 
         LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(mapIndex);
         if (!map)
@@ -770,13 +818,14 @@ void ClearClonesOnMap(int32_t mapIndex)
             DungeonSystem::SetFlag(d, kFlagTileStage, 0);
             DungeonSystem::SetFlag(d, kFlagTotemVid, 0);
 
-            for (int i = 0; i < kTileStages; ++i)
-                ApplyBlockRect(mapIndex, kBlockRects[i], true);
+            for (const auto& tile : LostCastleLayout::Tiles)
+                ApplyBlockRect(mapIndex, tile, true);
 
-            DungeonSystem::JumpAll(d, mapIndex, kFloor4CenterX, kFloor4CenterY);
+            JumpToRoom(d, mapIndex, LostCastleLayout::TileRoomEntrance);
             DungeonSystem::SpawnRegen(d, kFloor4Regen, true);
 
-            const entt::entity totem = DungeonSystem::SpawnMob(d, (int32_t)kTotemVnum, kFloor4CenterX, kFloor4CenterY);
+            const auto point = LostCastleLayout::Totem;
+            const entt::entity totem = DungeonSystem::SpawnMob(d, kTotemVnum, point.x, point.y);
             if (totem != entt::null)
 	DungeonSystem::SetFlag(d, kFlagTotemVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(totem));
 
@@ -823,7 +872,8 @@ void ClearClonesOnMap(int32_t mapIndex)
             if (stage >= kTileStages)
                 return false;
 
-            ApplyBlockRect(mapIndex, kBlockRects[stage], false);
+            if (!ApplyBlockRect(mapIndex, LostCastleLayout::Tiles[stage], false))
+                return false;
 
             stage += 1;
             DungeonSystem::SetFlag(d, kFlagTileStage, stage);
@@ -1429,6 +1479,16 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
         return std::nullopt;
     }
 
+    const auto mapIndex = DungeonSystem::GetMapIndex(d);
+    if (!CastleLayoutAvailable(mapIndex))
+    {
+        LOG_ERROR("Lost Castle: invalid layout on private map {}", mapIndex);
+        CancelTypedDungeonPreflight(d);
+        return std::nullopt;
+    }
+    const auto& bounds = SECTREE_MANAGER::instance().GetMap(mapIndex)->m_setting;
+    const auto entry = LostCastleLayout::WorldCell(LostCastleLayout::Entrance, bounds.iBaseX, bounds.iBaseY);
+
     DungeonSystem::SetFlag(d, kFlagFloor, 1);
     DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
     DungeonSystem::SetFlag(d, kFlagCorrectMetin, 0);
@@ -1457,15 +1517,13 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
     {
         applyMember(character);
 
-        // IMPORTANT: Join expects GLOBAL CELL on your core
-        DungeonSystem::Join_Coords(d, character, kJoinGlobalX, kJoinGlobalY, ecs::PlayerRuntime::GetMapIndex(character));
+        DungeonSystem::Join_Coords(d, character, entry.x, entry.y, lobbyMap);
     }
     else
     {
         PartySystem::ForEachOnMapMember(party, applyMember, ecs::PlayerRuntime::GetMapIndex(character));
 
-        // IMPORTANT: Join expects GLOBAL CELL on your core
-        DungeonSystem::JoinParty_Coords(d, party, kJoinGlobalX, kJoinGlobalY, ecs::PlayerRuntime::GetMapIndex(character));
+        DungeonSystem::JoinParty_Coords(d, party, entry.x, entry.y, lobbyMap);
     }
 
     s_lc.StartFloor1(DungeonSystem::GetMapIndex(d));

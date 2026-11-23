@@ -1,5 +1,6 @@
 #include "../../SRC/Server/GameServer/core/stdafx.h"
 #include "../../SRC/Server/GameServer/dungeon/dungeon.h"
+#include "../../SRC/Server/GameServer/dungeon/LostCastleLayout.hpp"
 #include "../../SRC/Server/GameServer/dungeon/PyramidDungeonRazor93.h"
 #include "../../SRC/Server/GameServer/dungeon/OrcsDungeon.h"
 #include "../../SRC/Server/GameServer/dungeon/TritonTempleDungeon.h"
@@ -910,9 +911,28 @@ void DungeonChestDelivery() {
 }
 }
 
+void CastleLayoutGeometry()
+{
+    using namespace LostCastleLayout;
+    Check(Fits(512, 1024), "Lost Castle layout fits map 380");
+    Check(!Fits(412, 1024) && !Fits(512, 598), "Lost Castle refuses a map cut through the last tile");
+    auto previousEnd = Tiles.front().start.y;
+    for (const auto& tile : Tiles)
+    {
+        Check(tile.start.y == previousEnd, "Lost Castle tiles form a contiguous route");
+        Check(tile.start.y > Totem.y, "Lost Castle tiles stay beyond the totem");
+        previousEnd = tile.end.y;
+    }
+    const auto keyRoom = WorldCell(KeyRoomEntrance, 307200, 332800);
+    const auto tileRoom = WorldCell(TileRoomEntrance, 307200, 332800);
+    Check(keyRoom.x == 3368 && keyRoom.y == 3708, "key room uses world coordinates for a floor jump");
+    Check(tileRoom.x == 3468 && tileRoom.y == 3703, "tile room uses world coordinates for a floor jump");
+}
+
 int main() {
     try {
         CreateFindDestroy();
+        CastleLayoutGeometry();
         MembershipAndDeadEvent();
         MonsterCounting();
         UniqueMobsAndFlags();
