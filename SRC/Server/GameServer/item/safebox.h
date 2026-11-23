@@ -16,8 +16,8 @@ namespace SafeboxSystem {
 
 // The storage published for this owner and window, or null.
 entt::entity Get(entt::entity owner, uint8_t window);
-entt::entity Open(entt::entity owner, uint8_t window, int height, uint32_t gold = 0);
-void Close(entt::entity owner, uint8_t window, bool save = true);
+entt::entity Open(entt::entity owner, uint8_t window, int height);
+void Close(entt::entity owner, uint8_t window);
 
 // Storage operations. They take the storage entity, not the owner, so a
 // replacement container cannot silently receive an old operation's result.
@@ -29,7 +29,6 @@ bool IsEmpty(entt::entity storage, uint32_t cell, uint8_t size);
 bool IsValidPosition(entt::entity storage, uint32_t cell);
 void ChangeSize(entt::entity storage, int size);
 void SetWindowMode(entt::entity storage, uint8_t window);
-void Save(entt::entity storage);
 
 // Retires the storage and its contents without saving. Reentrant calls and
 // calls after retirement are no-ops.

@@ -3,7 +3,6 @@
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/EntityFactory.hpp"
-#include "../ecs/systems/SessionSystem.hpp"
 #include "../ecs/systems/GayaSystem.hpp"
 #include "../item/TypedStoneExchange.hpp"
 #include "../ecs/Registry.hpp"
@@ -58,58 +57,17 @@ namespace quest
 		return 0;
 	}
 
-	ALUA(game_get_safebox_level)
-	{
-		// migrated from CHARACTER::GetSafeboxSize()
-		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
-		lua_pushnumber(L, ecs::SessionSystem::GetSafeboxSize(character) / SAFEBOX_PAGE_SIZE);
-		return 1;
-	}
-
-	ALUA(game_set_safebox_level)
-	{
-		// migrated from CHARACTER::SetSafeboxSize()
-		// DUAL-PATH: ECS update + legacy call during migration window
-		CQuestManager& q = CQuestManager::instance();
-		entt::entity e = q.GetPCEntity(L);
-		int32_t size = static_cast<int32_t>(lua_tonumber(L, -1));
-		LPDESC desc = ecs::PlayerRuntime::GetDesc(e);
-		if (!desc)
-			return 0;
-
-		TSafeboxChangeSizePacket p;
-		p.dwID = ecs::PlayerRuntime::GetAccountID(e);
-		p.bSize = size;
-		db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_CHANGE_SIZE, desc->GetHandle(), &p, sizeof(p));
-		ecs::SessionSystem::SetSafeboxSize(e, SAFEBOX_PAGE_SIZE * size);
-		return 0;
-	}
-
 	ALUA(game_open_safebox)
 	{
-		// migrated from CHARACTER::SetSafeboxOpenPosition()
-		// DUAL-PATH: ECS update + legacy call during migration window
-		CQuestManager& q = CQuestManager::instance();
-		const entt::entity chEntity = q.GetCurrentPCEntity();
-		if (chEntity != entt::null && g_registry.valid(chEntity))
-		{
-			auto& sb = g_registry.get_or_emplace<ecs::SafeboxRef>(chEntity);
-			sb.isOpening = true;
-			g_registry.emplace_or_replace<ecs::DirtyTag>(chEntity);
-		}
-		ecs::SessionSystem::SetSafeboxOpenPosition(chEntity);
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "ShowMeSafeboxPassword");
+		const auto character = CQuestManager::instance().GetCurrentPCEntity();
+		ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "ShowMeSafeboxPassword");
 		return 0;
 	}
 
 	ALUA(game_open_mall)
 	{
-		// migrated from CHARACTER::SetSafeboxOpenPosition
-		// DUAL-PATH: legacy only during migration window
-		CQuestManager& q = CQuestManager::instance();
-		const entt::entity chEntity = q.GetCurrentPCEntity();
-		ecs::SessionSystem::SetSafeboxOpenPosition(chEntity);
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "ShowMeMallPassword");
+		const auto character = CQuestManager::instance().GetCurrentPCEntity();
+		ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "ShowMeMallPassword");
 		return 0;
 	}
 
@@ -357,9 +315,7 @@ namespace quest
 	{
 		luaL_reg game_functions[] =
 		{
-			{ "get_safebox_level",			game_get_safebox_level			},
 			{ "request_make_guild",			game_request_make_guild			},
-			{ "set_safebox_level",			game_set_safebox_level			},
 			{ "open_safebox",				game_open_safebox				},
 			{ "open_mall",					game_open_mall					},
 			{ "get_event_flag",				game_get_event_flag				},

@@ -9,7 +9,7 @@
 #include "../ecs/Registry.hpp"
 #include "../ecs/components/inventory_components.hpp"
 #include "../ecs/systems/ItemSystem.hpp"
-#include "desc_client.h"
+#include "desc.h"
 #include "config.h"
 
 namespace
@@ -185,7 +185,7 @@ entt::entity Get(entt::entity owner, uint8_t window)
     return state && state->owner == owner && !state->destroying ? storage : entt::null;
 }
 
-entt::entity Open(entt::entity owner, uint8_t window, int height, uint32_t gold)
+entt::entity Open(entt::entity owner, uint8_t window, int height)
 {
     if (!ecs::PlayerRuntime::IsPC(owner) || (window != SAFEBOX && window != MALL)) return entt::null;
     EnsureLifecycle();
@@ -203,13 +203,12 @@ entt::entity Open(entt::entity owner, uint8_t window, int height, uint32_t gold)
     auto& state = g_registry.emplace<Storage>(storage);
     state.owner = owner;
     state.windowMode = window;
-    state.gold = static_cast<int32_t>(gold);
     ChangeSize(storage, height);
     slot = storage;
     return storage;
 }
 
-void Close(entt::entity owner, uint8_t window, bool save)
+void Close(entt::entity owner, uint8_t window)
 {
     if (!g_registry.valid(owner) || (window != SAFEBOX && window != MALL)) return;
     auto* refs = g_registry.try_get<ecs::SafeboxRef>(owner);
@@ -218,11 +217,10 @@ void Close(entt::entity owner, uint8_t window, bool save)
     if (closing) return;
     closing = true;
     ClosingStorageGuard guard {owner, window};
-    // Unpublish before saving, then retire contents immediately. Operations
+    // Unpublish before retiring the contents. Operations
     // already in flight revalidate the entity and become no-ops.
     const entt::entity storage = std::exchange(window == SAFEBOX ? refs->safebox : refs->mall, entt::null);
     if (storage == entt::null) return;
-    if (save) Save(storage);
     Destroy(storage);
 }
 
@@ -398,22 +396,6 @@ entt::entity Remove(entt::entity storage, uint32_t cell)
         return entt::null;
     LOG_INFO("SAFEBOX: REMOVE {} {} count {}", ecs::PlayerRuntime::GetName(chrOwner).data(), ItemSystem::GetItemName(item), ItemSystem::GetItemCount(item));
     return item;
-}
-
-void Save(entt::entity storage)
-{
-    const auto* state = LiveStorage(storage);
-    const entt::entity chrOwner = state ? state->owner : entt::null;
-    if (!state || !ecs::PlayerRuntime::IsPC(chrOwner) || !db_clientdesc)
-        return;
-    TSafeboxTable t {};
-    t.dwID = ecs::PlayerRuntime::GetAccountID(chrOwner);
-    if (!t.dwID)
-        return;
-    t.dwGold = state->gold;
-
-    db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_SAVE, 0, &t, sizeof(TSafeboxTable));
-    LOG_INFO("SAFEBOX: SAVE {}", ecs::PlayerRuntime::GetName(chrOwner).data());
 }
 
 bool IsEmpty(entt::entity storage, uint32_t cell, uint8_t size)

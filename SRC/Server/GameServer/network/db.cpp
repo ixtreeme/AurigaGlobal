@@ -19,7 +19,6 @@
 #include "../ecs/EntityFactory.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/systems/ItemSystem.hpp"
-#include "../ecs/systems/SessionSystem.hpp"
 #include "item.h"
 #include "item_manager.h"
 #include "p2p.h"
@@ -219,23 +218,6 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 	switch (qi->iType)
 	{
-		case QID_SAFEBOX_SIZE:
-			{
-				const entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(qi->dwIdent);
-
-				if (ecs::IsCharacter(ch))
-				{
-					if (pMsg->Get()->uiNumRows > 0)
-					{
-						MYSQL_ROW row = pMsg->Get()->FetchRow();
-						int	size = 0;
-						str_to_number(size, row[0]);
-						ecs::SessionSystem::SetSafeboxSize(ch, SAFEBOX_PAGE_SIZE * size);
-					}
-				}
-			}
-			break;
-
 		case QID_DB_STRING:
 			{
 				m_map_dbstring.clear();
@@ -244,7 +226,6 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 				for (uint64_t i = 0; i < pMsg->Get()->uiNumRows; ++i)
 				{
 					MYSQL_ROW row = pMsg->Get()->FetchRow();
-					//ch->SetSafeboxSize(SAFEBOX_PAGE_SIZE * atoi(row[0]));
 					if (row[0] && row[1])
 					{
 						m_map_dbstring.insert(make_pair(std::string(row[0]), std::string(row[1])));

@@ -121,7 +121,6 @@ struct SafeboxStorageComponent {
     entt::entity owner { entt::null };
     uint8_t windowMode { SAFEBOX };
     int size { 0 };
-    int32_t gold { 0 };
     bool destroying { false };
     bool retirePending { false };
     int operations { 0 };
@@ -134,12 +133,8 @@ struct SafeboxStorageComponent {
 struct SafeboxRef {
     entt::entity safebox { entt::null };
     entt::entity mall { entt::null };
-    int safeboxSize { -1 };
     int safeboxLoadTime { 0 };
-    int mallLoadTime { 0 };
     bool isOpening { false };
-    int32_t openX { -1000 };
-    int32_t openY { -1000 };
     bool closingSafebox { false };
     bool closingMall { false };
 };

@@ -2715,8 +2715,8 @@ void DestroyCharacterStatePre(entt::entity character)
     if (g_registry.valid(character))
         g_registry.remove<ecs::MobInstanceState>(character);
 
-    SafeboxSystem::Close(character, SAFEBOX, false);
-    SafeboxSystem::Close(character, MALL, false);
+    SafeboxSystem::Close(character, SAFEBOX);
+    SafeboxSystem::Close(character, MALL);
 
     ecs::PlayerRuntime::BuffOnAttr_Destroy(character);
 

@@ -2635,7 +2635,6 @@ ACMD(do_click_safebox)
 		return;
 	}
 
-	ecs::SessionSystem::SetSafeboxOpenPosition(character);
 	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "ShowMeSafeboxPassword");
 }
 ACMD(do_force_logout)

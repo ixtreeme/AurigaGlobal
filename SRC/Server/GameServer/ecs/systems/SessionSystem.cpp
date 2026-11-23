@@ -240,26 +240,6 @@ entt::entity GetSafebox(entt::entity e)
 }
 
 // The item mall storage, which is a safebox with its own window.
-// The ten second wait between mall load requests. CHARACTER::m_iMallLoadTime
-// held it and SafeboxRef::mallLoadTime beside it was written by nothing.
-int GetMallLoadTime(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return 0;
-
-    const auto* safebox = g_registry.try_get<ecs::SafeboxRef>(e);
-    return safebox ? safebox->mallLoadTime : 0;
-}
-
-void SetMallLoadTime(entt::entity e, int pulse)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return;
-
-    g_registry.get_or_emplace<ecs::SafeboxRef>(e).mallLoadTime = pulse;
-    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-}
-
 entt::entity GetMall(entt::entity e)
 {
     return SafeboxSystem::Get(e, MALL);
@@ -276,7 +256,7 @@ void CloseMall(entt::entity e)
     ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "CloseMall");
 }
 
-// Closing the safebox window and writing what changed.
+// Closing the safebox window.
 void CloseSafebox(entt::entity e)
 {
     const auto owner = e;
@@ -286,7 +266,7 @@ void CloseSafebox(entt::entity e)
     {
         LOG_ERROR("CloseSafebox skipped: invalid owner (name={} vid={} race={} ispc={} desc={})", ecs::PlayerRuntime::GetName(e).data(), ecs::PlayerRuntime::GetPacketVID(e), ecs::PlayerRuntime::GetRaceNum(e), ecs::PlayerRuntime::IsPC(e), static_cast<const void*>(ecs::PlayerRuntime::GetDesc(e)));
 
-        SafeboxSystem::Close(owner, SAFEBOX, false);
+        SafeboxSystem::Close(owner, SAFEBOX);
         if (!g_registry.valid(owner)) return;
         SetSafeboxLoading(owner, false);
         return;
@@ -606,46 +586,6 @@ bool IsCubeOpen(entt::entity character)
     if (g_registry.all_of<ecs::TypedCraftActive>(character)) return true;
     const auto* cube = g_registry.try_get<ecs::CubeWindowComponent>(character);
     return cube && g_registry.valid(cube->npc);
-}
-
-int GetSafeboxSize(entt::entity character)
-{
-    if (character == entt::null || !g_registry.valid(character))
-        return 0;
-
-    const auto* safebox = g_registry.try_get<ecs::SafeboxRef>(character);
-    return safebox ? safebox->safeboxSize : 0;
-}
-
-bool SetSafeboxSize(entt::entity, int)
-{
-    // Retired safebox-page purchases cannot write a second storage backend.
-    return false;
-}
-
-bool SetSafeboxOpenPosition(entt::entity character)
-{
-    if (character == entt::null || !g_registry.valid(character))
-        return false;
-
-    auto& safebox = g_registry.get_or_emplace<ecs::SafeboxRef>(character);
-    safebox.openX = ecs::PlayerRuntime::GetX(character);
-    safebox.openY = ecs::PlayerRuntime::GetY(character);
-    return true;
-}
-
-float GetDistanceFromSafeboxOpen(entt::entity character)
-{
-    if (character == entt::null || !g_registry.valid(character))
-        return 0.0f;
-
-    const auto* safebox = g_registry.try_get<ecs::SafeboxRef>(character);
-    if (!safebox)
-        return 0.0f;
-
-    return DISTANCE_APPROX(
-        ecs::PlayerRuntime::GetX(character) - safebox->openX,
-        ecs::PlayerRuntime::GetY(character) - safebox->openY);
 }
 
 } // namespace ecs::SessionSystem

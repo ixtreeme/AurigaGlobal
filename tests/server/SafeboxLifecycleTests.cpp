@@ -1,6 +1,6 @@
 #include "../../SRC/Server/GameServer/core/stdafx.h"
 #include "../../SRC/Server/GameServer/item/safebox.h"
-#include "../../SRC/Server/GameServer/network/desc_client.h"
+#include "../../SRC/Server/GameServer/network/desc.h"
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/inventory_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
@@ -13,12 +13,11 @@
 // Real safebox.cpp, with entity-only items/owners. No CItem, CHARACTER,
 // descriptor or database connection is instantiated.
 entt::registry g_registry;
-LPCLIENT_DESC db_clientdesc = nullptr;
 int g_bItemCountLimit = 200;
 
 namespace {
 int checks = 0, removed = 0, destroyed = 0;
-int accountLookups = 0, descriptorLookups = 0;
+int descriptorLookups = 0;
 bool rejectConsumption = false, rejectRemoval = false;
 std::function<void(entt::entity)> onRemove, onDestroy;
 struct Player { bool pc = true; };
@@ -44,7 +43,7 @@ entt::entity Item(uint32_t count = 1, uint8_t size = 1) {
 }
 void Reset() {
     g_registry.clear();
-    removed = destroyed = accountLookups = descriptorLookups = 0;
+    removed = destroyed = descriptorLookups = 0;
     onRemove = onDestroy = {};
     rejectConsumption = rejectRemoval = false;
     g_bItemCountLimit = 200;
@@ -60,7 +59,6 @@ std::shared_ptr<spdlog::logger> logging::GetLogger() {
     return logger;
 }
 void DESC::Packet(const void*, int) { throw std::runtime_error("unexpected live descriptor packet"); }
-void CLIENT_DESC::DBPacket(uint8_t, uint32_t, const void*, uint32_t) { throw std::runtime_error("unexpected live DB packet"); }
 
 namespace ecs::PlayerRuntime {
 bool IsPC(entt::entity entity) {
@@ -71,11 +69,6 @@ LPDESC GetDesc(entt::entity entity) {
     Check(IsPC(entity), "descriptor lookup used stale/non-player owner");
     ++descriptorLookups;
     return nullptr;
-}
-uint32_t GetAccountID(entt::entity entity) {
-    Check(IsPC(entity), "account lookup used stale/non-player owner");
-    ++accountLookups;
-    return 0;
 }
 std::string_view GetName(entt::entity entity) {
     Check(IsPC(entity), "name lookup used stale/non-player owner");
@@ -162,7 +155,7 @@ void ComponentOwnership() {
         const auto replacement = SafeboxSystem::Open(owner, window, 3);
         Check(replacement != entt::null && SafeboxSystem::Get(owner, window) == replacement, "post-close reopen failed");
         onRemove = {};
-        SafeboxSystem::Close(owner, window, false); SafeboxSystem::Close(owner, otherWindow, false);
+        SafeboxSystem::Close(owner, window); SafeboxSystem::Close(owner, otherWindow);
     }
     Reset(); const auto owner = PlayerEntity();
     const auto storage = SafeboxSystem::Open(owner, SAFEBOX, 3);
@@ -174,36 +167,23 @@ void ComponentOwnership() {
     Check(SafeboxSystem::Open(replacement, INVENTORY, 3) == entt::null, "unsupported storage window accepted");
     Check(SafeboxSystem::Get(entt::null, SAFEBOX) == entt::null, "null owner exposed storage");
 }
-// The safebox size, the "waiting for the database" flag and the position the
-// window was opened at each used to exist twice: a CHARACTER field and a
-// SafeboxRef member. Only the CHARACTER copy was ever read, so the component's
-// defaults were never exercised. They are the only copy now, and three callers
-// depend on the exact default: QuerySafeboxSize asks the database only while
-// the size is still -1, ReqSafeboxLoad refuses a second request while the flag
-// is set, and GetDistanceFromSafeboxOpen must report "nowhere near" before a
-// window was ever opened.
 void SessionStateOwnership() {
     Reset(); const auto owner = PlayerEntity();
     const auto& fresh = g_registry.emplace<ecs::SafeboxRef>(owner);
-    Check(fresh.safeboxSize == -1, "a fresh safebox reports a real size");
+    Check(fresh.safeboxLoadTime == 0, "a fresh safebox has a load cooldown");
     Check(!fresh.isOpening, "a fresh safebox claims a load is in flight");
-    Check(fresh.openX == -1000 && fresh.openY == -1000, "a fresh safebox opens at the origin");
 
     auto& state = g_registry.get<ecs::SafeboxRef>(owner);
-    state.safeboxSize = 27;
+    state.safeboxLoadTime = 27;
     state.isOpening = true;
-    state.openX = 400; state.openY = 500;
 
-    // Opening and closing the storage must not touch any of it: the flag is
-    // cleared by CloseSafebox, which runs after this, and the size outlives
-    // the window so the next open knows how many pages were paid for.
+    // The session owns the load state and cooldown across container teardown.
     const auto storage = SafeboxSystem::Open(owner, SAFEBOX, 3);
     Check(storage != entt::null, "storage did not open");
-    SafeboxSystem::Close(owner, SAFEBOX, false);
+    SafeboxSystem::Close(owner, SAFEBOX);
     const auto& kept = g_registry.get<ecs::SafeboxRef>(owner);
-    Check(kept.safeboxSize == 27, "closing the window forgot the paid-for size");
+    Check(kept.safeboxLoadTime == 27, "closing the window forgot the load cooldown");
     Check(kept.isOpening, "closing the window cleared the load flag behind its owner");
-    Check(kept.openX == 400 && kept.openY == 500, "closing the window moved the open position");
 
     // A new character in a recycled slot starts over; the old values must not
     // survive into it, which is what the CHARACTER constructor used to promise.
@@ -211,7 +191,7 @@ void SessionStateOwnership() {
     const auto replacement = PlayerEntity();
     Check(!g_registry.try_get<ecs::SafeboxRef>(replacement), "recycled owner inherited safebox state");
     const auto& reborn = g_registry.emplace<ecs::SafeboxRef>(replacement);
-    Check(reborn.safeboxSize == -1 && !reborn.isOpening && reborn.openX == -1000,
+    Check(reborn.safeboxLoadTime == 0 && !reborn.isOpening,
         "recycled owner inherited safebox state");
 }
 void BasicStorage() {
@@ -289,8 +269,7 @@ void StaleOwnersAndItems() {
             const auto lookups = descriptorLookups;
             Check(!SafeboxSystem::Add(box, 1, Item()) && !SafeboxSystem::MoveItem(box, 0, 1, 0)
                 && SafeboxSystem::Remove(box, 0) == entt::null, "stale owner mutated storage");
-            SafeboxSystem::Save(box);
-            Check(accountLookups == 0 && descriptorLookups == lookups, "replacement owner received old storage access");
+            Check(descriptorLookups == lookups, "replacement owner received old storage access");
         } else if (scenario == 1) {
             g_registry.destroy(item);
             const auto replacement = Item(9);
@@ -316,7 +295,6 @@ void StaleOwnersAndItems() {
     npcState.windowMode = SAFEBOX;
     npcState.size = 3;
     Check(!SafeboxSystem::Add(npcStorage, 0, Item()), "NPC owner accepted");
-    SafeboxSystem::Save(npcStorage); SafeboxSystem::Save(entt::null);
 }
 
 void ReentrantTeardown() {
@@ -333,7 +311,6 @@ void ReentrantTeardown() {
             SafeboxSystem::ChangeSize(box, 27);
             Check(!SafeboxSystem::Add(box, 2, unowned) && SafeboxSystem::Remove(box, 1) == entt::null
                 && !SafeboxSystem::MoveItem(box, 0, 2, 0), "callback mutated retiring storage");
-            SafeboxSystem::Save(box);
         };
         if (stage == 0) onRemove = callback;
         else onDestroy = callback;
@@ -422,7 +399,6 @@ void StackGuards() {
     Check(!g_registry.valid(source) && SafeboxSystem::GetItem(box, 0) == entt::null
         && SafeboxSystem::IsEmpty(box, 0, 1) && ItemSystem::GetItemCount(destination) == 15,
         "full merge left a stale source");
-    SafeboxSystem::Save(box); // No DB descriptor: must not dereference it.
 }
 }
 

@@ -7,8 +7,6 @@ namespace ecs::SessionSystem {
 
 bool WarpToPID(entt::entity e, uint32_t dwPID);
 entt::entity GetSafebox(entt::entity e);
-int GetMallLoadTime(entt::entity e);
-void SetMallLoadTime(entt::entity e, int pulse);
 entt::entity GetMall(entt::entity e);
 void CloseMall(entt::entity e);
 void CloseSafebox(entt::entity e);
@@ -25,9 +23,5 @@ bool IsSafeboxOpen(entt::entity character);
 void SetSafeboxOpen(entt::entity character, bool open);
 bool IsCubeOpen(entt::entity character);
 
-int GetSafeboxSize(entt::entity character);
-bool SetSafeboxSize(entt::entity character, int size);
-bool SetSafeboxOpenPosition(entt::entity character);
-float GetDistanceFromSafeboxOpen(entt::entity character);
 
 } // namespace ecs::SessionSystem
