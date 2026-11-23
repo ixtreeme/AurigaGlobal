@@ -6,7 +6,6 @@
 #include <Core/Logging.hpp>
 #include "constants.h"
 #include "sectree_manager.h"
-#include "item_manager.h"
 #include "buffer_manager.h"
 #include "config.h"
 #include "packet.h"
@@ -536,17 +535,34 @@ struct FIsIn
 
 bool CLand::RequestCreateObject(uint32_t dwVnum, int32_t lMapIndex, int32_t x, int32_t y, float xRot, float yRot, float zRot, bool checkAnother)
 {
+	auto object = PrepareCreateObject(dwVnum, lMapIndex, x, y, xRot, yRot, zRot, checkAnother);
+	if (!object)
+		return false;
+	db_clientdesc->DBPacket(HEADER_GD_CREATE_OBJECT, 0, &*object, sizeof(*object));
+	return true;
+}
+
+std::pair<uint32_t, uint32_t> CLand::ObjectRevision() const
+{
+	return {static_cast<uint32_t>(m_objectsByID.size()), m_objectsByID.empty() ? 0 : m_objectsByID.rbegin()->first};
+}
+
+std::optional<TPacketGDCreateObject> CLand::PrepareCreateObject(uint32_t dwVnum, int32_t lMapIndex, int32_t x, int32_t y,
+	float xRot, float yRot, float zRot, bool checkAnother)
+{
 	SECTREE_MANAGER& rkSecTreeMgr = SECTREE_MANAGER::instance();
 	TObjectProto * pkProto = CManager::instance().GetObjectProto(dwVnum);
 
 	if (!pkProto)
 	{
 		LOG_ERROR("Invalid Object vnum {}", dwVnum);
-		return false;
+		return {};
 	}
 	const TMapRegion * r = rkSecTreeMgr.GetMapRegion(lMapIndex);
-	if (!r)
-		return false;
+	if (!r || lMapIndex != m_data.lMapIndex || !std::isfinite(xRot) || !std::isfinite(yRot) || !std::isfinite(zRot) ||
+		std::abs(xRot) > 360 || std::abs(yRot) > 360 || std::abs(zRot) > 360 ||
+		!std::in_range<int32_t>(int64_t{r->sx} + x) || !std::in_range<int32_t>(int64_t{r->sy} + y))
+		return {};
 
 	LOG_INFO("RequestCreateObject(vnum={}, map={}, pos=({},{}), rot=({:.1f},{:.1f},{:.1f}) region({},{} ~ {},{})", dwVnum, lMapIndex, x, y, xRot, yRot, zRot, r->sx, r->sy, r->ex, r->ey);
 
@@ -557,6 +573,8 @@ bool CLand::RequestCreateObject(uint32_t dwVnum, int32_t lMapIndex, int32_t x, i
 	int ex = sx + m_data.width;
 	int sy = r->sy + m_data.y;
 	int ey = sy + m_data.height;
+	if (x < sx || x > ex || y < sy || y > ey)
+		return {};
 
 	int osx = x + pkProto->lRegion[0];
 	int osy = y + pkProto->lRegion[1];
@@ -574,7 +592,7 @@ bool CLand::RequestCreateObject(uint32_t dwVnum, int32_t lMapIndex, int32_t x, i
 	if (tsx < sx || tex > ex || tsy < sy || tey > ey)
 	{
 		LOG_ERROR("invalid position: object is outside of land region\nLAND: {} {} ~ {} {}\nOBJ: {} {} ~ {} {}", sx, sy, ex, ey, osx, osy, oex, oey);
-		return false;
+		return {};
 	}
 
 	// ADD_BUILDING_ROTATION
@@ -583,15 +601,18 @@ bool CLand::RequestCreateObject(uint32_t dwVnum, int32_t lMapIndex, int32_t x, i
 		if (rkSecTreeMgr.ForAttrRegion(lMapIndex, osx, osy, oex, oey, (int32_t)zRot, ATTR_OBJECT, ATTR_REGION_MODE_CHECK))
 		{
 			LOG_ERROR("another object already exist");
-			return false;
+			return {};
 		}
 		FIsIn f (osx, osy, oex, oey);
-		rkSecTreeMgr.GetMap(lMapIndex)->for_each(f);
+		auto* map = rkSecTreeMgr.GetMap(lMapIndex);
+		if (!map)
+			return {};
+		map->for_each(f);
 
 		if (f.bIn)
 		{
 			LOG_ERROR("another object already exist");
-			return false;
+			return {};
 		}
 	}
 	// END_OF_BUILDING_NPC
@@ -607,8 +628,7 @@ bool CLand::RequestCreateObject(uint32_t dwVnum, int32_t lMapIndex, int32_t x, i
 	p.yRot = yRot;
 	p.zRot = zRot;
 
-	db_clientdesc->DBPacket(HEADER_GD_CREATE_OBJECT, 0, &p, sizeof(TPacketGDCreateObject));
-	return true;
+	return p;
 }
 
 void CLand::RequestDeleteObject(uint32_t dwID)
@@ -692,20 +712,8 @@ bool CManager::LoadObjectProto(const TObjectProto * pProto, int size) // from DB
 		LOG_TRACE("ObjectProto {} price {} upgrade {} upg_limit {} life {} NPC {}", r.dwVnum, r.dwPrice, r.dwUpgradeVnum, r.dwUpgradeLimitTime, r.lLife, r.dwNPCVnum);
 		// END_OF_BUILDING_NPC
 
-		for (int j = 0; j < OBJECT_MATERIAL_MAX_NUM; ++j)
-		{
-			if (!r.kMaterials[j].dwItemVnum)
-				break;
-
-			if (nullptr == ITEM_MANAGER::instance().GetTable(r.kMaterials[j].dwItemVnum))
-			{
-				LOG_ERROR("          mat: ERROR!! no item by vnum {}", r.kMaterials[j].dwItemVnum);
-				return false;
-			}
-
-			LOG_TRACE("          mat: {} {}", r.kMaterials[j].dwItemVnum, r.kMaterials[j].dwCount);
-		}
-
+		// World prototypes load before player item operations. Their material
+		// references are resolved against the typed catalog when construction is requested.
 		m_map_pkObjectProto.insert(std::make_pair(r.dwVnum, &m_vec_kObjectProto[i]));
 	}
 

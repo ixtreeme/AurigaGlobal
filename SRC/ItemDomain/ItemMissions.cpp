@@ -124,7 +124,8 @@ static std::expected<ItemCommit,E> MakeExchangeCommit(const ItemCatalog& c,const
     if (requiredSource)
     {
         const auto source = std::ranges::find(inventory, *requiredSource, &PersistentItem::id);
-        if (m.costs.size() != 1 || source == inventory.end() || !MissionItemUsable(*source, fence.owner) ||
+        if (m.costs.size() != 1 || source == inventory.end() ||
+            !(gameplay ? ExchangeItemUsable : MissionItemUsable)(*source, fence.owner) ||
             source->key != m.costs.front().key || source->refinementLevel != m.costs.front().level ||
             source->count < m.costs.front().count)
             return std::unexpected(E::Requirements);
@@ -202,9 +203,10 @@ std::expected<ItemCommit,E> MakeItemMissionCommit(const ItemCatalog& c,const Ite
 }
 std::expected<ItemCommit,E> MakeGameplayItemExchangeCommit(const ItemCatalog& c,const ItemMission& m,ItemMissionProof proof,
     ItemOwnerFence fence,std::span<const ItemStorageLayout> layouts,std::span<const PersistentItem> inventory,
-    std::span<const ItemWallet> wallets,std::span<const ItemInstanceId> ids,std::uint64_t nowUtcMs,WalletCurrency currency)
+    std::span<const ItemWallet> wallets,std::span<const ItemInstanceId> ids,std::uint64_t nowUtcMs,WalletCurrency currency,
+    std::optional<ItemInstanceId> requiredSource)
 {
-    return MakeExchangeCommit(c,m,proof,0,fence,layouts,inventory,wallets,ids,nowUtcMs,{},true,currency);
+    return MakeExchangeCommit(c,m,proof,0,fence,layouts,inventory,wallets,ids,nowUtcMs,requiredSource,true,currency);
 }
 std::expected<std::vector<std::byte>,TypedInventoryWireError> EncodeItemMissionBoard(const ItemCatalog& c,const ItemMissionBoard* board,
     std::uint32_t npc,std::uint64_t session,std::uint64_t request,ItemMissionStatus status,std::uint32_t selected,std::span<const std::uint32_t> completed)

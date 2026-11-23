@@ -21,6 +21,9 @@
 #include "desc_manager.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
+#include "../item/TypedQuestItems.hpp"
+#include <item/GuildConstruction.hpp>
+#include <charconv>
 #include "item_manager.h"
 #include "sectree_manager.h"
 #include "mob_manager.h"
@@ -2818,6 +2821,28 @@ void block_chat(entt::entity executor, std::string_view arguments)
 // END_OF_BLOCK_CHAT
 
 // BUILD_BUILDING
+static std::optional<std::array<uint32_t, 3>> TypedBuildingMaterialCounts(const building::TObjectProto& prototype)
+{
+	std::array<uint32_t, 3> counts{};
+	for (const auto& material : prototype.kMaterials)
+	{
+		if (!material.dwItemVnum && !material.dwCount)
+			continue;
+		const auto known = std::ranges::find(auriga::item::GuildConstructionMaterials,
+			material.dwItemVnum, [](const auto& value) { return value.first; });
+		if (known == auriga::item::GuildConstructionMaterials.end() || !material.dwCount)
+		{
+			LOG_ERROR("Missing typed material {} for building {}", material.dwItemVnum, prototype.dwVnum);
+			return {};
+		}
+		auto& count = counts[std::distance(auriga::item::GuildConstructionMaterials.begin(), known)];
+		if (UINT32_MAX - count < material.dwCount)
+			return {};
+		count += material.dwCount;
+	}
+	return counts;
+}
+
 ACMD(do_build)
 {
 	using namespace building;
@@ -2857,6 +2882,28 @@ ACMD(do_build)
 
 	switch (LOWER(*arg1))
 	{
+		case 'p':
+		{
+			one_argument(line, arg2, sizeof(arg2));
+			uint32_t prototypeId = 0;
+			const auto end = arg2 + std::strlen(arg2);
+			const auto parsed = std::from_chars(arg2, end, prototypeId);
+			if (parsed.ec != std::errc{} || parsed.ptr != end)
+				return;
+			const auto* prototype = CManager::instance().GetObjectProto(prototypeId);
+			if (!prototype)
+				return;
+			const auto counts = TypedBuildingMaterialCounts(*prototype);
+			if (!counts)
+			{
+				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Az építőanyag nincs elérhetővé téve.");
+				return;
+			}
+			const bool paid = test_server || GMLevel == GM_PLAYER;
+			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "guild_build_price %u %u %u %u %u", prototypeId,
+				paid ? prototype->dwPrice : 0, paid ? (*counts)[0] : 0, paid ? (*counts)[1] : 0, paid ? (*counts)[2] : 0);
+			return;
+		}
 		case 'c':
 			{
 				// /build c vnum x y x_rot y_rot z_rot
@@ -2910,82 +2957,65 @@ ACMD(do_build)
 					}
 				}
 
-				if (test_server || GMLevel == GM_PLAYER)
+				const bool paid = test_server || GMLevel == GM_PLAYER;
+				if (paid && t->dwPrice > BUILDING_MAX_PRICE)
 				{
-					if (t->dwPrice > BUILDING_MAX_PRICE)
-					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 238, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 238, "");
 #endif
-						return;
-					}
-
-					if (ecs::PointSystem::GetGold(character) < (int64_t)t->dwPrice)
-
-					{
-#ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 232, "");
-#endif
-						return;
-					}
-
-
-					int i;
-					for (i = 0; i < OBJECT_MATERIAL_MAX_NUM; ++i)
-					{
-						uint32_t dwItemVnum = t->kMaterials[i].dwItemVnum;
-						uint32_t dwItemCount = t->kMaterials[i].dwCount;
-
-						if (dwItemVnum == 0)
-							break;
-
-						if ((int) dwItemCount > ItemSystem::CountItem(character, dwItemVnum))
-						{
-#ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 449, "");
-#endif
-							return;
-						}
-					}
-				}
-
-				float x_rot = atof(arg4);
-				float y_rot = atof(arg5);
-				float z_rot = atof(arg6);
-				int32_t map_x = 0;
-				str_to_number(map_x, arg2);
-				int32_t map_y = 0;
-				str_to_number(map_y, arg3);
-
-				bool isSuccess = pkLand->RequestCreateObject(dwVnum,
-						ecs::PlayerRuntime::GetMapIndex(character),
-						map_x,
-						map_y,
-						x_rot,
-						y_rot,
-						z_rot, true);
-
-				if (!isSuccess) {
 					return;
 				}
 
-				if (test_server || GMLevel == GM_PLAYER)
+				float xRot = 0, yRot = 0, zRot = 0;
+				int32_t mapX = 0, mapY = 0;
+				const auto parse = [](const char* word, auto& value) {
+					const auto end = word + std::strlen(word);
+					const auto parsed = std::from_chars(word, end, value);
+					return parsed.ec == std::errc{} && parsed.ptr == end;
+				};
+				if (!parse(arg2, mapX) || !parse(arg3, mapY) || !parse(arg4, xRot) ||
+					!parse(arg5, yRot) || !parse(arg6, zRot))
+					return;
+
+				const int32_t map = ecs::PlayerRuntime::GetMapIndex(character);
+				if (!paid)
 				{
-					ecs::PointSystem::Change(character, POINT_GOLD, -static_cast<int64_t>(t->dwPrice));
+					pkLand->RequestCreateObject(dwVnum, map, mapX, mapY, xRot, yRot, zRot, true);
+					return;
+				}
+				const auto placement = pkLand->PrepareCreateObject(dwVnum, map, mapX, mapY, xRot, yRot, zRot, true);
+				if (!placement)
+					return;
 
-					{
-						for (int i = 0; i < OBJECT_MATERIAL_MAX_NUM; ++i)
-						{
-							uint32_t dwItemVnum = t->kMaterials[i].dwItemVnum;
-							uint32_t dwItemCount = t->kMaterials[i].dwCount;
-
-							if (dwItemVnum == 0)
-								break;
-
-							LOG_INFO("BUILD: material {} {} {}", i, dwItemVnum, dwItemCount);
-							ItemSystem::RemoveSpecifyItemEcs(character, dwItemVnum, dwItemCount);
-						}
-					}
+				namespace items = auriga::item;
+				const auto counts = TypedBuildingMaterialCounts(*t);
+				if (!counts)
+				{
+					ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Az építőanyag nincs elérhetővé téve.");
+					return;
+				}
+				std::vector<items::MissionItemAmount> costs;
+				for (std::size_t i = 0; i < counts->size(); ++i)
+					if ((*counts)[i])
+						costs.push_back({items::GuildConstructionMaterials[i].second, 0, (*counts)[i]});
+				const auto [objectCount, lastObject] = pkLand->ObjectRevision();
+				const items::GuildConstruction build{pkLand->GetID(), pkLand->GetOwner(), dwVnum, map,
+					placement->x, placement->y, xRot, yRot, zRot, objectCount, lastObject, t->dwPrice, GMLevel == GM_PLAYER};
+				const auto result = RequestTypedGuildExchange(character, std::move(costs), t->dwPrice,
+					items::GuildConstructionOutcome, items::EncodeGuildConstruction(build), [character](bool committed) {
+						if (!committed && ecs::IsCharacter(character))
+							ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Az építés nem sikerült. Próbáld újra.");
+					});
+				if (!result)
+				{
+#ifdef TEXTS_IMPROVEMENT
+					if (result.error() == items::ItemMissionError::NoMoney)
+						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 232, "");
+					else if (result.error() == items::ItemMissionError::Requirements)
+						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 449, "");
+					else
+#endif
+						ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Az építés jelenleg nem elérhető.");
 				}
 			}
 			break;

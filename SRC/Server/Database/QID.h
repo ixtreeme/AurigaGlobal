@@ -40,6 +40,7 @@ enum QID
 
 	
 	// END_OF_MYSHOP_PRICE_LIST
+	QID_COMMITTED_BUILDINGS,
 };
 
 #endif

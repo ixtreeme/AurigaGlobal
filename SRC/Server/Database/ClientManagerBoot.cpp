@@ -440,17 +440,24 @@ bool CClientManager::InitializeObjectProto()
 
 bool CClientManager::InitializeObjectTable()
 {
-	using namespace building;
-
 	char query[4096];
 	snprintf(query, sizeof(query), "SELECT id, land_id, vnum, map_index, x, y, x_rot, y_rot, z_rot, life FROM object%s ORDER BY id", GetTablePostfix());
 
 	std::unique_ptr<SQLMsg> pkMsg(CDBManager::instance().DirectQuery(query));
-	SQLResult* pRes = pkMsg->Get();
+	return ReadObjectTable(pkMsg.get(), false);
+}
 
-	if (!m_map_pkObjectTable.empty())
+bool CClientManager::ReadObjectTable(SQLMsg* message, bool publish)
+{
+	using namespace building;
+	if (!message || message->uiSQLErrno || !message->Get())
+		return false;
+	SQLResult* pRes = message->Get();
+	if (!publish && !m_map_pkObjectTable.empty())
 	{
 		LOG_INFO("RELOAD: object");
+		for (const auto& entry : m_map_pkObjectTable)
+			delete entry.second;
 		m_map_pkObjectTable.clear();
 	}
 
@@ -459,13 +466,15 @@ bool CClientManager::InitializeObjectTable()
 	if (pRes->uiNumRows > 0)
 		while ((data = pRes->FetchRow()))
 		{
-			TObject* k = new TObject;
+			uint32_t id = 0;
+			str_to_number(id, data[0]);
+			if (!id || m_map_pkObjectTable.contains(id))
+				continue;
+			TObject* k = new TObject{};
 
-			memset(k, 0, sizeof(TObject));
+			int col = 1;
 
-			int col = 0;
-
-			str_to_number(k->dwID, data[col++]);
+			k->dwID = id;
 			str_to_number(k->dwLandID, data[col++]);
 			str_to_number(k->dwVnum, data[col++]);
 			str_to_number(k->lMapIndex, data[col++]);
@@ -479,6 +488,8 @@ bool CClientManager::InitializeObjectTable()
 			LOG_INFO("OBJ: {} vnum {} map {:<4} {:7}x{:<7} life {}", k->dwID, k->dwVnum, k->lMapIndex, k->x, k->y, k->lLife);
 
 			m_map_pkObjectTable.insert(std::make_pair(k->dwID, k));
+			if (publish)
+				ForwardPacket(HEADER_DG_CREATE_OBJECT, k, sizeof(TObject));
 		}
 
 	return true;

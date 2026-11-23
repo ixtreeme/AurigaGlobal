@@ -8,6 +8,7 @@
 #include <Core/Time.h>
 
 #include <common/building.h>
+#include <common/DragonCoinWallet.h>
 #include <common/VnumHelper.h>
 #include <Base/grid.h>
 
@@ -1369,6 +1370,7 @@ void CClientManager::DeleteObject(uint32_t dwID)
 		delete it->second;
 		m_map_pkObjectTable.erase(it);
 	}
+	++m_buildingDeleteEpoch;
 
 	ForwardPacket(HEADER_DG_DELETE_OBJECT, &dwID, sizeof(uint32_t));
 }
@@ -2263,6 +2265,14 @@ CPeer * CClientManager::GetAnyPeer()
 int CClientManager::AnalyzeQueryResult(SQLMsg * msg)
 {
 	CQueryInfo * qi = (CQueryInfo *) msg->pvUserData;
+	if (qi->iType == QID_COMMITTED_BUILDINGS)
+	{
+		m_buildingReadPending = false;
+		if (qi->dwIdent == m_buildingDeleteEpoch)
+			ReadObjectTable(msg, true);
+		delete qi;
+		return true;
+	}
 	CPeer * peer = GetPeer(qi->dwIdent);
 
 #ifdef _TEST
@@ -2408,6 +2418,15 @@ int CClientManager::Process()
 
 		if (!(thecore_heart->pulse % thecore_heart->passes_per_sec))
 		{
+			// GameServer commits paid construction together with the wallet and materials.
+			// Discover durable objects even if the initiating core died after COMMIT.
+			if (!m_buildingReadPending)
+			{
+				const auto query = fmt::format("SELECT id,land_id,vnum,map_index,x,y,x_rot,y_rot,z_rot,life FROM object{} ORDER BY id",
+					GetTablePostfix());
+				m_buildingReadPending = true;
+				CDBManager::instance().ReturnQuery(query.c_str(), QID_COMMITTED_BUILDINGS, m_buildingDeleteEpoch, nullptr);
+			}
 			if (g_test_server)
 			{
 

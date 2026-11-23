@@ -3,6 +3,8 @@
 #include <entt/entt.hpp>
 
 #include <common/building.h>
+#include <optional>
+#include <common/tables.h>
 
 namespace building
 {
@@ -51,6 +53,9 @@ namespace building
 			void DeleteObject(uint32_t dwID);
 
 			bool	RequestCreateObject(uint32_t dwVnum, int32_t lMapIndex, int32_t x, int32_t y, float xRot, float yRot, float zRot, bool checkAnother);
+			std::optional<TPacketGDCreateObject> PrepareCreateObject(uint32_t vnum, int32_t map, int32_t x, int32_t y,
+				float xRotation, float yRotation, float zRotation, bool checkAnother);
+			std::pair<uint32_t, uint32_t> ObjectRevision() const;
 			void	RequestDeleteObject(uint32_t dwID);
 			void	RequestDeleteObjectByVID(uint32_t dwVID);
 

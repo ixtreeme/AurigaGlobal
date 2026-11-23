@@ -175,6 +175,7 @@ private:
 	bool		InitializeLandTable();
 	bool		InitializeObjectProto();
 	bool		InitializeObjectTable();
+	bool		ReadObjectTable(SQLMsg* message, bool publish);
 #ifdef ENABLE_EVENT_MANAGER
 public:
 	bool		InitializeEventManager(bool updateFromGameMaster = false);
@@ -434,6 +435,8 @@ private:
 	std::vector<building::TLand>		m_vec_kLandTable;
 	std::vector<building::TObjectProto>	m_vec_kObjectProto;
 	std::map<uint32_t, building::TObject*>	m_map_pkObjectTable;
+	bool m_buildingReadPending = false;
+	uint32_t m_buildingDeleteEpoch = 0;
 
 
 	bool					m_bShutdowned;

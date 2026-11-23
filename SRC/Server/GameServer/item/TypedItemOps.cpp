@@ -107,7 +107,9 @@ static std::expected<void, items::ItemMissionError> RequestTypedItemExchange(ent
 	std::vector<items::MissionItemAmount> costs, std::vector<items::MissionItemAmount> rewards,
 	std::uint64_t goldCost, std::function<void(bool)> done,
 	quest::TypedItemUseSource source, std::uint64_t goldReward, bool inQuest,
-	items::WalletCurrency currency = items::WalletCurrency::Gold, bool includeSpecialInventory = false)
+	items::WalletCurrency currency = items::WalletCurrency::Gold, bool includeSpecialInventory = false,
+	std::uint16_t outcome = 0, std::vector<std::uint8_t> receipt = {},
+	std::optional<items::ItemInstanceId> guildSource = {})
 {
 	using Error = items::ItemMissionError;
 	if (source.id && includeSpecialInventory)
@@ -165,13 +167,21 @@ static std::expected<void, items::ItemMissionError> RequestTypedItemExchange(ent
 	exchange.rewards = std::move(rewards);
 	exchange.goldCost = goldCost;
 	exchange.goldReward = goldReward;
+	exchange.rewardExtension = outcome != 0;
 	const auto ids = exchange.rewards.empty() ? std::vector<items::ItemInstanceId>{}
 		: items::runtime::PeekInstanceIds(items::MaxItemCommitItems);
 	auto commit = inQuest && !includeSpecialInventory
 		? items::MakeItemMissionCommit(*catalog, exchange, proof, 0, fence, state.storages, state.items, state.wallets, ids, TypedItemEffectNow(), sourceId)
-		: items::MakeGameplayItemExchangeCommit(*catalog, exchange, proof, fence, state.storages, state.items, state.wallets, ids, TypedItemEffectNow(), currency);
+		: items::MakeGameplayItemExchangeCommit(*catalog, exchange, proof, fence, state.storages, state.items, state.wallets, ids, TypedItemEffectNow(), currency, guildSource);
 	if (!commit)
 		return std::unexpected(commit.error());
+	if (outcome)
+	{
+		commit->outcomeCode = outcome;
+		commit->result = std::move(receipt);
+		if (!items::ValidateItemCommit(*catalog, *commit))
+			return std::unexpected(Error::Invalid);
+	}
 	if (goldReward && std::ranges::any_of(commit->wallets, [](const auto& change) { return change.after.balance >= GOLD_MAX; }))
 		return std::unexpected(Error::Limit);
 
@@ -180,16 +190,20 @@ static std::expected<void, items::ItemMissionError> RequestTypedItemExchange(ent
 	auto held = std::make_shared<auriga::resource_admission::Permit>(std::move(*permit));
 	g_registry.emplace<ecs::TypedItemBusy>(character);
 	if (!items::runtime::RequestCommit(fence.owner, fence.sessionGeneration, std::move(*commit),
-		[current, done = std::move(done), held = std::move(held)](items::runtime::CommitOutcome result) mutable {
+		[current, outcome, done = std::move(done), held = std::move(held)](items::runtime::CommitOutcome result) mutable {
 			const auto entity = current();
 			if (entity == entt::null)
+			{
+				if (outcome && done)
+					done(result.write.has_value());
 				return;
+			}
 			if (result.state)
 				g_registry.emplace_or_replace<ecs::TypedItems>(entity, std::move(*result.state));
 			g_registry.remove<ecs::TypedItemBusy>(entity);
 			held.reset();
 			SendTypedInventory(entity);
-			if (current() != entity)
+			if (!outcome && current() != entity)
 				return;
 			if (done)
 				done(result.write.has_value());
@@ -217,6 +231,14 @@ std::expected<void, items::ItemMissionError> RequestTypedGameplayItemExchange(en
 	std::uint64_t price, std::function<void(bool)> done, items::WalletCurrency currency)
 {
 	return RequestTypedItemExchange(character,std::move(costs),std::move(rewards),price,std::move(done),{},0,false,currency);
+}
+
+std::expected<void, items::ItemMissionError> RequestTypedGuildExchange(entt::entity character,
+	std::vector<items::MissionItemAmount> costs, std::uint64_t price, std::uint16_t outcome,
+	std::vector<std::uint8_t> receipt, std::function<void(bool)> done, std::optional<items::ItemInstanceId> source)
+{
+	return RequestTypedItemExchange(character, std::move(costs), {}, price, std::move(done), {}, 0,
+		false, items::WalletCurrency::Gold, false, outcome, std::move(receipt), source);
 }
 
 void RequestTypedItemMove(entt::entity character, std::uint64_t itemId, std::uint8_t storageKind, std::uint64_t storageId, std::uint32_t cell)

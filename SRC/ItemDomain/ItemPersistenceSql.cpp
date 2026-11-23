@@ -2,6 +2,8 @@
 #include <item/SoulRuntime.hpp>
 #include <item/AmmoRuntime.hpp>
 #include "ItemPersistenceSql.hpp"
+#include <item/GuildConstruction.hpp>
+#include <item/GuildProgress.hpp>
 #include <item/ItemShopReceipt.hpp>
 #include "StoragePersistenceSql.hpp"
 #include "PrivateShopsSql.hpp"
@@ -182,6 +184,85 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
         {U::Blob(r.ground->core),U::UInt(r.ground->run)},{},1});
     tx.push_back({"INSERT INTO player.item_operation_receipt(operation_id,request_sha256,catalog_revision,catalog_sha256,operation_kind,outcome_code,result_payload) VALUES(?,?,?,?,?,?,?)",
         {U::Blob(Bytes(r.operationId)),U::Blob(Bytes(*digest)),U::UInt(r.catalogRevision),U::Blob(Bytes(r.catalogHash)),U::UInt(static_cast<unsigned>(r.kind)),U::UInt(r.outcomeCode),U::Blob(Bytes(r.result))},1,{}});
+    if (const auto build = DecodeGuildConstruction(r))
+    {
+        tx.push_back({"SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN "
+                      "('land','object','object_proto','guild') HAVING COUNT(*)=4 AND SUM(ENGINE='InnoDB')=4", {}, {}, 1});
+        tx.push_back({"SELECT id FROM player.land WHERE id=? AND guild_id=? AND map_index=? FOR UPDATE",
+                      {U::UInt(build->land), U::UInt(build->guild), U::Int(build->map)}, {}, 1});
+        if (build->requireMaster)
+            tx.push_back({"SELECT id FROM player.guild WHERE id=? AND master=? FOR UPDATE",
+                          {U::UInt(build->guild), U::UInt(r.owners.front().owner.id)}, {}, 1});
+        tx.push_back({"SELECT vnum FROM player.object_proto WHERE vnum=? AND price=? LOCK IN SHARE MODE",
+                      {U::UInt(build->prototype), U::UInt(build->gold)}, {}, 1});
+        tx.push_back({"SELECT COUNT(*) FROM player.object WHERE land_id=? "
+                      "HAVING COUNT(*)=? AND COALESCE(MAX(id),0)=? FOR UPDATE",
+                      {U::UInt(build->land), U::UInt(build->objectCount), U::UInt(build->lastObject)}, {}, 1});
+        tx.push_back({"INSERT INTO player.object(land_id,vnum,map_index,x,y,x_rot,y_rot,z_rot) VALUES (?,?,?,?,?,?,?,?)",
+                      {U::UInt(build->land), U::UInt(build->prototype), U::Int(build->map), U::Int(build->x), U::Int(build->y),
+                       U::Real(build->xRotation), U::Real(build->yRotation), U::Real(build->zRotation)}, 1, {}});
+    }
+    if (const auto progress = DecodeGuildProgress(r))
+    {
+        const auto guild = U::UInt(progress->guild);
+        const auto pid = U::UInt(r.owners.front().owner.id);
+        const auto level = U::UInt(progress->currentLevel);
+        tx.push_back({"SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN "
+                      "('guild','guild_member','guild_renewal_money','guild_renewal_storage','guild_renewal_tax',"
+                      "'guild_renewal_contrib','guild_renewal_kisado_item') HAVING COUNT(*)=7 AND SUM(ENGINE='InnoDB')=7", {}, {}, 1});
+        tx.push_back({"SELECT id FROM player.guild WHERE id=? AND level=? FOR UPDATE", {guild, level}, {}, 1});
+        tx.push_back({"SELECT pid FROM player.guild_member WHERE pid=? AND guild_id=? FOR UPDATE", {pid, guild}, {}, 1});
+        tx.push_back({"INSERT IGNORE INTO player.guild_renewal_money(guild_id,money) VALUES(?,0)", {guild}, {}, {}});
+        tx.push_back({"SELECT money FROM player.guild_renewal_money WHERE guild_id=? AND money=? FOR UPDATE",
+            {guild, U::UInt(progress->moneyBefore)}, {}, 1});
+        for (std::size_t index = 0; index < progress->before.size(); ++index)
+        {
+            const auto slot = U::UInt(index);
+            const auto& before = progress->before[index];
+            const auto& after = progress->after[index];
+            if (before.count)
+                tx.push_back({"SELECT slot FROM player.guild_renewal_storage WHERE guild_id=? AND slot=? AND vnum=? AND count=? FOR UPDATE",
+                    {guild, slot, U::UInt(before.material), U::UInt(before.count)}, {}, 1});
+            else
+                tx.push_back({"SELECT slot FROM player.guild_renewal_storage WHERE guild_id=? AND slot=? AND count<>0 FOR UPDATE",
+                    {guild, slot}, {}, 0});
+            if (!progress->levelUp && before != after)
+                tx.push_back({"INSERT INTO player.guild_renewal_storage(guild_id,slot,vnum,count) VALUES(?,?,?,?) "
+                              "ON DUPLICATE KEY UPDATE vnum=VALUES(vnum),count=VALUES(count)",
+                    {guild, slot, U::UInt(after.material), U::UInt(after.count)}, {}, {}});
+        }
+        if (progress->levelUp)
+        {
+            tx.push_back({"UPDATE player.guild SET level=level+1,exp=0 WHERE id=? AND level=? AND master=?", {guild, level, pid}, 1, {}});
+            tx.push_back({"UPDATE player.guild_renewal_money SET money=0 WHERE guild_id=?", {guild}, {}, {}});
+            tx.push_back({"DELETE FROM player.guild_renewal_storage WHERE guild_id=?", {guild}, {}, {}});
+            tx.push_back({"DELETE FROM player.guild_renewal_contrib WHERE guild_id=?", {guild}, {}, {}});
+            tx.push_back({"DELETE FROM player.guild_renewal_kisado_item WHERE guild_id=?", {guild}, {}, {}});
+            tx.push_back({"DELETE FROM player.guild_renewal_tax WHERE guild_id=?", {guild}, {}, {}});
+        }
+        else
+        {
+            if (progress->moneyPaid)
+                tx.push_back({"UPDATE player.guild_renewal_money SET money=money+? WHERE guild_id=?",
+                    {U::UInt(progress->moneyPaid), guild}, 1, {}});
+            std::uint64_t total = 0;
+            SqlParams contribution{guild, pid};
+            for (auto count : progress->contributed)
+            {
+                contribution.push_back(U::UInt(count));
+                total += count;
+            }
+            tx.push_back({"INSERT INTO player.guild_renewal_contrib(guild_id,pid,paid_money,paid_item_total,paid_flag,last_pay_time) "
+                          "VALUES(?,?,?,?,1,UNIX_TIMESTAMP()) ON DUPLICATE KEY UPDATE paid_money=paid_money+VALUES(paid_money),"
+                          "paid_item_total=paid_item_total+VALUES(paid_item_total),paid_flag=1,last_pay_time=VALUES(last_pay_time)",
+                {guild, pid, U::UInt(progress->moneyPaid), U::UInt(total)}, {}, {}});
+            if (total)
+                tx.push_back({"INSERT INTO player.guild_renewal_kisado_item(guild_id,pid,item0,item1,item2,item3,item4) VALUES(?,?,?,?,?,?,?) "
+                              "ON DUPLICATE KEY UPDATE item0=item0+VALUES(item0),item1=item1+VALUES(item1),"
+                              "item2=item2+VALUES(item2),item3=item3+VALUES(item3),item4=item4+VALUES(item4)",
+                    std::move(contribution), {}, {}});
+        }
+    }
     if (IsItemShopPurchaseOutcome(r.outcomeCode))
     {
         if (r.kind != ItemOperationKind::Grant || r.result.size() <= ItemShopReceiptPrefix ||
