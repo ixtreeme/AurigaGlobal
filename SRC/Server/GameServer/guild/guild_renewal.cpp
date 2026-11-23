@@ -21,10 +21,10 @@
 #include "p2p.h"
 #include "packet.h"
 #include "db.h"
-#include "item.h"
-#include "item_manager.h"
 #include "utils.h"
-#include "../ecs/systems/ItemSystem.hpp"
+#include "../item/ItemStore.hpp"
+#include "../item/ItemCatalogRuntime.hpp"
+#include "../item/TypedQuestItems.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/EntityFactory.hpp"
 
@@ -39,35 +39,14 @@ namespace
 {
 	static const int kGuildStorageSize = 15; // 5x3 (client UI)
 
-	// Safe helper: vnum -> localized item name (or nullptr if missing)
-	static const char* GetItemNameByVnum(uint32_t vnum, uint8_t lang)
-	{
-		TItemTable* p = ITEM_MANAGER::instance().GetTable(vnum);
-		if (!p)
-			return nullptr;
-
-#ifdef ENABLE_MULTI_NAMES
-		if (lang >= LANGUAGE_MAX_NUM)
-			lang = 0;
-		return p->szLocaleName[lang];
-#else
-		(void)lang;
-		return p->szLocaleName;
-#endif
-	}
-
-
-	// --------------------------------------------------------------------
-	// "Kis ad" rendszer: befizetsek nyilvntartsa (item bontsban)
-	// Megjegyzs: a rszletes bonts csak memriban l (upgrade utn nullzdik).
-	// A 5 darab szmll a kovetkez guild szinthez tartoz req itemek sorrendjben van.
-	// --------------------------------------------------------------------
+	namespace items = auriga::item;
 	using TKisAdoItemArr = std::array<uint32_t, 5>;
 	static std::unordered_map<uint32_t, std::unordered_map<uint32_t, TKisAdoItemArr>> s_kisAdoItemContrib;
 
-	static TKisAdoItemArr& KisAdo_GetItemArr(uint32_t guildId, uint32_t pid)
+	uint64_t PackedMaterial(uint32_t historicalId)
 	{
-		return s_kisAdoItemContrib[guildId][pid]; // default init {0,0,0,0,0}
+		const auto key = items::GuildProgressMaterial(historicalId);
+		return key ? items::PackItemKey(*key) : 0;
 	}
 
 	static TKisAdoItemArr KisAdo_GetItemArrCopy(uint32_t guildId, uint32_t pid)
@@ -87,35 +66,6 @@ namespace
 		s_kisAdoItemContrib.erase(guildId);
 	}
 
-
-	// --------------------------------------------------------------------
-	// Kis ado - reszletes item bontas DB-ben is (multi-core szinkron miatt)
-	// Table: guild_renewal_kisado_item (guild_id, pid, item0..item4)
-	// --------------------------------------------------------------------
-	static void KisAdo_DBSave(uint32_t guildId, uint32_t pid)
-	{
-		const TKisAdoItemArr& a = KisAdo_GetItemArr(guildId, pid);
-
-		// Ha minden 0, toroljuk a sort (hogy ne nojon feleslegesen a tabla).
-		if (a[0] == 0 && a[1] == 0 && a[2] == 0 && a[3] == 0 && a[4] == 0)
-		{
-			DBManager::instance().Query(
-				"DELETE FROM guild_renewal_kisado_item WHERE guild_id=%u AND pid=%u",
-				guildId, pid);
-			return;
-		}
-
-		DBManager::instance().Query(
-			"REPLACE INTO guild_renewal_kisado_item(guild_id,pid,item0,item1,item2,item3,item4) "
-			"VALUES(%u,%u,%u,%u,%u,%u,%u)",
-			guildId, pid,
-			a[0], a[1], a[2], a[3], a[4]);
-	}
-
-	static void KisAdo_DBDeleteGuild(uint32_t guildId)
-	{
-		DBManager::instance().Query("DELETE FROM guild_renewal_kisado_item WHERE guild_id=%u", guildId);
-	}
 
 	static void KisAdo_DBLoadGuild(uint32_t guildId)
 	{
@@ -442,61 +392,6 @@ bool CGuildRenewal::LoadLevelReqFromJson(const char* filename)
 }
 
 
-void CGuildRenewal::DB_SaveMoney(uint32_t guildId)
-{
-	auto& c = GetCache(guildId);
-	DBManager::instance().Query(
-		"REPLACE INTO guild_renewal_money(guild_id,money) VALUES(%u,%lld)", guildId, (long long)c.money);
-}
-
-void CGuildRenewal::DB_SaveTax(uint32_t guildId)
-{
-	auto& c = GetCache(guildId);
-	DBManager::instance().Query(
-		"REPLACE INTO guild_renewal_tax(guild_id,active,deadline,per_member_money,"
-		"item1_vnum,item1_count,item2_vnum,item2_count,item3_vnum,item3_count,item4_vnum,item4_count,item5_vnum,item5_count)"
-		" VALUES(%u,%d,%lld,%lld,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u)",
-		guildId,
-		c.tax.active ? 1 : 0,
-		c.tax.deadline,
-		(long long)c.tax.perMemberMoney,
-		c.tax.vnum[0], c.tax.count[0],
-		c.tax.vnum[1], c.tax.count[1],
-		c.tax.vnum[2], c.tax.count[2],
-		c.tax.vnum[3], c.tax.count[3],
-		c.tax.vnum[4], c.tax.count[4]);
-}
-
-void CGuildRenewal::DB_SaveSlot(uint32_t guildId, uint16_t slot)
-{
-	auto& c = GetCache(guildId);
-	if (slot >= c.storage.size())
-		return;
-
-	auto& s = c.storage[slot];
-	DBManager::instance().Query(
-		"REPLACE INTO guild_renewal_storage(guild_id,slot,vnum,count) VALUES(%u,%u,%u,%u)",
-		guildId, (unsigned)slot, (unsigned)s.vnum, (unsigned)s.count);
-}
-
-void CGuildRenewal::DB_SaveContrib(uint32_t guildId, uint32_t pid)
-{
-	auto& c = GetCache(guildId);
-	auto it = c.contrib.find(pid);
-	if (it == c.contrib.end())
-		return;
-	const Contrib& cc = it->second;
-
-	DBManager::instance().Query(
-		"REPLACE INTO guild_renewal_contrib(guild_id,pid,paid_money,paid_item_total,paid_flag,last_pay_time)"
-		" VALUES(%u,%u,%lld,%lld,%u,%lld)",
-		guildId, pid,
-		(long long)cc.paidMoney,
-		(long long)cc.paidItemTotal,
-		(unsigned)cc.paidFlag,
-		cc.lastPayTime);
-}
-
 uint64_t CGuildRenewal::Storage_Count(uint32_t guildId, uint32_t vnum) const
 {
 	auto it = m_cache.find(guildId);
@@ -509,123 +404,6 @@ uint64_t CGuildRenewal::Storage_Count(uint32_t guildId, uint32_t vnum) const
 			sum += s.count;
 	return sum;
 }
-
-bool CGuildRenewal::Storage_Add(uint32_t guildId, uint32_t vnum, uint32_t count)
-{
-	auto& c = GetCache(guildId);
-
-	// stack into existing slot
-	for (uint16_t i = 0; i < c.storage.size(); i++)
-	{
-		auto& s = c.storage[i];
-		if (s.vnum == vnum && s.count > 0)
-		{
-			s.count += count;
-			DB_SaveSlot(guildId, i);
-			return true;
-		}
-	}
-
-	// find empty
-	for (uint16_t i = 0; i < c.storage.size(); i++)
-	{
-		auto& s = c.storage[i];
-		if (s.vnum == 0 || s.count == 0)
-		{
-			s.vnum = vnum;
-			s.count = count;
-			DB_SaveSlot(guildId, i);
-			return true;
-		}
-	}
-
-	return false;
-}
-
-bool CGuildRenewal::Storage_Remove(uint32_t guildId, uint32_t vnum, uint32_t count)
-{
-	auto& c = GetCache(guildId);
-	uint32_t need = count;
-
-	for (uint16_t i = 0; i < c.storage.size() && need>0; i++)
-	{
-		auto& s = c.storage[i];
-		if (s.vnum != vnum || s.count == 0)
-			continue;
-		uint32_t take = MIN(need, s.count);
-		s.count -= take;
-		need -= take;
-		if (s.count == 0)
-			s.vnum = 0;
-		DB_SaveSlot(guildId, i);
-	}
-
-	return (need == 0);
-}
-
-uint64_t CGuildRenewal::CountItemVnum(entt::entity owner, uint32_t vnum) const
-{
-	if (!ecs::IsCharacter(owner))
-		return 0;
-
-	uint64_t total = 0;
-	for (uint16_t i = 0; i < INVENTORY_MAX_NUM; i++)
-	{
-		const entt::entity item = ItemSystem::GetInventoryItem(owner, i);
-		if (ItemSystem::IsValidItem(item) && ItemSystem::GetItemVnum(item) == vnum)
-			total += ItemSystem::GetItemCount(item);
-	}
-
-#ifdef ENABLE_EXTRA_INVENTORY
-	for (uint16_t i = 0; i < EXTRA_INVENTORY_MAX_NUM; i++)
-	{
-		const entt::entity item = ItemSystem::GetExtraInventoryItem(owner, i);
-		if (ItemSystem::IsValidItem(item) && ItemSystem::GetItemVnum(item) == vnum)
-			total += ItemSystem::GetItemCount(item);
-	}
-#endif
-
-	return total;
-}
-
-
-bool CGuildRenewal::RemoveItemVnum(entt::entity owner, uint32_t vnum, uint32_t count)
-{
-	if (!ecs::IsCharacter(owner))
-		return false;
-
-	uint32_t need = count;
-	for (uint16_t i = 0; i < INVENTORY_MAX_NUM && need>0; i++)
-	{
-		const entt::entity item = ItemSystem::GetInventoryItem(owner, i);
-		if (!ItemSystem::IsValidItem(item) || ItemSystem::GetItemVnum(item) != vnum)
-			continue;
-
-		uint32_t cur = ItemSystem::GetItemCount(item);
-		uint32_t take = MIN(need, cur);
-		uint32_t newCount = cur - take;
-		need -= take;
-		ItemSystem::SetItemCountEcs(item, newCount);
-	}
-
-#ifdef ENABLE_EXTRA_INVENTORY
-	for (uint16_t i = 0; i < EXTRA_INVENTORY_MAX_NUM && need>0; i++)
-	{
-		const entt::entity item = ItemSystem::GetExtraInventoryItem(owner, i);
-		if (!ItemSystem::IsValidItem(item) || ItemSystem::GetItemVnum(item) != vnum)
-			continue;
-
-		uint32_t cur = ItemSystem::GetItemCount(item);
-		uint32_t take = MIN(need, cur);
-		uint32_t newCount = cur - take;
-		need -= take;
-		ItemSystem::SetItemCountEcs(item, newCount);
-	}
-#endif
-
-	return (need == 0);
-}
-
 
 void CGuildRenewal::SendFullStateTo(entt::entity chEntity)
 {
@@ -646,6 +424,21 @@ void CGuildRenewal::SendFullStateTo(entt::entity chEntity)
 	// UI reset + guild storage money
 	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "gr_clear");
 	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "gr_money %lld", (long long)c.money);
+	const auto catalog = items::runtime::CurrentCatalog();
+	std::set<items::ItemKey> sentMaterials;
+	const auto sendMaterial = [&](uint32_t material) {
+		const auto key = items::GuildProgressMaterial(material);
+		if (!catalog || !key || !sentMaterials.insert(*key).second)
+			return;
+		const auto* entry = catalog->Find(*key);
+		if (!entry)
+			return;
+		const auto& base = entry->base;
+		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "gr_material %llu %s %s %s %s %u %u",
+			static_cast<unsigned long long>(items::PackItemKey(*key)), base.contentCode.c_str(),
+			base.nameKey.c_str(), base.descriptionKey.empty() ? "-" : base.descriptionKey.c_str(),
+			base.iconAsset.empty() ? "-" : base.iconAsset.c_str(), unsigned{base.width}, unsigned{base.height});
+	};
 
 	// per-player paid flag (Ad: O/X a kliensben)
 	{
@@ -662,7 +455,7 @@ void CGuildRenewal::SendFullStateTo(entt::entity chEntity)
 		const uint8_t target = (uint8_t)(g->GetLevel() + 1);
 
 		long long reqYang = 0;
-		uint32_t rv[5] = { 0,0,0,0,0 };
+		uint64_t rv[5] = { 0,0,0,0,0 };
 		uint32_t rc[5] = { 0,0,0,0,0 };
 
 		auto itReq = m_levelReqByTargetLevel.find(target);
@@ -671,7 +464,8 @@ void CGuildRenewal::SendFullStateTo(entt::entity chEntity)
 			reqYang = (long long)itReq->second.yang;
 			for (int i = 0; i < 5; ++i)
 			{
-				rv[i] = itReq->second.vnum[i];
+				sendMaterial(itReq->second.vnum[i]);
+				rv[i] = PackedMaterial(itReq->second.vnum[i]);
 				rc[i] = itReq->second.count[i];
 			}
 		}
@@ -680,13 +474,13 @@ void CGuildRenewal::SendFullStateTo(entt::entity chEntity)
 			LOG_INFO("GUILD_RENEWAL: no req row for target level={} (guild level={})", (unsigned)target, g->GetLevel());
 		}
 
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "gr_req %lld %u %u %u %u %u %u %u %u %u %u",
-			reqYang,
-			rv[0], rc[0],
-			rv[1], rc[1],
-			rv[2], rc[2],
-			rv[3], rc[3],
-			rv[4], rc[4]);
+		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "gr_req2 %u %lld %llu %u %llu %u %llu %u %llu %u %llu %u",
+			static_cast<unsigned>(target), reqYang,
+			static_cast<unsigned long long>(rv[0]), rc[0],
+			static_cast<unsigned long long>(rv[1]), rc[1],
+			static_cast<unsigned long long>(rv[2]), rc[2],
+			static_cast<unsigned long long>(rv[3]), rc[3],
+			static_cast<unsigned long long>(rv[4]), rc[4]);
 	}
 
 	// storage slots
@@ -694,7 +488,11 @@ void CGuildRenewal::SendFullStateTo(entt::entity chEntity)
 	{
 		auto& s = c.storage[i];
 		if (s.vnum && s.count)
-			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "gr_item %u %u %u", (unsigned)i, (unsigned)s.vnum, (unsigned)s.count);
+		{
+			sendMaterial(s.vnum);
+			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "gr_item2 %u %llu %u", (unsigned)i,
+				static_cast<unsigned long long>(PackedMaterial(s.vnum)), s.count);
+		}
 	}
 
 	// tax request state (kis ad rendszerben nincs kivetett ad)
@@ -727,570 +525,162 @@ void CGuildRenewal::SendFullStateTo(entt::entity chEntity)
 }
 
 
-bool CGuildRenewal::DepositItem(entt::entity chEntity, uint16_t invCell, uint32_t count)
+items::GuildProgress CGuildRenewal::ProgressSnapshot(uint32_t guildId, uint8_t currentLevel)
 {
-	if (!ecs::IsCharacter(chEntity))
-		return false;
-
-	CGuild* g = ecs::SocialSystem::GetGuild(chEntity);
-	if (!g)
-		return false;
-
-	// kis ad: csak fejlesztshez (20-as szinttl)
-	if (g->GetLevel() < 20)
-	{
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "A ceh fejlesztes csak 20-as szinttol elerheto.");
-		return false;
-	}
-
-	const uint32_t guildId = g->GetID();
 	EnsureLoaded(guildId);
-	EnsureLevelReqLoaded();
-
-	const uint8_t target = (uint8_t)(g->GetLevel() + 1);
-	auto itReq = m_levelReqByTargetLevel.find(target);
-	if (itReq == m_levelReqByTargetLevel.end())
+	const auto& cached = GetCache(guildId);
+	items::GuildProgress progress;
+	progress.guild = guildId;
+	progress.currentLevel = currentLevel;
+	progress.moneyBefore = static_cast<uint64_t>(std::max<int64_t>(0, cached.money));
+	for (std::size_t i = 0; i < cached.storage.size() && i < progress.before.size(); ++i)
 	{
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Nincs beallitva fejlesztesi kovetelmeny ehhez a szinthez: %u", (unsigned)target);
-		return false;
+		const auto& slot = cached.storage[i];
+		if (slot.vnum && slot.count)
+			progress.before[i] = {slot.vnum, slot.count};
 	}
-	const LevelReq& req = itReq->second;
-
-	const entt::entity owner = chEntity;
-	const entt::entity item = ItemSystem::GetInventoryItem(owner, invCell);
-	if (!ItemSystem::IsValidItem(item))
-		return false;
-
-	const uint32_t haveCount = ItemSystem::GetItemCount(item);
-	if (haveCount == 0)
-		return false;
-
-	if (count == 0 || count > haveCount)
-		count = haveCount;
-
-	const uint32_t vnum = ItemSystem::GetItemVnum(item);
-
-	// Csak azokat engedjk, amiket ppen kr a ch a kvetkez szinthez
-	int reqIdx = -1;
-	uint64_t totalNeedForVnum = 0;
-	for (int i = 0; i < 5; ++i)
-	{
-		if (req.vnum[i] && req.count[i] && req.vnum[i] == vnum)
-		{
-			if (reqIdx == -1)
-				reqIdx = i;
-			totalNeedForVnum += req.count[i];
-		}
-	}
-
-	if (reqIdx == -1 || totalNeedForVnum == 0)
-	{
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Ezt a targyat most nem keri a ceh fejleszteshez.");
-		return false;
-	}
-
-	// Ha mr megvan belle elg a ch raktrban, ne lehessen tbbet betenni
-	const uint64_t haveInStorage = Storage_Count(guildId, vnum);
-	if (haveInStorage >= totalNeedForVnum)
-	{
-		const uint8_t lang = (ecs::PlayerRuntime::GetDesc(chEntity) ? ecs::PlayerRuntime::GetDesc(chEntity)->GetLanguage() : 0);
-		const char* name = GetItemNameByVnum(vnum, lang);
-		if (name && *name)
-			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Ebbol a targybol mar eleg van a fejleszteshez: %s", name);
-		else
-			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Ebbol a targybol mar eleg van a fejleszteshez: VNUM %u", (unsigned)vnum);
-		return false;
-	}
-
-	const uint64_t remaining = totalNeedForVnum - haveInStorage;
-
-	const uint32_t requested = count;
-	const uint32_t allowed = (uint32_t)MIN((uint64_t)requested, remaining);
-	if (allowed == 0)
-		return false;
-
-	// Elbb raktrba prbljuk tenni (ha tele van, ne vegyk el a jtkostl)
-	if (!Storage_Add(guildId, vnum, allowed))
-	{
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "A ceh raktar tele van.");
-		return false;
-	}
-
-	// Levons a jtkostl
-	ItemSystem::SetItemCountEcs(item, haveCount - allowed);
-
-	// Befizets nyilvntarts (sszestve + rszletes bonts memriban)
-	auto& c = GetCache(guildId);
-	const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(chEntity);
-
-	Contrib& cc = c.contrib[pid];
-	cc.paidItemTotal += (int64_t)allowed;
-	cc.paidFlag = 1;
-	cc.lastPayTime = (int)get_global_time();
-	DB_SaveContrib(guildId, pid);
-
-	KisAdo_GetItemArr(guildId, pid)[reqIdx] += allowed;
-	KisAdo_DBSave(guildId, pid);
-
-	// Info, ha kevesebbet fogadott el (mert mr csak ennyi hinyzott)
-	if (allowed < requested)
-	{
-		const uint8_t lang = (ecs::PlayerRuntime::GetDesc(chEntity) ? ecs::PlayerRuntime::GetDesc(chEntity)->GetLanguage() : 0);
-		const char* name = GetItemNameByVnum(vnum, lang);
-		if (name && *name)
-			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Csak %u db-ot tett be (ennyire hianyzott): %s", (unsigned)allowed, name);
-		else
-			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Csak %u db-ot tett be (ennyire hianyzott).", (unsigned)allowed);
-	}
-
-	// Kliens frissites (legalabb a befizeto + cehvezeto kapjon azonnali infot)
-	SendFullStateTo(chEntity);
-	const entt::entity master = CHARACTER_MANAGER::instance().FindEntityByPID(g->GetMasterPID());
-	if (ecs::IsCharacter(master) && master != chEntity)
-		SendFullStateTo(master);
-
-	return true;
+	progress.after = progress.before;
+	return progress;
 }
 
-bool CGuildRenewal::DepositYang(entt::entity chEntity, int64_t yang)
+bool CGuildRenewal::RequestProgress(entt::entity character, items::GuildProgress progress,
+	std::vector<items::MissionItemAmount> costs, std::optional<items::ItemInstanceId> source)
 {
-	if (!ecs::IsCharacter(chEntity))
-		return false;
-
-	CGuild* g = ecs::SocialSystem::GetGuild(chEntity);
-	if (!g)
-		return false;
-
-	// kis ad: csak fejlesztshez (20-as szinttl)
-	if (g->GetLevel() < 20)
-	{
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "A ceh fejlesztes csak 20-as szinttol elerheto.");
-		return false;
-	}
-
-	if (yang <= 0)
-		return false;
-
-	const uint32_t guildId = g->GetID();
-	EnsureLoaded(guildId);
-	EnsureLevelReqLoaded();
-
-	const uint8_t target = (uint8_t)(g->GetLevel() + 1);
-	auto itReq = m_levelReqByTargetLevel.find(target);
-	if (itReq == m_levelReqByTargetLevel.end())
-	{
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Nincs beallitva fejlesztesi kovetelmeny ehhez a szinthez: %u", (unsigned)target);
-		return false;
-	}
-	const LevelReq& req = itReq->second;
-
-	auto& c = GetCache(guildId);
-
-	// Ha mr megvan elg yang a ch raktrban, ne lehessen tbbet betenni
-	int64_t remaining = (int64_t)req.yang - (int64_t)c.money;
-	if (remaining <= 0)
-	{
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Mar elegendo yang van a ceh leltarban a fejleszteshez.");
-		return false;
-	}
-
-	const int64_t playerGold = (int64_t)ecs::PointSystem::GetGold(chEntity);
-	if (playerGold <= 0)
-		return false;
-
-	const int64_t requested = yang;
-	int64_t allowed = requested;
-	if (allowed > remaining)
-		allowed = remaining;
-	if (allowed > playerGold)
-		allowed = playerGold;
-
-	if (allowed <= 0)
-		return false;
-
-	// Levons + hozzads
-	ecs::PointSystem::Change(chEntity, POINT_GOLD, -allowed, true);
-	c.money += allowed;
-	DB_SaveMoney(guildId);
-
-	// Befizets nyilvntarts
-	const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(chEntity);
-	Contrib& cc = c.contrib[pid];
-	cc.paidMoney += allowed;
-	cc.paidFlag = 1;
-	cc.lastPayTime = (int)get_global_time();
-	DB_SaveContrib(guildId, pid);
-
-	// Info, ha kevesebbet fogadott el (mert mr csak ennyi hinyzott)
-	if (allowed < requested)
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Csak %lld yangot tett be (ennyire hianyzott).", (long long)allowed);
-
-	// Kliens frissites (legalabb a befizeto + cehvezeto kapjon azonnali infot)
-	SendFullStateTo(chEntity);
-	const entt::entity master = CHARACTER_MANAGER::instance().FindEntityByPID(g->GetMasterPID());
-	if (ecs::IsCharacter(master) && master != chEntity)
-		SendFullStateTo(master);
-
-	return true;
-}
-
-bool CGuildRenewal::SetTaxRequest(entt::entity leaderEntity, int64_t deadlineUnix, int64_t perMemberMoney,
-	const std::array<uint32_t, 5>& vnums,
-	const std::array<uint32_t, 5>& counts)
-{
-	(void)deadlineUnix;
-	(void)perMemberMoney;
-	(void)vnums;
-	(void)counts;
-
-	if (!ecs::IsCharacter(leaderEntity))
-		return false;
-
-	CGuild* g = ecs::SocialSystem::GetGuild(leaderEntity);
-	if (!g)
-	{
-		ecs::ChatSystem::Send(leaderEntity, CHAT_TYPE_INFO, "Nincs cehed.");
-		return false;
-	}
-
-	ecs::ChatSystem::Send(leaderEntity, CHAT_TYPE_INFO, "Ado rendszer ki van kapcsolva. (Kis ado: szabad befizetes van.)");
-	return false;
-}
-
-bool CGuildRenewal::PayTax(entt::entity chEntity)
-{
-	if (!ecs::IsCharacter(chEntity))
-		return false;
-
-	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Ado rendszer ki van kapcsolva. Hasznald a Yang betesz / Targy betesz gombokat.");
-	return false;
-}
-
-bool CGuildRenewal::PayCustom(entt::entity chEntity, int64_t yang, const std::array<uint32_t,5>& vnums, const std::array<uint32_t,5>& counts)
-{
-	if (!ecs::IsCharacter(chEntity))
-		return false;
-
-	CGuild* g = ecs::SocialSystem::GetGuild(chEntity);
-	if (!g)
-		return false;
-
-	// kis ado: csak fejleszteshez (20-as szinttol)
-	if (g->GetLevel() < 20)
-	{
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "A ceh fejlesztes csak 20-as szinttol elerheto.");
-		return false;
-	}
-
-	const uint32_t guildId = g->GetID();
-	EnsureLoaded(guildId);
-	EnsureLevelReqLoaded();
-
-	const uint8_t target = (uint8_t)(g->GetLevel() + 1);
-	auto itReq = m_levelReqByTargetLevel.find(target);
-	if (itReq == m_levelReqByTargetLevel.end())
-	{
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Nincs beallitva fejlesztesi kovetelmeny ehhez a szinthez: %u", (unsigned)target);
-		return false;
-	}
-	const LevelReq& req = itReq->second;
-
-	auto& c = GetCache(guildId);	
-	const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(chEntity);
-	bool any = false;
-
-	// 1) Yang befizetes (clamp a hianyzo osszegre)
-	if (yang > 0)
-	{
-		int64_t remaining = (int64_t)req.yang - (int64_t)c.money;
-		if (remaining > 0)
-		{
-			int64_t playerGold = (int64_t)ecs::PointSystem::GetGold(chEntity);
-			int64_t allowed = yang;
-			if (allowed > remaining) allowed = remaining;
-			if (allowed > playerGold) allowed = playerGold;
-			if (allowed > 0)
+	const auto pid = ecs::PlayerRuntime::GetPlayerID(character);
+	const auto submitted = RequestTypedGuildExchange(character, std::move(costs), progress.moneyPaid,
+		items::GuildProgressOutcome, items::EncodeGuildProgress(progress),
+		[this, pid, guildId = progress.guild, level = progress.currentLevel, upgrade = progress.levelUp](bool committed) {
+			if (committed)
 			{
-				ecs::PointSystem::Change(chEntity, POINT_GOLD, -allowed, true);
-				c.money += allowed;
-				DB_SaveMoney(guildId);
-
-				Contrib& cc = c.contrib[pid];
-				cc.paidMoney += allowed;
-				cc.paidFlag = 1;
-				cc.lastPayTime = static_cast<int64_t>(get_global_time());
-				DB_SaveContrib(guildId, pid);
-
-				any = true;
+				if (upgrade)
+					if (auto* guild = CGuildManager::instance().FindGuild(guildId))
+						guild->RenewalSetLevel(static_cast<uint8_t>(level + 1), true);
+				OnP2PRefresh(guildId);
+				P2P_BroadcastRefresh(guildId);
+				return;
 			}
-		}
-	}
-
-	// 2) Item befizetesek (vnum+count par vagy indexelt count)
-	//    - ha vnums[]-ban van barmi, akkor azokat tekintjuk paroknak
-	//    - kulonben counts[] a req indexekhez tartozik
-	bool hasExplicitVnum = false;
-	for (int i = 0; i < 5; ++i)
-	{
-		if (vnums[i] != 0) { hasExplicitVnum = true; break; }
-	}
-
-	std::unordered_map<uint32_t, uint64_t> needByVnum;
-	for (int i = 0; i < 5; ++i)
-	{
-		if (req.vnum[i] && req.count[i])
-			needByVnum[req.vnum[i]] += req.count[i];
-	}
-
-	std::unordered_map<uint32_t, uint64_t> reqByVnum;
-	if (hasExplicitVnum)
-	{
-		for (int i = 0; i < 5; ++i)
-		{
-			if (!vnums[i] || !counts[i])
-				continue;
-			reqByVnum[vnums[i]] += counts[i];
-		}
-	}
-	else
-	{
-		for (int i = 0; i < 5; ++i)
-		{
-			if (!counts[i] || !req.vnum[i])
-				continue;
-			reqByVnum[req.vnum[i]] += counts[i];
-		}
-	}
-
-	for (const auto& kv : reqByVnum)
-	{
-		const uint32_t vnum = kv.first;
-		uint64_t want = kv.second;
-		if (want == 0)
-			continue;
-
-		auto itNeed2 = needByVnum.find(vnum);
-		if (itNeed2 == needByVnum.end())
-		{
-			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Ezt a targyat most nem keri a ceh fejleszteshez. VNUM: %u", (unsigned)vnum);
-			continue;
-		}
-
-		const uint64_t needTotal = itNeed2->second;
-		const uint64_t haveStorage = Storage_Count(guildId, vnum);
-		if (haveStorage >= needTotal)
-			continue;
-
-		uint64_t remaining = needTotal - haveStorage;
-		uint64_t allowed = want;
-		if (allowed > remaining)
-			allowed = remaining;
-
-		const uint64_t havePlayer = CountItemVnum(chEntity, vnum);
-		if (allowed > havePlayer)
-			allowed = havePlayer;
-
-		if (allowed == 0)
-			continue;
-
-		// Storage add elobb (ha tele van, ne vegyuk el)
-		if (!Storage_Add(guildId, vnum, (uint32_t)allowed))
-		{
-			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "A ceh raktar tele van.");
-			continue;
-		}
-
-		if (!RemoveItemVnum(chEntity, vnum, (uint32_t)allowed))
-		{
-			// rollback
-			Storage_Remove(guildId, vnum, (uint32_t)allowed);
-			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Hiba: nem sikerult levonni a targyat (VNUM %u).", (unsigned)vnum);
-			continue;
-		}
-
-		Contrib& cc = c.contrib[pid];
-		cc.paidItemTotal += (int64_t)allowed;
-		cc.paidFlag = 1;
-		cc.lastPayTime = static_cast<int64_t>(get_global_time());
-		DB_SaveContrib(guildId, pid);
-
-		int reqIdx = -1;
-		for (int i = 0; i < 5; ++i)
-		{
-			if (req.vnum[i] && req.count[i] && req.vnum[i] == vnum)
-			{
-				reqIdx = i;
-				break;
-			}
-		}
-		if (reqIdx != -1)
-			KisAdo_GetItemArr(guildId, pid)[reqIdx] += (uint32_t)allowed;
-			KisAdo_DBSave(guildId, pid);
-
-		any = true;
-	}
-
-	if (any)
-	{
-		SendFullStateTo(chEntity);
-		const entt::entity master = CHARACTER_MANAGER::instance().FindEntityByPID(g->GetMasterPID());
-		if (ecs::IsCharacter(master) && master != chEntity)
-			SendFullStateTo(master);
-	}
-
-	return any;
+			OnP2PRefresh(guildId);
+			const auto member = CHARACTER_MANAGER::instance().FindEntityByPID(pid);
+			if (ecs::IsCharacter(member))
+				ecs::ChatSystem::Send(member, CHAT_TYPE_INFO, "A céh befizetései megváltoztak, vagy a művelet nem sikerült. Próbáld újra.");
+		}, source);
+	if (!submitted)
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "A céhfejlesztés jelenleg nem elérhető.");
+	return submitted.has_value();
 }
 
-bool CGuildRenewal::TryLevelUp(entt::entity chEntity)
+bool CGuildRenewal::DepositItem(entt::entity character, uint32_t target, uint64_t itemId, uint32_t count)
 {
-	if (!ecs::IsCharacter(chEntity))
+	const auto id = items::ItemInstanceId::Create(itemId);
+	if (!id)
 		return false;
+	std::array<uint32_t, 5> counts{};
+	counts.front() = count ? count : UINT32_MAX;
+	return PayCustom(character, target, 0, counts, *id);
+}
 
-	CGuild* g = ecs::SocialSystem::GetGuild(chEntity);
-	if (!g)
-	{
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Nincs cehed.");
+bool CGuildRenewal::PayCustom(entt::entity character, uint32_t target, int64_t yang,
+	const std::array<uint32_t, 5>& counts, std::optional<items::ItemInstanceId> source)
+{
+	auto* guild = ecs::SocialSystem::GetGuild(character);
+	const auto* typed = g_registry.try_get<ecs::TypedItems>(character);
+	if (!guild || !typed || guild->GetLevel() < 20 || target != uint32_t{guild->GetLevel()} + 1)
 		return false;
-	}
-
-	const uint8_t curLvl = g->GetLevel();
-	if (curLvl < 20)
-	{
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "A ceh fejlesztes csak 20-as szinttol elerheto.");
-		return false;
-	}
-	if (curLvl >= NSBUZERANT)
-	{
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "A ceh elerte a maximum szintet.");
-		return false;
-	}
-
-	const uint8_t target = curLvl + 1;
-
 	EnsureLevelReqLoaded();
-	auto itReq = m_levelReqByTargetLevel.find(target);
-	if (itReq == m_levelReqByTargetLevel.end())
-	{
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Nincs beallitva fejlesztesi kovetelmeny ehhez a szinthez: %u", (unsigned)target);
+	const auto requirement = m_levelReqByTargetLevel.find(static_cast<uint8_t>(target));
+	if (requirement == m_levelReqByTargetLevel.end())
 		return false;
-	}
-
-	const uint32_t guildId = g->GetID();
-	EnsureLoaded(guildId);
-
-	auto& c = GetCache(guildId);
-	const LevelReq& req = itReq->second;
-
-	// Money check (GUILD storage money)
-	if (c.money < req.yang)
+	const auto& req = requirement->second;
+	auto progress = ProgressSnapshot(guild->GetID(), guild->GetLevel());
+	const auto& state = typed->state;
+	const auto owner = state.fence.owner;
+	const items::PersistentItem* selected = nullptr;
+	if (source)
 	{
-		const long long diff = (long long)(req.yang - c.money);
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Nincs elegendo yang a ceh leltarban. Hianyzik: %lld", diff);
-		return false;
-	}
-
-	// Item check (GUILD storage items)  
-	{
-		std::unordered_map<uint32_t, uint32_t> needByVnum;
-
-
-		for (int i = 0; i < 5; ++i)
-		{
-			if (!req.vnum[i] || !req.count[i])
-				continue;
-
-			needByVnum[req.vnum[i]] += req.count[i];
-		}
-
-		const uint8_t lang = (ecs::PlayerRuntime::GetDesc(chEntity) ? ecs::PlayerRuntime::GetDesc(chEntity)->GetLanguage() : 0);
-		bool hasMissing = false;
-
-		for (const auto& kv : needByVnum)
-		{
-			const uint32_t vnum = kv.first;
-			const uint32_t need = kv.second;
-
-			const uint32_t have = (uint32_t)Storage_Count(guildId, vnum);
-			if (have < need)
-			{
-				hasMissing = true;
-				const uint32_t diff = need - have;
-
-				const char* name = GetItemNameByVnum(vnum, lang);
-				if (name && *name)
-					ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Hianyzik fejlesztesi targy a ceh leltarbol: %s x%u", name, (unsigned)diff);
-				else
-					ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Hianyzik fejlesztesi targy a ceh leltarbol: VNUM %u x%u", (unsigned)vnum, (unsigned)diff);
-			}
-		}
-
-		if (hasMissing)
+		const auto found = std::ranges::find(state.items, *source, &items::PersistentItem::id);
+		if (found == state.items.end() || found->refinementLevel != 0 ||
+			!(items::PlainInventoryItem(*found, owner) || items::PlainInventoryItem(*found, owner, items::ItemStorageKind::SpecialInventory)))
 			return false;
+		selected = &*found;
 	}
 
+	const auto wallet = std::ranges::find(state.wallets, items::WalletCurrency::Gold, &items::ItemWallet::currency);
+	if (yang > 0 && req.yang > 0 && static_cast<uint64_t>(req.yang) > progress.moneyBefore && wallet != state.wallets.end())
+		progress.moneyPaid = std::min({static_cast<uint64_t>(yang), static_cast<uint64_t>(req.yang) - progress.moneyBefore, wallet->balance});
 
-	// Consume items
-	for (int i = 0; i < 5; ++i)
+	std::vector<items::MissionItemAmount> costs;
+	for (std::size_t index = 0; index < req.vnum.size(); ++index)
 	{
-		if (req.vnum[i] && req.count[i])
-		{
-			if (!Storage_Remove(guildId, req.vnum[i], req.count[i]))
-			{
-				ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Hiba: nem sikerult levonni egy fejlesztesi targyat (VNUM %u).", (unsigned)req.vnum[i]);
-				return false;
-			}
-		}
+		const auto material = req.vnum[index];
+		const auto key = items::GuildProgressMaterial(material);
+		if (!key || !req.count[index] || (selected && selected->key != *key))
+			continue;
+		const auto existing = std::ranges::find(costs, *key, &items::MissionItemAmount::key);
+		std::uint64_t alreadyPaid = existing != costs.end() ? existing->count : 0;
+		std::uint64_t wanted = selected ? counts.front() : counts[index];
+		const auto available = selected ? selected->count : items::CountGameplayExchangeItems(state.items, owner, *key, 0);
+		const auto have = Storage_Count(progress.guild, material) + alreadyPaid;
+		if (have >= req.count[index] || available <= alreadyPaid)
+			continue;
+		const auto paid = static_cast<std::uint32_t>(std::min({wanted, req.count[index] - have,
+			available - alreadyPaid, uint64_t{50'000} - alreadyPaid}));
+		if (!paid)
+			continue;
+
+		auto slot = std::ranges::find(progress.after, material, &items::GuildProgressSlot::material);
+		if (slot == progress.after.end())
+			slot = std::ranges::find(progress.after, 0u, &items::GuildProgressSlot::count);
+		if (slot == progress.after.end() || UINT32_MAX - slot->count < paid)
+			continue;
+		*slot = {material, slot->count + paid};
+		progress.contributed[index] = paid;
+		if (existing == costs.end())
+			costs.push_back({*key, 0, paid});
+		else
+			existing->count += paid;
+		if (selected)
+			break;
 	}
 
-	// Consume money
-	c.money -= req.yang;
-	DB_SaveMoney(guildId);
-
-	// Level up
-	g->RenewalSetLevel(target);
-
-	// ------------------------------------------------------------
-	// Kis ad rendszer: fejleszts utn minden befizets nullzdik
-	// ------------------------------------------------------------
+	if (!progress.moneyPaid && costs.empty())
 	{
-		// Tax rendszer kikapcsolva
-		c.tax.active = false;
-		c.tax.deadline = 0;
-		c.tax.perMemberMoney = 0;
-		c.tax.vnum.fill(0);
-		c.tax.count.fill(0);
-		DB_SaveTax(guildId);
-
-		// Befizetsek trlse
-		c.contrib.clear();
-		DBManager::instance().Query("DELETE FROM guild_renewal_contrib WHERE guild_id=%u", guildId);
-		KisAdo_ClearGuild(guildId);
-		KisAdo_DBDeleteGuild(guildId);
-
-		// Ch fejleszts raktr trlse
-		for (auto& s : c.storage)
-		{
-			s.vnum = 0;
-			s.count = 0;
-		}
-		DBManager::instance().Query("DELETE FROM guild_renewal_storage WHERE guild_id=%u", guildId);
-
-		// Yang nullzs (clamp miatt elvileg mr 0, de biztos ami biztos)
-		c.money = 0;
-		DB_SaveMoney(guildId);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Nincs befizethető tárgy vagy Yang az aktuális fejlesztéshez.");
+		return false;
 	}
-
-
-	// Kliens frissites (legalabb a befizeto + cehvezeto kapjon azonnali infot)
-	SendFullStateTo(chEntity);
-	const entt::entity master = CHARACTER_MANAGER::instance().FindEntityByPID(g->GetMasterPID());
-	if (ecs::IsCharacter(master) && master != chEntity)
-		SendFullStateTo(master);
-
-	return true;
+	return RequestProgress(character, progress, std::move(costs), source);
 }
 
-
+bool CGuildRenewal::TryLevelUp(entt::entity character)
+{
+	auto* guild = ecs::SocialSystem::GetGuild(character);
+	if (!guild || guild->GetMasterPID() != ecs::PlayerRuntime::GetPlayerID(character) ||
+		guild->GetLevel() < 20 || guild->GetLevel() >= NSBUZERANT)
+		return false;
+	EnsureLevelReqLoaded();
+	const auto requirement = m_levelReqByTargetLevel.find(static_cast<uint8_t>(guild->GetLevel() + 1));
+	if (requirement == m_levelReqByTargetLevel.end())
+		return false;
+	const auto& req = requirement->second;
+	auto progress = ProgressSnapshot(guild->GetID(), guild->GetLevel());
+	if (req.yang < 0 || progress.moneyBefore < static_cast<uint64_t>(req.yang))
+	{
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Nincs elegendő Yang a céh leltárában.");
+		return false;
+	}
+	std::unordered_map<uint32_t, uint64_t> required;
+	for (std::size_t index = 0; index < req.vnum.size(); ++index)
+		if (req.count[index])
+			required[req.vnum[index]] += req.count[index];
+	for (const auto& [material, count] : required)
+		if (!items::GuildProgressMaterial(material) || Storage_Count(progress.guild, material) < count)
+		{
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Hiányzik fejlesztési tárgy a céh leltárából.");
+			return false;
+		}
+	progress.levelUp = true;
+	progress.after = {};
+	return RequestProgress(character, progress, {});
+}
 
 #endif // ENABLE_GUILD_RENEWAL_BY_RAZOR93
 

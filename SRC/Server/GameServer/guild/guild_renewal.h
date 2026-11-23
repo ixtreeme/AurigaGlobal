@@ -9,6 +9,7 @@
 #include <array>
 
 #include <entt/entity/fwd.hpp>
+#include <item/GuildProgress.hpp>
 
 class CGuild;
 
@@ -30,23 +31,9 @@ public:
 	void InvalidateGuild(uint32_t guildId);
 
 
-	// Deposit item from player's INVENTORY into guild storage.
-	bool DepositItem(entt::entity chEntity, uint16_t invCell, uint32_t count);
-
-	// Deposit yang from player into guild money.
-	bool DepositYang(entt::entity chEntity, int64_t yang);
-
-	// Guild leader sets a tax request (deadline unix timestamp + per member requirements)
-	bool SetTaxRequest(entt::entity leaderEntity, int64_t deadlineUnix,
-		int64_t perMemberMoney,
-		const std::array<uint32_t,5>& vnums,
-		const std::array<uint32_t,5>& counts);
-
-	// Member pays current tax request (moves required items/yang into guild storage/money)
-	bool PayTax(entt::entity chEntity);
-
-	// Kis ado: member pays custom amounts (yang + up to 5 items)
-	bool PayCustom(entt::entity chEntity, int64_t yang, const std::array<uint32_t,5>& vnums, const std::array<uint32_t,5>& counts);
+	bool DepositItem(entt::entity character, uint32_t target, uint64_t itemId, uint32_t count);
+	bool PayCustom(entt::entity character, uint32_t target, int64_t yang, const std::array<uint32_t,5>& counts,
+		std::optional<auriga::item::ItemInstanceId> source = {});
 
 	// Level-up guild using stored items+money (levels 21..60)
 	bool TryLevelUp(entt::entity chEntity);
@@ -102,20 +89,10 @@ private:
 	void EnsureLevelReqLoaded();
 	bool LoadLevelReqFromJson(const char* filename);
 
-	// DB helpers
-	void DB_SaveMoney(uint32_t guildId);
-	void DB_SaveTax(uint32_t guildId);
-	void DB_SaveSlot(uint32_t guildId, uint16_t slot);
-	void DB_SaveContrib(uint32_t guildId, uint32_t pid);
-
-	// Storage helpers
-	bool Storage_Add(uint32_t guildId, uint32_t vnum, uint32_t count);
-	bool Storage_Remove(uint32_t guildId, uint32_t vnum, uint32_t count);
+	auriga::item::GuildProgress ProgressSnapshot(uint32_t guildId, uint8_t currentLevel);
+	bool RequestProgress(entt::entity character, auriga::item::GuildProgress progress,
+		std::vector<auriga::item::MissionItemAmount> costs, std::optional<auriga::item::ItemInstanceId> source = {});
 	uint64_t Storage_Count(uint32_t guildId, uint32_t vnum) const;
-
-	// Inventory helpers
-	uint64_t CountItemVnum(entt::entity owner, uint32_t vnum) const;
-	bool RemoveItemVnum(entt::entity owner, uint32_t vnum, uint32_t count);
 
 private:
 	std::unordered_map<uint32_t, GuildCache> m_cache;

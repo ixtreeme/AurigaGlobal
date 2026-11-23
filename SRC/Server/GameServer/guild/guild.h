@@ -166,7 +166,7 @@ class CGuild
 		
 
 #ifdef ENABLE_GUILD_RENEWAL_BY_RAZOR93
-			bool		RenewalSetLevel(uint8_t level);
+			bool		RenewalSetLevel(uint8_t level, bool persisted = false);
 			void		RenewalSetLevelP2P(uint8_t level);
 			template <typename Func>
 			void ForEachOnlineMember(Func f)

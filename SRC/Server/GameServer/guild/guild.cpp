@@ -2524,7 +2524,7 @@ void CGuild::RemoveGuildBuff(entt::entity character)
 #endif
 
 #ifdef ENABLE_GUILD_RENEWAL_BY_RAZOR93
-bool CGuild::RenewalSetLevel(uint8_t level)
+bool CGuild::RenewalSetLevel(uint8_t level, bool persisted)
 {
 	if (level <= m_data.level)
 		return false;
@@ -2539,7 +2539,8 @@ bool CGuild::RenewalSetLevel(uint8_t level)
 	ComputeGuildPoints();
 	// refill guild power so UI/skills stay consistent after a manual level set
 	GuildPointChange(POINT_SP, m_data.max_power - m_data.power);
-	SaveLevel();
+	if (!persisted)
+		SaveLevel();
 
 	// P2P sync: make every core/channel update the new guild level
 	{
