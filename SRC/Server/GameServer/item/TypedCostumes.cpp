@@ -7,6 +7,7 @@
 #include "ItemCatalogRuntime.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/MountFlightSystem.hpp"
+#include "../ecs/systems/QuestSystem.hpp"
 #include "../ecs/components/visibility_components.hpp"
 #include "../ecs/NetworkService.hpp"
 #include "../entity/char_manager.h"
@@ -54,6 +55,7 @@ Appearance Models(entt::entity owner) {
     bool set=true,bonus=false;for(const auto& p:effective)if(!p.destroyed && p.regalia && p.placement && p.placement->kind==item::ItemStorageKind::Equipment){const auto& row=std::get<item::ItemRegaliaRow>(c->Find(p.key)->category);if(row.kind==item::RegaliaKind::Stole){const auto& entry=*c->Find(p.key);if(entry.base.appearanceProfile)out.models[5]=c->FindAppearance(*entry.base.appearanceProfile)->modelAsset;}else{out.runes=1;if(row.slot==7)bonus=true;}}
     for(unsigned slot=1;slot<7;++slot){const auto found=std::ranges::find_if(effective,[&](const auto& p){if(p.destroyed || !p.regalia || !p.placement || p.placement->kind!=item::ItemStorageKind::Equipment)return false;const auto& r=std::get<item::ItemRegaliaRow>(c->Find(p.key)->category);return r.kind==item::RegaliaKind::Rune && r.slot==slot;});if(found==effective.end() || !found->regalia->active || found->regalia->remainingMs<found->regalia->capacityMs/2+found->regalia->capacityMs%2)set=false;}
     if(set && bonus)out.runes=2;
+    if(out.runes==2 && ecs::QuestSystem::GetFlag(owner,"rune.hide_effect")==1)out.runes=1;
     return out;
 }
 void Broadcast(entt::entity owner){SendTypedCostumeAppearance(owner,owner);if(const auto* view=g_registry.try_get<ecs::ViewerMap>(owner))for(auto e:view->viewers)SendTypedCostumeAppearance(owner,e);}

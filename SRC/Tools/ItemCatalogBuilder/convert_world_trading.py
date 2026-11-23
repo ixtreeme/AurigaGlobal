@@ -5,6 +5,9 @@ import json
 from pathlib import Path
 import re
 
+RUNE_EXCHANGE_SHOP = 54
+RUNE_CHARGE_TOOLS = {88977, 88978, 88979}
+
 
 def quest_shop_routes(root):
     result=defaultdict(set)
@@ -39,12 +42,16 @@ def convert_shops(catalog, original, quest_root):
         shop=int(row['shop_vnum'])
         if shop not in headers:
             audit['orphan_rows'].append(dict(shop=shop,source_id=int(row['item_vnum'])));continue
-        if not headers[shop] and not routes.get(shop):
+        rune_exchange=shop==RUNE_EXCHANGE_SHOP and headers[shop]==0
+        if not headers[shop] and not routes.get(shop) and not rune_exchange:
             continue
         try:
-            reward=resolve(int(row['item_vnum']));count=int(row['count']);gold=int(row['gold'])
+            reward_source=int(row['item_vnum']);reward=resolve(reward_source);count=int(row['count']);gold=int(row['gold'])
             base=bases[reward['category'],reward['local']]
-            if not 0<count<=int(base['max_stack']) or not 0<=gold<=2**63-1:raise ValueError('invalid_original_bundle_count_or_price')
+            if rune_exchange and reward_source not in RUNE_CHARGE_TOOLS:
+                raise ValueError('invalid_rune_exchange_reward')
+            maximum=128 if rune_exchange else int(base['max_stack'])
+            if not 0<count<=maximum or not 0<=gold<=2**63-1:raise ValueError('invalid_original_bundle_count_or_price')
             costs=Counter()
             for i in range(1,6):
                 source=int(row['itemvnum'+str(i)]);amount=int(row['itemcount'+str(i)])
@@ -52,12 +59,16 @@ def convert_shops(catalog, original, quest_root):
                 if amount<=0:raise ValueError('invalid_original_currency_count')
                 key=resolve(source);costs[key['category'],key['local'],key['level']]+=amount
             if any(amount>2**32-1 for amount in costs.values()):raise ValueError('original_currency_overflow')
-            stock[shop].append(dict(id=ordinal,**reward,count=count,gold=gold,try_magic=True,
+            stock[shop].append(dict(id=ordinal,**reward,count=count,gold=gold,try_magic=not rune_exchange,
                 costs=[dict(category=key[0],local=key[1],level=key[2],count=amount) for key,amount in sorted(costs.items())]))
         except ValueError as error:
             audit['excluded'].append(dict(shop=shop,source_id=int(row['item_vnum']),reason=str(error)))
     defaults=defaultdict(list);routed=[]
     for shop,npc in sorted(headers.items()):
+        if shop==RUNE_EXCHANGE_SHOP and not npc:
+            if stock[shop]:
+                routed.append(dict(source_id=shop,npc_race=0,name='Rúnatöltők cseréje',offers=stock[shop]))
+            continue
         if not npc and not routes.get(shop):audit['unbound_shops'].append(shop)
         offers=stock[shop]
         if not offers:continue

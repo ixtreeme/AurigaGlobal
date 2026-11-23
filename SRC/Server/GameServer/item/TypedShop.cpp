@@ -52,10 +52,16 @@ const items::NpcShop* Stock(std::uint32_t race,std::uint32_t route)
     if(route){const auto it=routedShops.find({race,route});return it==routedShops.end()?nullptr:&it->second;}
     const auto it=shops.find(race);return it==shops.end()?nullptr:&it->second;
 }
+bool IsRuneExchange(const Session& session)
+{
+    return session.race==0 && session.route==items::RuneExchangeShopRoute;
+}
 std::optional<items::NpcShop> QuotedStock(entt::entity character,const Session& session)
 {
     const auto* raw=Stock(session.race,session.route);const auto catalog=items::runtime::CurrentCatalog();
-    if(!raw || !catalog || !g_registry.valid(session.npc))return {};
+    if(!raw || !catalog)return {};
+    if(IsRuneExchange(session))return *raw;
+    if(!g_registry.valid(session.npc))return {};
     auto quoted=*raw;
     if(!g_bEmpireShopPriceTripleDisable && ecs::PlayerRuntime::GetEmpire(character)!=ecs::PlayerRuntime::GetEmpire(session.npc))
         for(auto& offer:quoted.offers) {
@@ -76,6 +82,10 @@ bool InRange(entt::entity character,entt::entity npc)
     const auto dx=std::abs(std::int64_t(ecs::PlayerRuntime::GetX(character))-ecs::PlayerRuntime::GetX(npc));
     const auto dy=std::abs(std::int64_t(ecs::PlayerRuntime::GetY(character))-ecs::PlayerRuntime::GetY(npc));
     return std::max(dx,dy)+std::min(dx,dy)/2<SHOP_MAX_DISTANCE;
+}
+bool WithinShop(entt::entity character,const Session& session)
+{
+    return IsRuneExchange(session) || InRange(character,session.npc);
 }
 bool Admitted(entt::entity e,bool transaction)
 {
@@ -98,8 +108,9 @@ void Reply(entt::entity e,Status status,std::uint64_t request=0)
     const auto* state=g_registry.try_get<ecs::TypedItems>(e);const auto* session=g_registry.try_get<Session>(e);
     if(!desc || !desc->IsPhase(PHASE_GAME) || !catalog || !state)return;
     const auto found=session ? QuotedStock(e,*session) : std::nullopt;
+    const auto sellable=session && IsRuneExchange(*session) ? std::span<const items::PersistentItem>{} : std::span<const items::PersistentItem>(state->state.items);
     const auto packet=items::EncodeNpcShop(*catalog,found ? &*found : nullptr,session ? session->vid : 0,
-        session ? session->token : 0,request,status,state->state.items);
+        session ? session->token : 0,request,status,sellable);
     SendTypedInventory(e);
     if(packet)desc->LargePacket(packet->data(),static_cast<int>(packet->size()));
     else LOG_ERROR("TypedShop: response encoding failed for pid {}",ecs::PlayerRuntime::GetPlayerID(e));
@@ -152,6 +163,20 @@ bool TryOpenTypedShop(entt::entity character,entt::entity npc,std::uint32_t auth
     ecs::SocialSystem::SetShopOwner(character,npc);
     Reply(character,Status::Ready);return true;
 }
+void OpenTypedRuneExchangeShop(entt::entity character)
+{
+    constexpr auto route=items::RuneExchangeShopRoute;
+    if(!Admitted(character,false) || g_registry.all_of<ecs::TypedItemBusy>(character) || !Stock(0,route))
+    {Reply(character,Status::Denied);return;}
+    const auto permission=ecs::resource_admission::Enter({character},auriga::resource_admission::Operation::Shop);
+    if(!permission || !permission->Current())return;
+    CloseTypedShop(character);
+    if(!permission->Current() || !Admitted(character,false))return;
+    auto op=Operation();std::uint64_t token=0;for(unsigned i=0;i<8;++i)token|=std::uint64_t{op[i]}<<(8*i);
+    auto& session=g_registry.emplace<Session>(character,entt::null,ecs::PlayerRuntime::GetPacketVID(character),0u,token);
+    session.route=route;
+    Reply(character,Status::Ready);
+}
 void CloseTypedShop(entt::entity character)
 {
     if(!g_registry.valid(character))return;
@@ -163,7 +188,7 @@ void TickTypedShops()
 {
     std::vector<entt::entity> closed;
     for(auto e:g_registry.view<Session>())
-    {const auto& session=g_registry.get<Session>(e);if(!InRange(e,session.npc) || !Admitted(e,false))closed.push_back(e);}
+    {const auto& session=g_registry.get<Session>(e);if(!WithinShop(e,session) || !Admitted(e,false))closed.push_back(e);}
     for(auto e:closed)CloseTypedShop(e);
 }
 bool HandleTypedShopPacket(entt::entity character,const char* data)
@@ -189,14 +214,14 @@ bool HandleTypedShopPacket(entt::entity character,const char* data)
     }
     session->lastRequest=request.request;session->lastStatus=Status::Invalid;
     session->lastAction=request.action;session->lastSubject=request.subject;session->lastCount=request.count;
-    if(!Admitted(character,true) || !InRange(character,session->npc)){CloseTypedShop(character);return true;}
+    if(!Admitted(character,true) || !WithinShop(character,*session)){CloseTypedShop(character);return true;}
     if(g_registry.all_of<ecs::TypedItemBusy>(character)){session->lastStatus=Status::Busy;Reply(character,Status::Busy,request.request);return true;}
     const auto permission=ecs::resource_admission::Enter({character},auriga::resource_admission::Operation::Shop);
     if(!permission || !permission->Current()){session->lastStatus=Status::Denied;Reply(character,Status::Denied,request.request);return true;}
     auto* typed=g_registry.try_get<ecs::TypedItems>(character);const auto* login=g_registry.try_get<ecs::TypedItemLogin>(character);
     const auto catalog=items::runtime::CurrentCatalog();session=g_registry.try_get<Session>(character);
     if(!typed || !login || !session || !catalog || session->token!=request.session || session->vid!=request.npc ||
-       session->lastRequest!=request.request || !Admitted(character,true) || !InRange(character,session->npc))return true;
+       session->lastRequest!=request.request || !Admitted(character,true) || !WithinShop(character,*session))return true;
     const auto& state=typed->state;const auto token=login->token;const auto nonce=session->token;
     std::expected<items::ItemCommit,items::NpcShopError> commit=std::unexpected(items::NpcShopError::Invalid);
     if(request.action==2)
@@ -206,8 +231,9 @@ bool HandleTypedShopPacket(entt::entity character,const char* data)
         const auto offer=std::ranges::find(offers,request.subject,[](const auto& o){return std::uint64_t{o.id};});
         if(offer!=offers.end())commit=items::MakeNpcBuyCommit(*catalog,Operation(),state.fence,state.storages,state.items,state.wallets,*offer,request.count,items::runtime::PeekInstanceIds(items::MaxItemCommitItems),TypedItemEffectNow());
     }
-    else if(const auto id=items::ItemInstanceId::Create(request.subject))
-        commit=items::MakeNpcSellCommit(*catalog,Operation(),state.fence,state.storages,state.items,state.wallets,*id,request.count);
+    else if(!IsRuneExchange(*session))
+        if(const auto id=items::ItemInstanceId::Create(request.subject))
+            commit=items::MakeNpcSellCommit(*catalog,Operation(),state.fence,state.storages,state.items,state.wallets,*id,request.count);
     if(!commit){session->lastStatus=Refusal(commit.error());Reply(character,session->lastStatus,request.request);return true;}
     if(!permission->Current())return true;
     const auto ids=std::ranges::count_if(commit->items,[](const auto& change){return !change.before;});

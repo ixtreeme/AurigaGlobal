@@ -33,13 +33,13 @@ std::expected<std::uint64_t,E> NpcBuyBundlePrice(const ItemCatalog& c,const NpcS
     if(!unit || !offer.grant.count || unit>std::uint64_t(INT64_MAX)/offer.grant.count)return std::unexpected(E::Invalid);
     return unit*offer.grant.count;
 }
-std::expected<void,E> ValidateNpcShops(const ItemCatalog& c,std::span<const NpcShop> shops)
+std::expected<void,E> ValidateNpcShops(const ItemCatalog& c,std::span<const NpcShop> shops,bool standalone)
 {
     if(shops.size()>MaxNpcShops)return std::unexpected(E::Invalid);
     std::set<std::uint32_t> races;
     for(const auto& shop:shops)
     {
-        if(!shop.npcRace || !races.insert(shop.npcRace).second || shop.name.empty() || shop.name.size()>128 ||
+        if((shop.npcRace==0)!=standalone || !races.insert(shop.npcRace).second || shop.name.empty() || shop.name.size()>128 ||
            std::ranges::any_of(shop.name,[](unsigned char c){return c<32 || c==127;}) ||
            shop.offers.empty() || shop.offers.size()>MaxNpcShopOffers)return std::unexpected(E::Invalid);
         std::set<std::uint32_t> ids;
@@ -47,9 +47,13 @@ std::expected<void,E> ValidateNpcShops(const ItemCatalog& c,std::span<const NpcS
         {
             const auto* entry=c.Find(offer.grant.key);
             const auto price=NpcBuyBundlePrice(c,offer);
+            const auto* tool=entry ? std::get_if<ItemBonusToolRow>(&entry->category) : nullptr;
+            const bool runeBundle=standalone && tool && tool->operation==SpecialBonusOperation::RuneCharge &&
+                !offer.costs.empty() && offer.grant.count<=MaxItemCommitItems;
             if(!offer.id || !ids.insert(offer.id).second || !entry || entry->base.retired || !price ||
                !SupportsPersistentGrant(c,*entry) || !c.RefinedBaseStats(offer.grant.key,offer.grant.refinementLevel) ||
-               !offer.grant.count || offer.grant.count>entry->base.maxStack || offer.costs.size()>5)return std::unexpected(E::Invalid);
+               !offer.grant.count || (standalone ? !runeBundle : offer.grant.count>entry->base.maxStack) ||
+               offer.costs.size()>5)return std::unexpected(E::Invalid);
             std::set<std::pair<ItemKey,std::uint16_t>> unique;
             for(const auto& cost:offer.costs) {
                 const auto* material=c.Find(cost.key);

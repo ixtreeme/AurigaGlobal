@@ -1,4 +1,5 @@
 #include "PersistentItemFixture.hpp"
+#include "SpecialBonusFixture.hpp"
 #include <item/NpcShops.hpp>
 #include <item/NpcShopConfig.hpp>
 #include <algorithm>
@@ -15,6 +16,51 @@ unsigned checks=0;
 std::vector<std::byte> barterGolden;
 void Check(bool value,const char* why,std::source_location at=std::source_location::current())
 {++checks;if(!value)throw std::runtime_error(std::string(why)+" line "+std::to_string(at.line()));}
+void RuneExchange()
+{
+    using special_bonus_fixture::Tool;
+    auto source=special_bonus_fixture::Catalog();
+    const auto base=*std::ranges::find(source.items,Tool(2),&ItemBaseRow::key);
+    const auto charge=*std::ranges::find(source.bonusTools,Tool(2),&ItemBonusToolRow::key);
+    for (unsigned local : {41u,42u})
+    {
+        auto item=base;
+        item.key=Tool(local);
+        item.contentCode="bonus_tool.rune_exchange_test_"+std::to_string(local);
+        source.items.push_back(item);
+        auto row=charge;
+        row.key=item.key;
+        source.bonusTools.push_back(row);
+    }
+    const auto catalog=BuildItemCatalog(source).value();
+    const std::string stock=R"({"version":2,"shops":[],"routes":[{"npc_race":0,"source_id":54,"name":"Rune exchange","offers":[{"id":1,"category":20,"local":42,"level":0,"count":10,"gold":0,"costs":[{"category":20,"local":41,"level":0,"count":30}]}]}]})";
+    const auto parsed=ParseNpcShopManifest(stock,*catalog);
+    Check(parsed && parsed->routes.size()==1,"original bundle can contain ten non-stackable rune bottles");
+    auto other=stock;
+    other.replace(other.find(":54"),3,":55");
+    Check(!ParseNpcShopManifest(other,*catalog),"an unspecified standalone route is rejected");
+    const auto& offer=parsed->routes.front().stock.offers.front();
+    const ItemOwnerFence fence{f::Character(),7,1};
+    const std::array layouts{f::Inventory()};
+    const std::array wallets{f::Gold()};
+    std::vector<PersistentItem> items;
+    std::array<std::uint8_t,16> op{0x97};
+    for (unsigned unit=0;unit<30;++unit)
+    {
+        ++op[1];
+        const auto id=ItemInstanceId::Create(2000+unit).value();
+        const auto grant=MakeGrantCommit(*catalog,op,fence,layouts,items,{Tool(41),0,1},std::array{id}).value();
+        items.push_back(grant.items.front().after);
+    }
+    ++op[1];
+    std::vector<ItemInstanceId> ids;
+    for (unsigned unit=0;unit<10;++unit) ids.push_back(ItemInstanceId::Create(3000+unit).value());
+    const auto buy=MakeNpcBuyCommit(*catalog,op,fence,layouts,items,wallets,offer,1,ids).value();
+    Check(buy.wallets.empty() && buy.items.size()==40,"the rune exchange has one receipt, no Yang cost, and forty instance changes");
+    Check(std::ranges::count_if(buy.items,[](const auto& change){return change.after.destroyed;})==30 &&
+          std::ranges::count_if(buy.items,[](const auto& change){return !change.before && change.after.count==1 && change.after.bonusTool.has_value();})==10,
+          "barter consumes originals and issues ten independently chargeable bottles");
+}
 std::vector<std::byte> Run()
 {
     auto source=f::Catalog();
@@ -107,6 +153,7 @@ int main(int argc,char** argv)
     try
     {
         const auto bytes=Run();
+        RuneExchange();
         if(argc==3 && (std::string_view(argv[1])=="--write-golden" || std::string_view(argv[1])=="--write-barter-golden"))
         {const auto& wire=std::string_view(argv[1])=="--write-barter-golden"?barterGolden:bytes;std::ofstream out(argv[2]);unsigned n=0;for(auto b:wire){if(n)out<<(n%32 ? ' ' : '\n');out<<std::hex<<std::setfill('0')<<std::setw(2)<<std::to_integer<unsigned>(b);++n;}out<<'\n';}
         std::cout<<checks<<" NPC shop checks passed\n";return 0;

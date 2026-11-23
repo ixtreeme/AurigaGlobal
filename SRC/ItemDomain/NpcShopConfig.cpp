@@ -32,9 +32,10 @@ std::expected<NpcShopManifest,std::string> ParseNpcShopManifest(std::string_view
                 }
                 shop.offers.push_back(std::move(value));
             }
-            if(!ValidateNpcShops(catalog,std::span(&shop,1)) || !EncodeNpcShop(catalog,&shop,1,1,0,NpcShopStatus::Ready,{}))throw std::runtime_error("Shop stock does not match the native catalog: NPC "+std::to_string(shop.npcRace));
+            const auto source=routed ? static_cast<std::uint32_t>(number(row,"source_id",UINT32_MAX)) : 0;
+            const bool standalone=shop.npcRace==0 && source==RuneExchangeShopRoute;
+            if(!ValidateNpcShops(catalog,std::span(&shop,1),standalone) || !EncodeNpcShop(catalog,&shop,1,1,0,NpcShopStatus::Ready,{}))throw std::runtime_error("Shop stock does not match the native catalog: NPC "+std::to_string(shop.npcRace));
             if(routed) {
-                const auto source=static_cast<std::uint32_t>(number(row,"source_id",UINT32_MAX));
                 if(!source || !routes.emplace(shop.npcRace,source).second)throw std::runtime_error("Invalid or duplicate authored shop route");out.routes.push_back({source,std::move(shop)});
             }else out.shops.push_back(std::move(shop));
         };

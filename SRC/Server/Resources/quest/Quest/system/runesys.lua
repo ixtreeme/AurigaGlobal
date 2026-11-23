@@ -5,7 +5,7 @@ quest rune begin
 			say("Susanoo system")
 			say("Susanoo system unlocked")
 			cmdchat("rune 2")
-			set_state(gotoinfo)
+			set_state("gotoinfo")
 		end
 	end
 
@@ -14,7 +14,7 @@ quest rune begin
 			local lang = pc.get_language()
 			say("Beta test")
 			cmdchat("rune 2")
-			set_state(gotoinfo)
+			set_state("gotoinfo")
 		end
 	end
 
@@ -23,7 +23,7 @@ quest rune begin
 			if pc.get_level() >= 42 then
 				cmdchat("rune 2")
 			else
-				set_state(gotoremind)
+				set_state("gotoremind")
 			end
 		end
 
@@ -53,7 +53,7 @@ quest rune begin
 			end
 			cmdchat("rune 1")
 			clear_letter()
-			set_state(__COMPLETE__)
+			set_state("__COMPLETE__")
 		end
 	end
 
@@ -61,8 +61,6 @@ quest rune begin
 		when login begin
 			if pc.get_level() >= 42 then
 				cmdchat("rune 1")
-			else
-				set_state(gotoinfo)
 			end
 		end
 	end

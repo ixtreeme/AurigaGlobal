@@ -1,5 +1,7 @@
 #include "../item/TypedBooks.hpp"
 #include "../item/TypedCraft.hpp"
+#include "../item/TypedCostumes.hpp"
+#include "../item/TypedShop.hpp"
 #include "../item/ItemCatalogRuntime.hpp"
 #include "../item/ItemStore.hpp"
 #include "../item/TypedQuestItems.hpp"
@@ -2841,7 +2843,7 @@ ACMD(do_hide_costume)
 
 ACMD(do_rune)
 {
-	if (!ecs::PlayerRuntime::IsValid(character))
+	if (!ecs::PlayerRuntime::IsValid(character) || g_registry.all_of<ecs::TypedItems>(character))
 		return;
 	const entt::entity owner = character;
 
@@ -2904,7 +2906,7 @@ ACMD(do_rune)
 
 ACMD(do_rune_charge)
 {
-	if (!ecs::PlayerRuntime::IsValid(character))
+	if (!ecs::PlayerRuntime::IsValid(character) || g_registry.all_of<ecs::TypedItems>(character))
 		return;
 	const entt::entity owner = character;
 
@@ -2934,6 +2936,11 @@ ACMD(do_rune_shop)
 {
 	if (!ecs::PlayerRuntime::IsPC(character))
 		return;
+	if (g_registry.all_of<ecs::TypedItems>(character))
+	{
+		OpenTypedRuneExchangeShop(character);
+		return;
+	}
 	if (ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SocialSystem::HasExchange(character) || ecs::SocialSystem::GetMyShop(character) != entt::null || ecs::SessionSystem::IsCubeOpen(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -2970,8 +2977,13 @@ ACMD(do_rune_effect)
 		return;
 
 	ecs::QuestSystem::SetFlag(character, "rune.hide_effect", iArg1);
-	ecs::PointSystem::Compute(character);
-	NetworkSyncSystem::UpdatePacket(character);
+	if (g_registry.all_of<ecs::TypedItems>(character))
+		UpdateTypedCostumes(character);
+	else
+	{
+		ecs::PointSystem::Compute(character);
+		NetworkSyncSystem::UpdatePacket(character);
+	}
 	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "rune_affect %d", iArg1);
 }
 #endif

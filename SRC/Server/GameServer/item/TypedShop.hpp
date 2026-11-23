@@ -7,6 +7,7 @@
 std::expected<void,std::string> LoadTypedShops(const std::string& file);
 // Legacy callers may continue only for characters without a loaded native owner.
 bool TryOpenTypedShop(entt::entity character,entt::entity npc,std::uint32_t authoredRoute=0);
+void OpenTypedRuneExchangeShop(entt::entity character);
 void CloseTypedShop(entt::entity character);
 void TickTypedShops();
 bool HandleTypedShopPacket(entt::entity character,const char* data);

@@ -177,8 +177,8 @@ namespace quest
 		CQuestManager& q = CQuestManager::instance();
 		PC* pPC = q.GetCurrentPC();
 
-		int idx = q.GetQuestIndexByName(pPC->GetCurrentQuestName());
-		lua_pushnumber(L, idx);
+		const auto idx = q.GetQuestIndexByName(pPC->GetCurrentQuestName());
+		lua_pushinteger(L, idx);
 		return 1;
 	}
 
