@@ -3,12 +3,15 @@
 #include "WoodcuttingSystem.hpp"
 #include "HerbalismSystem.hpp"
 #include "WoodcuttingRules.hpp"
+#include "../../item/TypedFieldGathering.hpp"
+#include "../../item/TypedFishProcessing.hpp"
+#include "../../item/TypedGathering.hpp"
+#include "../../item/ItemStore.hpp"
+#include <item/GatheringItems.hpp>
 #include "AffectSystem.hpp"
-#include "ActivitySystem.hpp"
 #include "ChatSystem.hpp"
 #include "CombatSystem.hpp"
 #include "InventorySystem.hpp"
-#include "ItemSystem.hpp"
 #include "MountSystem.hpp"
 #include "MovementSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
@@ -23,10 +26,8 @@
 #include "../../core/JsonFile.h"
 #include "../../core/locale_service.h"
 #include "../../core/utils.h"
-#include "../../network/db.h"
 #include "../../entity/char_manager.h"
 #include "../../entity/mob_manager.h"
-#include "../../item/item_manager.h"
 #include "../../world/sectree_manager.h"
 #include "../../command/cmd.h"
 #include <algorithm>
@@ -42,8 +43,8 @@ namespace {
 struct Settings {
     bool enabled = false;
     int population = 12, hits = 20, hitSeconds = 2, fallenSeconds = 180;
-    int respawnSeconds = 300, logChance = 30, pointChance = 20;
-    int refineChance = 80;
+    int respawnSeconds = 300, logChance = 30;
+    std::string rewardCode;
 } settings;
 bool loaded = false;
 uint32_t nextSpawn = 0;
@@ -77,8 +78,11 @@ void LoadSettings() {
         candidate.fallenSeconds = read("fallen_seconds", 180, 10, 600);
         candidate.respawnSeconds = read("respawn_seconds", 300, 10, 3600);
         candidate.logChance = read("log_chance_percent", 30, 0, 100);
-        candidate.pointChance = read("point_chance_percent", 20, 0, 100);
-        candidate.refineChance = read("refine_chance_percent", 80, 1, 100);
+        if (candidate.enabled) {
+            candidate.rewardCode = doc.at("reward").get<std::string>();
+            if (!FieldGatheringRewardExists(candidate.rewardCode))
+                throw std::runtime_error("missing typed log reward");
+        }
         settings = candidate;
         LOG_INFO("WOODCUT_CONFIG enabled={} map=metin2_map_main_razor93 trees={}", settings.enabled, settings.population);
     } catch (const std::exception& error) {
@@ -105,16 +109,8 @@ bool CanWork(entt::entity worker) {
         ecs::PlayerRuntime::GetDesc(worker) && !CombatSystem::IsDead(worker) &&
         !CombatSystem::IsStun(worker) && !AffectSystem::IsPolymorphed(worker) &&
         MountSystem::GetMountVnum(worker) == 0 && InventorySystem::CanHandleItems(worker) &&
-        !ActivitySystem::IsMining(worker) && !ActivitySystem::IsFishing(worker) &&
+        TypedGatheringAdmitted(worker) && !TypedResourceActive(worker) &&
         !g_registry.all_of<HerbalismSystem::PruningState>(worker);
-}
-
-void InitializeTraining(entt::entity axe) {
-    if (ItemSystem::GetItemSocket(axe, 1) == WoodcuttingRules::TrainingMarker) return;
-    // The IDs used to be swords. Old socket stones must not instantly qualify
-    // an axe for an upgrade; neither do proto sentinel values such as -1.
-    ItemSystem::SetItemSocket(axe, 0, 0);
-    ItemSystem::SetItemSocket(axe, 1, WoodcuttingRules::TrainingMarker);
 }
 
 std::vector<entt::entity> ViewersIncludingWorker(entt::entity tree, entt::entity worker) {
@@ -133,26 +129,6 @@ void HitMotion(entt::entity tree, entt::entity worker) {
     const auto workerVid = ecs::PlayerRuntime::GetPacketVID(worker);
     for (const auto viewer : ViewersIncludingWorker(tree, worker))
         ecs::ChatSystem::Send(viewer, CHAT_TYPE_COMMAND, "woodcut_swing %u %u %d", treeVid, workerVid, settings.hitSeconds);
-}
-
-bool DropLog(entt::entity worker, entt::entity tree) {
-    auto item = ITEM_MANAGER::instance().CreateItem(WoodcuttingRules::LogItem, 1);
-    if (!ItemSystem::IsValidItem(item)) return false;
-    PIXEL_POSITION position {};
-    // Use the worker's validated position so loot never lands beyond a wall at
-    // the far side of the trunk. All quantities and ownership are server-owned.
-    position.x = ecs::PlayerRuntime::GetX(worker);
-    position.y = ecs::PlayerRuntime::GetY(worker);
-    if (!ItemSystem::PlaceItemOnGround(item, ecs::PlayerRuntime::GetMapIndex(tree), position)) {
-        ItemSystem::DestroyItemEntityEcs(item, "WOODCUT_GROUND_FAIL");
-        return false;
-    }
-    if (!ItemSystem::SetGroundOwnership(item, worker, 30)) {
-        ItemSystem::DestroyItemEntityEcs(item, "WOODCUT_CLAIM_FAIL");
-        return false;
-    }
-    DBManager::instance().SendMoneyLog(MONEY_LOG_DROP, WoodcuttingRules::LogItem, 1);
-    return true;
 }
 
 bool GoodLocation(int32_t map, int32_t x, int32_t y) {
@@ -185,45 +161,6 @@ entt::entity Spawn(int32_t map, int32_t x, int32_t y) {
     return tree;
 }
 
-}
-
-bool TryRefine(entt::entity smith, entt::entity worker, entt::entity axe) {
-    if (!ItemSystem::IsValidItem(axe) || !WoodcuttingRules::IsAxe(ItemSystem::GetItemVnum(axe))) return false;
-    if (!g_registry.valid(smith) || ecs::PlayerRuntime::GetRaceNum(smith) != 20016) return false;
-    if (!loaded) LoadSettings();
-    if (!settings.enabled || !CanWork(worker) || !InReach(worker, smith) ||
-        ItemSystem::GetItemOwnerEntity(axe) != worker) return true;
-    Cancel(worker);
-    if (ItemSystem::IsItemEquipped(axe) || ItemSystem::GetItemWindow(axe) != INVENTORY) {
-        Notice(worker, "WOODCUT_REFINE_UNEQUIP"); return true;
-    }
-    InitializeTraining(axe);
-    const auto vnum = ItemSystem::GetItemVnum(axe);
-    const auto points = ItemSystem::GetItemSocket(axe, 0);
-    if (!WoodcuttingRules::CanRefine(vnum, points)) { Notice(worker, "WOODCUT_NOT_READY"); return true; }
-    if (number(1, 100) > settings.refineChance) {
-        ItemSystem::SetItemSocket(axe, 0, points - points / 10);
-        Notice(worker, "WOODCUT_REFINE_FAILED"); return true;
-    }
-    auto upgraded = ITEM_MANAGER::instance().CreateItem(vnum + 1, 1);
-    if (!ItemSystem::IsValidItem(upgraded)) return true;
-    ItemSystem::SetItemSocket(upgraded, 0, 0);
-    ItemSystem::SetItemSocket(upgraded, 1, WoodcuttingRules::TrainingMarker);
-    const auto cell = ItemSystem::GetItemCell(axe);
-    if (!ItemSystem::RemoveItemEcs(axe) || !ItemSystem::PlaceItemEcs(worker, upgraded, INVENTORY, cell)) {
-        if (ItemSystem::GetItemOwnerEntity(axe) == entt::null) ItemSystem::PlaceItemEcs(worker, axe, INVENTORY, cell);
-        ItemSystem::DestroyItemEntityEcs(upgraded, "WOODCUT_REFINE_PLACE_ROLLBACK");
-        return true;
-    }
-    if (!ItemSystem::DestroyItemEntityEcs(axe, "WOODCUT_REFINE_SUCCESS")) {
-        ItemSystem::RemoveItemEcs(upgraded);
-        ItemSystem::PlaceItemEcs(worker, axe, INVENTORY, cell);
-        ItemSystem::DestroyItemEntityEcs(upgraded, "WOODCUT_REFINE_SOURCE_ROLLBACK");
-        return true;
-    }
-    Notice(worker, "WOODCUT_REFINE_SUCCESS");
-    AurigaMissionPass::Events::Emit(worker,AurigaMissionPass::Kind::ToolUpgrade,vnum+1);
-    return true;
 }
 
 bool IsTree(entt::entity tree) {
@@ -269,11 +206,10 @@ bool Start(entt::entity worker, entt::entity tree) {
     if (trunk.worker != worker && g_registry.valid(trunk.worker) && g_registry.all_of<ChoppingState>(trunk.worker)) {
         Notice(worker, "WOODCUT_BUSY"); return true;
     }
-    auto axe = ItemSystem::GetWearItem(worker, WEAR_WEAPON);
-    if (!ItemSystem::IsValidItem(axe) || !WoodcuttingRules::IsAxe(ItemSystem::GetItemVnum(axe))) {
+    const auto axe = EquippedFieldTool(worker, auriga::item::ToolKind::Axe);
+    if (!axe) {
         Notice(worker, "WOODCUT_NEED_AXE"); return true;
     }
-    InitializeTraining(axe);
     // Repeated clicks do not reset the deadline or grant immediate hits.
     if (const auto* current = g_registry.try_get<ChoppingState>(worker); current && current->tree == tree) return true;
     Cancel(worker, nullptr);
@@ -310,12 +246,12 @@ void Tick(uint32_t now) {
             !WoodcuttingRules::StayedInPlace(state.startX, state.startY, state.map,
                 ecs::PlayerRuntime::GetX(worker), ecs::PlayerRuntime::GetY(worker),
                 ecs::PlayerRuntime::GetMapIndex(worker)) ||
-            ItemSystem::GetWearItem(worker, WEAR_WEAPON) != state.axe || !ItemSystem::IsValidItem(state.axe)) {
+            EquippedFieldTool(worker, auriga::item::ToolKind::Axe) != state.axe) {
             Cancel(worker); continue;
         }
         auto& trunk = g_registry.get<TreeState>(state.tree);
         if (!trunk.remaining || trunk.worker != worker) { Cancel(worker); continue; }
-        if (!WoodcuttingRules::Due(now, state.nextHit)) continue;
+        if (!WoodcuttingRules::Due(now, state.nextHit) || g_registry.all_of<ecs::TypedItemBusy>(worker)) continue;
         // One hit at most per tick: never catch up missed time with burst rewards.
         --trunk.remaining;
         const double hitDx = static_cast<double>(ecs::PlayerRuntime::GetX(state.tree)) - state.startX;
@@ -324,19 +260,8 @@ void Tick(uint32_t now) {
         for (const auto viewer : ViewersIncludingWorker(state.tree, worker))
             ecs::ChatSystem::Send(viewer, CHAT_TYPE_COMMAND, "woodcut_hit %u %u",
                 ecs::PlayerRuntime::GetPacketVID(state.tree), ecs::PlayerRuntime::GetPacketVID(worker));
-        const bool rewarded = number(1, 100) <= settings.logChance && DropLog(worker, state.tree);
-        Notice(worker, rewarded ? "WOODCUT_LOG_SUCCESS" : "WOODCUT_NO_LOG");
-        if(rewarded)AurigaMissionPass::Events::Emit(worker,AurigaMissionPass::Kind::WoodGather,90011);
-        const auto vnum = ItemSystem::GetItemVnum(state.axe);
-        if (vnum < WoodcuttingRules::LastAxe && number(1, 100) <= settings.pointChance) {
-            const auto old = ItemSystem::GetItemSocket(state.axe, 0);
-            const auto points = WoodcuttingRules::AddPoint(vnum, old);
-            if (points != old) {
-                ItemSystem::SetItemSocket(state.axe, 0, points);
-                AurigaMissionPass::Events::Emit(worker,AurigaMissionPass::Kind::ToolTraining,vnum,points-old);
-                if (WoodcuttingRules::CanRefine(vnum, points)) Notice(worker, "WOODCUT_READY");
-            }
-        }
+        CompleteFieldGatheringHit(worker, state.axe, auriga::item::ToolKind::Axe,
+            settings.rewardCode, settings.logChance);
         if (!trunk.remaining) {
             AurigaMissionPass::Events::Emit(worker,AurigaMissionPass::Kind::TreeFelled,WoodcuttingRules::TreeRace);
             trunk.fellAt = now ? now : 1;

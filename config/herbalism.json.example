@@ -7,6 +7,18 @@
   "attempt_seconds": 3,
   "respawn_seconds": 300,
   "drop_chance_percent": 40,
-  "point_chance_percent": 20,
-  "refine_chance_percent": 80
+  "rewards": [
+    "catalog.6.noname_bf0d77e9ff91",
+    "catalog.6.noname_3c568588cc46",
+    "catalog.6.noname_61919f5bdaa3",
+    "catalog.6.noname_bb4ffbda2af0",
+    "catalog.6.noname_70c03136f1f1",
+    "catalog.6.noname_299349049325",
+    "catalog.6.noname_db8e39e88c79",
+    "catalog.6.noname_10062fec77b2",
+    "catalog.6.noname_f76b0b1d2eb3",
+    "catalog.6.noname_864257157a4b",
+    "catalog.6.noname_8572aa1d10b5",
+    "catalog.6.noname_22bbe5a19e3a"
+  ]
 }

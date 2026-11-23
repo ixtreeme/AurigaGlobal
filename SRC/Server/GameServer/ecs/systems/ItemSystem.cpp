@@ -8,10 +8,6 @@
 #include "../../item/LegacyItemBoundary.hpp"
 
 #include "ItemSystem.hpp"
-#include "WoodcuttingSystem.hpp"
-#include "HerbalismSystem.hpp"
-#include "HerbalismRules.hpp"
-#include "WoodcuttingRules.hpp"
 #include "MountSystem.hpp"
 #include "NetworkSyncSystem.hpp"
 #include "PointSystem.hpp"
@@ -2873,10 +2869,7 @@ bool CanReceiveItemEcs(entt::entity receiver, entt::entity fromEntity, entt::ent
     if (dx > 2000 || dy > 2000 || DISTANCE_APPROX(static_cast<int>(dx), static_cast<int>(dy)) > 2000)
         return false;
 
-	uint32_t racenum = ecs::PlayerRuntime::GetRaceNum(receiver);
-
-    if (racenum == 20016 && WoodcuttingRules::IsAxe(GetItemVnum(item))) return true;
-    if (racenum == 20016 && HerbalismRules::IsShears(GetItemVnum(item))) return true;
+	const uint32_t racenum = ecs::PlayerRuntime::GetRaceNum(receiver);
 
 	switch (racenum)
 	{
@@ -3009,8 +3002,6 @@ bool ReceiveItemEcs(entt::entity receiver, entt::entity fromEntity, entt::entity
 {
     if (!CanReceiveItemEcs(receiver, fromEntity, item))
         return false;
-    if (WoodcuttingSystem::TryRefine(receiver, fromEntity, item)) return true;
-    if (HerbalismSystem::TryRefine(receiver, fromEntity, item)) return true;
     // Callbacks may consume the last item or destroy its entity.
     const std::string itemName = GetItemName(item);
 	const entt::entity itemEntity = item;

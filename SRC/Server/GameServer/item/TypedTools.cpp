@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "TypedTools.hpp"
 #include "TypedGathering.hpp"
+#include "TypedFieldGathering.hpp"
 #include "TypedFishProcessing.hpp"
 #include "TypedInventorySync.hpp"
 #include "TypedDrops.hpp"
@@ -14,6 +15,7 @@
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../entity/char_manager.h"
+#include "../mission_pass/MissionPassEvents.hpp"
 #include "../network/desc.h"
 #include "../core/packet.h"
 #include "../item/refine.h"
@@ -41,11 +43,14 @@ bool Service(entt::entity e,entt::entity npc,item::ToolKind kind)
 {
     if(!g_registry.valid(npc) || !ecs::PlayerRuntime::IsValid(npc) || ecs::PlayerRuntime::IsPC(npc) || CombatSystem::IsDead(npc) || ecs::PlayerRuntime::GetMapIndex(e)!=ecs::PlayerRuntime::GetMapIndex(npc))return false;
     const auto race=ecs::PlayerRuntime::GetRaceNum(npc);
+    const bool field = kind == item::ToolKind::Axe || kind == item::ToolKind::Shears;
+    if (field && race != BLACKSMITH_MOB)
+        return false;
     const bool canRefine = kind == item::ToolKind::Rod ? race == fishing::FISHER_MOB :
         race == BLACKSMITH_MOB || race == BLACKSMITH2_MOB || (kind == item::ToolKind::Pick && race == Deokbae);
     if (!canRefine)
         return false;
-    const auto x=std::abs(std::int64_t(ecs::PlayerRuntime::GetX(e))-ecs::PlayerRuntime::GetX(npc));const auto y=std::abs(std::int64_t(ecs::PlayerRuntime::GetY(e))-ecs::PlayerRuntime::GetY(npc));return std::max(x,y)+std::min(x,y)/2<1000;
+    const auto x=std::abs(std::int64_t(ecs::PlayerRuntime::GetX(e))-ecs::PlayerRuntime::GetX(npc));const auto y=std::abs(std::int64_t(ecs::PlayerRuntime::GetY(e))-ecs::PlayerRuntime::GetY(npc));return field ? x <= 300 && y <= 300 && x*x + y*y <= 300*300 : std::max(x,y)+std::min(x,y)/2<1000;
 }
 item::ToolRuntimeActor Actor(entt::entity e,const TypedToolsSession& s)
 {
@@ -65,7 +70,7 @@ entt::entity Current(std::uint32_t pid,std::uint64_t token)
 bool TypedGatheringActive(entt::entity e)
 {
     if(!g_registry.valid(e))return false;const auto* fishing=g_registry.try_get<ecs::FishingState>(e);const auto* mining=g_registry.try_get<ecs::MiningState>(e);
-    return TypedResourceActive(e) || g_registry.all_of<ecs::FishingActiveTag>(e) || (fishing && fishing->fishingNewEvent) || (mining && mining->event) || ecs::PlayerRuntime::GetCharEvent(e,ecs::PlayerRuntime::CharEvent::Fishing);
+    return TypedFieldGatheringActive(e) || TypedResourceActive(e) || g_registry.all_of<ecs::FishingActiveTag>(e) || (fishing && fishing->fishingNewEvent) || (mining && mining->event) || ecs::PlayerRuntime::GetCharEvent(e,ecs::PlayerRuntime::CharEvent::Fishing);
 }
 bool HandleTypedToolsPacket(entt::entity e,const char* bytes)
 {
@@ -117,6 +122,15 @@ bool HandleTypedToolsPacket(entt::entity e,const char* bytes)
     {
         const auto e=Current(pid,token);if(e==entt::null)return;if(!out.state){LOG_ERROR("TypedTools: authoritative reload failed pid {}",pid);if(auto* d=ecs::PlayerRuntime::GetDesc(e))d->SetPhase(PHASE_CLOSE);return;}
         g_registry.emplace_or_replace<ecs::TypedItems>(e,std::move(*out.state));g_registry.remove<ecs::TypedItemBusy>(e);if(auto* s=g_registry.try_get<TypedToolsSession>(e)){s->pending=false;if(!out.write){s->outcome=0;s->roll=0;}}
+        if(out.write)
+        {
+            const auto* s=g_registry.try_get<TypedToolsSession>(e);
+            const auto catalog=store::CurrentCatalog();
+            const auto* row=catalog && s && s->tool ? ToolRow(*catalog,*s->tool) : nullptr;
+            if(s && s->outcome==1 && row && (row->kind==item::ToolKind::Axe || row->kind==item::ToolKind::Shears))
+                AurigaMissionPass::Events::Emit(e,AurigaMissionPass::Kind::ToolUpgrade,
+                    s->afterItem.value_or(s->tool->key).LocalId());
+        }
         Reply(e,out.write ? Status::Applied : Status::Failed);PumpTypedItemGrants(e);
     });
     if(!queued){g_registry.remove<ecs::TypedItemBusy>(e);s->pending=false;s->outcome=0;s->roll=0;Reply(e,Status::Failed);}return true;

@@ -29,7 +29,8 @@
 #include "../../item/TypedRecovery.hpp"
 #include "../../item/TypedEquipment.hpp"
 #include "../../item/TypedCompanions.hpp"
-#include "HerbalismRules.hpp"
+#include "../../item/TypedFieldGathering.hpp"
+#include <item/GatheringItems.hpp>
 #include "SessionSystem.hpp"
 #include "SkillSystem.hpp"
 #include "MountSystem.hpp"
@@ -2733,13 +2734,9 @@ bool Attack(entt::entity attacker, entt::entity victim, uint8_t attackType)
     if(WarriorMobility::Active(attacker))return false;
     if (attacker == entt::null || !g_registry.valid(attacker))
         return false;
-    // Pruning shears are gathering tools, even though the equipment protocol
-    // retains the old SWORD subtype. Never trust a client-side attack gate.
-    if (ecs::PlayerRuntime::IsPC(attacker)) {
-        const auto tool=CombatWearItem(attacker,WEAR_WEAPON);
-        if (ItemSystem::IsValidItem(tool) && HerbalismRules::IsShears(ItemSystem::GetItemVnum(tool)))
-            return false;
-    }
+    if (ecs::PlayerRuntime::IsPC(attacker) && (EquippedFieldTool(attacker, auriga::item::ToolKind::Axe) ||
+        EquippedFieldTool(attacker, auriga::item::ToolKind::Shears)))
+        return false;
     if (victim == entt::null || !g_registry.valid(victim))
         return false;
 

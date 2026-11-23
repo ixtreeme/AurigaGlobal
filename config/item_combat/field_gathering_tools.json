@@ -1,0 +1,26 @@
+{
+  "starting_price_yang": 100000,
+  "refine_chance_basis_points": 8000,
+  "failure_point_loss_basis_points": 1000,
+  "practice_numerator": 1,
+  "practice_denominator": 5,
+  "points_by_grade": [100, 250, 500, 1000, 2000, 4000, 8000, 16000, 32000, 0],
+  "tools": [
+    {
+      "code": "tool.field.axe",
+      "kind": 3,
+      "name": "Favágó balta",
+      "name_key": "woodcut_axe_name",
+      "description_key": "woodcut_axe_description",
+      "icon": "icon/field/axe"
+    },
+    {
+      "code": "tool.field.shears",
+      "kind": 4,
+      "name": "Metszőolló",
+      "name_key": "herb_shears_name",
+      "description_key": "herb_shears_description",
+      "icon": "icon/field/shears"
+    }
+  ]
+}

@@ -27,8 +27,6 @@
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/WoodcuttingSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/HerbalismSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/WoodcuttingRules.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/HerbalismRules.hpp"
 #include "../../SRC/Server/GameServer/ecs/ItemRegistry.hpp"
 #include <Core/Logging.hpp>
 #include "../../SRC/Server/GameServer/ecs/components/inventory_components.hpp"
@@ -942,19 +940,4 @@ int main() {
     try { NativeFactory(); NativePrototypeRefresh(); FactoryCallbacks(); NativePickups(); PickupAdmission(); UseAdmission(); NativeInventoryAndUse(); NativeNpcItems(); NativeIdentityRegistry(); LocalizedNames(); LevelChecks(); LoadedTimers(); WearTimers(); WearTimerStops(); TimerFailuresAndCallbacks(); Reset(); }
     catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
     std::cout << "Item runtime: " << checks << " checks passed\n";
-}
-
-// NPC item tests exercise ordinary gifts, not gathering-tool refinement.
-// Reject only that out-of-scope route; actual tool refinement must not be masked.
-namespace WoodcuttingSystem {
-bool TryRefine(entt::entity, entt::entity, entt::entity item) {
-    if (!npcTest || WoodcuttingRules::IsAxe(ItemSystem::GetItemVnum(item))) Unexpected();
-    return false;
-}
-}
-namespace HerbalismSystem {
-bool TryRefine(entt::entity, entt::entity, entt::entity item) {
-    if (!npcTest || HerbalismRules::IsShears(ItemSystem::GetItemVnum(item))) Unexpected();
-    return false;
-}
 }

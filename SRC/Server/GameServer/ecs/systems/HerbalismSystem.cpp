@@ -2,13 +2,16 @@
 #include "../../mission_pass/MissionPassEvents.hpp"
 #include "HerbalismSystem.hpp"
 #include "HerbalismRules.hpp"
+#include "../../item/TypedFieldGathering.hpp"
+#include "../../item/TypedFishProcessing.hpp"
+#include "../../item/TypedGathering.hpp"
+#include "../../item/ItemStore.hpp"
+#include <item/GatheringItems.hpp>
 #include "WoodcuttingSystem.hpp"
 #include "AffectSystem.hpp"
-#include "ActivitySystem.hpp"
 #include "ChatSystem.hpp"
 #include "CombatSystem.hpp"
 #include "InventorySystem.hpp"
-#include "ItemSystem.hpp"
 #include "MountSystem.hpp"
 #include "MovementSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
@@ -22,10 +25,8 @@
 #include "../../core/JsonFile.h"
 #include "../../core/locale_service.h"
 #include "../../core/utils.h"
-#include "../../network/db.h"
 #include "../../entity/char_manager.h"
 #include "../../entity/mob_manager.h"
-#include "../../item/item_manager.h"
 #include "../../world/sectree_manager.h"
 #include <algorithm>
 #include <cmath>
@@ -39,7 +40,8 @@ namespace {
 struct Settings {
     bool enabled = false;
     int population = 3, attempts = 8, interval = 3, respawn = 300;
-    int dropChance = 40, pointChance = 20, refineChance = 80;
+    int dropChance = 40;
+    std::array<std::string, 12> rewardCodes;
 } settings;
 bool loaded = false;
 uint32_t nextSpawn = 0;
@@ -69,8 +71,14 @@ void LoadSettings() {
         candidate.interval = read("attempt_seconds", 3, 2, 10);
         candidate.respawn = read("respawn_seconds", 300, 30, 3600);
         candidate.dropChance = read("drop_chance_percent", 40, 0, 100);
-        candidate.pointChance = read("point_chance_percent", 20, 0, 100);
-        candidate.refineChance = read("refine_chance_percent", 80, 1, 100);
+        if (candidate.enabled) {
+            const auto& rewards = doc.at("rewards");
+            if (!rewards.is_array() || rewards.size() != candidate.rewardCodes.size())
+                throw std::runtime_error("expected one typed reward for each plant");
+            candidate.rewardCodes = rewards.get<decltype(candidate.rewardCodes)>();
+            if (!std::ranges::all_of(candidate.rewardCodes, FieldGatheringRewardExists))
+                throw std::runtime_error("missing typed plant reward");
+        }
         settings = candidate;
         nextSpawn = get_dword_time(); // reload also works after the 32-bit clock half-period
         LOG_INFO("HERBALISM_CONFIG enabled={} population_per_species={}", settings.enabled, settings.population);
@@ -92,7 +100,7 @@ bool CanWork(entt::entity worker) {
     return g_registry.valid(worker) && ecs::PlayerRuntime::IsPC(worker) && ecs::PlayerRuntime::GetDesc(worker) &&
         !CombatSystem::IsDead(worker) && !CombatSystem::IsStun(worker) && !AffectSystem::IsPolymorphed(worker) &&
         MountSystem::GetMountVnum(worker) == 0 && InventorySystem::CanHandleItems(worker) &&
-        !ActivitySystem::IsMining(worker) && !ActivitySystem::IsFishing(worker) &&
+        TypedGatheringAdmitted(worker) && !TypedResourceActive(worker) &&
         !g_registry.all_of<WoodcuttingSystem::ChoppingState>(worker);
 }
 std::vector<entt::entity> Viewers(entt::entity plant, entt::entity worker) {
@@ -100,30 +108,10 @@ std::vector<entt::entity> Viewers(entt::entity plant, entt::entity worker) {
     if (g_registry.valid(worker) && std::find(viewers.begin(), viewers.end(), worker) == viewers.end()) viewers.push_back(worker);
     return viewers;
 }
-void InitializeTraining(entt::entity tool) {
-    if (ItemSystem::GetItemSocket(tool, 1) == HerbalismRules::TrainingMarker) return;
-    ItemSystem::SetItemSocket(tool, 0, 0);
-    ItemSystem::SetItemSocket(tool, 1, HerbalismRules::TrainingMarker);
-}
 void Swing(entt::entity plant, entt::entity worker) {
     for (auto viewer : Viewers(plant, worker))
         ecs::ChatSystem::Send(viewer, CHAT_TYPE_COMMAND, "herb_prune %u %u %d",
             ecs::PlayerRuntime::GetPacketVID(plant), ecs::PlayerRuntime::GetPacketVID(worker), settings.interval);
-}
-bool Drop(entt::entity worker, entt::entity plant) {
-    const auto herb = HerbalismRules::HerbFor(ecs::PlayerRuntime::GetRaceNum(plant));
-    if (!herb) return false;
-    auto item = ITEM_MANAGER::instance().CreateItem(herb, 1);
-    if (!ItemSystem::IsValidItem(item)) return false;
-    PIXEL_POSITION p{};
-    p.x = ecs::PlayerRuntime::GetX(worker); p.y = ecs::PlayerRuntime::GetY(worker);
-    if (!ItemSystem::PlaceItemOnGround(item, ecs::PlayerRuntime::GetMapIndex(plant), p) ||
-        !ItemSystem::SetGroundOwnership(item, worker, 30)) {
-        ItemSystem::DestroyItemEntityEcs(item, "HERBALISM_DROP_ROLLBACK"); return false;
-    }
-    DBManager::instance().SendMoneyLog(MONEY_LOG_DROP, herb, 1);
-    AurigaMissionPass::Events::Emit(worker,AurigaMissionPass::Kind::HerbGather,herb);
-    return true;
 }
 bool GoodLocation(int32_t map, int32_t x, int32_t y) {
     auto* sector = SECTREE_MANAGER::instance().Get(map, x, y);
@@ -180,13 +168,12 @@ bool Start(entt::entity worker, entt::entity plant) {
     if (state.worker != worker && g_registry.valid(state.worker) && g_registry.all_of<PruningState>(state.worker)) {
         Notice(worker,"HERB_BUSY"); return true;
     }
-    auto tool = ItemSystem::GetWearItem(worker, WEAR_WEAPON);
-    if (!ItemSystem::IsValidItem(tool) || !HerbalismRules::IsShears(ItemSystem::GetItemVnum(tool))) {
+    const auto tool = EquippedFieldTool(worker, auriga::item::ToolKind::Shears);
+    if (!tool) {
         Notice(worker,"HERB_NEED_SHEARS"); return true;
     }
     if (const auto* current = g_registry.try_get<PruningState>(worker); current && current->plant == plant) return true;
     Cancel(worker,nullptr);
-    InitializeTraining(tool);
     ecs::MovementSystem::Stop(worker);
     g_registry.emplace<PruningState>(worker,PruningState{plant,tool,get_dword_time()+settings.interval*1000u,
         ecs::PlayerRuntime::GetX(worker),ecs::PlayerRuntime::GetY(worker),ecs::PlayerRuntime::GetMapIndex(worker)});
@@ -194,35 +181,6 @@ bool Start(entt::entity worker, entt::entity plant) {
     ecs::MovementSystem::SetRotationToXY(worker,ecs::PlayerRuntime::GetX(plant),ecs::PlayerRuntime::GetY(plant));
     Swing(plant,worker);
     return true;
-}
-bool TryRefine(entt::entity smith, entt::entity worker, entt::entity tool) {
-    if (!ItemSystem::IsValidItem(tool) || !HerbalismRules::IsShears(ItemSystem::GetItemVnum(tool)) ||
-        !g_registry.valid(smith) || ecs::PlayerRuntime::GetRaceNum(smith) != 20016) return false;
-    if (!loaded) LoadSettings();
-    if (!settings.enabled || !CanWork(worker) || !InReach(worker,smith) || ItemSystem::GetItemOwnerEntity(tool) != worker) return true;
-    Cancel(worker);
-    if (ItemSystem::IsItemEquipped(tool) || ItemSystem::GetItemWindow(tool) != INVENTORY) { Notice(worker,"HERB_REFINE_UNEQUIP"); return true; }
-    InitializeTraining(tool);
-    const auto vnum = ItemSystem::GetItemVnum(tool);
-    const auto points = ItemSystem::GetItemSocket(tool,0);
-    if (!HerbalismRules::CanRefine(vnum,points)) { Notice(worker,"HERB_NOT_READY"); return true; }
-    if (number(1,100) > settings.refineChance) {
-        ItemSystem::SetItemSocket(tool,0,points-points/10); Notice(worker,"HERB_REFINE_FAILED"); return true;
-    }
-    auto upgraded = ITEM_MANAGER::instance().CreateItem(vnum+1,1);
-    if (!ItemSystem::IsValidItem(upgraded)) return true;
-    ItemSystem::SetItemSocket(upgraded,0,0); ItemSystem::SetItemSocket(upgraded,1,HerbalismRules::TrainingMarker);
-    const auto cell = ItemSystem::GetItemCell(tool);
-    if (!ItemSystem::RemoveItemEcs(tool) || !ItemSystem::PlaceItemEcs(worker,upgraded,INVENTORY,cell)) {
-        if (ItemSystem::GetItemOwnerEntity(tool) == entt::null) ItemSystem::PlaceItemEcs(worker,tool,INVENTORY,cell);
-        ItemSystem::DestroyItemEntityEcs(upgraded,"HERBALISM_REFINE_ROLLBACK"); return true;
-    }
-    if (!ItemSystem::DestroyItemEntityEcs(tool,"HERBALISM_REFINE_SUCCESS")) {
-        ItemSystem::RemoveItemEcs(upgraded); ItemSystem::PlaceItemEcs(worker,tool,INVENTORY,cell);
-        ItemSystem::DestroyItemEntityEcs(upgraded,"HERBALISM_REFINE_SOURCE_ROLLBACK"); return true;
-    }
-    AurigaMissionPass::Events::Emit(worker,AurigaMissionPass::Kind::ToolUpgrade,vnum+1);
-    Notice(worker,"HERB_REFINE_SUCCESS"); return true;
 }
 void Tick(uint32_t now) {
     if (!loaded) LoadSettings();
@@ -236,24 +194,16 @@ void Tick(uint32_t now) {
         if (!settings.enabled || !CanWork(worker) || !IsPlant(state.plant) || !InReach(worker,state.plant) ||
             (movement && movement->moveDuration > 0) || state.startX != ecs::PlayerRuntime::GetX(worker) ||
             state.startY != ecs::PlayerRuntime::GetY(worker) || state.map != ecs::PlayerRuntime::GetMapIndex(worker) ||
-            ItemSystem::GetWearItem(worker,WEAR_WEAPON) != state.shears || !ItemSystem::IsValidItem(state.shears)) { Cancel(worker); continue; }
+            EquippedFieldTool(worker, auriga::item::ToolKind::Shears) != state.shears) { Cancel(worker); continue; }
         auto& plant = g_registry.get<PlantState>(state.plant);
         if (!plant.remaining || plant.worker != worker) { Cancel(worker); continue; }
-        if (!HerbalismRules::Due(now,state.nextHit)) continue;
+        if (!HerbalismRules::Due(now,state.nextHit) || g_registry.all_of<ecs::TypedItemBusy>(worker)) continue;
         --plant.remaining;
         for (auto viewer : Viewers(state.plant,worker))
             ecs::ChatSystem::Send(viewer,CHAT_TYPE_COMMAND,"herb_hit %u %u",ecs::PlayerRuntime::GetPacketVID(state.plant),ecs::PlayerRuntime::GetPacketVID(worker));
-        Notice(worker,number(1,100) <= settings.dropChance && Drop(worker,state.plant) ? "HERB_SUCCESS" : "HERB_FAILED");
-        const auto vnum = ItemSystem::GetItemVnum(state.shears);
-        if (vnum < HerbalismRules::LastShears && number(1,100) <= settings.pointChance) {
-            auto old = ItemSystem::GetItemSocket(state.shears,0);
-            auto points = HerbalismRules::AddPoint(vnum,old);
-            if (points != old) {
-                ItemSystem::SetItemSocket(state.shears,0,points);
-                AurigaMissionPass::Events::Emit(worker,AurigaMissionPass::Kind::ToolTraining,vnum,points-old);
-                if (HerbalismRules::CanRefine(vnum,points)) Notice(worker,"HERB_READY");
-            }
-        }
+        const auto species = ecs::PlayerRuntime::GetRaceNum(state.plant) - HerbalismRules::FirstPlant;
+        CompleteFieldGatheringHit(worker, state.shears, auriga::item::ToolKind::Shears,
+            settings.rewardCodes[species], settings.dropChance);
         if (!plant.remaining) plant.depletedAt = now ? now : 1;
         for (auto viewer : Viewers(state.plant,worker)) SendSnapshot(state.plant,viewer);
         if (!plant.remaining) { Cancel(worker,nullptr); Notice(worker,"HERB_DEPLETED"); }
@@ -294,13 +244,13 @@ void HandleCommand(entt::entity worker, const char* arguments) {
     if (action == "refine") { Notice(worker,"HERB_REFINE_NPC"); return; }
     if (ecs::PlayerRuntime::GetGMLevel(worker) < GM_HIGH_WIZARD) return;
     if (action == "reload") { LoadSettings(); Notice(worker,"HERB_RELOADED"); return; }
-    uint32_t item = 0; input >> item;
-    if (action == "spawn" && settings.enabled && item >= 50701 && item <= 50712) {
+    uint32_t species = 0; input >> species;
+    if (action == "spawn" && settings.enabled && species >= 1 && species <= settings.rewardCodes.size()) {
         for (int i=0; i<24; ++i) {
             double angle = i*3.141592653589793/12;
             auto x = ecs::PlayerRuntime::GetX(worker)+static_cast<int32_t>(std::cos(angle)*600);
             auto y = ecs::PlayerRuntime::GetY(worker)+static_cast<int32_t>(std::sin(angle)*600);
-            if (Spawn(HerbalismRules::FirstPlant+item-50701,ecs::PlayerRuntime::GetMapIndex(worker),x,y) != entt::null) {
+            if (Spawn(HerbalismRules::FirstPlant+species-1,ecs::PlayerRuntime::GetMapIndex(worker),x,y) != entt::null) {
                 Notice(worker,"HERB_SPAWNED"); return;
             }
         }

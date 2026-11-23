@@ -12,7 +12,8 @@ struct TreeState {
     entt::entity worker = entt::null;
 };
 struct ChoppingState {
-    entt::entity tree = entt::null, axe = entt::null;
+    entt::entity tree = entt::null;
+    std::uint64_t axe = 0;
     uint32_t nextHit = 0;
     int32_t startX = 0, startY = 0, map = 0;
 };
@@ -21,6 +22,5 @@ bool IsTree(entt::entity tree);
 bool Start(entt::entity character, entt::entity tree);
 void Cancel(entt::entity character, const char* noticeKey = "WOODCUT_INTERRUPTED");
 void SendSnapshot(entt::entity tree, entt::entity viewer);
-bool TryRefine(entt::entity smith, entt::entity character, entt::entity axe);
 void HandleCommand(entt::entity character, const char* arguments);
 }

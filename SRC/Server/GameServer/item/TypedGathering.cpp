@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "TypedRecovery.hpp"
 #include "TypedGathering.hpp"
+#include "TypedFieldGathering.hpp"
 #include "TypedTools.hpp"
 #include "TypedFishProcessing.hpp"
 #include "TypedInventorySync.hpp"
@@ -59,7 +60,7 @@ bool OnSiteMap(entt::entity e,const item::GatheringSite& site)
 }
 bool Node(entt::entity e,entt::entity n,const item::GatheringSite& site)
 {
- if(!g_registry.valid(n) || !ecs::PlayerRuntime::IsValid(n) || ecs::PlayerRuntime::IsPC(n) || CombatSystem::IsDead(n) || !OnSiteMap(e,site) || ecs::PlayerRuntime::GetMapIndex(e)!=ecs::PlayerRuntime::GetMapIndex(n) || ecs::PlayerRuntime::GetRaceNum(n)!=site.race)return false;
+ if(!g_registry.valid(n) || IsFieldGatheringNode(n) || !ecs::PlayerRuntime::IsValid(n) || ecs::PlayerRuntime::IsPC(n) || CombatSystem::IsDead(n) || !OnSiteMap(e,site) || ecs::PlayerRuntime::GetMapIndex(e)!=ecs::PlayerRuntime::GetMapIndex(n) || ecs::PlayerRuntime::GetRaceNum(n)!=site.race)return false;
  auto dx=std::abs(std::int64_t(ecs::PlayerRuntime::GetX(e))-ecs::PlayerRuntime::GetX(n)),dy=std::abs(std::int64_t(ecs::PlayerRuntime::GetY(e))-ecs::PlayerRuntime::GetY(n));return std::max(dx,dy)+std::min(dx,dy)/2<site.range;
 }
 std::uint32_t Elapsed(const TypedResourceSession& s)
