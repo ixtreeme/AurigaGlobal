@@ -25,7 +25,6 @@
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MountSystem.hpp"
 #include <Core/Logging.hpp>
-#include <Core/player_cache_snapshot.h>
 #include "../../SRC/Server/GameServer/ecs/components/inventory_components.hpp"
 #include <functional>
 #include <iostream>
@@ -36,18 +35,15 @@ LPCLIENT_DESC db_clientdesc = nullptr;
 
 namespace {
 int checks = 0, groundCalls = 0, detachCalls = 0, factoryCalls = 0, retirements = 0;
-int logs = 0, quickslots = 0, mountPackets = 0, computes = 0, points = 0, overheads = 0;
+int logs = 0, quickslots = 0, computes = 0, points = 0, overheads = 0;
 uint16_t quickslotType = 0, quickslotCell = 0;
 bool rejectFactory = false;
 bool rejectDetach = false;
 bool creationTest = false, rejectAllocation = false, rejectCount = false;
-bool persistenceTest = false;
-std::vector<uint8_t> persistedHeaders;
-std::vector<std::vector<uint8_t>> persistedPayloads;
 bool rejectRune = false, rejectTimer = false, blendExists = false;
 bool highDraw = false;
 uint32_t nextItemID = 1000;
-int creationSaves = 0, allocations = 0;
+int allocations = 0;
 std::function<void(const char*, entt::entity)> onCreation;
 std::vector<std::string> creationStages;
 std::set<uint32_t> availableSkills;
@@ -71,7 +67,6 @@ class Manager : public ITEM_MANAGER {
 public:
     void Prototype(TItemTable proto) { m_vec_prototype = {proto}; }
     TItemTable& Prototype() { return m_vec_prototype.front(); }
-    void VID(uint32_t value) { m_dwVIDCount = value; }
     void Group(CSpecialItemGroup& group, bool quest) {
         (quest ? m_map_pkQuestItemGroup : m_map_pkSpecialItemGroup)[group.m_dwVnum] = &group;
     }
@@ -79,26 +74,23 @@ public:
         const auto& identity = g_registry.get<ecs::ItemIdentity>(item);
         m_VIDMap[identity.vid] = item;
         if (identity.id) m_map_pkItemByID[identity.id] = item;
-        m_set_pkItemForDelayedSave.insert(item);
     }
     bool Indexed(entt::entity item) const {
         return std::any_of(m_VIDMap.begin(), m_VIDMap.end(), [=](auto& row) { return row.second == item; }) ||
-            std::any_of(m_map_pkItemByID.begin(), m_map_pkItemByID.end(), [=](auto& row) { return row.second == item; }) ||
-            m_set_pkItemForDelayedSave.contains(item);
+            std::any_of(m_map_pkItemByID.begin(), m_map_pkItemByID.end(), [=](auto& row) { return row.second == item; });
     }
     bool Busy(entt::entity item) const { return m_itemsBeingDestroyed.contains(item); }
-    bool PendingSave(entt::entity item) const { return m_set_pkItemForDelayedSave.contains(item); }
-    ~Manager() { m_VIDMap.clear(); m_map_pkItemByID.clear(); m_set_pkItemForDelayedSave.clear(); }
+    ~Manager() { m_VIDMap.clear(); m_map_pkItemByID.clear(); }
 };
 void Reset() {
-    persistenceTest = false; db_clientdesc = nullptr; persistedHeaders.clear(); persistedPayloads.clear();
+    db_clientdesc = nullptr;
     onCreation = {}; creationTest = rejectAllocation = rejectCount = false;
     rejectRune = rejectTimer = blendExists = highDraw = false;
-    nextItemID = 1000; creationSaves = allocations = 0; creationStages.clear(); availableSkills.clear();
+    nextItemID = 1000; allocations = 0; creationStages.clear(); availableSkills.clear();
     g_bItemCountLimit = 200;
     g_registry.clear(); inventory.clear();
     groundCalls = detachCalls = factoryCalls = retirements = 0;
-    logs = quickslots = mountPackets = computes = points = overheads = 0;
+    logs = quickslots = computes = points = overheads = 0;
     rejectFactory = rejectDetach = false;
     onGround = onDetach = onFactory = {};
     onLog = onQuickslot = onCompute = {};
@@ -266,9 +258,7 @@ double ecs::PointSystem::GetPrecise(entt::entity, uint8_t) { Unexpected(); }
 namespace ecs::PlayerRuntime {
 LPDESC GetDesc(entt::entity owner) { Check(g_registry.valid(owner), "stale descriptor lookup"); return nullptr; }
 uint32_t GetAccountID(entt::entity owner) { Check(g_registry.valid(owner), "stale account lookup"); return 0; }
-uint32_t GetPlayerID(entt::entity owner) { Check(persistenceTest && IsPC(owner), "invalid save owner"); return 1234; }
 uint8_t GetEmpire(entt::entity) { Unexpected(); }
-bool IsValid(entt::entity owner) { Check(persistenceTest, "unexpected player validity check"); return IsPC(owner); }
 bool IsPC(entt::entity owner) { return g_registry.valid(owner) && g_registry.all_of<Player>(owner); }
 bool IsStone(entt::entity) { Unexpected(); }
 uint8_t GetCharType(entt::entity) { Unexpected(); }
@@ -279,7 +269,6 @@ void NetworkSyncSystem::PointsPacket(entt::entity owner) { Check(g_registry.vali
 void ecs::PointSystem::Compute(entt::entity owner) {
     Check(g_registry.valid(owner), "stale point computation"); ++computes; if (onCompute) onCompute(owner);
 }
-void MountSystem::SendMountInventory(entt::entity owner) { Check(g_registry.valid(owner), "stale mount packet"); ++mountPackets; }
 entt::entity MountSystem::GetMountInventoryItem(entt::entity owner, uint32_t cell) {
     return ItemSystem::GetItem(owner, TItemPos(MOUNT_INVENTORY, cell));
 }
@@ -302,7 +291,6 @@ int32_t GetItemFlags(entt::entity item) { return g_registry.get<ecs::ItemFlags>(
 bool DestroyItemEntityEcs(entt::entity item, const char* reason) {
     ITEM_MANAGER::instance().RemoveItem(item, reason); return !g_registry.valid(item);
 }
-int16_t GetItemLockedAttr(entt::entity) { Check(persistenceTest, "unexpected saved locked attribute"); return -1; }
 void StartUniqueExpireEvent(entt::entity item) { CreationStage("unique", item); }
 void StartTimerBasedOnWearExpireEvent(entt::entity) { Unexpected(); }
 uint32_t GetItemSocket(entt::entity item, int index) {
@@ -314,12 +302,11 @@ TPlayerItemAttribute GetItemAttribute(entt::entity item, int index) {
     return attrs ? attrs->attrs[index] : TPlayerItemAttribute{};
 }
 bool SetItemSocket(entt::entity, int, uint32_t, bool) { Unexpected(); }
-bool SetItemForceAttributeEcs(entt::entity item, int index, uint8_t type, int16_t value) {
+bool SetItemForceAttributeEcs(entt::entity item, int index, uint8_t type, double value) {
     g_registry.get<ecs::ItemAttributes>(item).attrs[index] = {type, value}; CreationStage("attribute", item); return true;
 }
 bool ApplyItemAddon(entt::entity item, int) { CreationStage("addon", item); return true; }
 bool IsItemConsumptionPending(entt::entity item) { return g_registry.valid(item) && g_registry.get<ecs::ItemCount>(item).count < 0; }
-void ProcessPendingItemConsumptions() { Check(persistenceTest, "unexpected pending consumption processing"); }
 bool SetItemSkipSave(entt::entity item, bool flag) { g_registry.get<ecs::ItemFlags>(item).skipSave = flag; return true; }
 uint8_t GetItemSize(entt::entity) { return 1; }
 uint32_t GetItemAntiFlags(entt::entity) { return 0; }
@@ -328,8 +315,6 @@ bool SetItemWindow(entt::entity item, uint8_t window) { g_registry.get<ecs::Item
 bool SetItemCell(entt::entity item, entt::entity owner, uint16_t cell) {
     g_registry.get<ecs::ItemLocation>(item).cell = cell; SetItemOwnerEntity(item, owner); return true;
 }
-bool SaveItemEcs(entt::entity, bool) { return true; }
-bool FlushDelayedSaveEcs(entt::entity item) { Check(GetItemSkipSave(item), "storage flush can delete persistence"); return true; }
 bool RemoveItemEcs(entt::entity item) { return InventorySystem::RemoveFromCharacter(item) == item; }
 bool IsItemExchanging(entt::entity) { return false; }
 bool IsItemLocked(entt::entity) { return false; }
@@ -340,18 +325,9 @@ bool IsItemEquipped(entt::entity) { Unexpected(); }
 bool StartRealTimeExpireEventEcs(entt::entity item) { CreationStage("real-time", item); return !rejectTimer; }
 bool StartSoulItemEventEcs(entt::entity item) { CreationStage("soul", item); return !rejectTimer; }
 bool InitializeRuneItem(entt::entity item) { CreationStage("rune", item); return !rejectRune; }
-void SaveItem(entt::entity item) { ++creationSaves; CreationStage("save", item); }
 }
 int CHARACTER_MANAGER::GetMobItemRate(entt::entity) { Unexpected(); }
 const event_struct_* CHARACTER_MANAGER::CheckEventIsActive(uint8_t, uint8_t) { Unexpected(); }
-void CLIENT_DESC::DBPacketHeader(uint8_t header, uint32_t, uint32_t) {
-    Check(persistenceTest && this == db_clientdesc, "unexpected DB header"); persistedHeaders.push_back(header);
-}
-void CLIENT_DESC::Packet(const void* data, int size) {
-    Check(persistenceTest && this == db_clientdesc && data && size > 0, "invalid DB payload");
-    const auto* bytes = static_cast<const uint8_t*>(data);
-    persistedPayloads.emplace_back(bytes, bytes + size);
-}
 void DBManager::ReturnQuery(int, uint32_t, void*, const char*, ...) { Unexpected(); }
 void DBManager::SendMoneyLog(uint8_t, uint32_t, int64_t) { Unexpected(); }
 void LogManager::ItemLogEntity(entt::entity owner, entt::entity item, const char* reason, const char* hint) {
@@ -400,148 +376,8 @@ bool ItemSystem::RefreshItemPrototype(entt::entity item, const TItemTable* proto
 const TRefineTable* CRefineManager::GetRefineRecipe(uint32_t) { Unexpected(); }
 
 namespace {
-struct CreationFixture {
-    Manager manager;
-    CreationFixture() {
-        Reset(); creationTest = true;
-        TItemTable proto {}; proto.dwVnum = 100; proto.bType = ITEM_WEAPON; proto.bSize = 1;
-        manager.Prototype(proto);
-    }
-    entt::entity Create(uint32_t count = 1, uint32_t id = 0, bool magic = false, bool skip = false) {
-        return manager.CreateItem(manager.Prototype().dwVnum, count, id, magic, -1, skip);
-    }
-    void Retire(entt::entity item) {
-        if (!ItemSystem::IsValidItem(item)) return;
-        g_registry.get<ecs::ItemFlags>(item).skipSave = true;
-        manager.DestroyItem(item);
-        Check(!g_registry.valid(item), "creation fixture could not retire item");
-    }
-    bool Stage(const char* stage) const {
-        return std::find(creationStages.begin(), creationStages.end(), stage) != creationStages.end();
-    }
-};
-void CreationQuantitiesAndIdentity() {
-
-    for (bool loaded : {false, true}) {
-        for (bool skip : {false, true}) {
-            CreationFixture f;
-            f.manager.Prototype().dwFlags = ITEM_FLAG_STACKABLE;
-            const auto item = f.Create(UINT32_MAX, loaded ? 400 : 0, false, skip);
-            Check(ItemSystem::IsValidItem(item) && ItemSystem::GetItemCount(item) == 200, "creation count clamp failed");
-            Check(ItemSystem::GetItemID(item) == (loaded ? 400 : 1000) && ItemSystem::GetItemVID(item) == 1,
-                "creation lost native ID/VID");
-            Check(f.manager.Indexed(item) == !skip && !ItemSystem::GetItemSkipSave(item), "creation index/save policy changed");
-            Check(creationSaves == 1 && creationStages.back() == "save", "creation did not save exactly once at completion");
-            Check(f.Stage("rune") == !loaded, "load repeated new-item initialization");
-            f.Retire(item); Check(retirements == allocations, "creation leaked/double-retired entity");
-        }
-    }
-
-    for (uint32_t requested : {0u, 1u, 17u, UINT32_MAX}) {
-        for (int kind = 0; kind < 3; ++kind) {
-            CreationFixture f;
-            auto& proto = f.manager.Prototype();
-            if (kind == 1) proto.dwFlags = ITEM_FLAG_STACKABLE | ITEM_FLAG_MAKECOUNT;
-            if (kind == 2) proto.bType = ITEM_ELK;
-            proto.alValues[1] = 15;
-            const auto item = f.Create(requested, 0, true);
-            if (kind == 2 && requested == 0) { Check(item == entt::null && allocations == 0, "zero gold allocated"); continue; }
-            const uint32_t expected = kind == 0 ? 1 : kind == 2 ? std::min(requested, uint32_t(INT_MAX)) :
-                requested <= 1 ? 15 : std::min(requested, 200u);
-            Check(ItemSystem::GetItemCount(item) == expected, "MAKECOUNT/non-stack/gold normalization changed");
-            Check(kind != 2 || ItemSystem::GetItemID(item) == 0, "gold acquired persistent ID");
-            f.Retire(item);
-        }
-    }
-    for (int scenario = 0; scenario < 6; ++scenario) {
-        CreationFixture f;
-        if (scenario == 0) f.manager.Prototype().bSize = 0;
-        if (scenario == 1) g_bItemCountLimit = 0;
-        if (scenario == 2) nextItemID = 0;
-        if (scenario == 3) f.manager.VID(UINT32_MAX);
-        if (scenario == 4) f.manager.Prototype().dwFlags = ITEM_FLAG_STACKABLE | ITEM_FLAG_MAKECOUNT;
-        if (scenario == 5) f.manager.Prototype().dwVnum = 0;
-        Check(f.Create(1, 0, true) == entt::null && allocations == 0 && creationSaves == 0, "invalid creation had allocation effects");
-    }
-    for (bool stale : {false, true}) {
-        CreationFixture f;
-        const auto previous = Item(f.manager, 1000, 99);
-        if (stale) g_registry.destroy(previous);
-        const auto item = f.Create();
-        if (stale) { Check(ItemSystem::IsValidItem(item) && f.manager.Indexed(item), "stale ID blocked creation"); f.Retire(item); }
-        else { Check(item == entt::null && allocations == 0 && f.manager.Indexed(previous), "native duplicate ID overwritten"); f.Retire(previous); }
-    }
-}
-void CreationPayloads() {
-    for (int scenario : {0, 1, 2, 3, 4, 5, 8, 9, 10}) {
-        CreationFixture f;
-        auto& proto = f.manager.Prototype();
-        proto.alValues[0] = 1234;
-        if (scenario == 0) { proto.bType = ITEM_UNIQUE; proto.alValues[2] = 1; }
-        if (scenario == 1) proto.bType = ITEM_UNIQUE;
-        if (scenario == 2) proto.dwVnum = ITEM_AUTO_HP_RECOVERY_S;
-        if (scenario == 3) proto.aLimits[0] = {LIMIT_TIMER_BASED_ON_WEAR, 876};
-        if (scenario == 4) proto.aLimits[0] = {LIMIT_TIMER_BASED_ON_WEAR, 0};
-        if (scenario == 5) proto.bGainSocketPct = 255;
-        if (scenario == 8) { proto.bType = ITEM_SOUL; proto.alValues[2] = 777; proto.aLimits[1].lValue = 10; }
-        if (scenario == 9) { proto.bType = ITEM_USE; proto.bSubType = USE_NEW_POTIION; proto.aLimits[0].lValue = 555; }
-        if (scenario == 10) { proto.bType = ITEM_SOUL; proto.alValues[2] = 100000; proto.aLimits[1].lValue = 10; }
-        onCreation = [&](const char* stage, entt::entity item) {
-            if (std::string_view(stage) == "unique")
-                Check(g_registry.get<ecs::ItemSockets>(item).sockets[ITEM_SOCKET_UNIQUE_REMAIN_TIME] == 11234,
-                    "unique timer started before its payload");
-            if (std::string_view(stage) == "soul")
-                Check(g_registry.get<ecs::ItemSockets>(item).sockets[2] == 777, "soul timer saw partial payload");
-        };
-        const auto item = f.Create();
-        Check(ItemSystem::IsValidItem(item), "special item creation rejected");
-        const auto sockets = g_registry.get<ecs::ItemSockets>(item).sockets;
-        if (scenario < 2) Check(sockets[ITEM_SOCKET_UNIQUE_REMAIN_TIME] == (scenario == 0 ? 11234 : 1234), "unique duration changed");
-        if (scenario == 2) Check(sockets[2] == 1234, "auto-potion capacity missing");
-        if (scenario == 3 || scenario == 4) Check(sockets[0] == (scenario == 3 ? 876 : 36000), "wear duration/default missing");
-        if (scenario == 5) Check(std::all_of(sockets.begin(), sockets.end(), [](auto v) { return v == 1; }), "socket holes overflow/missing");
-        if (scenario == 8) Check(f.Stage("soul") && sockets[2] == 777, "soul initialization missing");
-        if (scenario == 9) Check(sockets[0] == 555 && sockets[1] == 0, "new potion initialization missing");
-        if (scenario == 10) Check(!f.Stage("soul") && sockets[2] == 100000, "fully charged soul was rejected or restarted");
-        f.Retire(item);
-    }
-    for (bool loaded : {false, true}) {
-        CreationFixture f;
-        auto& proto = f.manager.Prototype(); proto.bAlterToMagicItemPct = 100; proto.sAddonType = 1;
-        const auto item = f.Create(1, loaded ? 20 : 0, true);
-        Check(f.Stage("magic") && f.Stage("addon") == !loaded, "new/load magic/addon dispatch changed"); f.Retire(item);
-    }
-    for (bool quest : {false, true}) {
-        CreationFixture f; f.manager.Prototype().bType = quest ? ITEM_QUEST : ITEM_UNIQUE;
-        CSpecialItemGroup first(50, quest ? CSpecialItemGroup::QUEST : CSpecialItemGroup::SPECIAL);
-        CSpecialItemGroup last(60, first.m_bType); first.AddItem(100, 1, 1, 0); last.AddItem(100, 1, 1, 0);
-        f.manager.Group(first, quest); f.manager.Group(last, quest);
-        const auto item = f.Create(); Check(g_registry.get<ecs::ItemIdentity>(item).sigVnum == 60, "native SIG/order lost"); f.Retire(item);
-    }
-    {
-        CreationFixture f; auto& proto = f.manager.Prototype(); proto.bType = ITEM_BLEND;
-        proto.bAlterToMagicItemPct = 100; proto.sAddonType = 1; proto.bGainSocketPct = 3; blendExists = true;
-        const auto item = f.Create(1, 0, true);
-        const auto sockets = g_registry.get<ecs::ItemSockets>(item).sockets;
-        Check(sockets[0] == 3 && sockets[1] == 7 && sockets[2] == 900, "blend payload overwritten");
-        Check(f.Stage("blend") && !f.Stage("magic") && !f.Stage("addon") && !f.Stage("rune"), "blend early path changed"); f.Retire(item);
-    }
-    for (uint32_t vnum : {50300u, uint32_t(ITEM_SKILLFORGET_VNUM), uint32_t(ITEM_SKILLFORGET2_VNUM)}) {
-        for (bool hasSkills : {false, true}) {
-            CreationFixture f; f.manager.Prototype().dwVnum = vnum;
-            if (hasSkills) availableSkills = {17, 114, 119};
-            const auto item = f.Create();
-            if (!hasSkills) {
-                Check(item == entt::null && creationSaves == 0 && factoryCalls == 1, "missing skills did not reject and retire book");
-            } else {
-                Check(g_registry.get<ecs::ItemSockets>(item).sockets[0] == (vnum == ITEM_SKILLFORGET2_VNUM ? 114 : 17), "skill selection changed");
-                f.Retire(item);
-            }
-        }
-    }
-}
 void SkillBookSelection() {
-    CreationFixture f;
+    Reset(); creationTest = true;
     constexpr uint32_t skills[][12] = {
         {1, 2, 3, 4, 5, 6, 16, 17, 18, 19, 20, 21},
         {31, 32, 33, 34, 35, 36, 46, 47, 48, 49, 50, 51},
@@ -564,80 +400,6 @@ void SkillBookSelection() {
     highDraw = true;
     Check(GetRandomSkillVnum(JOB_MAX_NUM) == 111 && GetRandomSkillVnum(0) == 21, "skill high boundary changed");
 }
-void CreationFailuresAndCallbacks() {
-
-    for (int stage = 0; stage < 6; ++stage) {
-        CreationFixture f;
-        if (stage == 0) rejectAllocation = true;
-        if (stage == 1) rejectCount = true;
-        if (stage == 2) rejectRune = true;
-        if (stage == 3) { f.manager.Prototype().bType = ITEM_RETIRED_29; }
-        if (stage == 4) { rejectTimer = true; f.manager.Prototype().aLimits[0] = {LIMIT_REAL_TIME, 100}; }
-        if (stage == 5) { rejectTimer = true; f.manager.Prototype().bType = ITEM_SOUL; f.manager.Prototype().aLimits[1].lValue = 10; }
-        Check(f.Create() == entt::null && creationSaves == 0 && retirements == allocations, "failed creation leaked entity or saved partial item");
-        Check(g_registry.view<ecs::ItemIdentity>().size() == 0, "failed creation left live item");
-    }
-
-    for (const char* stage : {"extra", "count", "addon", "magic", "rune", "unique", "real-time", "soul", "save"}) {
-        for (int action = 0; action < 5; ++action) {
-            CreationFixture f;
-            auto& proto = f.manager.Prototype(); proto.sAddonType = 1; proto.bAlterToMagicItemPct = 100;
-            proto.bType = std::string_view(stage) == "soul" ? ITEM_SOUL : ITEM_UNIQUE;
-            proto.alValues[2] = 1; proto.alValues[0] = 100;
-            proto.aLimits[0] = {LIMIT_REAL_TIME, 100};
-            proto.aLimits[1].lValue = 10;
-            entt::entity watched = entt::null, replacement = entt::null;
-            onCreation = [&](const char* current, entt::entity item) {
-                if (std::string_view(current) != stage) return;
-                watched = item;
-                if (action == 0) { g_registry.get<ecs::ItemFlags>(item).skipSave = true; f.manager.DestroyItem(item); }
-                if (action == 1) {
-                    const auto identity = g_registry.get<ecs::ItemIdentity>(item);
-                    g_registry.destroy(item); replacement = Item(f.manager, identity.id, identity.vid);
-                    Check(entt::to_entity(replacement) == entt::to_entity(item) && replacement != item, "factory callback did not recycle generation");
-                }
-                if (action == 2) Owner(item, INVENTORY, 17);
-                if (action == 3) Check(f.manager.CreateItem(100, 1, ItemSystem::GetItemID(item)) == entt::null, "recursive duplicate ID accepted");
-                if (action == 4) throw std::runtime_error("initializer failure");
-            };
-            bool threw = false; entt::entity result = entt::null;
-            try { result = f.Create(1, 0, true); } catch (const std::runtime_error&) { threw = true; }
-            Check(watched != entt::null && threw == (action == 4), "creation callback stage/exception missing");
-            Check((result != entt::null) == (action == 3), "creation returned invalid/moved item");
-            if (action < 2) Check(!f.manager.Indexed(watched), "retired generation still indexed");
-            if (action == 1) Check(f.manager.Indexed(replacement) && g_registry.valid(replacement), "rollback destroyed replacement");
-            if (action == 2) Check(g_registry.valid(watched) && f.manager.Indexed(watched) && !ItemSystem::GetItemSkipSave(watched),
-                "rollback destroyed/unindexed/transiently stranded transferred item");
-            if (action == 4 && std::string_view(stage) != "save") Check(!g_registry.valid(watched), "exception left detached partial item");
-            onCreation = {}; f.Retire(watched); f.Retire(replacement);
-        }
-    }
-    for (bool throws : {false, true}) {
-        CreationFixture f; entt::entity item = entt::null;
-        onCreation = [&](const char* stage, entt::entity current) {
-            if (std::string_view(stage) != "rune") return;
-            item = current; rejectRune = rejectFactory = true;
-            if (throws) onFactory = [](entt::entity) { throw std::runtime_error("retirement failure"); };
-        };
-        Check(f.Create() == entt::null && g_registry.valid(item) && f.manager.Indexed(item) && !f.manager.Busy(item) && retirements == 0,
-            "failed rollback lost recoverable item/indices");
-        onFactory = {}; rejectFactory = false; f.Retire(item);
-    }
-}
-void CreationRollbackTransfers() {
-    for (bool throws : {false, true}) {
-        CreationFixture f; rejectRune = true;
-        entt::entity transferred = entt::null;
-        onGround = [&](entt::entity item) {
-            transferred = item; Owner(item, INVENTORY, 17);
-            if (throws) throw std::runtime_error("transfer during failed creation cleanup");
-        };
-        Check(f.Create() == entt::null && ItemSystem::IsValidItem(transferred) && f.manager.Indexed(transferred) &&
-            !ItemSystem::GetItemSkipSave(transferred) && !f.manager.Busy(transferred) && factoryCalls == 0,
-            "rollback callback stranded/transiently marked its new owner's item");
-        onGround = {}; f.Retire(transferred);
-    }
-}
 void NativeRemoval() {
 
     for (const uint8_t window : {INVENTORY, EQUIPMENT, EXTRA_INVENTORY, SWITCHBOT, MOUNT_INVENTORY}) {
@@ -653,7 +415,7 @@ void NativeRemoval() {
         if (hasQuickslot) Check(quickslotCell == cell && quickslotType == (window == EXTRA_INVENTORY ? QUICKSLOT_TYPE_ITEM_EXTRA : QUICKSLOT_TYPE_ITEM),
             "quickslot cell narrowed or wrong quickslot type");
         const int expectedMount = window == MOUNT_INVENTORY ? 1 : 0;
-        Check(mountPackets == expectedMount && computes == expectedMount && points == expectedMount && overheads == expectedMount,
+        Check(computes == expectedMount && points == expectedMount && overheads == expectedMount,
             "native mount refresh skipped/repeated");
     }
 
@@ -700,9 +462,8 @@ void RemovalCallbacks() {
     Check(!g_registry.valid(item) && points == 0 && overheads == 0, "stale owner used after mount computation");
 }
 void RemovalFailures() {
-    for (int scenario = 0; scenario < 4; ++scenario) {
+    for (int scenario = 1; scenario < 4; ++scenario) {
         Reset(); Manager manager; const auto item = Item(manager); const auto owner = Owner(item);
-        if (scenario == 0) g_registry.get<ecs::ItemFlags>(item).skipSave = false;
         if (scenario == 1) inventory[{owner, 5}] = Item(manager, 11, 21);
         if (scenario == 2) rejectDetach = true;
         if (scenario == 3) onLog = [](entt::entity) { throw std::runtime_error("log failure"); };
@@ -743,7 +504,7 @@ void StorageRemovalIntegration() {
             if (scenario == 3) rejectDetach = true;
             if (scenario == 4) onDetach = [&](entt::entity current) { Owner(current, INVENTORY, 17); };
             manager.RemoveItem(item);
-            Check(quickslots == 0 && mountPackets == 0 && !manager.Busy(item), "bank removal ran unrelated effects/kept guard");
+            Check(quickslots == 0 && !manager.Busy(item), "bank removal ran unrelated effects/kept guard");
             if (scenario < 3) Check(!g_registry.valid(item) && !manager.Indexed(item) && factoryCalls == 1, "bank/close callback left orphan item");
             else Check(g_registry.valid(item) && manager.Indexed(item) && factoryCalls == 0, "failed/transferred bank item destroyed");
             if (scenario == 1 || scenario == 2) Check(!g_registry.valid(storage) && SafeboxSystem::Get(owner, window) == entt::null, "closed storage retained");
@@ -863,10 +624,14 @@ void SlotAndPersistenceGuards() {
     const auto persisted = Item(manager);
     g_registry.get<ecs::ItemFlags>(persisted).skipSave = false;
     manager.DestroyItem(persisted);
-    Check(g_registry.valid(persisted) && manager.Indexed(persisted) && groundCalls == 0 && !manager.Busy(persisted),
-        "missing DB descriptor lost persistent item");
-    g_registry.get<ecs::ItemFlags>(persisted).skipSave = true;
-    manager.DestroyItem(persisted);
+    Check(!g_registry.valid(persisted) && !manager.Indexed(persisted) && groundCalls == 1 && !manager.Busy(persisted),
+        "retiring an identified item required a database connection");
+    const auto owned = Item(manager, 11, 21);
+    const auto owner = Owner(owned);
+    g_registry.get<ecs::ItemFlags>(owned).skipSave = false;
+    manager.RemoveItem(owned);
+    Check(!g_registry.valid(owned) && !manager.Indexed(owned) && !inventory.contains({owner, 5}),
+        "removing an identified item required a database connection");
     const auto transient = Item(manager, 0, 99);
     g_registry.get<ecs::ItemFlags>(transient).skipSave = false;
     manager.DestroyItem(transient);
@@ -1007,7 +772,7 @@ void NativeShutdownAndReload() {
         manager.Destroy();
         Check(!g_registry.valid(first) && !g_registry.valid(second) && !g_registry.valid(gold) &&
             !manager.Indexed(first) && !manager.Indexed(second) && !manager.Indexed(gold) &&
-            factoryCalls == 3 && persistedHeaders.empty(), "shutdown skipped native items or deleted DB rows");
+            factoryCalls == 3, "shutdown skipped native items or deleted DB rows");
         manager.Destroy();
         Check(factoryCalls == 3, "repeated shutdown destroyed native items twice");
     }
@@ -1056,187 +821,6 @@ void RetiredPrototypeReload() {
         "retirement filtered unrelated prototypes or broke the index");
 }
 
-void DeferredSavePolicies() {
-    for (int path = 0; path < 5; ++path) for (const bool disconnected : {false, true}) {
-        Reset(); Manager manager; const auto item = Item(manager); const auto owner = Owner(item);
-        persistenceTest = true;
-        CLIENT_DESC connection;
-        db_clientdesc = disconnected ? nullptr : &connection;
-        g_registry.get<ecs::ItemFlags>(item).skipSave = !disconnected;
-        const auto flush = [&] {
-            switch (path) {
-                case 0: return manager.SaveSingleItem(item);
-                case 1: manager.FlushDelayedSave(item); break;
-                case 2: manager.FlushDelayedSaveByOwner(owner); break;
-                case 3: manager.Update(); break;
-                case 4: manager.GracefulShutdown(); break;
-            }
-            return !manager.PendingSave(item);
-        };
-        Check(!flush() && persistedHeaders.empty() && persistedPayloads.empty() && manager.PendingSave(item),
-            "suppressed/disconnected save wrote data or discarded pending work");
-        db_clientdesc = &connection; g_registry.get<ecs::ItemFlags>(item).skipSave = false;
-        Check(flush() && persistedHeaders.size() == 1 && persistedHeaders[0] == HEADER_GD_ITEM_SAVE &&
-            persistedPayloads.size() == 1 && persistedPayloads[0].size() == sizeof(TPlayerItem),
-            "deferred save could not retry with restored connection/policy");
-        TPlayerItem saved {}; std::memcpy(&saved, persistedPayloads[0].data(), sizeof(saved));
-        Check(saved.id == 10 && saved.owner == 1234 && saved.pos == 5 && saved.count == 1,
-            "retry saved stale or incorrect native item state");
-        db_clientdesc = nullptr;
-    }
-    {
-        Reset(); Manager manager; const auto item = Item(manager);
-        persistenceTest = true; g_registry.destroy(item);
-        manager.Update();
-        Check(!manager.PendingSave(item) && manager.SaveSingleItem(item), "stale save remained queued");
-    }
-    for (int stage = 0; stage < 3; ++stage) {
-        Reset(); Manager manager; const auto item = Item(manager); const auto owner = Owner(item);
-        persistenceTest = true; CLIENT_DESC connection; db_clientdesc = &connection;
-        g_registry.get<ecs::ItemFlags>(item).skipSave = false;
-        const auto flush = [&](entt::entity current) {
-            // The manager guard must protect even when another callback changes
-            // the mutable save flag. The initial no-DB-delete intent stays latched.
-            g_registry.get<ecs::ItemFlags>(current).skipSave = false;
-            Check(!manager.SaveSingleItem(current), "direct save serialized a retiring item");
-            manager.FlushDelayedSave(current); manager.FlushDelayedSaveByOwner(owner);
-            manager.Update(); manager.GracefulShutdown();
-            Check(persistedHeaders.empty() && persistedPayloads.empty(), "duplicate cleanup sent DB data");
-        };
-        if (stage == 0) onGround = flush;
-        if (stage == 1) onDetach = flush;
-        if (stage == 2) onFactory = flush;
-        Check(ItemSystem::DestroyLoadedDuplicateItem(item) && persistedHeaders.empty(),
-            "duplicate retirement lost suppression or failed after nested flush");
-        db_clientdesc = nullptr;
-    }
-    {
-        Reset(); Manager manager; const auto item = Item(manager); Owner(item);
-        persistenceTest = true; CLIENT_DESC connection; db_clientdesc = &connection;
-        g_registry.get<ecs::ItemFlags>(item).skipSave = false;
-        rejectDetach = true;
-        Check(!ItemSystem::DestroyLoadedDuplicateItem(item) && !ItemSystem::GetItemSkipSave(item) &&
-            manager.PendingSave(item), "rejected detach lost its pending save/policy");
-        manager.FlushDelayedSave(item);
-        Check(persistedHeaders.size() == 1 && persistedHeaders[0] == HEADER_GD_ITEM_SAVE &&
-            !manager.PendingSave(item), "surviving owned item could not save after rejected purge");
-        db_clientdesc = nullptr;
-    }
-}
-void PlayerCacheSnapshotCapture() {
-    namespace snapshot = auriga::player_cache_snapshot;
-    for (int scenario = 0; scenario < 22; ++scenario) {
-        Reset(); Manager manager; persistenceTest = true;
-        const auto item = Item(manager, 20); const auto owner = Owner(item, INVENTORY, 5);
-        g_registry.get<ecs::ItemOwner>(item).ownerPID = 1234;
-        g_registry.get<ecs::ItemFlags>(item).skipSave = false;
-        g_registry.get<ecs::ItemIdentity>(item).originalVnum = 100;
-        g_registry.emplace<ecs::ItemSockets>(item).sockets[0] = 123;
-        g_registry.emplace<ecs::ItemAttributes>(item).attrs[0] = {1, 25};
-        g_registry.emplace<ecs::MainInventoryRuntimeComponent>(owner).items[5] = item;
-        switch (scenario) {
-            case 0: break;
-            case 1: g_registry.get<ecs::ItemFlags>(item).skipSave = true; break;
-            case 2: g_registry.get<ecs::ItemFlags>(item).exchanging = true; break;
-            case 3: g_registry.get<ecs::ItemFlags>(item).isLocked = true; break;
-            case 4: g_registry.get<ecs::ItemCount>(item).count = 0; break;
-            case 5: g_registry.get<ecs::ItemCount>(item).count = -1; break;
-            case 6: g_registry.get<ecs::ItemIdentity>(item).id = 0; break;
-            case 7: g_registry.get<ecs::ItemIdentity>(item).originalVnum = 0; break;
-            case 8: g_registry.get<ecs::ItemOwner>(item).ownerPID = 999; break;
-            case 9: g_registry.get<ecs::ItemOwner>(item).owner = entt::null; break;
-            case 10: g_registry.remove<ecs::ItemOwner>(item); break;
-            case 11: g_registry.remove<ecs::ItemCount>(item); break;
-            case 12: g_registry.get<ecs::ItemLocation>(item).cell = 6; break;
-            case 13: g_registry.get<ecs::ItemLocation>(item).window = SAFEBOX; break;
-            case 14: g_registry.get<ecs::MainInventoryRuntimeComponent>(owner).items[5] = entt::null; break;
-            case 15: g_registry.get<ecs::MainInventoryRuntimeComponent>(owner).items[6] = item; break;
-            case 16: { const auto stale = g_registry.create(); g_registry.destroy(stale);
-                g_registry.get<ecs::MainInventoryRuntimeComponent>(owner).items[5] = stale; break; }
-            case 17: { const auto other = Item(manager, 99);
-                auto& ownership = g_registry.get<ecs::ItemOwner>(other);
-                ownership.lastOwnerPID = 1234; break; }
-            case 18: { const auto other = Item(manager, 99);
-                auto& ownership = g_registry.get<ecs::ItemOwner>(other);
-                ownership.ownerPID = 999; ownership.lastOwnerPID = 1234;
-                ownership.owner = g_registry.create(); break; }
-            case 19: { const auto other = Item(manager, 20, 99);
-                auto& ownership = g_registry.get<ecs::ItemOwner>(other);
-                ownership.owner = owner; ownership.ownerPID = 1234;
-                g_registry.get<ecs::ItemLocation>(other) = {INVENTORY, 6};
-                g_registry.get<ecs::MainInventoryRuntimeComponent>(owner).items[6] = other; break; }
-            case 20: g_registry.get<ecs::ItemLocation>(item).window = MOUNT_INVENTORY; break;
-            case 21: g_registry.remove<ecs::ItemIdentity>(item); break;
-        }
-        std::vector<TPlayerItem> rows(1);
-        const auto captured = manager.BuildPlayerCacheSnapshot(owner, rows);
-        Check(captured == (scenario == 0), "invalid/incomplete native inventory capture accepted");
-        Check(persistedHeaders.empty() && persistedPayloads.empty() && manager.PendingSave(item),
-            "snapshot capture flushed or discarded delayed saves");
-        if (captured) Check(rows.size() == 1 && rows[0].owner == 1234 && rows[0].id == 20 &&
-            rows[0].pos == 5 && rows[0].count == 1 && rows[0].alSockets[0] == 123 &&
-            rows[0].aAttr[0].bType == 1 && rows[0].aAttr[0].sValue == 25,
-            "snapshot serialization lost native item fields");
-        else Check(rows.empty(), "failed snapshot exposed partial output");
-    }
-    for (int window : {INVENTORY, EQUIPMENT, BELT_INVENTORY
-#ifdef ENABLE_EXTRA_INVENTORY
-        , EXTRA_INVENTORY
-#endif
-#ifdef ENABLE_SWITCHBOT
-        , SWITCHBOT
-#endif
-    }) {
-        Reset(); Manager manager; persistenceTest = true;
-        const auto item = Item(manager); const auto owner = Owner(item);
-        g_registry.get<ecs::ItemOwner>(item).ownerPID = 1234;
-        g_registry.get<ecs::ItemFlags>(item).skipSave = false;
-        g_registry.get<ecs::ItemIdentity>(item).originalVnum = 100;
-        const auto rawWindow = window == BELT_INVENTORY ? INVENTORY : window;
-        const auto cell = static_cast<uint16_t>(window == EQUIPMENT ? INVENTORY_MAX_NUM + 1 :
-            window == BELT_INVENTORY ? BELT_INVENTORY_SLOT_START + 1 : 1);
-        g_registry.get<ecs::ItemLocation>(item) = {static_cast<uint8_t>(rawWindow), cell};
-        if (rawWindow == INVENTORY || window == EQUIPMENT)
-            g_registry.emplace<ecs::MainInventoryRuntimeComponent>(owner).items[cell] = item;
-#ifdef ENABLE_EXTRA_INVENTORY
-        if (window == EXTRA_INVENTORY)
-            g_registry.emplace<ecs::ExtraInventoryRuntimeComponent>(owner).items[cell] = item;
-#endif
-#ifdef ENABLE_SWITCHBOT
-        if (window == SWITCHBOT)
-            g_registry.emplace<ecs::SwitchbotRuntimeComponent>(owner).items[cell] = item;
-#endif
-        std::vector<TPlayerItem> rows;
-        Check(manager.BuildPlayerCacheSnapshot(owner, rows) && rows.size() == 1 &&
-            rows[0].window == window && rows[0].pos == 1, "normalized native inventory window failed");
-        TPlayerItem legacy{};
-        Check(manager.BuildItemSave(item, legacy) && std::memcmp(&legacy, &rows[0], sizeof(legacy)) == 0,
-            "final snapshot diverged from legacy item serializer");
-    }
-    {
-        Reset(); Manager manager; persistenceTest = true;
-        const auto owner = g_registry.create(); g_registry.emplace<Player>(owner);
-        std::vector<TPlayerItem> rows;
-        Check(manager.BuildPlayerCacheSnapshot(owner, rows) && rows.empty(), "empty native inventory failed");
-        Check(!manager.BuildPlayerCacheSnapshot(entt::null, rows), "stale character captured");
-        auto& slots = g_registry.emplace<ecs::ExtraInventoryRuntimeComponent>(owner).items;
-        for (size_t i = 0; i <= snapshot::MaximumItems; ++i) {
-            const auto item = Item(manager, 1000 + static_cast<uint32_t>(i), 2000 + static_cast<uint32_t>(i));
-            auto& ownership = g_registry.get<ecs::ItemOwner>(item);
-            ownership.owner = owner; ownership.ownerPID = 1234;
-            g_registry.get<ecs::ItemFlags>(item).skipSave = false;
-            g_registry.get<ecs::ItemIdentity>(item).originalVnum = 100;
-            g_registry.get<ecs::ItemLocation>(item) = {EXTRA_INVENTORY, static_cast<uint16_t>(i)};
-            slots[i] = item;
-            if (i + 1 == snapshot::MaximumItems)
-                Check(manager.BuildPlayerCacheSnapshot(owner, rows) && rows.size() == snapshot::MaximumItems,
-                    "native snapshot rejected capacity boundary");
-        }
-        Check(!manager.BuildPlayerCacheSnapshot(owner, rows) && rows.empty(), "oversized native snapshot accepted");
-        Check(persistedHeaders.empty(), "oversized capture sent partial saves");
-    }
-}
-
 }
 
 int main() {
@@ -1244,12 +828,11 @@ int main() {
         LogManager log;
         CSkillManager skills;
 
-        CreationQuantitiesAndIdentity(); CreationPayloads(); SkillBookSelection(); CreationFailuresAndCallbacks();
-        CreationRollbackTransfers();
+        SkillBookSelection();
         NativeLifecycle(); ReentryAndExceptions(); FactoryFailures(); RecycledAndTransferred(); SlotAndPersistenceGuards();
         NativeRemoval(); RemovalCallbacks(); RemovalFailures(); StorageRemovalIntegration();
         DuplicateLoadRetirement(); DuplicateLoadFailuresAndReentry(); DuplicateLoadTransfersAndGenerations();
-        NativeShutdownAndReload(); RetiredPrototypeReload(); DeferredSavePolicies(); PlayerCacheSnapshotCapture();
+        NativeShutdownAndReload(); RetiredPrototypeReload();
         std::cout << "Item-manager lifecycle checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

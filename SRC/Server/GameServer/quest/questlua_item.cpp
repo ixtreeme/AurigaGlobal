@@ -396,7 +396,6 @@ namespace quest
 			return 1;
 		}
 
-		ItemSystem::FlushDelayedSaveEcs(replacement);
 		ItemSystem::AttrLogEcs(replacement);
 		lua_pushboolean(L, 1);
 		return 1;

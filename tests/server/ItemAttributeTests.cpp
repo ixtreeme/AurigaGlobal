@@ -14,6 +14,7 @@
 #include "../../SRC/Server/GameServer/ecs/components/social_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/status_components.hpp"
 #include "../../SRC/Server/GameServer/item/attr_transfer.h"
+#include "../../SRC/Server/GameServer/item/TypedCostumeTransfer.hpp"
 #include "../../SRC/Server/GameServer/ecs/detail/ItemAttributeRules.hpp"
 #include "../../SRC/Server/GameServer/core/constants.h"
 #include "../../SRC/Server/GameServer/core/log.h"
@@ -40,7 +41,6 @@ const int aiItemMagicAttributePercentHigh[ITEM_ATTRIBUTE_MAX_LEVEL] = {0, 0, 0, 
 const int aiItemMagicAttributePercentLow[ITEM_ATTRIBUTE_MAX_LEVEL] = {100, 0, 0, 0, 0};
 
 namespace {
-int saves = 0;
 int updates = 0;
 int randomCalls = 0;
 int randomOffset = 0;
@@ -75,7 +75,7 @@ TItemTable outputProto {};
 int rejectPaymentAt = 0, transferLogs = 0;
 std::vector<std::string> transferCommands;
 std::function<void()> onPayment;
-std::function<void(entt::entity)> onSave, onUpdate, onDestroy;
+std::function<void(entt::entity)> onUpdate, onDestroy;
 std::vector<entt::entity> publishedCounts;
 std::vector<entt::entity> destroyAttempts;
 std::set<entt::entity> rejectDestruction;
@@ -110,7 +110,7 @@ void CheckPaymentOrder()
         "attributes changed before payment succeeded");
     Check(ItemSystem::GetItemLockedAttr(watchedItem) == lockBeforePayment,
         "attribute lock changed before payment succeeded");
-    Check(saves == 0 && updates == 0, "partial attributes published before payment");
+    Check(updates == 0, "partial attributes published before payment");
 }
 
 [[noreturn]] void UnexpectedSwitchbotService()
@@ -345,7 +345,7 @@ void ecs::ChatSystem::Send(entt::entity, uint8_t type, const char* message, ...)
 }
 void LogManager::AttrTransferLog(uint32_t pid, uint32_t, uint32_t, uint32_t)
 {
-    Check(transferTest && pid == 42 && saves == 1 && updates == 1, "transfer logged before complete publish");
+    Check(transferTest && pid == 42 && updates == 1, "transfer logged before complete publish");
     ++transferLogs;
 }
 int64_t ecs::PointSystem::GetGold(entt::entity e) { return g_registry.get<TestPlayer>(e).gold; }
@@ -406,6 +406,10 @@ bool RemoveAffect(entt::entity owner, uint32_t type)
     return removed;
 }
 }
+
+// This fixture exercises the in-memory attribute path without a typed item session.
+bool OpenTypedCostumeTransfer(entt::entity) { return false; }
+bool CloseTypedCostumeTransfer(entt::entity) { return false; }
 
 namespace { struct TestGroundReservation { entt::entity owner {entt::null}; }; }
 namespace ItemSystem {
@@ -499,12 +503,6 @@ TItemExtraProto* GetItemExtraProto(entt::entity item)
     const auto* ref = g_registry.try_get<ecs::ItemExtraProtoRef>(item);
     return ref ? ref->proto : nullptr;
 }
-void SaveItem(entt::entity item)
-{
-    if (runeTest) Check(IsValidItem(item), "rune save used a stale entity");
-    if (!transferTest || item == watchedItem) ++saves;
-    if (onSave) onSave(item);
-}
 TPlayerItemAttribute GetItemAttribute(entt::entity item, int index)
 {
     return g_registry.get<ecs::ItemAttributes>(item).attrs[index];
@@ -513,7 +511,6 @@ void SetItemAttributes(entt::entity item, const TPlayerItemAttribute* attrs)
 {
     auto& component = g_registry.get<ecs::ItemAttributes>(item);
     std::copy_n(attrs, ITEM_ATTRIBUTE_MAX_NUM, component.attrs.begin());
-    ++saves;
 }
 }
 
@@ -526,7 +523,7 @@ struct Fixture {
         g_registry.clear();
         g_map_itemAttr.clear();
         g_map_itemRare.clear();
-        saves = updates = randomCalls = 0;
+        updates = randomCalls = 0;
         randomOffset = 0;
         gaussianValue = 4.f;
         floatDrawFraction = 0.f;
@@ -544,7 +541,7 @@ struct Fixture {
         rejectPaymentAt = transferLogs = 0;
         transferCommands.clear();
         onPayment = {};
-        onSave = onUpdate = onDestroy = {};
+        onUpdate = onDestroy = {};
         publishedCounts.clear();
         destroyAttempts.clear();
         rejectDestruction.clear();
@@ -608,7 +605,7 @@ struct PaidFixture : Fixture {
         watchedItem = item;
         beforePayment = Attrs();
         lockBeforePayment = ItemSystem::GetItemLockedAttr(item);
-        saves = updates = payments = 0;
+        updates = payments = 0;
     }
 };
 
@@ -626,7 +623,7 @@ struct AttributeItemFixture : PaidFixture {
     }
     void Unchanged()
     {
-        Check(EqualAttributes(Attrs(), beforePayment) && saves == 0 && updates == 0 &&
+        Check(EqualAttributes(Attrs(), beforePayment) && updates == 0 &&
             ItemSystem::GetItemLockedAttr(item) == lockBeforePayment,
             "failed attribute item operation published changes");
         Check(ItemSystem::GetItemCount(material) == 2, "failed attribute item operation consumed material");
@@ -690,14 +687,14 @@ void EntityAndTableValidation()
     f.proto.bSubType = WEAPON_ARROW;
     f.Rows(2, true);
     Check(!ItemSystem::AddItemRareAttributeEcs(f.item), "arrow must not index attribute set -1");
-    Check(randomCalls == 0 && saves == 0 && updates == 0, "invalid item caused side effects");
+    Check(randomCalls == 0 && updates == 0, "invalid item caused side effects");
     f.proto.bSubType = WEAPON_SWORD;
     Check(!ItemSystem::AddItemAttributeEcs(f.item), "empty table accepted");
     Check(g_map_itemAttr.empty(), "read inserted rows into the attribute table");
     f.Rows(1);
     g_map_itemAttr.begin()->second.dwProb = 0;
     Check(!ItemSystem::AddItemAttributeEcs(f.item), "zero-weight table accepted");
-    Check(saves == 0 && updates == 0, "failed roll saved item");
+    Check(updates == 0, "failed roll published an item update");
     g_registry.destroy(f.item);
     Check(!ItemSystem::ChangeItemAttributeEcs(f.item), "stale entity accepted");
 }
@@ -715,7 +712,7 @@ void LockedSlotAndRarePreservation()
     Check(f.Attrs()[2].bType == 3 && f.Attrs()[2].sValue == 102, "locked slot changed");
     Check(ecs::item_attributes::Count(f.Attrs(), 0, 5) == 5, "reroll lost a normal bonus");
     Check(f.Attrs()[5].bType == 40 && f.Attrs()[6].bType == 41, "normal reroll touched rare slots");
-    Check(saves == 1 && updates == 1, "reroll must publish once after success");
+    Check(updates == 1, "reroll must publish once after success");
     Check(!ItemSystem::AddItemAttributeEcs(f.item), "full attributes accepted another bonus");
     Check(ItemSystem::ClearNormalItemAttributes(f.item), "clear normal failed");
     Check(f.Attrs()[2].sValue == 102 && f.Attrs()[5].sValue == 70, "clear destroyed protected bonus");
@@ -731,7 +728,7 @@ void FailureIsAtomic()
     Check(!ItemSystem::ChangeItemAttributeEcs(f.item), "insufficient distinct bonuses accepted");
     Check(f.Attrs()[0].bType == before[0].bType && f.Attrs()[1].sValue == before[1].sValue,
         "failed reroll changed original attributes");
-    Check(saves == 0 && updates == 0, "failed reroll published partial state");
+    Check(updates == 0, "failed reroll published partial state");
     const int badProbabilities[5] = {0, 0, 0, 0, 0};
     Check(!ItemSystem::ChangeItemAttributeEcs(f.item, badProbabilities), "invalid level probabilities accepted");
 }
@@ -747,11 +744,11 @@ void RareHolesAndFailure()
     const auto before = f.Attrs();
     g_map_itemRare.erase(2);
     g_map_itemRare.erase(3);
-    saves = updates = 0;
+    updates = 0;
     Check(!ItemSystem::ChangeItemRareAttributeEcs(f.item), "rare reroll accepted too few types");
     Check(f.Attrs()[5].bType == before[5].bType && f.Attrs()[6].sValue == before[6].sValue,
         "failed rare reroll lost bonuses");
-    Check(saves == 0 && updates == 0, "failed rare reroll published state");
+    Check(updates == 0, "failed rare reroll published state");
 }
 
 void AddonRemovalAndDuplicates()
@@ -824,14 +821,14 @@ void ProtoAndCostumeRules()
     Check(ecs::item_attributes::Count(f.Attrs(), 0, 5) == 3 && f.Attrs()[0].sValue == 19,
         "costume magic count or high-level value changed");
 #endif
-    saves = updates = 0;
+    updates = 0;
     Check(!ItemSystem::SetItemForceAttributeEcs(f.item, -1, 1, 10), "negative force-attribute index accepted");
     Check(!ItemSystem::SetItemForceAttributeEcs(f.item, ITEM_ATTRIBUTE_MAX_NUM, 1, 10), "force-attribute index overflow");
-    Check(saves == 0 && updates == 0, "invalid force write caused side effects");
+    Check(updates == 0, "invalid force write caused side effects");
     Check(ItemSystem::SetItemForceAttributeEcs(f.item, 6, 2, -30), "signed force attribute failed");
-    Check(f.Attrs()[6].sValue == -30 && saves == 1 && updates == 1, "force write did not update client and save");
-    Check(ItemSystem::SetItemForceAttributeEcs(f.item, 6, 2, 1.113) && f.Attrs()[6].sValue == 1.113 && saves == 2 && updates == 2, "fractional attribute was not committed and published");
-    Check(!ItemSystem::SetItemForceAttributeEcs(f.item, 6, 2, std::numeric_limits<double>::quiet_NaN()) && saves == 2 && updates == 2, "non-finite attribute caused side effects");
+    Check(f.Attrs()[6].sValue == -30 && updates == 1, "force write did not update the client");
+    Check(ItemSystem::SetItemForceAttributeEcs(f.item, 6, 2, 1.113) && f.Attrs()[6].sValue == 1.113 && updates == 2, "fractional attribute was not committed and published");
+    Check(!ItemSystem::SetItemForceAttributeEcs(f.item, 6, 2, std::numeric_limits<double>::quiet_NaN()) && updates == 2, "non-finite attribute caused side effects");
 }
 
 void HitDamageScrollTransactions()
@@ -901,7 +898,7 @@ void HitDamageScrollTransactions()
         setup(f);
         g_registry.get<ecs::ItemCount>(f.material).count = 1;
         bool observed = false;
-        onSave = [&](entt::entity item) {
+        onUpdate = [&](entt::entity item) {
             if (item != f.item) return;
             observed = true;
             Check(ItemSystem::GetItemCount(f.material) == 0 &&
@@ -930,16 +927,16 @@ void PaidRerollTransactions()
     f.Rows(5);
     rejectPayment = true;
     Check(!ItemSystem::ChangeItemAttributeWithItemCost(f.item, f.material), "failed payment accepted");
-    Check(payments == 1 && saves == 0 && updates == 0 && EqualAttributes(f.Attrs(), beforePayment),
+    Check(payments == 1 && updates == 0 && EqualAttributes(f.Attrs(), beforePayment),
         "failed payment published a reroll");
     rejectPayment = false;
     f.Watch();
     Check(ItemSystem::ChangeItemAttributeWithItemCost(f.item, f.material), "paid reroll failed");
-    Check(payments == 1 && ItemSystem::GetItemCount(f.material) == 1 && saves == 1 && updates == 1,
+    Check(payments == 1 && ItemSystem::GetItemCount(f.material) == 1 && updates == 1,
         "paid reroll did not charge and publish exactly once");
     f.Watch();
     Check(ItemSystem::ChangeItemAttributeWithItemCost(f.item, f.material), "last material failed");
-    Check(!g_registry.valid(f.material) && g_registry.valid(f.item) && saves == 1 && updates == 1,
+    Check(!g_registry.valid(f.material) && g_registry.valid(f.item) && updates == 1,
         "last-unit consumption invalidated target or missed commit");
     f.Watch();
     Check(!ItemSystem::ChangeItemAttributeWithItemCost(f.item, f.material) && payments == 0,
@@ -972,7 +969,7 @@ void PaymentValidation()
     g_registry.get<ecs::ItemOwner>(f.material).owner = f.owner;
     inventory.erase({f.owner, INVENTORY, 0});
     Check(!ItemSystem::CanPayItemAttributeCost(f.item, f.material), "detached material accepted");
-    Check(payments == 0 && saves == 0 && updates == 0, "invalid payment caused side effects");
+    Check(payments == 0 && updates == 0, "invalid payment caused side effects");
     f.Place(f.material, INVENTORY, 0);
     g_registry.destroy(f.owner);
     Check(!ItemSystem::ChangeItemAttributeWithItemCost(f.item, f.material), "stale owner accepted");
@@ -990,11 +987,11 @@ void GoldTransactions()
     f.Rows(5);
     rejectGoldPayment = true;
     Check(!ItemSystem::ChangeItemAttributeWithGoldCost(f.item, 10), "rejected wallet debit accepted");
-    Check(saves == 0 && updates == 0 && EqualAttributes(f.Attrs(), beforePayment), "rejected debit changed attributes");
+    Check(updates == 0 && EqualAttributes(f.Attrs(), beforePayment), "rejected debit changed attributes");
     rejectGoldPayment = false;
     f.Watch();
     Check(ItemSystem::ChangeItemAttributeWithGoldCost(f.item, 100), "exact yang payment failed");
-    Check(ecs::PointSystem::GetGold(f.owner) == 0 && payments == 1 && saves == 1 && updates == 1,
+    Check(ecs::PointSystem::GetGold(f.owner) == 0 && payments == 1 && updates == 1,
         "yang debit and commit were not applied exactly once");
 }
 
@@ -1010,12 +1007,12 @@ void CostumeResetTransactions()
     g_map_itemAttr.clear();
     f.Rows(2);
     Check(!ItemSystem::ResetCostumeAttributesWithItemCost(f.item, f.material), "partial costume reset accepted");
-    Check(EqualAttributes(f.Attrs(), beforePayment) && saves == 0 && updates == 0 && payments == 0,
+    Check(EqualAttributes(f.Attrs(), beforePayment) && updates == 0 && payments == 0,
         "failed reset cleared original bonuses or consumed reset item");
     f.Rows(5);
     rejectPayment = true;
     Check(!ItemSystem::ResetCostumeAttributesWithItemCost(f.item, f.material), "unpaid costume reset accepted");
-    Check(EqualAttributes(f.Attrs(), beforePayment) && saves == 0 && updates == 0,
+    Check(EqualAttributes(f.Attrs(), beforePayment) && updates == 0,
         "rejected reset payment changed attributes");
     rejectPayment = false;
     f.Watch();
@@ -1025,7 +1022,7 @@ void CostumeResetTransactions()
         "costume reset changed three-bonus level rules");
     Check(f.Attrs()[5].sValue == 400 && f.Attrs()[6].sValue == 500 && !g_registry.valid(f.material),
         "costume reset damaged rare bonuses or failed to consume last material");
-    Check(saves == 1 && updates == 1 && payments == 1, "costume reset published intermediate empty attributes");
+    Check(updates == 1 && payments == 1, "costume reset published intermediate empty attributes");
     f.material = f.Material(39028, 2, 0);
     f.Attrs()[2] = {30, 777};
     g_registry.emplace<ecs::ItemLockedAttribute>(f.item, ecs::ItemLockedAttribute{2});
@@ -1056,7 +1053,7 @@ struct CostumeFixture : PaidFixture {
     auto Use() { return ItemSystem::UseCostumeAttributeItem(owner, item, material); }
     void Unchanged()
     {
-        Check(EqualAttributes(Attrs(), beforePayment) && saves == 0 && updates == 0,
+        Check(EqualAttributes(Attrs(), beforePayment) && updates == 0,
             "rejected costume operation published attributes");
         Check(ItemSystem::GetItemCount(material) == 2, "rejected costume operation consumed material");
     }
@@ -1107,7 +1104,7 @@ void CostumeAdditionTransactions()
             "costume addition changed signed payload or rare slot order");
         Check(f.Attrs()[0].sValue == 200 && f.Attrs()[1].sValue == 300 && !g_registry.valid(f.material),
             "costume addition damaged normal bonuses or missed last-unit debit");
-        Check(saves == 1 && updates == 1 && payments == 1 && randomCalls == 0,
+        Check(updates == 1 && payments == 1 && randomCalls == 0,
             "explicit costume addition was not a single deterministic transaction");
         f.Watch();
         Check(f.Use() == Result::InvalidMaterial && payments == 0, "stale costume material reused");
@@ -1139,7 +1136,7 @@ void CostumeAdditionTransactions()
     Check(f.Attrs()[5].bType == 20 && f.Attrs()[5].sValue == INT16_MIN && f.Attrs()[6].sValue == 500,
         "rare-gap addition lost other bonuses");
     f.Watch();
-    Check(f.Use() == Result::SlotsFull && payments == 0 && saves == 0, "full rare slots accepted addition");
+    Check(f.Use() == Result::SlotsFull && payments == 0 && updates == 0, "full rare slots accepted addition");
     f.Attrs()[5] = {};
     f.Watch();
     g_registry.remove<ecs::ItemSockets>(f.material);
@@ -1171,7 +1168,7 @@ void CostumeRemovalTransactions()
             "costume removal compacted wrong slots");
         Check(f.Attrs()[0].sValue == 200 && f.Attrs()[1].sValue == 300,
             "costume removal changed normal bonuses");
-        Check(!g_registry.valid(f.material) && saves == 1 && updates == 1 && payments == 1,
+        Check(!g_registry.valid(f.material) && updates == 1 && payments == 1,
             "costume removal published intermediate state or missed last-unit debit");
     }
     CostumeFixture f(USE_REMOVE_ATTR_COSTUME);
@@ -1249,11 +1246,11 @@ void CostumeOperationValidation()
     f.Unchanged();
     rejectPayment = false;
     f.Watch();
-    Check(f.Use() == Result::Success && saves == 1 && updates == 1 && payments == 1, "costume reroll transaction failed");
+    Check(f.Use() == Result::Success && updates == 1 && payments == 1, "costume reroll transaction failed");
     Check(f.Attrs()[5].sValue == 400 && f.Attrs()[6].sValue == 500 && ItemSystem::GetItemAttributeCount(f.item) == 2,
         "costume changer altered rare bonuses or normal count");
     f.Watch();
-    Check(f.Use() == Result::Success && !g_registry.valid(f.material) && saves == 1 && updates == 1,
+    Check(f.Use() == Result::Success && !g_registry.valid(f.material) && updates == 1,
         "costume changer failed last-unit debit");
     f.Watch();
     g_registry.destroy(f.item);
@@ -1281,7 +1278,7 @@ void StoleEnchantTransactions()
                 "stole grade/variant table value changed");
         Check(f.Attrs()[6].bType == beforePayment[6].bType && f.Attrs()[6].sValue == beforePayment[6].sValue,
             "stole enchant overwrote seventh bonus");
-        Check(randomCalls == MAX_ATTR && payments == 1 && saves == 1 && updates == 1 && !g_registry.valid(f.material),
+        Check(randomCalls == MAX_ATTR && payments == 1 && updates == 1 && !g_registry.valid(f.material),
             "stole enchant was not one six-bonus commit with last-unit debit");
         f.Watch();
         Check(!ItemSystem::EnchantStoleWithItemCost(f.owner, f.item, f.material) && payments == 0,
@@ -1311,7 +1308,7 @@ void StoleEnchantTransactions()
     f.Place(f.material, EXTRA_INVENTORY, 7);
 #endif
     Check(ItemSystem::EnchantStoleWithItemCost(f.owner, f.item, f.material) &&
-        ItemSystem::GetItemCount(f.material) == 1 && payments == 1 && saves == 1 && updates == 1,
+        ItemSystem::GetItemCount(f.material) == 1 && payments == 1 && updates == 1,
         "stole enchant did not debit one unit of a stack");
     f.Watch();
     g_registry.destroy(f.item);
@@ -1344,7 +1341,7 @@ void AttributeLockTransactions()
         const int expected = operation == USE_ADD_ATTRIBUTE_LOCK ? 0 : operation == USE_CHANGE_ATTRIBUTE_LOCK ? 1 : -1;
         Check(ItemSystem::GetItemLockedAttr(f.item) == expected && EqualAttributes(f.Attrs(), beforePayment),
             "lock operation changed bonuses or selected wrong slot");
-        Check(payments == 1 && saves == 1 && updates == 1 && !g_registry.valid(f.material),
+        Check(payments == 1 && updates == 1 && !g_registry.valid(f.material),
             "lock operation was not a single commit with last-unit debit");
         f.Watch();
         Check(ItemSystem::UseItemAttributeLock(f.owner, f.item, f.material) == Result::InvalidMaterial && payments == 0,
@@ -1463,7 +1460,7 @@ struct TransferFixture : PaidFixture {
     ecs::AttrTransferWindowComponent& Window() { return g_registry.get<ecs::AttrTransferWindowComponent>(owner); }
     void Unchanged()
     {
-        Check(EqualAttributes(Attrs(), beforePayment) && saves == 0 && updates == 0 && transferLogs == 0,
+        Check(EqualAttributes(Attrs(), beforePayment) && updates == 0 && transferLogs == 0,
             "rejected transfer changed target or published success");
     }
 };
@@ -1641,7 +1638,7 @@ void TransferPaymentAndCommit()
 #ifdef ENABLE_ATTR_COSTUMES
         expected[5] = {}; expected[6] = {};
 #endif
-        onSave = [&](entt::entity published) {
+        onUpdate = [&](entt::entity published) {
             if (published != f.item) return;
             Check(EqualAttributes(f.Attrs(), expected) && ItemSystem::GetItemCount(f.material) == count - 1 &&
                 ItemSystem::GetItemCount(f.donor) == 0, "first callback observed a partial batch");
@@ -1656,7 +1653,7 @@ void TransferPaymentAndCommit()
         };
         Check(AttrTransfer_make(f.owner), "valid transfer failed");
         Check(EqualAttributes(f.Attrs(), expected) && !g_registry.valid(f.donor) &&
-            payments == 0 && saves == 1 && updates == 1 && transferLogs == 1 && !f.Window().busy,
+            payments == 0 && updates == 1 && transferLogs == 1 && !f.Window().busy,
             "batch transfer did not publish exactly once");
         Check(count == 1 ? !g_registry.valid(f.material) : ItemSystem::GetItemCount(f.material) == count - 1,
             "wrong transfer scroll count");
@@ -1675,7 +1672,7 @@ void TransferPaymentAndCommit()
     rejectDestruction.clear();
     ItemSystem::ProcessPendingItemConsumptions();
     Check(!g_registry.valid(f.donor) && EqualAttributes(f.Attrs(), committed) && ItemSystem::GetItemCount(f.material) == 1 &&
-        saves == 1 && updates == 1 && transferLogs == 1, "cleanup retry recharged or republished transaction");
+        updates == 1 && transferLogs == 1, "cleanup retry recharged or republished transaction");
 }
 
 void CompanionCostCommit()
@@ -1691,7 +1688,7 @@ void CompanionCostCommit()
                 (!g_registry.valid(f.donor) || ItemSystem::GetItemCount(f.donor) == 0),
                 "cost companion published partial resource state");
         };
-        onSave = onUpdate = onDestroy = observe;
+        onUpdate = onDestroy = observe;
         Check(ItemSystem::ConsumeOwnedItemCostsWithCommit(f.owner, costs, [&] {
             Check(ItemSystem::GetItemCount(f.material) == 2 && ItemSystem::GetItemCount(f.donor) == 1 && wallet == 100,
                 "cost companion ran after debit");
@@ -1767,14 +1764,14 @@ void BatchCostValidation()
     for (int i = 0; i < 64; ++i)
         costs.push_back({f.Material(50000 + i, 3, static_cast<uint16_t>(20 + i)), 2});
     const auto desired = g_registry.get<ecs::ItemAttributes>(f.donor);
-    onSave = [&](entt::entity published) {
+    onUpdate = [&](entt::entity published) {
         if (published != f.item) return;
         for (const auto cost : costs)
             Check(ItemSystem::GetItemCount(cost.item) == 1, "64-cost batch partly visible");
         Check(EqualAttributes(f.Attrs(), desired.attrs), "target not committed with all costs");
     };
     Check(ItemSystem::SetItemAttributesWithItemCosts(f.owner, f.item, desired, costs), "64 valid costs rejected");
-    Check(publishedCounts.size() == 64 && saves == 1 && updates == 1 && destroyAttempts.empty(), "64-cost publication incorrect");
+    Check(publishedCounts.size() == 64 && updates == 1 && destroyAttempts.empty(), "64-cost publication incorrect");
 }
 
 void BatchReentrancyAndRetirement()
@@ -1788,7 +1785,7 @@ void BatchReentrancyAndRetirement()
         auto nestedAttributes = desired;
         nestedAttributes.attrs[0].sValue = 321;
         bool nested = false;
-        onSave = [&](entt::entity published) {
+        onUpdate = [&](entt::entity published) {
             if (published != f.item || nested) return;
             nested = true;
             Check(ItemSystem::GetItemCount(f.material) == 4 && ItemSystem::GetItemCount(f.donor) == 0,
@@ -1838,7 +1835,7 @@ void BatchReentrancyAndRetirement()
         const auto desired = g_registry.get<ecs::ItemAttributes>(f.donor);
         const std::array costs {Cost{f.material, 1}, Cost{f.donor, 1}};
         entt::entity replacement {entt::null};
-        onSave = [&](entt::entity published) {
+        onUpdate = [&](entt::entity published) {
             if (published != f.item) return;
             Check(ItemSystem::GetItemCount(f.material) == 1 && ItemSystem::GetItemCount(f.donor) == 0,
                 "post-commit callback observed partial costs");
@@ -1849,7 +1846,7 @@ void BatchReentrancyAndRetirement()
         Check(ItemSystem::SetItemAttributesWithItemCosts(f.owner, f.item, desired, costs),
             "post-commit target disappearance was reported as an uncommitted payment");
         Check(replacement != f.item && entt::to_entity(replacement) == entt::to_entity(f.item) &&
-            g_registry.get<ecs::ItemAttributes>(replacement).attrs[0].sValue == 999 && updates == 0 &&
+            g_registry.get<ecs::ItemAttributes>(replacement).attrs[0].sValue == 999 && updates == 1 &&
             ItemSystem::GetItemCount(f.material) == 1 && !g_registry.valid(f.donor),
             "post-commit replacement overwritten, refunded or published as old target");
     }
@@ -1888,7 +1885,7 @@ void CountValidationAndLimits()
             "invalid stack delta accepted");
         if (scenario == 0 || scenario == 1 || scenario == 2 || scenario == 4)
             Check(ItemSystem::GetItemCount(invalid) == 0, "missing/stale stack read nonzero");
-        Check(saves == 0 && updates == 0 && destroyAttempts.empty(), "rejected count write published");
+        Check(updates == 0 && destroyAttempts.empty(), "rejected count write published");
         if (scenario == 4) Check(!g_registry.any_of<ecs::ItemCount>(invalid), "count setter created missing component");
     }
     {
@@ -1898,9 +1895,9 @@ void CountValidationAndLimits()
         entt::scoped_connection countUpdate = g_registry.on_update<ecs::ItemCount>().connect<&CountSignals::Changed>(signals);
         Check(ItemSystem::SetItemCountEcs(f.item, 4) && ItemSystem::GetItemCount(f.item) == 4,
             "positive stack update failed");
-        Check(saves == 1 && updates == 1, "positive stack publication not exactly once");
+        Check(updates == 1, "positive stack publication not exactly once");
         ItemSystem::SetItemCount(f.item, 8);
-        Check(ItemSystem::GetItemCount(f.item) == 8 && saves == 2 && updates == 2, "void setter bypassed core");
+        Check(ItemSystem::GetItemCount(f.item) == 8 && updates == 2, "void setter bypassed core");
         for (auto amount : {201u, UINT32_MAX})
             Check(ItemSystem::SetItemCountEcs(f.item, amount) && ItemSystem::GetItemCount(f.item) == 200,
                 "stack limit/unsigned input narrowed before clamping");
@@ -1908,7 +1905,7 @@ void CountValidationAndLimits()
             g_bItemCountLimit = limit;
             f.Watch();
             Check(!ItemSystem::SetItemCountEcs(f.item, 1) && ItemSystem::GetItemCount(f.item) == 200 &&
-                saves == 0 && updates == 0, "invalid cap created zero/negative stack");
+                updates == 0, "invalid cap created zero/negative stack");
         }
         f.proto.bType = ITEM_ELK;
         Check(ItemSystem::SetItemCountEcs(f.item, UINT32_MAX) && ItemSystem::GetItemCount(f.item) == INT_MAX,
@@ -1932,32 +1929,31 @@ void CountDestructionAndCallbacks()
         rejectDestruction.insert(f.item);
         const auto remove = [&] { return delta ? ItemSystem::AddItemCountEcs(f.item, INT_MIN) :
             ItemSystem::SetItemCountEcs(f.item, 0); };
-        Check(!remove() && ItemSystem::GetItemCount(f.item) == 3 && saves == 0 && updates == 0,
+        Check(!remove() && ItemSystem::GetItemCount(f.item) == 3 && updates == 0,
             "failed zero-count removal reported success or changed count");
         rejectDestruction.clear();
-        Check(remove() && !g_registry.valid(f.item) && saves == 0 && updates == 0,
+        Check(remove() && !g_registry.valid(f.item) && updates == 0,
             "zero-count removal did not retire the item");
     }
     {
         CountFixture f;
         bool nested = false;
-        onSave = [&](entt::entity e) {
+        onUpdate = [&](entt::entity e) {
             Check(e == f.item && ItemSystem::GetItemCount(e) == (nested ? 9u : 5u),
-                "save observed uncommitted stack");
+                "packet observed uncommitted stack");
             if (!nested) {
                 nested = true;
                 Check(ItemSystem::SetItemCountEcs(e, 9), "nested count update rejected");
             }
         };
-        onUpdate = [&](entt::entity e) { Check(ItemSystem::GetItemCount(e) == 9, "outer packet restored stale count"); };
         Check(ItemSystem::SetItemCountEcs(f.item, 5) && ItemSystem::GetItemCount(f.item) == 9 &&
-            saves == 2 && updates == 2, "nested count commit was overwritten");
+            updates == 2, "nested count commit was overwritten");
     }
     for (int scenario = 0; scenario < 4; ++scenario) {
         CountFixture f;
         entt::entity replacement {entt::null};
-        onSave = [&](entt::entity e) {
-            Check(ItemSystem::GetItemCount(e) == 5, "save called before positive commit");
+        onUpdate = [&](entt::entity e) {
+            Check(ItemSystem::GetItemCount(e) == 5, "packet sent before positive commit");
             if (scenario == 0) {
                 g_registry.destroy(e);
                 replacement = f.Material(50001, 37, 5);
@@ -1967,14 +1963,14 @@ void CountDestructionAndCallbacks()
             else if (scenario == 2) g_registry.get<ecs::ItemCount>(e).count = 0;
             else Check(ItemSystem::SetItemCountEcs(e, 0), "nested zero-count removal failed");
         };
-        Check(ItemSystem::SetItemCountEcs(f.item, 5) && saves == 1 && updates == 0,
-            "post-save removal still published count or hid successful commit");
+        Check(ItemSystem::SetItemCountEcs(f.item, 5) && updates == 1,
+            "publication-time removal hid a committed write or published again");
         if (scenario == 0) Check(ItemSystem::GetItemCount(replacement) == 37, "stale publication touched replacement item");
     }
     {
         CountFixture f;
         onUpdate = [&](entt::entity e) { g_registry.destroy(e); };
-        Check(ItemSystem::SetItemCountEcs(f.item, 6) && !g_registry.valid(f.item) && saves == 1 && updates == 1,
+        Check(ItemSystem::SetItemCountEcs(f.item, 6) && !g_registry.valid(f.item) && updates == 1,
             "packet callback destruction invalidated the commit result");
     }
     {
@@ -1987,7 +1983,7 @@ void CountDestructionAndCallbacks()
             Check(!ItemSystem::SetItemCountEcs(f.material, amount), "count setter resurrected retired stack");
         Check(!ItemSystem::AddItemCountEcs(f.material, 1) && !ItemSystem::AddItemCountEcs(f.material, -1),
             "count delta bypassed retirement guard");
-        Check(ItemSystem::GetItemCount(f.material) == 0 && saves == 0 && updates == 0,
+        Check(ItemSystem::GetItemCount(f.material) == 0 && updates == 0,
             "retired stack was published");
         rejectDestruction.clear();
         ItemSystem::ProcessPendingItemConsumptions();
@@ -2048,17 +2044,17 @@ void StackMergeBoundaries()
                             ItemSystem::GetItemCount(f.material) == uint32_t(target + expected),
                             "callback observed only half of stack transfer");
                     };
-                    onSave = onUpdate = onDestroy = observe;
+                    onUpdate = onDestroy = observe;
                     const auto result = ItemSystem::MergeItemStacksEcs(f.owner, f.item, f.material, request);
                     Check(result.transferred == uint32_t(expected) && result.sourceDepleted == (expected == source),
                         "stack transfer amount/depletion boundary incorrect");
                     Check(ItemSystem::GetItemCount(f.item) + ItemSystem::GetItemCount(f.material) == uint32_t(source + target),
                         "stack merge created or lost units");
                     Check(signals.calls == 0, "stack commit emitted registry signals");
-                    if (expected == 0) Check(saves == 0 && updates == 0 && destroyAttempts.empty(), "failed merge published changes");
-                    else if (expected == source) Check(!g_registry.valid(f.item) && saves == 1 && updates == 1 &&
+                    if (expected == 0) Check(updates == 0 && destroyAttempts.empty(), "failed merge published changes");
+                    else if (expected == source) Check(!g_registry.valid(f.item) && updates == 1 &&
                         destroyAttempts.size() == 1, "depleted stack not retired exactly once");
-                    else Check(saves == 2 && updates == 2 && destroyAttempts.empty(), "partial merge publication incorrect");
+                    else Check(updates == 2 && destroyAttempts.empty(), "partial merge publication incorrect");
                 }
 }
 
@@ -2115,7 +2111,7 @@ void StackMergeGuards()
         Check(ItemSystem::MergeItemStacksEcs(owner, source, target, amount, storage).transferred == 0,
             "invalid stack merge accepted");
         Check(ItemSystem::GetItemCount(source) == beforeSource && ItemSystem::GetItemCount(target) == beforeTarget &&
-            saves == 0 && updates == 0 && destroyAttempts.empty(), "rejected merge changed state");
+            updates == 0 && destroyAttempts.empty(), "rejected merge changed state");
     }
     for (int scenario = 0; scenario < 21; ++scenario) {
         StackFixture f;
@@ -2145,7 +2141,7 @@ void StackMergeGuards()
             case 20: g_registry.emplace<ecs::ItemExtraProtoRef>(e).proto = reinterpret_cast<TItemExtraProto*>(1); break;
         }
         Check(ItemSystem::MergeItemStacksEcs(f.owner, f.item, e).transferred == 0 &&
-            ItemSystem::GetItemCount(f.item) == 40 && ItemSystem::GetItemCount(e) == 180 && saves == 0,
+            ItemSystem::GetItemCount(f.item) == 40 && ItemSystem::GetItemCount(e) == 180 && updates == 0,
             "incompatible payload merged/lost metadata");
     }
 }
@@ -2173,7 +2169,7 @@ void StackMergeCallbacks()
         StackFixture f;
         const auto third = f.Target(100, 1);
         bool nested = false;
-        onSave = [&](entt::entity) {
+        onUpdate = [&](entt::entity) {
             if (nested) return;
             nested = true;
             Check(ItemSystem::GetItemCount(f.item) == 20 && ItemSystem::GetItemCount(f.material) == 200,
@@ -2188,7 +2184,7 @@ void StackMergeCallbacks()
         StackFixture f;
         entt::entity replacement {entt::null};
         bool removed = false;
-        onSave = [&](entt::entity) {
+        onUpdate = [&](entt::entity) {
             if (removed) return;
             removed = true;
             const auto victim = removeTarget ? f.material : f.item;
@@ -2201,7 +2197,7 @@ void StackMergeCallbacks()
     }
     {
         StackFixture f;
-        onSave = [&](entt::entity) { throw std::runtime_error("publication failure"); };
+        onUpdate = [&](entt::entity) { throw std::runtime_error("publication failure"); };
         bool threw = false;
         try { ItemSystem::MergeItemStacksEcs(f.owner, f.item, f.material); }
         catch (const std::runtime_error&) { threw = true; }
@@ -2227,7 +2223,7 @@ void GroundStackMerges()
             Check(ItemSystem::GetItemCount(f.item) == count - moved &&
                 ItemSystem::GetItemCount(f.material) == 180 + moved, "ground pickup exposed half a transfer");
         };
-        onSave = onUpdate = onDestroy = observe;
+        onUpdate = onDestroy = observe;
         const auto result = ItemSystem::MergeItemStacksEcs(f.owner, f.item, f.material, 0, ItemSystem::StackSource::GroundPickup);
         Check(result.transferred == std::min(count, 820u) && result.sourceDepleted == (count <= 820),
             "ground pickup narrowed counts to eight bits");
@@ -2248,7 +2244,7 @@ void GroundStackMerges()
         if (invalid == 9) g_registry.get<ecs::ItemAttributes>(f.item).attrs[0] = {APPLY_MAX_HP, 123};
         Check(ItemSystem::MergeItemStacksEcs(f.owner, f.item, f.material, 0,
             ItemSystem::StackSource::GroundPickup).transferred == 0 &&
-            ItemSystem::GetItemCount(f.item) == 40 && ItemSystem::GetItemCount(f.material) == 180 && saves == 0,
+            ItemSystem::GetItemCount(f.item) == 40 && ItemSystem::GetItemCount(f.material) == 180 && updates == 0,
             "ground pickup accepted an invalid/reserved/foreign payload");
     }
     {
@@ -2273,7 +2269,7 @@ void AutomaticStackMerges()
         f.Detach();
         g_registry.get<ecs::ItemFlags>(f.item).flags = 0;
         Check(ItemSystem::MergeItemIntoInventoryEcs(f.owner, f.item) == f.item &&
-            stackCategoryLookups == 0 && saves == 0 && updates == 0,
+            stackCategoryLookups == 0 && updates == 0,
             "nonstackable reward entered inventory search");
     }
     for (bool blend : {false, true}) {
@@ -2295,7 +2291,7 @@ void AutomaticStackMerges()
         f.Detach();
         const auto second = f.Target(180, 1);
         bool nested = false;
-        onSave = [&](entt::entity) {
+        onUpdate = [&](entt::entity) {
             if (nested) return;
             nested = true;
             g_registry.get<ecs::ItemFlags>(f.item).flags = 0;
@@ -2313,7 +2309,7 @@ void AutomaticStackMerges()
         const auto second = f.Target(100, 1);
         entt::entity replacement {entt::null};
         bool acted = false;
-        onSave = [&](entt::entity) {
+        onUpdate = [&](entt::entity) {
             if (acted) return;
             acted = true;
             if (scenario == 0) { g_registry.destroy(second); replacement = f.Target(77, 1); }
@@ -2358,7 +2354,7 @@ void AutomaticStackMerges()
         StackFixture f;
         f.Detach();
         g_registry.get<ecs::ItemCount>(f.item).count = 10;
-        onSave = [&](entt::entity e) { g_registry.destroy(e); };
+        onUpdate = [&](entt::entity e) { g_registry.destroy(e); };
         Check(ItemSystem::MergeItemIntoInventoryEcs(f.owner, f.item) == entt::null && !g_registry.valid(f.item),
             "destroyed destination returned as live reward or source resurrected");
     }
@@ -2383,7 +2379,7 @@ void SwitchbotTransactions()
     f.Rows(5);
     const auto outcome = SwitchbotHelper::TrySwitch(f.owner, f.item, 0);
     Check(outcome.result == Result::Success && outcome.materialVnum == c_arSwitchingItems[0], "switchbot transaction failed");
-    Check(payments == 1 && saves == 1 && updates == 1, "switchbot charged or committed more than once");
+    Check(payments == 1 && updates == 1, "switchbot charged or committed more than once");
     f.Watch();
     g_registry.get<ecs::ItemCount>(f.material).count = 0;
     Check(SwitchbotHelper::TrySwitch(f.owner, f.item, 0).result == Result::NoPayment && payments == 0, "empty material stack accepted");
@@ -2685,8 +2681,8 @@ void RuneAttributeAndTimerTransitions()
         Check(runePointCalls.size() == calls + 2 && runePoints[f.runes[0]][0] == 1900 && runePoints[f.runes[0]][1] == 10,
             "active rune attributes were not removed/reapplied once");
         Check(f.Attributes(0)[3].sValue == 123 && f.Attributes(0)[3].bType == APPLY_MAX_SP, "unrelated attribute overwritten");
-        const int beforeSave = saves, beforeUpdate = updates;
-        Check(ItemSystem::ChangeRuneAttributes(f.runes[0], 5000) && beforeSave == saves && beforeUpdate == updates,
+        const int beforeUpdate = updates;
+        Check(ItemSystem::ChangeRuneAttributes(f.runes[0], 5000) && beforeUpdate == updates,
             "unchanged rune republished/reapplied");
         Check(!ItemSystem::ChangeRuneAttributes(f.runes[0], -1), "negative attribute time accepted");
         ItemSystem::DeactivateRune(f.runes[0]);
@@ -2742,13 +2738,12 @@ void RuneRuntimeCallbacks()
         onRunePoints = {};
         Check(ItemSystem::DeactivateRune(f.runes[0]), "operation guard remained stuck");
     }
-    for (int boundary = 0; boundary < 3; ++boundary) {
+    for (int boundary = 0; boundary < 2; ++boundary) {
         RuneFixture f;
         entt::entity replacement = entt::null;
         const auto retire = [&](entt::entity item) { g_registry.destroy(item); replacement = g_registry.create(); };
-        if (boundary == 0) onSave = retire;
-        if (boundary == 1) onUpdate = retire;
-        if (boundary == 2) onRunePoints = [&](entt::entity item, bool) { retire(item); };
+        if (boundary == 0) onUpdate = retire;
+        else onRunePoints = [&](entt::entity item, bool) { retire(item); };
         Check(!ItemSystem::ActivateRune(f.runes[0]) && g_registry.valid(replacement), "retirement callback was ignored");
         Check(!g_registry.any_of<ecs::ItemSockets, ecs::ItemAttributes>(replacement), "retired generation mutated its replacement");
     }
@@ -2812,7 +2807,7 @@ void RuneInitializationAndBoundaries()
                 }
                 Check(f.Attrs()[3].bType == APPLY_MAX_SP && f.Attrs()[3].sValue == 23, "rune overwrote unrelated attribute");
             }
-            Check(saves == 0 && updates == 0 && randomCalls == 0, "rune setup published partial item");
+            Check(updates == 0 && randomCalls == 0, "rune setup published partial item");
         }
     }
     for (int duration : {INT_MIN, -100, -1, 0, 1, 99}) {

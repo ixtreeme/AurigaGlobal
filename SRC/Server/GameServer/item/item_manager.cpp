@@ -13,8 +13,6 @@
 #include "config.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
-#include "desc_client.h"
-#include "db.h"
 #include "log.h"
 #include "skill.h"
 #include "priv_manager.h"
@@ -98,15 +96,6 @@ void ITEM_MANAGER::Destroy()
     }
     std::erase_if(m_VIDMap, [](const auto& row) { return !ItemSystem::IsValidItem(row.second); });
     std::erase_if(m_map_pkItemByID, [](const auto& row) { return !ItemSystem::IsValidItem(row.second); });
-    std::erase_if(m_set_pkItemForDelayedSave, [](entt::entity item) { return !ItemSystem::IsValidItem(item); });
-}
-
-void ITEM_MANAGER::GracefulShutdown()
-{
-    ItemSystem::ProcessPendingItemConsumptions();
-	for (auto it = m_set_pkItemForDelayedSave.begin(); it != m_set_pkItemForDelayedSave.end();)
-		if (SaveSingleItem(*it)) it = m_set_pkItemForDelayedSave.erase(it);
-		else ++it;
 }
 
 namespace { uint64_t g_bonusCatalogRevision = 1; }
@@ -273,162 +262,6 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t, uint32_t, uint32_t, bool, int, b
 }
 
 
-void ITEM_MANAGER::DelayedSave(entt::entity itemEntity)
-{
-	if (!ItemSystem::IsValidItem(itemEntity) || ItemSystem::GetItemID(itemEntity) == 0)
-		return;
-
-	m_set_pkItemForDelayedSave.insert(itemEntity);
-}
-void ITEM_MANAGER::FlushDelayedSave(entt::entity itemEntity)
-{
-	const auto it = m_set_pkItemForDelayedSave.find(itemEntity);
-	if (it == m_set_pkItemForDelayedSave.end())
-		return;
-
-	if (SaveSingleItem(itemEntity))
-		m_set_pkItemForDelayedSave.erase(it);
-}
-
-void ITEM_MANAGER::FlushDelayedSaveByOwner(entt::entity owner)
-{
-	if (!ecs::PlayerRuntime::IsValid(owner))
-		return;
-
-	auto it = m_set_pkItemForDelayedSave.begin();
-	while (it != m_set_pkItemForDelayedSave.end())
-	{
-		const entt::entity item = *it;
-
-		if (!ItemSystem::IsValidItem(item))
-		{
-			it = m_set_pkItemForDelayedSave.erase(it);
-			continue;
-		}
-
-		if (ItemSystem::GetItemOwner(item) == owner)
-		{
-			if (SaveSingleItem(item)) it = m_set_pkItemForDelayedSave.erase(it);
-			else ++it;
-			continue;
-		}
-		++it;
-	}
-}
-
-bool ITEM_MANAGER::SaveSingleItem(entt::entity item)
-{
-	if (!ItemSystem::IsValidItem(item))
-		return true; // A retired generation needs no more persistence work.
-	// Existing delayed saves and direct session flushes must obey the same
-	// suppression as SaveItem. Never serialize a half-detached/retiring item.
-	if (ItemSystem::GetItemSkipSave(item) || m_itemsBeingDestroyed.contains(item) || !db_clientdesc)
-		return false;
-
-	if (ItemSystem::GetItemOwner(item) == entt::null ||
-        (ItemSystem::IsItemConsumptionPending(item) && ItemSystem::GetItemCount(item) == 0))
-	{
-		uint32_t dwID = ItemSystem::GetItemID(item);
-		uint32_t dwOwnerID = ItemSystem::GetItemLastOwnerPID(item);
-
-		db_clientdesc->DBPacketHeader(HEADER_GD_ITEM_DESTROY, 0, sizeof(uint32_t) + sizeof(uint32_t));
-		db_clientdesc->Packet(&dwID, sizeof(uint32_t));
-		db_clientdesc->Packet(&dwOwnerID, sizeof(uint32_t));
-
-		LOG_INFO("ITEM_DELETE {}:{}", ItemSystem::GetItemName(item), dwID);
-		return true;
-	}
-
-	LOG_INFO("ITEM_SAVE {} in window {}", ItemSystem::GetItemID(item), ItemSystem::GetItemWindow(item));
-
-    TPlayerItem t{};
-    if (!BuildItemSave(item, t))
-        return false;
-    db_clientdesc->DBPacketHeader(HEADER_GD_ITEM_SAVE, 0, sizeof(TPlayerItem));
-    db_clientdesc->Packet(&t, sizeof(TPlayerItem));
-    return true;
-}
-
-bool ITEM_MANAGER::BuildItemSave(entt::entity item, TPlayerItem &t) const
-{
-    if (!ItemSystem::IsValidItem(item) || ItemSystem::GetItemOwner(item) == entt::null)
-        return false;
-    t = {};
-
-    t.id = ItemSystem::GetItemID(item);
-    t.window = ItemSystem::GetItemWindow(item);
-#ifdef ATTR_LOCK
-    t.lockedattr = ItemSystem::GetItemLockedAttr(item);
-#endif
-    switch (t.window)
-    {
-    case EQUIPMENT:
-        t.pos = ItemSystem::GetItemCell(item) - INVENTORY_MAX_NUM;
-        break;
-#ifdef ENABLE_BELT_INVENTORY_EX
-    case INVENTORY:
-        if (BELT_INVENTORY_SLOT_START <= ItemSystem::GetItemCell(item) &&
-            BELT_INVENTORY_SLOT_END > ItemSystem::GetItemCell(item))
-        {
-            t.window = BELT_INVENTORY;
-            t.pos = ItemSystem::GetItemCell(item) - BELT_INVENTORY_SLOT_START;
-            break;
-        }
-#endif
-    default:
-        t.pos = ItemSystem::GetItemCell(item);
-        break;
-    }
-    t.count = ItemSystem::GetItemCount(item);
-    t.vnum = ItemSystem::GetItemOriginalVnum(item);
-    const entt::entity owner = ItemSystem::GetItemOwner(item);
-    if (t.window == SAFEBOX || t.window == MALL)
-    {
-        LPDESC desc = ecs::PlayerRuntime::GetDesc(owner);
-        if (!desc)
-        {
-            LOG_ERROR("ITEM_SAVE failed: owner has no descriptor (item_id={})", t.id);
-            return false;
-        }
-        t.owner = desc->GetAccountTable().id;
-    }
-    else
-        t.owner = ecs::PlayerRuntime::GetPlayerID(owner);
-    for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-        t.alSockets[i] = ItemSystem::GetItemSocket(item, i);
-    for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-        t.aAttr[i] = ItemSystem::GetItemAttribute(item, i);
-
-    return true;
-}
-
-
-
-void ITEM_MANAGER::Update()
-{
-    ItemSystem::ProcessPendingItemConsumptions();
-	auto it = m_set_pkItemForDelayedSave.begin();
-	while (it != m_set_pkItemForDelayedSave.end())
-	{
-		const entt::entity item = *it;
-
-		if (!ItemSystem::IsValidItem(item))
-		{
-			it = m_set_pkItemForDelayedSave.erase(it);
-			continue;
-		}
-
-		if (ItemSystem::GetItemOwner(item) != entt::null && IS_SET(ItemSystem::GetItemFlags(item), ITEM_FLAG_SLOW_QUERY))
-		{
-			++it;
-			continue;
-		}
-
-		if (SaveSingleItem(item)) it = m_set_pkItemForDelayedSave.erase(it);
-		else ++it;
-	}
-}
-
 void ITEM_MANAGER::RemoveItem(entt::entity itemEntity, const char* reason)
 {
 	if (!ItemSystem::IsValidItem(itemEntity) || m_itemsBeingDestroyed.contains(itemEntity))
@@ -436,11 +269,6 @@ void ITEM_MANAGER::RemoveItem(entt::entity itemEntity, const char* reason)
 
 	const uint32_t id = ItemSystem::GetItemID(itemEntity);
 	const uint32_t vid = ItemSystem::GetItemVID(itemEntity);
-	if (id && !ItemSystem::GetItemSkipSave(itemEntity) && !db_clientdesc)
-	{
-		LOG_ERROR("ITEM_REMOVE deferred: no DB descriptor for item {}", id);
-		return;
-	}
 
 	m_itemsBeingDestroyed.insert(itemEntity);
 	ItemDestructionGuard guard {m_itemsBeingDestroyed, itemEntity};
@@ -542,7 +370,6 @@ void ITEM_MANAGER::RemoveItem(entt::entity itemEntity, const char* reason)
 
 void ITEM_MANAGER::ForgetItem(entt::entity item, uint32_t id, uint32_t vid)
 {
-	m_set_pkItemForDelayedSave.erase(item);
 	if (auto it = m_map_pkItemByID.find(id); it != m_map_pkItemByID.end() && it->second == item)
 		m_map_pkItemByID.erase(it);
 	if (auto it = m_VIDMap.find(vid); it != m_VIDMap.end() && it->second == item)
@@ -562,12 +389,6 @@ void ITEM_MANAGER::DestroyItemNow(entt::entity itemEntity)
 {
 	const uint32_t id = ItemSystem::GetItemID(itemEntity);
 	const uint32_t vid = ItemSystem::GetItemVID(itemEntity);
-	const bool preservePersistence = ItemSystem::GetItemSkipSave(itemEntity);
-	if (id && !preservePersistence && !db_clientdesc)
-	{
-		LOG_ERROR("ITEM_DESTROY deferred: no DB descriptor for item {}", id);
-		return;
-	}
 
 	const auto forget = [&] {
 		ForgetItem(itemEntity, id, vid);
@@ -629,18 +450,9 @@ void ITEM_MANAGER::DestroyItemNow(entt::entity itemEntity)
 		return;
 	}
 
-	// DBPacket writes/flushes bytes; it does not dispatch gameplay callbacks.
 	LOG_INFO("ITEM_DESTROY {}:{}", ItemSystem::GetItemName(itemEntity), id);
-	if (!preservePersistence && !ItemSystem::GetItemSkipSave(itemEntity) && id)
-	{
-		if (!db_clientdesc)
-			return;
-		const std::array<uint32_t, 2> payload {id, ItemSystem::GetItemLastOwnerPID(itemEntity)};
-		db_clientdesc->DBPacket(HEADER_GD_ITEM_DESTROY, 0, payload.data(), sizeof(payload));
-	}
 
 	// Preserve live indexes if final ECS retirement fails or is rejected.
-	const bool wasDelayed = m_set_pkItemForDelayedSave.contains(itemEntity);
 	const bool wasByID = id && m_map_pkItemByID.contains(id) && m_map_pkItemByID.at(id) == itemEntity;
 	const bool wasByVID = m_VIDMap.contains(vid) && m_VIDMap.at(vid) == itemEntity;
 	const auto restore = [&] {
@@ -649,7 +461,6 @@ void ITEM_MANAGER::DestroyItemNow(entt::entity itemEntity)
 		// Never overwrite an identity published by a nested callback.
 		if (wasByID) m_map_pkItemByID.try_emplace(id, itemEntity);
 		if (wasByVID) m_VIDMap.try_emplace(vid, itemEntity);
-		if (wasDelayed) m_set_pkItemForDelayedSave.insert(itemEntity);
 	};
 	forget();
 	try
@@ -685,8 +496,7 @@ bool ItemSystem::DestroyLoadedDuplicateItem(entt::entity item)
             if (auto* flags = g_registry.try_get<ecs::ItemFlags>(item))
                 flags->skipSave = originalSkipSave;
     }};
-    // The DB row belongs to the incoming load. Retire only its stale runtime
-    // instance, without deleting persistence or requiring a DB connection.
+    // Suppress legacy exchange while the stale entity is being detached.
     g_registry.get<ecs::ItemFlags>(item).skipSave = true;
     LOG_ERROR("DUP_ITEM_DESTROY_BEGIN entity={} id={} vid={} vnum={} last_owner_pid={} window={} cell={}",
         entt::to_integral(item), id, GetItemVID(item), GetItemVnum(item),

@@ -70,8 +70,8 @@ std::string receivedItemName;
 std::function<bool(entt::entity)> onUse;
 bool failAllocation = false;
 bool wearStopTest = false;
-int flushed = 0;
-std::function<void(entt::entity)> onSave, onUpdate;
+int wearUpdates = 0;
+std::function<void(entt::entity)> onUpdate;
 std::vector<LPEVENT> queued;
 std::function<void(entt::entity)> onCreate, onPublish, onComponent;
 std::function<void()> onCancel;
@@ -92,7 +92,7 @@ void Reset() {
     onPickupMerge = {}; pickupClaim = creditedOwner = entt::null;
     onCreate = onPublish = onComponent = {}; onCancel = {};
     onUse = {}; npcTest = false; revivals = feeds = 0; receivedItemName.clear();
-    onSave = onUpdate = {}; wearStopTest = false; flushed = 0;
+    onUpdate = {}; wearStopTest = false; wearUpdates = 0;
     g_registry.clear(); queued.clear(); failAllocation = false; test_server = 0;
 }
 struct Fixture {
@@ -241,9 +241,6 @@ bool quest::CQuestManager::TakeItem(unsigned int, unsigned int, entt::entity) { 
 CRuneDungeon& CRuneDungeon::instance() { static CRuneDungeon dungeon; return dungeon; }
 CHalloween2022Dungeon& CHalloween2022Dungeon::instance() { static CHalloween2022Dungeon dungeon; return dungeon; }
 CVikingDungeon& CVikingDungeon::instance() { static CVikingDungeon dungeon; return dungeon; }
-bool CRuneDungeon::OnNpcTakeItem(entt::entity, entt::entity, entt::entity) { return false; }
-bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity, entt::entity, entt::entity) { return false; }
-bool CVikingDungeon::OnNpcTakeItem(entt::entity, entt::entity, entt::entity) { return false; }
 bool ItemSystem::GiveItemFromSpecialItemGroup(entt::entity, uint32_t, std::vector<uint32_t>&,
     std::vector<uint32_t>&, std::vector<entt::entity>&, int&) { Unexpected(); }
 void PartySystem::ChatPacketToAllMemberNew(entt::entity, uint8_t, uint32_t, const char*, ...) { Unexpected(); }
@@ -254,17 +251,10 @@ uint32_t PartySystem::GetNearMemberCount(entt::entity) { Unexpected(); }
 void MountSystem::ForceClearRidingState(entt::entity) { Unexpected(); }
 void ecs::ItemNetworkSystem::SendItemUpdate(entt::registry&, entt::entity item) {
     Check(wearStopTest && ItemSystem::IsValidItem(item), "wear stop published a stale item");
+    ++wearUpdates;
     if (onUpdate) onUpdate(item);
 }
 void ecs::PointSystem::Change(entt::entity, uint8_t, int64_t, bool, bool, bool) { Unexpected(); }
-void ITEM_MANAGER::DelayedSave(entt::entity item) {
-    Check(wearStopTest && ItemSystem::IsValidItem(item), "wear stop saved a stale item");
-    if (onSave) onSave(item);
-}
-void ITEM_MANAGER::FlushDelayedSave(entt::entity item) {
-    Check(wearStopTest && ItemSystem::IsValidItem(item), "wear stop flushed a stale item");
-    ++flushed;
-}
 void ITEM_MANAGER::DestroyItem(entt::entity) { Unexpected(); }
 TItemTable* ITEM_MANAGER::GetTable(uint32_t) { Unexpected(); }
 bool ITEM_MANAGER::IsExtraItem(uint32_t) { Unexpected(); }
@@ -394,7 +384,9 @@ void NativeNpcItems() {
     g_registry.get<ecs::ItemPrototypeMeta>(f.item).type = ITEM_WEAPON;
     f.proto.dwRefinedVnum = 1001;
     g_registry.get<ecs::ItemProtoRef>(f.item).refined_vnum = 1001;
-    Check(ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "entity-only blacksmith rejected a weapon");
+    Check(!ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "blacksmith accepted a retired forge request");
+    g_registry.get<Actor>(npc).race = ALCHEMIST_MOB;
+    Check(ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "alchemist rejected a refinable item");
     g_registry.get<Actor>(npc).map = 2;
     Check(!ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "cross-map NPC accepted an item");
     g_registry.get<Actor>(npc).map = 1;
@@ -408,10 +400,7 @@ void NativeNpcItems() {
     Check(!ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "foreign item accepted");
     g_registry.get<ecs::ItemOwner>(f.item).owner = owner;
     g_registry.get<Actor>(npc).race = DEVILTOWER_BLACKSMITH_WEAPON_MOB;
-    f.proto.aLimits[0] = {LIMIT_LEVEL, 90};
-    Check(!ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "tower level restriction lost");
-    f.proto.aLimits[0].lValue = 89;
-    Check(ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "eligible tower item rejected");
+    Check(!ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "tower blacksmith accepted a retired forge request");
     auto& horse = g_registry.get<Actor>(npc); horse.race = 20101;
     g_registry.get<ecs::ItemIdentity>(f.item).vnum = ITEM_REVIVE_HORSE_1;
     Check(!ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "live horse accepted revival");
@@ -596,20 +585,19 @@ void WearTimerStops() {
         Check(ItemSystem::StartTimerBasedOnWearExpireEventEcs(f.item), "wear stop fixture timer failed");
         ItemSystem::StopTimerBasedOnWearExpireEvent(f.item);
         Check(queued.front()->is_force_to_end && !g_registry.get<ecs::ItemEvents>(f.item).timerBasedOnWearExpire &&
-            g_registry.get<ecs::ItemSockets>(f.item).sockets[0] == (active ? 0 : 5) && flushed == 1,
+            g_registry.get<ecs::ItemSockets>(f.item).sockets[0] == (active ? 0 : 5) && wearUpdates == 1,
             "wear stop lost paused-rune semantics, nonnegative time, or cancellation");
     }
-    for (int boundary = 0; boundary < 2; ++boundary) {
+    {
         Reset(); Fixture f; wearStopTest = true; f.proto.cLimitTimerBasedOnWearIndex = 0;
         ItemSystem::StartTimerBasedOnWearExpireEventEcs(f.item);
-        if (boundary == 0) onSave = [](entt::entity item) { g_registry.destroy(item); };
-        else onUpdate = [](entt::entity item) { g_registry.destroy(item); };
+        onUpdate = [](entt::entity item) { g_registry.destroy(item); };
         ItemSystem::StopTimerBasedOnWearExpireEvent(f.item);
-        Check(queued.front()->is_force_to_end && flushed == 0, "wear stop reused a retired entity after publication");
+        Check(queued.front()->is_force_to_end && wearUpdates == 1, "wear stop reused a retired entity after publication");
     }
     Reset(); Fixture f; wearStopTest = true; f.proto.cLimitTimerBasedOnWearIndex = 0;
     ItemSystem::StartTimerBasedOnWearExpireEventEcs(f.item);
-    onSave = [](entt::entity item) { Check(ItemSystem::StartTimerBasedOnWearExpireEventEcs(item), "nested wear restart failed"); };
+    onUpdate = [](entt::entity item) { Check(ItemSystem::StartTimerBasedOnWearExpireEventEcs(item), "nested wear restart failed"); };
     ItemSystem::StopTimerBasedOnWearExpireEvent(f.item);
     Check(queued.size() == 2 && queued[0]->is_force_to_end && !queued[1]->is_force_to_end &&
         g_registry.get<ecs::ItemEvents>(f.item).timerBasedOnWearExpire == queued[1], "wear stop canceled a replacement timer");

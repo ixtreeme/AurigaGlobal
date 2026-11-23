@@ -31,6 +31,7 @@
 #include "desc_manager.h"
 #include "../ecs/CharacterAccessors.hpp"
 #include "item_manager.h"
+#include "../ecs/systems/ItemSystem.hpp"
 #include "char_interface.hpp"
 #include "char_manager.h"
 #include "mob_manager.h"
@@ -324,7 +325,7 @@ void heartbeat(LPHEART ht, int pulse)
 
 	if (!(pulse % (passes_per_sec * 5 + 2)))
 	{
-		ITEM_MANAGER::instance().Update();
+		ItemSystem::ProcessPendingItemConsumptions();
 		DESC_MANAGER::instance().UpdateLocalUserCount();
 	}
 
@@ -555,8 +556,7 @@ int main(int argc, char **argv)
 
 	LOG_INFO("<shutdown> Shutting down CHARACTER_MANAGER...");
 	char_manager.GracefulShutdown();
-	LOG_INFO("<shutdown> Shutting down ITEM_MANAGER...");
-	item_manager.GracefulShutdown();
+	ItemSystem::ProcessPendingItemConsumptions();
 
 	LOG_INFO("<shutdown> Flushing db_clientdesc...");
 	db_clientdesc->FlushOutput();

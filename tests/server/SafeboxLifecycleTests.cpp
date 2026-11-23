@@ -17,10 +17,10 @@ LPCLIENT_DESC db_clientdesc = nullptr;
 int g_bItemCountLimit = 200;
 
 namespace {
-int checks = 0, saves = 0, flushes = 0, removed = 0, destroyed = 0;
+int checks = 0, removed = 0, destroyed = 0;
 int accountLookups = 0, descriptorLookups = 0;
-bool rejectConsumption = false, rejectSave = false, rejectRemoval = false;
-std::function<void(entt::entity)> onSave, onFlush, onRemove, onDestroy;
+bool rejectConsumption = false, rejectRemoval = false;
+std::function<void(entt::entity)> onRemove, onDestroy;
 struct Player { bool pc = true; };
 struct ItemData { uint8_t size = 1; };
 void Check(bool value, const char* message) {
@@ -44,9 +44,9 @@ entt::entity Item(uint32_t count = 1, uint8_t size = 1) {
 }
 void Reset() {
     g_registry.clear();
-    saves = flushes = removed = destroyed = accountLookups = descriptorLookups = 0;
-    onSave = onFlush = onRemove = onDestroy = {};
-    rejectConsumption = rejectSave = rejectRemoval = false;
+    removed = destroyed = accountLookups = descriptorLookups = 0;
+    onRemove = onDestroy = {};
+    rejectConsumption = rejectRemoval = false;
     g_bItemCountLimit = 200;
 }
 }
@@ -104,18 +104,6 @@ bool SetItemCell(entt::entity item, entt::entity owner, uint16_t cell) {
     g_registry.get<ecs::ItemOwner>(item).owner = owner;
     return true;
 }
-bool SaveItemEcs(entt::entity item, bool) {
-    Check(IsValidItem(item), "save received invalid item");
-    ++saves;
-    if (onSave) onSave(item);
-    return !rejectSave;
-}
-bool FlushDelayedSaveEcs(entt::entity item) {
-    Check(IsValidItem(item) && GetItemSkipSave(item), "teardown flush not protected from DB deletion");
-    ++flushes;
-    if (onFlush) onFlush(item);
-    return true;
-}
 bool RemoveItemEcs(entt::entity item) {
     Check(IsValidItem(item), "detach received invalid item");
     if (rejectRemoval) return false;
@@ -161,7 +149,7 @@ void ComponentOwnership() {
             && SafeboxSystem::Open(owner, window, 1) == storage, "storage publication not unique");
         const auto item = Item();
         Check(SafeboxSystem::Add(storage, 0, item), "component-owned storage add failed");
-        onFlush = [&](entt::entity) {
+        onRemove = [&](entt::entity) {
             Check(SafeboxSystem::Get(owner, window) == entt::null, "closing storage remained published");
             Check(SafeboxSystem::Open(owner, window, 3) == entt::null, "callback reopened closing storage");
             Check(SafeboxSystem::Get(owner, otherWindow) == other, "other window was closed");
@@ -173,7 +161,7 @@ void ComponentOwnership() {
         Check(!g_registry.valid(storage), "retired storage entity outlived its close");
         const auto replacement = SafeboxSystem::Open(owner, window, 3);
         Check(replacement != entt::null && SafeboxSystem::Get(owner, window) == replacement, "post-close reopen failed");
-        onFlush = {};
+        onRemove = {};
         SafeboxSystem::Close(owner, window, false); SafeboxSystem::Close(owner, otherWindow, false);
     }
     Reset(); const auto owner = PlayerEntity();
@@ -240,7 +228,7 @@ void BasicStorage() {
         const auto other = Item();
         Check(!SafeboxSystem::Add(box, 0, other) && !SafeboxSystem::Add(box, 16, other)
             && !SafeboxSystem::Add(box, 1, item), "occupied/duplicate add accepted");
-        Check(g_registry.get<ecs::ItemOwner>(other).owner == entt::null && saves == 1, "rejected add changed item");
+        Check(g_registry.get<ecs::ItemOwner>(other).owner == entt::null, "rejected add changed item");
         SafeboxSystem::SetWindowMode(box, window == SAFEBOX ? MALL : SAFEBOX);
         Check(SafeboxSystem::GetItem(box, 0) == item, "nonempty storage changed window mode");
         Check(SafeboxSystem::MoveItem(box, 0, 1, 0) && SafeboxSystem::GetItem(box, 0) == entt::null
@@ -249,7 +237,7 @@ void BasicStorage() {
             && SafeboxSystem::IsEmpty(box, 1, 2), "remove failed");
         Check(SafeboxSystem::Add(box, 2, item), "reattachment failed");
         SafeboxSystem::Destroy(box);
-        Check(!g_registry.valid(item) && g_registry.valid(other) && destroyed == 1 && flushes == 1,
+        Check(!g_registry.valid(item) && g_registry.valid(other) && destroyed == 1,
             "teardown did not destroy only stored item");
         SafeboxSystem::Destroy(box);
         Check(destroyed == 1 && !SafeboxSystem::Add(box, 0, other), "repeated teardown changed storage");
@@ -332,7 +320,7 @@ void StaleOwnersAndItems() {
 }
 
 void ReentrantTeardown() {
-    for (int stage = 0; stage < 3; ++stage) {
+    for (int stage = 0; stage < 2; ++stage) {
         Reset();
         const auto owner = PlayerEntity();
         const auto box = SafeboxSystem::Open(owner, SAFEBOX, 3);
@@ -347,25 +335,21 @@ void ReentrantTeardown() {
                 && !SafeboxSystem::MoveItem(box, 0, 2, 0), "callback mutated retiring storage");
             SafeboxSystem::Save(box);
         };
-        if (stage == 0) onFlush = callback;
-        else if (stage == 1) onRemove = callback;
+        if (stage == 0) onRemove = callback;
         else onDestroy = callback;
         SafeboxSystem::Destroy(box);
-        Check(destroyed == 2 && flushes == 2 && removed == 2 && g_registry.valid(unowned),
+        Check(destroyed == 2 && removed == 2 && g_registry.valid(unowned),
             "reentrant teardown double-destroyed");
     }
-    for (int stage = 0; stage < 3; ++stage) {
+    for (int stage = 0; stage < 2; ++stage) {
         Reset();
         const auto owner = PlayerEntity();
         const auto box = SafeboxSystem::Open(owner, SAFEBOX, 3);
         const auto item = Item();
         Check(SafeboxSystem::Add(box, 0, item), "callback migration fixture failed");
         entt::entity replacement {entt::null};
-        if (stage == 0) onFlush = [&](entt::entity e) {
+        if (stage == 0) onRemove = [&](entt::entity e) {
             g_registry.destroy(e); replacement = Item(9);
-        };
-        else if (stage == 1) onFlush = [&](entt::entity e) {
-            g_registry.get<ecs::ItemLocation>(e).window = INVENTORY;
         };
         else onRemove = [&](entt::entity e) {
             g_registry.get<ecs::ItemOwner>(e).owner = owner;
@@ -378,38 +362,7 @@ void ReentrantTeardown() {
     }
 }
 
-void PublicationAndDetachFailures() {
-    for (int scenario = 0; scenario < 4; ++scenario) {
-        Reset();
-        const auto owner = PlayerEntity();
-        const auto box = SafeboxSystem::Open(owner, SAFEBOX, 3);
-        const auto item = Item();
-        entt::entity replacement {entt::null};
-        onSave = [&](entt::entity current) {
-            Check(SafeboxSystem::GetItem(box, 0) == current && !SafeboxSystem::IsEmpty(box, 0, 1),
-                "save observed partially attached storage");
-            if (scenario == 0) rejectSave = true;
-            if (scenario == 1) SafeboxSystem::Destroy(box);
-            if (scenario == 2) {
-                g_registry.destroy(current);
-                replacement = Item(9);
-            }
-            if (scenario == 3) g_registry.destroy(owner);
-        };
-        Check(!SafeboxSystem::Add(box, 0, item), "failed/interrupted attachment reported success");
-        Check(SafeboxSystem::GetItem(box, 0) == entt::null && descriptorLookups == 0,
-            "interrupted add published stale data");
-        if (scenario == 0)
-            Check(SafeboxSystem::IsEmpty(box, 0, 1) && g_registry.get<ecs::ItemOwner>(item).owner == entt::null &&
-                ItemSystem::GetItemWindow(item) == RESERVED_WINDOW, "failed add left orphaned ownership/grid cells");
-        if (scenario == 2)
-            Check(g_registry.valid(replacement) && ItemSystem::GetItemCount(replacement) == 9
-                && SafeboxSystem::IsEmpty(box, 0, 1), "add rollback damaged replacement generation");
-        if (scenario == 3)
-            Check(!g_registry.valid(box) && g_registry.get<ecs::ItemOwner>(item).owner == entt::null &&
-                ItemSystem::GetItemWindow(item) == RESERVED_WINDOW,
-                "owner teardown did not roll the in-flight add back");
-    }
+void DetachAndMergeFailures() {
     for (int scenario = 0; scenario < 4; ++scenario) {
         Reset();
         const auto owner = PlayerEntity();
@@ -476,7 +429,7 @@ void StackGuards() {
 int main() {
     try {
         BasicStorage(); BoundsAndResize(); StaleOwnersAndItems(); ReentrantTeardown();
-        PublicationAndDetachFailures(); StackGuards();
+        DetachAndMergeFailures(); StackGuards();
         ComponentOwnership(); SessionStateOwnership();
         std::cout << "Safebox/mall lifecycle checks passed: " << checks << '\n';
         return 0;

@@ -125,8 +125,6 @@ public:
 bool PublishRune(const RuneContext& context)
 {
     if (!context.Valid()) return false;
-    SaveItem(context.item);
-    if (!context.Valid()) return false;
     ecs::ItemNetworkSystem::SendItemUpdate(g_registry, context.item);
     return context.Valid();
 }
@@ -825,9 +823,7 @@ void PublishItemCount(entt::entity item)
     };
     if (!publishable())
         return;
-    SaveItem(item);
-    if (publishable())
-        ecs::ItemNetworkSystem::SendItemUpdate(g_registry, item);
+    ecs::ItemNetworkSystem::SendItemUpdate(g_registry, item);
 }
 
 uint32_t GetItemCount(entt::entity item)
@@ -1082,7 +1078,6 @@ bool SetItemAttributesWithItemCosts(entt::entity owner, entt::entity target,
     // Everything observable from here on sees the complete committed state.
     // Reentrant callbacks may consume/move/delete entities; do not rewrite a
     // saved snapshot over their newer state or report a committed debit failed.
-    SaveItem(target);
     if (IsValidItem(target) && !IsItemConsumptionPending(target))
         ecs::ItemNetworkSystem::SendItemUpdate(g_registry, target);
     for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM && IsValidItem(target); ++i)
@@ -1393,7 +1388,6 @@ void SetItemLockedAttr(entt::entity item, short index)
         return;
     g_registry.emplace_or_replace<ecs::ItemLockedAttribute>(item, ecs::ItemLockedAttribute{index});
     ecs::ItemNetworkSystem::SendItemUpdate(g_registry, item);
-    SaveItem(item);
 }
 
 AttributeLockResult UseItemAttributeLock(entt::entity character, entt::entity item, entt::entity material)

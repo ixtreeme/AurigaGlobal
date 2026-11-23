@@ -1392,15 +1392,6 @@ bool DestroyItemEntityEcs(entt::entity item, const char* reason)
     return RetireItemEntity(item, reason ? reason : "DESTROY_ITEM_ENTITY_ECS");
 }
 
-bool FlushDelayedSaveEcs(entt::entity item)
-{
-    if (!IsValidItem(item))
-        return false;
-
-    ITEM_MANAGER::instance().FlushDelayedSave(item);
-    return true;
-}
-
 // Handed out by reference so callers can event_cancel(&events.field) the way
 // they used to take the address of the member.
 // The three limit-table predicates and the socket-accessory test are pure
@@ -1589,8 +1580,6 @@ void StopUniqueExpireEvent(entt::entity item)
 
 	SetItemSocket(item, ITEM_SOCKET_UNIQUE_SAVE_TIME, event_time(events.uniqueExpire) / passes_per_sec);
 	event_cancel(&events.uniqueExpire);
-
-	ITEM_MANAGER::instance().FlushDelayedSave(item);
 }
 
 void StartTimerBasedOnWearExpireEvent(entt::entity item)
@@ -1618,12 +1607,9 @@ void StopTimerBasedOnWearExpireEvent(entt::entity item)
         g_registry.get<ecs::ItemSockets>(item).sockets[0] = static_cast<int32_t>(
             std::max<int64_t>(0, static_cast<int64_t>(remaining) - std::max(0, elapsed)));
     }
-    // Detach/cancel first. A save/update callback may remove ItemEvents, retire
-    // the item, or install a new timer; none may be touched through the old reference.
-    SaveItem(item);
-    if (!IsValidItem(item)) return;
+    // Publish only after detaching the timer: the update may retire the item
+    // or install another timer.
     ecs::ItemNetworkSystem::SendItemUpdate(g_registry, item);
-    if (IsValidItem(item)) ITEM_MANAGER::instance().FlushDelayedSave(item);
 }
 
 void StartAccessorySocketExpireEvent(entt::entity item)
@@ -1716,17 +1702,6 @@ void PrepareItemDestruction(entt::entity item)
     event_cancel(&timers.realTimeExpire);
     event_cancel(&timers.accessorySocketExpire);
     if (g_registry.valid(item)) g_dispatcher.trigger(ecs::EvItemDestroyed {item, id});
-}
-
-bool SaveItemEcs(entt::entity item, bool flush)
-{
-    if (!IsValidItem(item))
-        return false;
-
-    SaveItem(item);
-    if (flush)
-        ITEM_MANAGER::instance().FlushDelayedSave(item);
-    return true;
 }
 
 entt::entity GetItemOwner(entt::entity item)
@@ -1843,7 +1818,6 @@ void SetItemAttributes(entt::entity item, const TPlayerItemAttribute* attributes
 
     auto& component = g_registry.get_or_emplace<ecs::ItemAttributes>(item);
     std::copy_n(attributes, ITEM_ATTRIBUTE_MAX_NUM, component.attrs.begin());
-    SaveItem(item);
 }
 
 int GetItemAttributeType(entt::entity item, int index)
@@ -1878,7 +1852,6 @@ bool SetItemSocket(entt::entity item, int index, uint32_t value, bool log)
     sockets.sockets[index] = static_cast<int32_t>(value);
 
     ecs::ItemNetworkSystem::SendItemUpdate(g_registry, item);
-    SaveItem(item);
 
     if (log) {
 #ifdef ENABLE_NEWSTUFF
@@ -1907,7 +1880,6 @@ bool SetItemAttribute(entt::entity item, int index, int type, double value)
     attrs.attrs[index].bType = static_cast<uint8_t>(type);
     attrs.attrs[index].sValue = value;
 
-    SaveItem(item);
 
     return true;
 }
@@ -1928,7 +1900,6 @@ bool ClearItemAttributesEcs(entt::entity item)
         attr.sValue = 0;
     }
 
-    SaveItem(item);
 
     return true;
 }
@@ -1944,8 +1915,6 @@ bool CopyItemAttributesEcs(entt::entity source, entt::entity target)
 
     g_registry.emplace_or_replace<ecs::ItemAttributes>(target, *sourceAttributes);
 
-    // CItem::SetAttributes, which CopyAttributeTo called, ended with Save().
-    SaveItem(target);
     return true;
 }
 
@@ -1959,10 +1928,8 @@ bool CopyItemSocketsEcs(entt::entity source, entt::entity target)
         return false;
 
     g_registry.emplace_or_replace<ecs::ItemSockets>(target, *sourceSockets);
-    // SetSocket, which the per-index copy used to call, ended with an item
-    // update packet and a save. The component write does neither.
+    // Send one update for the complete socket copy.
     ecs::ItemNetworkSystem::SendItemUpdate(g_registry, target);
-    SaveItem(target);
     return true;
 }
 
@@ -2466,14 +2433,6 @@ void ClearMountAttributeAndAffect(entt::entity item)
 	ecs::PointSystem::Change(chEntity, POINT_DX, 0);
 	ecs::PointSystem::Change(chEntity, POINT_HT, 0);
 	ecs::PointSystem::Change(chEntity, POINT_IQ, 0);
-}
-
-void SaveItem(entt::entity item)
-{
-    if (GetItemSkipSave(item))
-        return;
-
-    ITEM_MANAGER::instance().DelayedSave(item);
 }
 
 bool GetItemSkipSave(entt::entity item)

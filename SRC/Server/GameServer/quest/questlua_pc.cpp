@@ -1989,7 +1989,6 @@ namespace quest
 		LogManager::instance().ItemLogEntity(
 			character, replacement,
 			"REFINE SUCCESS (QUEST)", ItemSystem::GetItemName(replacement));
-		ItemSystem::FlushDelayedSaveEcs(replacement);
 		lua_pushboolean(L, 1);
 		return 1;
 	}

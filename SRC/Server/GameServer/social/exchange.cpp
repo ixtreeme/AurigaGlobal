@@ -673,8 +673,6 @@ bool Complete(entt::entity session)
     // participant or cancels the window. Work below holds only value snapshots.
     for (const auto& transfer : transfers)
     {
-        if (ItemSystem::IsValidItem(transfer.selection.item))
-            ItemSystem::SaveItemEcs(transfer.selection.item, true);
         SendSlot(transfer.from, transfer.selection.source);
         SendSlot(transfer.to, transfer.destination);
         if (ItemSystem::IsValidItem(transfer.selection.item) &&

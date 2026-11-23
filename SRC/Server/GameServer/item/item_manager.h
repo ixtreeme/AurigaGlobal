@@ -172,19 +172,10 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 #endif
 
 		void			Destroy();
-		void			Update();
-		void			GracefulShutdown();
+
 		uint32_t			GetNewID();
 		bool			SetMaxItemID(TItemIDRangeTable range);
 		bool			SetMaxSpareItemID(TItemIDRangeTable range);
-
-		void			DelayedSave(entt::entity item);
-		void			FlushDelayedSave(entt::entity item);
-		void FlushDelayedSaveByOwner(entt::entity owner);
-		// True when sent or already retired; false keeps a delayed save pending.
-		bool			SaveSingleItem(entt::entity item);
-        // Pure capture: never flushes/erases pending saves or changes item ownership.
-        bool BuildItemSave(entt::entity item, TPlayerItem &output) const;
 
 		entt::entity            CreateItem(uint32_t vnum, uint32_t count = 1, uint32_t dwID = 0, bool bTryMagic = false, int iRarePct = -1, bool bSkipSave = false);
 		void DestroyItem(entt::entity item);
@@ -232,7 +223,6 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		TItemIDRangeTable	m_ItemIDRange;
 		TItemIDRangeTable	m_ItemIDSpareRange;
 
-		std::unordered_set<entt::entity> m_set_pkItemForDelayedSave;
 		// Versioned identities, retained across cleanup callbacks and entity destruction.
 		std::unordered_set<entt::entity> m_itemsBeingDestroyed;
 

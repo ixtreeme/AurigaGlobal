@@ -885,10 +885,6 @@ namespace ShopSystem
 						InventorySystem::AddToCharacter(itemEntity, ch, TItemPos(INVENTORY, iEmptyPos));
 #endif
 					}
-
-					if (ItemSystem::IsValidItem(itemEntity)) {
-						ItemSystem::FlushDelayedSaveEcs(itemEntity);
-					}
 				}
 
 				if (auto* current = Find(shopEntity); current && pos < current->items.size() &&

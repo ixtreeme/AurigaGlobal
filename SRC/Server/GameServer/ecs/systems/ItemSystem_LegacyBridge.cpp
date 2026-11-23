@@ -1009,7 +1009,6 @@ void InventorySystem::ClearItem(entt::entity e)
 		if (ItemSystem::IsValidItem(item = ItemSystem::GetInventoryItem(e, i)))
 		{
 			ItemSystem::SetItemSkipSave(item, true);
-			ITEM_MANAGER::instance().FlushDelayedSave(item);
 
 			InventorySystem::RemoveFromCharacter(item);
 			ItemSystem::DestroyItemEntityEcs(
@@ -1025,7 +1024,6 @@ void InventorySystem::ClearItem(entt::entity e)
 		if (ItemSystem::IsValidItem(item = ItemSystem::GetExtraInventoryItem(e, i)))
 		{
 			ItemSystem::SetItemSkipSave(item, true);
-			ITEM_MANAGER::instance().FlushDelayedSave(item);
 
 			InventorySystem::RemoveFromCharacter(item);
 			ItemSystem::DestroyItemEntityEcs(
@@ -1043,7 +1041,6 @@ void InventorySystem::ClearItem(entt::entity e)
 		if (ItemSystem::IsValidItem(item = ItemSystem::GetItem(e, TItemPos(SWITCHBOT, i))))
 		{
 			ItemSystem::SetItemSkipSave(item, true);
-			ITEM_MANAGER::instance().FlushDelayedSave(item);
 
 			InventorySystem::RemoveFromCharacter(item);
 			ItemSystem::DestroyItemEntityEcs(

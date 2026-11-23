@@ -46,7 +46,6 @@ bool ReplaceItemWith(entt::entity character, entt::entity source, uint32_t resul
 		return false;
 	}
 
-	ItemSystem::FlushDelayedSaveEcs(result);
 	return true;
 }
 }

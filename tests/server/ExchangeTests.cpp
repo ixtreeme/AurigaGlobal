@@ -34,10 +34,10 @@ int passes_per_sec = 25, g_nPortalLimitTime = 10;
 std::string g_stHostname = "exchange-test";
 LPCLIENT_DESC db_clientdesc = nullptr;
 namespace {
-int checks = 0, saves = 0, characterSaves = 0, itemLogs = 0, goldLogs = 0;
+int checks = 0, characterSaves = 0, itemLogs = 0, goldLogs = 0;
 int pulse = 100000;
 bool noQuest = false, questConsumes = false;
-std::function<void()> onQuest, onFlag, onSave, onQuickslot;
+std::function<void()> onQuest, onFlag, onSlot, onQuickslot;
 std::function<void(entt::entity, uint8_t, uint8_t)> onPacket;
 std::vector<std::unique_ptr<DESC>> descriptors;
 struct Actor {
@@ -124,11 +124,11 @@ entt::entity Item(entt::entity owner, int cell = 0, uint8_t size = 1, uint8_t wi
     return e;
 }
 void Reset() {
-    onQuest = onFlag = onSave = onQuickslot = {};
+    onQuest = onFlag = onSlot = onQuickslot = {};
     onPacket = {};
     g_registry.clear();
     descriptors.clear(); sent.clear(); quickDeletes.clear();
-    saves = characterSaves = itemLogs = goldLogs = 0;
+    characterSaves = itemLogs = goldLogs = 0;
     noQuest = questConsumes = false;
 }
 void Offer(entt::entity owner, entt::entity item, int display = 0) {
@@ -191,6 +191,7 @@ void DESC::Packet(const void* data, int size) {
         sub = static_cast<const packet_exchange*>(data)->sub_header;
     }
     sent.push_back({GetEntity(), header, sub});
+    if (header == HEADER_GC_ITEM_SET || header == HEADER_GC_ITEM_DEL) Call(onSlot);
     if (onPacket) { auto callback = onPacket; callback(GetEntity(), header, sub); }
 }
 void CLIENT_DESC::DBPacket(uint8_t, uint32_t, const void*, uint32_t) {
@@ -278,7 +279,6 @@ TPlayerItemAttribute GetItemAttribute(entt::entity e, int index) { I(e); return 
 int16_t GetItemLockedAttributeIndex(entt::entity e) { I(e); return g_registry.get<ecs::ItemLockedAttribute>(e).index; }
 bool IsExtraItem(entt::entity e) { return I(e).extra; }
 uint8_t GetItemExtraCategory(entt::entity e) { return I(e).category; }
-bool SaveItemEcs(entt::entity e, bool flush) { I(e); Check(flush, "immediate item persistence"); ++saves; Call(onSave); return true; }
 
 }
 namespace {
@@ -361,7 +361,7 @@ void OffersAndValidation() {
         case 13: A(b).map = 2; break;
         }
         Check(!Finish(a, b), "changed offer aborts"); AssertClosed(a, b);
-        Check(saves == 0 && ecs::PointSystem::GetGold(a) == 10000, "failed trade has no transfer effects");
+        Check(ecs::PointSystem::GetGold(a) == 10000, "failed trade has no transfer effects");
     }
     Reset(); auto a = ActorEntity(), b = ActorEntity(); auto tall = Item(a, 0, 3), other = Item(a, 1);
     Check(ExchangeSystem::Start(a, b), "display start");
@@ -395,9 +395,9 @@ void TransferTests() {
         Check(ItemSystem::GetItem(a, TItemPos(INVENTORY, 0)) == y, "incoming reused outgoing cell");
         Check(g_registry.get<ecs::QuickSlots>(a).slots[0].type == QUICKSLOT_TYPE_NONE, "old quickslot removed before callback");
     };
-    onSave = verify; onQuickslot = verify;
+    onSlot = verify; onQuickslot = verify;
     Check(Finish(a, b), "complete swap"); verify(); AssertClosed(a, b);
-    Check(saves == 2 && characterSaves == 2 && itemLogs == 4 && goldLogs == 4, "persistence and logs");
+    Check(characterSaves == 2 && itemLogs == 4 && goldLogs == 4, "persistence and logs");
     Check(quickDeletes.size() == 1, "quickslot publication");
     Check(g_registry.get<ecs::ItemOwner>(x).ownerPID == A(b).pid &&
         g_registry.get<ecs::ItemOwner>(x).lastOwnerPID == A(b).pid, "persistent owner metadata");
@@ -415,7 +415,7 @@ void TransferTests() {
     Check(ExchangeSystem::Start(a, b), "no space start"); Offer(a, x);
     Check(ExchangeSystem::AddGold(b, 1), "gold for no-space item");
     Check(!Finish(a, b), "no space abort");
-    Check(ItemSystem::GetItemOwner(x) == a && ecs::PointSystem::GetGold(a) == 10000 && saves == 0, "no partial gold/item transfer");
+    Check(ItemSystem::GetItemOwner(x) == a && ecs::PointSystem::GetGold(a) == 10000, "no partial gold/item transfer");
     AssertClosed(a, b);
 }
 void GoldTests() {
@@ -430,7 +430,7 @@ void GoldTests() {
     Check(!ExchangeSystem::AddGold(a, 1), "cannot overwrite gold offer");
     g_registry.get<ecs::GoldAmount>(a).amount = 4999;
     Check(!Finish(a, b), "balance changed after offer");
-    Check(ecs::PointSystem::GetGold(b) == 10000 && saves == 0, "failed gold untouched"); AssertClosed(a, b);
+    Check(ecs::PointSystem::GetGold(b) == 10000, "failed gold untouched"); AssertClosed(a, b);
 }
 void InventoryKinds() {
     // A tall item must not straddle pages, even if the corresponding cells
@@ -475,9 +475,9 @@ void ReentrancyTests() {
     Reset(); auto a = ActorEntity(), b = ActorEntity(); auto x = Item(a), y = Item(b);
     Check(ExchangeSystem::Start(a, b), "reentrant start"); Offer(a, x); Offer(b, y);
     bool called = false;
-    onSave = [&] {
+    onSlot = [&] {
         if (called) return; called = true;
-        Check(ItemSystem::GetItemOwner(x) == b && ItemSystem::GetItemOwner(y) == a, "atomic before first save");
+        Check(ItemSystem::GetItemOwner(x) == b && ItemSystem::GetItemOwner(y) == a, "atomic before first slot packet");
         g_registry.destroy(b);
     };
     Check(Finish(a, b), "committed trade survives participant destruction");
@@ -536,7 +536,7 @@ void AdditionalFailureTests() {
         case 5: g_registry.get<ecs::MainInventoryRuntimeComponent>(a).items[10] = item; break;
         }
         Check(!Finish(a, b), "late validation abort"); db_clientdesc = database;
-        Check(ItemSystem::GetItemOwner(item) == a && saves == 0, "late failure has no item effects");
+        Check(ItemSystem::GetItemOwner(item) == a, "late failure has no item effects");
         AssertClosed(a, b);
     }
     Reset(); auto a = ActorEntity(), b = ActorEntity(), x = Item(a), y = Item(b);
@@ -631,8 +631,8 @@ void AdmissionGuards()
         Reset(); const auto a = ActorEntity(), b = ActorEntity(); const auto item = Item(a);
         g_registry.emplace<ecs::PlayerID>(a, A(a).pid);
         Check(ExchangeSystem::Start(a, b) && ExchangeSystem::AddItem(a, TItemPos(INVENTORY, 0), 0), "transfer fixture failed");
-        onSave = [&] {
-            onSave = {};
+        onSlot = [&] {
+            onSlot = {};
             ExchangeSystem::Cancel(a);
             Check(!admission::Prepare(a, AdmissionKey(a), AdmissionKey(a).request),
                 "committed transfer publication lost root admission");

@@ -754,7 +754,6 @@ void Refine(entt::entity e)
 				ClearMaterials(e);
 				return;
 			}
-			ItemSystem::FlushDelayedSaveEcs(resultItem);
 			ItemSystem::AttrLogEcs(resultItem);
 
 #ifdef TEXTS_IMPROVEMENT
@@ -822,7 +821,6 @@ void Refine(entt::entity e)
 		ItemSystem::DestroyItemEntityEcs(
 			absorbedMaterial, "ABSORBED (REFINE SUCCESS)");
 
-		ItemSystem::FlushDelayedSaveEcs(pkItemMaterial[0]);
 		ItemSystem::AttrLogEcs(pkItemMaterial[0]);
 
 #ifdef TEXTS_IMPROVEMENT

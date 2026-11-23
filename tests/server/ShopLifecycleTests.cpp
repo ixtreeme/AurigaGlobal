@@ -249,7 +249,6 @@ bool DestroyItemEntityEcs(entt::entity item, const char*) {
     if (g_registry.valid(item)) g_registry.destroy(item);
     return true;
 }
-bool FlushDelayedSaveEcs(entt::entity) { return true; }
 const char* GetItemName(entt::entity item) { return g_registry.valid(item) ? "item" : "unknown"; }
 bool ConsumeItemEcs(entt::entity item, uint32_t amount) {
     if (onRetire) onRetire();

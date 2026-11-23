@@ -146,9 +146,7 @@ public:
 		// Membership only: the update pump calls AISystem::UpdateStateMachine
 		// with the entity, nothing here dereferences a character.
 		std::unordered_set<entt::entity>	m_set_pkChrState;
-		// Membership only. SaveReal is still a CHARACTER method, so the flush
-		// resolves once per entry - the same shape ITEM_MANAGER already uses for
-		// m_set_pkItemForDelayedSave.
+		// Entity handles for pending character saves.
 		std::unordered_set<entt::entity>	m_set_pkChrForDelayedSave;
 		// Membership only: PacketMonsterLog reads position and descriptor off
 		// the entity.

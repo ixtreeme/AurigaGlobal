@@ -81,7 +81,6 @@ struct PlacementMeta {
     int wear = WEAR_BODY, group = 0;
 };
 std::vector<std::unique_ptr<DESC>> descriptors;
-std::function<void(entt::entity)> onSave;
 std::function<void()> onCancel, onRegistration;
 std::function<void(entt::entity, uint8_t, TItemPos)> onStoragePacket;
 std::function<void(const char*)> onService;
@@ -99,7 +98,7 @@ TItemTable rewardProto {};
 std::vector<entt::entity> rewards;
 std::function<entt::entity(entt::entity, entt::entity)> onRewardMerge;
 std::function<void(const char*, entt::entity)> onReward;
-int saves = 0, storagePackets = 0, registrations = 0;
+int storagePackets = 0, registrations = 0;
 std::vector<LPEVENT> groundTimers;
 std::map<EVENT*, int32_t> groundDelays;
 std::vector<TPacketGCItemOwnership> ownershipPackets;
@@ -111,7 +110,7 @@ bool dropping = false, rejectDropInsertion = false, missingDropQuest = false;
 bool trading = false, rejectTradePreparation = false, rejectTradeCleanup = false;
 std::vector<entt::entity> tradeRetirements;
 uint32_t dropClock = 10000;
-int dropLogs = 0, dropSaves = 0, dropFlushes = 0, dropHacks = 0;
+int dropLogs = 0, dropSaves = 0, dropHacks = 0;
 std::vector<TPacketGCPointChange> goldPackets;
 std::function<void(entt::entity)> onDropPreparation;
 std::function<void()> onGoldPacket;
@@ -157,7 +156,7 @@ void Send(entt::entity owner, Packet packet) {
 entt::entity Reset() {
     trading = rejectTradePreparation = rejectTradeCleanup = false; tradeRetirements.clear(); g_BuySellTimeLimitValue = 0;
     dropping = rejectDropInsertion = missingDropQuest = false; dropClock = 10000;
-    dropLogs = dropSaves = dropFlushes = dropHacks = 0; goldPackets.clear(); onDropPreparation = {}; onGoldPacket = {};
+    dropLogs = dropSaves = dropHacks = 0; goldPackets.clear(); onDropPreparation = {}; onGoldPacket = {};
     onOwnershipPacket = {}; onTimerCreate = {}; onGroundRetire = {};
     rejectTimer = rejectGroundRetirement = false; groundRetired = 0; timerPulse = 1000;
     groundTimers.clear(); groundDelays.clear(); ownershipPackets.clear();
@@ -167,9 +166,9 @@ entt::entity Reset() {
     g_bItemCountLimit = 200;
     onCreate = {}; onMerge = {}; onPullOut = {}; retiredSplits = 0;
     switchActive = false; switchAllowed = true;
-    onSave = {}; onCancel = onRegistration = {}; onStoragePacket = {}; onService = {};
+    onCancel = onRegistration = {}; onStoragePacket = {}; onService = {};
     notices.clear(); married = marriageItem = false;
-    g_registry.clear(); descriptors.clear(); saves = storagePackets = registrations = 0;
+    g_registry.clear(); descriptors.clear(); storagePackets = registrations = 0;
     packets.clear(); inventory.clear(); onPacket = {}; expectDirty = true;
     return g_registry.create();
 }
@@ -671,7 +670,6 @@ bool CombatSystem::IsDead(entt::entity e) { return !g_registry.valid(e) || Actor
 int64_t ecs::PointSystem::GetGold(entt::entity e) { Actor(e); return g_registry.get<ecs::GoldAmount>(e).amount; }
 uint32_t get_dword_time() { return dropClock; }
 void ecs::SessionSystem::Save(entt::entity e) { Check(dropping || trading, "unexpected character save"); Actor(e); ++dropSaves; Service("drop-save"); }
-bool ItemSystem::FlushDelayedSaveEcs(entt::entity e) { Check(dropping || trading, "unexpected item flush"); Meta(e); ++dropFlushes; Service("drop-flush"); return true; }
 void LogManager::CharLog(entt::entity e, uint32_t, const char*, const char*) { Check(dropping, "unexpected gold log"); Actor(e); ++dropLogs; Service("drop-gold-log"); }
 void LogManager::HackLog(const char*, entt::entity e) { Check(dropping, "unexpected hack log"); Actor(e); ++dropHacks; }
 entt::entity ItemSystem::MergeItemIntoInventoryEcs(entt::entity owner, entt::entity item) {
@@ -784,9 +782,8 @@ TPlayerItemAttribute ItemSystem::GetItemAttribute(entt::entity e, int i) { retur
 int ItemSystem::GetItemAttributeType(entt::entity e, int i) { return GetItemAttribute(e, i).bType; }
 bool ItemSystem::SetItemSocket(entt::entity e, int i, uint32_t value, bool) { g_registry.get<ecs::ItemSockets>(e).sockets[i] = value; Service("set-socket"); return true; }
 void ItemSystem::ClearMountAttributeAndAffect(entt::entity) { Unexpected(); }
-void ItemSystem::SaveItem(entt::entity e) { Meta(e); ++saves; if (onSave) { auto f = onSave; f(e); } }
 int64_t ItemSystem::GetItemShopBuyPrice(entt::entity e) { return Meta(e).proto.dwShopBuyPrice; }
-void ItemSystem::PublishItemCount(entt::entity e) { if (IsValidItem(e) && !IsItemConsumptionPending(e)) SaveItem(e); }
+void ItemSystem::PublishItemCount(entt::entity e) { if (IsValidItem(e) && !IsItemConsumptionPending(e)) Service("item-count-update"); }
 bool ItemSystem::HaveSameStackPayload(entt::entity a, entt::entity b, bool) {
     if (!IsItemStackable(a) || !IsItemStackable(b) || IsRuneItem(a) || IsRuneItem(b) ||
         GetItemType(a) != GetItemType(b) || GetItemSubType(a) != GetItemSubType(b) || GetItemVnum(a) != GetItemVnum(b) ||
@@ -967,15 +964,13 @@ void PlacementWindows() {
         Meta(item).extra = window == EXTRA_INVENTORY;
 #endif
         const TItemPos pos(window, 2);
-        onSave = [&](entt::entity e) { AssertPlaced(owner, e, pos); };
         onStoragePacket = [&](entt::entity e, uint8_t header, TItemPos p) {
             Check(e == owner && header == HEADER_GC_ITEM_SET, "unexpected insertion packet"); AssertPlaced(owner, item, p);
         };
         onRegistration = [&] { AssertPlaced(owner, item, pos); };
         Check(ItemSystem::PlaceItemEcs(owner, item, window, 2), "native insertion rejected");
-        Check(saves == 1 && storagePackets == 1, "insert publication count");
+        Check(storagePackets == 1, "insert publication count");
         Check(g_registry.get<ecs::ItemOwner>(item).lastOwnerPID == 37, "last owner PID not recorded");
-        onSave = [&](entt::entity e) { AssertDetached(owner, e, window); };
         onRegistration = [&] { AssertDetached(owner, item, window); };
         onStoragePacket = [&](entt::entity e, uint8_t header, TItemPos p) {
             Check(e == owner && header == HEADER_GC_ITEM_DEL && p.cell == 2, "unexpected removal packet");
@@ -983,8 +978,8 @@ void PlacementWindows() {
         };
         Check(ItemSystem::RemoveItemEcs(item), "native detach rejected");
         AssertDetached(owner, item, window);
-        Check(saves == 2 && storagePackets == 2 && registrations == 0, "detach publication count");
-        Check(ItemSystem::RemoveItemEcs(item) && saves == 2 && storagePackets == 2, "idempotent remove published twice");
+        Check(storagePackets == 2 && registrations == 0, "detach publication count");
+        Check(ItemSystem::RemoveItemEcs(item) && storagePackets == 2, "idempotent remove published twice");
     }
     Reset();
     const auto owner = PlacementOwner(), belt = PlacementItem();
@@ -1030,7 +1025,7 @@ void PlacementValidation() {
     g_registry.remove<ecs::SectorPlacement>(item);
     Meta(item).proto.bSize = 0;
     Check(!ItemSystem::PlaceItemEcs(owner, item, INVENTORY, 0), "zero size inserted");
-    Check(saves == 0 && storagePackets == 0 && RawOwner(item) == entt::null, "rejected insertion published state");
+    Check(storagePackets == 0 && RawOwner(item) == entt::null, "rejected insertion published state");
     Meta(item).proto.bSize = 1;
     for (unsigned cell = INVENTORY_AND_EQUIP_SLOT_MAX; cell <= UINT16_MAX; ++cell)
         Check(!ItemSystem::PlaceItemEcs(owner, item, INVENTORY, static_cast<uint16_t>(cell)), "oversized cell accepted");
@@ -1071,10 +1066,10 @@ struct ConstructionCallback {
 void PlacementCallbacks() {
     Reset();
     auto owner = PlacementOwner(), other = PlacementOwner(), item = PlacementItem();
-    onSave = [&](entt::entity e) {
-        onSave = {};
-        Check(ItemSystem::RemoveItemEcs(e), "nested removal failed");
-        Check(ItemSystem::PlaceItemEcs(other, e, INVENTORY, 3), "nested move failed");
+    onStoragePacket = [&](entt::entity, uint8_t, TItemPos) {
+        onStoragePacket = {};
+        Check(ItemSystem::RemoveItemEcs(item), "nested removal failed");
+        Check(ItemSystem::PlaceItemEcs(other, item, INVENTORY, 3), "nested move failed");
     };
     Check(ItemSystem::PlaceItemEcs(owner, item, INVENTORY, 0), "committed insertion misreported failure");
     AssertPlaced(other, item, TItemPos(INVENTORY, 3));
@@ -1083,9 +1078,9 @@ void PlacementCallbacks() {
     Reset(); owner = PlacementOwner(); item = PlacementItem();
     Check(ItemSystem::PlaceItemEcs(owner, item, INVENTORY, 0), "setup insert");
     const auto replacement = PlacementItem();
-    onSave = [&](entt::entity e) {
-        Check(RawOwner(e) == entt::null, "removal save before commit");
-        onSave = {};
+    onStoragePacket = [&](entt::entity, uint8_t, TItemPos) {
+        Check(RawOwner(item) == entt::null, "removal packet before commit");
+        onStoragePacket = {};
         Check(ItemSystem::PlaceItemEcs(owner, replacement, INVENTORY, 0), "replacement insert failed");
     };
     Check(ItemSystem::RemoveItemEcs(item), "removal with replacement failed");
@@ -1095,9 +1090,9 @@ void PlacementCallbacks() {
     for (bool destroyOwner : {false, true}) {
         Reset(); owner = PlacementOwner(); item = PlacementItem();
         entt::entity recycled = entt::null;
-        onSave = [&](entt::entity e) {
-            onSave = {};
-            g_registry.destroy(destroyOwner ? owner : e); recycled = g_registry.create();
+        onStoragePacket = [&](entt::entity, uint8_t, TItemPos) {
+            onStoragePacket = {};
+            g_registry.destroy(destroyOwner ? owner : item); recycled = g_registry.create();
         };
         Check(ItemSystem::PlaceItemEcs(owner, item, INVENTORY, 0), "committed destroy callback rolled back");
         Check(recycled != (destroyOwner ? owner : item) &&
@@ -1108,7 +1103,7 @@ void PlacementCallbacks() {
     g_registry.emplace<ecs::ItemEvents>(item).destroy = LPEVENT(new EVENT);
     onCancel = [&] { g_registry.destroy(item); };
     Check(!ItemSystem::PlaceItemEcs(owner, item, INVENTORY, 0), "destroyed item inserted after timer callback");
-    Check(storagePackets == 0 && saves == 0, "failed timer cancellation published");
+    Check(storagePackets == 0, "failed timer cancellation published");
 
     Reset(); owner = PlacementOwner(); item = PlacementItem();
     const auto blocker = PlacementItem();
@@ -1125,7 +1120,7 @@ void PlacementCallbacks() {
             g_registry.on_construct<ecs::MainInventoryRuntimeComponent>().connect<&ConstructionCallback::OnConstruct>(callback) :
             g_registry.on_construct<ecs::ItemOwner>().connect<&ConstructionCallback::OnConstruct>(callback);
         Check(!ItemSystem::PlaceItemEcs(owner, item, INVENTORY, 0), "component callback destruction ignored");
-        Check(saves == 0 && storagePackets == 0, "constructor failure published");
+        Check(storagePackets == 0, "constructor failure published");
     }
 }
 entt::entity WornItem(entt::entity owner) {
@@ -1191,8 +1186,8 @@ void RemovalCallbacksAndAliases() {
     main.items[2] = item; main.itemGrid[2] = main.itemGrid[7] = 3;
     auto& extraAlias = g_registry.emplace<ecs::ExtraInventoryRuntimeComponent>(owner);
     extraAlias.items[3] = item; extraAlias.itemGrid[3] = 4;
-    onSave = [&](entt::entity e) {
-        AssertDetached(owner, e, INVENTORY); AssertDetached(owner, e, EXTRA_INVENTORY);
+    onStoragePacket = [&](entt::entity, uint8_t, TItemPos) {
+        AssertDetached(owner, item, INVENTORY); AssertDetached(owner, item, EXTRA_INVENTORY);
     };
     Check(ItemSystem::RemoveItemEcs(item), "alias removal failed");
     AssertDetached(owner, item, INVENTORY); AssertDetached(owner, item, EXTRA_INVENTORY);
@@ -1479,8 +1474,8 @@ void EquipmentCallbacks() {
     Reset(); owner = PlacementOwner();
     const auto old = Gear(owner); item = Gear(owner, 1);
     Check(ItemSystem::EquipItemEcs(owner, old), "lock callback setup");
-    onSave = [&](entt::entity e) {
-        if (e == item && RawOwner(item) == entt::null) { onSave = {}; Meta(old).locked = true; }
+    onStoragePacket = [&](entt::entity, uint8_t, TItemPos) {
+        if (RawOwner(item) == entt::null) { onStoragePacket = {}; Meta(old).locked = true; }
     };
     Check(!ItemSystem::EquipItemEcs(owner, item), "swap ignored changed removal permission");
     AssertWorn(owner, old, WEAR_BODY);
@@ -1670,7 +1665,7 @@ void RewardMergeAndReentry() {
         RewardFixture f;
         const auto target = f.Existing(190);
         Check(ItemSystem::PlaceItemEcs(f.owner, target, INVENTORY, 0), "reward target setup");
-        storagePackets = saves = 0;
+        storagePackets = 0;
         onReward = [](const char* stage, entt::entity item) {
             if (std::string_view(stage) == "create") {
                 g_registry.get<ecs::ItemSockets>(item).sockets[0] = 123;
@@ -1698,11 +1693,11 @@ void RewardMergeAndReentry() {
     }
 }
 void RewardCallbacksAndFailures() {
-    for (const char* stage : {"create", "money-log", "merge", "save", "item-log", "notice", "quickslot"}) {
+    for (const char* stage : {"create", "money-log", "merge", "item-log", "notice", "quickslot"}) {
         for (int action = 0; action < 3; ++action) {
             RewardFixture f; const auto other = PlacementOwner(); entt::entity watched = entt::null, replacement = entt::null;
             const auto callback = [&](entt::entity item) {
-                watched = item; onReward = {}; onSave = {}; onService = {}; onPacket = {};
+                watched = item; onReward = {}; onService = {}; onPacket = {};
                 if (action == 0) { g_registry.destroy(item); replacement = g_registry.create(); }
                 if (action == 1) g_registry.destroy(f.owner);
                 if (action == 2) {
@@ -1711,7 +1706,6 @@ void RewardCallbacksAndFailures() {
                 }
             };
             onReward = [&](const char* current, entt::entity item) { if (std::string_view(current) == stage) callback(item); };
-            if (std::string_view(stage) == "save") onSave = callback;
             if (std::string_view(stage) == "notice") onService = [&](const char* current) { if (std::string_view(current) == "notice") callback(rewards.back()); };
             if (std::string_view(stage) == "quickslot") onPacket = [&](entt::entity) { callback(rewards.back()); };
             Check(f.Give() == entt::null && watched != entt::null && rewardCreates == 1, "callback did not invalidate reward receipt");
@@ -1823,14 +1817,14 @@ void NativeMoves()
         Reset(); extraUnlock = INT32_MAX;
         const auto owner = PlacementOwner(), item = StackAt(owner, from, 7, 2);
         const TItemPos to(from.window_type, from.cell + 1);
-        onSave = [&](entt::entity e) {
-            Check(e == item, "move saved another item"); AssertPlaced(owner, item, to);
+        onStoragePacket = [&](entt::entity, uint8_t, TItemPos) {
+            AssertPlaced(owner, item, to);
             Check(ItemSystem::GetItem(owner, from) == entt::null && ItemSystem::GetItemCount(item) == 7,
                 "move published partial storage");
             Check(!InventorySystem::MoveItem(owner, to, from, 0), "recursive drag accepted");
         };
         Check(InventorySystem::MoveItem(owner, from, to, 0), "native multi-cell move rejected");
-        onSave = {};
+        onStoragePacket = {};
         AssertPlaced(owner, item, to);
         // A move may overlap its own footprint. A split may not.
         const int columns = INVENTORY_PAGE_COLUMN;
@@ -1848,8 +1842,10 @@ void NativeMoves()
     auto& slots = g_registry.emplace<ecs::QuickSlots>(owner);
     slots.slots[0] = {QUICKSLOT_TYPE_ITEM, 0};
     slots.slots[1] = {QUICKSLOT_TYPE_ITEM, 4};
-    onPacket = [&](entt::entity e) { AssertPlaced(e, item, TItemPos(INVENTORY, 4)); };
-    onSave = [&](entt::entity) { Check(Read(owner, 0).pos == 4 && Read(owner, 1).type == 0, "quickslot lagged item commit"); };
+    onPacket = [&](entt::entity e) {
+        AssertPlaced(e, item, TItemPos(INVENTORY, 4));
+        Check(Read(owner, 0).pos == 4 && Read(owner, 1).type == 0, "quickslot lagged item commit");
+    };
     Check(InventorySystem::MoveItem(owner, TItemPos(INVENTORY, 0), TItemPos(INVENTORY, 4), 7), "full-stack move");
     Check(Read(owner, 0).pos == 4 && Read(owner, 1).type == 0, "quickslot relocation not atomic");
     Reset(); owner = PlacementOwner(); item = StackAt(owner, TItemPos(INVENTORY, 0));
@@ -1862,7 +1858,7 @@ void MoveRejections()
     Reset(); extraUnlock = INT32_MAX;
     const auto owner = PlacementOwner(), item = StackAt(owner, TItemPos(INVENTORY, 0), 7, 2);
     const TItemPos from(INVENTORY, 0), to(INVENTORY, 1);
-    const int saved = saves;
+    const int published = storagePackets;
     for (const int count : {INT32_MIN, -1, 8, INT32_MAX})
         Check(!InventorySystem::MoveItem(owner, from, to, count), "invalid count accepted");
     Check(!InventorySystem::MoveItem(owner, from, from, 0), "self move accepted");
@@ -1905,7 +1901,7 @@ void MoveRejections()
     Check(!InventorySystem::MoveItem(owner, from, to, 0), "zero stack moved");
     g_registry.get<ecs::ItemCount>(item).count = -1;
     Check(!InventorySystem::MoveItem(owner, from, to, 0), "negative stack moved");
-    Check(saves == saved, "rejected move saved state");
+    Check(storagePackets == published, "rejected move published state");
 }
 void MoveSpecialWindows()
 {
@@ -1977,7 +1973,7 @@ void NativeSplits()
         g_registry.get<ecs::ItemIdentity>(item).transmutationVnum = 800;
         EnableSplitting(item);
         const auto originalID = ItemSystem::GetItemID(item);
-        onSave = [&](entt::entity) {
+        onStoragePacket = [&](entt::entity, uint8_t, TItemPos) {
             const auto clone = ItemSystem::GetItem(owner, dest);
             Check(clone != entt::null && clone != item, "split published before clone anchored");
             AssertPlaced(owner, item, from); AssertPlaced(owner, clone, dest);
@@ -2013,7 +2009,6 @@ void CompanionSplitTransactions()
                 g_registry.get<ecs::MainInventoryRuntimeComponent>(owner).items[1] == output &&
                 ItemSystem::GetItemSocket(output, 0) == 70, "split observer saw an incomplete companion commit");
         };
-        onSave = [&](entt::entity) { complete(); };
         onStoragePacket = [&](entt::entity, uint8_t, TItemPos) { complete(); };
         Check(InventorySystem::SplitItemWithCommit(owner, item, 1, TItemPos(INVENTORY, 1), [&](entt::entity split) {
             Check(ItemSystem::GetItemCount(item) == 3 && RawOwner(split) == entt::null,
@@ -2050,8 +2045,8 @@ void CompanionSplitTransactions()
         Reset(); const auto owner = PlacementOwner(), item = StackAt(owner, TItemPos(INVENTORY, 0), 3);
         EnableSplitting(item);
         entt::entity output = entt::null;
-        onSave = [&](entt::entity) {
-            onSave = {};
+        onStoragePacket = [&](entt::entity, uint8_t, TItemPos) {
+            onStoragePacket = {};
             Check(ItemSystem::GetItemCount(item) == 2, "retirement callback saw unpaid split");
             g_registry.destroy(output);
         };
@@ -2103,11 +2098,10 @@ void SplitFailuresAndCallbacks()
         const auto owner = PlacementOwner(), item = StackAt(owner, TItemPos(INVENTORY, 0));
         EnableSplitting(item);
         entt::entity clone = entt::null, replacement = entt::null;
-        onSave = [&](entt::entity e) {
-            Check(e == item, "split source must publish first");
+        onStoragePacket = [&](entt::entity, uint8_t, TItemPos) {
             clone = ItemSystem::GetItem(owner, TItemPos(INVENTORY, 1));
-            Check(ItemSystem::GetItemCount(item) == 4 && ItemSystem::GetItemCount(clone) == 3, "split save precedes commit");
-            onSave = {};
+            Check(ItemSystem::GetItemCount(item) == 4 && ItemSystem::GetItemCount(clone) == 3, "split packet precedes commit");
+            onStoragePacket = {};
             g_registry.destroy(destroyOwner ? owner : item); replacement = g_registry.create();
         };
         Check(InventorySystem::MoveItem(owner, TItemPos(INVENTORY, 0), TItemPos(INVENTORY, 1), 3),
@@ -2119,8 +2113,8 @@ void SplitFailuresAndCallbacks()
     const auto owner = PlacementOwner(), item = StackAt(owner, TItemPos(INVENTORY, 0)), other = PlacementOwner();
     EnableSplitting(item);
     entt::entity movedClone = entt::null;
-    onSave = [&](entt::entity) {
-        onSave = {};
+    onStoragePacket = [&](entt::entity, uint8_t, TItemPos) {
+        onStoragePacket = {};
         movedClone = ItemSystem::GetItem(owner, TItemPos(INVENTORY, 1));
         Check(ItemSystem::RemoveItemEcs(movedClone) && ItemSystem::PlaceItemEcs(other, movedClone, INVENTORY, 9),
             "nested split transfer failed");
@@ -2206,7 +2200,6 @@ void MovePreparationSignals()
 
 void MoveCallbacksAndDispatch()
 {
-    for (bool packet : {false, true})
     {
         Reset();
         const auto owner = PlacementOwner(), item = StackAt(owner, TItemPos(INVENTORY, 0)), other = PlacementOwner();
@@ -2216,9 +2209,7 @@ void MoveCallbacksAndDispatch()
             Check(ItemSystem::PlaceItemEcs(other, item, INVENTORY, 7), "callback transfer failed");
             StackAt(owner, dest); // Must not be overwritten by the outer publication.
         };
-        if (packet)
-            onStoragePacket = [&](entt::entity, uint8_t, TItemPos) { onStoragePacket = {}; moveAgain(); };
-        else onSave = [&](entt::entity) { onSave = {}; moveAgain(); };
+        onStoragePacket = [&](entt::entity, uint8_t, TItemPos) { onStoragePacket = {}; moveAgain(); };
         Check(InventorySystem::MoveItem(owner, from, dest, 0), "committed relocation reported failure");
         AssertPlaced(other, item, TItemPos(INVENTORY, 7));
         Check(ItemSystem::GetItem(owner, dest) != item && ItemSystem::GetItem(owner, from) == entt::null,
@@ -2271,14 +2262,14 @@ void GroundPlacementAndRemoval()
     Check(ItemSystem::PlaceItemOnGround(item, 1, position, 30), "native ground placement failed");
     const auto timer = g_registry.get<ecs::ItemEvents>(item).destroy;
     Check(timer && g_registry.get<ecs::ItemEvents>(item).ownership == claim &&
-        g_registry.get<ecs::ItemOwner>(item).ownershipPID == 37 && saves == 1,
-        "ground commit lost timer/preclaim/save");
+        g_registry.get<ecs::ItemOwner>(item).ownershipPID == 37,
+        "ground commit lost timer/preclaim");
     Check(!ItemSystem::PlaceItemOnGround(item, 1, position), "duplicate placement accepted");
     Check(InventorySystem::RemoveFromGround(item) == item, "native ground removal failed");
     Check(ItemSystem::GetItemWindow(item) == RESERVED_WINDOW &&
         !g_registry.any_of<ecs::SpatialEntity, ecs::SectorPlacement, ecs::ItemGroundPosition>(item) &&
         !g_registry.get<ecs::ItemEvents>(item).destroy &&
-        !g_registry.get<ecs::ItemEvents>(item).ownership && saves == 2, "removal left ground state");
+        !g_registry.get<ecs::ItemEvents>(item).ownership, "removal left ground state");
     Check(ItemSystem::PlaceItemEcs(owner, item, INVENTORY, 0), "pickup into inventory failed");
     Check(FireGround(timer) == 0 && g_registry.valid(item), "cancelled ground timer deleted pickup");
 
@@ -2288,7 +2279,7 @@ void GroundPlacementAndRemoval()
         if (mode == 1) g_registry.emplace<ecs::ItemOwner>(e).ownerPID = 999;
         if (mode == 2) g_registry.emplace<ecs::ItemLocation>(e, ecs::ItemLocation {INVENTORY, 0});
         if (mode == 3) Meta(e).pending = true;
-        Check(!ItemSystem::PlaceItemOnGround(e, 1, position) && saves == 0 &&
+        Check(!ItemSystem::PlaceItemOnGround(e, 1, position) &&
             !g_registry.any_of<ecs::SpatialEntity, ecs::SectorPlacement>(e),
             "invalid ground item accepted/mutated");
     }
@@ -2301,20 +2292,18 @@ void GroundPlacementAndRemoval()
             if (!onRemove) InventorySystem::RemoveFromGround(current);
             Check(ItemSystem::PlaceItemOnGround(current, 1, position, 90), "same-location respawn failed");
         };
-        const int before = saves;
         if (onRemove) InventorySystem::RemoveFromGround(e);
         else Check(ItemSystem::PlaceItemOnGround(e, 1, position, 30), "publication reported uncommitted placement");
         Check(g_registry.all_of<ecs::SpatialEntity, ecs::SectorPlacement, ecs::ItemGroundPosition>(e) &&
-            groundDelays.at(g_registry.get<ecs::ItemEvents>(e).destroy.get()) == 90 * passes_per_sec &&
-            saves == before + (onRemove ? 1 : 2),
-            "older ground operation changed/saved respawn");
+            groundDelays.at(g_registry.get<ecs::ItemEvents>(e).destroy.get()) == 90 * passes_per_sec,
+            "older ground operation changed respawn");
     }
     Reset(); const auto erased = PlacementItem();
     onReward = [&](const char* stage, entt::entity e) {
         if (std::string_view(stage) == "ground") { onReward = {}; g_registry.destroy(e); }
     };
-    Check(ItemSystem::PlaceItemOnGround(erased, 1, position) && !g_registry.valid(erased) && saves == 0,
-        "deleted published item was saved/dereferenced");
+    Check(ItemSystem::PlaceItemOnGround(erased, 1, position) && !g_registry.valid(erased),
+        "deleted published item was dereferenced");
 }
 
 void GroundClaims()
@@ -2603,12 +2592,12 @@ void MoveAdmissionGuards()
                 "paused move/split changed live inventory");
         onCreate = create;
         admission::ReleasePreparation(owner, key);
-        onSave = [&](entt::entity) {
-            Check(!admission::Prepare(owner, key, key.request), "save callback paused a running move");
+        onStoragePacket = [&](entt::entity, uint8_t, TItemPos) {
+            Check(!admission::Prepare(owner, key, key.request), "slot packet paused a running move");
         };
         Check(InventorySystem::MoveItem(owner, TItemPos(INVENTORY, 0), TItemPos(INVENTORY, 1), 0),
             "released native move failed");
-        onSave = {};
+        onStoragePacket = {};
         Check(admission::Prepare(owner, key, key.request).has_value(), "move leaked active admission");
     }
     for (bool invalidate : {false, true})
@@ -2641,11 +2630,11 @@ void EquipmentAdmissionGuards()
         auto pause = admission::Prepare(owner, key, key.request);
         Check(pause && admission::StorePreparation(owner, key, std::move(*pause), Clock::now() + std::chrono::seconds(10)),
             "equipment preparation failed");
-        const int oldSaves = saves, oldPackets = storagePackets;
+        const int oldPackets = storagePackets;
         onService = [](const char*) { Unexpected(); };
         Check(!ItemSystem::EquipItemEcs(owner, item), "paused direct equip entered");
         AssertPlaced(owner, item, TItemPos(INVENTORY, 0));
-        Check(saves == oldSaves && storagePackets == oldPackets && !ItemSystem::IsItemEquipped(item),
+        Check(storagePackets == oldPackets && !ItemSystem::IsItemEquipped(item),
             "paused equip changed inventory or published");
         onService = {};
         admission::ReleasePreparation(owner, key);
@@ -2654,12 +2643,12 @@ void EquipmentAdmissionGuards()
         pause = admission::Prepare(owner, key, key.request);
         Check(pause && admission::StorePreparation(owner, key, std::move(*pause), Clock::now() + std::chrono::seconds(10)),
             "unequip preparation failed");
-        const int equippedSaves = saves, equippedPackets = storagePackets;
+        const int equippedPackets = storagePackets;
         onService = [](const char*) { Unexpected(); };
         Check(!ItemSystem::UnequipItemEcs(owner, item) &&
             !ItemSystem::UnequipItemToEcs(owner, item, TItemPos(INVENTORY, 5)), "paused direct unequip entered");
         AssertWorn(owner, item, WEAR_BODY);
-        Check(saves == equippedSaves && storagePackets == equippedPackets, "paused unequip published changes");
+        Check(storagePackets == equippedPackets, "paused unequip published changes");
         onService = {};
         admission::ReleasePreparation(owner, key);
         Check(ItemSystem::UnequipItemToEcs(owner, item, TItemPos(INVENTORY, 5)), "released explicit unequip failed");
@@ -2685,7 +2674,7 @@ void EquipmentAdmissionGuards()
         AssertWorn(owner, item, WEAR_BODY);
     }
     // Both anonymous and already-native operations exclude a cache capture
-    // throughout effects, timer/socket initialization, saves and publication.
+    // throughout effects, timer/socket initialization and publication.
     for (bool nativeSession : {false, true})
     {
         Reset(); const auto owner = PlacementOwner(), item = Gear(owner);
@@ -2699,7 +2688,6 @@ void EquipmentAdmissionGuards()
             Check(!admission::Prepare(owner, key, key.request), "callback captured an active equipment operation");
         };
         onService = [&](const char*) { checkBusy(); };
-        onSave = [&](entt::entity) { checkBusy(); };
         onStoragePacket = [&](entt::entity, uint8_t, TItemPos) { checkBusy(); };
         onPacket = [&](entt::entity) { checkBusy(); };
         Check(ItemSystem::EquipItemEcs(owner, item), "admitted equip failed");
@@ -2727,8 +2715,8 @@ void EquipmentAdmissionGuards()
             cancelled = true;
             admission::Invalidate(owner);
         };
-        onSave = [&](entt::entity e) {
-            if (!afterOutgoing && e == item && RawOwner(item) == entt::null) cancel();
+        onStoragePacket = [&](entt::entity, uint8_t, TItemPos) {
+            if (!afterOutgoing && RawOwner(item) == entt::null) cancel();
             Check(!admission::Prepare(owner, key, key.request), "swap recovery admitted a new native capture");
         };
         onService = [&](const char* stage) {
@@ -2738,7 +2726,7 @@ void EquipmentAdmissionGuards()
         Check(!ItemSystem::EquipItemEcs(owner, item) && cancelled, "cancelled swap committed replacement");
         AssertWorn(owner, old, WEAR_BODY);
         AssertPlaced(owner, item, TItemPos(INVENTORY, 1));
-        onService = {}; onSave = {};
+        onService = {}; onStoragePacket = {};
         Check(admission::Prepare(owner, key, key.request).has_value(), "cancelled swap leaked activity");
         Check(ItemSystem::EquipItemEcs(owner, item), "cancelled swap did not recover for a later retry");
     }
@@ -2862,10 +2850,10 @@ void NpcTransactions() {
             Check(!InventorySystem::MoveItem(f.owner, TItemPos(INVENTORY, 0), TItemPos(INVENTORY, 5), 0),
                 "NPC publication reentered inventory movement");
         };
-        onGoldPacket = observe; onSave = [&](entt::entity) { observe(); };
+        onGoldPacket = observe;
         onService = [&](const char*) { observe(); };
         Check(f.Buy(request) == Result::Committed && observed > 2 && moneyLogs == 1, "NPC purchase failed");
-        onGoldPacket = {}; onSave = {}; onService = {};
+        onGoldPacket = {}; onService = {};
         Check(paid == 7 ? !g_registry.valid(currency) : ItemSystem::GetItemCount(currency) == 7 - paid,
             "NPC purchase lost cost result");
     }
@@ -2881,9 +2869,9 @@ void NpcTransactions() {
         if (defect == 5) request.gold = -1;
         auto pause = defect == 6 ? ecs::resource_admission::Prepare(f.owner, MoveAdmissionKey(f.owner),
             MoveAdmissionKey(f.owner).request) : std::optional<auriga::resource_admission::Pause>{};
-        const int oldSaves = saves, oldPackets = storagePackets;
+        const int oldPackets = storagePackets;
         Check(f.Buy(request) != Result::Committed && g_registry.get<ecs::GoldAmount>(f.owner).amount == 1000 &&
-            ItemSystem::GetItemCount(currency) == 7 && moneyLogs == 0 && saves == oldSaves && storagePackets == oldPackets,
+            ItemSystem::GetItemCount(currency) == 7 && moneyLogs == 0 && storagePackets == oldPackets,
             "rejected NPC purchase changed resources");
     }
     for (uint32_t amount : {1u, 7u}) {
@@ -3048,7 +3036,7 @@ void NpcCallbacksAndCleanup() {
         NpcFixture f; const auto cost = f.Stack(0, 7);
         const InventorySystem::NpcItemPrice price{500, 7};
         auto request = f.Request(); request.items = std::span(&price, 1);
-        onSave = [](entt::entity) { throw std::runtime_error("trade-publication-test"); };
+        onStoragePacket = [](entt::entity, uint8_t, TItemPos) { throw std::runtime_error("trade-publication-test"); };
         bool threw = false;
         try { (void)f.Buy(request); } catch (const std::runtime_error& error) {
             if (std::string_view(error.what()) != "trade-publication-test") throw;
@@ -3056,7 +3044,7 @@ void NpcCallbacksAndCleanup() {
         }
         Check(threw && g_registry.get<ecs::GoldAmount>(f.owner).amount == 900 && Meta(cost).pending &&
             ItemSystem::GetItemOwner(f.created.back()) == f.owner, "NPC publication exception rolled back only part of commit");
-        onSave = {}; ItemSystem::ProcessPendingItemConsumptions();
+        onStoragePacket = {}; ItemSystem::ProcessPendingItemConsumptions();
         Check(!g_registry.valid(cost), "NPC exception lost pending cleanup");
     }
 }
@@ -3080,10 +3068,10 @@ void GroundDropFailures() {
             if (failure == 1) rejectGround = true;
             if (failure == 2) rejectDropInsertion = true;
             if (failure == 3) rejectTimer = true;
-            const auto beforeSaves = saves, beforePackets = storagePackets;
+            const auto beforePackets = storagePackets;
             Check(!fixture.Drop(count), "failed drop reported successful");
             fixture.Unchanged();
-            Check(saves == beforeSaves && storagePackets == beforePackets && dropFlushes == 0 && dropLogs == 0 &&
+            Check(storagePackets == beforePackets && dropLogs == 0 &&
                 g_registry.get<ecs::DropLimiter>(fixture.owner).itemDropCount == 0,
                 "failed drop saved/published resources or spent its rate slot");
             for (auto clone : fixture.created) Check(!g_registry.valid(clone), "failed drop leaked prepared clone");
@@ -3148,7 +3136,7 @@ void GroundDropQuantities() {
             } else Check(ItemSystem::GetItem(fixture.owner, cell) == entt::null, "full drop retained its inventory anchor");
             if (fixture.HasBinding()) Check((Read(fixture.owner, 0).type != 0) == split,
                 "drop cleared a partial stack binding or retained a full-stack binding");
-            Check(dropLogs == 1 && dropFlushes == (split ? 2 : 1), "drop audit/persistence missed a committed row");
+            Check(dropLogs == 1, "drop audit missed a committed row");
         }
     }
 #ifdef ENABLE_ANTICHEAT

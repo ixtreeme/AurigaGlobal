@@ -286,7 +286,7 @@ add_executable(ItemAttributeTests EXCLUDE_FROM_ALL
     social/new_switchbot.cpp
     item/attr_transfer.cpp
 )
-target_link_libraries(ItemAttributeTests PRIVATE SERVER EnTT::EnTT)
+target_link_libraries(ItemAttributeTests PRIVATE SERVER EnTT::EnTT AurigaItemDomain)
 if(NOT MSVC)
     target_compile_options(ItemAttributeTests PRIVATE -ffunction-sections -fdata-sections)
     target_link_options(ItemAttributeTests PRIVATE -Wl,--gc-sections)
@@ -998,7 +998,7 @@ add_executable(ExchangeTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/ExchangeTests.cpp
     social/exchange.cpp
 )
-target_link_libraries(ExchangeTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
+target_link_libraries(ExchangeTests PRIVATE SERVER EnTT::EnTT LUA S_Core AurigaItemDomain)
 add_test(NAME exchange COMMAND ExchangeTests)
 
 # These suites replace the SQL connection/worker, but SQLMsg destruction still

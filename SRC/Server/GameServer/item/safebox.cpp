@@ -255,7 +255,6 @@ void Destroy(entt::entity storage)
 
         const bool previousSkipSave = ItemSystem::GetItemSkipSave(item);
         ItemSystem::SetItemSkipSave(item, true);
-        ItemSystem::FlushDelayedSaveEcs(item);
         if (!OwnsItem(chrOwner, windowMode, item, static_cast<uint32_t>(cell)))
         {
             if (ItemSystem::IsValidItem(item))
@@ -308,10 +307,8 @@ bool Add(entt::entity storage, uint32_t cell, entt::entity item)
     ItemSystem::SetItemWindow(item, windowMode);
     ItemSystem::SetItemCell(item, chrOwner, cell);
     state->items[cell] = item;
-    const bool saved = ItemSystem::SaveItemEcs(item);
-    // Saving can run callbacks that close or replace this storage.
     state = FindStorage(storage);
-    if (!saved || !state || state->destroying || !OwnsItem(chrOwner, windowMode, item, cell) || !ecs::PlayerRuntime::IsPC(chrOwner))
+    if (!state || state->destroying || !OwnsItem(chrOwner, windowMode, item, cell) || !ecs::PlayerRuntime::IsPC(chrOwner))
     {
         // Never restore over a moved/destroyed entity or a replacement slot.
         if (state && state->items[cell] == item)

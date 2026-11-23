@@ -786,7 +786,6 @@ bool PlaceItemOnGround(entt::entity item, int32_t map, const PIXEL_POSITION& pos
     };
     if (receipt()) StartDestroyEvent(item, seconds);
     if (receipt()) ecs::SpatialService::UpdateSectree(g_registry, item);
-    if (receipt()) SaveItem(item);
     return true; // Insertion committed, even if a publication callback removed it.
 }
 
@@ -908,8 +907,6 @@ entt::entity RemoveFromGround(entt::entity item)
     };
     if (!detachedAt(revision)) return item;
     ecs::SpatialService::RemoveEntity(g_registry, item);
-    if (detachedAt(revision + 2) && !ecs::SectorOf(g_registry, item))
-        ItemSystem::SaveItem(item);
     return item;
 }
 
@@ -1098,7 +1095,6 @@ bool InsertInventoryItem(entt::entity item, entt::entity owner, TItemPos positio
     if (position.window_type == SWITCHBOT)
         CSwitchbotManager::instance().RegisterItem(pid, itemID, position.cell);
 #endif
-    if (At(owner, item, position)) ItemSystem::SaveItem(item);
     SendStorageSlot(owner, position, highlight);
     // A publication callback may move/destroy the committed item. That is not
     // an insertion failure and must not trigger an old-state rollback.
@@ -1144,7 +1140,6 @@ bool AddToCharacter(entt::entity item, entt::entity owner, TItemPos position)
         if (g_registry.valid(owner) && ItemSystem::IsValidItem(item) && ItemSystem::GetItemOwner(item) == owner)
         {
             ItemSystem::SetItemLastOwnerPID(item, ecs::PlayerRuntime::GetPlayerID(owner));
-            ItemSystem::SaveItem(item);
         }
         return true;
     }
@@ -1523,7 +1518,6 @@ void PublishMove(entt::entity owner, entt::entity item, TItemPos source, TItemPo
         CSwitchbotManager::instance().RegisterItem(ecs::PlayerRuntime::GetPlayerID(owner), ItemSystem::GetItemID(item), dest.cell);
 #endif
     quickslots.Publish(owner);
-    if (Anchored(owner, item, dest)) ItemSystem::SaveItem(item);
     SendStorageSlot(owner, source, false);
     SendStorageSlot(owner, dest, false);
 }
@@ -1634,7 +1628,6 @@ static bool MoveItemImpl(entt::entity owner, TItemPos source, TItemPos dest, int
     CommitRelocation(owner, prepared.item, source, dest, true);
     prepared.committed = true;
     LogManager::instance().ItemLogEntity(owner, item, "ITEM_SPLIT", splitHint);
-    if (Anchored(owner, item, source) && !ItemSystem::IsItemConsumptionPending(item)) ItemSystem::SaveItem(item);
     PublishMove(owner, prepared.item, source, dest, true, quickslots);
     LOG_INFO("ITEM_SPLIT owner entity={} source entity={} target entity={} count={}",
         entt::to_integral(owner), entt::to_integral(item), entt::to_integral(prepared.item), count);
@@ -1753,8 +1746,6 @@ bool DropGround(entt::entity item, const DropOrigin& origin, int seconds,
     };
     publish();
     if (current()) ecs::SpatialService::UpdateSectree(g_registry, item);
-    if (current()) ItemSystem::SaveItem(item);
-    if (current()) ItemSystem::FlushDelayedSaveEcs(item);
     return true;
 }
 } // namespace
@@ -1841,8 +1832,6 @@ bool DropItemImpl(entt::entity owner, TItemPos source, int requested)
             char hint[80]; snprintf(hint, sizeof(hint), "%u %u %u %u", groundPayload.identity.id,
                 uint32_t(count), uint32_t(payload.count - count), uint32_t(payload.count));
             LogManager::instance().ItemLogEntity(owner, item, "ITEM_SPLIT", hint);
-            if (Anchored(owner, item, source)) ItemSystem::SaveItem(item);
-            if (Anchored(owner, item, source)) ItemSystem::FlushDelayedSaveEcs(item);
         }
         SendStorageSlot(owner, source, false);
         PublishBeltMove(owner, source, NPOS, split, payload.identity.vnum);
@@ -2110,8 +2099,7 @@ NpcTradeResult BuyFromNpc(entt::entity owner, const NpcPurchase& input, const st
         for (const auto& row : merges) if (Anchored(owner, row.item, row.pos)) ItemSystem::PublishItemCount(row.item);
         if (remaining && Anchored(owner, item, destination)) {
             if (rune) PublishEquipmentInsertion(item, owner, uint8_t(destination.cell - INVENTORY_MAX_NUM), wearTimer);
-            else { ItemSystem::SaveItem(item); SendStorageSlot(owner, destination, true); }
-            if (Anchored(owner, item, destination)) ItemSystem::FlushDelayedSaveEcs(item);
+            else SendStorageSlot(owner, destination, true);
         }
         if (TradePlayer(owner, origin.pid)) ecs::SessionSystem::Save(owner);
         DBManager::instance().SendMoneyLog(MONEY_LOG_SHOP, request.vnum, -request.gold);
@@ -2375,7 +2363,6 @@ void PublishEquipmentInsertion(entt::entity itemEntity, entt::entity charEntity,
     SendStorageSlot(charEntity, target, false);
     if (!stillWorn()) return;
     g_dispatcher.trigger(ecs::EvItemEquipped { charEntity, itemEntity });
-    if (stillWorn()) ItemSystem::SaveItem(itemEntity);
     return;
 }
 
@@ -2529,7 +2516,6 @@ entt::entity RemoveFromCharacter(entt::entity item)
                 CSwitchbotManager::instance().UnregisterItem(ownerPID, cell);
         }
 #endif
-    if (Detached(item)) ItemSystem::SaveItem(item);
     for (const auto position : removedSlots) SendStorageSlot(owner, position, false);
     return item;
 }
