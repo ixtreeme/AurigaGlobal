@@ -29,7 +29,6 @@
 #include "../ecs/components/dirty_components.hpp"
 #include "../ecs/components/spatial_components.hpp"
 #include "../ecs/events.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 
 EVENTINFO(dungeon_id_info)
 {
@@ -622,24 +621,6 @@ namespace DungeonSystem
 		};
 #endif
 
-		struct FPurgeSectree
-		{
-			void operator () (entt::entity entity)
-			{
-				if (ItemSystem::IsValidItem(entity)) {
-					ItemSystem::DestroyItemEntityEcs(entity, "DUNGEON_ENTITY_CLEANUP");
-					return;
-				}
-				const auto* kind = g_registry.try_get<ecs::SpatialKindTag>(entity);
-				if (!kind || kind->kind != ecs::SpatialKind::Character) return;
-				if (!ecs::PlayerRuntime::IsPC(entity) && !ecs::PlayerRuntime::IsPet(entity)
-#ifdef __NEWPET_SYSTEM__
-					&& !ecs::PlayerRuntime::IsNewPet(entity)
-#endif
-				)
-					CHARACTER_MANAGER::instance().DestroyCharacter(entity);
-			}
-		};
 	}
 
 	void Join_Coords(entt::entity dungeon, entt::entity character, int32_t X, int32_t Y, int32_t index)
@@ -993,21 +974,6 @@ namespace DungeonSystem
 		map->for_each(f);
 	}
 #endif
-
-	void Purge(entt::entity dungeon)
-	{
-		ecs::DungeonState* state = Find(dungeon);
-		if (!state)
-			return;
-
-		LPSECTREE_MAP pkMap = SECTREE_MANAGER::instance().GetMap(state->mapIndex);
-		if (pkMap == nullptr) {
-			LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", state->mapIndex);
-			return;
-		}
-		FPurgeSectree f;
-		pkMap->for_each(f);
-	}
 
 	void ExitAllLobby(entt::entity dungeon, uint8_t lobby)
 	{

@@ -103,7 +103,6 @@ namespace DungeonSystem
 	entt::entity GetMemberDungeon(entt::entity e);
 	void ClearMemberDungeonIfOtherMap(entt::entity e, int32_t mapIndex);
 
-	void Purge(entt::entity dungeon);
 	void KillAll(entt::entity dungeon);
 	void KillAllMonsters(entt::entity dungeon);
 #ifdef __DEFENSE_WAVE__
