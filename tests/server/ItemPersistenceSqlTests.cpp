@@ -7,6 +7,7 @@
 #include "ForgeRuntimeFixture.hpp"
 #include <item/AmmoRuntime.hpp>
 #include "PersistentItemFixture.hpp"
+#include <item/InventorySort.hpp>
 #include "AttributeRuntimeFixture.hpp"
 #include "EffectRuntimeFixture.hpp"
 #include "BookRuntimeFixture.hpp"
@@ -1614,6 +1615,52 @@ SqlFixtureContext ActualSql(CAsyncSQL& admin,CAsyncSQL& writer,unsigned port,con
     }
     return {c,hatchEgg,growthSeal,petSeal,mountSeal,petBook};
 }
+void InventorySortSql(CAsyncSQL& admin, CAsyncSQL& writer, const ItemCatalog& catalog)
+{
+    const ItemOwner owner{ItemOwnerKind::Character, 990401};
+    auto bag = f::Inventory(owner);
+    bag.pages = 8;
+    Check(p::ProvisionOwner(admin, catalog, owner, std::span(&bag, 1), {}).has_value(), "sort owner provisioned");
+    auto before = p::LoadCurrentItemOwner(writer, catalog, owner).value();
+    for (std::uint32_t group = 0; group < 4; ++group)
+    {
+        auto grant = f::Grant(catalog, {});
+        grant.operationId = {90, static_cast<std::uint8_t>(group)};
+        grant.owners = {before.fence};
+        grant.storages = {bag};
+        for (std::uint32_t cell = group * 90; cell < (group + 1) * 90; ++cell)
+        {
+            auto item = f::Leather(990401000 + cell);
+            item.owner = owner;
+            item.count = 1 + cell % 30;
+            item.placement->anchor = cell;
+            if (cell >= 180)
+                item.key = item_catalog_fixture::SocketJewel();
+            grant.items.push_back({{}, std::move(item)});
+        }
+        Check(p::CommitItems(writer, catalog, grant).has_value(), "full bag fixture granted");
+        before = p::LoadCurrentItemOwner(writer, catalog, owner).value();
+    }
+    const auto proposal = MakeInventorySortCommit(catalog, {90, 4}, before.fence,
+        before.storages, before.items, SortBackpack);
+    Check(proposal && *proposal && (*proposal)->items.size() == 360, "full eight page sort planned");
+    const auto& commit = **proposal;
+    auto transaction = p::PrepareItemWrite(catalog, commit).value();
+    transaction.push_back({"SELECT 1 WHERE FALSE", {}, {}, 1});
+    Message refused(writer.DirectTransactionPrepared(std::move(transaction)));
+    Check(refused && refused->transactionOutcome == SqlTransactionOutcome::Conflict,
+        "forced failure after the last sort write rolls back");
+    const auto rolledBack = p::LoadCurrentItemOwner(writer, catalog, owner).value();
+    Check(rolledBack.fence == before.fence && rolledBack.items == before.items,
+        "rollback restores every item and its original footprint");
+    Check(p::CommitItems(writer, catalog, commit).has_value(), "complete sort committed");
+    Check(p::CommitItems(writer, catalog, commit)->replay, "sort receipt replay does not move items twice");
+    const auto after = p::LoadCurrentItemOwner(writer, catalog, owner).value();
+    Check(after.items.size() == before.items.size(), "no items lost during sort");
+    for (const auto& change : commit.items)
+        Check(Find(after, change.after.id.Value()) == change.after, "persisted identity, count and location match the plan");
+}
+
 void GayaCraftSql(CAsyncSQL& admin,CAsyncSQL& writer,const ItemCatalog& c) {
  const ItemOwner owner{ItemOwnerKind::Character,880186};const auto bag=f::Inventory(owner);const std::array wallets{ItemWallet{owner,WalletCurrency::Gold,1,1000},ItemWallet{owner,WalletCurrency::Gaya,1,20}};
  Check(p::ProvisionOwner(admin,c,owner,std::span(&bag,1),wallets).has_value(),"Gaya SQL owner provision");auto state=p::LoadCurrentItemOwner(writer,c,owner).value();
@@ -1669,6 +1716,7 @@ int main(int argc,char** argv)
             NativeAwardsSql(admin,writer,*c);
             TypedMissionSql(admin,writer,*c,port,pw);
             GayaCraftSql(admin,writer,*c);
+            InventorySortSql(admin,writer,*c);
             FreshCharacters(admin,writer,*c);
             Sessions(admin,writer,*c);
             Allocator(admin,writer,*c,port,pw);

@@ -4,6 +4,7 @@
 #include "ItemPersistenceSql.hpp"
 #include <item/GuildConstruction.hpp>
 #include <item/GuildProgress.hpp>
+#include <item/InventorySort.hpp>
 #include <item/ItemShopReceipt.hpp>
 #include "StoragePersistenceSql.hpp"
 #include "PrivateShopsSql.hpp"
@@ -505,22 +506,34 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
         }
     }
     std::size_t cellBudget=0;
+    const bool inventorySort = r.outcomeCode == InventorySortOutcome;
+    const auto maximumCells = inventorySort ? 2 * MaxInventorySortCells : 512u;
+    SqlParams sortedIds;
     // Release ALL old footprints before acquiring any new one, allowing a swap
     // without a transient overlap. A failure rolls the entire release back.
     for(const auto& i:items)if(i.before)
     {
-        const auto& b=*i.before;auto expectedValues=ItemValues(c,b);std::string predicates;std::size_t start=0,index=0;
-        while(start<Columns.size())
+        const auto& b=*i.before;
+        if(!inventorySort)
         {
-            const auto end=Columns.find(',',start);if(index++)predicates+=" AND ";
-            predicates+=std::string(Columns.substr(start,end==Columns.npos ? end : end-start))+"<=>?";
-            if(end==Columns.npos)break;start=end+1;
+            auto expectedValues=ItemValues(c,b);std::string predicates;std::size_t start=0,index=0;
+            while(start<Columns.size())
+            {
+                const auto end=Columns.find(',',start);if(index++)predicates+=" AND ";
+                predicates+=std::string(Columns.substr(start,end==Columns.npos ? end : end-start))+"<=>?";
+                if(end==Columns.npos)break;start=end+1;
+            }
+            tx.push_back({"SELECT 1 FROM player.item_instance WHERE "+predicates+" AND destroyed=0 FOR UPDATE",std::move(expectedValues),{},1});
         }
-        tx.push_back({"SELECT 1 FROM player.item_instance WHERE "+predicates+" AND destroyed=0 FOR UPDATE",std::move(expectedValues),{},1});
         auto cells=OccupiedItemCells(c,b,Layout(r,b));if(!cells)return std::unexpected(cells.error());cellBudget+=cells->size();
         auto cellParams=Owner(b.owner);Append(cellParams,{U::UInt(static_cast<unsigned>(b.placement->kind)),U::UInt(b.placement->storageId),U::UInt(b.id.Value())});
         for(auto cell:*cells)cellParams.push_back(U::UInt(cell));
         tx.push_back({"DELETE FROM player.item_occupied_cell WHERE owner_kind=? AND owner_id=? AND storage_kind=? AND storage_id=? AND instance_id=? AND cell_index IN ("+Marks(cells->size())+")",std::move(cellParams),cells->size(),{}});
+        if (inventorySort)
+        {
+            sortedIds.push_back(U::UInt(b.id.Value()));
+            continue;
+        }
         tx.push_back({"DELETE FROM player.item_occupied_cell WHERE instance_id=?",{U::UInt(b.id.Value())},0,{}});
         SqlParams attributeParams{U::UInt(b.id.Value())};std::string attributeMatch;
         for(std::size_t slot=0;slot<b.attributes.slots.size();++slot)if(const auto& a=b.attributes.slots[slot])
@@ -541,8 +554,29 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
         tx.push_back({"DELETE FROM player.item_instance_socket WHERE instance_id=? AND ("+socketMatch+")",std::move(socketParams),3,{}});
         tx.push_back({"DELETE FROM player.item_instance_socket WHERE instance_id=?",{U::UInt(b.id.Value())},0,{}});
     }
+    if (!sortedIds.empty())
+        tx.push_back({"SELECT instance_id FROM player.item_occupied_cell WHERE instance_id IN ("+
+            Marks(sortedIds.size())+") LIMIT 1 FOR UPDATE", std::move(sortedIds), {}, 0});
     for(const auto& i:items)
     {
+        if (inventorySort)
+        {
+            // The owner fence protects the whole layout. Verify the previous
+            // state hash and update only the item's cell and revision. The instance's
+            // attributes and sockets stay attached to the same ID.
+            const auto expected = PersistentItemDigest(c, *i.before);
+            const auto next = PersistentItemDigest(c, i.after);
+            if (!expected || !next)
+                return std::unexpected(E::HashFailure);
+            tx.push_back({"UPDATE player.item_instance SET state_revision=?,anchor_cell=?,state_sha256=?,last_operation=? "
+                          "WHERE instance_id=? AND owner_kind=? AND owner_id=? AND state_revision=? AND state_sha256=? AND destroyed=0",
+                {U::UInt(i.after.revision), U::UInt(i.after.placement->anchor), U::Blob(Bytes(*next)),
+                 U::Blob(Bytes(r.operationId)), U::UInt(i.after.id.Value()),
+                 U::UInt(static_cast<unsigned>(i.after.owner.kind)), U::UInt(i.after.owner.id),
+                 U::UInt(i.before->revision), U::Blob(Bytes(*expected))}, 1, {}});
+        }
+        else
+        {
         auto p=ItemValues(c,i.after);p.push_back(U::Blob(Bytes(r.operationId)));
         if(!i.before)tx.push_back({"INSERT INTO player.item_instance("+std::string(Columns)+",last_operation) VALUES("+Marks(p.size())+")",std::move(p),1,{}});
         else
@@ -555,10 +589,11 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
             tx.push_back({"UPDATE player.item_instance SET "+set+" WHERE instance_id=?",std::move(p),1,{}});
         }
         InsertChildren(tx,i.after);
+        }
         if(i.after.placement)
         {
             auto cells=OccupiedItemCells(c,i.after,Layout(r,i.after));if(!cells)return std::unexpected(cells.error());cellBudget+=cells->size();
-            if(cellBudget>512)return std::unexpected(E::LimitExceeded);
+            if(cellBudget>maximumCells)return std::unexpected(E::LimitExceeded);
             std::string values;SqlParams pCells;
             for(auto cell:*cells){if(!values.empty())values+=",";values+="(?,?,?,?,?,?)";Append(pCells,Storage({i.after.owner,i.after.placement->kind,i.after.placement->storageId}));Append(pCells,{U::UInt(cell),U::UInt(i.after.id.Value())});}
             tx.push_back({"INSERT INTO player.item_occupied_cell(owner_kind,owner_id,storage_kind,storage_id,cell_index,instance_id) VALUES"+values,std::move(pCells),cells->size(),{}});
@@ -638,7 +673,7 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
     }
     std::size_t parameters=0,bytes=0;
     for(const auto& step:tx){parameters+=step.params.size();bytes+=step.query.size();for(const auto& p:step.params)bytes+=p.bytes.size();if(step.query.size()>SqlTransactionLimits::QueryBytes)return std::unexpected(E::LimitExceeded);}
-    if(tx.size()>SqlTransactionLimits::Steps || parameters>SqlTransactionLimits::Parameters || bytes>SqlTransactionLimits::TotalBytes || cellBudget>512)return std::unexpected(E::LimitExceeded);
+    if(tx.size()>SqlTransactionLimits::Steps || parameters>SqlTransactionLimits::Parameters || bytes>SqlTransactionLimits::TotalBytes || cellBudget>maximumCells)return std::unexpected(E::LimitExceeded);
     return tx;
 }
 std::expected<ItemReceipt,E> ItemWriteCompleted(const ItemCatalog& c,const ItemCommit& r,SQLMsg& m)

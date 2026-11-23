@@ -22,6 +22,7 @@
 #include <item/ItemMissions.hpp>
 #include <item/GuildConstruction.hpp>
 #include <item/GuildProgress.hpp>
+#include <item/InventorySort.hpp>
 
 namespace auriga::item
 {
@@ -930,12 +931,15 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
             if(const auto* rules=c.FindDefinitionRules(changed->after.key,changed->after.refinementLevel);rules && !rules->allowAcquire)
                 return std::unexpected(E::TransferDenied);
     }
-    if(r.owners.empty() || r.owners.size()>MaxItemCommitOwners || r.items.size()>MaxItemCommitItems ||
+    const bool inventorySort = r.outcomeCode == InventorySortOutcome;
+    if(r.owners.empty() || r.owners.size()>MaxItemCommitOwners || r.items.size()>(inventorySort ? MaxInventorySortCells : MaxItemCommitItems) ||
        r.storages.size()>MaxItemCommitStorages || r.wallets.size()>MaxItemCommitOwners || r.result.size()>MaxItemCommitResult)return std::unexpected(E::LimitExceeded);
     if((r.items.empty() && r.wallets.empty() && !r.recovery && !r.learning && !r.privateShop && !r.dungeonEntry &&
         r.outcomeCode!=GuildConstructionOutcome && r.outcomeCode!=GuildProgressOutcome) || !r.outcomeCode || r.kind<ItemOperationKind::Grant || r.kind>ItemOperationKind::Trade ||
        (r.petStudyCooldown && r.outcomeCode!=PetStudyOutcome) ||
        std::ranges::all_of(r.operationId,[](auto n){return !n;}))return std::unexpected(E::InvalidOperation);
+    if (inventorySort && !ValidInventorySort(c, r))
+        return std::unexpected(E::InvalidChange);
     if (r.outcomeCode == ItemShopCostumeBirthOutcome)
     {
         if (r.kind != ItemOperationKind::Grant || r.items.size() != 1 || r.items.front().before ||
@@ -1178,13 +1182,14 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
 std::expected<ItemCatalogDigest,E> ItemCommitDigest(const ItemCatalog& c,const ItemCommit& r)
 {
     if(auto v=ValidateItemCommit(c,r);!v)return std::unexpected(v.error());
-    Writer w;for(auto b:std::string_view("auriga.item_commit.v1"))w.Put(static_cast<unsigned char>(b),1);
+    const bool inventorySort = r.outcomeCode == InventorySortOutcome;
+    Writer w;for(auto b:std::string_view(inventorySort ? "auriga.inventory_sort.v1" : "auriga.item_commit.v1"))w.Put(static_cast<unsigned char>(b),1);
     for(auto b:r.operationId)w.Put(b,1);w.Put(r.catalogRevision,8);for(auto b:r.catalogHash)w.Put(b,1);w.Put(static_cast<std::uint8_t>(r.kind),1);
     auto owners=r.owners;std::ranges::sort(owners,{},&ItemOwnerFence::owner);w.Put(owners.size(),1);
     for(const auto& o:owners){w.Owner(o.owner);w.Put(o.sessionGeneration,8);w.Put(o.revision,8);}
     auto storages=r.storages;std::ranges::sort(storages,{},&ItemStorageLayout::storage);w.Put(storages.size(),1);
     for(const auto& s:storages){w.Owner(s.storage.owner);w.Put(static_cast<std::uint8_t>(s.storage.kind),1);w.Put(s.storage.id,8);w.Put(s.columns,2);w.Put(s.rows,2);w.Put(s.pages,2);}
-    auto items=r.items;std::ranges::sort(items,{},[](const auto& i){return i.after.id;});w.Put(items.size(),1);
+    auto items=r.items;std::ranges::sort(items,{},[](const auto& i){return i.after.id;});w.Put(items.size(),inventorySort ? 2 : 1);
     for(const auto& i:items)
     {
         w.Put(i.before.has_value(),1);

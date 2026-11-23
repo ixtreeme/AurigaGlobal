@@ -1,5 +1,6 @@
 #include "PersistentItemFixture.hpp"
 #include <item/Consumables.hpp>
+#include <item/InventorySort.hpp>
 #include <item/OwnedGround.hpp>
 #include <iostream>
 #include <source_location>
@@ -16,6 +17,66 @@ namespace
 unsigned checks=0;
 void Check(bool good,const char* why,std::source_location at=std::source_location::current())
 {++checks;if(!good)throw std::runtime_error(std::string(why)+" at "+std::to_string(at.line()));}
+
+void InventorySort()
+{
+    const auto catalog = BuildItemCatalog(f::Catalog()).value();
+    const ItemOwnerFence owner{f::Character(), 7, 1};
+    std::array<std::uint8_t, 16> operation{25};
+    std::array layouts{f::Inventory(), ItemStorageLayout{{f::Character(), ItemStorageKind::SpecialInventory, 1},
+        SpecialInventoryColumns, SpecialInventoryRows, SpecialInventoryPagesPerType * SpecialInventoryTypes}};
+    auto sword = f::Sword();
+    sword.placement->anchor = 50;
+    auto first = f::Leather(2);
+    first.count = 198;
+    first.placement->anchor = 70;
+    auto donor = f::Leather(3);
+    donor.count = 2;
+    donor.placement->anchor = 71;
+    auto bound = f::Leather(4);
+    bound.boundTo = owner.owner;
+    bound.placement->anchor = 72;
+    auto extra = f::Leather(5);
+    extra.placement = ItemPlacement{ItemStorageKind::SpecialInventory, 1, 80};
+    const std::array source{sword, first, donor, bound, extra};
+    auto proposal = MakeInventorySortCommit(*catalog, operation, owner, layouts, source, SortBackpack);
+    Check(proposal && *proposal && (*proposal)->items.size() == 4, "backpack sort handles all pages");
+    const auto& commit = **proposal;
+    const auto after = [&](ItemInstanceId id) -> const PersistentItem& {
+        return std::ranges::find(commit.items, id, [](const ItemChange& change) { return change.after.id; })->after;
+    };
+    Check(after(sword.id).placement->anchor == 0 && after(sword.id).attributes == sword.attributes &&
+        after(sword.id).stones == sword.stones, "sorting preserves sockets and attributes on the same instance");
+    Check(after(first.id).count == first.count && after(donor.id).count == donor.count &&
+        after(bound.id).count == bound.count && after(bound.id).boundTo == bound.boundTo,
+        "separate stacks retain their counts and identities");
+    auto corrupt = commit;
+    std::ranges::find(corrupt.items, first.id, [](const ItemChange& change) { return change.after.id; })->after.count--;
+    Check(!ValidateItemCommit(*catalog, corrupt), "sort cannot destroy units or change unrelated state");
+    const auto special = MakeInventorySortCommit(*catalog, operation, owner, layouts, source, 0);
+    Check(special && *special && (*special)->items.size() == 1 && (*special)->items.front().after.id == extra.id &&
+        (*special)->items.front().after.placement->anchor == 0, "extra sorts one category across its pages");
+
+    layouts[0].pages = 8;
+    std::vector<PersistentItem> full;
+    for (std::uint32_t cell = 0; cell < 360; ++cell)
+    {
+        auto stack = f::Leather(100 + cell);
+        stack.count = 200;
+        stack.placement->anchor = cell;
+        if (cell >= 180)
+            stack.key = item_catalog_fixture::SocketJewel();
+        full.push_back(std::move(stack));
+    }
+    const auto large = MakeInventorySortCommit(*catalog, operation, owner, layouts, full, SortBackpack);
+    Check(large && *large && (*large)->items.size() == 360 && ItemCommitDigest(*catalog, **large),
+        "the complete eight-page backpack is one valid commit");
+    for (const auto& change : (*large)->items)
+        full.at(change.before->placement->anchor) = change.after;
+    const auto already = MakeInventorySortCommit(*catalog, operation, owner, layouts, full, SortBackpack);
+    Check(already && !*already, "a sorted backpack does not write anything");
+}
+
 void Run()
 {
     auto catalog=BuildItemCatalog(f::Catalog());Check(catalog.has_value(),"fixture catalog");const auto& c=**catalog;
@@ -391,4 +452,4 @@ void SourceBirthSockets()
 }
 #include "SourceAddonBirthCases.hpp"
 #include "SourceMagicBirthCases.hpp"
-int main(int argc,char** argv){try{Run();SourceBirthSockets();SourceAddonBirth();SourceMagicBirth();if(argc==3 && std::string_view(argv[1])=="--mob-drop-client-fixture")ExportMobDropBirth(argv[2]);std::cout<<checks<<" Persistent item checks passed\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(int argc,char** argv){try{Run();InventorySort();SourceBirthSockets();SourceAddonBirth();SourceMagicBirth();if(argc==3 && std::string_view(argv[1])=="--mob-drop-client-fixture")ExportMobDropBirth(argv[2]);std::cout<<checks<<" Persistent item checks passed\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

@@ -474,7 +474,10 @@ ACMD(do_item_check)
 
 ACMD(do_sort_extra_inventory)
 {
-	InventorySortSystem::SortExtraInventory(character);
+	char category[8];
+	one_argument(argument, category, sizeof(category));
+	if (!category[0] || (category[0] >= '0' && category[0] <= '5' && !category[1]))
+		InventorySortSystem::SortExtraInventory(character, category[0] ? category[0] - '0' : 0);
 }
 
 #endif

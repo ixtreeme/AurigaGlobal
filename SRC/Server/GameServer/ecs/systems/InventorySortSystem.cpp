@@ -1,251 +1,127 @@
 #include "../../core/stdafx.h"
-
 #include "InventorySortSystem.hpp"
 
 #ifdef ENABLE_SORT_INVEN
 
 #include "InventorySystem.hpp"
-#include "ItemSystem.hpp"
 #include "ChatSystem.hpp"
 #include "CombatSystem.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include "SessionSystem.hpp"
 #include "SocialSystem.hpp"
-#include "../CharacterAccessors.hpp"
-#include "../Registry.hpp"
+#include "../AIHelpers.hpp"
+#include "../ResourceAdmission.hpp"
 #include "../components/character_runtime_components.hpp"
+#include "../../entity/char_manager.h"
+#include "../../item/ItemCatalogRuntime.hpp"
+#include "../../item/ItemStore.hpp"
+#include "../../item/TypedDrops.hpp"
+#include "../../item/TypedInventorySync.hpp"
+#include "../../item/TypedTools.hpp"
+#include "../../network/desc.h"
+#include <item/InventorySort.hpp>
+#include <openssl/rand.h>
 
-#include <algorithm>
-#include <string>
-#include <vector>
-
-namespace InventorySortSystem {
-namespace {
-
-constexpr int32_t kSortCooldownSeconds = 30;
-
-struct SortEntry {
-    entt::entity item { entt::null };
-    uint16_t oldCell { 0 };
-    std::string name;
-    uint32_t vnum { 0 };
-};
-
-int32_t GetSortAvailableTime(entt::entity e, bool extra)
+namespace InventorySortSystem
 {
-    const auto* cooldowns = g_registry.try_get<ecs::CommandCooldowns>(e);
-    if (!cooldowns)
-        return 0;
-    return extra ? cooldowns->sortExtraInvUntil : cooldowns->sortInvUntil;
+namespace
+{
+namespace items = auriga::item;
+constexpr auto SortCooldownSeconds = 30;
+
+void Reply(entt::entity character, std::uint8_t scope, const char* result)
+{
+    ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "typed_inventory_sort %u %s", unsigned{scope}, result);
 }
 
-void SetSortAvailableTime(entt::entity e, bool extra)
+std::int32_t& Cooldown(ecs::CommandCooldowns& state, std::uint8_t scope)
 {
-    auto& cooldowns = g_registry.get_or_emplace<ecs::CommandCooldowns>(e);
-    (extra ? cooldowns.sortExtraInvUntil : cooldowns.sortInvUntil) =
-        get_global_time() + kSortCooldownSeconds;
+    return scope == items::SortBackpack ? state.sortInvUntil : state.sortExtraInvUntil;
 }
 
-bool IsExpiringItem(entt::entity item)
+void SortWindow(entt::entity character, std::uint8_t scope)
 {
-    if (!ItemSystem::IsValidItem(item))
-        return false;
-
-    for (int i = 0; i < ITEM_LIMIT_MAX_NUM; ++i)
-    {
-        const uint8_t limitType = ItemSystem::GetItemLimitType(item, i);
-        if (limitType == LIMIT_REAL_TIME || limitType == LIMIT_REAL_TIME_START_FIRST_USE ||
-            limitType == LIMIT_TIMER_BASED_ON_WEAR)
-            return true;
-    }
-
-    return false;
-}
-
-// AutoGive merges a stackable into the first matching stack. The sorter must
-// not merge a normal stack into an expiring one that was deliberately left in
-// place (see the live server's special-inventory fix).
-bool HasMatchingExpiringItem(entt::entity owner, entt::entity item, bool extra)
-{
-    if (!ItemSystem::IsValidItem(item))
-        return false;
-
-    const uint32_t vnum = ItemSystem::GetItemVnum(item);
-    const int size = extra ? EXTRA_INVENTORY_MAX_NUM : InventorySystem::GetInventorySize(owner);
-    for (int cell = 0; cell < size; ++cell)
-    {
-        const entt::entity other = extra
-            ? ItemSystem::GetExtraInventoryItem(owner, static_cast<uint16_t>(cell))
-            : ItemSystem::GetInventoryItem(owner, static_cast<uint16_t>(cell));
-        if (other == entt::null || other == item)
-            continue;
-        if (ItemSystem::GetItemVnum(other) != vnum)
-            continue;
-        if (IsExpiringItem(other))
-            return true;
-    }
-
-    return false;
-}
-
-bool IsSortBlocked(entt::entity ch)
-{
-    if (CombatSystem::IsDead(ch) ||
-        ecs::SocialSystem::HasExchange(ch) ||
-        ecs::SocialSystem::GetMyShop(ch) != entt::null ||
-        ecs::SocialSystem::GetShopOwner(ch) != entt::null ||
-        ecs::SessionSystem::IsSafeboxOpen(ch) ||
-        ecs::SessionSystem::IsCubeOpen(ch))
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 540, "");
-#endif
-        return true;
-    }
-
-    return false;
-}
-
-bool CanMergeStackable(entt::entity item, bool extra)
-{
-    if (!ItemSystem::IsItemStackable(item) || ItemSystem::GetItemType(item) == ITEM_BLEND)
-        return false;
-#ifdef ENABLE_NEW_USE_POTION
-    // New potions carry per-stack state; never re-create them during a sort.
-    if (ItemSystem::GetItemType(item) == ITEM_USE &&
-        ItemSystem::GetItemSubType(item) == USE_NEW_POTIION)
-        return false;
-#endif
-    (void)extra;
-    return true;
-}
-
-void SortWindow(entt::entity ch, bool extra)
-{
-    if (!ecs::IsCharacter(ch) || !g_registry.valid(ch))
+    if (!ecs::IsCharacter(character))
         return;
-
-    if (get_global_time() < GetSortAvailableTime(ch, extra))
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 1290, "");
-#endif
+    const auto* descriptor = ecs::PlayerRuntime::GetDesc(character);
+    if (!descriptor || !descriptor->IsPhase(PHASE_GAME))
         return;
-    }
+    if (g_registry.all_of<ecs::TypedItemBusy>(character) || CombatSystem::IsDead(character) ||
+        !InventorySystem::CanHandleItems(character) || TypedGatheringActive(character) ||
+        ecs::SocialSystem::HasExchange(character) || ecs::SocialSystem::GetShopOwner(character) != entt::null ||
+        ecs::SessionSystem::IsSafeboxOpen(character))
+        return Reply(character, scope, "busy");
 
-    if (IsSortBlocked(ch))
+    if (auto* cooldowns = g_registry.try_get<ecs::CommandCooldowns>(character);
+        cooldowns && get_global_time() < Cooldown(*cooldowns, scope))
+        return Reply(character, scope, "cooldown");
+
+    auto permit = ecs::resource_admission::Enter({character}, auriga::resource_admission::Operation::InventoryMove);
+    if (!permit || !permit->Current() || !g_registry.valid(character))
         return;
-
-    const int window = extra ? EXTRA_INVENTORY : INVENTORY;
-    const int size = extra ? EXTRA_INVENTORY_MAX_NUM : InventorySystem::GetInventorySize(ch);
-
-    std::vector<SortEntry> entries;
-    entries.reserve(static_cast<size_t>(size));
-
-    for (int cell = 0; cell < size; ++cell)
+    const auto* typed = g_registry.try_get<ecs::TypedItems>(character);
+    const auto* login = g_registry.try_get<ecs::TypedItemLogin>(character);
+    const auto catalog = items::runtime::CurrentCatalog();
+    if (!typed || !login || !catalog || g_registry.all_of<ecs::TypedItemBusy>(character))
+        return Reply(character, scope, "unavailable");
+    const auto& state = typed->state;
+    std::array<std::uint8_t, 16> operation{};
+    if (RAND_bytes(operation.data(), static_cast<int>(operation.size())) != 1)
+        return Reply(character, scope, "unavailable");
+    auto plan = items::MakeInventorySortCommit(*catalog, operation, state.fence, state.storages, state.items, scope);
+    if (!plan)
     {
-        const entt::entity item = extra
-            ? ItemSystem::GetExtraInventoryItem(ch, static_cast<uint16_t>(cell))
-            : ItemSystem::GetInventoryItem(ch, static_cast<uint16_t>(cell));
-        if (item == entt::null || !ItemSystem::IsValidItem(item))
-            continue;
-        if (IsExpiringItem(item))
-            continue;
-
-        SortEntry entry;
-        entry.item = item;
-        entry.oldCell = static_cast<uint16_t>(cell);
-        entry.vnum = ItemSystem::GetItemVnum(item);
-        if (!extra)
-            entry.name = ItemSystem::GetItemName(item);
-        entries.push_back(std::move(entry));
+        LOG_INFO("Typed inventory sort: owner {} plan refused ({})", state.fence.owner.id, static_cast<int>(plan.error()));
+        return Reply(character, scope, "unavailable");
     }
+    if (!*plan)
+        return Reply(character, scope, "already_sorted");
 
-    // Main: by name (the live server's SortMyItems). Extra: by vnum.
-    std::sort(entries.begin(), entries.end(), [extra](const SortEntry& a, const SortEntry& b) {
-        if (extra)
-            return a.vnum < b.vnum;
-        return a.name < b.name;
-    });
-
-    for (const SortEntry& entry : entries)
-    {
-        if (!ItemSystem::IsValidItem(entry.item) || ItemSystem::GetItemOwner(entry.item) != ch)
-            continue;
-
-        entt::entity placed = entt::null;
-        const uint16_t quickslotType = extra ? QUICKSLOT_TYPE_ITEM_EXTRA : QUICKSLOT_TYPE_ITEM;
-
-        if (CanMergeStackable(entry.item, extra) &&
-            !HasMatchingExpiringItem(ch, entry.item, extra))
-        {
-            const uint32_t vnum = entry.vnum;
-            const uint32_t count = ItemSystem::GetItemCount(entry.item);
-
-            if (InventorySystem::RemoveFromCharacter(entry.item) == entt::null)
-                continue;
-            if (ItemSystem::IsValidItem(entry.item) && ItemSystem::GetItemOwner(entry.item) == entt::null)
-                ItemSystem::DestroyItemEntityEcs(entry.item, "INVENTORY_SORT_MERGE");
-
-            placed = ItemSystem::AutoGiveItemEcs(ch, vnum, count, -1, false, false);
-        }
-        else
-        {
-            if (InventorySystem::RemoveFromCharacter(entry.item) == entt::null)
-                continue;
-
-            const int cell = ItemSystem::GetEmptyInventoryPositionEcs(ch, entry.item);
-            bool added = false;
-            if (cell >= 0)
+    const auto pid = ecs::PlayerRuntime::GetPlayerID(character);
+    const auto token = login->token;
+    const auto fence = state.fence;
+    auto held = std::make_shared<auriga::resource_admission::Permit>(std::move(*permit));
+    g_registry.emplace<ecs::TypedItemBusy>(character);
+    if (!items::runtime::RequestCommit(fence.owner, fence.sessionGeneration, std::move(**plan),
+        [pid, token, scope, held = std::move(held)](items::runtime::CommitOutcome outcome) mutable {
+            const auto entity = CHARACTER_MANAGER::instance().FindEntityByPID(pid);
+            const auto* active = g_registry.valid(entity) ? g_registry.try_get<ecs::TypedItemLogin>(entity) : nullptr;
+            if (!active || active->token != token)
+                return;
+            g_registry.remove<ecs::TypedItemBusy>(entity);
+            held.reset();
+            if (outcome.state)
             {
-                const TItemPos position(static_cast<uint8_t>(window), static_cast<uint16_t>(cell));
-#ifdef __HIGHLIGHT_SYSTEM__
-                added = InventorySystem::AddToCharacter(entry.item, ch, position, false);
-#else
-                added = InventorySystem::AddToCharacter(entry.item, ch, position);
-#endif
+                g_registry.emplace_or_replace<ecs::TypedItems>(entity, std::move(*outcome.state));
+                SendTypedInventory(entity);
             }
-
-            if (added)
+            if (outcome.write && outcome.state)
             {
-                placed = entry.item;
+                auto& cooldowns = g_registry.get_or_emplace<ecs::CommandCooldowns>(entity);
+                Cooldown(cooldowns, scope) = get_global_time() + SortCooldownSeconds;
+                Reply(entity, scope, "sorted");
             }
             else
-            {
-                // The detached item has no home: replacement keeps the sort
-                // atomic instead of leaving an ownerless entity behind.
-                const uint32_t vnum = entry.vnum;
-                const uint32_t count = ItemSystem::GetItemCount(entry.item);
-                if (ItemSystem::DestroyItemEntityEcs(entry.item, "INVENTORY_SORT_PLACE_FAIL") ||
-                    ItemSystem::GetItemOwner(entry.item) == entt::null)
-                {
-                    placed = ItemSystem::AutoGiveItemEcs(ch, vnum, count, -1, false, false);
-                }
-            }
-        }
-
-        if (placed != entt::null)
-        {
-            const uint16_t newCell = ItemSystem::GetItemCell(placed);
-            InventorySystem::SyncQuickslot(ch, quickslotType, entry.oldCell, newCell);
-        }
+                Reply(entity, scope, "unavailable");
+            PumpTypedItemGrants(entity);
+        }))
+    {
+        g_registry.remove<ecs::TypedItemBusy>(character);
+        Reply(character, scope, "unavailable");
     }
-
-    ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, extra ? "ext_sort_done" : "inv_sort_done");
-    SetSortAvailableTime(ch, extra);
 }
-
-} // namespace
+}
 
 void SortInventory(entt::entity character)
 {
-    SortWindow(character, false);
+    SortWindow(character, items::SortBackpack);
 }
 
-void SortExtraInventory(entt::entity character)
+void SortExtraInventory(entt::entity character, std::uint8_t category)
 {
-    SortWindow(character, true);
+    if (category < items::SpecialInventoryTypes)
+        SortWindow(character, category);
+}
 }
 
-} // namespace InventorySortSystem
-
-#endif // ENABLE_SORT_INVEN
+#endif
