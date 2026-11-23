@@ -452,8 +452,6 @@ namespace
         std::unordered_map<uint32_t, int32_t>  m_cloneMap;        // clone vid -> mapIndex
 
 
-        // clone vid -> target vid (owner)
-        std::unordered_map<uint32_t, uint32_t> m_cloneTargetVid;
         // clone vid -> available ATTACK skill vnums (<=127 so we can broadcast skill motion)
         std::unordered_map<uint32_t, std::vector<uint8_t>> m_cloneSkills;
 
@@ -514,7 +512,6 @@ void ClearClonesOnMap(int32_t mapIndex)
             {
                 m_cloneMap.erase(vid);
                 m_cloneAllowedPid.erase(vid);
-                m_cloneTargetVid.erase(vid);
                 m_cloneSkills.erase(vid);
                 m_clonePending.erase(vid);
                 m_cloneNextAction.erase(vid);
@@ -817,7 +814,6 @@ void ClearClonesOnMap(int32_t mapIndex)
             // register
 	m_cloneAllowedPid[ecs::PlayerRuntime::GetPacketVID(cloneEntity)] = ecs::PlayerRuntime::GetPlayerID(ownerEntity);
 	m_cloneMap[ecs::PlayerRuntime::GetPacketVID(cloneEntity)] = mapIndex;
-	m_cloneTargetVid[ecs::PlayerRuntime::GetPacketVID(cloneEntity)] = ecs::PlayerRuntime::GetPacketVID(ownerEntity);
 	m_cloneSkills[ecs::PlayerRuntime::GetPacketVID(cloneEntity)] = std::move(skillList);
 
 	m_clonePending.erase(ecs::PlayerRuntime::GetPacketVID(cloneEntity));
@@ -880,7 +876,6 @@ void ClearClonesOnMap(int32_t mapIndex)
 
             m_cloneAllowedPid.erase(it);
             m_cloneMap.erase(cloneVid);
-            m_cloneTargetVid.erase(cloneVid);
             m_cloneSkills.erase(cloneVid);
             m_clonePending.erase(cloneVid);
             m_cloneNextAction.erase(cloneVid);
@@ -1048,13 +1043,14 @@ void ClearClonesOnMap(int32_t mapIndex)
             if (!ecs::IsCharacter(cloneEntity) || CombatSystem::IsDead(cloneEntity))
                 continue;
 
-            auto tgtIt = s_lc.m_cloneTargetVid.find(cloneVid);
-            if (tgtIt == s_lc.m_cloneTargetVid.end())
+            const auto owner = s_lc.m_cloneAllowedPid.find(cloneVid);
+            if (owner == s_lc.m_cloneAllowedPid.end())
                 continue;
 
-            const entt::entity targetEntity = CHARACTER_MANAGER::instance().FindEntity(tgtIt->second);
+            const entt::entity targetEntity = ecs::PlayerRuntime::FindByPlayerID(owner->second);
 
-            if (!ecs::IsCharacter(targetEntity) || !ecs::PlayerRuntime::IsPC(targetEntity) || CombatSystem::IsDead(targetEntity))
+            if (!ecs::IsCharacter(targetEntity) || !ecs::PlayerRuntime::IsPC(targetEntity)
+                || ecs::PlayerRuntime::GetMapIndex(targetEntity) != mapIndex || CombatSystem::IsDead(targetEntity))
             {
                 s_lc.m_clonePending.erase(cloneVid);
                 continue;
@@ -1072,7 +1068,7 @@ void ClearClonesOnMap(int32_t mapIndex)
 
                 // cancel if target got too far
                 const int32_t maxPendDist = p.isSkill ? 900 : 650;
-                if (dist > maxPendDist)
+                if (p.targetVid != ecs::PlayerRuntime::GetPacketVID(targetEntity) || dist > maxPendDist)
                 {
                     s_lc.m_clonePending.erase(cloneVid);
                     continue;
@@ -1354,7 +1350,6 @@ bool CLostCastleDungeon::SpawnTestClones(entt::entity source, entt::entity targe
         // Register: only the target can fight this clone, and the clone targets the target
 	s_lc.m_cloneAllowedPid[ecs::PlayerRuntime::GetPacketVID(cloneEntity)] = ecs::PlayerRuntime::GetPlayerID(target);
 	s_lc.m_cloneMap[ecs::PlayerRuntime::GetPacketVID(cloneEntity)] = mapIndex;
-	s_lc.m_cloneTargetVid[ecs::PlayerRuntime::GetPacketVID(cloneEntity)] = ecs::PlayerRuntime::GetPacketVID(target);
 	s_lc.m_cloneSkills[ecs::PlayerRuntime::GetPacketVID(cloneEntity)] = std::move(skillList);
 
 	s_lc.m_clonePending.erase(ecs::PlayerRuntime::GetPacketVID(cloneEntity));
@@ -1407,7 +1402,6 @@ void CLostCastleDungeon::PurgeTestClonesForTargetPID(uint32_t targetPid, int32_t
 
         s_lc.m_cloneAllowedPid.erase(vid);
         s_lc.m_cloneMap.erase(vid);
-        s_lc.m_cloneTargetVid.erase(vid);
         s_lc.m_cloneSkills.erase(vid);
         s_lc.m_clonePending.erase(vid);
         s_lc.m_cloneNextAction.erase(vid);
@@ -1501,7 +1495,10 @@ void CLostCastleDungeon::OnPlayerLogin(entt::entity character)
     ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
     const auto dungeon = CDungeonManager::instance().FindByMapIndex(idx);
     if (g_registry.valid(dungeon) && !DungeonSystem::GetFlag(dungeon, kFlagWasCompleted))
+    {
         ecs::SocialSystem::SetDungeon(character, dungeon);
+        ecs::QuestSystem::SetFlag(character, kQfDisconnect, 0);
+    }
     ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "lostcastle_tile %d",
         DungeonSystem::GetFlag(dungeon, kFlagTileStage));
 }
@@ -1516,6 +1513,33 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
     const int32_t lobbyMap = ecs::PlayerRuntime::GetMapIndex(character);
     const int32_t lobbyX = ecs::PlayerRuntime::GetX(character) / 100;
     const int32_t lobbyY = ecs::PlayerRuntime::GetY(character) / 100;
+
+    const auto savedMap = ecs::QuestSystem::GetFlag(character, kQfIdx);
+    if (lobbyMap == kLobbyMap && LostCastleLayout::IsPrivateMap(savedMap)
+        && ecs::QuestSystem::GetFlag(character, kQfDisconnect) > get_global_time())
+    {
+        if (ecs::QuestSystem::GetFlag(character, kQfCh) != g_bChannel)
+        {
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "A folyamatban lévő Elveszett Kastélyhoz az eredeti csatornán csatlakozhatsz vissza.");
+            return true;
+        }
+
+        const auto dungeon = CDungeonManager::instance().FindByMapIndex(savedMap);
+        const auto* map = SECTREE_MANAGER::instance().GetMap(savedMap);
+        if (g_registry.valid(dungeon) && map && !DungeonSystem::GetFlag(dungeon, kFlagWasCompleted))
+        {
+            const auto floor = DungeonSystem::GetFlag(dungeon, kFlagFloor);
+            auto point = LostCastleLayout::Entrance;
+            if (floor == 2)
+                point = LostCastleLayout::KeyRoomEntrance;
+            else if (floor == 4)
+                point = LostCastleLayout::TileRoomEntrance;
+            const auto world = LostCastleLayout::WorldCell(point, map->m_setting.iBaseX, map->m_setting.iBaseY);
+            DungeonSystem::Join_Coords(dungeon, character, world.x, world.y, lobbyMap);
+            return true;
+        }
+        ecs::QuestSystem::SetFlag(character, kQfDisconnect, 0);
+    }
 
     const entt::entity party = ecs::SocialSystem::GetParty(character);
 
