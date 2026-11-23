@@ -9,6 +9,7 @@
 #include "unique_item.h"
 #include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
+#include "../entity/char.h"
 #include "../network/desc.h"
 #include <Headers/Header_GC.h>
 #include "../core/utils.h"
