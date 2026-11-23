@@ -38,24 +38,29 @@ void Run(){
  auto pyramidItems=items;for(unsigned n=0;n<2;++n){auto item=items.front();item.key=purgeKeys.back();item.id=ItemInstanceId::Create(11000+n).value();item.count=200;item.placement->anchor=2+n;pyramidItems.push_back(item);}const auto pyramid=MakeDungeonEntryReservation(*c,{58,22},"dungeon.pyramid.entry",items[0].key,0,1,100000,owners,pyramidItems).value();auto pyramidDebit=MakeDungeonEntryResolution(*c,{58,23},*pyramid.dungeonEntry,true,current,layouts,pyramidItems);Check(pyramidDebit && pyramidDebit->items.size()==10 && pyramidDebit->items[8].after.count==0 && pyramidDebit->items[9].after.count==145,"Pyramid preserves original255-unit cleanup cap across multiple concrete stacks");
 
  const auto greenKey = purgeKeys.back();
- auto orcItems = pyramidItems; // The leader carries 400 old keys across two stacks.
- auto memberKey = orcItems.back();
+ auto fullCleanupItems = pyramidItems; // The leader carries 400 old keys across two stacks.
+ auto memberKey = fullCleanupItems.back();
  memberKey.id = ItemInstanceId::Create(11002).value();
  memberKey.owner = owners[1].owner;
- orcItems.push_back(memberKey);
- const auto orcs = MakeDungeonEntryReservation(*c, {58, 24}, "dungeon.orcs.entry", items.front().key,
-     0, 1, 100000, owners, orcItems);
- Check(orcs && orcs->items.empty(), "Orc entry reservation preserves tickets and green keys");
- const auto orcsDebit = MakeDungeonEntryResolution(*c, {58, 25}, *orcs->dungeonEntry, true, current, layouts, orcItems);
- Check(orcsDebit && orcsDebit->items.size() == 11 &&
-     std::ranges::count_if(orcsDebit->items, [&](const auto& change) {
-         return change.before->key == items.front().key && change.after.count + 1 == change.before->count;
-     }) == 8 &&
-     std::ranges::count_if(orcsDebit->items, [&](const auto& change) {
-         return change.before->key == greenKey && change.after.destroyed && change.after.count == 0;
-     }) == 3, "Orc entry debits one ticket per member and fully clears every green-key stack");
- const auto orcsRelease = MakeDungeonEntryResolution(*c, {58, 26}, *orcs->dungeonEntry, false, current, layouts, orcItems);
- Check(orcsRelease && orcsRelease->items.empty(), "Cancelled Orc entry does not spend tickets or clear green keys");
+ fullCleanupItems.push_back(memberKey);
+ for (const auto* gate : {"dungeon.orcs.entry", "dungeon.triton.entry"})
+ {
+     const auto reservation = MakeDungeonEntryReservation(*c, {58, 24}, gate, items.front().key,
+         0, 1, 100000, owners, fullCleanupItems);
+     Check(reservation && reservation->items.empty(), "Reservation preserves tickets and green keys");
+     const auto debit = MakeDungeonEntryResolution(*c, {58, 25}, *reservation->dungeonEntry,
+         true, current, layouts, fullCleanupItems);
+     Check(debit && debit->items.size() == 11 &&
+         std::ranges::count_if(debit->items, [&](const auto& change) {
+             return change.before->key == items.front().key && change.after.count + 1 == change.before->count;
+         }) == 8 &&
+         std::ranges::count_if(debit->items, [&](const auto& change) {
+             return change.before->key == greenKey && change.after.destroyed && change.after.count == 0;
+         }) == 3, "Entry debits one ticket per member and fully clears every green-key stack");
+     const auto released = MakeDungeonEntryResolution(*c, {58, 26}, *reservation->dungeonEntry,
+         false, current, layouts, fullCleanupItems);
+     Check(released && released->items.empty(), "Cancelled entry preserves tickets and green keys");
+ }
 
  auto forgedPurge=*pyramidDebit;--forgedPurge.items.back().after.count;Check(!ValidateItemCommit(*c,forgedPurge),"cleanup cannot destroy one extra unit beyond authored cap");auto unrelated=items[0];unrelated.id=ItemInstanceId::Create(12000).value();unrelated.placement->anchor=20;auto removed=unrelated;++removed.revision;removed.destroyed=true;removed.count=0;removed.placement.reset();forgedPurge=*consume;forgedPurge.items.push_back({unrelated,removed});Check(!ValidateItemCommit(*c,forgedPurge),"entry receipt cannot smuggle destruction of an unrelated item");
 }
