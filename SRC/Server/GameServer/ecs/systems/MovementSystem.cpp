@@ -1827,7 +1827,6 @@ EVENTFUNC(save_event)
 	if (saveEntity != entt::null)
 		g_dispatcher.trigger(ecs::EvCharSaved { saveEntity });
 	ecs::SessionSystem::Save(saveEntity);
-	ecs::SessionSystem::FlushDelayedSaveItem(saveEntity);
 	return (save_event_second_cycle);
 }
 

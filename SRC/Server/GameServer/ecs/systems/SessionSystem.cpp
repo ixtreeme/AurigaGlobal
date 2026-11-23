@@ -18,7 +18,6 @@
 #include "SocialSystem.hpp"
 #include "SkillSystem.hpp"
 #include "AffectSystem.hpp"
-#include "ItemSystem.hpp"
 #include "MovementSystem.hpp"
 
 #include "../../entity/char.h"
@@ -30,8 +29,6 @@
 #include "../../network/desc_client.h"
 #include "../../world/arena.h"
 #include "../../guild/guild.h"
-#include "../../item/item.h"
-#include "../../item/item_manager.h"
 #include "../../core/log.h"
 #include "../../world/map_location.h"
 #include "../../social/marriage.h"
@@ -183,27 +180,6 @@ bool WarpToPID(entt::entity e, uint32_t dwPID)
         }
     }
     return true;
-}
-
-// Writing every carried item out before the character goes.
-void FlushDelayedSaveItem(entt::entity e)
-{
-    const entt::entity owner = e;
-
-    for (int i = 0; i < INVENTORY_AND_EQUIP_SLOT_MAX; ++i)
-        if (const entt::entity item = ItemSystem::GetInventoryItem(owner, i); item != entt::null)
-            ITEM_MANAGER::instance().SaveSingleItem(item);
-
-#ifdef ENABLE_EXTRA_INVENTORY
-    for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
-        if (const entt::entity item = ItemSystem::GetItem(owner, TItemPos(EXTRA_INVENTORY, i)); item != entt::null)
-            ITEM_MANAGER::instance().SaveSingleItem(item);
-#endif
-#ifdef ENABLE_SWITCHBOT
-    for (int i = 0; i < SWITCHBOT_SLOT_COUNT; ++i)
-        if (const entt::entity item = ItemSystem::GetItem(owner, TItemPos(SWITCHBOT, i)); item != entt::null)
-            ITEM_MANAGER::instance().SaveSingleItem(item);
-#endif
 }
 
 // Queueing a save; the manager batches them.
@@ -560,12 +536,8 @@ void Disconnect(entt::entity e, const char* c_pszReason)
         ecs::PointSystem::Change(e, POINT_HP, 50 - ecs::PlayerRuntime::GetHP(e));
     }
 
-    ITEM_MANAGER::instance().FlushDelayedSaveByOwner(e);
-
     if (!CHARACTER_MANAGER::instance().FlushDelayedSave(e))
         SaveReal(e);
-
-    FlushDelayedSaveItem(e);
 
     AffectSystem::SaveAffect(e);
     AffectSystem::SetLoaded(e, false);

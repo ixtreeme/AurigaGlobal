@@ -401,7 +401,6 @@ void AISystem::StateIdle(entt::entity) { Unexpected(); }
 namespace ecs::SessionSystem {
 void SaveReal(entt::entity e) { ++saves; if (onSave) onSave(e); }
 void Save(entt::entity) {}
-void FlushDelayedSaveItem(entt::entity) {}
 }
 const DESC_MANAGER::DESC_SET& DESC_MANAGER::GetClientSet() { Unexpected(); }
 void ecs::SessionSystem::Disconnect(entt::entity, const char*) { Unexpected(); }

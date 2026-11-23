@@ -21,7 +21,6 @@ void SetSkipSave(entt::entity e, bool value);
 void Save(entt::entity e);
 void SaveReal(entt::entity e);
 void StartSaveEvent(entt::entity e);
-void FlushDelayedSaveItem(entt::entity e);
 bool IsSafeboxOpen(entt::entity character);
 void SetSafeboxOpen(entt::entity character, bool open);
 bool IsCubeOpen(entt::entity character);

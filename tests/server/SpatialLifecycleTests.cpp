@@ -453,7 +453,6 @@ bool CombatSystem::IsStun(entt::entity e) { return Recovery(e).stun; }
 bool CombatSystem::IsDead(entt::entity e) { return inputDescriptors.contains(e) ? false : Recovery(e).dead; }
 int CalculateDuration(int, int) { Unexpected(); }
 namespace ecs::SessionSystem {
-void FlushDelayedSaveItem(entt::entity) { Unexpected(); }
 void Save(entt::entity) { Unexpected(); }
 }
 void CombatSystem::DistributeSP(entt::entity e, entt::entity target, int) {
