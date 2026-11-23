@@ -2,6 +2,7 @@
 #include "DungeonUi.hpp"
 #include "DungeonUiEvents.hpp"
 #include "DungeonUiRules.hpp"
+#include "LostCastleLayout.hpp"
 #include "dungeon.h"
 #include "../core/config.h"
 #include "../core/utils.h"
@@ -26,6 +27,8 @@
 #include <item/DungeonEntryBindings.hpp>
 #include <item/DungeonItems.hpp>
 #include "../world/LocalWarp.hpp"
+#include "../world/map_location.h"
+#include "../world/sectree_manager.h"
 #include "../ecs/systems/AffectSystem.hpp"
 #include <openssl/rand.h>
 #include <algorithm>
@@ -75,7 +78,60 @@ void SendEntryTicket(entt::entity e, unsigned map)
         + TypedDungeonTicketCount(e, binding->alternateTicketCode);
     Send(e, item::DungeonEntryCountCommand(map, count));
 }
-struct Entry {unsigned map=0,status=0,type=1,organization=0,min=1,max=120,partyMin=1,partyMax=8,x=0,y=0,cooldown=0,duration=0,entrance=0,strength=0,resistance=0,item=0,count=0;};
+struct Entry {unsigned map=0,status=0,type=1,organization=0,min=1,max=120,partyMin=1,partyMax=8,x=0,y=0,cooldown=0,duration=0,entrance=0,strength=0,resistance=0,count=0;};
+
+#ifdef ENABLE_CPP_DUNGEON_RAZOR93
+bool HostsLostCastleEntrance()
+{
+    auto& maps = SECTREE_MANAGER::instance();
+    return maps.GetMap(LostCastleLayout::MapIndex) && maps.GetMap(LostCastleLayout::LobbyMap);
+}
+
+bool HasLostCastleEntranceRoute()
+{
+    if (HostsLostCastleEntrance())
+        return true;
+
+    auto route = [](int map, std::uint32_t& address, std::uint16_t& port) {
+        return CMapLocation::instance().Get(
+#ifdef ENABLE_GENERAL_CH
+            g_bChannel,
+#endif
+            map, address, port);
+    };
+    std::uint32_t lobbyAddress, castleAddress;
+    std::uint16_t lobbyPort, castlePort;
+    return route(LostCastleLayout::LobbyMap, lobbyAddress, lobbyPort)
+        && route(LostCastleLayout::MapIndex, castleAddress, castlePort)
+        && lobbyAddress == castleAddress && lobbyPort == castlePort;
+}
+
+Entry LostCastleEntry()
+{
+    Entry entry;
+    entry.map = LostCastleLayout::MapIndex;
+    entry.status = HasLostCastleEntranceRoute() ? 0 : 2;
+    entry.min = LostCastleLayout::MinimumLevel;
+    entry.max = LostCastleLayout::MaximumLevel;
+    entry.x = LostCastleLayout::LobbyArrival.x / 100;
+    entry.y = LostCastleLayout::LobbyArrival.y / 100;
+    entry.entrance = LostCastleLayout::LobbyMap;
+    entry.count = LostCastleLayout::TicketCount;
+    return entry;
+}
+#endif
+
+bool WarpToDungeonEntrance(entt::entity character, const Entry& entry)
+{
+    const int x = static_cast<int>(entry.x * 100);
+    const int y = static_cast<int>(entry.y * 100);
+#ifdef ENABLE_CPP_DUNGEON_RAZOR93
+    if (entry.map == LostCastleLayout::MapIndex && !HostsLostCastleEntrance())
+        return ecs::MovementSystem::WarpSet(character, x, y);
+#endif
+    return ecs::MovementSystem::WarpSetOnCurrentCore(character, x, y);
+}
+
 std::vector<Entry> Catalog(){
     std::vector<Entry> entries;auto* q=quest::CQuestManager::instance_ptr();auto* l=q?q->GetLuaState():nullptr;if(!l)return entries;
     const int top=lua_gettop(l);lua_getglobal(l,"dungeonInfo");
@@ -83,11 +139,16 @@ std::vector<Entry> Catalog(){
         if(lua_istable(l,-1))for(int i=1;i<=std::min(128,luaL_getn(l,-1));++i){lua_rawgeti(l,-1,i);if(lua_istable(l,-1)){
             auto value=[&](const char* key,unsigned fallback=0){lua_pushstring(l,key);lua_gettable(l,-2);unsigned v=lua_isnumber(l,-1)?static_cast<unsigned>(std::max(0.0,lua_tonumber(l,-1))):fallback;lua_pop(l,1);return v;};
             auto pair=[&](const char* key,unsigned& a,unsigned& b){lua_pushstring(l,key);lua_gettable(l,-2);if(lua_istable(l,-1)){lua_rawgeti(l,-1,1);a=static_cast<unsigned>(std::max(0.0,lua_tonumber(l,-1)));lua_pop(l,1);lua_rawgeti(l,-1,2);b=static_cast<unsigned>(std::max(0.0,lua_tonumber(l,-1)));lua_pop(l,1);}lua_pop(l,1);};
-            Entry e;e.map=value("map_index");e.status=value("status");e.type=value("type",1);e.organization=value("organization");pair("level_limit",e.min,e.max);pair("party_member_limit",e.partyMin,e.partyMax);pair("map_coords",e.x,e.y);pair("required_item",e.item,e.count);e.cooldown=value("cooldown");e.duration=value("duration");e.entrance=value("entrance_map_index");e.strength=value("strength_bonus");e.resistance=value("resistance_bonus");
+            Entry e;e.map=value("map_index");e.status=value("status");e.type=value("type",1);e.organization=value("organization");pair("level_limit",e.min,e.max);pair("party_member_limit",e.partyMin,e.partyMax);pair("map_coords",e.x,e.y);e.count=auriga::item::DungeonEntryForMap(e.map)?1:0;e.cooldown=value("cooldown");e.duration=value("duration");e.entrance=value("entrance_map_index");e.strength=value("strength_bonus");e.resistance=value("resistance_bonus");
             if(!e.min)e.min=1;if(!e.max)e.max=120;if(!e.partyMin)e.partyMin=1;if(!e.partyMax)e.partyMax=8;
             if(e.map&&e.x&&e.y&&e.x<20000000&&e.y<20000000)entries.push_back(e);
         }lua_pop(l,1);}}
-    lua_settop(l,top);return entries;
+    lua_settop(l,top);
+#ifdef ENABLE_CPP_DUNGEON_RAZOR93
+    std::erase_if(entries, [](const Entry& entry) { return entry.map == LostCastleLayout::MapIndex; });
+    entries.push_back(LostCastleEntry());
+#endif
+    return entries;
 }
 const std::map<unsigned,std::string> cooldownFlags={{367,"monkey_tower_razor93"},{18,"owl_zone_razor93"},{355,"dungeonorchi"},{27,"slime_dungeon"},{217,"dungeon_spider"},{66,"deviltower_zone"},{218,"rune_zone"},{216,"catacombe"},{208,"dragonlair_zone"},{212,"meleylair_zone"},{351,"razador_zone"},{352,"nemere_zone"},{209,"temple_ochao"},{210,"enchanted_forest"},{373,"nightmare_zone_razor93_prepare"},{357,"dungeonpyramid_razor93"},{369,"tritontemple_razor93"},{161,"halloween2022"},{179,"vikingdungeon_zone"}};
 unsigned Wait(entt::entity e,unsigned map){const auto f=cooldownFlags.find(map);return f==cooldownFlags.end()?0:static_cast<unsigned>(std::max<std::int64_t>(0,ecs::QuestSystem::GetFlag(e,f->second+".cooldown")));}
@@ -203,7 +264,7 @@ void Handle(entt::entity e,const char* argument){
     if(action=="warp"&&b.empty()){
         if(now<throttle.mutation||!CanTravel(e)||!Open(e,*d)){Error(e,"blocked");return;}
         if(P::GetMapIndex(e)>=10000){auto* r=Current(e);if(!r||!r->finished){Error(e,"blocked");return;}}
-        throttle.mutation=now+5000;if(!ecs::MovementSystem::WarpSetOnCurrentCore(e,static_cast<int>(d->x*100),static_cast<int>(d->y*100))){Error(e,"warp");return;}recruits.erase(P::GetPlayerID(e));Send(e,"nx_dungeon_action 1 warped");return;
+        throttle.mutation=now+5000;if(!WarpToDungeonEntrance(e,*d)){Error(e,"warp");return;}recruits.erase(P::GetPlayerID(e));Send(e,"nx_dungeon_action 1 warped");return;
     }
     if(action=="retry"&&b.empty()){
         auto* r=Current(e);if(now<throttle.mutation||!r||!r->finished||r->base!=map||!r->members.contains(P::GetPlayerID(e))){Error(e,"blocked");return;}
@@ -212,7 +273,7 @@ void Handle(entt::entity e,const char* argument){
         for(auto [pid,m]:r->members){auto member=P::FindByPlayerID(pid);if(!g_registry.valid(member)||!P::GetDesc(member)||P::GetMapIndex(member)!=P::GetMapIndex(e)||ecs::SocialSystem::GetParty(member)!=party||!CanTravel(member)||!Open(member,*d)){ready=false;break;}members.push_back(member);}
         if(!ready||members.empty()){Error(e,"team_not_ready");return;}
         if(party!=entt::null){unsigned online=0;auto count=[&](entt::entity){++online;};PartySystem::ForEachOnlineMember(party,count);if(online!=members.size()){Error(e,"team_not_ready");return;}}
-        throttle.mutation=now+5000;for(auto member:members)if(!ecs::MovementSystem::WarpSetOnCurrentCore(member,static_cast<int>(d->x*100),static_cast<int>(d->y*100)))Error(member,"warp");
+        throttle.mutation=now+5000;for(auto member:members)if(!WarpToDungeonEntrance(member,*d))Error(member,"warp");
         Send(e,"nx_dungeon_action 1 warped");return;
     }
     if(action=="exit"&&b.empty()){auto* r=Current(e);if(!r||!r->finished||r->base!=map||!CanTravel(e)){Error(e,"blocked");return;}ecs::MovementSystem::ExitToSavedLocation(e);Send(e,"nx_dungeon_action 1 exited");return;}

@@ -10,6 +10,12 @@ struct Tile { Point start; Point end; };
 inline constexpr int MapWidth = 512;
 inline constexpr int MapHeight = 1024;
 inline constexpr int MapIndex = 380;
+inline constexpr int LobbyMap = 219;
+inline constexpr Point EntranceGuard{535000, 1436200};
+inline constexpr Point LobbyArrival{EntranceGuard.x, EntranceGuard.y + 200};
+inline constexpr int MinimumLevel = 40;
+inline constexpr int MaximumLevel = 140;
+inline constexpr unsigned TicketCount = 1;
 inline constexpr int PrivateMin = MapIndex * 10000;
 inline constexpr int PrivateMax = PrivateMin + 10000;
 constexpr bool IsPrivateMap(int mapIndex)

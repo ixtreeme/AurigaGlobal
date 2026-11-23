@@ -59,13 +59,13 @@ namespace
     constexpr int32_t  kPrivateMax = LostCastleLayout::PrivateMax;
 
     constexpr uint32_t kEntryNpcVnum = 20021;
-    constexpr int32_t kLobbyMap = 219;
-    constexpr int32_t kLobbyX = 535000;
-    constexpr int32_t kLobbyY = 1436200;
+    constexpr int32_t kLobbyMap = LostCastleLayout::LobbyMap;
+    constexpr int32_t kLobbyX = LostCastleLayout::EntranceGuard.x;
+    constexpr int32_t kLobbyY = LostCastleLayout::EntranceGuard.y;
     constexpr std::string_view kEntryTicketCode = "material.arpa";
 
-    constexpr int32_t  kMinLevel = 40;
-    constexpr int32_t  kMaxLevel = 140;
+    constexpr int32_t  kMinLevel = LostCastleLayout::MinimumLevel;
+    constexpr int32_t  kMaxLevel = LostCastleLayout::MaximumLevel;
 
     // Floor1
     constexpr uint32_t kMetinVnum = 8001;
@@ -1568,7 +1568,7 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
                     ok = false;
                     return;
                 }
-                if (TypedDungeonTicketCount(m, kEntryTicketCode) < 1)
+                if (TypedDungeonTicketCount(m, kEntryTicketCode) < LostCastleLayout::TicketCount)
                 {
                     ok = false;
                     return;
@@ -1590,7 +1590,7 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Csak lvl %d-%d kozott lephetsz be!", kMinLevel, kMaxLevel);
             return true;
         }
-        if (TypedDungeonTicketCount(character, kEntryTicketCode) < 1)
+        if (TypedDungeonTicketCount(character, kEntryTicketCode) < LostCastleLayout::TicketCount)
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Szükséges belépő: 1 Árpa.");
             return true;
@@ -1656,7 +1656,7 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
     s_lc.StartFloor1(DungeonSystem::GetMapIndex(d));
         };return plan;
     };
-    if(!BeginTypedDungeonEntry(character,"dungeon.lost_castle.entry",kEntryTicketCode,1,[character](entt::entity pc){const auto level=ecs::PointSystem::GetLevel(pc);if(level<kMinLevel || level>kMaxLevel)return false;bool together=true;const auto party=ecs::SocialSystem::GetParty(character);if(party!=entt::null){auto check=[&](entt::entity m){if(ecs::PlayerRuntime::IsPC(m) && ecs::PlayerRuntime::GetMapIndex(m)!=ecs::PlayerRuntime::GetMapIndex(character))together=false;};PartySystem::ForEachOnlineMember(party,check);}return together;},prepare))
+    if(!BeginTypedDungeonEntry(character,"dungeon.lost_castle.entry",kEntryTicketCode,LostCastleLayout::TicketCount,[character](entt::entity pc){const auto level=ecs::PointSystem::GetLevel(pc);if(level<kMinLevel || level>kMaxLevel)return false;bool together=true;const auto party=ecs::SocialSystem::GetParty(character);if(party!=entt::null){auto check=[&](entt::entity m){if(ecs::PlayerRuntime::IsPC(m) && ecs::PlayerRuntime::GetMapIndex(m)!=ecs::PlayerRuntime::GetMapIndex(character))together=false;};PartySystem::ForEachOnlineMember(party,check);}return together;},prepare))
         ecs::ChatSystem::Send(character,CHAT_TYPE_INFO,"A teljes csapatnak készen kell állnia, és a belépőnek a hátizsákban kell lennie.");
     return true;
 }
