@@ -44,6 +44,9 @@
 #include "../../SRC/Server/GameServer/ecs/ItemRegistry.hpp"
 #include "../../SRC/Server/GameServer/ecs/CBuildingRegistry.hpp"
 #include <Base/attribute.h>
+#include "../../SRC/Server/GameServer/item/TypedGathering.hpp"
+#include "../../SRC/Server/GameServer/item/TypedWorldUtilities.hpp"
+#include "../../SRC/Server/GameServer/warrior/WarriorSkillSystem.hpp"
 #include <functional>
 #include <iostream>
 #include <stdexcept>
@@ -187,15 +190,31 @@ void ContinueOnFatalError() { Unexpected(); }
 // A private-map sector shares the origin sector's attribute; the shared
 // ownership must keep it alive when the origin map goes first.
 void AttributeSharing() {
+    constexpr auto side = SECTREE_SIZE / CELL_SIZE;
     auto* origin = new SECTREE;
     auto* clone = new SECTREE;
-    origin->BindAttribute(new CAttribute(nullptr, 0, 0));
+    origin->BindAttribute(new CAttribute(side, side));
     clone->CloneAttribute(origin);
     CAttribute* shared = origin->GetAttributePtr();
     Check(shared && clone->GetAttributePtr() == shared, "private-map clone did not share the attribute");
     delete origin;
     Check(clone->GetAttributePtr() == shared, "attribute died with the origin sector");
     delete clone;
+
+    SECTREE base, first, second;
+    base.BindAttribute(new CAttribute(side, side));
+    base.SetAttribute(2, 3, ATTR_WATER);
+    first.CloneAttribute(&base);
+    second.CloneAttribute(&base);
+    first.SetAttribute(2, 3, ATTR_BLOCK);
+    Check(first.GetAttribute(2 * CELL_SIZE, 3 * CELL_SIZE) == (ATTR_BLOCK | ATTR_WATER),
+        "private sector keeps the base flags when locking a tile");
+    Check(second.GetAttribute(2 * CELL_SIZE, 3 * CELL_SIZE) == ATTR_WATER,
+        "locking a tile must not change the other instance");
+    first.RemoveAttribute(2, 3, ATTR_BLOCK);
+    Check(base.GetAttribute(2 * CELL_SIZE, 3 * CELL_SIZE) == ATTR_WATER
+        && first.GetAttribute(2 * CELL_SIZE, 3 * CELL_SIZE) == ATTR_WATER,
+        "unlocking a private tile preserves the base flags");
 }
 
 std::shared_ptr<spdlog::logger> logging::GetLogger() {
@@ -208,6 +227,10 @@ SECTREE* SECTREE_MANAGER::Get(int32_t map, int32_t x, int32_t y) {
     if (x < 0 || y < 0) return nullptr;
     auto it = sectors.find({map, x / SECTREE_SIZE, y / SECTREE_SIZE});
     return it == sectors.end() ? nullptr : it->second;
+}
+bool SECTREE_MANAGER::IsMovablePosition(int32_t map, int32_t x, int32_t y) {
+    const auto tree = Get(map, x, y);
+    return tree && (!tree->GetAttributePtr() || !tree->IsAttr(x, y, ATTR_BLOCK | ATTR_OBJECT));
 }
 // Grid loading is a fixture, not a second production spatial implementation.
 SECTREE_MAP::SECTREE_MAP() { m_setting = {}; }
@@ -224,14 +247,6 @@ void SECTREE_MAP::Build() {
                 tree->m_neighbor_list.push_back(other);
     }
 }
-CAttribute::~CAttribute() {}
-// The constructor pair is only referenced by the attribute-sharing check; the
-// accessors stay fail-fast seams because production never reads them here.
-CAttribute::CAttribute(uint32_t*, uint32_t, uint32_t) {}
-CAttribute::CAttribute(uint32_t, uint32_t) {}
-uint32_t CAttribute::Get(uint32_t, uint32_t) { Unexpected(); }
-void CAttribute::Set(uint32_t, uint32_t, uint32_t) { Unexpected(); }
-void CAttribute::Remove(uint32_t, uint32_t, uint32_t) { Unexpected(); }
 CHARACTER_MANAGER::CHARACTER_MANAGER() {}
 CHARACTER_MANAGER::~CHARACTER_MANAGER() {}
 // Out-of-line key functions emit RTTI required by singleton's guard on FreeBSD.
@@ -259,6 +274,9 @@ uint32_t get_dword_time() { return clockNow; }
 bool ecs::PlayerRuntime::IsPC(entt::entity e) { return g_registry.all_of<ecs::TagPC>(e); }
 bool CaravanQuest::Locked(entt::entity) { return false; }
 bool CaravanQuest::Defending(entt::entity) { return false; }
+bool WarriorExpansion::IsCasting(entt::entity) { return false; }
+bool TryStartTypedMining(entt::entity, entt::entity) { return false; }
+bool ResumeTypedWorldWarp(entt::entity) { return false; }
 entt::entity ecs::PlayerRuntime::FindByPlayerID(uint32_t) { Unexpected(); }
 bool ecs::PlayerRuntime::IsStone(entt::entity e) { return g_registry.all_of<ecs::StoneAITag>(e); }
 unsigned char ecs::PlayerRuntime::GetCharType(entt::entity) { Unexpected(); }
@@ -442,8 +460,8 @@ void CombatSystem::DistributeSP(entt::entity e, entt::entity target, int) {
     Check(e == target, "recovery SP target mismatch"); RecoveryCallback(e, 2);
 }
 uint64_t ecs::PlayerRuntime::GetHP(entt::entity e) { Recovery(e); return g_registry.get<ecs::Health>(e).current; }
-int ecs::PointSystem::GetLimitPoint(entt::entity e, uint8_t point) {
-    if (inputDescriptors.contains(e) && point == POINT_MOV_SPEED) return int(motionSettings[e].movePoint);
+double ecs::PointSystem::GetLimitPoint(entt::entity e, uint8_t point) {
+    if (inputDescriptors.contains(e) && point == POINT_MOV_SPEED) return motionSettings[e].movePoint;
     Unexpected();
 }
 void ecs::PointSystem::Compute(entt::entity e) { CheckShow(e); }
@@ -493,6 +511,9 @@ int64_t ecs::PointSystem::Get(entt::entity e, uint8_t point) {
     if (point == POINT_HP) return g_registry.get<ecs::Health>(e).current;
     if (point == POINT_HP_REGEN) return Recovery(e).bonus;
     Unexpected();
+}
+double ecs::PointSystem::GetPrecise(entt::entity e, uint8_t point) {
+    return static_cast<double>(Get(e, point));
 }
 uint64_t ecs::PointSystem::GetMaxHP(entt::entity e) { Recovery(e); return g_registry.get<ecs::Health>(e).max; }
 void ecs::PointSystem::Change(entt::entity e, uint8_t point, int64_t amount, bool, bool, bool) {
@@ -2086,8 +2107,12 @@ void RefreshKeepsEveryPairExact() {
         "the half edge came down without its REMOVE");
 }
 }
-int main() {
+int main(int argc, char** argv) {
     try {
+        if (argc == 2 && std::string_view(argv[1]) == "--attribute-sharing") {
+            AttributeSharing();
+            return 0;
+        }
         SECTREE_MANAGER maps; CHARACTER_MANAGER characters; DESC_MANAGER descriptors; CMotionManager motionManager;
         ecs::VisibilitySystem::Init(g_registry);
         auto recoveryConnection = entt::scoped_connection(g_dispatcher.sink<ecs::EvRecovery>().connect<&Recovered>());

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include <algorithm>
+#include <array>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Base/attribute.h>
 #include "sectree_manager.h"
@@ -263,15 +264,37 @@ void SECTREE::CloneAttribute(LPSECTREE tree)
     isClone = true;
 }
 
+namespace
+{
+void DetachAttributesForWrite(std::shared_ptr<CAttribute>& attributes)
+{
+    if (attributes.use_count() == 1)
+        return;
+    constexpr std::uint32_t side = SECTREE_SIZE / CELL_SIZE;
+    auto copy = std::make_shared<CAttribute>(side, side);
+    std::array<std::uint32_t, side> row;
+    for (std::uint32_t y = 0; y < side; ++y)
+    {
+        attributes->CopyRow(y, row.data());
+        for (std::uint32_t x = 0; x < side; ++x)
+            if (row[x])
+                copy->Set(x, y, row[x]);
+    }
+    attributes = std::move(copy);
+}
+}
+
 void SECTREE::SetAttribute(uint32_t x, uint32_t y, uint32_t dwAttr)
 {
 	assert(m_pkAttribute);
+	DetachAttributesForWrite(m_pkAttribute);
 	m_pkAttribute->Set(x, y, dwAttr);
 }
 
 void SECTREE::RemoveAttribute(uint32_t x, uint32_t y, uint32_t dwAttr)
 {
 	assert(m_pkAttribute);
+	DetachAttributesForWrite(m_pkAttribute);
 	m_pkAttribute->Remove(x, y, dwAttr);
 }
 

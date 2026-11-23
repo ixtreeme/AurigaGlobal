@@ -857,7 +857,7 @@ add_executable(SpatialLifecycleTests EXCLUDE_FROM_ALL
     world/event.cpp
     world/event_queue.cpp
 )
-target_link_libraries(SpatialLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core AurigaItemCatalog)
+target_link_libraries(SpatialLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core S_Base AurigaItemCatalog)
 if(WIN32)
     target_link_libraries(SpatialLifecycleTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
 endif()
@@ -869,6 +869,7 @@ else()
     target_link_options(SpatialLifecycleTests PRIVATE -Wl,--gc-sections)
 endif()
 add_test(NAME spatial_lifecycle COMMAND SpatialLifecycleTests)
+add_test(NAME sectree_attribute_sharing COMMAND SpatialLifecycleTests --attribute-sharing)
 
 add_executable(BuildingLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/BuildingLifecycleTests.cpp
