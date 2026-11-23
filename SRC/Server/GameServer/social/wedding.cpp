@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "../ecs/systems/ItemSystem.hpp"
+#include "../item/TypedDrops.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
 #include <Core/Logging.hpp>
@@ -39,6 +39,8 @@ namespace marriage
 
 	namespace
 	{
+		constexpr auto WeddingGuestPotion = *auriga::item::ItemKey::Create(auriga::item::ItemCategory::Consumable, 535);
+
 		ecs::WeddingMapState* FindState(entt::entity map)
 		{
 			if (map == entt::null || !g_registry.valid(map))
@@ -122,7 +124,7 @@ namespace marriage
 		for (const entt::entity chEntity : members)
 		{
 			auto* current = FindState(map);
-			if (!current || !current->members.contains(chEntity))
+			if (!current || !current->members.contains(chEntity) || !ecs::PlayerRuntime::IsPC(chEntity))
 				continue;
 
 			if (ecs::PlayerRuntime::GetPlayerID(chEntity) == pid1 || ecs::PlayerRuntime::GetPlayerID(chEntity) == pid2)
@@ -131,8 +133,7 @@ namespace marriage
 			if (ecs::PointSystem::GetLevel(chEntity) < 10)
 				continue;
 
-			//ch->AutoGiveItem(27003, 5);
-			ItemSystem::AutoGiveItemEcs(chEntity, 27002, 5);
+			QueueTypedItemGrant(chEntity, {WeddingGuestPotion, 0, 5});
 		}
 	}
 

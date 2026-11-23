@@ -9,12 +9,14 @@
 #include "../../SRC/Server/GameServer/world/event.h"
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/social_components.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
+#include "../../SRC/Server/GameServer/item/TypedDrops.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ChatSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MovementSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
+#include <cstdarg>
+#include <cstdio>
 #include <functional>
 #include <iostream>
 #include <stdexcept>
@@ -35,7 +37,7 @@ int privateMapsCreated = 0, privateMapsDestroyed = 0, privateMapIndex = 810001;
 bool allowFind = true;
 std::vector<std::pair<entt::entity, std::string>> chat;
 std::vector<entt::entity> warped, observerOn, observerOff;
-struct Grant { entt::entity character; uint32_t vnum; uint32_t count; };
+struct Grant { entt::entity character; auriga::item::ItemGrant item; };
 std::vector<Grant> granted;
 std::vector<int32_t> destroyedMapIndices;
 std::unordered_map<LPDESC, entt::entity> descOwners;
@@ -151,7 +153,12 @@ int GetLevel(entt::entity e) {
 
 namespace ecs {
 void ChatSystem::Send(entt::entity e, uint8_t, const char* format, ...) {
-    chat.emplace_back(e, format ? format : "");
+    char message[256]{};
+    va_list args;
+    va_start(args, format);
+    std::vsnprintf(message, sizeof(message), format, args);
+    va_end(args);
+    chat.emplace_back(e, message);
 }
 #ifdef TEXTS_IMPROVEMENT
 void ChatSystem::SendNew(entt::entity e, uint8_t, uint32_t, const char* format, ...) {
@@ -164,13 +171,8 @@ namespace ecs::MovementSystem {
 void ExitToSavedLocation(entt::entity e) { warped.push_back(e); }
 }
 
-namespace ItemSystem {
-entt::entity AutoGiveItemEcs(entt::entity character, uint32_t vnum, uint32_t count, int, bool, bool) {
-    // Non-player members (mob parties) have no inventory to receive into.
-    if (ecs::PlayerRuntime::IsPC(character))
-        granted.push_back({character, vnum, count});
-    return entt::null;
-}
+void QueueTypedItemGrant(entt::entity character, const auriga::item::ItemGrant& grant) {
+    granted.push_back({character, grant});
 }
 
 void DESC_MANAGER::DestroyDesc(LPDESC desc, bool) {
@@ -295,7 +297,7 @@ void WarpAndEndEvent() {
     Manager().Request(1, 2);
     const auto map = Manager().Find(privateMapIndex);
     const auto leader = PlayerEntity(1, 20), partner = PlayerEntity(2, 20);
-    const auto guest = PlayerEntity(3, 20), lowLevel = PlayerEntity(4, 5);
+    const auto guest = PlayerEntity(3, 10), lowLevel = PlayerEntity(4, 9);
     const auto npc = g_registry.create(); // Not a player: members can be NPCs.
     marriage::WeddingSystem::SetMemberMap(leader, map);
     marriage::WeddingSystem::SetMemberMap(partner, map);
@@ -314,9 +316,11 @@ void WarpAndEndEvent() {
     marriage::WeddingSystem::SetEnded(map);
     Check(liveEvents == 1 && State(map).endEvent == event, "second end event was scheduled");
 
-    // The couple and sub-level-10 members are excluded from the ceremony gift.
+    // The couple, NPCs and guests below level 10 are excluded from the ceremony gift.
     Check(granted.size() == 1 && granted.front().character == guest
-        && granted.front().vnum == 27002 && granted.front().count == 5, "ceremony gift policy changed");
+        && granted.front().item.key.Category() == auriga::item::ItemCategory::Consumable
+        && granted.front().item.key.LocalId() == 535 && granted.front().item.refinementLevel == 0
+        && granted.front().item.count == 5, "ceremony must grant five typed medium red potions exactly once");
 
     warped.clear();
     Check(event->func(event, 0) == PASSES_PER_SEC(15), "end event did not enter the warp step");

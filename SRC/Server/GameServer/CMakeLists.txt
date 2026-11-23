@@ -389,7 +389,7 @@ add_executable(WeddingLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/WeddingLifecycleTests.cpp
     social/wedding.cpp
 )
-target_link_libraries(WeddingLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
+target_link_libraries(WeddingLifecycleTests PRIVATE SERVER EnTT::EnTT LUA AurigaItemDomain)
 add_test(NAME wedding_lifecycle COMMAND WeddingLifecycleTests)
 
 # The guild member rows over the production guild.cpp: the player-id
