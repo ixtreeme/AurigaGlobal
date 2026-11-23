@@ -31,7 +31,6 @@
 #include <item/OwnedGround.hpp>
 #include <random>
 #include <set>
-#include "item_manager.h"
 #include "../core/packet.h"
 #include "../ecs/Registry.hpp"
 #include "../ecs/SpatialHelpers.hpp"
@@ -79,6 +78,14 @@ std::unordered_map<std::uint32_t, Entry>& Loot()
 {
 	static std::unordered_map<std::uint32_t, Entry> loot;
 	return loot;
+}
+
+std::uint32_t AllocateGroundVid()
+{
+	static std::uint32_t last = 0;
+	if (last == UINT32_MAX)
+		return 0;
+	return ++last;
 }
 
 std::int64_t NowMs()
@@ -154,7 +161,7 @@ static std::uint32_t CreateLoot(const items::ItemGrant& grant, std::int32_t mapI
 	const auto* item = catalog ? catalog->Find(grant.key) : nullptr;
 	if (!item || !grant.count || mapIndex <= 0)
 		return 0;
-	const std::uint32_t vid = ITEM_MANAGER::instance().AllocateGroundVID();
+	const std::uint32_t vid = AllocateGroundVid();
 	if (!vid)
 		return 0;
 	auto insert = items::EncodeTypedGround({ vid, x, y, z, grant.key, grant.refinementLevel, grant.count, item->base.contentCode,catalog->CurrencyMode(grant.key)==items::CurrencyTokenMode::GroundGold ? grant.currencyAmount.value_or(grant.count) : 0 });

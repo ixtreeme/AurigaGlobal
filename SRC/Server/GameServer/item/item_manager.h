@@ -195,9 +195,6 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		bool			GetVnumByOriginalName(const char * c_pszName, uint32_t & r_dwVnum);
 
 		bool			GetDropPct(entt::entity victim, entt::entity killer, OUT double& iDeltaPercent, OUT int& iRandRange);
-		// A ground VID from the item VID counter for typed ground loot (C7c), so
-		// it never meets a legacy item's VID; 0 when the counter is exhausted.
-		uint32_t		AllocateGroundVID();
 		bool			ReadSpecialDropItemFile(const char * c_pszFileName);
 
 		// convert name -> vnum special_item_group.txt
@@ -231,7 +228,6 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		std::map<uint32_t, uint32_t>		m_map_ItemRefineFrom;
 		int				m_iTopOfTable;
 		ITEM_VID_MAP			m_VIDMap;
-		uint32_t				m_dwVIDCount;
 		uint32_t				m_dwCurrentID;
 		TItemIDRangeTable	m_ItemIDRange;
 		TItemIDRangeTable	m_ItemIDSpareRange;

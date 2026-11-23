@@ -65,7 +65,7 @@ struct ItemDestructionGuard
 };
 }
 ITEM_MANAGER::ITEM_MANAGER()
-	: m_iTopOfTable(0), m_dwVIDCount(0), m_dwCurrentID(0)
+	: m_iTopOfTable(0), m_dwCurrentID(0)
 {
 	m_ItemIDRange.dwMin = m_ItemIDRange.dwMax = m_ItemIDRange.dwUsableItemIDMin = 0;
 	m_ItemIDSpareRange.dwMin = m_ItemIDSpareRange.dwMax = m_ItemIDSpareRange.dwUsableItemIDMin = 0;
