@@ -3,6 +3,7 @@
 #include "../warrior/WarriorMobility.hpp"
 #include "../story/CaravanQuestSystem.hpp"
 #include "../item/TypedGathering.hpp"
+#include "../dungeon/LostCastleLayout.hpp"
 #include <Core/Logging.hpp>
 #include "input.h"
 #include "../ecs/Registry.hpp"
@@ -203,6 +204,18 @@ void CInputMain::Move(entt::entity character, const char * data)
 			//}
 		}
 	}
+
+#ifdef ENABLE_CPP_DUNGEON_RAZOR93
+    const auto mapIndex = ecs::PlayerRuntime::GetMapIndex(character);
+    if (LostCastleLayout::IsPrivateMap(mapIndex))
+    {
+        int32_t acceptedX, acceptedY;
+        if (!WarriorMobility::Trace(mapIndex,
+            ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character),
+            pinfo->lX, pinfo->lY, acceptedX, acceptedY))
+            return;
+    }
+#endif
 
 	if (pinfo->bFunc == FUNC_MOVE)
 	{

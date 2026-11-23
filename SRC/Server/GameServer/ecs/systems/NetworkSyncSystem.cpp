@@ -21,6 +21,7 @@
 #include "../../core/packet.h"
 #include "../../social/party.h"
 #include "../../world/sectree.h"
+#include "../../dungeon/LostCastleDungeon.h"
 #include "../EntityFactory.hpp"
 #include "../ItemRegistry.hpp"
 #include "../NetworkService.hpp"
@@ -373,10 +374,9 @@ bool NetworkSyncSystem::BuildCharAdditionalInfo(entt::registry& reg, entt::entit
         return false;
 
     const bool isPC = ecs::PlayerRuntime::IsPC(source);
-    // The class sent this packet for IsPC() || m_bCharType == CHAR_TYPE_NPC:
-    // players and NPCs, never monsters.
     const bool isNPC = ecs::PlayerRuntime::IsNPCType(source);
-    if (!isPC && !isNPC)
+    const bool isCastleClone = reg.all_of<ecs::LostCastleCloneAppearance>(source);
+    if (!isPC && !isNPC && !isCastleClone)
         return false;
 
     const auto* vid = reg.try_get<ecs::VIDComponent>(source);
@@ -424,6 +424,10 @@ bool NetworkSyncSystem::BuildCharAdditionalInfo(entt::registry& reg, entt::entit
 #ifdef ENABLE_MULTI_LANGUAGE
         packet.bLanguage = ecs::NetworkService::GetLanguage(source);
 #endif
+    }
+    else if (isCastleClone) {
+        const int level = ecs::PointSystem::GetLevel(source);
+        packet.dwLevel = level > 0 ? static_cast<uint32_t>(level) : 0;
     }
 #ifdef __NEWPET_SYSTEM__
     else if (const auto* pet = reg.try_get<ecs::GrowthPetComponent>(source)) {

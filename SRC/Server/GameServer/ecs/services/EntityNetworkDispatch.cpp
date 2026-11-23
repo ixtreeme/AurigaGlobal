@@ -10,6 +10,7 @@
 #include "../../core/buffer_manager.h"
 #include "../../core/packet.h"
 #include "../../core/utils.h"
+#include "../../dungeon/LostCastleDungeon.h"
 #include "../NetworkService.hpp"
 #include "../Registry.hpp"
 #include "../components/appearance_components.hpp"
@@ -168,7 +169,7 @@ bool BuildCharacterInsert(entt::registry& reg, entt::entity source, TPacketGCCha
     packet.wRaceNum = static_cast<uint16_t>(race);
 
 #ifdef ENABLE_MULTI_NAMES
-    packet.transname = !specialMountLikeRace;
+    packet.transname = !specialMountLikeRace && !reg.all_of<ecs::LostCastleCloneAppearance>(source);
 #endif
 
     if (specialMountLikeRace) {

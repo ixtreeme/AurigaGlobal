@@ -19,6 +19,7 @@
 #include "LostCastleDungeon.h"
 #include "LostCastleLayout.hpp"
 #include "JsonFile.h"
+#include "../mission_pass/MissionPassEvents.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -53,11 +54,14 @@ namespace
 {
 #define STR_MULTIPLE 50 //player statja szorozva ennyivel lesz a klon statja (HP/SP/DMG/STAT),
     // ---------------- CONFIG ----------------
-    constexpr int32_t  kOriginalMap = 380;
-    constexpr int32_t  kPrivateMin = 3800000;
-    constexpr int32_t  kPrivateMax = 3810000;
+    constexpr int32_t  kOriginalMap = LostCastleLayout::MapIndex;
+    constexpr int32_t  kPrivateMin = LostCastleLayout::PrivateMin;
+    constexpr int32_t  kPrivateMax = LostCastleLayout::PrivateMax;
 
     constexpr uint32_t kEntryNpcVnum = 20021;
+    constexpr int32_t kLobbyMap = 219;
+    constexpr int32_t kLobbyX = 535000;
+    constexpr int32_t kLobbyY = 1436200;
     constexpr std::string_view kEntryTicketCode = "material.arpa";
 
     constexpr int32_t  kMinLevel = 40;
@@ -94,9 +98,11 @@ namespace
     constexpr const char* kFlagCorrectMetin = "lc_metin_vid";
     constexpr const char* kFlagStatueVid = "lc_statue_vid";
     constexpr const char* kFlagKeyMask = "lc_key_mask";
+    constexpr const char* kFlagNextKeyDrop = "lc_next_key_drop";
     constexpr const char* kFlagTotemVid = "lc_totem_vid";
     constexpr const char* kFlagTileStage = "lc_tile_stage";
     constexpr const char* kFlagClonesRemain = "lc_clones_remain";
+    constexpr const char* kFlagExitVid = "lc_exit_vid";
 
     // Rejoin quest flags (per character)
     constexpr const char* kQfDisconnect = "lostcastle.disconnect";
@@ -152,7 +158,8 @@ namespace
         const auto& bounds = map->m_setting;
         const int width = bounds.iWidth / 100;
         const int height = bounds.iHeight / 100;
-        if (!LostCastleLayout::Fits(width, height) || !CastleRegensFit(kFloor2Regen, width, height)
+        if (width != LostCastleLayout::MapWidth || height != LostCastleLayout::MapHeight
+            || !LostCastleLayout::Fits(width, height) || !CastleRegensFit(kFloor2Regen, width, height)
             || !CastleRegensFit(kFloor4Regen, width, height))
             return false;
 
@@ -235,19 +242,18 @@ namespace
             });
     }
 
-    void DropCastleTile(entt::entity victim, entt::entity claimant)
+    bool DropCastleItem(entt::entity victim, entt::entity claimant, auriga::item::DungeonUseRole role)
     {
-        const auto key = FindTypedDungeonUseKey(auriga::item::DungeonUseRole::CastleTile);
+        const auto key = FindTypedDungeonUseKey(role);
         if (!key)
         {
-            LOG_ERROR("Lost Castle: typed tile item is missing from the catalog");
-            return;
+            LOG_ERROR("Lost Castle: typed objective item {} is missing from the catalog", static_cast<unsigned>(role));
+            return false;
         }
 
         namespace Player = ecs::PlayerRuntime;
-        DropTypedLoot({*key, 0, 1}, Player::GetMapIndex(victim),
-            Player::GetX(victim) + number(-200, 200),
-            Player::GetY(victim) + number(-200, 200),
+        return DropTypedLoot({*key, 0, 1}, Player::GetMapIndex(victim),
+            Player::GetX(victim), Player::GetY(victim),
             Player::GetZ(victim), claimant, 180000);
     }
 
@@ -269,6 +275,33 @@ namespace
             ATTR_BLOCK,
             block ? ATTR_REGION_MODE_SET : ATTR_REGION_MODE_REMOVE
         );
+    }
+
+    bool InstallCastleWalls(int32_t mapIndex)
+    {
+        using namespace LostCastleLayout;
+        std::vector<int> xs{0, MapWidth}, ys{0, MapHeight};
+        for (const auto& room : Rooms)
+        {
+            xs.insert(xs.end(), {room.start.x, room.end.x});
+            ys.insert(ys.end(), {room.start.y, room.end.y});
+        }
+        const auto order = [](auto& edges) {
+            std::sort(edges.begin(), edges.end());
+            edges.erase(std::unique(edges.begin(), edges.end()), edges.end());
+        };
+        order(xs);
+        order(ys);
+        for (std::size_t y = 1; y < ys.size(); ++y)
+            for (std::size_t x = 1; x < xs.size(); ++x)
+            {
+                const Point start{xs[x - 1], ys[y - 1]};
+                if (!Walkable(start) && !ApplyBlockRect(mapIndex, {start, {xs[x], ys[y]}}, true))
+                    return false;
+            }
+        return std::ranges::all_of(Tiles, [=](const Tile& tile) {
+            return ApplyBlockRect(mapIndex, tile, true);
+        });
     }
 
     // ---------------- LostCastle clone helpers (anim + move + timed hit) ----------------
@@ -603,6 +636,7 @@ void ClearClonesOnMap(int32_t mapIndex)
 
             DungeonSystem::SetFlag(d, kFlagFloor, 2);
             DungeonSystem::SetFlag(d, kFlagKeyMask, 0);
+            DungeonSystem::SetFlag(d, kFlagNextKeyDrop, 0);
             DungeonSystem::SetFlag(d, kFlagStatueVid, 0);
 
             JumpToRoom(d, mapIndex, LostCastleLayout::KeyRoomEntrance);
@@ -705,14 +739,16 @@ void ClearClonesOnMap(int32_t mapIndex)
             snprintf(evilName, sizeof(evilName), "Gonosz%s", ecs::PlayerRuntime::GetName(sourceEntity).data());
 
             // FAKE PC (nem mob!) - PID=0, hogy ne keruljon bele PC name/PID map-ekbe
-            const entt::entity cloneEntity = CHARACTER_MANAGER::instance().CreateCharacterEntity(evilName, 0);
+            const entt::entity cloneEntity = CHARACTER_MANAGER::instance().SpawnMobEntity(
+                kCloneBaseMobVnum, mapIndex, gx, gy, 0, false, -1, false);
 
             if (cloneEntity == entt::null)
                 continue;
 
-
-            // Fontos: legyen PC race/job/empire/PK mode, hogy a kliens PvP-kent kezelje
-            ecs::PlayerRuntime::SetRace(cloneEntity, (uint8_t)ecs::PlayerRuntime::GetRaceNum(sourceEntity));
+            // Keep monster combat rules and send the player's appearance.
+            g_registry.emplace<ecs::LostCastleCloneAppearance>(cloneEntity);
+            ecs::PlayerRuntime::SetName(cloneEntity, evilName);
+            ecs::PlayerRuntime::SetRace(cloneEntity, static_cast<uint8_t>(g_registry.get<ecs::RaceState>(sourceEntity).baseRace));
             ecs::PlayerRuntime::SetEmpire(cloneEntity, ecs::PlayerRuntime::GetEmpire(sourceEntity));
             CombatSystem::SetPKMode(cloneEntity, PK_MODE_FREE);
             SkillSystem::SetSkillGroup(cloneEntity, SkillSystem::GetSkillGroup(sourceEntity));
@@ -792,6 +828,11 @@ void ClearClonesOnMap(int32_t mapIndex)
         }
 
         DungeonSystem::SetFlag(d, kFlagClonesRemain, remain);
+        if (remain == 0)
+        {
+            ClearDungeon(mapIndex);
+            return;
+        }
 
         BigNoticeMap(mapIndex, "Elveszett Kastely: Mindenki olje meg a sajat klonjat!");
 
@@ -817,12 +858,10 @@ void ClearClonesOnMap(int32_t mapIndex)
             DungeonSystem::SetFlag(d, kFlagFloor, 4);
             DungeonSystem::SetFlag(d, kFlagTileStage, 0);
             DungeonSystem::SetFlag(d, kFlagTotemVid, 0);
-
-            for (const auto& tile : LostCastleLayout::Tiles)
-                ApplyBlockRect(mapIndex, tile, true);
+            DungeonSystem::SetFlag(d, kFlagExitVid, 0);
 
             JumpToRoom(d, mapIndex, LostCastleLayout::TileRoomEntrance);
-            DungeonSystem::SpawnRegen(d, kFloor4Regen, true);
+            DungeonSystem::SpawnRegen(d, kFloor4Regen, false);
 
             const auto point = LostCastleLayout::Totem;
             const entt::entity totem = DungeonSystem::SpawnMob(d, kTotemVnum, point.x, point.y);
@@ -862,6 +901,22 @@ void ClearClonesOnMap(int32_t mapIndex)
             }
         }
 
+        void SpawnExit(entt::entity dungeon, int32_t mapIndex)
+        {
+            if (DungeonSystem::GetFlag(dungeon, kFlagExitVid))
+                return;
+
+            const auto point = LostCastleLayout::Exit;
+            const auto exit = DungeonSystem::SpawnMob(dungeon, kTotemVnum, point.x, point.y);
+            if (exit == entt::null)
+            {
+                LOG_ERROR("Lost Castle: could not spawn the exit totem on map {}", mapIndex);
+                return;
+            }
+            DungeonSystem::SetFlag(dungeon, kFlagExitVid, ecs::PlayerRuntime::GetPacketVID(exit));
+            BigNoticeMap(mapIndex, "A híd elkészült. A túloldali totemnél fejezheted be a kazamatát.");
+        }
+
         bool UnlockNextTile(int32_t mapIndex)
         {
             const entt::entity d = CDungeonManager::instance().FindByMapIndex(mapIndex);
@@ -880,6 +935,8 @@ void ClearClonesOnMap(int32_t mapIndex)
 
             SendCommandMap(mapIndex, "lostcastle_tile %d", stage);
             BigNoticeMap(mapIndex, "Elveszett Kastely: Letettel egy csempet (%d/%d)!", stage, kTileStages);
+            if (stage == kTileStages)
+                SpawnExit(d, mapIndex);
             return true;
         }
 
@@ -1388,6 +1445,47 @@ void CLostCastleDungeon::OnPlayerDisconnect(entt::entity character)
     ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
 }
 
+bool CLostCastleDungeon::TryHandleNpcClick(entt::entity character, entt::entity npc)
+{
+    namespace P = ecs::PlayerRuntime;
+    const auto map = P::GetMapIndex(npc);
+    const auto vnum = P::GetRaceNum(npc);
+    const bool entrance = map == kLobbyMap && vnum == kEntryNpcVnum
+        && P::GetX(npc) == kLobbyX && P::GetY(npc) == kLobbyY;
+    const auto dungeon = IsInRange(map, kPrivateMin, kPrivateMax) && vnum == kTotemVnum
+        ? CDungeonManager::instance().FindByMapIndex(map) : entt::null;
+    const bool exit = g_registry.valid(dungeon)
+        && P::GetPacketVID(npc) == static_cast<std::uint32_t>(DungeonSystem::GetFlag(dungeon, kFlagExitVid));
+    const bool bridgeTotem = g_registry.valid(dungeon)
+        && DungeonSystem::GetFlag(dungeon, kFlagTileStage) == kTileStages
+        && !DungeonSystem::GetFlag(dungeon, kFlagWasCompleted)
+        && !DungeonSystem::GetFlag(dungeon, kFlagExitVid)
+        && P::GetPacketVID(npc) == static_cast<std::uint32_t>(DungeonSystem::GetFlag(dungeon, kFlagTotemVid));
+    if (!entrance && !exit && !bridgeTotem)
+        return false;
+    if (P::GetMapIndex(character) != map || CombatSystem::IsDead(character)
+        || DISTANCE_APPROX(P::GetX(character) - P::GetX(npc), P::GetY(character) - P::GetY(npc)) > 550)
+        return true;
+
+    if (exit)
+    {
+        if (ecs::SocialSystem::GetDungeon(character) == dungeon
+            && !DungeonSystem::GetFlag(dungeon, kFlagWasCompleted))
+        {
+            AurigaMissionPass::Events::Complete(map);
+            s_lc.ClearDungeon(map);
+        }
+        return true;
+    }
+    if (bridgeTotem)
+    {
+        if (ecs::SocialSystem::GetDungeon(character) == dungeon)
+            s_lc.SpawnExit(dungeon, map);
+        return true;
+    }
+    return OnClickNpc(character);
+}
+
 void CLostCastleDungeon::OnPlayerLogin(entt::entity character)
 {
     if (!ecs::PlayerRuntime::IsPC(character))
@@ -1401,6 +1499,11 @@ void CLostCastleDungeon::OnPlayerLogin(entt::entity character)
     // Lobby is set at entry time (npc click) to where the player came from.
     ecs::QuestSystem::SetFlag(character, kQfIdx, idx);
     ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
+    const auto dungeon = CDungeonManager::instance().FindByMapIndex(idx);
+    if (g_registry.valid(dungeon) && !DungeonSystem::GetFlag(dungeon, kFlagWasCompleted))
+        ecs::SocialSystem::SetDungeon(character, dungeon);
+    ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "lostcastle_tile %d",
+        DungeonSystem::GetFlag(dungeon, kFlagTileStage));
 }
 
 bool CLostCastleDungeon::OnClickNpc(entt::entity character)
@@ -1480,7 +1583,7 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
     }
 
     const auto mapIndex = DungeonSystem::GetMapIndex(d);
-    if (!CastleLayoutAvailable(mapIndex))
+    if (!CastleLayoutAvailable(mapIndex) || !InstallCastleWalls(mapIndex))
     {
         LOG_ERROR("Lost Castle: invalid layout on private map {}", mapIndex);
         CancelTypedDungeonPreflight(d);
@@ -1541,15 +1644,12 @@ void CLostCastleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
         ecs::PlayerRuntime::GetMapIndex(killer) != ecs::PlayerRuntime::GetMapIndex(victim))
         return;
 
-    if (!ecs::PlayerRuntime::IsValid(victim))
-        return;
-
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(victim);
     if (!IsInRange(idx, kPrivateMin, kPrivateMax))
         return;
 
     const entt::entity d = CDungeonManager::instance().FindByMapIndex(idx);
-    if (d == entt::null)
+    if (d == entt::null || DungeonSystem::GetFlag(d, kFlagWasCompleted))
         return;
 
     const int32_t floor = DungeonSystem::GetFlag(d, kFlagFloor);
@@ -1565,11 +1665,20 @@ void CLostCastleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
         return;
     }
 
-    if (floor == 3)
+    if (floor == 2 && ecs::PlayerRuntime::IsMonster(victim))
     {
-	const uint32_t vvid = ecs::PlayerRuntime::GetPacketVID(victim);
-        if (s_lc.IsClone(vvid))
-            s_lc.OnCloneKilled(idx, vvid);
+        using Role = auriga::item::DungeonUseRole;
+        const auto used = DungeonSystem::GetFlag(d, kFlagKeyMask);
+        const auto next = DungeonSystem::GetFlag(d, kFlagNextKeyDrop);
+        for (int offset = 0; offset < 5; ++offset)
+        {
+            const auto index = (next + offset) % 5;
+            if (used & (1 << index))
+                continue;
+            if (DropCastleItem(victim, killer, static_cast<Role>(static_cast<int>(Role::CastleKey1) + index)))
+                DungeonSystem::SetFlag(d, kFlagNextKeyDrop, (index + 1) % 5);
+            break;
+        }
         return;
     }
 
@@ -1580,8 +1689,8 @@ void CLostCastleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             const uint16_t vnum = ecs::PlayerRuntime::GetRaceNum(victim);
             if (vnum != kTotemVnum && vnum != kStatueVnum)
             {
-                if (number(1, 100) <= kTileDropChancePct)
-                    DropCastleTile(victim, killer);
+                if (DungeonSystem::GetFlag(d, kFlagTileStage) < kTileStages && number(1, 100) <= kTileDropChancePct)
+                    DropCastleItem(victim, killer, auriga::item::DungeonUseRole::CastleTile);
             }
         }
         return;
@@ -1645,8 +1754,14 @@ bool CLostCastleDungeon::CheckCloneDamage(entt::entity attacker, entt::entity vi
     if (!attackerIsClone && !victimIsClone)
         return true;
 
-    // Player/NPC -> Clone
+    if (attackerIsClone)
+        return !victimIsClone && ecs::PlayerRuntime::IsPC(victim)
+            && s_lc.IsCloneAttackAllowed(aVid, ecs::PlayerRuntime::GetPlayerID(victim));
+    return ecs::PlayerRuntime::IsPC(attacker)
+        && s_lc.IsCloneAttackAllowed(vVid, ecs::PlayerRuntime::GetPlayerID(attacker));
+}
 
-    //// Clone -> Player/NPC
-    return false;
+void CLostCastleDungeon::OnCloneDeath(entt::entity victim)
+{
+    s_lc.OnCloneKilled(ecs::PlayerRuntime::GetMapIndex(victim), ecs::PlayerRuntime::GetPacketVID(victim));
 }

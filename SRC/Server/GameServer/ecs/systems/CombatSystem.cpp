@@ -112,6 +112,7 @@
 #include "../../dungeon/RuneDungeon.h"
 #include "../../dungeon/PyramidDungeonRazor93.h"
 #include "../../dungeon/NightmareDungeonRazor93.h"
+#include "../../dungeon/LostCastleDungeon.h"
 #include "../../dungeon/Halloween2022Dungeon.h"
 #include "../../dungeon/VikingDungeon.h"
 #include "../../dungeon/EasterDungeon.h"
@@ -2220,6 +2221,11 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 	if (CombatSystem::GetInvincible(victim))
 		return;
 
+#ifdef ENABLE_CPP_DUNGEON_RAZOR93
+    const bool castleClone = CLostCastleDungeon::instance().IsCloneVID(ecs::PlayerRuntime::GetPacketVID(victim));
+    if (castleClone)
+        SET_BIT(g_registry.get_or_emplace<ecs::CharacterRuntimeFlagsComponent>(victim).instantFlag, INSTANT_FLAG_NO_REWARD);
+#endif
     if(SpyQuest::Hooks::death)SpyQuest::Hooks::death(victim,killer);
     CaravanQuest::OnDeath(victim,killer);
     EclipseRaid::OnDeath(victim,killer);
@@ -2707,6 +2713,10 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 		ecs::SocialSystem::CloseMyShop(victim);
 		ecs::SessionSystem::CloseSafebox(victim);
 	}
+#ifdef ENABLE_CPP_DUNGEON_RAZOR93
+    if (castleClone && g_registry.valid(victim))
+        CLostCastleDungeon::instance().OnCloneDeath(victim);
+#endif
 }
 
 } // namespace CombatSystem
@@ -3921,7 +3931,7 @@ void Reward(entt::entity e, bool bItemDrop)
 		CRuneDungeon::instance().OnMobKilled(attacker, e);
 		CPyramidDungeonRazor93::instance().OnMobKilled(attacker, e);
 		CNightmareDungeonRazor93::instance().OnMobKilled(attacker, e);
-		//CLostCastleDungeon::instance().OnMobKilled(attacker, e);
+		CLostCastleDungeon::instance().OnMobKilled(attacker, e);
 		CHalloween2022Dungeon::instance().OnMobKilled(attacker, e);
 		CVikingDungeon::instance().OnMobKilled(attacker, e);
 		CEasterDungeon::instance().OnMobKilled(attacker, e);
@@ -4254,6 +4264,10 @@ namespace CombatSystem {
 // was a read on the victim; that is what the entity in each call is.
 bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t damageType)
 {
+#ifdef ENABLE_CPP_DUNGEON_RAZOR93
+    if (!CLostCastleDungeon::instance().CheckCloneDamage(attacker, victim))
+        return false;
+#endif
     if(TypedSoulDamageLocked(victim) || TypedSoulDamageLocked(attacker))return false;
     if (HasTypedEquipment(attacker)) RefreshTypedEquipment(attacker);
     if (HasTypedEquipment(victim)) RefreshTypedEquipment(victim);

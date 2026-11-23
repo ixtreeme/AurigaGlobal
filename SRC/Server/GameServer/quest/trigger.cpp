@@ -40,14 +40,13 @@
 #include "VikingDungeon.h"
 #include "EasterDungeon.h"
 #include "../ecs/systems/SessionSystem.hpp"
-//#include "LostCastleDungeon.h"
+#include "LostCastleDungeon.h"
 int OnClickOrcsDungeon(TRIGGERPARAM);
 int OnClickTritonTempleDungeon(TRIGGERPARAM);
 int OnClickValentineDungeon(TRIGGERPARAM);
 int OnClickRuneDungeon(TRIGGERPARAM);
 int OnClickPyramidDungeon(TRIGGERPARAM);
 int OnClickNightmareDungeon(TRIGGERPARAM);
-//int OnClickLostCastleDungeon(TRIGGERPARAM);
 int OnClickHalloween2022Dungeon(TRIGGERPARAM);
 int OnClickVikingDungeon(TRIGGERPARAM);
 #ifdef ENABLE_NEW_CRAFT_SYSTEM_RAZOR93
@@ -87,7 +86,6 @@ TTriggerFunction OnClickTriggers[ON_CLICK_MAX_NUM] =
 	{ OnClickRuneDungeon }, // ON_CLICK_RUNE_DUNGEON
 	{ OnClickPyramidDungeon }, // ON_CLICK_PYRAMID_DUNGEON
 	{ OnClickNightmareDungeon }, // ON_CLICK_NIGHTMARE_DUNGEON
-	//{ OnClickLostCastleDungeon }, // ON_CLICK_LOST_CASTLE_DUNGEON
 	{ OnClickHalloween2022Dungeon }, // ON_CLICK_HALLOWEEN2022_DUNGEON
 	{ OnClickVikingDungeon }, // ON_CLICK_VIKING_DUNGEON
 #ifdef ENABLE_NEW_CRAFT_SYSTEM_RAZOR93
@@ -137,6 +135,10 @@ void ecs::PlayerRuntime::OnClick(entt::entity target, entt::entity causer)
         }
     }
 
+#ifdef ENABLE_CPP_DUNGEON_RAZOR93
+    if (CLostCastleDungeon::instance().TryHandleNpcClick(causer, target))
+        return;
+#endif
     if (IsPC(target))
     {
         if (!CTargetManager::instance().GetTargetInfo(GetPlayerID(causer), TARGET_TYPE_VID, GetPacketVID(target)))

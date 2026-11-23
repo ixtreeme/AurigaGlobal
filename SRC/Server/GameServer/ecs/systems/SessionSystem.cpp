@@ -72,6 +72,7 @@
 #include "../components/visibility_components.hpp"
 #include "../../dungeon/PyramidDungeonRazor93.h"
 #include "../../dungeon/NightmareDungeonRazor93.h"
+#include "../../dungeon/LostCastleDungeon.h"
 #include "../../dungeon/Halloween2022Dungeon.h"
 #include "../../dungeon/VikingDungeon.h"
 #include "../../dungeon/EasterDungeon.h"
@@ -500,6 +501,7 @@ void Disconnect(entt::entity e, const char* c_pszReason)
     CRuneDungeon::instance().OnPlayerDisconnect(e);
     CPyramidDungeonRazor93::instance().OnPlayerDisconnect(e);
     CNightmareDungeonRazor93::instance().OnPlayerDisconnect(e);
+    CLostCastleDungeon::instance().OnPlayerDisconnect(e);
     CHalloween2022Dungeon::instance().OnPlayerDisconnect(e);
     CVikingDungeon::instance().OnPlayerDisconnect(e);
     CEasterDungeon::instance().OnPlayerDisconnect(e);

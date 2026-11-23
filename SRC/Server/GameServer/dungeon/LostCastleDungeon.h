@@ -6,6 +6,10 @@
 
 #include <entt/entt.hpp>
 
+namespace ecs
+{
+struct LostCastleCloneAppearance {};
+}
 
 /*
     Elveszett Kastely (LostCastle) - Lua mentes C++ dungeon
@@ -35,6 +39,8 @@ public:
 
     // Entry NPC click handler
     bool OnClickNpc(entt::entity character);
+    bool TryHandleNpcClick(entt::entity character, entt::entity npc);
+    void OnCloneDeath(entt::entity victim);
 
     // Floor3 clone sebzes-korlatozas (Damage hook)
     bool CheckCloneDamage(entt::entity attacker, entt::entity victim) const;

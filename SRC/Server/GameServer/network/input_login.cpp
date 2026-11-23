@@ -62,7 +62,7 @@
 #include "RuneDungeon.h"
 #include "PyramidDungeonRazor93.h"
 #include "NightmareDungeonRazor93.h"
-//#include "LostCastleDungeon.h"
+#include "LostCastleDungeon.h"
 #include "Halloween2022Dungeon.h"
 #include "VikingDungeon.h"
 #include "EasterDungeon.h"
@@ -658,7 +658,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	CRuneDungeon::instance().OnPlayerLogin(ch);
 	CPyramidDungeonRazor93::instance().OnPlayerLogin(ch);
 	CNightmareDungeonRazor93::instance().OnPlayerLogin(ch);
-	//CLostCastleDungeon::instance().OnPlayerLogin(ch);
+	CLostCastleDungeon::instance().OnPlayerLogin(ch);
 	CHalloween2022Dungeon::instance().OnPlayerLogin(ch);
 	CVikingDungeon::instance().OnPlayerLogin(ch);
 	CEasterDungeon::instance().OnPlayerLogin(ch);
