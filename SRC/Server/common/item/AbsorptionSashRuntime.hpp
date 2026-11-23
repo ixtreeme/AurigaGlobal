@@ -2,7 +2,11 @@
 #include "PersistentItems.hpp"
 namespace auriga::item {
 inline constexpr std::uint16_t AbsorptionSashOutcome=0x2902;
-enum class AbsorptionSashOperation : std::uint8_t { Combine=1,Absorb=2,Clear=3 };
+enum class AbsorptionSashOperation : std::uint8_t { Combine=1,Absorb=2,Clear=3,CombineStoles=4 };
+constexpr bool IsRegaliaCombination(AbsorptionSashOperation operation)
+{
+    return operation == AbsorptionSashOperation::Combine || operation == AbsorptionSashOperation::CombineStoles;
+}
 struct AbsorptionSashActor {
     EquipContext equipment;
     bool admitted=false,alive=false,observer=false,polymorphed=false;

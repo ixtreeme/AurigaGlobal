@@ -43,7 +43,7 @@ auto* d=ecs::PlayerRuntime::GetDesc(e);return d && d->IsPhase(PHASE_GAME);}
 item::EquipContext Actor(entt::entity e){item::EquipContext a{static_cast<std::uint16_t>(std::max(0,ecs::PointSystem::GetLevel(e))),ecs::PlayerRuntime::GetJob(e),ecs::PlayerRuntime::GetSex(e)};a.inCombat=TypedItemEffectFacts(e).actor.inCombat;a.nowUtcMs=TypedItemEffectNow();return a;}
 std::uint64_t Elapsed(entt::entity e,const Request& r){const auto all=TypedCostumeElapsed(e);const auto id=r.operation==3 ? r.target : r.source;const auto i=std::ranges::find(all,id,&item::CostumeElapsed::instance);return i==all.end() ? 0 : i->elapsedMs;}
 std::optional<std::uint32_t> Random(std::uint32_t maximum){std::uint32_t value;if(maximum==UINT32_MAX){if(RAND_bytes(reinterpret_cast<unsigned char*>(&value),4)!=1)return {};return value;}const auto bound=maximum+1;const auto threshold=static_cast<std::uint32_t>((std::uint64_t{1}<<32)%bound);do{if(RAND_bytes(reinterpret_cast<unsigned char*>(&value),4)!=1)return {};}while(value<threshold);return value%bound;}
-bool SashRequest(const Request& r){return r.operation==3 && r.selection>=2 && r.selection<=4;}
+bool SashRequest(const Request& r){return r.operation==3 && r.selection>=2 && r.selection<=5;}
 item::AbsorptionSashActor SashActor(entt::entity e){return {Actor(e),Admitted(e),!CombatSystem::IsDead(e),ecs::PlayerRuntime::IsObserverMode(e),AffectSystem::IsPolymorphed(e)};}
 std::expected<item::AbsorptionSashQuote,item::ItemPersistenceError> SashQuote(entt::entity e,const Request& r){
     const auto c=store::CurrentCatalog();const auto* t=g_registry.try_get<ecs::TypedItems>(e);const auto a=item::ItemInstanceId::Create(r.source),b=item::ItemInstanceId::Create(r.target);
@@ -66,7 +66,7 @@ bool HandleTypedSpecialBonusesPacket(entt::entity e,const char* bytes){
     if(!Admitted(e) || g_registry.all_of<ecs::TypedItemBusy>(e)){Reply(e,Status::Denied,&r);return true;}
     const auto* t=g_registry.try_get<ecs::TypedItems>(e);
     if(r.action==1){
-        if(r.nonce || r.operation<1 || r.operation>3 || r.selection>4 || (r.selection>=2 && r.operation!=3) || !r.source || (r.operation==3)!=bool(r.target)){Reply(e,Status::Invalid,&r);return true;}
+        if(r.nonce || r.operation<1 || r.operation>3 || r.selection>5 || (r.selection>=2 && r.operation!=3) || !r.source || (r.operation==3)!=bool(r.target)){Reply(e,Status::Invalid,&r);return true;}
         TypedSpecialBonusSession next;next.request=r;next.nonce=0;if(RAND_bytes(reinterpret_cast<unsigned char*>(&next.nonce),8)!=1 || !next.nonce || RAND_bytes(next.operation.data(),16)!=1){Reply(e,Status::Failed,&r);return true;}
         const auto source=std::ranges::find(t->state.items,r.source,[](const auto& i){return i.id.Value();});const auto target=std::ranges::find(t->state.items,r.target,[](const auto& i){return i.id.Value();});if(source==t->state.items.end()){Reply(e,Status::Invalid,&r);return true;}next.source=*source;if(target!=t->state.items.end())next.target=*target;
         if(SashRequest(r)){const auto q=SashQuote(e,r);if(q)next.sashQuote=*q;next.status=q ? Status::Ready : Status::Invalid;}
@@ -82,7 +82,7 @@ bool HandleTypedSpecialBonusesPacket(entt::entity e,const char* bytes){
     if(SashRequest(r)){
         const auto c=store::CurrentCatalog();const auto q=SashQuote(e,r);if(!c || !q){session->status=Status::Invalid;Reply(e,session->status);return true;}
         item::AbsorptionSashDecision draw;
-        if(q->operation==item::AbsorptionSashOperation::Combine){
+        if(item::IsRegaliaCombination(q->operation)){
             const auto roll=Random(9999);if(!roll){session->status=Status::Failed;Reply(e,session->status);return true;}draw.successRoll=*roll+1;
             if(draw.successRoll<=q->successBp){const auto percent=Random(q->maximumPercent-q->minimumPercent);const auto ids=store::PeekInstanceIds(1);if(!percent || ids.size()!=1){session->status=Status::Failed;Reply(e,session->status);return true;}draw.resultPercent=q->minimumPercent+*percent;draw.newInstance=ids.front();}
         }
