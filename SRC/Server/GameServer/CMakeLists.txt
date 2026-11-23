@@ -768,7 +768,7 @@ add_executable(DungeonLifecycleTests EXCLUDE_FROM_ALL
     dungeon/Halloween2022Dungeon.cpp
     dungeon/VikingDungeon.cpp
 )
-target_link_libraries(DungeonLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
+target_link_libraries(DungeonLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core AurigaItemCatalog)
 add_test(NAME dungeon_lifecycle COMMAND DungeonLifecycleTests)
 
 add_executable(ShopLifecycleTests EXCLUDE_FROM_ALL

@@ -11,6 +11,16 @@
 #include "../../SRC/Server/GameServer/dungeon/VikingDungeon.h"
 #include "../../SRC/Server/GameServer/network/db.h"
 #include "../../SRC/Server/GameServer/item/item_manager.h"
+#include "../../SRC/Server/GameServer/item/ItemCatalogRuntime.hpp"
+#include "../../SRC/Server/GameServer/item/ItemStore.hpp"
+#include "../../SRC/Server/GameServer/item/TypedDungeonActions.hpp"
+#include "../../SRC/Server/GameServer/item/TypedDungeonEntry.hpp"
+#include "../../SRC/Server/GameServer/item/TypedDrops.hpp"
+#include "../../SRC/Server/GameServer/item/TypedFishProcessing.hpp"
+#include "../../SRC/Server/GameServer/item/TypedInventorySync.hpp"
+#include "../../SRC/Server/GameServer/item/TypedLoot.hpp"
+#include "../../SRC/Server/GameServer/item/TypedRecovery.hpp"
+#include "../../SRC/Server/GameServer/item/TypedTools.hpp"
 #include "../../SRC/Server/GameServer/social/party.h"
 #include "../../SRC/Server/GameServer/entity/char_manager.h"
 #include "../../SRC/Server/GameServer/world/sectree_manager.h"
@@ -191,6 +201,13 @@ void event_cancel(LPEVENT* event) {
 CHARACTER_MANAGER::CHARACTER_MANAGER() = default;
 CHARACTER_MANAGER::~CHARACTER_MANAGER() = default;
 entt::entity CHARACTER_MANAGER::FindEntity(uint32_t vid) { return ecs::PlayerRuntime::FindByVID(vid); }
+entt::entity CHARACTER_MANAGER::FindEntityByPID(uint32_t pid)
+{
+    for (const auto [entity, actor] : g_registry.view<Actor>().each())
+        if (actor.pid == pid)
+            return entity;
+    return entt::null;
+}
 SECTREE_MANAGER::SECTREE_MANAGER() = default;
 SECTREE_MANAGER::~SECTREE_MANAGER() = default;
 quest::CQuestManager::CQuestManager() = default;
@@ -249,6 +266,7 @@ bool IsValid(entt::entity e) { return e != entt::null && g_registry.valid(e); }
 bool IsPC(entt::entity e) { const auto* a = ActorOf(e); return a && a->pc; }
 bool CanWarp(entt::entity e) { return IsPC(e); }
 uint32_t GetPlayerID(entt::entity e) { const auto* a = ActorOf(e); return a ? a->pid : 0; }
+bool IsWarping(entt::entity) { return false; }
 bool IsMonster(entt::entity e) { const auto* a = ActorOf(e); return a && a->monster; }
 bool IsStone(entt::entity e) { const auto* a = ActorOf(e); return a && a->stone; }
 bool IsPet(entt::entity) { return false; }
@@ -285,7 +303,7 @@ void ChatSystem::SendNew(entt::entity, uint8_t, uint32_t, const char*, ...) {}
 }
 
 namespace AffectSystem {
-bool AddAffect(entt::entity e, uint32_t, uint8_t, int32_t, uint32_t, int32_t, int32_t, bool, bool) {
+bool AddAffect(entt::entity e, uint32_t, uint8_t, double, uint32_t, int32_t, int32_t, bool, bool) {
     affected.push_back(e);
     return true;
 }
@@ -363,6 +381,75 @@ bool CanConsumeOwnedItem(entt::entity, entt::entity, uint32_t, ItemCostStorage) 
 bool ConsumeOwnedItemCosts(entt::entity, std::span<const ItemCost>) { return true; }
 bool PlaceItemOnGround(entt::entity, int, const PIXEL_POSITION&, int) { return true; }
 bool SetGroundOwnership(entt::entity, entt::entity, int) { return true; }
+}
+
+// Item-domain and SQL rules have their own tests. The controller fixture
+// publishes the same preflight plan with an immediately successful commit.
+bool HasTypedDungeonInventory(entt::entity character)
+{
+    return ecs::PlayerRuntime::IsPC(character);
+}
+
+bool TypedDungeonEntryPending(entt::entity)
+{
+    return false;
+}
+
+std::uint64_t TypedDungeonTicketCount(entt::entity character, std::string_view code)
+{
+    return !code.empty() && HasTypedDungeonInventory(character) ? 1 : 0;
+}
+
+bool BeginTypedDungeonEntry(entt::entity leader, std::string_view gate, std::string_view code,
+    std::uint32_t units, std::function<bool(entt::entity)> eligible,
+    std::function<std::optional<TypedDungeonEntryPlan>()> preflight, TypedDungeonQuestEntry)
+{
+    if (gate.empty() || TypedDungeonTicketCount(leader, code) < units || !eligible(leader))
+        return false;
+    auto plan = preflight();
+    if (!plan)
+        return false;
+    plan->publish();
+    return true;
+}
+
+void CancelTypedDungeonPreflight(entt::entity dungeon)
+{
+    CDungeonManager::instance().Destroy(DungeonSystem::GetId(dungeon));
+}
+
+void RequestTypedDungeonReward(entt::entity, entt::entity dungeon, std::string flag, std::string_view code)
+{
+    if (itemDeliverySucceeds && !code.empty() && !DungeonSystem::GetFlag(dungeon, flag))
+    {
+        ++rewardDeliveries;
+        DungeonSystem::SetFlag(dungeon, flag, 1);
+    }
+}
+
+void QueueTypedDungeonCleanup(entt::entity, std::string_view, std::uint32_t) {}
+void QueueTypedItemGrant(entt::entity, const auriga::item::ItemGrant&) {}
+void PumpTypedItemGrants(entt::entity) {}
+void SendTypedInventory(entt::entity) {}
+bool TypedGatheringAdmitted(entt::entity) { return false; }
+bool TypedGatheringActive(entt::entity) { return false; }
+std::uint64_t TypedItemEffectNow() { return 0; }
+auriga::item::InstantRecoveryAdmission TypedRecoveryAdmission(entt::entity,
+    std::optional<std::uint32_t>, std::uint32_t) { return {}; }
+
+std::optional<auriga::item::ItemKey> FindTypedDungeonUseKey(auriga::item::DungeonUseRole) { return {}; }
+
+bool DropTypedLoot(const auriga::item::ItemGrant&, std::int32_t, std::int32_t, std::int32_t,
+    std::int32_t, entt::entity, std::uint64_t) { return false; }
+
+bool UseTypedDungeonAction(entt::entity, const auriga::item::PersistentItem&,
+    const auriga::item::ItemCatalog&, TypedDungeonPlanner, bool) { return false; }
+
+namespace auriga::item::runtime {
+std::shared_ptr<const ItemCatalog> CurrentCatalog() noexcept { return {}; }
+std::vector<ItemInstanceId> PeekInstanceIds(std::size_t) { return {}; }
+void SpendInstanceIds(std::size_t) {}
+bool RequestCommit(ItemOwner, std::uint64_t, ItemCommit, std::function<void(CommitOutcome)>) { return false; }
 }
 
 namespace PartySystem {
