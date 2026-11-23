@@ -1044,6 +1044,10 @@ bool ItemCatalog::IsQuestEggGrowthPet(ItemKey key) const noexcept
         return FindPetHatchProfile(entry.second)->target == key;
     });
 }
+bool ItemCatalog::AllowsGrowthPetEvolution(ItemKey seal, const GrowthPetStage& stage) const noexcept
+{
+    return !stage.ingredients.empty() || !IsQuestEggGrowthPet(seal);
+}
 const PetFeedRule* ItemCatalog::FindPetFeedRule(ItemKey key,PetFeedingService service) const noexcept {
     const auto wanted=std::pair{key,service};
     const auto projection=[](const PetFeedRule& r){return std::pair{r.key,r.service};};

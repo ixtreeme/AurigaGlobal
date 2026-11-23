@@ -40,8 +40,8 @@ quest baule_pet begin
             local ok, reason = pc.typed_item_redeem({{category, item, 0, 1}}, 0)
             if ok then
                 say(language == "hu" and "A tojást a leltárból tudod kikeltetni." or "You can hatch the egg from your inventory.")
-                say(language == "hu" and "A pet a 40. szintig fejlődhet. Az első evolúcióhoz szükséges eredeti anyagok még nem elérhetők."
-                    or "Your pet can reach level 40. The original materials for its first evolution are pending.")
+                say(language == "hu" and "A fejlődés feltételeit a pet adatlapján nézheted meg."
+                    or "Check your pet's details to see its evolution requirements.")
             elseif reason == "inventory_full" then
                 say(language == "hu" and "Szabadíts fel helyet a leltárban." or "Make room in your inventory.")
             else

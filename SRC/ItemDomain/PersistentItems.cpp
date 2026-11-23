@@ -380,6 +380,15 @@ bool ValidPetFeedWrite(const ItemCatalog& c,const ItemCommit& commit)
     return remaining==food->after;
 }
 
+const GrowthPetStage* PetEvolutionStage(const ItemCatalog& c,const PersistentItem& seal)
+{
+    const auto* entry=c.Find(seal.key);
+    const auto* companion=entry ? std::get_if<ItemCompanionRow>(&entry->category) : nullptr;
+    const auto* profile=companion && companion->growthProfile ? c.FindGrowthPetProfile(*companion->growthProfile) : nullptr;
+    return profile && seal.growthPet && seal.growthPet->progress.stage<profile->stages.size()
+        ? &profile->stages[seal.growthPet->progress.stage] : nullptr;
+}
+
 std::expected<GrowthPetState,E> ApplyPetProgress(const ItemCatalog& c,const PetCareContext& context,
     const PersistentItem& seal,std::span<const std::uint64_t> awards,const std::optional<GrowthPetEvolution>& evolution)
 {
@@ -392,8 +401,8 @@ std::expected<GrowthPetState,E> ApplyPetProgress(const ItemCatalog& c,const PetC
     if(evolution)
     {
         if(!awards.empty() || !pet.recallRequested)return std::unexpected(E::InvalidChange);
-        // Chest pets need the original recipes, whose item definitions are still deferred.
-        if(c.IsQuestEggGrowthPet(seal.key))return std::unexpected(E::RequirementNotMet);
+        const auto* stage=PetEvolutionStage(c,seal);
+        if(!stage || !c.AllowsGrowthPetEvolution(seal.key,*stage))return std::unexpected(E::RequirementNotMet);
         const PetCareItemSnapshot snapshot{seal.key,seal.id.Value(),seal.revision,seal.owner.id,seal.count,
             seal.refinementLevel,false,false,false,true,true,seal.id.Value()};
         PetLifecycleRequest request{context,snapshot,seal.revision,evolution->nowUtcMs,pet};
@@ -417,15 +426,6 @@ std::expected<GrowthPetState,E> ApplyPetProgress(const ItemCatalog& c,const PetC
     }
     if(pet.progress==seal.growthPet->progress)return std::unexpected(E::RequirementNotMet);
     return pet;
-}
-
-const GrowthPetStage* PetEvolutionStage(const ItemCatalog& c,const PersistentItem& seal)
-{
-    const auto* entry=c.Find(seal.key);
-    const auto* companion=entry ? std::get_if<ItemCompanionRow>(&entry->category) : nullptr;
-    const auto* profile=companion && companion->growthProfile ? c.FindGrowthPetProfile(*companion->growthProfile) : nullptr;
-    return profile && seal.growthPet && seal.growthPet->progress.stage<profile->stages.size()
-        ? &profile->stages[seal.growthPet->progress.stage] : nullptr;
 }
 
 bool IsPetEvolutionMaterial(const PersistentItem& item,ItemOwner owner) noexcept

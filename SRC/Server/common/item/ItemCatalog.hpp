@@ -358,6 +358,7 @@ public:
     const PetHatchProfile* FindPetHatchProfile(std::uint32_t id) const noexcept;
     const PetHatchProfile* FindPetHatchFor(ItemKey egg) const noexcept;
     bool IsQuestEggGrowthPet(ItemKey seal) const noexcept;
+    bool AllowsGrowthPetEvolution(ItemKey seal, const GrowthPetStage& stage) const noexcept;
     const PetFeedRule* FindPetFeedRule(ItemKey key,PetFeedingService service) const noexcept;
     const GrowthPetProfile* FindGrowthPetProfile(std::uint32_t id) const noexcept;
     const CompanionForm* FindCompanionForm(std::uint32_t id) const noexcept;

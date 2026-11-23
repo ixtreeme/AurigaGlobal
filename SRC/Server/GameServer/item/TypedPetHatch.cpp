@@ -319,7 +319,7 @@ void Reply(entt::entity entity, Status status, std::uint64_t id, std::uint64_t t
                 available[i]=item::CountPetEvolutionMaterial(typed->state.items,typed->state.fence.owner,ingredient.key);
                 materialsReady=materialsReady && available[i]>=ingredient.amount;
             }
-            const bool canEvolve = atGate && following && !entry->base.retired && !catalog->IsQuestEggGrowthPet(seal->key) && materialsReady &&
+            const bool canEvolve = atGate && following && !entry->base.retired && catalog->AllowsGrowthPetEvolution(seal->key,stage) && materialsReady &&
                 (stage.ingredients.empty() || pet->progress.mobExperience==level.mobExperience) &&
                 (pet->life.clock==item::CompanionClock::Permanent || elapsed<pet->life.remainingMs);
             packet.Put(pet->progress.mobExperience);
@@ -821,7 +821,8 @@ void Evolve(entt::entity entity,const TPacketCGTypedPetHatch& packet,const item:
     const auto& row = std::get<item::ItemCompanionRow>(catalog.Find(seal->key)->category);
     const auto& profile = *catalog.FindGrowthPetProfile(*row.growthProfile);
     const auto stage = std::size_t(pet.progress.stage);
-    if (stage+1>=profile.stages.size() || pet.progress.level!=profile.stages[stage].maximumLevel || catalog.IsQuestEggGrowthPet(seal->key))
+    if (stage+1>=profile.stages.size() || pet.progress.level!=profile.stages[stage].maximumLevel ||
+        !catalog.AllowsGrowthPetEvolution(seal->key,profile.stages[stage]))
     {
         ProgressReply(entity,Status::NoEffect,packet.itemId);
         return;

@@ -72,6 +72,16 @@ void StudyResetAndCooldown() {
 }
 void EvolutionMaterialCommit() {
     auto source=f::Catalog();
+    const auto eggKey=ItemKey::Create(10,100).value();
+    auto egg=source.items[3];
+    egg.key=eggKey;egg.contentCode="quest.evolution_egg";egg.nameKey="item.evolution_egg.name";
+    egg.descriptionKey="item.evolution_egg.description";egg.usePolicy=1;
+    source.items.push_back(egg);
+    source.questItems.push_back({eggKey,QuestItemDispatch::FirstHandler,"",1,false});
+    auto hatch=source.petHatchProfiles.front();
+    hatch.id=2;hatch.code="pet_egg."+egg.contentCode;
+    source.petHatchProfiles.push_back(hatch);
+    const auto withoutRecipe=BuildItemCatalog(source).value();
     const auto material=item_catalog_fixture::Leather();
     source.growthPetProfiles[0].stages[0].ingredients={{material,5}};
     const auto catalog=BuildItemCatalog(source).value();
@@ -87,6 +97,9 @@ void EvolutionMaterialCommit() {
     auto second=first;second.id=ItemInstanceId::Create(122).value();second.count=6;second.placement->anchor=2;
     std::vector items{seal,first,second};
     const GrowthPetEvolution evolution{100001,0,{6,0,0}};
+    Check(catalog->IsQuestEggGrowthPet(seal.key),"the fixture seal is hatched from a quest egg");
+    Check(!MakeGrowthPetProgressCommit(*withoutRecipe,fence,layouts,items,request.context,seal.id,{},evolution),
+        "quest egg pet cannot evolve before its recipe is configured");
     const auto evolve=[&](std::span<const PersistentItem> inventory) {
         return MakeGrowthPetProgressCommit(*catalog,fence,layouts,inventory,request.context,seal.id,{},evolution);
     };
