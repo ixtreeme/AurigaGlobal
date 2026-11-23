@@ -578,19 +578,26 @@ class Catalog:
         return row['profile_id'], row['level']
 
     def referenced(self):
-        return {(table, row[spec[0]]) for table, spec in PROFILES.items() for row in self.tables[table]
-                if self.references(table, row[spec[0]])}
+        referenced = set()
+        for table, (identity, sources, _) in PROFILES.items():
+            ids = {row.get(field) for source, field in sources for row in self.tables[source]}
+            referenced.update((table, row[identity]) for row in self.tables[table] if str(row[identity]) in ids)
+        return referenced
 
     def prune(self, candidates):
         # Remove profiles this edit left unused; children first, repeated
         # because dropping refinement levels can free their bonus profiles.
-        while True:
-            unused = [(table, pid) for table, pid in candidates if self.row(table, pid, PROFILES[table][0]) and not self.references(table, pid)]
+        if not candidates: return
+        present = {(table, row[identity]) for table, (identity, _, _) in PROFILES.items() for row in self.tables[table]}
+        candidates = candidates & present
+        while candidates:
+            unused = candidates - self.referenced()
             if not unused: return
             for table, pid in unused:
                 idcol, _, children = PROFILES[table]
                 for child in children: self.replace(child, {'profile_id': pid}, [])
                 self.replace(table, {idcol: pid}, [])
+            candidates = candidates - unused
 
     # --- document -> tables ------------------------------------------------
     def apply(self, document, original_key=None, *, encode_result=True):
