@@ -79,7 +79,6 @@
 #include "../../combat/pvp.h"
 #endif
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
-#include "../../dungeon/RuneDungeon.h"
 #include "../../dungeon/Halloween2022Dungeon.h"
 #include "../../dungeon/VikingDungeon.h"
 #endif
@@ -1987,16 +1986,6 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 	// 30001: Teszt klonok torlese (dungeon instance-ben blokkolva)
 	//	default: break;
 	//}
-
-#ifdef ENABLE_CPP_DUNGEON_RAZOR93
-	switch (GetItemVnum(item))
-	{
-	case 89103: return CRuneDungeon::instance().OnUseItem89103(e);
-	case 89102: return CRuneDungeon::instance().OnUseItem89102(e);
-	case 89100: return CRuneDungeon::instance().OnUseItem89100(e);
-	default: break;
-	}
-#endif
 
 	switch (GetItemType(item))
 	{

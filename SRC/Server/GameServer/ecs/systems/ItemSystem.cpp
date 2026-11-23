@@ -77,7 +77,6 @@
 #include "../../combat/pvp.h"
 #endif
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
-#include "../../dungeon/RuneDungeon.h"
 #include "../../dungeon/Halloween2022Dungeon.h"
 #include "../../dungeon/VikingDungeon.h"
 #endif
@@ -3060,9 +3059,6 @@ bool ReceiveItemEcs(entt::entity receiver, entt::entity fromEntity, entt::entity
     // Callbacks may consume the last item or destroy its entity.
     const std::string itemName = GetItemName(item);
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
-	// Rune Dungeon: key pedestal (20507) consumes 89103 and progresses floor 5
-	if (CRuneDungeon::instance().OnNpcTakeItem(fromEntity, receiver, item))
-		return true;
 	if (CHalloween2022Dungeon::instance().OnNpcTakeItem(fromEntity, receiver, item))
 		return true;
 	if (CVikingDungeon::instance().OnNpcTakeItem(fromEntity, receiver, item))
