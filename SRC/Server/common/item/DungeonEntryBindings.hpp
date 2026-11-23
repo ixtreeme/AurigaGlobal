@@ -5,8 +5,7 @@
 #include <string_view>
 namespace auriga::item {
 struct DungeonEntryBinding {std::uint32_t map;std::string_view gate,ticketCode,alternateTicketCode{};};
-// Authored dungeon identities and native catalog content codes. The UI's old
-// item number remains a visual reference; ownership never resolves through it.
+// Authored dungeon identities and native catalog content codes.
 inline constexpr std::array DungeonEntryBindings{
  DungeonEntryBinding{366,"dungeon.easter.entry","catalog.10.empty_basket_91293abed792"},
  DungeonEntryBinding{161,"dungeon.halloween.entry","catalog.10.ampoule_with_blood_e3d2daf02c11"},

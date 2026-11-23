@@ -12,7 +12,6 @@
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
 #include "../ecs/systems/QuestSystem.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../entity/char_manager.h"
 #include "../network/db.h"
@@ -22,8 +21,10 @@
 #include "../social/party.h"
 #include "../item/TypedItemOps.hpp"
 #include "../item/ItemStore.hpp"
+#include "../item/ItemCatalogRuntime.hpp"
 #include "../item/TypedDungeonEntry.hpp"
 #include <item/DungeonEntryBindings.hpp>
+#include <item/DungeonItems.hpp>
 #include "../world/LocalWarp.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
 #include <openssl/rand.h>
@@ -47,14 +48,32 @@ std::string Hex(std::string_view s){static const char* digits="0123456789abcdef"
 void Send(entt::entity e,const std::string& line){if(g_registry.valid(e)&&P::GetDesc(e))ecs::ChatSystem::Send(e,CHAT_TYPE_COMMAND,"%s",line.c_str());}
 void Error(entt::entity e,const char* reason){Send(e,std::string("nx_dungeon_error 1 ")+reason);}
 std::int64_t DisplayGold(entt::entity e){if(const auto* t=g_registry.valid(e)?g_registry.try_get<ecs::TypedItems>(e):nullptr){for(const auto& w:t->state.wallets)if(w.currency==auriga::item::WalletCurrency::Gold)return static_cast<std::int64_t>(w.balance);return 0;}return ecs::PointSystem::GetGold(e);}
-std::uint64_t EntryCount(entt::entity e,unsigned map,unsigned legacyVisual)
+void SendEntryTicket(entt::entity e, unsigned map)
 {
-    if(HasTypedDungeonInventory(e))
+    namespace item = auriga::item;
+    const auto* binding = item::DungeonEntryForMap(map);
+    const auto catalog = item::runtime::CurrentCatalog();
+    if (!binding || !catalog)
+        return;
+
+    const auto sendTicket = [&](unsigned slot, std::string_view code)
     {
-        const auto* binding=auriga::item::DungeonEntryForMap(map);
-        return binding?TypedDungeonTicketCount(e,binding->ticketCode)+TypedDungeonTicketCount(e,binding->alternateTicketCode):0;
-    }
-    return legacyVisual?ItemSystem::CountItem(e,legacyVisual):0;
+        const auto key = item::DungeonItemKey(*catalog, code);
+        if (!key)
+            return;
+
+        const auto& base = catalog->Find(*key)->base;
+        const auto line = "nx_dungeon_ticket 1 " + std::to_string(map) + " " + std::to_string(slot)
+            + " " + std::to_string(item::PackItemKey(*key)) + " " + Hex(base.nameKey)
+            + " " + Hex(base.iconAsset) + " " + Hex(base.descriptionKey);
+        if (line.size() <= CHAT_MAX_LEN)
+            Send(e, line);
+    };
+    sendTicket(0, binding->ticketCode);
+    sendTicket(1, binding->alternateTicketCode);
+    const auto count = TypedDungeonTicketCount(e, binding->ticketCode)
+        + TypedDungeonTicketCount(e, binding->alternateTicketCode);
+    Send(e, item::DungeonEntryCountCommand(map, count));
 }
 struct Entry {unsigned map=0,status=0,type=1,organization=0,min=1,max=120,partyMin=1,partyMax=8,x=0,y=0,cooldown=0,duration=0,entrance=0,strength=0,resistance=0,item=0,count=0;};
 std::vector<Entry> Catalog(){
@@ -120,8 +139,11 @@ bool Persist(Run& r){
 void Info(entt::entity e){auto catalog=Catalog();if(catalog.empty()){Error(e,"unavailable");return;}Send(e,"CleanDungeonInfo");for(const auto& d:catalog){
     std::uint64_t completed=0,fastest=0,highest=0;auto m=Query("SELECT completed,time,damage FROM "+Table("dungeon_ranking")+" WHERE pid=? AND dungeon_index=?",{SqlParam::UInt(P::GetPlayerID(e)),SqlParam::UInt(d.map)});if(Good(m)&&m->Get()->uiNumRows){auto row=m->Get()->FetchRow();completed=N(row[0]);fastest=N(row[1]);highest=N(row[2]);}
     auto recent=Query("SELECT COUNT(*),MIN(r.elapsed),MAX(m.highest) FROM dungeon_ui_member m JOIN dungeon_ui_run r ON r.id=m.run_id WHERE m.pid=? AND r.dungeon=?",{SqlParam::UInt(P::GetPlayerID(e)),SqlParam::UInt(d.map)});if(Good(recent)&&recent->Get()->uiNumRows){auto row=recent->Get()->FetchRow();completed=std::max(completed,N(row[0]));const auto best=N(row[1]);if(best&&(!fastest||best<fastest))fastest=best;highest=std::max(highest,N(row[2]));}
-    std::ostringstream line;line<<"UpdateDungeonInfo "<<d.status<<' '<<Wait(e,d.map)<<' '<<d.type<<' '<<d.organization<<' '<<d.min<<' '<<d.max<<' '<<d.partyMin<<' '<<d.partyMax<<' '<<d.map<<' '<<d.x<<' '<<d.y<<' '<<d.cooldown<<' '<<d.duration<<' '<<d.entrance<<' '<<d.strength<<' '<<d.resistance<<' '<<d.item<<' '<<d.count<<' '<<completed<<' '<<fastest<<' '<<highest;Send(e,line.str());
-    Send(e,auriga::item::DungeonEntryCountCommand(d.map,d.item?EntryCount(e,d.map,d.item):0));
+    // Keep the reserved slot in the existing row. Ticket identities arrive
+    // separately as typed catalog keys.
+    std::ostringstream line;line<<"UpdateDungeonInfo "<<d.status<<' '<<Wait(e,d.map)<<' '<<d.type<<' '<<d.organization<<' '<<d.min<<' '<<d.max<<' '<<d.partyMin<<' '<<d.partyMax<<' '<<d.map<<' '<<d.x<<' '<<d.y<<' '<<d.cooldown<<' '<<d.duration<<' '<<d.entrance<<' '<<d.strength<<' '<<d.resistance<<" 0 "<<d.count<<' '<<completed<<' '<<fastest<<' '<<highest;Send(e,line.str());
+    if (d.count)
+        SendEntryTicket(e, d.map);
     }Send(e,"nx_dungeon_ready 1 "+std::to_string(P::GetPlayerID(e))+" "+std::to_string(Now()/1000));
 }
 std::string Eligible(){return " FROM dungeon_ui_member m JOIN dungeon_ui_run r ON r.id=m.run_id JOIN "+Table("player")+" p ON p.id=m.pid JOIN account.account a ON a.id=p.account_id WHERE r.dungeon=? AND r.completed_at>=DATE_SUB(UTC_DATE(),INTERVAL WEEKDAY(UTC_DATE()) DAY) AND a.status='OK' AND p.name NOT IN(SELECT mName FROM common.gmlist) ";}
