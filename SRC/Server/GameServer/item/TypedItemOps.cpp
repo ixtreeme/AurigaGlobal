@@ -235,10 +235,10 @@ std::expected<void, items::ItemMissionError> RequestTypedGameplayItemExchange(en
 
 std::expected<void, items::ItemMissionError> RequestTypedGuildExchange(entt::entity character,
 	std::vector<items::MissionItemAmount> costs, std::uint64_t price, std::uint16_t outcome,
-	std::vector<std::uint8_t> receipt, std::function<void(bool)> done, std::optional<items::ItemInstanceId> source)
+	std::vector<std::uint8_t> receipt, std::function<void(bool)> done, std::optional<items::ItemInstanceId> source, bool inQuest)
 {
 	return RequestTypedItemExchange(character, std::move(costs), {}, price, std::move(done), {}, 0,
-		false, items::WalletCurrency::Gold, false, outcome, std::move(receipt), source);
+		inQuest, items::WalletCurrency::Gold, inQuest, outcome, std::move(receipt), source);
 }
 
 void RequestTypedItemMove(entt::entity character, std::uint64_t itemId, std::uint8_t storageKind, std::uint64_t storageId, std::uint32_t cell)

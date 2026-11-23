@@ -27,6 +27,8 @@
 #include "../ecs/components/spatial_components.hpp"
 #include "../ecs/components/transform_components.hpp"
 #include "../ecs/components/visibility_components.hpp"
+#include "../item/TypedQuestItems.hpp"
+#include <item/GuildConstruction.hpp>
 #include <exception>
 
 enum
@@ -348,6 +350,38 @@ void RegenNPC(entt::entity object)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
+
+bool building::RequestAltarUpgrade(entt::entity character, entt::entity npc, uint32_t prototype, std::function<void(bool)> done)
+{
+	namespace items = auriga::item;
+	if (!ecs::IsCharacter(character) || !ecs::IsCharacter(npc))
+		return false;
+	const auto* guild = ecs::SocialSystem::GetGuild(character);
+	if (!guild || guild != ecs::SocialSystem::GetGuild(npc) || guild->GetMasterPID() != ecs::PlayerRuntime::GetPlayerID(character))
+		return false;
+	auto* land = CManager::instance().FindLandByGuild(guild->GetID());
+	if (!land)
+		return false;
+	const auto object = land->FindObjectByNPC(npc);
+	const auto* state = g_registry.try_get<ecs::BuildingState>(object);
+	const auto* position = g_registry.try_get<ecs::Position>(object);
+	const auto* map = g_registry.try_get<ecs::MapIndex>(object);
+	if (!ObjectSystem::IsValid(object) || !state || !position || !map || ecs::PlayerRuntime::GetMapIndex(character) != map->value)
+		return false;
+	const auto* upgrade = items::FindGuildAltarUpgrade(state->vnum, prototype);
+	const auto* region = SECTREE_MANAGER::instance().GetMapRegion(map->value);
+	if (!upgrade || !region || !land->PrepareCreateObject(prototype, map->value, position->x - region->sx,
+		position->y - region->sy, state->rotationX, state->rotationY, state->rotationZ, false))
+		return false;
+	const auto [count, last] = land->ObjectRevision();
+	const items::GuildConstruction change{land->GetID(), guild->GetID(), prototype, map->value, position->x, position->y,
+		state->rotationX, state->rotationY, state->rotationZ, count, last, upgrade->gold, true, state->objectId, state->vnum};
+	std::vector<items::MissionItemAmount> costs;
+	for (std::size_t index = 0; index < upgrade->amounts.size(); ++index)
+		costs.push_back({items::GuildConstructionMaterials[index].second, 0, upgrade->amounts[index]});
+	return RequestTypedGuildExchange(character, std::move(costs), upgrade->gold, items::GuildConstructionOutcome,
+		items::EncodeGuildConstruction(change), std::move(done), {}, true).has_value();
+}
 
 CLand::CLand(TLand * pData)
 {

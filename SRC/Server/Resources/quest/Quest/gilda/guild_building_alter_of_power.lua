@@ -33,11 +33,9 @@ quest alter_of_power begin
 				say_title(string.format("%s:", mob_name(npc.get_race())))
 				say("")
 				if s == 1 then
-					local paid = pc.typed_item_exchange({{6, 755, 0, 10}, {6, 756, 0, 10}, {6, 757, 0, 15}}, {}, 25000000)
-					if paid then
+					if building.upgrade_altar(14062) then
 						say(gameforge[lang].alter_of_power._19)
 						say(gameforge[lang].alter_of_power._20)
-						building.reconstruct(14062)
 						pc.setqf("build_level", guild.level(pc.get_guild()))
 						char_log(0, "GUILD_BUILDING", "alter_of_power 14062 constructed")
 					else
@@ -76,13 +74,11 @@ quest alter_of_power begin
 				say_title(string.format("%s:", mob_name(npc.get_race())))
 				say("")
 				if s == 1 then
-					local paid = pc.typed_item_exchange({{6, 755, 0, 15}, {6, 756, 0, 20}, {6, 757, 0, 20}}, {}, 30000000)
-					if paid then
+					if building.upgrade_altar(14063) then
 						say(gameforge[lang].alter_of_power._39)
 						say(gameforge[lang].alter_of_power._40)
 						say(gameforge[lang].alter_of_power._41)
 						say(gameforge[lang].alter_of_power._42)
-						building.reconstruct(14063)
 						pc.setqf("build_level", guild.level(pc.get_guild()))
 						char_log(0, "GUILD_BUILDING", "alter_of_power 14063 constructed")
 					else

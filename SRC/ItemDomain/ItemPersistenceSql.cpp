@@ -193,14 +193,25 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
         if (build->requireMaster)
             tx.push_back({"SELECT id FROM player.guild WHERE id=? AND master=? FOR UPDATE",
                           {U::UInt(build->guild), U::UInt(r.owners.front().owner.id)}, {}, 1});
-        tx.push_back({"SELECT vnum FROM player.object_proto WHERE vnum=? AND price=? LOCK IN SHARE MODE",
-                      {U::UInt(build->prototype), U::UInt(build->gold)}, {}, 1});
         tx.push_back({"SELECT COUNT(*) FROM player.object WHERE land_id=? "
                       "HAVING COUNT(*)=? AND COALESCE(MAX(id),0)=? FOR UPDATE",
                       {U::UInt(build->land), U::UInt(build->objectCount), U::UInt(build->lastObject)}, {}, 1});
-        tx.push_back({"INSERT INTO player.object(land_id,vnum,map_index,x,y,x_rot,y_rot,z_rot) VALUES (?,?,?,?,?,?,?,?)",
-                      {U::UInt(build->land), U::UInt(build->prototype), U::Int(build->map), U::Int(build->x), U::Int(build->y),
-                       U::Real(build->xRotation), U::Real(build->yRotation), U::Real(build->zRotation)}, 1, {}});
+        if (build->replacedId)
+        {
+            tx.push_back({"SELECT vnum FROM player.object_proto WHERE vnum=? LOCK IN SHARE MODE",
+                {U::UInt(build->prototype)}, {}, 1});
+            tx.push_back({"UPDATE player.object SET vnum=?,life=0 WHERE id=? AND land_id=? AND vnum=? AND map_index=? AND x=? AND y=?",
+                {U::UInt(build->prototype), U::UInt(build->replacedId), U::UInt(build->land), U::UInt(build->replacedPrototype),
+                 U::Int(build->map), U::Int(build->x), U::Int(build->y)}, 1, {}});
+        }
+        else
+        {
+            tx.push_back({"SELECT vnum FROM player.object_proto WHERE vnum=? AND price=? LOCK IN SHARE MODE",
+                {U::UInt(build->prototype), U::UInt(build->gold)}, {}, 1});
+            tx.push_back({"INSERT INTO player.object(land_id,vnum,map_index,x,y,x_rot,y_rot,z_rot) VALUES (?,?,?,?,?,?,?,?)",
+                {U::UInt(build->land), U::UInt(build->prototype), U::Int(build->map), U::Int(build->x), U::Int(build->y),
+                 U::Real(build->xRotation), U::Real(build->yRotation), U::Real(build->zRotation)}, 1, {}});
+        }
     }
     if (const auto progress = DecodeGuildProgress(r))
     {

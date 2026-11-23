@@ -468,8 +468,20 @@ bool CClientManager::ReadObjectTable(SQLMsg* message, bool publish)
 		{
 			uint32_t id = 0;
 			str_to_number(id, data[0]);
-			if (!id || m_map_pkObjectTable.contains(id))
+			uint32_t prototype = 0;
+			str_to_number(prototype, data[2]);
+			if (!id || !prototype)
 				continue;
+			const auto existing = m_map_pkObjectTable.find(id);
+			if (existing != m_map_pkObjectTable.end())
+			{
+				if (existing->second->dwVnum == prototype)
+					continue;
+				// A paid altar upgrade updates the existing object row atomically.
+				ForwardPacket(HEADER_DG_DELETE_OBJECT, &id, sizeof(id));
+				delete existing->second;
+				m_map_pkObjectTable.erase(existing);
+			}
 			TObject* k = new TObject{};
 
 			int col = 1;

@@ -21,4 +21,4 @@ std::expected<void, auriga::item::ItemMissionError> RequestTypedGameplayItemExch
 std::expected<void, auriga::item::ItemMissionError> RequestTypedGuildExchange(entt::entity character,
     std::vector<auriga::item::MissionItemAmount> costs, std::uint64_t price,
     std::uint16_t outcome, std::vector<std::uint8_t> receipt, std::function<void(bool)> done,
-    std::optional<auriga::item::ItemInstanceId> source = {});
+    std::optional<auriga::item::ItemInstanceId> source = {}, bool inQuest = false);

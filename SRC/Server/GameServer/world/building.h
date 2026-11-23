@@ -3,12 +3,14 @@
 #include <entt/entt.hpp>
 
 #include <common/building.h>
+#include <functional>
 #include <optional>
 #include <common/tables.h>
 
 namespace building
 {
 	class CLand;
+	bool RequestAltarUpgrade(entt::entity character, entt::entity npc, uint32_t prototype, std::function<void(bool)> done);
 
 	namespace ObjectSystem
 	{

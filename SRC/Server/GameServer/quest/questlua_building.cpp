@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "../ecs/systems/SocialSystem.hpp"
+#include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "config.h"
 #include "questmanager.h"
 #undef sys_err
@@ -160,6 +161,31 @@ namespace quest
 		return 0;
 	}
 
+	ALUA(building_upgrade_altar)
+	{
+		int valid = 0;
+		const auto prototype = lua_tointegerx(L, 1, &valid);
+		auto& quest = CQuestManager::instance();
+		const auto* state = quest.GetCurrentState();
+		if (!valid || !std::in_range<uint32_t>(prototype) || !lua_isyieldable(L) ||
+			quest.IsInOtherPCBlock() || !state || state->co != L)
+		{
+			lua_pushboolean(L, false);
+			return 1;
+		}
+		const auto character = quest.GetCurrentCharacter();
+		const auto pid = ecs::PlayerRuntime::GetPlayerID(character);
+		if (!building::RequestAltarUpgrade(character, quest.GetCurrentNPCEntity(), static_cast<uint32_t>(prototype),
+			[pid, coroutine = L](bool ok) { CQuestManager::instance().ResumeTypedItems(pid, coroutine, ok); }))
+		{
+			lua_pushboolean(L, false);
+			return 1;
+		}
+		lua_settop(L, 0);
+		lua_pushliteral(L, "typed_items");
+		return lua_yieldk(L, 1, 0, [](lua_State* thread, int, lua_KContext) { return lua_gettop(thread); });
+	}
+
 	void RegisterBuildingFunctionTable()
 	{
 		luaL_reg functions[] =
@@ -169,6 +195,7 @@ namespace quest
 			{ "set_land_owner",	building_set_land_owner	},
 			{ "has_land",	building_has_land	},
 			{ "reconstruct",	building_reconstruct	},
+			{ "upgrade_altar", building_upgrade_altar },
 			{nullptr, nullptr}
 		};
 
