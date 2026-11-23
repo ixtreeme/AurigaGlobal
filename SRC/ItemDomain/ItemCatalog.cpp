@@ -174,7 +174,7 @@ auto VisualKey(const CostumeVisualRow& row) { return std::tuple{row.key,row.char
 
 std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCatalog(ItemCatalogSource source)
 {
-    if (source.schemaVersion != 55 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
+    if (source.schemaVersion != 56 || !source.revision) return std::unexpected(Error(ItemCatalogErrorCode::InvalidVersion, "metadata"));
     if (auto result = Budget(source); !result) return std::unexpected(result.error());
     std::ranges::sort(source.absorptionSashes,{},&AbsorptionSashProfile::key);
     for(std::size_t n=0;n<source.absorptionSashes.size();++n){const auto& p=source.absorptionSashes[n];if(!ValidAbsorptionSashProfile(p) || (n && source.absorptionSashes[n-1].key==p.key))return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"sash.profile",p.key));}
@@ -193,6 +193,7 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
     if(auto r=Profiles(source.companionForms,"companion.form",[](const CompanionForm& f){return f.mobTemplateId>0 && detail::AssetReference(f.modelAsset);});!r)return std::unexpected(r.error());
     for(auto& p:source.growthPetProfiles) {
         std::ranges::sort(p.levels,{},&GrowthPetLevel::level);std::ranges::sort(p.stages,{},&GrowthPetStage::stage);
+        for(auto& stage:p.stages)std::ranges::sort(stage.ingredients,{},&GrowthPetEvolutionIngredient::key);
     }
     if(auto r=Profiles(source.growthPetProfiles,"growth_pet.profile",ValidGrowthPetProfile);!r)return std::unexpected(r.error());
     for(const auto& p:source.growthPetProfiles)for(const auto& stage:p.stages)
@@ -888,6 +889,17 @@ std::expected<std::shared_ptr<const ItemCatalog>, ItemCatalogError> BuildItemCat
                 return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile, "pet.hatch_quest_egg", profile.target, profile.id));
         }
     }
+    for(const auto& profile:source.growthPetProfiles)
+        for(const auto& stage:profile.stages)
+            for(const auto& ingredient:stage.ingredients) {
+                const auto* entry=catalog->Find(ingredient.key);
+                const auto rules=std::ranges::find_if(source.definitionRules,[&](const ItemDefinitionRules& row) {
+                    return row.key==ingredient.key && row.level==0;
+                });
+                if(!entry || entry->base.retired || ingredient.key.Category()!=ItemCategory::Material ||
+                    (rules!=source.definitionRules.end() && !rules->available))
+                    return std::unexpected(Error(ItemCatalogErrorCode::InvalidProfile,"pet.evolution_ingredient",ingredient.key,profile.id));
+            }
     auto foodKey=[](const PetFeedRule& r){return std::pair{r.key,r.service};};
     std::ranges::sort(source.petFeedRules,{},foodKey);
     std::optional<std::pair<ItemKey,PetFeedingService>> previousFood;

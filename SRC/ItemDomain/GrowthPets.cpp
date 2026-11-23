@@ -17,6 +17,14 @@ bool ValidGrowthPetProfile(const GrowthPetProfile& p) noexcept {
     for(std::size_t i=0;i<p.stages.size();++i) {
         const auto& s=p.stages[i];
         if(s.stage!=i || !s.form || s.maximumLevel<=prior || s.maximumLevel>p.maximumLevel)return false;
+        if(s.ingredients.size()>MaxGrowthPetEvolutionIngredients || (i+1==p.stages.size() && !s.ingredients.empty()))return false;
+        std::uint64_t total=0;
+        for(const auto& ingredient:s.ingredients) {
+            if(!ingredient.amount)return false;
+            total+=ingredient.amount;
+        }
+        if(total>MaxGrowthPetEvolutionUnits || !std::ranges::is_sorted(s.ingredients,{},&GrowthPetEvolutionIngredient::key) ||
+            std::ranges::adjacent_find(s.ingredients,{},&GrowthPetEvolutionIngredient::key)!=s.ingredients.end())return false;
         prior=s.maximumLevel;
     }
     return prior==p.maximumLevel;
@@ -58,6 +66,8 @@ std::expected<GrowthPetPlan,GrowthPetError> PlanGrowthPetProgress(const ItemCata
     auto& s=plan.after;const auto& stage=p->stages[s.stage];
     if(r.action==A::Evolve) {
         if(s.stage+1>=p->stages.size() || s.level!=stage.maximumLevel)return std::unexpected(E::NotAtEvolutionGate);
+        if(!stage.ingredients.empty() && s.mobExperience<p->levels[s.level-1].mobExperience)
+            return std::unexpected(E::NotAtEvolutionGate);
         ++s.stage;++s.level;s.mobExperience=s.itemExperience=0;plan.levelled=plan.evolved=true;
     } else {
         const auto& l=p->levels[s.level-1];

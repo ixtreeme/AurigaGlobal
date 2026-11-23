@@ -73,7 +73,7 @@ PROFILES = {
     'pet_training_profile': ('profile_id',[('item_companion','training_profile_id')],['pet_skill_rank','pet_skill_definition','pet_slot_rule','pet_age_tier']),
     'pet_supply_profile': ('profile_id',[('item_special','profile_id')],['pet_study_rule','pet_extension_rule','pet_enchant_rule','pet_skin_rule']),
     'pet_hatch_profile': ('profile_id',[('item_container','hatch_profile_id')],[]),
-    'growth_pet_profile': ('profile_id',[('item_companion','growth_profile_id')],['growth_pet_level','growth_pet_stage']),
+    'growth_pet_profile': ('profile_id',[('item_companion','growth_profile_id')],['growth_pet_level','growth_pet_stage','growth_pet_evolution_ingredient']),
     'soul_profile': ('profile_id',[('item_soul','profile_id')],['soul_level']),
     'tool_profile': ('profile_id', [('item_tool','profile_id')], ['tool_level']),
 }
@@ -891,6 +891,9 @@ class Catalog:
         self.replace('growth_pet_profile',{'profile_id':identity},[dict(head,profile_id=identity,code=code)])
         self.replace('growth_pet_level',{'profile_id':identity},[dict(r,profile_id=identity) for r in levels])
         self.replace('growth_pet_stage',{'profile_id':identity},[dict(r,profile_id=identity) for r in stages]);child['growth_profile_id']=identity
+        if previous and identity!=old:
+            ingredients=[dict(row,profile_id=identity) for row in self.tables['growth_pet_evolution_ingredient'] if row['profile_id']==old]
+            self.replace('growth_pet_evolution_ingredient',{'profile_id':identity},ingredients)
 
     def apply_soul(self,document,child,key):
         if child['soul_kind']=='2':child['profile_id']=None;return

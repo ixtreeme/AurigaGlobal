@@ -115,6 +115,7 @@ constexpr std::array<TableSpec, TableCount> Specs {{
     {Table::CostumeTransferTargets,"costume_transfer_target","category_id,local_id",Items},
     {Table::EnergyCrystalTiers,"energy_crystal_tier","profile_id,percent,chance_bp",Items*16},
     {Table::CurrencyTokenPolicies,"currency_token_policy","category_id,local_id,mode_kind",Items},
+    {Table::GrowthPetEvolutionIngredients,"growth_pet_evolution_ingredient","profile_id,stage,category_id,local_id,amount",Profiles*15*MaxGrowthPetEvolutionIngredients},
 }};
 static_assert([] { for (std::size_t i = 0; i < Specs.size(); ++i) if (static_cast<std::size_t>(Specs[i].table) != i) return false; return true; }());
 }

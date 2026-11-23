@@ -269,6 +269,7 @@ struct GrowthPetEvolution
     std::uint64_t nowUtcMs=0,elapsedMs=0;
     PetBirthTraits growth;
 };
+std::uint32_t CountPetEvolutionMaterial(std::span<const PersistentItem>,ItemOwner,ItemKey) noexcept;
 std::expected<ItemCommit,ItemPersistenceError> MakeGrowthPetProgressCommit(const ItemCatalog&,ItemOwnerFence,
     std::span<const ItemStorageLayout>,std::span<const PersistentItem>,const PetCareContext&,ItemInstanceId seal,
     std::span<const std::uint64_t> mobAwards,std::optional<GrowthPetEvolution> evolution={});

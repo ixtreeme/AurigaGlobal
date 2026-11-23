@@ -213,7 +213,7 @@ using ItemCategoryRow = std::variant<ItemWeaponRow, ItemArmorRow, ItemAccessoryR
                                      ItemContainerRow, ItemContainerKeyRow, ItemCurrencyTokenRow, ItemSkillBookRow, ItemQuestRow, ItemSocketStoneRow, ItemCostumeRow, ItemToolRow, ItemFishingRow, ItemPolymorphRow, ItemSoulRow, ItemCompanionRow, ItemPetSupplyRow, ItemRegaliaRow, ItemBonusToolRow, ItemAmmoRow, ItemForgeAidRow>;
 struct ItemCatalogSource
 {
-    std::uint32_t schemaVersion = 55;
+    std::uint32_t schemaVersion = 56;
     std::uint64_t revision = 0;
     std::vector<ItemBaseRow> items;
     std::vector<ItemDefinitionRules> definitionRules;

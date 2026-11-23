@@ -44,7 +44,7 @@ enum class Status : std::uint8_t
     Closed, Ready, Pending, Hatched, Invalid, Denied, Busy, Stale, Failed,
     InsufficientGold, NoRoom, InvalidName, Details, FoodList, FeedReady, Fed, NoEffect, Evolved,
     StudyList, StudyReady, Studied, StudyMissed, StudyCooldown, ResetList, ResetReady, SkillsReset,
-    ServiceList, ServiceReady, ServiceApplied, ServiceMissed
+    ServiceList, ServiceReady, ServiceApplied, ServiceMissed, MissingEvolutionMaterials
 };
 
 struct ServiceView
@@ -144,6 +144,14 @@ struct PacketWriter
             bytes.push_back(static_cast<std::uint8_t>(value >> (i * 8)));
     }
 };
+
+std::uint64_t EvolutionToken(const item::ItemCatalog& catalog,std::uint8_t stage)
+{
+    std::uint64_t digest=0;
+    const auto& hash=catalog.ContentHash();
+    for(unsigned i=0;i<8;++i)digest|=std::uint64_t(hash[i])<<(i*8);
+    return (digest & ~std::uint64_t{0xff}) | (std::uint64_t{1}<<63) | (std::uint64_t(stage)+1);
+}
 
 bool InGame(entt::entity entity)
 {
@@ -251,6 +259,11 @@ void Reply(entt::entity entity, Status status, std::uint64_t id, std::uint64_t t
     const auto* entry = target && catalog ? catalog->Find(*target) : nullptr;
     const std::string_view nameKey = entry && entry->base.nameKey.size() <= 256 ? std::string_view(entry->base.nameKey) : std::string_view{};
     const auto* pet = seal && seal->growthPet ? &*seal->growthPet : nullptr;
+    const auto* growthRow = progression && entry ? std::get_if<item::ItemCompanionRow>(&entry->category) : nullptr;
+    const auto* growthProfile = growthRow && growthRow->growthProfile ? catalog->FindGrowthPetProfile(*growthRow->growthProfile) : nullptr;
+    const bool showMaterials = pet && growthProfile && pet->progress.stage<growthProfile->stages.size() &&
+        pet->progress.level==growthProfile->stages[pet->progress.stage].maximumLevel &&
+        !growthProfile->stages[pet->progress.stage].ingredients.empty();
 
     if((study && !resetting) || (!study && !feeding && !progression && !service)){
         item::PetStudyRuntimeView view;view.withStudy=study!=nullptr;view.status=static_cast<std::uint8_t>(status);view.item=id;view.quote=token;view.cost=cost;view.gold=wallet ? wallet->balance : 0;view.target=target;view.seal=seal;
@@ -262,7 +275,7 @@ void Reply(entt::entity entity, Status status, std::uint64_t id, std::uint64_t t
     PacketWriter packet;
     packet.Put<std::uint8_t>(HEADER_GC_TYPED_PET_HATCH);
     packet.Put<std::uint32_t>(0);
-    packet.Put<std::uint8_t>(service ? 6 : study ? resetting ? 5 : 7 : progression ? 3 : feeding ? 8 : 1);
+    packet.Put<std::uint8_t>(service ? 6 : study ? resetting ? 5 : 7 : progression ? showMaterials ? 9 : 3 : feeding ? 8 : 1);
     packet.Put<std::uint8_t>(static_cast<std::uint8_t>(status));
     packet.Put(id);
     packet.Put(token);
@@ -292,13 +305,22 @@ void Reply(entt::entity entity, Status status, std::uint64_t id, std::uint64_t t
         packet.Put(pet->traits.pveNormalDamagePercentTenths);
         if (progression)
         {
-            const auto& companion = std::get<item::ItemCompanionRow>(entry->category);
-            const auto& profile = *catalog->FindGrowthPetProfile(*companion.growthProfile);
+            if (!growthProfile || !typed) return;
+            const auto& profile = *growthProfile;
             const auto& level = profile.levels[pet->progress.level-1];
             const auto& stage = profile.stages[pet->progress.stage];
             const bool atGate = pet->progress.level == stage.maximumLevel && pet->progress.level < profile.maximumLevel;
             const bool following = PetSystem::LiveTypedSeal(entity)==seal->id.Value();
-            const bool canEvolve = atGate && following && !entry->base.retired && !catalog->IsQuestEggGrowthPet(seal->key) &&
+            std::array<std::uint32_t,item::MaxGrowthPetEvolutionIngredients> available{};
+            bool materialsReady=true;
+            for(std::size_t i=0;showMaterials && i<stage.ingredients.size();++i)
+            {
+                const auto& ingredient=stage.ingredients[i];
+                available[i]=item::CountPetEvolutionMaterial(typed->state.items,typed->state.fence.owner,ingredient.key);
+                materialsReady=materialsReady && available[i]>=ingredient.amount;
+            }
+            const bool canEvolve = atGate && following && !entry->base.retired && !catalog->IsQuestEggGrowthPet(seal->key) && materialsReady &&
+                (stage.ingredients.empty() || pet->progress.mobExperience==level.mobExperience) &&
                 (pet->life.clock==item::CompanionClock::Permanent || elapsed<pet->life.remainingMs);
             packet.Put(pet->progress.mobExperience);
             packet.Put(level.mobExperience);
@@ -306,6 +328,24 @@ void Reply(entt::entity entity, Status status, std::uint64_t id, std::uint64_t t
             packet.Put(level.itemExperience);
             packet.Put<std::uint8_t>((profile.experiencePolicy==item::GrowthExpPolicy::MobAndItem ? 1 : 0) |
                 (atGate ? 2 : 0) | (canEvolve ? 4 : 0));
+            if(showMaterials)
+            {
+                packet.Put(EvolutionToken(*catalog,pet->progress.stage));
+                packet.Put(static_cast<std::uint8_t>(stage.ingredients.size()));
+                for(std::size_t i=0;i<stage.ingredients.size();++i)
+                {
+                    const auto& ingredient=stage.ingredients[i];
+                    const auto& base=catalog->Find(ingredient.key)->base;
+                    packet.Put(static_cast<std::uint16_t>(ingredient.key.Category()));
+                    packet.Put(ingredient.key.LocalId());
+                    packet.Put(ingredient.amount);
+                    packet.Put(available[i]);
+                    packet.Put(static_cast<std::uint16_t>(base.nameKey.size()));
+                    packet.bytes.insert(packet.bytes.end(),base.nameKey.begin(),base.nameKey.end());
+                    packet.Put(static_cast<std::uint16_t>(base.contentCode.size()));
+                    packet.bytes.insert(packet.bytes.end(),base.contentCode.begin(),base.contentCode.end());
+                }
+            }
         }
     }
     if (feeding)
@@ -778,19 +818,34 @@ void Evolve(entt::entity entity,const TPacketCGTypedPetHatch& packet,const item:
         return;
     }
     const auto& pet = *seal->growthPet;
-    if (packet.token!=std::uint64_t(pet.progress.stage)+1)
+    const auto& row = std::get<item::ItemCompanionRow>(catalog.Find(seal->key)->category);
+    const auto& profile = *catalog.FindGrowthPetProfile(*row.growthProfile);
+    const auto stage = std::size_t(pet.progress.stage);
+    if (stage+1>=profile.stages.size() || pet.progress.level!=profile.stages[stage].maximumLevel || catalog.IsQuestEggGrowthPet(seal->key))
+    {
+        ProgressReply(entity,Status::NoEffect,packet.itemId);
+        return;
+    }
+    const auto expectedToken=profile.stages[stage].ingredients.empty()
+        ? std::uint64_t(stage)+1 : EvolutionToken(catalog,pet.progress.stage);
+    if(packet.token!=expectedToken)
     {
         ProgressReply(entity,Status::Stale,packet.itemId);
         return;
     }
-    const auto& row = std::get<item::ItemCompanionRow>(catalog.Find(seal->key)->category);
-    const auto& profile = *catalog.FindGrowthPetProfile(*row.growthProfile);
-    const auto stage = std::size_t(pet.progress.stage);
-    if (stage+1>=profile.stages.size() || pet.progress.level!=profile.stages[stage].maximumLevel ||
-        catalog.IsQuestEggGrowthPet(seal->key))
+    if(!profile.stages[stage].ingredients.empty())
     {
-        ProgressReply(entity,Status::NoEffect,packet.itemId);
-        return;
+        if(pet.progress.mobExperience!=profile.levels[pet.progress.level-1].mobExperience)
+        {
+            ProgressReply(entity,Status::NoEffect,packet.itemId);
+            return;
+        }
+        for(const auto& ingredient:profile.stages[stage].ingredients)
+            if(item::CountPetEvolutionMaterial(typed.state.items,typed.state.fence.owner,ingredient.key)<ingredient.amount)
+            {
+                ProgressReply(entity,Status::MissingEvolutionMaterials,packet.itemId,seal);
+                return;
+            }
     }
     const auto* form = catalog.FindCompanionForm(profile.stages[stage+1].form);
     if (!form || form->mobTemplateId>UINT16_MAX || !CMobManager::instance().Get(form->mobTemplateId))
@@ -1226,7 +1281,7 @@ bool HandleTypedPetHatchPacket(entt::entity entity, const char* data)
         || ((action==Action::StudyList || action==Action::ResetList) && packet.token) || ((action==Action::StudyConfirm || action==Action::ResetConfirm) && !packet.token)
         || ((action == Action::Preview || action == Action::Inspect || action == Action::FoodList || action == Action::Progress) && packet.token)
         || ((action == Action::FeedPreview || action == Action::FeedConfirm) && !packet.token)
-        || (action == Action::Evolve && (!packet.token || packet.token>16))
+        || (action == Action::Evolve && !packet.token)
         || std::any_of(packet.name + packet.nameLength, std::end(packet.name), [](char c) { return c != 0; }))
     {
         Reply(entity, Status::Invalid, packet.itemId, packet.token);

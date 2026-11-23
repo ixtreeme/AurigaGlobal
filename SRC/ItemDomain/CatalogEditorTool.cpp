@@ -155,7 +155,7 @@ unsigned KeyColumns(T table) {
     case T::CostumeTransferTargets:case T::EnergyCrystalTiers:case T::CurrencyTokenPolicies:return 2;
     case T::RegaliaRules:return 5;
     case T::ForgeLevels:return 3;
-    case T::SocketMaterials:case T::RefinementIngredients:return 4;
+    case T::SocketMaterials:case T::RefinementIngredients:case T::GrowthPetEvolutionIngredients:return 4;
     case T::MobDropEntries:return 2;
     default:return 1;
     }
@@ -252,7 +252,7 @@ void Commit(CAsyncSQL& sql,const db::CapturedCatalog& before,const db::Snapshot&
     constexpr T order[]={T::UsePolicies,T::TradePolicies,T::Appearances,T::Attacks,T::AmmoPolicies,T::Resistances,
         T::CompanionForms,T::PetTrainingProfiles,T::PetAgeTiers,T::PetSlotRules,T::PetSkillDefinitions,T::PetSkillRanks,T::PetSupplyProfiles,T::PetStudyRules,T::PetExtensionRules,T::PetEnchantRules,T::PetSkinRules,T::GrowthPetProfiles,T::GrowthPetLevels,T::GrowthPetStages,T::SoulProfiles,T::SoulLevels,T::PolymorphForms,T::PolymorphProfiles,T::PolymorphSkills,T::PolymorphMasteries,T::ToolProfiles,T::BookProfiles,T::BookTargets,T::BookSteps,T::BonusProfiles,T::BonusEntries,T::Refinements,T::RefinementLevels,T::SocketProfiles,T::SocketGrades,
         T::BookAids,T::AttributeBirthProfiles,T::AttributeBirthTiers,T::AttributeProfiles,T::AttributeGroups,T::AttributeCandidates,T::AttributeValues,T::AttributeServices,T::AttributeTiers,T::SocketServices,T::Cooldowns,T::TimedEffectGroups,T::TimedEffects,T::ToggleEffectGroups,T::ToggleEffects,T::Recoveries,T::Instant,T::Reserve,T::Periodic,T::Automatic,T::LootProfiles,T::Items,T::PetHatchProfiles,T::Weapons,T::Armors,T::Materials,
-        T::AttributeBindings,T::Accessories,T::Consumables,T::SkillBooks,T::Containers,T::ContainerKeys,T::CurrencyTokens,T::QuestItems,T::SocketStones,T::Costumes,T::CostumeVisuals,T::Tools,T::FishingItems,T::PolymorphItems,T::SoulItems,T::Companions,T::PetSupplies,T::PetFeedRules,T::LootEntries,T::SocketMaterials,T::RefinementRecipes,T::RefinementIngredients,T::MobDropGroups,T::MobDropEntries,T::Regalia,T::RegaliaRules,T::BonusTools,T::BonusToolChoices,T::SpecialBonusTiers,T::Ammunition,T::ForgeAids,T::ForgeLevels,T::DefinitionRules,T::ToolLevels,T::CharacterServices,T::SashProfiles,T::SashDonors,T::SashDonorComponents,T::CostumeTransferTargets,T::EnergyCrystalTiers,T::CurrencyTokenPolicies};
+        T::AttributeBindings,T::Accessories,T::Consumables,T::SkillBooks,T::Containers,T::ContainerKeys,T::CurrencyTokens,T::QuestItems,T::SocketStones,T::Costumes,T::CostumeVisuals,T::Tools,T::FishingItems,T::PolymorphItems,T::SoulItems,T::Companions,T::PetSupplies,T::PetFeedRules,T::LootEntries,T::SocketMaterials,T::RefinementRecipes,T::RefinementIngredients,T::MobDropGroups,T::MobDropEntries,T::Regalia,T::RegaliaRules,T::BonusTools,T::BonusToolChoices,T::SpecialBonusTiers,T::Ammunition,T::ForgeAids,T::ForgeLevels,T::DefinitionRules,T::ToolLevels,T::CharacterServices,T::SashProfiles,T::SashDonors,T::SashDonorComponents,T::CostumeTransferTargets,T::EnergyCrystalTiers,T::CurrencyTokenPolicies,T::GrowthPetEvolutionIngredients};
     static_assert(std::size(order)==db::TableCount-3,"every editable table needs a commit position");
     for(T table:{T::Format,T::Categories,T::BonusDefinitions})Require(before.rows[table]==after[table],"A rendszerregiszter nem szerkesztheto.");
     // Published group IDs own common conflict/lifecycle rules. Item edits may

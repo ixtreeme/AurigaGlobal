@@ -288,6 +288,12 @@ ItemCatalogSource Decode(const Snapshot& source, std::uint64_t revision)
     const auto growthIndex=Index(s.growthPetProfiles,Table::GrowthPetProfiles);
     Each(source,Table::GrowthPetLevels,[&](const Reader& r){Parent(s.growthPetProfiles,growthIndex,r).levels.push_back({r.U16(1),r.U64(2),r.U64(3)});});
     Each(source,Table::GrowthPetStages,[&](const Reader& r){Parent(s.growthPetProfiles,growthIndex,r).stages.push_back({r.U8(1),r.U16(2),r.U32(3)});});
+    Each(source,Table::GrowthPetEvolutionIngredients,[&](const Reader& r){
+        auto& stages=Parent(s.growthPetProfiles,growthIndex,r).stages;
+        const auto stage=std::ranges::find(stages,r.U8(1),&GrowthPetStage::stage);
+        if(stage==stages.end())r.Fail(ReadErrorCode::InvalidChild);
+        stage->ingredients.push_back({r.Key(2),r.U32(4)});
+    });
     Each(source,Table::SoulProfiles,[&](const Reader& r){s.soulProfiles.push_back({r.U32(0),r.Text(1,96),{}});});
     const auto soulIndex=Index(s.soulProfiles,Table::SoulProfiles);
     Each(source,Table::SoulLevels,[&](const Reader& r){Parent(s.soulProfiles,soulIndex,r).levels.push_back({r.U16(1),r.U32(2),r.U32(3),r.U32(4),r.U32(5),r.U32(6),r.U64(7),r.U32(8),r.U32(9),r.U32(10)});});

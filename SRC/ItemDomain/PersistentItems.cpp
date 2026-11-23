@@ -419,6 +419,21 @@ std::expected<GrowthPetState,E> ApplyPetProgress(const ItemCatalog& c,const PetC
     return pet;
 }
 
+const GrowthPetStage* PetEvolutionStage(const ItemCatalog& c,const PersistentItem& seal)
+{
+    const auto* entry=c.Find(seal.key);
+    const auto* companion=entry ? std::get_if<ItemCompanionRow>(&entry->category) : nullptr;
+    const auto* profile=companion && companion->growthProfile ? c.FindGrowthPetProfile(*companion->growthProfile) : nullptr;
+    return profile && seal.growthPet && seal.growthPet->progress.stage<profile->stages.size()
+        ? &profile->stages[seal.growthPet->progress.stage] : nullptr;
+}
+
+bool IsPetEvolutionMaterial(const PersistentItem& item,ItemOwner owner) noexcept
+{
+    return item.key.Category()==ItemCategory::Material && !item.refinementLevel && item.count &&
+        PlainInventoryItem(item,owner);
+}
+
 bool ValidPetProgressWrite(const ItemCatalog& c,const ItemCommit& commit)
 {
     const auto& bytes=commit.result;
@@ -427,6 +442,7 @@ bool ValidPetProgressWrite(const ItemCatalog& c,const ItemCommit& commit)
         bytes[0]!='P' || bytes[1]!='R' || bytes[2]!='G' || bytes[3]!=1 || bytes[4]>1)
         return false;
     const ItemChange* seal=nullptr;
+    std::map<ItemKey,std::uint64_t> consumed;
     for(const auto& change:commit.items)
     {
         if(change.before && change.before->growthPet)
@@ -434,7 +450,18 @@ bool ValidPetProgressWrite(const ItemCatalog& c,const ItemCommit& commit)
             if(seal)return false;
             seal=&change;
         }
-        else if(!AccessoryTimeOnly(change))return false;
+        else if(!AccessoryTimeOnly(change))
+        {
+            if(!bytes[4] || !change.before || !IsPetEvolutionMaterial(*change.before,commit.owners.front().owner)
+                || change.after.count>=change.before->count)return false;
+            auto expected=*change.before;
+            const auto taken=expected.count-change.after.count;
+            ++expected.revision;
+            expected.count-=taken;
+            if(!expected.count){expected.destroyed=true;expected.placement.reset();}
+            if(expected!=change.after)return false;
+            consumed[expected.key]+=taken;
+        }
     }
     if(!seal || !seal->after.growthPet)return false;
     const auto read=[&](std::size_t at,unsigned size) {
@@ -449,6 +476,13 @@ bool ValidPetProgressWrite(const ItemCatalog& c,const ItemCommit& commit)
     if(bytes[4])
     {
         if(bytes.size()!=32 || bytes[31]>1)return false;
+        const auto* stage=PetEvolutionStage(c,*seal->before);
+        if(!stage || consumed.size()!=stage->ingredients.size())return false;
+        for(const auto& ingredient:stage->ingredients)
+        {
+            const auto at=consumed.find(ingredient.key);
+            if(at==consumed.end() || at->second!=ingredient.amount)return false;
+        }
         evolution=GrowthPetEvolution{read(5,8),read(13,8),{static_cast<std::uint16_t>(read(21,2)),
             static_cast<std::uint16_t>(read(23,2)),static_cast<std::uint16_t>(read(25,2))}};
         context.characterLevel=static_cast<std::uint16_t>(read(27,2));
@@ -727,6 +761,13 @@ bool SupportsPersistentGrant(const ItemCatalog& c,const ItemCatalogEntry& e) noe
 }
 bool PlainInventoryItem(const PersistentItem& item,ItemOwner owner,ItemStorageKind kind) noexcept
 {return item.owner==owner && !item.destroyed && !item.privateShop && item.placement && item.placement->kind==kind && (!item.boundTo || item.boundTo==owner) && item.attributes==InstanceAttributes{} && item.stones==decltype(item.stones){} && (!item.accessory || *item.accessory==AccessorySocketState{}) && (!item.automatic || !item.automatic->active) && (!item.toggle || !item.toggle->active) && (!item.soul || !item.soul->active) && !RecallRequested(item) && !item.growthPet && (!item.petSupply || (!item.petSupply->containedSeal && !item.petSupply->equippedSeal));}
+std::uint32_t CountPetEvolutionMaterial(std::span<const PersistentItem> items,ItemOwner owner,ItemKey key) noexcept
+{
+    std::uint64_t count=0;
+    for(const auto& item:items)
+        if(item.key==key && IsPetEvolutionMaterial(item,owner))count+=item.count;
+    return static_cast<std::uint32_t>((std::min<std::uint64_t>)(count,UINT32_MAX));
+}
 std::expected<void,E> ValidatePersistentItem(const ItemCatalog& c,const PersistentItem& p)
 {
     const auto* e=c.Find(p.key);if(!e)return std::unexpected(E::MissingItem);
@@ -1632,6 +1673,25 @@ std::expected<ItemCommit,E> MakeGrowthPetProgressCommit(const ItemCatalog& c,Ite
     result.bytes={'P','R','G',1,static_cast<std::uint8_t>(evolution.has_value())};
     if(evolution)
     {
+        const auto* stage=PetEvolutionStage(c,*seal);
+        if(!stage)return std::unexpected(E::InvalidChange);
+        for(const auto& ingredient:stage->ingredients)
+        {
+            auto remaining=ingredient.amount;
+            for(const auto& stack:inventory)
+            {
+                if(!remaining)break;
+                if(stack.key!=ingredient.key || !IsPetEvolutionMaterial(stack,owner.owner))continue;
+                const auto units=(std::min)(remaining,stack.count);
+                auto consume=MakeConsumeCommit(c,context.operationId,owner,storages,inventory,stack.id,units);
+                if(!consume)return std::unexpected(consume.error());
+                const auto& storage=consume->storages.front();
+                if(std::ranges::find(commit.storages,storage)==commit.storages.end())commit.storages.push_back(storage);
+                commit.items.push_back(std::move(consume->items.front()));
+                remaining-=units;
+            }
+            if(remaining)return std::unexpected(E::RequirementNotMet);
+        }
         result.Put(evolution->nowUtcMs,8);
         result.Put(evolution->elapsedMs,8);
         result.Put(evolution->growth.maximumHpPercentTenths,2);

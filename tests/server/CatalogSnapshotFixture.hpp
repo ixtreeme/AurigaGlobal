@@ -136,7 +136,11 @@ inline db::Snapshot Snapshot(const ItemCatalogSource& source = item_catalog_fixt
     for(const auto& p:source.growthPetProfiles) {
         Add(s,T::GrowthPetProfiles,p.id,p.code,p.maximumLevel,p.experiencePolicy);
         for(const auto& l:p.levels)Add(s,T::GrowthPetLevels,p.id,l.level,l.mobExperience,l.itemExperience);
-        for(const auto& stage:p.stages)Add(s,T::GrowthPetStages,p.id,stage.stage,stage.maximumLevel,stage.form);
+        for(const auto& stage:p.stages) {
+            Add(s,T::GrowthPetStages,p.id,stage.stage,stage.maximumLevel,stage.form);
+            for(const auto& ingredient:stage.ingredients)
+                Add(s,T::GrowthPetEvolutionIngredients,p.id,stage.stage,ingredient.key.Category(),ingredient.key.LocalId(),ingredient.amount);
+        }
     }
     for(const auto& p:source.petHatchProfiles)Add(s,T::PetHatchProfiles,p.id,p.code,p.target.Category(),p.target.LocalId(),p.goldCost,
         p.maximumHp.minimum,p.maximumHp.maximum,p.maximumHp.step,p.monsterDamage.minimum,p.monsterDamage.maximum,p.monsterDamage.step,

@@ -68,7 +68,7 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
     // Vectors and refinement levels are already validated and canonically sorted.
     // Revision is separate release identity; unchanged content retains its digest.
     Writer out;
-    out.Text("auriga.item_catalog.v55");
+    out.Text("auriga.item_catalog.v56");
     out.Integer(source.schemaVersion);
     out.Table(1, source.usePolicies.size());
     for (const auto& row : source.usePolicies)
@@ -345,7 +345,11 @@ std::expected<ItemCatalogDigest, ItemCatalogErrorCode> CanonicalCatalogHash(cons
         out.Integer(static_cast<std::uint32_t>(p.levels.size()));
         for(const auto& l:p.levels){out.Integer(l.level);out.Integer(l.mobExperience);out.Integer(l.itemExperience);}
         out.Integer(static_cast<std::uint32_t>(p.stages.size()));
-        for(const auto& s:p.stages){out.Integer(s.stage);out.Integer(s.maximumLevel);out.Integer(s.form);}
+        for(const auto& s:p.stages){
+            out.Integer(s.stage);out.Integer(s.maximumLevel);out.Integer(s.form);
+            out.Integer(static_cast<std::uint32_t>(s.ingredients.size()));
+            for(const auto& ingredient:s.ingredients){out.Key(ingredient.key);out.Integer(ingredient.amount);}
+        }
     }
     out.Table(45,source.petHatchProfiles.size());
     for(const auto& p:source.petHatchProfiles) {

@@ -40,6 +40,7 @@ def upgrade(tables, blank):
     if int(target_format['schema_version'])>=53:supported.add(52)
     if int(target_format['schema_version'])>=54:supported.add(53)
     if int(target_format['schema_version'])>=55:supported.add(54)
+    if int(target_format['schema_version'])>=56:supported.add(55)
     if int(target_format['schema_version'])>=45:supported.add(44)
     if int(target_format['schema_version'])>=44:supported.add(43)
     if int(target_format['schema_version'])>=43:supported.add(42)

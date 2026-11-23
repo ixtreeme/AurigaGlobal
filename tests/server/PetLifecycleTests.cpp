@@ -70,6 +70,37 @@ void StudyResetAndCooldown() {
     Check(PlanPetSupply(*c,r).error()==PetLifecycleError::InvalidDecision,"out-of-range recorded roll rejected");
     r.recordedRollBp=0;r.pet.nowUtcMs=INT64_MAX;Check(PlanPetSupply(*c,r).error()==PetLifecycleError::InvalidTime,"cooldown overflow rejected");
 }
+void EvolutionMaterialCommit() {
+    auto source=f::Catalog();
+    const auto material=item_catalog_fixture::Leather();
+    source.growthPetProfiles[0].stages[0].ingredients={{material,5}};
+    const auto catalog=BuildItemCatalog(source).value();
+    auto request=Request(*catalog);
+    request.state.everSummoned=request.state.recallRequested=true;
+    const ItemOwner owner{ItemOwnerKind::Character,77};
+    const ItemOwnerFence fence{owner,9,1};
+    const std::vector<ItemStorageLayout> layouts{{{owner,ItemStorageKind::Inventory,1},5,9,1}};
+    PersistentItem seal{ItemInstanceId::Create(120).value(),care::Pet(),owner};
+    seal.revision=3;seal.placement=ItemPlacement{ItemStorageKind::Inventory,1,0};seal.growthPet=request.state;
+    PersistentItem first{ItemInstanceId::Create(121).value(),material,owner};
+    first.count=2;first.placement=ItemPlacement{ItemStorageKind::Inventory,1,1};
+    auto second=first;second.id=ItemInstanceId::Create(122).value();second.count=6;second.placement->anchor=2;
+    std::vector items{seal,first,second};
+    const GrowthPetEvolution evolution{100001,0,{6,0,0}};
+    const auto evolve=[&](std::span<const PersistentItem> inventory) {
+        return MakeGrowthPetProgressCommit(*catalog,fence,layouts,inventory,request.context,seal.id,{},evolution);
+    };
+    Check(!evolve(items),"a material-backed evolution requires the full combat experience bar");
+    items[0].growthPet->progress.mobExperience=source.growthPetProfiles[0].levels[0].mobExperience;
+    Check(!evolve(std::span(items).first(2)),"insufficient inventory must not yield a partial evolution");
+    const auto write=evolve(items).value();
+    Check(write.items.size()==3 && write.items[0].after.growthPet->progress.stage==1 &&
+        write.items[1].after.destroyed && write.items[2].after.count==3,
+        "the stage and exact material quantities across stacks share one commit");
+    auto forged=write;
+    ++forged.items[2].after.count;
+    Check(!ValidateItemCommit(*catalog,forged),"an evolution receipt cannot underpay its material recipe");
+}
 void LifeAndEnchantment() {
     const auto c=BuildItemCatalog(f::Catalog()).value();auto r=Supply(*c,4,false);r.pet.state.life.remainingMs=1000;
     auto extended=PlanPetSupply(*c,r).value();Check(extended.after.life==GrowthPetLife{CompanionClock::ActiveTime,86401000,86401000},"extension derives a new capacity from the saved remainder");
@@ -312,7 +343,7 @@ int main(int argc,char** argv) {
             const auto c=BuildItemCatalog(f::Catalog()).value();auto r=Request(*c,false);r.state.skills[0]={true,1,2};r.state.skills[3]={true,2,1};r.state.carrierInstanceId=300;r.state.ageMs=123456789;r.state.life.remainingMs=1234;
             for(auto b:EncodeGrowthPetState(*c,care::Pet(),r.state).value())std::cout<<"0123456789abcdef"[b>>4]<<"0123456789abcdef"[b&15];std::cout<<'\n';return 0;
         }
-        AgeAndEvolution();StudyResetAndCooldown();LifeAndEnchantment();BuffTransportAndSkin();PersistentSkins();PersistentStudyBypassAndSacrifice();PassiveDamage();PersistenceAndCatalog();CompleteJourney();
+        AgeAndEvolution();EvolutionMaterialCommit();StudyResetAndCooldown();LifeAndEnchantment();BuffTransportAndSkin();PersistentSkins();PersistentStudyBypassAndSacrifice();PassiveDamage();PersistenceAndCatalog();CompleteJourney();
         std::cout<<checks<<" Pet lifecycle checks passed\n";return 0;
     }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
 }

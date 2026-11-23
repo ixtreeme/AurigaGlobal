@@ -12,10 +12,17 @@ struct GrowthPetLevel {
     std::uint16_t level=0;
     std::uint64_t mobExperience=0,itemExperience=0;
 };
+inline constexpr std::size_t MaxGrowthPetEvolutionIngredients=6;
+inline constexpr std::uint32_t MaxGrowthPetEvolutionUnits=64;
+struct GrowthPetEvolutionIngredient {
+    ItemKey key;
+    std::uint32_t amount=0;
+};
 struct GrowthPetStage {
     std::uint8_t stage=0;
     std::uint16_t maximumLevel=0;
     std::uint32_t form=0;
+    std::vector<GrowthPetEvolutionIngredient> ingredients;
 };
 struct GrowthPetProfile {
     std::uint32_t id=0;
