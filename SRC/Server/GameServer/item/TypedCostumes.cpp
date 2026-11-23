@@ -107,6 +107,11 @@ void SendTypedCostumeAppearance(entt::entity source,entt::entity viewer) {
 void ReplayTypedCostumeAppearances(entt::entity viewer) {
     for(auto source:g_registry.view<CostumeProjection>())if(source==viewer || (g_registry.all_of<ecs::ViewerMap>(source) && g_registry.get<ecs::ViewerMap>(source).viewers.contains(viewer)))SendTypedCostumeAppearance(source,viewer);
 }
+void CopyTypedCostumeAppearance(entt::entity target, entt::entity source)
+{
+    if (g_registry.valid(target) && g_registry.valid(source) && g_registry.all_of<ecs::TypedItems>(source))
+        g_registry.emplace_or_replace<CostumeProjection>(target, Models(source), std::uint64_t{1});
+}
 void StopTypedCostumes(entt::entity owner) {
     const auto* typed=g_registry.try_get<ecs::TypedItems>(owner);if(!typed)return;
     for(auto it=clocks.lower_bound(Identity(typed->state.fence,0));it!=clocks.end() && std::get<0>(it->first)==typed->state.fence.owner && std::get<1>(it->first)==typed->state.fence.sessionGeneration;++it)Stop(*it->second);

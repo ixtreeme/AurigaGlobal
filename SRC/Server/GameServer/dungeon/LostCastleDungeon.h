@@ -10,13 +10,12 @@
 /*
     Elveszett Kastely (LostCastle) - Lua mentes C++ dungeon
 
-    Original map: 390
-    Private maps: 3900000..3910000
+    Original map: 380
+    Private maps: 3800000..3809999
 
     Fo hookok (mint a tobbi C++ dungeon):
-      - trigger.cpp: NPC 9006 -> CLostCastleDungeon::OnClickNpc
+      - trigger.cpp: entry NPC -> CLostCastleDungeon::OnClickNpc
       - char_battle.cpp: OnMobKilled -> CLostCastleDungeon::OnMobKilled
-      - char_item.cpp: ReceiveItem(from,npc,item) -> CLostCastleDungeon::OnNpcTakeItem
       - (opcionalis) char_battle.cpp/CHARACTER::Damage elejen:
             if (!CLostCastleDungeon::instance().CheckCloneDamage(pAttacker, this)) return false;
 */
@@ -34,11 +33,8 @@ public:
     void OnPlayerLogin(entt::entity character);
     void OnMobKilled(entt::entity killer, entt::entity victim);
 
-    // Entry NPC click handler (9006)
+    // Entry NPC click handler
     bool OnClickNpc(entt::entity character);
-
-    // NPC "take item" handler (drag item onto NPC) - statue/totem
-    bool OnNpcTakeItem(entt::entity from, entt::entity npc, entt::entity item);
 
     // Floor3 clone sebzes-korlatozas (Damage hook)
     bool CheckCloneDamage(entt::entity attacker, entt::entity victim) const;
@@ -52,6 +48,4 @@ public:
     void PurgeTestClonesOnMap(int32_t mapIndex);
     void PurgeTestClonesForTargetPID(uint32_t targetPid, int32_t mapIndex /* -1 = all maps */ = -1);
 
-    // 30001 item: torli a sajat (targetPid = player) teszt klonjait (dungeon instance-ben blokkolva)
-    bool OnUseItem30001(entt::entity character);
 };

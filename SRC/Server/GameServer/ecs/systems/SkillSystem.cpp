@@ -2068,6 +2068,14 @@ EVENTFUNC(ChainLightningEvent)
 
 void SetPolyVarForAttack(entt::entity character, CSkillProto * pkSk, entt::entity pkWeapon)
 {
+    if (const auto* weapon = ClonedWeaponView(character))
+    {
+        const auto magic = EquipmentScale(weapon->magicalAttackRaw, 1, 1000);
+        pkSk->SetPointVar("wep", EquipmentScale(weapon->physicalAttackRaw, 1, 1000));
+        pkSk->SetPointVar("mtk", magic);
+        pkSk->SetPointVar("mwep", magic);
+        return;
+    }
     if (HasTypedEquipment(character))
     {
         const auto* stats=TypedEquipmentView(character);

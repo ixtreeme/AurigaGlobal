@@ -18,6 +18,14 @@ struct TypedEquipmentProjection
     std::uint64_t collectionRevision=0;
     bool applied=false;
 };
+// Clones already copy the player's effective points. The weapon facts are
+// used for motion and skills without applying those stats a second time.
+struct ClonedWeaponStats
+{
+    auriga::item::WeaponSubtype subtype;
+    std::int64_t physicalAttackRaw;
+    std::int64_t magicalAttackRaw;
+};
 }
 inline bool HasTypedEquipment(entt::entity e)
 {return g_registry.valid(e) && g_registry.all_of<ecs::TypedEquipmentProjection>(e);}
@@ -31,12 +39,19 @@ inline std::int64_t TypedPetBonus(entt::entity e,auriga::item::PetEffect effect)
 {const auto* stats=TypedEquipmentView(e);return stats ? stats->petBonuses.Bonus(effect) : 0;}
 inline entt::entity CombatWearItem(entt::entity e,std::uint8_t slot)
 {return HasTypedEquipment(e) ? entt::null : ItemSystem::GetWearItem(e,slot);}
+inline const ecs::ClonedWeaponStats* ClonedWeaponView(entt::entity e)
+{
+    return g_registry.valid(e) ? g_registry.try_get<ecs::ClonedWeaponStats>(e) : nullptr;
+}
 inline int CombatWeaponSubtype(entt::entity e)
 {
-    if(HasTypedEquipment(e))
+    const auto* clone = ClonedWeaponView(e);
+    if (clone || HasTypedEquipment(e))
     {
-        const auto* s=TypedEquipmentView(e);if(!s || !s->weapon)return -1;
-        switch(*s->weapon){case auriga::item::WeaponSubtype::Sword:return WEAPON_SWORD;case auriga::item::WeaponSubtype::Dagger:return WEAPON_DAGGER;
+        const auto* stats = TypedEquipmentView(e);
+        const auto subtype = clone ? std::optional{clone->subtype} : (stats ? stats->weapon : std::nullopt);
+        if (!subtype) return -1;
+        switch(*subtype){case auriga::item::WeaponSubtype::Sword:return WEAPON_SWORD;case auriga::item::WeaponSubtype::Dagger:return WEAPON_DAGGER;
         case auriga::item::WeaponSubtype::Bow:return WEAPON_BOW;case auriga::item::WeaponSubtype::TwoHanded:return WEAPON_TWO_HANDED;
         case auriga::item::WeaponSubtype::Bell:return WEAPON_BELL;case auriga::item::WeaponSubtype::Fan:return WEAPON_FAN;
         case auriga::item::WeaponSubtype::MountSpear:return WEAPON_MOUNT_SPEAR;}return -1;

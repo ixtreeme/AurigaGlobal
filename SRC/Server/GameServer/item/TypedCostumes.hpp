@@ -10,6 +10,7 @@ void StopTypedCostumes(entt::entity);
 void FinishTypedCostumes();
 void SendTypedCostumeAppearance(entt::entity source,entt::entity viewer);
 void ReplayTypedCostumeAppearances(entt::entity viewer);
+void CopyTypedCostumeAppearance(entt::entity target, entt::entity source);
 namespace auriga::item::runtime {
 bool DeferCostumeLogin(std::uint32_t,std::function<void()>);
 std::function<void(MultiCommitOutcome*)> BeginCostumeCommit(const std::vector<OwnerRead>&,const ItemCommit&);

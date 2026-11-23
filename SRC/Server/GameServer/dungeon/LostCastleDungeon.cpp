@@ -2,7 +2,10 @@
 #include "stdafx.h"
 #include "../item/TypedDungeonEntry.hpp"
 #include "../item/TypedDungeonActions.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../item/TypedDungeonItems.hpp"
+#include "../item/TypedLoot.hpp"
+#include "../item/TypedCostumes.hpp"
+#include "../item/TypedEquipment.hpp"
 #include "../ecs/systems/AISystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
@@ -32,11 +35,8 @@
 #include "party.h"
 #include "sectree_manager.h"
 #include "dungeon.h"
-#include "item.h"
-#include "item_manager.h"
 #include "packet.h"
 #include "log.h"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/EntityFactory.hpp"
 #include "mob_manager.h"
@@ -54,9 +54,7 @@ namespace
     constexpr int32_t  kPrivateMax = 3810000;
 
     constexpr uint32_t kEntryNpcVnum = 20021;
-    constexpr uint32_t kEntryItemVnum = 30000;
-    constexpr std::string_view kNativeEntryCode="material.arpa";
-    std::uint64_t EntryTicketCount(entt::entity e){return HasTypedDungeonInventory(e)?TypedDungeonTicketCount(e,kNativeEntryCode):ItemSystem::CountItem(e,kEntryItemVnum);}
+    constexpr std::string_view kEntryTicketCode = "material.arpa";
 
     constexpr int32_t  kMinLevel = 40;
     constexpr int32_t  kMaxLevel = 140;
@@ -88,7 +86,6 @@ namespace
     constexpr int32_t  kFloor2CenterX = kEnterLocalX;
     constexpr int32_t  kFloor2CenterY = kEnterLocalY;
     constexpr const char* kFloor2Regen = "data/dungeon/elveszett_kastely/floor2.json";
-    constexpr uint32_t kKeyItems[5] = { 30001, 30002, 30003, 30004, 30005 };
 
     // Floor3
     constexpr uint32_t kCloneBaseMobVnum = 136;
@@ -98,7 +95,6 @@ namespace
     // Floor4
     constexpr const char* kFloor4Regen = "data/dungeon/elveszett_kastely/floor4.json";
     constexpr uint32_t kTotemVnum = 9298;
-    constexpr uint32_t kTileItemVnum = 30007;
     constexpr int32_t  kTileDropChancePct = 3;
     constexpr int32_t  kFloor4CenterX = kEnterLocalX;
     constexpr int32_t  kFloor4CenterY = kEnterLocalY;
@@ -179,39 +175,20 @@ namespace
             });
     }
 
-    void DropItemOnGround(entt::entity victimEntity, entt::entity owner, uint32_t vnum, uint32_t count)
+    void DropCastleTile(entt::entity victim, entt::entity claimant)
     {
-        if (!ecs::PlayerRuntime::IsValid(victimEntity))
-            return;
-
-        const entt::entity item = ITEM_MANAGER::instance().CreateItem(vnum, count);
-        if (!ItemSystem::IsValidItem(item))
-            return;
-
-        PIXEL_POSITION pos;
-        pos.x = ecs::PlayerRuntime::GetX(victimEntity) + number(-200, 200);
-        pos.y = ecs::PlayerRuntime::GetY(victimEntity) + number(-200, 200);
-        pos.z = ecs::PlayerRuntime::GetZ(victimEntity);
-
-        ItemSystem::PlaceItemOnGround(item, ecs::PlayerRuntime::GetMapIndex(victimEntity), pos);
-
-        if (owner != entt::null)
-            ItemSystem::SetGroundOwnership(item, owner, 60 * 3);
-    }
-
-    bool ConsumeOneGivenItem(entt::entity itemEntity, const char* reason)
-    {
-        if (itemEntity == entt::null)
-            return false;
-
-        if (ItemSystem::GetItemCount(itemEntity) > 1)
+        const auto key = FindTypedDungeonUseKey(auriga::item::DungeonUseRole::CastleTile);
+        if (!key)
         {
-            ItemSystem::ConsumeItemEcs(itemEntity);
-            return true;
+            LOG_ERROR("Lost Castle: typed tile item is missing from the catalog");
+            return;
         }
 
-        ItemSystem::DestroyItemEntityEcs(itemEntity, reason);
-        return true;
+        namespace Player = ecs::PlayerRuntime;
+        DropTypedLoot({*key, 0, 1}, Player::GetMapIndex(victim),
+            Player::GetX(victim) + number(-200, 200),
+            Player::GetY(victim) + number(-200, 200),
+            Player::GetZ(victim), claimant, 180000);
     }
 
     // Block rect (cell coords) - TODO: set real block rects for your floor4 map
@@ -301,39 +278,15 @@ namespace
     }
 
 
-    inline void CloneEquipWeaponFromSource(entt::entity clone, entt::entity source)
+    void CopyCloneEquipment(entt::entity clone, entt::entity source)
     {
-        if (!ecs::IsCharacter(clone) || !ecs::IsCharacter(source))
-            return;
+        namespace Player = ecs::PlayerRuntime;
+        Player::SetPart(clone, PART_HAIR, Player::GetPart(source, PART_HAIR));
+        CopyTypedCostumeAppearance(clone, source);
 
-        // A legtobb PvP skill ellenorzi a WEAR_WEAPON-t (es a weapon tipust),
-        // ezert a klonnak is legyen valodi fegyver itemje, nem csak vizualis PART.
-        const entt::entity sourceWeapon = ItemSystem::GetWearItem(
-            source, WEAR_WEAPON);
-        if (!ItemSystem::IsValidItem(sourceWeapon))
-            return;
-
-        if (ItemSystem::IsValidItem(
-                ItemSystem::GetWearItem(clone, WEAR_WEAPON)))
-            return;
-
-		// RefineLevel a legtobb forrasban a vnum-bol szamolodik, igy eleg a megfelelo vnum-ot klonozni.
-		// (Nincs SetRefineLevel API nalatok.)
-		const uint32_t vnum = ItemSystem::GetItemOriginalVnum(sourceWeapon);
-
-		const entt::entity cloneWeapon = ITEM_MANAGER::instance().CreateItem(vnum, 1, 0, true);
-        if (!ItemSystem::IsValidItem(cloneWeapon))
-            return;
-
-		// klon item: ne menjen DB save/DelayedSave
-		ItemSystem::SetItemSkipSave(cloneWeapon, true);
-
-		// Sockets + Attributes masolasa publikus API-val
-		ItemSystem::CopyItemSocketsEcs(sourceWeapon, cloneWeapon);
-		ItemSystem::CopyItemAttributesEcs(sourceWeapon, cloneWeapon);
-
-        // Equip without inventory (direct wear)
-        InventorySystem::EquipTo(cloneWeapon, clone, WEAR_WEAPON);
+        if (const auto* stats = TypedEquipmentView(source); stats && stats->weapon)
+            g_registry.emplace<ecs::ClonedWeaponStats>(
+                clone, *stats->weapon, stats->flat.physicalAttackRaw, stats->flat.magicalAttackRaw);
     }
 
     inline void LostCastleCloneStartMove(entt::entity cloneEntity, int32_t tx, int32_t ty, uint32_t now)
@@ -718,22 +671,7 @@ void ClearClonesOnMap(int32_t mapIndex)
 
             ecs::MovementSystem::SetRotation(cloneEntity, ecs::PlayerRuntime::GetRotation(sourceEntity));
 
-            ecs::PlayerRuntime::SetPart(cloneEntity, PART_MAIN, ecs::PlayerRuntime::GetPart(sourceEntity, PART_MAIN));
-            ecs::PlayerRuntime::SetPart(cloneEntity, PART_WEAPON, ecs::PlayerRuntime::GetPart(sourceEntity, PART_WEAPON));
-            ecs::PlayerRuntime::SetPart(cloneEntity, PART_HEAD, ecs::PlayerRuntime::GetPart(sourceEntity, PART_HEAD));
-            ecs::PlayerRuntime::SetPart(cloneEntity, PART_HAIR, ecs::PlayerRuntime::GetPart(sourceEntity, PART_HAIR));
-#ifdef ENABLE_ACCE_SYSTEM
-            ecs::PlayerRuntime::SetPart(cloneEntity, PART_ACCE, ecs::PlayerRuntime::GetPart(sourceEntity, PART_ACCE));
-#endif
-#ifdef ENABLE_RUNE_SYSTEM
-            ecs::PlayerRuntime::SetPart(cloneEntity, PART_RUNE, ecs::PlayerRuntime::GetPart(sourceEntity, PART_RUNE));
-#endif
-#ifdef ENABLE_COSTUME_EFFECT
-            ecs::PlayerRuntime::SetPart(cloneEntity, PART_EFFECT_BODY, ecs::PlayerRuntime::GetPart(sourceEntity, PART_EFFECT_BODY));
-            ecs::PlayerRuntime::SetPart(cloneEntity, PART_EFFECT_WEAPON, ecs::PlayerRuntime::GetPart(sourceEntity, PART_EFFECT_WEAPON));
-#endif
-
-            CloneEquipWeaponFromSource(cloneEntity, sourceEntity);
+            CopyCloneEquipment(cloneEntity, sourceEntity);
 
             for (int p = 0; p < POINT_MAX_NUM; ++p)
             {
@@ -843,7 +781,7 @@ void ClearClonesOnMap(int32_t mapIndex)
 	DungeonSystem::SetFlag(d, kFlagTotemVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(totem));
 
             SendCommandMap(mapIndex, "lostcastle_tile 0");
-            BigNoticeMap(mapIndex, "Elveszett Kastely: Mobokbol eshet %u (3%%). Huzd a totemre, hogy csempet tegyel le!", kTileItemVnum);
+            BigNoticeMap(mapIndex, "Elveszett Kastely: Ork amulett eshet a szörnyekből (3%%). Használd a totem közelében!");
         }
 
         void OnCloneKilled(int32_t mapIndex, uint32_t cloneVid)
@@ -1259,22 +1197,7 @@ bool CLostCastleDungeon::SpawnTestClones(entt::entity source, entt::entity targe
         ecs::MovementSystem::SetRotation(cloneEntity, ecs::PlayerRuntime::GetRotation(source));
 
         // look/parts
-        ecs::PlayerRuntime::SetPart(cloneEntity, PART_MAIN, ecs::PlayerRuntime::GetPart(source, PART_MAIN));
-        ecs::PlayerRuntime::SetPart(cloneEntity, PART_WEAPON, ecs::PlayerRuntime::GetPart(source, PART_WEAPON));
-        ecs::PlayerRuntime::SetPart(cloneEntity, PART_HEAD, ecs::PlayerRuntime::GetPart(source, PART_HEAD));
-        ecs::PlayerRuntime::SetPart(cloneEntity, PART_HAIR, ecs::PlayerRuntime::GetPart(source, PART_HAIR));
-#ifdef ENABLE_ACCE_SYSTEM
-        ecs::PlayerRuntime::SetPart(cloneEntity, PART_ACCE, ecs::PlayerRuntime::GetPart(source, PART_ACCE));
-#endif
-#ifdef ENABLE_RUNE_SYSTEM
-        ecs::PlayerRuntime::SetPart(cloneEntity, PART_RUNE, ecs::PlayerRuntime::GetPart(source, PART_RUNE));
-#endif
-#ifdef ENABLE_COSTUME_EFFECT
-        ecs::PlayerRuntime::SetPart(cloneEntity, PART_EFFECT_BODY, ecs::PlayerRuntime::GetPart(source, PART_EFFECT_BODY));
-        ecs::PlayerRuntime::SetPart(cloneEntity, PART_EFFECT_WEAPON, ecs::PlayerRuntime::GetPart(source, PART_EFFECT_WEAPON));
-#endif
-
-        CloneEquipWeaponFromSource(cloneEntity, source);
+        CopyCloneEquipment(cloneEntity, source);
 
         // copy points (NO 10x here - real PvP test)
         for (int p = 0; p < POINT_MAX_NUM; ++p)
@@ -1400,25 +1323,6 @@ void CLostCastleDungeon::PurgeTestClonesForTargetPID(uint32_t targetPid, int32_t
     }
 }
 
-bool CLostCastleDungeon::OnUseItem30001(entt::entity character)
-{
-    if (!ecs::PlayerRuntime::IsPC(character))
-        return false;
-
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
-
-    // Block inside LostCastle instance maps to avoid skipping dungeon mechanics
-    if (IsInRange(idx, kPrivateMin, kPrivateMax))
-    {
-        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Dungeonban nem hasznalhato.");
-        return false;
-    }
-
-    PurgeTestClonesForTargetPID(ecs::PlayerRuntime::GetPlayerID(character), idx);
-    ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Klonok torolve ezen a mapon.");
-    return true;
-}
-
 void CLostCastleDungeon::OnPlayerDisconnect(entt::entity character)
 {
     if (!ecs::PlayerRuntime::IsPC(character))
@@ -1487,7 +1391,7 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
                     ok = false;
                     return;
                 }
-                if (EntryTicketCount(m) < 1)
+                if (TypedDungeonTicketCount(m, kEntryTicketCode) < 1)
                 {
                     ok = false;
                     return;
@@ -1498,7 +1402,7 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
 
         if (!ok)
         {
-            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Feltetelek: minden tagnak itt kell lennie, lvl %d-%d, es kell 1 db %u.", kMinLevel, kMaxLevel, kEntryItemVnum);
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Minden tagnak itt kell lennie. Szükséges szint: %d–%d. Belépő: 1 Árpa.", kMinLevel, kMaxLevel);
             return true;
         }
     }
@@ -1509,9 +1413,9 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Csak lvl %d-%d kozott lephetsz be!", kMinLevel, kMaxLevel);
             return true;
         }
-        if (EntryTicketCount(character) < 1)
+        if (TypedDungeonTicketCount(character, kEntryTicketCode) < 1)
         {
-            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Szukseges belepo item: %u", kEntryItemVnum);
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Szükséges belépő: 1 Árpa.");
             return true;
         }
     }
@@ -1539,7 +1443,6 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
             if (!ecs::PlayerRuntime::IsPC(m))
                 return;
 
-            if(!HasTypedDungeonInventory(m))ItemSystem::RemoveSpecifyItemEcs(m, kEntryItemVnum, 1);
 
             // rejoin flags reset
             ecs::QuestSystem::SetFlag(m, kQfDisconnect, 0);
@@ -1568,12 +1471,8 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
     s_lc.StartFloor1(DungeonSystem::GetMapIndex(d));
         };return plan;
     };
-    if(HasTypedDungeonInventory(character)){
-        if(!BeginTypedDungeonEntry(character,"dungeon.lost_castle.entry",kNativeEntryCode,1,[character](entt::entity pc){const auto level=ecs::PointSystem::GetLevel(pc);if(level<kMinLevel || level>kMaxLevel)return false;bool together=true;const auto party=ecs::SocialSystem::GetParty(character);if(party!=entt::null){auto check=[&](entt::entity m){if(ecs::PlayerRuntime::IsPC(m) && ecs::PlayerRuntime::GetMapIndex(m)!=ecs::PlayerRuntime::GetMapIndex(character))together=false;};PartySystem::ForEachOnlineMember(party,check);}return together;},prepare))
-            ecs::ChatSystem::Send(character,CHAT_TYPE_INFO,"A teljes csapatnak készen kell állnia, és a belépőnek a hátizsákban kell lennie.");
-        return true;
-    }
-    if(auto plan=prepare())plan->publish();
+    if(!BeginTypedDungeonEntry(character,"dungeon.lost_castle.entry",kEntryTicketCode,1,[character](entt::entity pc){const auto level=ecs::PointSystem::GetLevel(pc);if(level<kMinLevel || level>kMaxLevel)return false;bool together=true;const auto party=ecs::SocialSystem::GetParty(character);if(party!=entt::null){auto check=[&](entt::entity m){if(ecs::PlayerRuntime::IsPC(m) && ecs::PlayerRuntime::GetMapIndex(m)!=ecs::PlayerRuntime::GetMapIndex(character))together=false;};PartySystem::ForEachOnlineMember(party,check);}return together;},prepare))
+        ecs::ChatSystem::Send(character,CHAT_TYPE_INFO,"A teljes csapatnak készen kell állnia, és a belépőnek a hátizsákban kell lennie.");
     return true;
 }
 
@@ -1624,7 +1523,7 @@ void CLostCastleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             if (vnum != kTotemVnum && vnum != kStatueVnum)
             {
                 if (number(1, 100) <= kTileDropChancePct)
-                    DropItemOnGround(victim, killer, kTileItemVnum, 1);
+                    DropCastleTile(victim, killer);
             }
         }
         return;
@@ -1652,8 +1551,9 @@ mask |= bit;
 
             ForEachPcOnMap(idx, [&](entt::entity pc){
                 if (!ecs::PlayerRuntime::IsValid(pc)) return;
-                if(HasTypedDungeonInventory(pc)){for(const auto& binding:auriga::item::DungeonUseBindings)if(binding.role>=auriga::item::DungeonUseRole::CastleKey1&&binding.role<=auriga::item::DungeonUseRole::CastleKey5)QueueTypedDungeonCleanup(pc,binding.code);}
-                else for(uint32_t kv:kKeyItems){const auto count=ItemSystem::CountItem(pc,kv);if(count>0)ItemSystem::RemoveSpecifyItemEcs(pc,kv,count);}
+                for (const auto& binding : auriga::item::DungeonUseBindings)
+                    if (binding.role >= R::CastleKey1 && binding.role <= R::CastleKey5)
+                        QueueTypedDungeonCleanup(pc, binding.code);
                 });
 
             s_lc.StartFloor3(idx);
@@ -1667,13 +1567,6 @@ if (!s_lc.UnlockNextTile(idx))
             ecs::ChatSystem::Send(from, CHAT_TYPE_INFO, "Mar minden csempe le van teve!");
 }};
  }return {};
-}
-bool CLostCastleDungeon::OnNpcTakeItem(entt::entity from,entt::entity npc,entt::entity item){
- if(!ItemSystem::CanConsumeOwnedItem(from,item))return false;
- const auto d=CDungeonManager::instance().FindByMapIndex(ecs::PlayerRuntime::GetMapIndex(from));if(TypedDungeonActionPending(d))return true;
- using R=auriga::item::DungeonUseRole;const auto v=ItemSystem::GetItemVnum(item);auto role=v==kTileItemVnum?R::CastleTile:R::None;
- for(unsigned n=0;n<5;++n)if(v==kKeyItems[n])role=static_cast<R>(static_cast<unsigned>(R::CastleKey1)+n);
- auto plan=PlanCastleAction(from,npc,role);if(!plan)return false;if(ConsumeOneGivenItem(item,"LOSTCASTLE_NATIVE_COMPAT"))plan->publish();return true;
 }
 bool CLostCastleDungeon::OnUseTypedItem(entt::entity e,const auriga::item::PersistentItem& item,const auriga::item::ItemCatalog& catalog){
  const auto role=auriga::item::DungeonItemUseRole(catalog,item.key);return UseTypedDungeonAction(e,item,catalog,[role](auto pc,auto npc){return PlanCastleAction(pc,npc,role);});
