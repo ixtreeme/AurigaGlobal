@@ -28,7 +28,6 @@
 #include "event.h"
 #include "../ecs/EntityFactory.hpp"
 #include "../ecs/Registry.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/CharacterAccessors.hpp"
 
 namespace
@@ -39,7 +38,6 @@ namespace
 
     constexpr uint32_t kEntryNpcVnum    = 9615;
     constexpr uint32_t kRewardChestVnum = 9626;
-    constexpr uint32_t kResetItemVnum   = 33018;
 
     constexpr int32_t kBaseCellX = 19712;
     constexpr int32_t kBaseCellY = 25088;
@@ -53,9 +51,7 @@ namespace
     constexpr int32_t kMaxLevel = 160;
     constexpr int32_t kMinMembers = 2;
 
-    constexpr uint32_t kEntryItemVnum  = 33014;
-    constexpr std::string_view kNativeEntryCode="catalog.10.ironclad_amulet_26fbf68fe199";
-    std::uint64_t EntryTicketCount(entt::entity e){return HasTypedDungeonInventory(e)?TypedDungeonTicketCount(e,kNativeEntryCode):ItemSystem::CountItem(e,kEntryItemVnum);}
+    constexpr std::string_view kEntryTicketCode = "catalog.10.ironclad_amulet_26fbf68fe199";
     constexpr int32_t  kEntryItemCount = 1;
 
     constexpr uint32_t kGateNpc           = 9616;
@@ -69,8 +65,6 @@ namespace
     constexpr uint32_t kMemorialNpc4      = 9624;
     constexpr uint32_t kStoneProtectorNpc = 9625;
 
-    constexpr uint32_t kFloor1ItemVnum = 33015;
-    constexpr uint32_t kFloor3ItemVnum = 33016;
     constexpr std::string_view kNativeRewardCode = "catalog.8.freeze_chest_022d34838ecb";
 
     constexpr uint32_t kFloor1LowBossVnum  = 4812;
@@ -1083,35 +1077,6 @@ void CVikingDungeon::OnPlayerLogin(entt::entity character)
     SetCooldown(character);
 }
 
-bool CVikingDungeon::OnUseItem(entt::entity character, entt::entity item)
-{
-    if (!ecs::PlayerRuntime::IsValid(character) || !ItemSystem::CanConsumeOwnedItem(character, item))
-        return false;
-
-    if (ItemSystem::GetItemVnum(item) != kResetItemVnum)
-        return false;
-
-    if (IsVikingDungeonMap(ecs::PlayerRuntime::GetMapIndex(character)))
-    {
-        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You cannot use this item while inside the dungeon.");
-        return true;
-    }
-
-    const int32_t cooldownUntil = ecs::QuestSystem::GetFlag(character, kQfCooldown);
-    if (cooldownUntil <= get_global_time())
-    {
-        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You can already enter the dungeon.");
-        return true;
-    }
-
-    const ItemSystem::ItemCost cost {item, 1};
-    if (!ItemSystem::ConsumeOwnedItemCosts(character, std::span(&cost, 1)))
-        return true;
-    ecs::QuestSystem::SetFlag(character, kQfCooldown, 0);
-    ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Dungeon cooldown reset successfully.");
-    return true;
-}
-
 bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
 {
     if(TypedDungeonEntryPending(character))return true;
@@ -1251,7 +1216,7 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
 
         if (!quickRestart)
         {
-            if (EntryTicketCount(m) < kEntryItemCount)
+            if (TypedDungeonTicketCount(m, kEntryTicketCode) < kEntryItemCount)
             {
                 ok = false;
                 bad = BAD_ITEM;
@@ -1321,10 +1286,7 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
         ecs::QuestSystem::SetFlag(m, kQfCh, (int32_t)g_bChannel);
 
         if (!quickRestart)
-        {
             SetCooldown(m);
-            if(!HasTypedDungeonInventory(m))ItemSystem::RemoveSpecifyItemEcs(m, kEntryItemVnum, kEntryItemCount);
-        }
     };
 
     if (party != entt::null)
@@ -1342,8 +1304,9 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
     BigNoticeMap(dungeonMapIdx, "<Frostbane Fortress> Dungeon instance created.");
         };return plan;
     };
-    if(HasTypedDungeonInventory(character) && !quickRestart){
-        if(!BeginTypedDungeonEntry(character,"dungeon.viking.entry",kNativeEntryCode,1,[](entt::entity pc){const auto level=ecs::PointSystem::GetLevel(pc);return level>=kMinLevel && level<=kMaxLevel && ecs::QuestSystem::GetFlag(pc,kQfCooldown)<=get_global_time();},prepare))
+    if (!quickRestart)
+    {
+        if(!BeginTypedDungeonEntry(character,"dungeon.viking.entry",kEntryTicketCode,kEntryItemCount,[](entt::entity pc){const auto level=ecs::PointSystem::GetLevel(pc);return level>=kMinLevel && level<=kMaxLevel && ecs::QuestSystem::GetFlag(pc,kQfCooldown)<=get_global_time();},prepare))
             ecs::ChatSystem::Send(character,CHAT_TYPE_INFO,"A teljes csapatnak készen kell állnia, és a belépőnek a hátizsákban kell lennie.");
         return true;
     }
@@ -1421,12 +1384,6 @@ return TypedDungeonAction{100+static_cast<std::uint64_t>(DungeonSystem::GetFlag(
         }
 }};
  }return {};
-}
-bool CVikingDungeon::OnNpcTakeItem(entt::entity from,entt::entity npc,entt::entity item){
- if(!ItemSystem::CanConsumeOwnedItem(from,item))return false;
- const auto d=CDungeonManager::instance().FindByMapIndex(ecs::PlayerRuntime::GetMapIndex(from));if(TypedDungeonActionPending(d))return true;
- using R=auriga::item::DungeonUseRole;const auto v=ItemSystem::GetItemVnum(item);const auto role=v==kFloor1ItemVnum?R::VikingFire:v==kFloor3ItemVnum?R::VikingRune:R::None;
- auto plan=PlanVikingAction(from,npc,role);if(!plan)return false;const ItemSystem::ItemCost cost{item,1};if(ItemSystem::ConsumeOwnedItemCosts(from,std::span(&cost,1)))plan->publish();return true;
 }
 bool CVikingDungeon::OnUseTypedItem(entt::entity e,const auriga::item::PersistentItem& item,const auriga::item::ItemCatalog& catalog){
  const auto role=auriga::item::DungeonItemUseRole(catalog,item.key);return UseTypedDungeonAction(e,item,catalog,[role](auto pc,auto npc){return PlanVikingAction(pc,npc,role);},role!=auriga::item::DungeonUseRole::VikingReset);

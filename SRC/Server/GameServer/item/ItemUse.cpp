@@ -6,7 +6,6 @@
 
 #include "../ecs/systems/ItemSystem.hpp"
 
-#include "VikingDungeon.h"
 namespace
 {
 	inline bool CheckCanUseNow(entt::entity ch)
@@ -30,10 +29,6 @@ namespace item_change
 	{
 		if (!ecs::PlayerRuntime::IsPC(chEntity) || !ItemSystem::CanConsumeOwnedItem(chEntity, item))
 			return false;
-#ifdef ENABLE_CPP_DUNGEON_RAZOR93
-		if (CVikingDungeon::instance().OnUseItem(chEntity, item))
-			return true;
-#endif
 		switch (ItemSystem::GetItemVnum(item))
 		{
 			// 30279: consumes 100 (across all stacks), gives 30280 x1

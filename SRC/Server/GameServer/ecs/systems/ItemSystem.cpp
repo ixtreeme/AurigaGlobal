@@ -76,10 +76,6 @@
 #ifdef ENABLE_NEWSTUFF
 #include "../../combat/pvp.h"
 #endif
-#ifdef ENABLE_CPP_DUNGEON_RAZOR93
-#include "../../dungeon/Halloween2022Dungeon.h"
-#include "../../dungeon/VikingDungeon.h"
-#endif
 #ifdef ENABLE_STOLE_COSTUME
 #include "../../../common/stole_length.h"
 #endif
@@ -3058,12 +3054,6 @@ bool ReceiveItemEcs(entt::entity receiver, entt::entity fromEntity, entt::entity
     if (HerbalismSystem::TryRefine(receiver, fromEntity, item)) return true;
     // Callbacks may consume the last item or destroy its entity.
     const std::string itemName = GetItemName(item);
-#ifdef ENABLE_CPP_DUNGEON_RAZOR93
-	if (CHalloween2022Dungeon::instance().OnNpcTakeItem(fromEntity, receiver, item))
-		return true;
-	if (CVikingDungeon::instance().OnNpcTakeItem(fromEntity, receiver, item))
-		return true;
-#endif
 	const entt::entity itemEntity = item;
 	switch (ecs::PlayerRuntime::GetRaceNum(receiver))
 	{

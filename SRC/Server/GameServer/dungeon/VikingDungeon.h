@@ -17,8 +17,6 @@
       - input_login.cpp: CVikingDungeon::OnPlayerLogin
       - char.cpp: CVikingDungeon::OnPlayerDisconnect
       - char_battle.cpp: CVikingDungeon::OnMobKilled
-      - ItemSystem.cpp: ItemSystem::ReceiveItemEcs -> CVikingDungeon::OnNpcTakeItem
-      - ItemUse.cpp vagy char_item.cpp/use hook: CVikingDungeon::OnUseItem (33018)
 */
 class CVikingDungeon
 {
@@ -31,8 +29,6 @@ public:
     void OnMobKilled(entt::entity killer, entt::entity victim);
 
     bool OnClickNpc(entt::entity character, entt::entity npc);
-    bool OnNpcTakeItem(entt::entity from, entt::entity npc, entt::entity item);
-    bool OnUseItem(entt::entity character, entt::entity item);
 
     bool IsVikingDungeonMap(int32_t mapIndex) const;
 };

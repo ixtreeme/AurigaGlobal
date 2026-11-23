@@ -28,7 +28,6 @@
 #include "item.h"
 #include "questmanager.h"
 #include "event.h"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/EntityFactory.hpp"
 #include "../ecs/CharacterAccessors.hpp"
@@ -59,9 +58,7 @@ namespace
     constexpr int32_t  kMinLevel = 140;
     constexpr int32_t  kMaxLevel = 160;
 
-    constexpr uint32_t kEntryItemVnum  = 30930;
-    constexpr std::string_view kNativeEntryCode="catalog.10.ampoule_with_blood_e3d2daf02c11";
-    std::uint64_t EntryTicketCount(entt::entity e){return HasTypedDungeonInventory(e)?TypedDungeonTicketCount(e,kNativeEntryCode):ItemSystem::CountItem(e,kEntryItemVnum);}
+    constexpr std::string_view kEntryTicketCode = "catalog.10.ampoule_with_blood_e3d2daf02c11";
     constexpr int32_t  kEntryItemCount = 1;
     constexpr bool     kEveryMemberNeedsTicket = true; // custom: every entering party member must have ticket
 
@@ -77,8 +74,6 @@ namespace
     constexpr uint32_t kStoneHalfVnum   = 8739;
     constexpr uint32_t kFirstBossVnum   = 4582;
 
-    constexpr uint32_t kStatueItemVnum  = 30931;
-    constexpr uint32_t kActivateItemVnum = 30932;
 
     constexpr int32_t  kFloor1Wave1Kills = 120;
     constexpr int32_t  kFloor1Wave2Kills = 182;
@@ -91,7 +86,6 @@ namespace
     constexpr uint32_t kCalyxEmptyNpc   = 9482;
     constexpr uint32_t kCalyxFullNpc    = 9483;
     constexpr uint32_t kSecondBossVnum  = 4583;
-    constexpr uint32_t kSecondFloorItem = 30933;
     constexpr uint32_t kSecondStoneVnum = 8740;
     constexpr uint32_t kFinalBossVnum   = 4584;
 
@@ -289,12 +283,6 @@ namespace
         ForEachPcOnMap(mapIndex, [&](entt::entity pc){
             WarpOut(pc);
         });
-    }
-
-    bool RemoveOneGivenItem(entt::entity owner, entt::entity item)
-    {
-        const ItemSystem::ItemCost cost {item, 1};
-        return ItemSystem::ConsumeOwnedItemCosts(owner, std::span(&cost, 1));
     }
 
     void DropProgressionItem(entt::entity victim, entt::entity owner, auriga::item::DungeonUseRole role)
@@ -787,7 +775,7 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
             return;
         }
 
-        if (EntryTicketCount(m) < kEntryItemCount)
+        if (TypedDungeonTicketCount(m, kEntryTicketCode) < kEntryItemCount)
         {
             ok = false;
             bad = BAD_ITEM;
@@ -847,7 +835,6 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
         ecs::QuestSystem::SetFlag(m, kQfIdx, dungeonMapIdx);
         ecs::QuestSystem::SetFlag(m, kQfCh, (int32_t)g_bChannel);
         SetCooldown(m);
-        if(!HasTypedDungeonInventory(m))ItemSystem::RemoveSpecifyItemEcs(m, kEntryItemVnum, kEntryItemCount);
     };
 
     if (party == entt::null)
@@ -866,12 +853,8 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
     BigNoticeMap(dungeonMapIdx, "<Bloody cathedral> You have 30 minutes to complete the dungeon.");
         };return plan;
     };
-    if(HasTypedDungeonInventory(character)){
-        if(!BeginTypedDungeonEntry(character,"dungeon.halloween.entry",kNativeEntryCode,1,[](entt::entity pc){const auto level=ecs::PointSystem::GetLevel(pc);return level>=kMinLevel && level<=kMaxLevel && CooldownRemain(pc)==0;},prepare))
-            ecs::ChatSystem::Send(character,CHAT_TYPE_INFO,"A teljes csapatnak készen kell állnia, és a belépőnek a hátizsákban kell lennie.");
-        return true;
-    }
-    if(auto plan=prepare())plan->publish();
+    if(!BeginTypedDungeonEntry(character,"dungeon.halloween.entry",kEntryTicketCode,kEntryItemCount,[](entt::entity pc){const auto level=ecs::PointSystem::GetLevel(pc);return level>=kMinLevel && level<=kMaxLevel && CooldownRemain(pc)==0;},prepare))
+        ecs::ChatSystem::Send(character,CHAT_TYPE_INFO,"A teljes csapatnak készen kell állnia, és a belépőnek a hátizsákban kell lennie.");
     return true;
 }
 
@@ -1191,12 +1174,6 @@ DungeonSystem::SetFlag(d, kFlagCanFillCalyx, 0);
         }
 }};}
  return {};
-}
-bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from,entt::entity npc,entt::entity item){
- if(!ItemSystem::CanConsumeOwnedItem(from,item))return false;
- const auto d=CDungeonManager::instance().FindByMapIndex(ecs::PlayerRuntime::GetMapIndex(from));if(TypedDungeonActionPending(d))return true;
- using R=auriga::item::DungeonUseRole;const auto v=ItemSystem::GetItemVnum(item);const auto role=v==kStatueItemVnum?R::CathedralCross:v==kActivateItemVnum?R::CathedralSeal:v==kSecondFloorItem?R::CathedralBlood:R::None;
- auto plan=PlanCathedralAction(from,npc,role);if(!plan)return false;if(RemoveOneGivenItem(from,item))plan->publish();return true;
 }
 bool CHalloween2022Dungeon::OnUseTypedItem(entt::entity e,const auriga::item::PersistentItem& item,const auriga::item::ItemCatalog& catalog){
  const auto role=auriga::item::DungeonItemUseRole(catalog,item.key);return UseTypedDungeonAction(e,item,catalog,[role](auto pc,auto npc){return PlanCathedralAction(pc,npc,role);});
