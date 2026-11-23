@@ -1,9 +1,7 @@
 #include "stdafx.h"
-#include "../item/TypedDungeonItems.hpp"
 #include "../item/TypedDungeonEntry.hpp"
 #include "../mission_pass/MissionPassEvents.hpp"
 #include "../ecs/systems/PointSystem.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
@@ -66,11 +64,7 @@ namespace
 
     constexpr int32_t kMinLevel = 35;
     constexpr int32_t kMaxLevel = 65;
-    constexpr uint32_t kRequiredItem = 89106;
-    constexpr std::string_view kNativeEntryCode="catalog.10.ork_dungeon_key_97b2ab2dff75";
-    std::uint64_t EntryTicketCount(entt::entity e){return HasTypedDungeonInventory(e)?TypedDungeonTicketCount(e,kNativeEntryCode):ItemSystem::CountItem(e,kRequiredItem);}
-    void ConsumeEntryTicket(entt::entity e){if(!HasTypedDungeonInventory(e))ItemSystem::RemoveSpecifyItemEcs(e,kRequiredItem,1);}
-    constexpr uint32_t kRemoveAllItem = 89104; // removed in original quest (count 255)
+    constexpr std::string_view kEntryTicketCode = "catalog.10.ork_dungeon_key_97b2ab2dff75";
 
     // Dungeon flags (stored in CDungeon)
     constexpr const char* kFlagFloor = "floor";
@@ -697,7 +691,7 @@ bool COrcsDungeon::OnClickNpc(entt::entity character)
     // Check level + entry item for everyone who will enter (same map as leader)
     if (party == entt::null)
     {
-        if (EntryTicketCount(character) < 1)
+        if (TypedDungeonTicketCount(character, kEntryTicketCode) < 1)
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Orc Dungeon: you don't have the entry item.");
             return true;
@@ -723,7 +717,7 @@ bool COrcsDungeon::OnClickNpc(entt::entity character)
                 return;
             }
 
-            if (EntryTicketCount(m) < 1)
+            if (TypedDungeonTicketCount(m, kEntryTicketCode) < 1)
             {
                 ok = false;
                 badName = ecs::PlayerRuntime::GetName(m).data();
@@ -744,72 +738,59 @@ bool COrcsDungeon::OnClickNpc(entt::entity character)
     }
 
     auto prepare = [=]() -> std::optional<TypedDungeonEntryPlan> {
-    const entt::entity d = CDungeonManager::instance().Create(kOrcOriginalMap);
-    if (d == entt::null)
-    {
-        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Orc Dungeon: failed to create the dungeon.");
-        return std::nullopt;
-    }
+        const entt::entity dungeon = CDungeonManager::instance().Create(kOrcOriginalMap);
+        if (dungeon == entt::null)
+        {
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Orc Dungeon: failed to create the dungeon.");
+            return std::nullopt;
+        }
 
-    // Initialize dungeon flags
-    DungeonSystem::SetFlag(d, kFlagFloor, 0);
-    DungeonSystem::SetFlag(d, kFlagWasCompleted, 0);
-    DungeonSystem::SetFlag(d, kFlagStep, 0);
-    DungeonSystem::SetFlag(d, kFlagBossVid, 0);
+        DungeonSystem::SetFlag(dungeon, kFlagFloor, 0);
+        DungeonSystem::SetFlag(dungeon, kFlagWasCompleted, 0);
+        DungeonSystem::SetFlag(dungeon, kFlagStep, 0);
+        DungeonSystem::SetFlag(dungeon, kFlagBossVid, 0);
+        const auto dungeonMapIndex = DungeonSystem::GetMapIndex(dungeon);
 
-        TypedDungeonEntryPlan plan;plan.dungeon=d;plan.cancel=[d]{CancelTypedDungeonPreflight(d);};
-        plan.publish=[=]{
-    // Consume items + set per-player flags
-    auto applyMember = [&](entt::entity m){
-            if (!ecs::PlayerRuntime::IsPC(m))
-                return;
+        TypedDungeonEntryPlan plan;
+        plan.dungeon = dungeon;
+        plan.cancel = [dungeon] { CancelTypedDungeonPreflight(dungeon); };
+        // The entry transaction consumes the tickets and removes all leftover green keys.
+        plan.publish = [=] {
+            const auto applyMember = [&](entt::entity member) {
+                if (!ecs::PlayerRuntime::IsPC(member))
+                    return;
+                ecs::QuestSystem::SetFlag(member, kQfDisconnect, 0);
+                ecs::QuestSystem::SetFlag(member, kQfIdx, dungeonMapIndex);
+                ecs::QuestSystem::SetFlag(member, kQfCh, (int32_t)g_bChannel);
+                ecs::QuestSystem::SetFlag(member, kQfEnterTime, now);
+            };
 
-            if (HasTypedDungeonInventory(m))
-                QueueTypedDungeonCleanup(m, auriga::item::OrcKeyCode);
+            if (party == entt::null)
+            {
+                applyMember(character);
+                DungeonSystem::Join_Coords(dungeon, character, kEnterX, kEnterY, kOrcOriginalMap);
+            }
             else
             {
-                ConsumeEntryTicket(m);
-                const int32_t rmAll = ItemSystem::CountItem(m, kRemoveAllItem);
-                if (rmAll > 0)
-                    ItemSystem::RemoveSpecifyItemEcs(m, kRemoveAllItem, rmAll);
+                // A party starting a new run can still be inside the preceding private map.
+                const auto originMap = ecs::PlayerRuntime::GetMapIndex(character);
+                ForEachPcOnMap(originMap, [&](entt::entity member) {
+                    if (ecs::SocialSystem::GetParty(member) == party)
+                        applyMember(member);
+                });
+                DungeonSystem::JoinParty_Coords(dungeon, party, kEnterX, kEnterY, originMap);
             }
-
-            ecs::QuestSystem::SetFlag(m, kQfDisconnect, 0);
-            ecs::QuestSystem::SetFlag(m, kQfIdx, DungeonSystem::GetMapIndex(d));
-            ecs::QuestSystem::SetFlag(m, kQfCh, (int32_t)g_bChannel);
-            ecs::QuestSystem::SetFlag(m, kQfEnterTime, now);
-            // cooldown is set on completion, just like original quest.
-        };
-
-    if (party == entt::null)
-    {
-        applyMember(character);
-        DungeonSystem::Join_Coords(d, character, kEnterX, kEnterY, kOrcOriginalMap);
-    }
-    else
-    {
-        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity m){
-            if (!ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
-                return;
-            applyMember(m);
-        });
-        // IMPORTANT: the last parameter selects which map members are currently on.
-        // If the party starts a new run from inside the completed instance, members are on the private map,
-        // so we must pass the current map index (same as the one used above).
-        DungeonSystem::JoinParty_Coords(d, party, kEnterX, kEnterY, ecs::PlayerRuntime::GetMapIndex(character));
-    }
-
-    // Prepare after 1 second
-    // OnPlayerLogin starts preparation after the first member reaches GAME.
+            // OnPlayerLogin starts preparation when the first member reaches GAME.
         };
         return plan;
     };
-    if(HasTypedDungeonInventory(character)){
-        if(!BeginTypedDungeonEntry(character,"dungeon.orcs.entry",kNativeEntryCode,1,[](entt::entity pc){const auto level=ecs::PointSystem::GetLevel(pc);return level>=kMinLevel && level<=kMaxLevel && ecs::QuestSystem::GetFlag(pc,kQfCooldown)<=get_global_time();},prepare))
-            ecs::ChatSystem::Send(character,CHAT_TYPE_INFO,"A teljes csapatnak készen kell állnia, és a belépőnek a hátizsákban kell lennie.");
-        return true;
-    }
-    if(auto plan=prepare())plan->publish();
+
+    const auto eligible = [](entt::entity pc) {
+        const auto level = ecs::PointSystem::GetLevel(pc);
+        return level >= kMinLevel && level <= kMaxLevel &&
+            ecs::QuestSystem::GetFlag(pc, kQfCooldown) <= get_global_time();
+    };
+    if (!BeginTypedDungeonEntry(character, "dungeon.orcs.entry", kEntryTicketCode, 1, eligible, prepare))
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "A teljes csapatnak készen kell állnia, és a belépőnek a hátizsákban kell lennie.");
     return true;
 }
-

@@ -36,6 +36,27 @@ void Run(){
  auto withLeftovers=items;for(unsigned n=0;n<3;++n){auto item=items.front();item.key=purgeKeys[n];item.id=ItemInstanceId::Create(10000+n).value();item.count=3;item.placement->anchor=2+n;withLeftovers.push_back(item);}
  const auto rune=MakeDungeonEntryReservation(*c,{58,20},"dungeon.rune.entry",items[0].key,0,1,100000,owners,withLeftovers).value();const auto runeDebit=MakeDungeonEntryResolution(*c,{58,21},*rune.dungeonEntry,true,current,layouts,withLeftovers);Check(runeDebit && runeDebit->items.size()==11 && std::ranges::all_of(std::span(runeDebit->items).last(3),[](const auto& ch){return ch.after.destroyed && !ch.after.count;}),"Rune entry atomically removes all3 original leftover kinds with the8 party tickets");
  auto pyramidItems=items;for(unsigned n=0;n<2;++n){auto item=items.front();item.key=purgeKeys.back();item.id=ItemInstanceId::Create(11000+n).value();item.count=200;item.placement->anchor=2+n;pyramidItems.push_back(item);}const auto pyramid=MakeDungeonEntryReservation(*c,{58,22},"dungeon.pyramid.entry",items[0].key,0,1,100000,owners,pyramidItems).value();auto pyramidDebit=MakeDungeonEntryResolution(*c,{58,23},*pyramid.dungeonEntry,true,current,layouts,pyramidItems);Check(pyramidDebit && pyramidDebit->items.size()==10 && pyramidDebit->items[8].after.count==0 && pyramidDebit->items[9].after.count==145,"Pyramid preserves original255-unit cleanup cap across multiple concrete stacks");
+
+ const auto greenKey = purgeKeys.back();
+ auto orcItems = pyramidItems; // The leader carries 400 old keys across two stacks.
+ auto memberKey = orcItems.back();
+ memberKey.id = ItemInstanceId::Create(11002).value();
+ memberKey.owner = owners[1].owner;
+ orcItems.push_back(memberKey);
+ const auto orcs = MakeDungeonEntryReservation(*c, {58, 24}, "dungeon.orcs.entry", items.front().key,
+     0, 1, 100000, owners, orcItems);
+ Check(orcs && orcs->items.empty(), "Orc entry reservation preserves tickets and green keys");
+ const auto orcsDebit = MakeDungeonEntryResolution(*c, {58, 25}, *orcs->dungeonEntry, true, current, layouts, orcItems);
+ Check(orcsDebit && orcsDebit->items.size() == 11 &&
+     std::ranges::count_if(orcsDebit->items, [&](const auto& change) {
+         return change.before->key == items.front().key && change.after.count + 1 == change.before->count;
+     }) == 8 &&
+     std::ranges::count_if(orcsDebit->items, [&](const auto& change) {
+         return change.before->key == greenKey && change.after.destroyed && change.after.count == 0;
+     }) == 3, "Orc entry debits one ticket per member and fully clears every green-key stack");
+ const auto orcsRelease = MakeDungeonEntryResolution(*c, {58, 26}, *orcs->dungeonEntry, false, current, layouts, orcItems);
+ Check(orcsRelease && orcsRelease->items.empty(), "Cancelled Orc entry does not spend tickets or clear green keys");
+
  auto forgedPurge=*pyramidDebit;--forgedPurge.items.back().after.count;Check(!ValidateItemCommit(*c,forgedPurge),"cleanup cannot destroy one extra unit beyond authored cap");auto unrelated=items[0];unrelated.id=ItemInstanceId::Create(12000).value();unrelated.placement->anchor=20;auto removed=unrelated;++removed.revision;removed.destroyed=true;removed.count=0;removed.placement.reset();forgedPurge=*consume;forgedPurge.items.push_back({unrelated,removed});Check(!ValidateItemCommit(*c,forgedPurge),"entry receipt cannot smuggle destruction of an unrelated item");
 }
 }
