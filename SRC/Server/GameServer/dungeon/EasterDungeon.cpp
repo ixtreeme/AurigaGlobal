@@ -2,7 +2,6 @@
 #include "../item/TypedDungeonEntry.hpp"
 #include "../mission_pass/MissionPassEvents.hpp"
 #include "../ecs/systems/PointSystem.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
@@ -42,9 +41,7 @@ namespace
     constexpr uint32_t kEntryNpcVnum = 9308;
 
     // Same entry item as Valentine by default. Change if needed.
-    constexpr uint32_t kEntryItemVnum = 50180;
-    constexpr std::string_view kNativeEntryCode="catalog.10.empty_basket_91293abed792";
-    std::uint64_t EntryTicketCount(entt::entity e){return HasTypedDungeonInventory(e)?TypedDungeonTicketCount(e,kNativeEntryCode):ItemSystem::CountItem(e,kEntryItemVnum);}
+    constexpr std::string_view kEntryTicketCode = "catalog.10.empty_basket_91293abed792";
 
     // Gameplay (same as Valentine)
     constexpr uint32_t kFloor1StoneVnum = 8461;  // stones
@@ -152,14 +149,6 @@ namespace
             });
     }
 
-    inline const char* GetItemNameByVnum(uint32_t vnum)
-    {
-        const TItemTable* t = ITEM_MANAGER::instance().GetTable(vnum);
-        if (t && t->szName[0])
-            return t->szName;
-        return nullptr;
-    }
-
     inline bool GetMapBaseTiles(int32_t mapIndex, int32_t& baseX, int32_t& baseY)
     {
         LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(mapIndex);
@@ -237,18 +226,15 @@ namespace
 
     struct FEntryItemCheck
     {
-        uint32_t vnum;
-        bool ok;
-        const char* name;
-
-        explicit FEntryItemCheck(uint32_t v) : vnum(v), ok(true), name(nullptr) {}
+        bool ok = true;
+        const char* name = nullptr;
 
         void operator()(entt::entity chEntity)
         {
             if (!ecs::PlayerRuntime::IsPC(chEntity))
                 return;
 
-            if (EntryTicketCount(chEntity) < 1 && ok)
+            if (TypedDungeonTicketCount(chEntity, kEntryTicketCode) < 1 && ok)
             {
                 ok = false;
                 name = ecs::PlayerRuntime::GetName(chEntity).data();
@@ -873,14 +859,12 @@ if (!f.ok)
         }
     }
 
-    const char* entryItemName = GetItemNameByVnum(kEntryItemVnum);
-    if (!entryItemName)
-        entryItemName = "Entry item";
+    constexpr const char* entryItemName = "Empty basket";
 
-    // Entry item check (NAME not VNUM)
+    // Entry item check
     if (party == entt::null)
     {
-        if (EntryTicketCount(character) < 1)
+        if (TypedDungeonTicketCount(character, kEntryTicketCode) < 1)
         {
             ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Easter: required to enter: %s (x1).", entryItemName);
             return true;
@@ -888,7 +872,7 @@ if (!f.ok)
     }
     else
     {
-        FEntryItemCheck it(kEntryItemVnum);
+        FEntryItemCheck it;
         ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity m){
             if (!ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
                 return;
@@ -922,13 +906,10 @@ if (!it.ok)
     DungeonSystem::SetFlag(d, kFlagF1ToF2, 0);
 
         TypedDungeonEntryPlan plan;plan.dungeon=d;plan.cancel=[d]{CancelTypedDungeonPreflight(d);};plan.publish=[=]{
-    // Set per-player rejoin flags + consume entry item
+    // The entry transaction has already spent the tickets.
     auto applyMember = [&](entt::entity m){
             if (!ecs::PlayerRuntime::IsPC(m))
                 return;
-
-            // Consume entry item (already checked above)
-            if(!HasTypedDungeonInventory(m))ItemSystem::RemoveSpecifyItemEcs(m, kEntryItemVnum, 1);
 
             ecs::QuestSystem::SetFlag(m, "easter_dungeon.disconnect", 0);
             ecs::QuestSystem::SetFlag(m, "easter_dungeon.idx", DungeonSystem::GetMapIndex(d));
@@ -958,12 +939,8 @@ if (!it.ok)
     // OnPlayerLogin starts preparation after the first member reaches GAME.
         };return plan;
     };
-    if(HasTypedDungeonInventory(character)){
-        if(!BeginTypedDungeonEntry(character,"dungeon.easter.entry",kNativeEntryCode,1,[](entt::entity pc){const auto level=ecs::PointSystem::GetLevel(pc);return (kMinLevel==0 || level>=kMinLevel) && (kMaxLevel==0 || level<=kMaxLevel) && ecs::QuestSystem::GetFlag(pc,"easter_dungeon.cooldown")<=get_global_time();},prepare))
-            ecs::ChatSystem::Send(character,CHAT_TYPE_INFO,"A teljes csapatnak készen kell állnia, és a belépőnek a hátizsákban kell lennie.");
-        return true;
-    }
-    if(auto plan=prepare())plan->publish();
+    if (!BeginTypedDungeonEntry(character,"dungeon.easter.entry",kEntryTicketCode,1,[](entt::entity pc){const auto level=ecs::PointSystem::GetLevel(pc);return (kMinLevel==0 || level>=kMinLevel) && (kMaxLevel==0 || level<=kMaxLevel) && ecs::QuestSystem::GetFlag(pc,"easter_dungeon.cooldown")<=get_global_time();},prepare))
+        ecs::ChatSystem::Send(character,CHAT_TYPE_INFO,"A teljes csapatnak készen kell állnia, és a belépőnek a hátizsákban kell lennie.");
     return true;
 }
 
