@@ -21,6 +21,28 @@ def native(checker, *args):
     return result.stdout.decode('utf-8')
 
 
+def retire_item_metatable(library):
+    # Match the three reviewed sections together. A locally edited accessor or
+    # registration must stay intact for review; unrelated library edits survive.
+    patterns = (
+        rb"^item_index_table = \{\r?\n(?:[^\r\n}]*\r?\n)*\}\r?\n\r?\n",
+        rb"^function item_index\(t, i\)\r?\n(?:[\t ][^\r\n]*\r?\n)*end\r?\n\r?\n",
+        rb"^setmetatable\(item,\{__index=item_index\}\)\r?\n",
+    )
+    sections = []
+    for pattern in patterns:
+        matches = list(re.finditer(pattern, library, re.MULTILINE))
+        if len(matches) != 1:
+            return library
+        sections.append(matches[0])
+    signature = b''.join(match.group().replace(b'\r\n', b'\n') for match in sections)
+    if hashlib.sha256(signature).hexdigest() != 'd0221cda3852edbbf10cb5264464396813167ebcdea884771bb90762bc6d2141':
+        return library
+    for match in sorted(sections, key=lambda match: match.start(), reverse=True):
+        library = library[:match.start()] + library[match.end():]
+    return library
+
+
 def reconcile(root, checker, legacy=None, duplicate_policy='error'):
     """Validate an already copied tree and rewrite only its quest_list."""
     root, checker = Path(root).resolve(), Path(checker).resolve()
@@ -80,8 +102,12 @@ def reconcile(root, checker, legacy=None, duplicate_policy='error'):
         pattern = rb"(function\s+select\s*\(\s*\.\.\.\s*\)\s*return\s+q\.yield\(\s*['\"]select['\"]\s*,\s*)arg(\s*\)\s*end)"
         updated, count = re.subn(pattern, rb'\g<1>{...}\g<2>', raw)
         if count:
-            library.write_bytes(updated)
             changes.append(dict(file='questlib.lua', change='explicit select varargs', replacements=count))
+        migrated = retire_item_metatable(updated)
+        if migrated != updated:
+            changes.append(dict(file='questlib.lua', change='retire legacy item metatable', replacements=1))
+        if migrated != raw:
+            library.write_bytes(migrated)
     result = native(checker, '--check-quests', root).strip()
     return dict(runtime='Lua 5.5.1', source_count=len(parsed), active_quests=len(last),
                 disabled_duplicates=disabled, preserved_state_ids=state_checks, lua_changes=changes, check=result)
