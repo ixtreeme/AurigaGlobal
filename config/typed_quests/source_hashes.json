@@ -79,6 +79,10 @@
     "resource": "skill/reset_scroll.lua",
     "original_sha256": "0dd8d8419b90fe039eb4379f8f4943ba33e1923d1f2b9ed4b4b473d4731b08b1"
   },
+  "runesys.lua": {
+    "resource": "system/runesys.lua",
+    "original_sha256": "d98dda5f7703f48f96c643e1aa6cb03bc2bffc3680d840323ee9415d3d2dba3d"
+  },
   "tanaka.lua": "9563336e97caa347148c320a6387962127b7908ebeadad358fe37a350c7420a4",
   "teleportgyuru.quest": {
     "resource": "item/teleportgyuru.quest",
