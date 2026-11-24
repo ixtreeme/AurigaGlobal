@@ -192,7 +192,6 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		bool			ConvSpecialDropItemFile();
 		// convert name -> vnum special_item_group.txt
 
-		uint32_t			GetRefineFromVnum(uint32_t dwVnum);
 
 
 		const CSpecialItemGroup* GetSpecialItemGroup(uint32_t dwVnum);
@@ -216,7 +215,6 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 #endif
 		std::vector<TItemTable>		m_vec_prototype;
 		std::vector<TItemTable*> m_vec_item_vnum_range_info;
-		std::map<uint32_t, uint32_t>		m_map_ItemRefineFrom;
 		int				m_iTopOfTable;
 		ITEM_VID_MAP			m_VIDMap;
 		uint32_t				m_dwCurrentID;
@@ -240,12 +238,8 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		std::map<uint32_t, int>		m_ItemToSpecialGroup;
 		// END_OF_CHECK_UNIQUE_GROUP
 
-	private:
-		typedef std::map <uint32_t, uint32_t> TMapDW2DW;
-		TMapDW2DW	m_map_new_to_ori;
 
 	public:
-		uint32_t	GetMaskVnum(uint32_t dwVnum);
 		std::map<uint32_t, TItemTable>  m_map_vid;
 		std::map<uint32_t, TItemTable>&  GetVIDMap() { return m_map_vid; }
 		std::vector<TItemTable>& GetVecProto() { return m_vec_prototype; }
@@ -254,7 +248,6 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		const static int MAX_NORM_ATTR_NUM = ITEM_ATTRIBUTE_NORM_NUM;
 		const static int MAX_RARE_ATTR_NUM = ITEM_ATTRIBUTE_RARE_NUM;
 #endif
-		bool ReadItemVnumMaskTable(const char * c_pszFileName);
 #ifdef ENABLE_EXTRA_INVENTORY
 		bool IsExtraItem(uint32_t vnum);
 #endif

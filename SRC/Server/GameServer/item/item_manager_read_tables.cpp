@@ -296,29 +296,3 @@ bool ITEM_MANAGER::ConvSpecialDropItemFile()
 	return true;
 }
 
-bool ITEM_MANAGER::ReadItemVnumMaskTable(const char * c_pszFileName)
-{
-	nlohmann::json doc;
-
-	if (!JsonFile::Load(c_pszFileName, doc))
-		return false;
-
-	if (!doc.contains("pairs") || !doc.at("pairs").is_array())
-	{
-		LOG_ERROR("ReadItemVnumMaskTable : {} must have a 'pairs' array of {{ori, new}} entries", c_pszFileName);
-		return false;
-	}
-
-	for (const auto& entry : doc.at("pairs"))
-	{
-		if (!entry.is_object())
-			continue;
-
-		uint32_t ori_vnum = entry.value("ori", 0u);
-		uint32_t new_vnum = entry.value("new", 0u);
-
-		m_map_new_to_ori.insert (TMapDW2DW::value_type (new_vnum, ori_vnum));
-	}
-
-	return true;
-}

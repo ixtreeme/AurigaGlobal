@@ -123,12 +123,8 @@ bool ITEM_MANAGER::Initialize(TItemTable* table, int size)
 		}
 	}
 
-	m_map_ItemRefineFrom.clear();
 	for (i = 0; i < size; ++i)
 	{
-
-		if (m_vec_prototype[i].dwRefinedVnum)
-			m_map_ItemRefineFrom.insert(std::make_pair(m_vec_prototype[i].dwRefinedVnum, m_vec_prototype[i].dwVnum));
 
 		if (m_vec_prototype[i].bType == ITEM_QUEST || IS_SET(m_vec_prototype[i].dwFlags, ITEM_FLAG_QUEST_USE | ITEM_FLAG_QUEST_USE_MULTIPLE)
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
@@ -659,14 +655,6 @@ bool ITEM_MANAGER::GetDropPct(entt::entity victim, entt::entity killer,
 	return true;
 }
 
-uint32_t ITEM_MANAGER::GetRefineFromVnum(uint32_t dwVnum)
-{
-	auto it = m_map_ItemRefineFrom.find(dwVnum);
-	if (it != m_map_ItemRefineFrom.end())
-		return it->second;
-	return 0;
-}
-
 const CSpecialItemGroup* ITEM_MANAGER::GetSpecialItemGroup(uint32_t dwVnum)
 {
 	auto it = m_map_pkSpecialItemGroup.find(dwVnum);
@@ -686,18 +674,6 @@ const CSpecialAttrGroup* ITEM_MANAGER::GetSpecialAttrGroup(uint32_t dwVnum)
 	}
 	return nullptr;
 }
-
-uint32_t ITEM_MANAGER::GetMaskVnum(uint32_t dwVnum)
-{
-	if (auto it = m_map_new_to_ori.find(dwVnum); it != m_map_new_to_ori.end())
-	{
-		return it->second;
-	}
-	else
-		return 0;
-}
-
-
 
 #ifdef ENABLE_EXTRA_INVENTORY
 bool ITEM_MANAGER::IsExtraItem(uint32_t vnum)
