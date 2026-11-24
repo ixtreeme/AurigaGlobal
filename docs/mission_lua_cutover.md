@@ -40,6 +40,14 @@ A `SRC/Tools/MissionStudio/studio.pyw` önálló Windows-szerkesztő. A tervezet
 
 Az **Ellenőrzés és csomagolás** egy helyi mappába teszi a forrást, a lefordított `mission.aurmission` csomagot és a vele egyező `typed_mission_runtime.json` küldetésadó-szabályokat. A C++ fordító ellenőrzi a csomagot és a célokhoz tartozó játékbeli eseményeket. A közös szerverkezelő jóváhagyási és telepítési folyamatába a Mission-csomagokat még be kell kötni.
 
+### Küldetésgráf
+
+A Studio a **Küldetésgráf** fülön nyílik meg. A bal oldali fából küldetést választhatsz. A palettáról húzd a vászonra a párbeszédet, feladatot, feltételt, várakozást vagy jutalmat. Egy csomópont jobb oldali pontját húzd a következő lépés bal oldali pontjára. Kijelölés után a Delete billentyűvel bonthatsz egy vezetéket vagy törölhetsz egy lépést. Az üres vászon húzásával mozgathatod a nézetet, a görgővel nagyíthatsz. Az **Illesztés** megmutatja a teljes gráfot.
+
+Dupla kattintással szerkesztheted a lépést. Egy párbeszédhez kettő–nyolc válasz és válaszonként egy útvonal tartozhat. A párbeszéd alsó táblázatában a válasz mellett látszik a következő lépés. A **Próbajáték** gombbal bejárhatod a választott utat. A feladat teljesítését és az idő múlását itt kézzel léptetheted. A jutalomcsomóponton XP és Yang szerkeszthető. A feltétel azt ellenőrzi, hogy egy adott feladat teljesült-e. Ez a tartós jelző egyszer teljesíthető küldetésekhez használható.
+
+A Studio helyi tervezetbe menti a vezetékeket és a pozíciókat. Az **Ellenőrzés és csomagolás** a bekötött ágakat a C++ missziómotor lépéseire fordítja. Az ágak közösen folytathatók. Nyitott kimenetnél vagy elérhetetlen lépésnél a csomagolás jelzi a hibát. A játékos a missziónaplóban olvashatja a kérdést és a válaszokat. Korábbi csomag megnyitásakor a Studio a hozzá tartozó gráfot is visszatölti. Külön szerkesztői gráf nélkül az egyszerű lépéssor szerkeszthető, az összetett natív szerkezet olvasási nézetben járható be.
+
 ### Kampánygráf
 
 A **Kampánygráf** fülön egy kártya egy küldetést jelöl. A kártya testét húzva átrendezheted a felvonást. A jobb oldali csatlakozópontot egy másik kártyára húzva az első küldetés teljesítése a második felvételének előfeltétele lesz. Több bejövő nyílnál a **Mindegyik** vagy **Bármelyik** szabály alkalmazható. Egy kijelölt nyíl a **Kapcsolat bontása** gombbal távolítható el. A **Kapcsolatok…** ablakban két külön felvonás küldetései is összekapcsolhatók. A kártyára duplán kattintva a küldetés tényleges céljai és jutalma szerkeszthetők.
@@ -57,3 +65,4 @@ Windowsos kiadáshoz a `MissionCompiler` CMake-cél és a mellette található O
 - A Mission Studióban összeállított „Beszélgetés a kereskedővel” próbaküldetést a kliens a missziónaplóból indította. A kereskedőre kattintás teljesítette. Újrabelépéskor ugyanaz a küldetéspéldány teljesítettként jelent meg.
 - A teleportgyűrű próbáján a régi gyűrűszkript a kiszolgáló betöltési listájából és a próbaszerver adatkönyvtárából is kikerült. A kilenc vadászterület menüje megnyílt és visszavonható volt. A három város közül a fővárost kiválasztva a karakter a célkoordinátára érkezett. A térképváltás után a gyűrű példányazonosítója és darabszáma megegyezett az induláskor rögzített értékkel.
 - A Windows-kiadás elindult, a névkereső a `fulbevalo` szövegre több fülbevalót adott vissza. A szerkesztővel elmentett típusos tárgygyűjtési cél, XP és Yang visszaolvasható volt. A csomagolt C++ fordító a forrásból betölthető csomagot készített. Az XP és Yang jóváírása ebben a szerkesztőpróbában nem szerepelt.
+- A küldetésgráf külön helyi próbáján két küldetés ugyanazon párbeszéd két útvonalát fedte le. A Unity kliens megkapta a magyar választási szövegeket. Az A és B választás után a megfelelő NPC-feladat következett. Az egyik út 12 TP-t és 1000 Yangot, a másik 21 TP-t és 250 Yangot ajánlott. Mindkét jutalom átvétele sikerült. Újrabelépés után a szerver mindkét küldetést teljesítettként küldte vissza.

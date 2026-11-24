@@ -73,6 +73,55 @@ class MissionPackageToolsTests(unittest.TestCase):
             self.run_tool("compile", source, package)
             self.run_tool("check-events", package)
 
+    def test_quest_graph_compiles_branches_shared_continuation_and_editor_sidecar(self):
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "SRC/Tools/MissionStudio"))
+        try:
+            from campaign import empty_board, place_missing
+            from mission_source import build_draft, new_mission, new_package, source_digest
+            from quest_flow import connect, example_flow, fresh_id, import_flow, node, package_source, task_flag
+        finally:
+            sys.path.pop(0)
+        source, board = new_package(), empty_board()
+        graph = new_mission(source, "Border patrol", "Choose a path")
+        code = graph["mission"]
+        place_missing(board, source)
+        flow = board["cards"][code]["flow"] = example_flow()
+        ns = flow["nodes"]
+        talk = next(k for k,n in ns.items() if n["kind"] == "dialogue")
+        hunt, report = flow["wires"][talk].values()
+        big, small = flow["wires"][hunt]["next"], flow["wires"][report]["next"]
+        condition, timer = fresh_id(), fresh_id()
+        ns[condition] = node("condition", 850, 320, test=hunt)
+        ns[timer] = node("timer", 970, 100, duration=2000)
+        for k in (big, small):
+            connect(flow, k, "next", condition)
+        connect(flow, condition, "yes", timer)
+        connect(flow, condition, "no", "end")
+        connect(flow, timer, "next", "end")
+        original = copy.deepcopy((source, board))
+        with self.assertRaises(ValueError):
+            connect(flow, timer, "next", talk)
+        rules = {code: [9003, 1]}
+        with tempfile.TemporaryDirectory() as directory:
+            output = build_draft(ARGS.compiler, source, rules, Path(directory), board)
+            recovered = json.loads((output / "forras.json").read_bytes())
+            sidecar = json.loads((output / "kampanyterv.json").read_bytes())
+            self.assertEqual(source_digest(recovered), sidecar["source_digest"])
+            self.assertEqual(sidecar["campaign"], board)
+            self.assertEqual(package_source(recovered, board), recovered)
+            self.assertTrue(import_flow(recovered, recovered["missions"][0])["readonly"])
+            native = recovered["missions"][0]
+            by_id = {n["id"]: n for n in native["nodes"]}
+            self.assertEqual(by_id[native["root"]]["children"], [talk, talk+".branch", condition+".branch"])
+            self.assertEqual(by_id[hunt]["completion_flags"], [task_flag(graph,hunt)])
+            self.assertEqual(native["choices"][talk+".reply"], ["A","B"])
+            self.assertEqual(sum(n["id"] == timer for n in native["nodes"]),1)
+            self.run_tool("check-events", output / "mission.aurmission")
+        self.assertEqual((source,board), original)
+        del flow["wires"][talk]["A"]
+        with self.assertRaisesRegex(ValueError, "Hiányzó vezeték"):
+            package_source(source, board)
+
     def test_campaign_edges_preserve_native_prerequisites_and_layout(self):
         sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "SRC/Tools/MissionStudio"))
         try:

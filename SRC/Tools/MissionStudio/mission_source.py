@@ -186,7 +186,14 @@ def compile_source(compiler, source, directory, check_events=False):
         return output
 
 
+def source_digest(source):
+    return sha256(json.dumps(source, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+
+
 def build_draft(compiler, source, rules, directory, board=None):
+    if board is not None and any("flow" in card for card in board["cards"].values()):
+        from quest_flow import package_source
+        source = package_source(source, board)
     runtime = runtime_config(source, rules)
     components = [source, runtime]
     if board is not None:
@@ -202,7 +209,8 @@ def build_draft(compiler, source, rules, directory, board=None):
         save_draft(bundle / "forras.json", source)
         if board is not None:
             save_draft(bundle / "kampanyterv.json",
-                       {"package": source["package"], "version": source["version"], "campaign": board})
+                       {"package": source["package"], "version": source["version"],
+                        "source_digest": source_digest(source), "campaign": board})
         try:
             bundle.rename(target)
         except OSError:

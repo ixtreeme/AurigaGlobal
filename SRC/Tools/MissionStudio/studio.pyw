@@ -10,10 +10,12 @@ from uuid import uuid4
 
 from mission_source import EVENTS, add_objective, build_draft, check_source, compile_source, new_mission, new_package
 from mission_source import completion_reward, objective_subject, read_json, save_draft, set_completion_reward
-from mission_source import edit_translation
+from mission_source import edit_translation, source_digest
 from target_names import display, folded, target_names
-from campaign import check_board, crown_example, empty_board, remove_mission
+from campaign import check_board, crown_example, empty_board, place_missing, remove_mission
 from campaign_view import BG, PANEL, CampaignView, button
+from quest_flow import example_flow, validate
+from quest_flow_view import QuestFlowView, details, title
 
 
 class TargetPicker(simpledialog.Dialog):
@@ -134,14 +136,28 @@ class Studio:
         self.root.configure(bg=BG)
         toolbar = tk.Frame(root, bg=PANEL, padx=8, pady=4)
         toolbar.pack(fill="x")
-        for label, command in (("Új csomag", self.blank), ("Forrás megnyitása…", self.open_source),
-                               ("Korona mintaterv", self.example), ("Ellenőrzés és csomagolás…", self.build)):
+        brand = tk.Label(toolbar, text="AURIGA   /   MISSION STUDIO", font=("Georgia", 12, "bold"),
+                         fg="#e5bf7d", bg=PANEL, padx=8)
+        brand.pack(side="left")
+        for label, command in (("Új csomag", self.blank), ("Megnyitás…", self.open_source),
+                               ("Mintaküldetés", self.flow_example), ("Korona mintaterv", self.example),
+                               ("Ellenőrzés és csomagolás…", self.build)):
             button(toolbar, label, command).pack(side="left", padx=3)
         self.tabs = ttk.Notebook(root)
         self.tabs.pack(fill="both", expand=True, padx=8, pady=(5, 0))
         self.campaign = CampaignView(self.tabs, self)
+        style = ttk.Style(root)
+        style.theme_use("clam")
+        style.configure("TNotebook", background=BG, borderwidth=0)
+        style.configure("TNotebook.Tab", background=PANEL, foreground="#bdcbd0", padding=(9,4))
+        style.map("TNotebook.Tab", background=[("selected", "#304150")], foreground=[("selected", "#f1d69c")])
+        style.configure("Quest.Treeview", background=PANEL, fieldbackground=PANEL, foreground="#d9e5ea", rowheight=24,
+                        bordercolor=PANEL, lightcolor=PANEL, darkcolor=PANEL)
+        style.configure("Quest.Treeview.Heading", background="#2c3c45", foreground="#d2dfe3", relief="flat")
+        self.flow_view = QuestFlowView(self.tabs, self)
+        self.tabs.add(self.flow_view, text="  Küldetésgráf  ")
         self.tabs.add(self.campaign, text="  Kampánygráf  ")
-        editor = ttk.Frame(self.tabs)
+        editor = self.editor = ttk.Frame(self.tabs)
         self.tabs.add(editor, text="  Küldetés részletei  ")
         panels = ttk.Panedwindow(editor, orient="horizontal")
         panels.pack(fill="both", expand=True, padx=10)
@@ -170,8 +186,8 @@ class Studio:
                                ("Cél szerkesztése…", self.edit_step), ("Zárójutalom…", self.reward)):
             ttk.Button(actions, text=label, command=command).pack(side="left", padx=3)
         self.status = tk.StringVar()
-        ttk.Label(root, textvariable=self.status, padding=10, wraplength=920).pack(fill="x")
-        self.example()
+        tk.Label(root, textvariable=self.status, anchor="w", fg="#abc0ca", bg=BG, padx=10, pady=5).pack(fill="x")
+        self.flow_example()
 
     def load(self, source, rules, imported=False, board=None):
         # A damaged local draft must leave the currently open work available.
@@ -192,6 +208,9 @@ class Studio:
         versions = {g["mission"]: g["version"] for g in source["missions"]} if imported else {}
         version = source["version"] if imported else None
         verified_board = check_board(board if board is not None else empty_board(), source)
+        for card in verified_board["cards"].values():
+            if "flow" in card:
+                validate(card["flow"])
         self.source, self.rules, self.board = source, rules, verified_board
         self.path = self.drafts / uuid4().hex / "tervezet.json"
         self.original_versions, self.original_package = versions, version
@@ -199,12 +218,23 @@ class Studio:
         if source["missions"]:
             self.campaign.selected = source["missions"][0]["mission"]
             self.campaign.act = self.board["cards"].get(self.campaign.selected, {}).get("act", 0)
+        self.flow_view.code = None
         self.refresh()
-        self.tabs.select(self.campaign)
+        self.tabs.select(self.flow_view)
+
+    def flow_example(self):
+        source, board = new_package(), empty_board("A határvidék")
+        board["acts"][0]["name"] = "A határvidék"
+        g = new_mission(source, "A határőr próbája", "Vadászd le az alfa farkasokat, vagy vigyél hírt az őrnek.")
+        place_missing(board, source)
+        board["cards"][g["mission"]]["flow"] = example_flow()
+        self.load(source, {g["mission"]: [20355, 1]}, board=board)
+        self.status.set("A kimeneti pontot húzd egy bemenetre. Dupla kattintással szerkesztheted a lépést.")
 
     def example(self):
         source, board = crown_example()
         self.load(source, {}, board=board)
+        self.tabs.select(self.campaign)
         self.status.set("Mintaterv · A játékbeli csomagoláshoz add meg a küldetésadókat és a teljesítési célokat.")
 
     def select_mission(self, code):
@@ -216,7 +246,14 @@ class Studio:
 
     def open_details(self, code):
         self.select_mission(code)
-        self.tabs.select(1)
+        self.campaign.selected = code
+        self.campaign.act = self.board["cards"][code]["act"]
+        self.campaign.refresh()
+        self.flow_view.refresh()
+        self.tabs.select(self.flow_view)
+
+    def edit_flow_task(self, values):
+        return ObjectiveDialog(self.root, values).result
 
     def remove_card(self, code):
         candidate = deepcopy(self.source)
@@ -238,12 +275,13 @@ class Studio:
     def list_selected(self, _):
         self.show_mission()
         graph = self.current()
-        if graph and self.tabs.index(self.tabs.select()) == 1:
+        if graph and self.tabs.select() == str(self.editor):
             code = graph["mission"]
             self.campaign.act = self.board["cards"][code]["act"]
             self.campaign.selected = code
             self.campaign.edge = None
             self.campaign.refresh()
+            self.flow_view.refresh()
 
     def blank(self):
         self.load(new_package(), {})
@@ -280,13 +318,20 @@ class Studio:
                         if any(g["mission"] == row["code"] and g["version"] == row["version"] for g in source["missions"]):
                             rules[row["code"]] = [row["npc_race"], row["min_level"]]
             board = document.get("campaign") if own else None
+            stale_layout = False
             sidecar = path.with_name("kampanyterv.json")
             if not own and sidecar.is_file():
                 layout = read_json(sidecar)
                 if layout["package"] == source["package"] and layout["version"] == source["version"]:
-                    board = layout["campaign"]
+                    candidate = layout["campaign"]
+                    if layout.get("source_digest") == source_digest(source) or not any(
+                            "flow" in c for c in candidate["cards"].values()):
+                        board = candidate
+                    else:
+                        stale_layout = True
             self.load(source, rules, True, board)
-            self.status.set("Megnyitva · " + str(path))
+            self.status.set("A forrás megváltozott. A gráf az aktuális natív forrásból épült fel."
+                            if stale_layout else "Megnyitva · " + str(path))
         except (ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError) as error:
             messagebox.showerror("A forrás megnyitása sikertelen", str(error), parent=self.root)
 
@@ -300,6 +345,7 @@ class Studio:
             self.missions.see(index)
         self.show_mission()
         self.campaign.refresh()
+        self.flow_view.refresh()
 
     def current(self):
         selected = self.missions.curselection()
@@ -321,6 +367,12 @@ class Studio:
         npc, level = self.rules.get(graph["mission"], (None, 1))
         giver = display(f"npc.{npc}") if npc else "nincs megadva"
         self.description.config(text=texts[binding["summary"]] + f"\nKüldetésadó: {giver} · Szint: {level}")
+        flow = self.board["cards"].get(graph["mission"], {}).get("flow")
+        if flow:
+            for key, n in flow["nodes"].items():
+                self.steps.insert("", "end", iid=key, text=title(n),
+                                  values=(details(n, flow).replace("\n", " · "), "", ""))
+            return
         labels = {b["node"]: texts[b["title"]] for b in binding["objectives"]}
         nodes = {n["id"]: n for n in graph["nodes"]}
         root = nodes[graph["root"]]
@@ -399,6 +451,10 @@ class Studio:
         graph = self.current()
         if not graph:
             return
+        if "flow" in self.board["cards"][graph["mission"]]:
+            self.open_details(graph["mission"])
+            self.flow_view.add("task")
+            return
         result = ObjectiveDialog(self.root, ("", "mob_killed", "", 1)).result
         if result:
             try:
@@ -411,6 +467,13 @@ class Studio:
         graph = self.current()
         selected = self.steps.selection()
         if not graph or not selected:
+            return
+        if "flow" in self.board["cards"][graph["mission"]]:
+            self.open_details(graph["mission"])
+            self.flow_view.selected = selected[0]
+            self.flow_view.draw()
+            self.flow_view.panels()
+            self.flow_view.edit(selected[0])
             return
         node = next(n for n in graph["nodes"] if n["id"] == selected[0])
         obj = node.get("objective", {})
@@ -429,6 +492,10 @@ class Studio:
     def reward(self):
         graph = self.current()
         if not graph:
+            return
+        if "flow" in self.board["cards"][graph["mission"]]:
+            self.open_details(graph["mission"])
+            self.flow_view.add("reward")
             return
         try:
             _, bundle = completion_reward(graph)

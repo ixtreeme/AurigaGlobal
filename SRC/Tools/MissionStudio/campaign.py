@@ -159,6 +159,13 @@ def check_board(board, source):
             or not all(isinstance(card.get(k, ""), str) for k in ("speaker", "line"))
         ):
             raise ValueError("Érvénytelen kártya a kampánytervben.")
+        positions = card.get("node_positions", {})
+        if not isinstance(positions, dict) or not all(
+            isinstance(key, str) and isinstance(pair, (list, tuple)) and len(pair) == 2 and
+            all(type(v) in (int, float) and -100000 <= v <= 100000 for v in pair)
+            for key, pair in positions.items()
+        ):
+            raise ValueError("Érvénytelen csomópontpozíció a kampánytervben.")
     return board
 
 
