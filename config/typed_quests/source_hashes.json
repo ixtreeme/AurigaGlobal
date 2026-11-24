@@ -8,6 +8,10 @@
     "resource": "item/cooldown_reset.lua",
     "original_sha256": "c3fad283ffe5fcc3e04168f145e1b8230addc112a224a3a39e5740c38eb8b0fb"
   },
+  "create_ore.lua": {
+    "resource": "gilda/create_ore.lua",
+    "original_sha256": "815b2e4e35b6a88f3ac06b1c70914b88c692e37e3111529c568b5d2a7caeca3e"
+  },
   "drop3.quest": "790c406e5d1c63b85cf6794b9d582eca1d2dd750c9be898cf41ce0ca4224f874",
   "fisher.lua": {
     "resource": "npc/fisher.lua",

@@ -13,6 +13,7 @@ db/migrations/item_combat/002_category_seed.sql text eol=lf
 db/migrations/item_combat/007_bonus_registry_seed.sql text eol=lf
 
 # Keep packaged quests byte-identical to their reviewed drafts on Windows.
+SRC/Server/Resources/quest/Quest/gilda/create_ore.lua text eol=lf
 SRC/Server/Resources/quest/Quest/login/begin_weapons.lua text eol=lf
 SRC/Server/Resources/quest/Quest/item/cooldown_reset.lua text eol=lf
 SRC/Server/Resources/quest/Quest/item/lvl_back.lua text eol=lf
