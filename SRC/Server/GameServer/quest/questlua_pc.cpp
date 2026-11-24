@@ -40,7 +40,6 @@
 #include "start_position.h"
 #include "marriage.h"
 #include "p2p.h"
-#include "polymorph.h"
 #include "desc_client.h"
 #include "messenger_manager.h"
 #include "log.h"
@@ -2037,33 +2036,6 @@ teleport_area:
         return 0;
     }
 
-	ALUA(pc_give_polymorph_book)
-	{
-		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) ||
-			!lua_isnumber(L, 3) || !lua_isnumber(L, 4))
-		{
-			sys_err("Wrong Quest Function Arguments: pc_give_polymorph_book");
-			return 0;
-		}
-
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		CPolymorphUtils::instance().GiveBook(chEntity, (uint32_t)lua_tonumber(L, 1), (uint32_t)lua_tonumber(L, 2), (uint8_t)lua_tonumber(L, 3), (uint8_t)lua_tonumber(L, 4));
-
-		return 0;
-	}
-
-	ALUA(pc_upgrade_polymorph_book)
-	{
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
-
-		bool ret = CPolymorphUtils::instance().BookUpgrade(chEntity, item);
-
-		lua_pushboolean(L, ret);
-
-		return 1;
-	}
-
 	ALUA(pc_get_premium_remain_sec)
 	{
 		int	remain_seconds	= 0;
@@ -2538,65 +2510,6 @@ teleport_area:
 		return 1;
 	}
 
-	ALUA(pc_give_poly_marble)
-	{
-		const int dwVnum = lua_tonumber(L, 1);
-
-		const CMob* MobInfo = CMobManager::instance().Get(dwVnum);
-
-		if (nullptr == MobInfo)
-		{
-			lua_pushboolean(L, false);
-			return 1;
-		}
-
-		if (0 == MobInfo->m_table.dwPolymorphItemVnum)
-		{
-			lua_pushboolean(L, false);
-			return 1;
-		}
-
-		const entt::entity item = ITEM_MANAGER::instance().CreateItem(MobInfo->m_table.dwPolymorphItemVnum);
-
-		if (!ItemSystem::IsValidItem(item))
-		{
-			lua_pushboolean(L, false);
-			return 1;
-		}
-
-		const entt::entity character = CQuestManager::instance().GetCurrentPCEntity();
-		if (!ItemSystem::SetItemSocket(item, 0, dwVnum))
-		{
-			ItemSystem::DestroyItemEntityEcs(item, "QUEST_POLY_MARBLE_INIT_FAIL");
-			lua_pushboolean(L, false);
-			return 1;
-		}
-
-		const int iEmptyCell = ItemSystem::GetEmptyInventoryPositionEcs(character, item);
-
-		if (-1 == iEmptyCell)
-		{
-			ItemSystem::DestroyItemEntityEcs(item, "QUEST_ITEM_FAIL");
-			lua_pushboolean(L, false);
-			return 1;
-		}
-
-		if (!ItemSystem::PlaceItemEcs(character, item, INVENTORY, iEmptyCell))
-		{
-			ItemSystem::DestroyItemEntityEcs(item, "QUEST_POLY_MARBLE_PLACE_FAIL");
-			lua_pushboolean(L, false);
-			return 1;
-		}
-
-		const PC* pPC = CQuestManager::instance().GetCurrentPC();
-
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::PlayerRuntime::GetPlayerID(character), ecs::PointSystem::GetLevel(character), MobInfo->m_table.dwPolymorphItemVnum, dwVnum);
-
-		lua_pushboolean(L, true);
-
-		return 1;
-	}
-
 	ALUA(pc_get_sig_items)
 	{
 		const uint32_t group_vnum = static_cast<uint32_t>(lua_tonumber(L, 1));
@@ -2686,166 +2599,6 @@ teleport_area:
 	}
 
 #ifdef ENABLE_NEWSTUFF
-
-	#define PC_MI0L_ARG1	2		// 1: vnum or locale_name, 2: count
-	#define PC_MI0L_ARG2	3		// socket 1-2-3
-	#define PC_MI0L_ARG3	7*2		// (type, value)*7
-	enum eMakeItemType{PCMI0_GIVE, PCMI0_DROP, PCMI0_DROPWP, PCMI0_MAX};
-	ALUA(pc_make_item0)
-	{
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		if (!lua_istable(L, 1) && !lua_istable(L, 2) && !lua_istable(L, 3) && !lua_isnumber(L, 4))
-			return 0;
-
-		int m_idx = 0;
-		// config arg1
-		uint32_t m_vnum = 0;
-		int m_count = 0;
-		// start arg1
-		lua_pushnil(L);
-		while (lua_next(L, 1))
-		{
-			switch(m_idx)
-			{
-				case 0:
-					if (lua_isnumber(L, -1))
-					{
-						if ((m_vnum = lua_tonumber(L, -1))<=0)
-						{
-#ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 738, "%d", m_vnum);
-#endif
-							return 0;
-						}
-					}
-					else if (lua_isstring(L, -1))
-					{
-						if (!ITEM_MANAGER::instance().GetVnum(lua_tostring(L, -1), m_vnum))
-						{
-#ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 739, "%d", m_vnum);
-#endif
-							return 0;
-						}
-					}
-					else
-					{
-						return 0;
-					}
-					break;
-				case 1:
-					if (lua_isnumber(L, -1))
-					{
-						// if ((m_count = MINMAX(1, lua_tonumber(L, -1), ITEM_MAX_COUNT))<=0)
-						if ((m_count = lua_tonumber(L, -1))<=0)
-						{
-							return 0;
-						}
-					}
-					else
-					{
-						return 0;
-					}
-					break;
-				default:
-					break;
-			}
-			m_idx++;
-			lua_pop(L, 1);
-		}
-
-		int m_socket[ITEM_SOCKET_MAX_NUM] = {0};
-		m_idx = 0;
-		lua_pushnil(L);
-		while (lua_next(L, 2) && m_idx<ITEM_SOCKET_MAX_NUM)
-		{
-			if (!lua_isnumber(L, -1))
-				return 0;
-			m_socket[m_idx++] = lua_tonumber(L, -1);
-			lua_pop(L, 1);
-		}
-
-		int m_attr[ITEM_ATTRIBUTE_MAX_NUM*2] = {0};
-		m_idx = 0;
-		lua_pushnil(L);
-		while (lua_next(L, 3) && m_idx<(ITEM_ATTRIBUTE_MAX_NUM*2))
-		{
-			if (!lua_isnumber(L, -1))
-				return 0;
-			m_attr[m_idx++] = lua_tonumber(L, -1);
-			lua_pop(L, 1);
-		}
-
-		uint32_t m_state = 0;
-		if ((m_state = lua_tonumber(L, 4))>=PCMI0_MAX)
-			return 0;
-
-		const entt::entity newItem = ITEM_MANAGER::instance().CreateItem(m_vnum, m_count, 0, false);
-		if (ItemSystem::IsValidItem(newItem))
-		{
-			// socket
-			bool initialized = true;
-			for (int i=0; i<ITEM_SOCKET_MAX_NUM; i++)
-				initialized = initialized && ItemSystem::SetItemSocket(newItem, i, m_socket[i]);
-			// attr
-			for (int i=0; i<ITEM_ATTRIBUTE_MAX_NUM; i++)
-				initialized = initialized && ItemSystem::SetItemForceAttributeEcs(newItem, i, m_attr[(i*2)+0], m_attr[(i*2)+1]);
-			if (!initialized)
-			{
-				ItemSystem::DestroyItemEntityEcs(newItem, "QUEST_MAKE_ITEM_INIT_FAIL");
-				lua_pushboolean(L, false);
-				return 1;
-			}
-			// state
-			int iEmptyCell = -1;
-			int m_sec = 0;
-			PIXEL_POSITION pos{};
-			switch(m_state)
-			{
-				case PCMI0_GIVE:
-					iEmptyCell = ItemSystem::GetEmptyInventoryPositionEcs(chEntity, newItem);
-					if (-1 == iEmptyCell)
-					{
-						ItemSystem::DestroyItemEntityEcs(newItem, "QUEST_ITEM_FAIL");
-						lua_pushboolean(L, false);
-						return 1;
-					}
-					if (!ItemSystem::PlaceItemEcs(chEntity, newItem, INVENTORY, iEmptyCell))
-					{
-						ItemSystem::DestroyItemEntityEcs(newItem, "QUEST_ITEM_PLACE_FAIL");
-						lua_pushboolean(L, false);
-						return 1;
-					}
-					break;
-				case PCMI0_DROPWP:
-					if (lua_isnumber(L, 5) && (m_sec = lua_tonumber(L, 5)))
-						ItemSystem::SetGroundOwnership(newItem, chEntity, m_sec <= 0 ? 1 : m_sec);
-					else
-						ItemSystem::SetGroundOwnership(newItem, chEntity);
-				case PCMI0_DROP:
-					pos.x = ecs::PlayerRuntime::GetX(chEntity) + number(-200, 200);
-					pos.y = ecs::PlayerRuntime::GetY(chEntity) + number(-200, 200);
-
-					if (!ItemSystem::PlaceItemOnGround(
-							newItem, ecs::PlayerRuntime::GetMapIndex(chEntity), pos))
-					{
-						ItemSystem::DestroyItemEntityEcs(newItem, "QUEST_ITEM_GROUND_FAIL");
-						lua_pushboolean(L, false);
-						return 1;
-					}
-					break;
-				default:
-					ItemSystem::DestroyItemEntityEcs(newItem, "QUEST_ITEM_BAD_STATE");
-					lua_pushboolean(L, false);
-					return 1;
-			}
-			lua_pushboolean(L, true);
-		}
-		else
-			lua_pushboolean(L, false);
-
-		return 1;
-	}
 
     ALUA(pc_set_race0)
     {
@@ -3303,23 +3056,6 @@ teleport_area:
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		lua_pushboolean(L, chEntity != entt::null && g_registry.valid(chEntity));
-		return 1;
-	}
-
-	ALUA(pc_give_random_book0)
-	{
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		const entt::entity item = ITEM_MANAGER::instance().CreateItem(50300);
-		const uint32_t skillVnum = lua_isnumber(L, 1)
-			? ::GetRandomSkillVnum(lua_tonumber(L, 1))
-			: ::GetRandomSkillVnum();
-		const bool initialized = ItemSystem::IsValidItem(item) &&
-			ItemSystem::SetItemSocket(item, 0, skillVnum);
-		if (initialized)
-			ItemSystem::AutoGiveItem(chEntity, item);
-		else if (ItemSystem::IsValidItem(item))
-			ItemSystem::DestroyItemEntityEcs(item, "QUEST_RANDOM_BOOK_INIT_FAIL");
-		lua_pushboolean(L, initialized);
 		return 1;
 	}
 
@@ -4129,8 +3865,6 @@ teleport_area:
 
 			{ "set_skill_level",        pc_set_skill_level      },
 
-            { "give_polymorph_book",    pc_give_polymorph_book  },
-            { "upgrade_polymorph_book", pc_upgrade_polymorph_book },
             { "get_premium_remain_sec", pc_get_premium_remain_sec },
 
 			{ "send_block_mode",		pc_send_block_mode	},
@@ -4176,7 +3910,6 @@ teleport_area:
 
 			{ "get_channel_id",		pc_get_channel_id	},
 
-			{ "give_poly_marble",	pc_give_poly_marble	},
 			{ "get_sig_items",		pc_get_sig_items	},
 
 			{ "charge_cash",		pc_charge_cash		},
@@ -4192,8 +3925,6 @@ teleport_area:
 			{ "set_race0",			pc_set_race0			},
 			//if pc.delf("game_option", "block_cocks") then syschat("now you are unsafe") end
 			{ "delf",				pc_del_another_quest_flag},	// delete quest flag [return lua boolean: successfulness]
-			//pc.make_item0({vnum|locale_name, count}, {socket1,2,3}, {type1, value1, ... , type7, value7}, gstate(=0: giveitem, 1: dropitem, 2: drop_item_with_leadership)[, countdown_in_secs_before_ownership_vanish(=if <=10 would be 30; default=10->30)])
-			{ "make_item0",			pc_make_item0		},	// [return lua boolean: successfulness]
 			//pc.pointchange(uint type, int amount, bool bAmount, bool bBroadcast)
 			{ "pointchange",		pc_pointchange		},	// [return nothing]
 			//pc.pullmob()
@@ -4241,7 +3972,6 @@ teleport_area:
 			// pc.unequip_slot0(cell)
 			{ "unequip_slot0",		pc_unequip_slot0	},	// [return lua boolean: successfulness]
 			{ "is_available0",		pc_is_available0	},	// [return lua boolean]
-			{ "give_random_book0",	pc_give_random_book0},	// [return lua boolean]
 			{ "is_pvp0",			pc_is_pvp0			},	// [return lua boolean]
 #endif
 #ifdef ENABLE_PC_OPENSHOP
