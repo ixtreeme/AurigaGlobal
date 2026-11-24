@@ -163,6 +163,7 @@ class CampaignView(tk.Frame):
             text.pack(side="left", padx=7)
             label(text, row["name"], fg=GOLD, serif=True, wraplength=115).pack(anchor="w")
             label(text, row.get("role", ""), size=9, fg=MUTED, wraplength=116).pack(anchor="w")
+            self.bind_reference(tile,"cast",row)
         button(self.rail, "+ Szereplő", lambda: self.add_reference("cast")).pack(anchor="w", padx=8, pady=5)
         self.clear(self.scenes)
         head = tk.Frame(self.scenes, bg=PANEL)
@@ -180,6 +181,7 @@ class CampaignView(tk.Frame):
                 area.pack(fill="x")
                 area.create_image(0, -12, anchor="nw", image=self.images[row["art"]])
             label(tile, row["name"], size=9).pack(anchor="w")
+            self.bind_reference(tile,"scene",row)
         self.draw()
         self.details()
 
@@ -187,6 +189,14 @@ class CampaignView(tk.Frame):
         self.reset()
         self.act = index
         self.refresh()
+
+    def bind_reference(self,widget,kind,row):
+        from quest_assets import Asset
+        asset=Asset(kind,row["name"],subject=row.get("art",""),line=row.get("line",""))
+        widget.configure(cursor="hand2")
+        self.studio.flow_view.dragger.bind(widget,lambda _:asset)
+        for child in widget.winfo_children():
+            self.bind_reference(child,kind,row)
 
     def act_names(self):
         return [f"{i + 1}. {a['name']}" for i, a in enumerate(self.board["acts"])]
@@ -463,6 +473,10 @@ class CampaignView(tk.Frame):
             self.studio.save_layout()
 
         kind.bind("<<ComboboxSelected>>", category)
+        if card.get("scene"):
+            label(self.detail,"Helyszín · "+card["scene"],size=10).pack(anchor="w",padx=9)
+        if card.get("speaker") and not card.get("line"):
+            label(self.detail,"Szereplő · "+card["speaker"],size=10).pack(anchor="w",padx=9)
         if card.get("line"):
             quote_bar = tk.Frame(self.detail, bg="#e1d3b4", padx=11, pady=5)
             quote_bar.pack(fill="x", padx=8, pady=(2, 6))
@@ -470,7 +484,7 @@ class CampaignView(tk.Frame):
                 label(quote_bar, card["speaker"], size=10, fg="#594322", bg="#e1d3b4", serif=True).pack(
                     anchor="w"
                 )
-            label(
+            quote=label(
                 quote_bar,
                 card["line"],
                 fg="#322c25",
@@ -478,7 +492,10 @@ class CampaignView(tk.Frame):
                 serif=True,
                 wraplength=max(620, self.right.winfo_width() - 54),
                 justify="left",
-            ).pack(anchor="w")
+            )
+            quote.pack(anchor="w")
+            from quest_assets import Asset
+            self.studio.flow_view.dragger.bind(quote,lambda _:Asset("phrase",self.name(code),line=card["line"],speaker=card.get("speaker","")))
         parents = [self.name(a) for a, b in links(self.studio.source) if b == code]
         if parents:
             rule = gate(graph)

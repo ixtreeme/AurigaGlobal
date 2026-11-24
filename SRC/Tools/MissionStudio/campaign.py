@@ -135,6 +135,11 @@ def check_board(board, source):
         or board["cards"].keys() - ids
     ):
         raise ValueError("A kampányterv szerkezete érvénytelen.")
+    snippets=board.get("texts",[])
+    if not isinstance(snippets,list) or any(
+            not isinstance(row,dict) or not all(isinstance(row.get(k),str) and row[k].strip() for k in ("name","speaker","line"))
+            for row in snippets):
+        raise ValueError("Hibás szöveg a kampány könyvtárában.")
     for act in board["acts"]:
         if not isinstance(act, dict) or not isinstance(act.get("name"), str):
             raise TypeError("A felvonáshoz szöveges név szükséges.")
@@ -156,7 +161,7 @@ def check_board(board, source):
                 type(card.get(k)) in (int, float) and isfinite(card[k]) and 0 <= card[k] <= 100000
                 for k in ("x", "y")
             )
-            or not all(isinstance(card.get(k, ""), str) for k in ("speaker", "line"))
+            or not all(isinstance(card.get(k, ""), str) for k in ("speaker", "line", "scene"))
         ):
             raise ValueError("Érvénytelen kártya a kampánytervben.")
         positions = card.get("node_positions", {})

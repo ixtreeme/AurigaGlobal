@@ -11,6 +11,7 @@ from mission_source import EVENTS, objective_subject
 TYPES = {
     "start": "Kezdés",
     "dialogue": "NPC-párbeszéd",
+    "text": "Szövegdoboz",
     "task": "Feladat",
     "condition": "Feltétel",
     "reward": "Jutalom",
@@ -84,7 +85,7 @@ def validate(flow):
             or not all(isinstance(v, str) and v.strip() for v in n["answers"])
         ):
             raise ValueError("Egy párbeszédhez 2–8 válasz szükséges.")
-        if n["kind"] == "dialogue" and not all(
+        if n["kind"] in ("dialogue", "text") and not all(
             isinstance(n.get(f), str) and n[f].strip() for f in ("speaker", "line")
         ):
             raise ValueError("Add meg a beszélőt és a párbeszéd szövegét.")
@@ -357,7 +358,13 @@ def materialize(source, graph, flow):
                 continue
             native = deepcopy(n.get("original", {}))
             native["id"] = k
-            if kind == "task":
+            if kind == "text":
+                subject = k + ".reply"
+                choices[subject] = ["OK"]
+                native.update(
+                    kind="objective", objective={"event": "dialogue_choice", "subject": subject, "goal": 1}
+                )
+            elif kind == "task":
                 native.update(
                     kind="objective",
                     objective={
@@ -383,7 +390,7 @@ def materialize(source, graph, flow):
             else:
                 raise ValueError("Nem fordítható lépés: " + title(n))
             result.append(emit(native))
-            caption(k, title(n))
+            caption(k, n["speaker"] + " · " + n["line"] if kind == "text" else title(n))
             k = wires[k]["next"]
         return result
 

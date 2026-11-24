@@ -12,6 +12,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--compiler", required=True, type=Path)
     parser.add_argument("--catalog", required=True, type=Path, help="Published CatalogEditorTool read response")
+    parser.add_argument("--actors", type=Path, help="Named actor types exported from player.mob_proto, indexed by race")
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
     compiler = args.compiler.resolve(strict=True)
@@ -22,7 +23,8 @@ def main():
     with tempfile.TemporaryDirectory() as work:
         labels = Path(__file__).resolve().parents[3] / "config/server_manager/content_names_hu.json"
         index = Path(work) / "mission_targets.json"
-        index.write_text(json.dumps(make_index(json.loads(labels.read_bytes()), json.loads(args.catalog.read_bytes())),
+        actors = json.loads(args.actors.read_bytes()) if args.actors else None
+        index.write_text(json.dumps(make_index(json.loads(labels.read_bytes()), json.loads(args.catalog.read_bytes()), actors),
                                     ensure_ascii=False), encoding="utf-8")
         subprocess.run([sys.executable, "-m", "PyInstaller", "--windowed", "--onedir",
                         "--name", "MissionStudio", "--distpath", str(output),

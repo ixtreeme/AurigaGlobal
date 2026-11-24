@@ -4,16 +4,23 @@ import tkinter as tk
 from copy import deepcopy
 from tkinter import messagebox, simpledialog, ttk
 
+from asset_shelf import STEPS, AssetShelf, PointerDrag
 from campaign_view import button
 from mission_source import EVENTS
+from quest_assets import (
+    Asset,
+    apply_drop,
+    change_stack,
+    drop_action,
+    reorder_answer,
+    reward_subject,
+)
 from quest_flow import (
     TYPES,
     connect,
     drop_node,
-    fresh_id,
     import_flow,
     materialize,
-    node,
     ports,
     title,
     validate,
@@ -25,6 +32,7 @@ TEXT, MUTED, GOLD = "#eaf1f3", "#a4b6c3", "#e5bf7d"
 COLORS = {
     "start": "#6ece95",
     "dialogue": "#7cc3ea",
+    "text": "#a5ceda",
     "task": "#c2a0e6",
     "condition": "#edbb72",
     "reward": "#84cfac",
@@ -35,6 +43,7 @@ COLORS = {
 SYMBOL = {
     "start": "▶",
     "dialogue": "◇",
+    "text": "▤",
     "task": "◆",
     "condition": "⑂",
     "reward": "✦",
@@ -42,7 +51,7 @@ SYMBOL = {
     "end": "⚑",
     "native": "▣",
 }
-EDITABLE = ("dialogue", "task", "condition", "reward", "timer")
+EDITABLE = STEPS
 W = 174
 
 
@@ -74,9 +83,13 @@ def details(n, flow):
         return f"{EVENTS[n['event']][0]}\n{display(n['subject'])} × {n['goal']}"
     if kind == "dialogue":
         return f"{n['speaker']} · {len(n['answers'])} válasz"
+    if kind == "text":
+        return n["speaker"] + " · " + n["line"]
     if kind == "reward":
         b = n["bundle"]
-        return f"{b.get('experience', 0):,} TP  ·  {b.get('gold', 0):,} Yang".replace(",", " ")
+        lines = [f"{b.get('experience', 0):,} TP  ·  {b.get('gold', 0):,} Yang".replace(",", " ")]
+        lines.extend(f"{display(reward_subject(r))} × {r['count']}" for r in b.get("typed_items", []))
+        return "\n".join(lines)
     if kind == "condition":
         task = flow["nodes"].get(n.get("test"))
         return "Teljesült? " + (title(task) if task else "Válassz feladatot")
@@ -85,20 +98,6 @@ def details(n, flow):
     if kind == "native":
         return n["original"]["kind"]
     return "Küldetés felvétele" if kind == "start" else "Küldetés teljesítve"
-
-
-def defaults(kind):
-    return {
-        "dialogue": {
-            "speaker": "Küldetésadó",
-            "line": "Segítesz nekem?",
-            "answers": ["Igen.", "Mesélj még."],
-        },
-        "task": {"event": "mob_killed", "subject": "*", "goal": 1},
-        "condition": {"test": ""},
-        "reward": {"bundle": {"schema": 3, "experience": 100, "gold": 0}},
-        "timer": {"duration": 1000},
-    }[kind]
 
 
 class NodeDialog(simpledialog.Dialog):
@@ -124,9 +123,10 @@ class NodeDialog(simpledialog.Dialog):
     def body(self, frame):
         n = self.n
         first = self.field(frame, "name", "Csomópont neve", title(n))
-        if n["kind"] == "dialogue":
+        if n["kind"] in ("text", "dialogue"):
             self.field(frame, "speaker", "Beszélő", n["speaker"])
-            self.field(frame, "line", "Párbeszéd", n["line"], 3)
+            self.field(frame, "line", "Szöveg", n["line"], 3)
+        if n["kind"] == "dialogue":
             self.field(
                 frame, "answers", "Válaszok sorrendben (soronként egy, A–H)", "\n".join(n["answers"]), 5
             )
@@ -153,8 +153,13 @@ class NodeDialog(simpledialog.Dialog):
                 raise ValueError("Adj nevet a csomópontnak.")
             n = deepcopy(self.n)
             n["name"] = data["name"]
+            if n["kind"] in ("text", "dialogue"):
+                if n["speaker"] != data["speaker"]:
+                    n.pop("speaker_target", None)
+                    n.pop("portrait", None)
+                n.update(speaker=data["speaker"], line=data["line"])
             if n["kind"] == "dialogue":
-                n.update(speaker=data["speaker"], line=data["line"], answers=data["answers"].splitlines())
+                n["answers"] = data["answers"].splitlines()
                 if any(p not in ports(n) for p in self.view.flow["wires"].get(self.key, {})):
                     raise ValueError("A törlendő válasz vezetékét előbb bontsd a gráfon.")
             elif n["kind"] == "timer":
@@ -187,9 +192,10 @@ class QuestFlowView(tk.Frame):
         self.completed = set()
         self.columnconfigure(1, weight=1)
         self.rowconfigure(0, weight=1)
-        sidebar = tk.Frame(self, bg=PANEL, width=181)
-        sidebar.grid(row=0, column=0, rowspan=2, sticky="nsew", padx=(0, 2))
-        sidebar.pack_propagate(False)
+        sidebar = studio.dock
+        self.dragger = PointerDrag(
+            studio.root, self.route_drop, lambda s: studio.status.set(s), self.clear_drop_hint
+        )
         label(sidebar, "Küldetések", 12, GOLD).pack(fill="x", padx=10, pady=(13, 6))
         self.query = tk.StringVar()
         label(sidebar, "Keresés név szerint", 9, MUTED).pack(anchor="w", padx=10)
@@ -206,19 +212,20 @@ class QuestFlowView(tk.Frame):
         self.query.trace_add("write", lambda *_: self.tree_refresh())
         self.tree = ttk.Treeview(sidebar, show="tree", height=7, selectmode="browse", style="Quest.Treeview")
         self.tree.column("#0", width=166, minwidth=50)
-        self.tree.pack(fill="both", expand=True, padx=5, pady=6)
-        self.tree.bind("<<TreeviewSelect>>", self.pick_mission)
+        self.tree.pack(fill="both", padx=5, pady=6)
+
+        def mission_asset(e):
+            code = self.tree.identify_row(e.y)
+            if code and not code.startswith("act:"):
+                return Asset("mission", self.tree.item(code, "text"), subject=code)
+            return None
+
+        self.dragger.bind(self.tree, mission_asset)
+        self.tree.bind("<ButtonRelease-1>", self.pick_mission, add=True)
+        self.tree.bind("<KeyRelease>", self.pick_mission, add=True)
         button(sidebar, "+ Küldetés", studio.add_mission).pack(anchor="w", padx=8)
-        label(sidebar, "Csomópontok", 12, GOLD).pack(fill="x", padx=10, pady=(16, 4))
-        for kind in EDITABLE:
-            tile = label(
-                sidebar, SYMBOL[kind] + "   " + TYPES[kind], 10, COLORS[kind], padx=10, pady=4, cursor="hand2"
-            )
-            tile.pack(fill="x")
-            tile.bind("<ButtonRelease-1>", lambda e, k=kind: self.palette_drop(e, k))
-        label(sidebar, "Húzd a vászonra, vagy kattints a nevére.", 9, MUTED, wraplength=154).pack(
-            padx=10, pady=(6, 14)
-        )
+        self.shelf = AssetShelf(sidebar, self)
+        self.shelf.pack(fill="both", expand=True, padx=8, pady=6)
         middle = tk.Frame(self, bg=BG)
         middle.grid(row=0, column=1, sticky="nsew")
         bar = tk.Frame(middle, bg=PANEL, pady=3)
@@ -279,6 +286,9 @@ class QuestFlowView(tk.Frame):
         self.tree_busy = True
         self.tree.delete(*self.tree.get_children())
         query = folded(self.query.get().strip())
+        if not query:
+            for i, act in enumerate(self.studio.board["acts"]):
+                self.tree.insert("", "end", iid=f"act:{i}", text=act["name"], open=True)
         for g in self.studio.source["missions"]:
             name = self.mission_name(g)
             if query not in folded(name):
@@ -334,6 +344,8 @@ class QuestFlowView(tk.Frame):
             self.selected = "start"
         self.head.config(text=self.mission_name(g) if g else "Küldetésgráf")
         self.tree_refresh()
+        if self.shelf.group.get() == "Szövegek":
+            self.shelf.refresh()
         self.fit() if self.auto_fit else self.draw()
         self.panels()
 
@@ -520,6 +532,8 @@ class QuestFlowView(tk.Frame):
             self.gesture = ("pan", e.x, e.y, self.dx, self.dy)
         elif hit[0] == "edge":
             self.edge = hit[1:]
+            if not self.flow.get("readonly"):
+                self.gesture = ("edge", *self.edge)
             self.draw()
         else:
             _, k, *p = hit
@@ -534,6 +548,15 @@ class QuestFlowView(tk.Frame):
         if not self.gesture:
             return
         mode, *g = self.gesture
+        if mode in ("move", "wire", "edge") and self.local_point(self.shelf.bin, e.x_root, e.y_root):
+            self.studio.status.set(
+                "A kezdés és a befejezés rögzített."
+                if mode == "move" and g[0] in ("start", "end")
+                else "Az egér elengedésével eltávolítod a kijelölt elemet."
+            )
+            return
+        if mode == "edge":
+            return
         if mode == "wire":
             self.canvas.delete("loose")
             self.wire(*self.socket(*g), e.x, e.y, GOLD, 3, "loose")
@@ -555,6 +578,17 @@ class QuestFlowView(tk.Frame):
             return
         mode, *g = self.gesture
         self.gesture = None
+        if mode in ("move", "wire", "edge") and not self.local_point(self.canvas, e.x_root, e.y_root):
+            if mode == "move":
+                self.flow["nodes"][g[0]].update(x=g[3], y=g[4])
+            if self.local_point(self.shelf.bin, e.x_root, e.y_root):
+                if mode == "move" and g[0] not in ("start", "end"):
+                    self.remove()
+                elif mode in ("wire", "edge") and g[1] in self.flow["wires"].get(g[0], {}):
+                    self.edge = tuple(g)
+                    self.remove()
+            self.draw()
+            return
         if mode == "wire":
             hit = self.hit(e.x, e.y)
             if hit and hit[0] == "in":
@@ -597,14 +631,233 @@ class QuestFlowView(tk.Frame):
                 menu.add_command(label=TYPES[kind], command=lambda k=kind: self.add(k, pos))
         menu.tk_popup(e.x_root, e.y_root)
 
-    def palette_drop(self, e, kind):
-        x, y = e.x_root - self.canvas.winfo_rootx(), e.y_root - self.canvas.winfo_rooty()
-        pos = (
-            self.world(x, y)
-            if 0 <= x < self.canvas.winfo_width() and 0 <= y < self.canvas.winfo_height()
-            else None
-        )
-        self.add(kind, pos)
+    @staticmethod
+    def local_point(widget, x, y):
+        if not widget or not widget.winfo_exists() or not widget.winfo_ismapped():
+            return None
+        px, py = x - widget.winfo_rootx(), y - widget.winfo_rooty()
+        return (px, py) if 0 <= px < widget.winfo_width() and 0 <= py < widget.winfo_height() else None
+
+    def clear_drop_hint(self):
+        self.canvas.delete("drop_hint")
+        self.studio.status.set("")
+
+    def route_drop(self, asset, x, y, apply):
+        self.canvas.delete("drop_hint")
+        try:
+            description = self.resolve_drop(asset, x, y, apply)
+            if not apply:
+                self.studio.status.set(description)
+        except (ValueError, KeyError) as error:
+            self.studio.status.set(str(error))
+
+    def resolve_drop(self, asset, x, y, apply):
+        app = self.studio
+        if self.local_point(self.shelf.bin, x, y) and asset.kind == "stack" and asset.mission == self.code:
+            if apply:
+                candidate = deepcopy(self.flow)
+                change_stack(candidate["nodes"][asset.origin]["bundle"], asset.subject, -asset.count)
+                self.flow = candidate
+                self.commit()
+            return "Kivétel a jutalomból · " + asset.name
+        code = self.code
+        target = edge = pos = None
+        tab = app.tabs.select()
+        tree_point = self.local_point(self.tree, x, y)
+        graph_point = self.local_point(self.canvas, x, y)
+        if asset.kind == "mission":
+            act = None
+            if tree_point:
+                row = self.tree.identify_row(tree_point[1])
+                if row.startswith("act:"):
+                    act = int(row[4:])
+            elif pt := self.local_point(app.campaign.canvas, x, y):
+                act = app.campaign.act
+                c = app.campaign.canvas
+                px, py = c.canvasx(pt[0]), c.canvasy(pt[1])
+                hit, other = app.campaign.hit(px, py)
+                if hit in ("node", "out", "in") and other != asset.subject:
+                    if apply:
+                        app.campaign.change_link(asset.subject, other)
+                    return "Küldetések összekötése"
+                pos = (max(0, min(100000, round(px))), max(0, min(100000, round(py))))
+            if act is None:
+                raise ValueError("Húzd a küldetést egy felvonásra vagy a kampánygráfra.")
+            if apply:
+                card = app.board["cards"][asset.subject]
+                card["act"] = act
+                if pos:
+                    card.update(x=pos[0], y=pos[1])
+                app.campaign.act = act
+                app.campaign.selected = asset.subject
+                app.select_mission(asset.subject)
+                app.campaign.refresh()
+                self.refresh()
+                app.save_layout()
+            return "Küldetés elhelyezése · " + app.board["acts"][act]["name"]
+        if tree_point:
+            code = self.tree.identify_row(tree_point[1])
+            if not code or code.startswith("act:"):
+                raise ValueError("Egy küldetés nevére húzd az elemet.")
+            target = "start" if asset.kind == "npc" else "end"
+        elif tab == str(self) and graph_point:
+            px, py = graph_point
+            pos = self.world(px, py)
+            hit = self.hit(px, py)
+            if hit:
+                if hit[0] in ("edge", "out") and asset.kind != "answer":
+                    edge = tuple(hit[1:])
+                else:
+                    target = hit[1] if hit[0] != "edge" else None
+        elif tab == str(self) and (
+            self.local_point(self.inspector, x, y)
+            or self.local_point(self.script, x, y)
+            or self.local_point(self.preview, x, y)
+        ):
+            target = "start" if self.local_point(getattr(self, "giver_button", None), x, y) else self.selected
+            table = getattr(self, "answers_table", None)
+            row_point = self.local_point(table, x, y)
+            if asset.kind == "answer" and row_point and asset.mission == code and asset.origin == target:
+                p = table.identify_row(row_point[1])
+                if not p:
+                    raise ValueError("A célhelyhez húzd egy válasz sorára.")
+                if apply and p != asset.subject:
+                    reorder_answer(self.flow, target, asset.subject, p)
+                    self.commit()
+                return "Válasz és hozzá tartozó ág átrendezése"
+        elif tab == str(app.campaign) and (pt := self.local_point(app.campaign.canvas, x, y)):
+            c = app.campaign.canvas
+            kind, code = app.campaign.hit(c.canvasx(pt[0]), c.canvasy(pt[1]))
+            if kind not in ("in", "out", "node"):
+                raise ValueError("A kampányban egy küldetéskártyára húzd az elemet.")
+            target = "start" if asset.kind == "npc" else "end"
+        elif tab == str(app.editor) and (pt := self.local_point(app.steps, x, y)):
+            target = app.steps.identify_row(pt[1])
+            if not target:
+                raise ValueError("Válassz egy lépést a listában.")
+        elif tab == str(app.editor) and (pt := self.local_point(app.missions, x, y)):
+            i = app.missions.nearest(pt[1])
+            bbox = app.missions.bbox(i) if i >= 0 else None
+            if not bbox or pt[1] >= bbox[1] + bbox[3] + 1:
+                raise ValueError("Egy küldetés sorára húzd az elemet.")
+            code = app.source["missions"][i]["mission"]
+            target = "start" if asset.kind == "npc" else "end"
+        else:
+            raise ValueError("Húzd az elemet a gráfra vagy egy küldetésre.")
+        if not code:
+            raise ValueError("Előbb válassz küldetést.")
+        if asset.kind in ("scene", "cast") or (
+            asset.kind == "phrase" and tab == str(app.campaign) and not tree_point
+        ):
+            if tab != str(app.campaign):
+                raise ValueError("Húzd a kampányban a célküldetésre.")
+            if apply:
+                card = app.board["cards"][code]
+                if asset.kind == "scene":
+                    card["scene"] = asset.name
+                elif asset.kind == "cast":
+                    card["speaker"] = asset.name
+                else:
+                    card.update(line=asset.line, speaker=asset.speaker or "")
+                app.campaign.selected = code
+                app.campaign.refresh()
+                app.save_layout()
+            return "Hozzárendelés a kampánykártyához · " + asset.name
+        hint = self.drop_on(code, asset, target, edge, pos, apply)
+        if not apply and graph_point and self.flow:
+            if target in self.flow["nodes"]:
+                n = self.flow["nodes"][target]
+                self.canvas.create_rectangle(
+                    *self.xy(n["x"] - 3, n["y"] - 3),
+                    *self.xy(n["x"] + self.width(n) + 3, n["y"] + self.height(n) + 3),
+                    outline=GOLD,
+                    width=3,
+                    tags="drop_hint",
+                )
+            elif edge:
+                a, p = edge
+                other = self.flow["wires"].get(a, {}).get(p)
+                if other:
+                    self.wire(*self.socket(a, p), *self.socket(other), GOLD, 4, "drop_hint")
+        return hint
+
+    def drop_on(self, code, asset, target=None, edge=None, pos=None, apply=True):
+        app = self.studio
+        graph = next(g for g in app.source["missions"] if g["mission"] == code)
+        card = app.board["cards"][code]
+        flow = self.flow if self.code == code else card.get("flow")
+        if flow is None:
+            flow = import_flow(app.source, graph)
+            for key, (x, y) in card.get("node_positions", {}).items():
+                if key in flow["nodes"]:
+                    flow["nodes"][key].update(x=x, y=y)
+        if flow.get("readonly"):
+            raise ValueError("Ez az importált gráf csak olvasható.")
+        if target == graph["root"] and target not in flow["nodes"]:
+            target = "start" if asset.kind == "npc" else "end"
+        if target is not None and target not in flow["nodes"]:
+            raise ValueError("Ez a lépés nem szerkeszthető a gráfon.")
+        if asset.mission and asset.mission != code:
+            raise ValueError("Ezt az elemet ugyanazon küldetésen belül húzhatod át.")
+        kind = flow["nodes"].get(target, {}).get("kind")
+        hint = drop_action(asset, kind, edge)
+        if not hint:
+            raise ValueError("Ez az elem itt nem helyezhető el.")
+        if (
+            asset.kind == "item"
+            and kind == "reward"
+            and flow["nodes"][target]["bundle"].get("schema", 1) == 1
+        ):
+            raise ValueError("Ez a jutalom régi formátumú.")
+        if not apply:
+            return hint + " · " + asset.name
+        if asset.kind == "npc" and target == "start" and edge is None:
+            old = app.rules.get(code, [0, 1])
+            app.rules[code] = [int(asset.subject.split(".")[1]), old[1]]
+            selected = "start"
+        else:
+            if pos is None:
+                anchor = flow["nodes"][target or "end"]
+                pos = anchor["x"] - 92, anchor["y"] + 107
+            if target or edge:
+                predecessor = (
+                    edge[0]
+                    if edge
+                    else next((k for k, outputs in flow["wires"].items() if target in outputs.values()), None)
+                )
+                following = flow["wires"].get(edge[0], {}).get(edge[1]) if edge else target
+                if predecessor and following:
+                    left, right = flow["nodes"][predecessor], flow["nodes"][following]
+                    pos = ((left["x"] + self.width(left) + right["x"] - W) / 2, (left["y"] + right["y"]) / 2)
+                pos = self.free_position(flow, pos)
+            pos = tuple(max(-100000, min(100000, p)) for p in pos)
+            candidate = deepcopy(flow)
+            selected = apply_drop(candidate, asset, pos, target, edge)
+            validate(candidate)
+            card["flow"] = candidate
+            card.pop("node_positions", None)
+        self.playing = self.gesture = self.edge = None
+        app.campaign.selected = code
+        app.campaign.act = card["act"]
+        app.changed(graph)
+        self.selected = selected
+        self.draw()
+        self.panels()
+        return hint
+
+    def free_position(self, flow, pos):
+        x, y = pos
+        obstacles = [
+            (n["x"] - W - 14, n["x"] + self.width(n) + 14, n["y"] - 100, n["y"] + self.height(n) + 14)
+            for n in flow["nodes"].values()
+        ]
+        for i in range(len(obstacles) + 2):
+            for py in (y + i * 112, y - i * 112):
+                if -100000 <= py <= 100000 and not any(
+                    l < x < r and top < py < bottom for l, r, top, bottom in obstacles
+                ):
+                    return x, py
+        return pos
 
     def add(self, kind, pos=None):
         if not self.flow or self.flow.get("readonly"):
@@ -614,10 +867,7 @@ class QuestFlowView(tk.Frame):
             return
         if pos is None:
             pos = self.world(self.canvas.winfo_width() * 0.42, self.canvas.winfo_height() * 0.45)
-        k = fresh_id()
-        self.flow["nodes"][k] = node(kind, *pos, name=TYPES[kind], **defaults(kind))
-        self.selected, self.edge = k, None
-        self.commit()
+        self.drop_on(self.code, Asset("step", TYPES[kind], kind), pos=pos)
 
     def remove(self):
         if not self.flow or self.flow.get("readonly"):
@@ -684,7 +934,8 @@ class QuestFlowView(tk.Frame):
         else:
             btn = tk.Frame(box, bg=PANEL)
             btn.pack(side="bottom", fill="x", pady=8, padx=5)
-            button(btn, "Küldetésadó…", self.studio.admission).pack(anchor="w")
+            self.giver_button = button(btn, "Küldetésadó…", self.studio.admission)
+            self.giver_button.pack(anchor="w")
             button(btn, "Küldetés neve és leírása…", self.studio.edit_text).pack(anchor="w")
         label(
             self.script, "Párbeszéd szerkesztő" if n["kind"] == "dialogue" else "Kijelölt lépés", 11, GOLD
@@ -716,10 +967,76 @@ class QuestFlowView(tk.Frame):
                     self.panels()
 
             answer_list.bind("<Double-1>", follow)
+            self.answers_table = answer_list
+
+            def answer_asset(e):
+                port = answer_list.identify_row(e.y)
+                if port:
+                    return Asset(
+                        "answer",
+                        n["answers"][ports(n).index(port)],
+                        subject=port,
+                        origin=self.selected,
+                        mission=self.code,
+                    )
+                return None
+
+            self.dragger.bind(answer_list, answer_asset)
             button(self.script, "Szöveg és válaszok szerkesztése…", self.edit).pack(anchor="w", pady=3)
+        elif n["kind"] == "reward":
+            label(self.script, "Jutalomtárgyak", 12).pack(anchor="w")
+            table = ttk.Treeview(
+                self.script, columns=("name", "count"), show="headings", height=4, style="Quest.Treeview"
+            )
+            table.heading("name", text="Tárgy")
+            table.heading("count", text="Darab")
+            table.column("count", width=50, stretch=False)
+            table.pack(fill="both", expand=True, pady=3)
+            for r in n["bundle"].get("typed_items", []):
+                subject = reward_subject(r)
+                table.insert("", "end", iid=subject, values=(display(subject), r["count"]))
+
+            def stack(e):
+                subject = table.identify_row(e.y)
+                if subject:
+                    count = int(table.set(subject, "count"))
+                    return Asset(
+                        "stack",
+                        display(subject),
+                        subject,
+                        count=count,
+                        origin=self.selected,
+                        mission=self.code,
+                    )
+                return None
+
+            self.dragger.bind(table, stack)
+
+            def quantity(e):
+                a = stack(e)
+                if not a or self.flow.get("readonly"):
+                    return
+                value = simpledialog.askinteger(
+                    a.name, "Darabszám", initialvalue=a.count, minvalue=1, maxvalue=50000, parent=self
+                )
+                if value and value != a.count:
+                    change_stack(n["bundle"], a.subject, value - a.count)
+                    self.commit()
+
+            table.bind("<Double-1>", quantity)
+        elif n["kind"] == "text":
+            label(self.script, n["speaker"], 12).pack(anchor="w")
+            label(self.script, n["line"], 10, wraplength=350).pack(anchor="w")
+            button(self.script, "Szöveg szerkesztése…", self.edit).pack(anchor="w", pady=4)
         else:
             label(self.script, title(n), 13).pack(anchor="w", pady=(7, 2))
             label(self.script, details(n, self.flow), 10, MUTED, wraplength=330).pack(anchor="w")
+            if n["kind"] == "task":
+                ref = label(self.script, "↗  Húzd egy feltételre", 10, COLORS["condition"], cursor="hand2")
+                ref.pack(anchor="w")
+                self.dragger.bind(
+                    ref, lambda _: Asset("taskref", title(n), origin=self.selected, mission=self.code)
+                )
         self.preview_draw()
 
     def start_preview(self):
@@ -765,7 +1082,7 @@ class QuestFlowView(tk.Frame):
         n = self.flow["nodes"][self.playing or self.selected]
         body = tk.Frame(box, bg=box["bg"])
         body.pack(fill="both", expand=True, pady=(4, 0))
-        if n["kind"] == "dialogue":
+        if n["kind"] in ("text", "dialogue"):
             portrait_key = n.get("portrait")
             if portrait_key in self.studio.campaign.images:
                 tk.Label(body, image=self.studio.campaign.images[portrait_key], bg=box["bg"]).pack(
@@ -776,8 +1093,9 @@ class QuestFlowView(tk.Frame):
             label(panel, n["speaker"], 12, GOLD).pack(anchor="w")
             line = label(panel, n["line"], 10, wraplength=330)
             line.pack(anchor="w", fill="x")
+            self.dragger.bind(line, lambda _: Asset("phrase", title(n), line=n["line"], speaker=n["speaker"]))
             panel.bind("<Configure>", lambda e: line.configure(wraplength=max(80, e.width - 4)))
-            for p, ans in zip(ports(n), n["answers"]):
+            for p, ans in zip(ports(n), n.get("answers", ["Tovább"])):
                 if self.playing:
                     button(panel, p + "  " + ans, lambda out=p: self.advance(out)).pack(anchor="w")
                 else:

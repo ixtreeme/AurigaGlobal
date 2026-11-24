@@ -73,6 +73,54 @@ class MissionPackageToolsTests(unittest.TestCase):
             self.run_tool("compile", source, package)
             self.run_tool("check-events", package)
 
+    def test_studio_asset_drops_compile_and_preserve_wires_and_typed_stacks(self):
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "SRC/Tools/MissionStudio"))
+        try:
+            from quest_assets import Asset, apply_drop, change_stack, reorder_answer
+            from quest_flow import example_flow, package_source
+            from campaign import empty_board, place_missing
+            from mission_source import build_draft, new_mission, new_package
+        finally:
+            sys.path.pop(0)
+        source, board = new_package(), empty_board()
+        graph = new_mission(source, "A messenger", "Test")
+        code = graph["mission"]
+        place_missing(board, source)
+        flow = board["cards"][code]["flow"] = example_flow()
+        ns, wires = flow["nodes"], flow["wires"]
+        talk = wires["start"]["next"]
+        first, second = wires[talk].values()
+        reward, other_reward = wires[first]["next"], wires[second]["next"]
+        initial_answers = ns[talk]["answers"].copy()
+        reorder_answer(flow, talk, "A", "B")
+        self.assertEqual(ns[talk]["answers"], initial_answers[::-1])
+        self.assertEqual(wires[talk], {"A":second,"B":first})
+        text = apply_drop(flow, Asset("phrase","Notice",line="Welcome"), (60,20), edge=("start","next"))
+        self.assertEqual(wires[text], {"next":talk})
+        self.assertEqual(wires["start"], {"next":text})
+        apply_drop(flow, Asset("npc","Merchant","npc.9003"), (0,0), text)
+        apply_drop(flow, Asset("item","Pearl","item.6.117.0",count=3), (0,0), reward)
+        apply_drop(flow, Asset("item","Pearl","item.6.117.0",count=2), (0,0), reward)
+        apply_drop(flow, Asset("stack","Pearl","item.6.117.0",count=5,origin=reward), (0,0), other_reward)
+        before = copy.deepcopy(ns[other_reward]["bundle"])
+        with self.assertRaises(ValueError):
+            change_stack(ns[other_reward]["bundle"],"item.6.117.0",50000)
+        self.assertEqual(before,ns[other_reward]["bundle"])
+        apply_drop(flow, Asset("enemy","Wolf","mob.103"), (0,0), first)
+        final = apply_drop(flow, Asset("npc","Guard","npc.20374"),(740,30),"end")
+        self.assertEqual(wires[other_reward],{"next":final})
+        self.assertEqual(wires[reward],{"next":final})
+        self.assertEqual(wires[final],{"next":"end"})
+        with tempfile.TemporaryDirectory() as directory:
+            dest=build_draft(ARGS.compiler,source,{code:[9003,1]},Path(directory),board)
+            pkg=json.loads((dest / "forras.json").read_bytes())
+            native=pkg["missions"][0]
+            self.assertEqual(native["choices"][text+".reply"],["OK"])
+            self.assertIn("Merchant · Welcome",pkg["presentation"]["locales"]["hu"].values())
+            self.assertEqual(native["rewards"][other_reward]["typed_items"],[dict(category=6,local=117,level=0,count=5)])
+            self.assertFalse(native["rewards"][reward].get("typed_items"))
+            self.assertEqual(package_source(pkg,board),pkg)
+
     def test_quest_graph_compiles_branches_shared_continuation_and_editor_sidecar(self):
         sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "SRC/Tools/MissionStudio"))
         try:

@@ -143,8 +143,13 @@ class Studio:
                                ("Mintaküldetés", self.flow_example), ("Korona mintaterv", self.example),
                                ("Ellenőrzés és csomagolás…", self.build)):
             button(toolbar, label, command).pack(side="left", padx=3)
-        self.tabs = ttk.Notebook(root)
-        self.tabs.pack(fill="both", expand=True, padx=8, pady=(5, 0))
+        workspace = tk.Frame(root, bg=BG)
+        workspace.pack(fill="both", expand=True, padx=8, pady=(5, 0))
+        self.dock = tk.Frame(workspace, bg="#17222c", width=215)
+        self.dock.pack(side="left", fill="y", padx=(0, 3))
+        self.dock.pack_propagate(False)
+        self.tabs = ttk.Notebook(workspace)
+        self.tabs.pack(side="left", fill="both", expand=True)
         self.campaign = CampaignView(self.tabs, self)
         style = ttk.Style(root)
         style.theme_use("clam")

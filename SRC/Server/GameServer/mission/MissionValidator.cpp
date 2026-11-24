@@ -178,8 +178,8 @@ struct DefinitionCompiler
             }
             for (const auto &[key, values] : source.choices)
             {
-                Need(IsIdentifier(key) && values.size() >= 2 && values.size() <= Limits::ChoiceValues,
-                     "choices/" + key, "choice needs a valid key and 2..32 options");
+                Need(IsIdentifier(key) && !values.empty() && values.size() <= Limits::ChoiceValues,
+                     "choices/" + key, "dialogue needs a valid key and 1..32 options");
                 std::set<std::string> unique;
                 for (const auto &value : values)
                     Need(IsIdentifier(value) && unique.insert(value).second, "choices/" + key,
