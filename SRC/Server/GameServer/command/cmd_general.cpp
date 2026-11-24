@@ -63,6 +63,7 @@
 #include "daily_reward.h"
 #include <string_view>
 #include <charconv>
+#include <unordered_map>
 
 namespace {
 template <typename T>
@@ -2459,46 +2460,45 @@ ACMD(do_attr_transfer)
 
 ACMD(do_inventory)
 {
-	int	index = 0;
-	int	count		= 1;
-
-	char arg1[256];
-	char arg2[256];
-
-	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
-
-	if (!*arg1) {
-		return;
-	}
-
-	if (!*arg2)
-	{
-		index = 0;
-		str_to_number(count, arg1);
-	}
-	else
-	{
-		str_to_number(index, arg1); index = MIN(index, INVENTORY_MAX_NUM);
-		str_to_number(count, arg2); count = MIN(count, INVENTORY_MAX_NUM);
-	}
-
-	for (int i = 0; i < count; ++i)
-	{
-		if (index >= INVENTORY_MAX_NUM)
-			break;
-
-		const entt::entity item = ItemSystem::GetInventoryItem(
-			character, index);
 #ifdef TEXTS_IMPROVEMENT
-		if (ItemSystem::IsValidItem(item)) {
-			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 727,
-				"%d#%s", index, ItemSystem::GetItemName(item));
-		} else {
-			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 728, "%d", index);
-		}
+    namespace item = auriga::item;
+    char first[256], second[256];
+    two_arguments(argument, first, sizeof(first), second, sizeof(second));
+    std::uint32_t index = 0, count = 0;
+    if (*second) {
+        if (!ParseCommandNumber(first, index) || !ParseCommandNumber(second, count)) return;
+    } else if (!ParseCommandNumber(first, count)) {
+        return;
+    }
+
+    const auto* inventory = g_registry.try_get<ecs::TypedItems>(character);
+    const auto catalog = item::runtime::CurrentCatalog();
+    if (!inventory || !catalog) return;
+    const auto& state = inventory->state;
+    const auto bag = std::ranges::find_if(state.storages, [&](const auto& layout) {
+        return layout.storage == item::ItemStorage{state.fence.owner, item::ItemStorageKind::Inventory, 1};
+    });
+    if (bag == state.storages.end()) return;
+    const auto capacity = std::uint64_t{bag->columns} * bag->rows * bag->pages;
+    const auto end = std::min(capacity, std::uint64_t{index} + std::min<std::uint32_t>(count, INVENTORY_MAX_NUM));
+    std::unordered_map<std::uint32_t, std::string_view> names;
+    for (const auto& instance : state.items) {
+        const auto& p = instance.placement;
+        if (instance.destroyed || instance.owner != state.fence.owner || !p ||
+            p->kind != bag->storage.kind || p->storageId != bag->storage.id || p->anchor < index || p->anchor >= end)
+            continue;
+        if (const auto* def = catalog->Find(instance.key))
+            names.emplace(p->anchor, def->base.nameKey);
+    }
+    for (std::uint64_t cell = index; cell < end; ++cell) {
+        const auto slot = static_cast<std::uint32_t>(cell);
+        if (auto it = names.find(slot); it != names.end())
+            ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 727, "%u#%.*s", slot,
+                                     static_cast<int>(it->second.size()), it->second.data());
+        else
+            ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 728, "%u", slot);
+    }
 #endif
-		++index;
-	}
 }
 
 //gift notify quest command
