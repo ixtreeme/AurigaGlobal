@@ -41,8 +41,6 @@ uint32_t g_BuySellTimeLimitValue = 0;
 bool g_NoMountAtGuildWar = false;
 bool g_NoPotionsOnPVP = false;
 #endif
-extern bool DropEvent_CharStone_SetValue(const std::string& name, int value);
-extern bool DropEvent_RefineBox_SetValue (const std::string& name, int value);
 
 namespace {
 std::vector<entt::entity> SnapshotQuestPlayers()
@@ -1378,8 +1376,6 @@ namespace quest
 		// Numeric gameplay settings remain bounded ints; arbitrary flags retain
 		// their full value in storage and on the DB link.
 		const int setting = static_cast<int>(std::clamp<int64_t>(value, INT32_MIN, INT32_MAX));
-		static const char*	DROPEVENT_CHARTONE_NAME		= "drop_char_stone";
-		static const int	DROPEVENT_CHARTONE_NAME_LEN = strlen(DROPEVENT_CHARTONE_NAME);
 
 		const int64_t prev_value = m_mapEventFlag[name];
 
@@ -1539,14 +1535,6 @@ namespace quest
 					}
 				}
 			}
-		}
-		else if (name.compare(0, DROPEVENT_CHARTONE_NAME_LEN, DROPEVENT_CHARTONE_NAME)== 0)
-		{
-			DropEvent_CharStone_SetValue(name, setting);
-		}
-		else if (name.compare(0, strlen("refine_box"), "refine_box")== 0)
-		{
-			DropEvent_RefineBox_SetValue(name, setting);
 		}
 		else if (name == "gold_drop_limit_time")
 		{

@@ -88,7 +88,6 @@ bool ParseGMNumber(std::string_view text, T& value)
 }
 }
 
-extern bool DropEvent_RefineBox_SetValue(const std::string& name, int value);
 
 // ADD_COMMAND_SLOW_STUN
 enum
