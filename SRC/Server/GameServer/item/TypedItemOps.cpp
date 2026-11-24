@@ -531,13 +531,12 @@ bool UtilityAdmitted(entt::entity e)
 {
     if(CombatSystem::IsDead(e) || !InventorySystem::CanHandleItems(e) || g_registry.all_of<ecs::TypedItemBusy>(e) || ecs::SocialSystem::HasExchange(e) || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e) || ecs::SocialSystem::GetMyShop(e)!=entt::null || ecs::SocialSystem::GetShopOwner(e)!=entt::null)return false;
     const auto* q=g_registry.try_get<ecs::QuestPCState>(e);const auto* f=g_registry.try_get<ecs::StatusFlags>(e);
-    return q && q->pc && !q->pc->IsRunning() && (!f || (!f->isObserverMode && !f->isStunned));
+    return (!q || !q->pc || !q->pc->IsRunning()) && (!f || (!f->isObserverMode && !f->isStunned));
 }
 bool TryUseTypedQuestScript(entt::entity character, const items::PersistentItem& source, const items::ItemCatalog& catalog)
 {
 	const auto* entry = catalog.Find(source.key);
 	const auto* script = entry ? std::get_if<items::ItemQuestRow>(&entry->category) : nullptr;
-	auto& quests = quest::CQuestManager::instance();
 	if (entry && !entry->base.retired && entry->base.contentCode == items::RuneCooldownStoneCode)
 	{
 		if (UtilityAdmitted(character))
@@ -546,13 +545,19 @@ bool TryUseTypedQuestScript(entt::entity character, const items::PersistentItem&
 			Tell(character, "A Zeusz köve most nem használható.");
 		return true;
 	}
-	if (!entry || !quests.HasTypedItemUse(entry->base.contentCode))
+	if (!entry)
+		return false;
+	// Native utility groups (including the teleport ring) work without a Lua registry.
+	// Authored timed pet seals still use typed_use while their content is migrated.
+	if (script && !script->groupCode.empty() && !items::FindTimedQuestPetSealClock(catalog, source.key))
+		return false;
+	auto& quests = quest::CQuestManager::instance();
+	if (!quests.HasTypedItemUse(entry->base.contentCode))
 		return false;
 	// A few original dungeon puzzle props were catalogued as accessories.
 	const bool dungeonProp = !script && source.key.Category() == items::ItemCategory::Accessory &&
 		g_registry.valid(CDungeonManager::instance().FindByMapIndex(ecs::PlayerRuntime::GetMapIndex(character)));
-	if (!dungeonProp && (!script || script->dispatch != items::QuestItemDispatch::FirstHandler ||
-		(!script->groupCode.empty() && !items::FindTimedQuestPetSealClock(catalog, source.key))))
+	if (!dungeonProp && (!script || script->dispatch != items::QuestItemDispatch::FirstHandler))
 		return false;
 
 	const auto* policy = catalog.FindUsePolicy(entry->base.usePolicy);
