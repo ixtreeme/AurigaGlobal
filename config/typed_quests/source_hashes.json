@@ -14,5 +14,9 @@
     "original_sha256": "3db4d45fc2b18143ab81f9d589c9ac10d05424c503d55d3f3df5ef159693e4aa"
   },
   "miki_event.lua": "38efa0c00b292b5733bafb0be96666409cdd77ca947e43a45f768ff1e8dffa2e",
+  "pda_perf_quest.lua": {
+    "resource": "pda_perfetta/pda_perf_quest.lua",
+    "original_sha256": "8d9a0f15ea4bace66bacfea7a7332ac5262d79d54d6d6e0db5c240dc14f74b51"
+  },
   "tanaka.lua": "9563336e97caa347148c320a6387962127b7908ebeadad358fe37a350c7420a4"
 }
