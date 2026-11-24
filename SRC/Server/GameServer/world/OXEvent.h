@@ -64,13 +64,6 @@ class COXEventManager : public singleton<COXEventManager>
 		bool ShowQuizList(entt::entity character);
 
 		bool Quiz(unsigned char level, int timelimit);
-		bool GiveItemToAttender(uint32_t dwItemVnum,
-#ifdef ENABLE_NEW_STACK_LIMIT
-		int 
-#else
-		uint8_t 
-#endif
-		count);
 		bool QueueTypedReward(entt::entity issuer,std::string_view contentCode,std::uint16_t refinement,std::uint32_t count);
 
 		bool CheckAnswer(bool answer);

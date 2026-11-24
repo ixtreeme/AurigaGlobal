@@ -17,7 +17,6 @@
 #include "MovementSystem.hpp"
 #include "ViewSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
-#include "AcceSystem.hpp"
 #include "AffectSystem.hpp"
 #include "PointSystem.hpp"
 #include "InventorySystem.hpp"
@@ -2703,10 +2702,6 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 	if (ecs::SessionSystem::IsCubeOpen(victim))
 		CloseTypedCraft(victim);
 
-#ifdef ENABLE_ACCE_SYSTEM
-	if (ecs::PlayerRuntime::IsPC(victim))
-		ecs::AcceSystem::Close(victim);
-#endif
 
 	if (ecs::PlayerRuntime::IsPC(victim))
 	{
@@ -2968,9 +2963,6 @@ void DeathPenalty(entt::entity e, uint8_t bTown)
 	CloseTypedCraft(e);
 #ifdef __ATTR_TRANSFER_SYSTEM__
 	AttrTransfer_close(e);
-#endif
-#ifdef ENABLE_ACCE_SYSTEM
-	ecs::AcceSystem::Close(e);
 #endif
 
 	if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(e)) == true)

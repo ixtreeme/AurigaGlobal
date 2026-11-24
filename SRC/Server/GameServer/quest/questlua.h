@@ -14,7 +14,6 @@ namespace quest
 	extern void RegisterAffectFunctionTable();
 	extern void RegisterBuildingFunctionTable();
 	extern void RegisterMarriageFunctionTable();
-	extern void RegisterITEMFunctionTable();
 	extern void RegisterDungeonFunctionTable();
 	extern void RegisterQuestFunctionTable();
 	extern void RegisterPartyFunctionTable();

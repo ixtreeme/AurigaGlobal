@@ -502,40 +502,6 @@ namespace quest
 	}
 	// END_OF_LUA_ADD_GOTO_INFO
 
-	// REFINE_PICK
-	ALUA(_refine_pick)
-	{
-		// migrated from CHARACTER::refine_pick
-		// DUAL-PATH: legacy only during migration window
-		uint8_t bCell = (uint8_t) lua_tonumber(L,-1);
-
-		CQuestManager& q = CQuestManager::instance();
-
-		const entt::entity chEntity = q.GetCurrentPCEntity();
-		const entt::entity item = ItemSystem::GetInventoryItem(chEntity, bCell);
-
-		int ret = mining::RealRefinePick(chEntity, item);
-		lua_pushnumber(L, ret);
-		return 1;
-	}
-	// END_OF_REFINE_PICK
-
-	ALUA(_fish_real_refine_rod)
-	{
-		// migrated from CHARACTER::fish_real_refine_rod
-		// DUAL-PATH: legacy only during migration window
-		uint8_t bCell = (uint8_t) lua_tonumber(L,-1);
-
-		CQuestManager& q = CQuestManager::instance();
-
-		const entt::entity chEntity = q.GetCurrentPCEntity();
-		const entt::entity item = ItemSystem::GetInventoryItem(chEntity, bCell);
-
-		int ret = ActivitySystem::RefineFishingRod(chEntity, item);
-		lua_pushnumber(L, ret);
-		return 1;
-	}
-
 	ALUA(_give_char_privilege)
 	{
 		// migrated from CHARACTER::give_char_privilege
@@ -1803,11 +1769,9 @@ namespace quest
 			// END_OF_LUA_ADD_GOTO_INFO
 
 			// REFINE_PICK
-			{	"__refine_pick",			_refine_pick			},
 			// END_OF_REFINE_PICK
 
 			{	"add_ox_quiz",					_add_ox_quiz					},
-			{	"__fish_real_refine_rod",		_fish_real_refine_rod			}, // XXX
 			{	"__give_char_priv",				_give_char_privilege			},
 			{	"__give_empire_priv",			_give_empire_privilege			},
 			{	"__give_guild_priv",			_give_guild_privilege			},

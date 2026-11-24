@@ -13,18 +13,6 @@
 #include "char_manager.h"
 #include "desc.h"
 
-void CInputDB::MyshopPricelistRes(LPDESC d, const TPacketMyshopPricelistHeader* p )
-{
-	const entt::entity chEntity = d ? d->GetEntity() : entt::null;
-
-	if (!ecs::IsCharacter(chEntity))
-		return;
-
-	LOG_INFO("RecvMyshopPricelistRes name[{}]", ecs::PlayerRuntime::GetName(chEntity).data());
-	ecs::SocialSystem::UseSilkBotaryReal(chEntity, p);
-
-}
-
 #ifdef ENABLE_ITEMSHOP
 void CInputDB::ItemShop(const char* data)
 {

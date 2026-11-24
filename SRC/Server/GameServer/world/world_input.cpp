@@ -38,7 +38,6 @@
 #include "../ecs/systems/StatSystem.hpp"
 #include "desc_client.h"
 #include "gm.h"
-#include "../ecs/systems/AcceSystem.hpp"
 
 void CInputMain::Warp(entt::entity character, const char * pcData)
 {
@@ -53,9 +52,6 @@ void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* p
 {
 // migrated from CHARACTER handler
 	if (ecs::PlayerRuntime::IsHack(character) || ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SessionSystem::IsCubeOpen(character) || ecs::SocialSystem::GetShop(character) != entt::null || ecs::SocialSystem::GetMyShop(character) != entt::null
-#ifdef ENABLE_ACCE_SYSTEM
-		|| ecs::AcceSystem::IsOpen(character)
-#endif
 		)
 	{
 #ifdef TEXTS_IMPROVEMENT

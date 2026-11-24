@@ -1510,7 +1510,7 @@ void TransferWindowAndCommands()
 
 void TransferContextGuards()
 {
-    for (int scenario = 0; scenario < 16; ++scenario)
+    for (int scenario = 0; scenario < 15; ++scenario)
     {
         TransferFixture f;
         f.Select();
@@ -1534,10 +1534,9 @@ void TransferContextGuards()
                 g_registry.emplace<ecs::ExchangeRef>(f.owner).session = session;
                 break;
             }
-            case 12: g_registry.emplace<ecs::AcceWindowComponent>(f.owner).absorptionOpen = true; break;
-            case 13: location.x = INT_MIN; g_registry.get<TransferActor>(f.npc).x = INT_MAX; break;
-            case 14: g_registry.emplace<ecs::ShopState>(f.owner).myShop = static_cast<entt::entity>(1); break;
-            case 15: g_registry.emplace<ecs::CubeWindowComponent>(f.owner).npc = f.npc; break;
+            case 12: location.x = INT_MIN; g_registry.get<TransferActor>(f.npc).x = INT_MAX; break;
+            case 13: g_registry.emplace<ecs::ShopState>(f.owner).myShop = static_cast<entt::entity>(1); break;
+            case 14: g_registry.emplace<ecs::CubeWindowComponent>(f.owner).npc = f.npc; break;
         }
         Check(!AttrTransfer_make(f.owner) && payments == 0, "blocked transfer context accepted");
         f.Unchanged();

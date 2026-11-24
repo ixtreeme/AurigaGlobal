@@ -61,7 +61,6 @@
 #include "target.h"
 #include "marriage.h"
 #include "wedding.h"
-#include "fishing.h"
 #include "locale_service.h"
 #include "arena.h"
 #include "OXEvent.h"
@@ -513,7 +512,6 @@ int main(int argc, char **argv)
 
 	MessengerManager::instance().Initialize();
 	CGuildManager::instance().Initialize();
-	fishing::Initialize();
 	OXEvent_manager.Initialize();
 	Blend_Item_init();
 

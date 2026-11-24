@@ -34,7 +34,6 @@
 #include "guild_manager.h"
 #include "p2p.h"
 #include "buffer_manager.h"
-#include "fishing.h"
 #include "mining.h"
 #include "questmanager.h"
 #include "vector.h"
@@ -841,81 +840,6 @@ ACMD(do_purge)
 		sectree->ForEachAround(func);
 	else
 		LOG_ERROR("PURGE_ERROR.NULL_SECTREE(mapIndex={}, pos=({}, {})", ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character));
-}
-
-#define ENABLE_CMD_IPURGE_EX
-ACMD(do_item_purge)
-{
-	if (!ecs::PlayerRuntime::IsPC(character))
-		return;
-    char arg[256];
-    one_argument(argument, arg, sizeof(arg));
-    const std::string_view window(arg);
-    const bool all = window == "all";
-    const bool inventory = window == "inventory" || window == "inv";
-    const bool equipment = window == "equipment" || window == "equip";
-    const bool belt = window == "belt";
-#ifdef ENABLE_EXTRA_INVENTORY
-    const bool extra = window == "extra";
-#else
-    const bool extra = false;
-#endif
-    if (!(all || inventory || equipment || belt || extra))
-    {
-        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO,
-            "Usage: ipurge <all|inventory|equipment|belt|extra>");
-        return;
-    }
-#ifdef __NEWPET_SYSTEM__
-    if (NewPetSystem::CountSummoned(character) > 0)
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 807, "");
-#endif
-        return;
-    }
-#endif
-
-    struct Entry { entt::entity item; TItemPos position; uint16_t quickslotType; };
-    std::vector<Entry> pending;
-    std::unordered_set<entt::entity> seen;
-    const auto collect = [&](uint8_t type, int first, int end, uint16_t quickslotType)
-    {
-        for (int cell = first; cell < end; ++cell)
-        {
-            const TItemPos position(type, cell);
-            const auto item = ItemSystem::GetItem(character, position);
-            if (ItemSystem::IsValidItem(item) && ItemSystem::GetItemOwner(item) == character
-                && seen.insert(item).second)
-                pending.push_back({item, position, quickslotType});
-        }
-    };
-    if (all) collect(INVENTORY, 0, INVENTORY_AND_EQUIP_SLOT_MAX, QUICKSLOT_TYPE_ITEM);
-    else if (inventory) collect(INVENTORY, 0, INVENTORY_MAX_NUM, QUICKSLOT_TYPE_ITEM);
-    else if (equipment) collect(INVENTORY, INVENTORY_MAX_NUM, INVENTORY_MAX_NUM + WEAR_MAX_NUM, QUICKSLOT_TYPE_ITEM);
-    else if (belt) collect(INVENTORY, BELT_INVENTORY_SLOT_START,
-        BELT_INVENTORY_SLOT_START + BELT_INVENTORY_SLOT_COUNT, QUICKSLOT_TYPE_ITEM);
-#ifdef ENABLE_EXTRA_INVENTORY
-    if (all || extra) collect(EXTRA_INVENTORY, 0, EXTRA_INVENTORY_MAX_NUM, QUICKSLOT_TYPE_ITEM_EXTRA);
-#endif
-
-    // No inventory iterators/pointers survive deletion callbacks. An item moved
-    // into a selected slot after the snapshot does not belong to this command.
-    for (const auto& entry : pending)
-    {
-        if (!ecs::PlayerRuntime::IsPC(character))
-            return;
-        if (!ItemSystem::IsValidItem(entry.item) || ItemSystem::GetItemOwner(entry.item) != character
-            || ItemSystem::GetItem(character, entry.position) != entry.item)
-            continue;
-        if (!ItemSystem::DestroyItemEntityEcs(entry.item, "PURGE"))
-            continue;
-        if (!ecs::PlayerRuntime::IsPC(character))
-            return;
-        if (entry.quickslotType != QUICKSLOT_TYPE_NONE
-            && ItemSystem::GetItem(character, entry.position) == entt::null)
-            InventorySystem::SyncQuickslot(character, entry.quickslotType, entry.position.cell, 255);
-    }
 }
 
 ACMD(do_state)
@@ -1752,78 +1676,9 @@ ACMD(do_greset)
 		ecs::SocialSystem::GetGuild(character)->Reset();
 }
 
-// REFINE_ROD_HACK_BUG_FIX
-ACMD(do_refine_rod)
-{
-	char arg1[256];
-	one_argument(argument, arg1, sizeof(arg1));
-
-	uint8_t cell = 0;
-	str_to_number(cell, arg1);
-	const entt::entity owner = character;
-	const entt::entity item = ItemSystem::GetInventoryItem(owner, cell);
-	if (ItemSystem::IsValidItem(item))
-		ActivitySystem::RefineFishingRod(owner, item);
-}
-// END_OF_REFINE_ROD_HACK_BUG_FIX
-
-// REFINE_PICK
-ACMD(do_refine_pick)
-{
-	char arg1[256];
-	one_argument(argument, arg1, sizeof(arg1));
-
-	uint8_t cell = 0;
-	str_to_number(cell, arg1);
-	const entt::entity item = ItemSystem::GetInventoryItem(character, cell);
-	if (ItemSystem::IsValidItem(item))
-	{
-		mining::CHEAT_MAX_PICK(character, item);
-		mining::RealRefinePick(character, item);
-	}
-}
-
-ACMD(do_max_pick)
-{
-	char arg1[256];
-	one_argument(argument, arg1, sizeof(arg1));
-
-	uint8_t cell = 0;
-	str_to_number(cell, arg1);
-	const entt::entity item = ItemSystem::GetInventoryItem(character, cell);
-	if (ItemSystem::IsValidItem(item))
-	{
-		mining::CHEAT_MAX_PICK(character, item);
-	}
-}
-// END_OF_REFINE_PICK
 
 
-ACMD(do_fishing_simul)
-{
-	char arg1[256];
-	char arg2[256];
-	char arg3[256];
-	argument = one_argument(argument, arg1, sizeof(arg1));
-	two_arguments(argument, arg2, sizeof(arg2), arg3, sizeof(arg3));
 
-	int count = 1000;
-	int prob_idx = 0;
-	int level = 100;
-
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Usage: fishing_simul <level> <prob index> <count>");
-
-	if (*arg1)
-		str_to_number(level, arg1);
-
-	if (*arg2)
-		str_to_number(prob_idx, arg2);
-
-	if (*arg3)
-		str_to_number(count, arg3);
-
-	fishing::Simulation(level, count, prob_idx, character);
-}
 
 ACMD(do_invisibility)
 {
@@ -1942,35 +1797,6 @@ ACMD(do_qf)
 	{
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "setting quest state flag failed");
 	}
-}
-
-ACMD(do_book)
-{
-	if (!ecs::PlayerRuntime::IsValid(character))
-		return;
-	char arg1[256];
-
-	one_argument(argument, arg1, sizeof(arg1));
-
-	CSkillProto * pkProto;
-
-	if (isnhdigit(*arg1))
-	{
-		uint32_t vnum = 0;
-		str_to_number(vnum, arg1);
-		pkProto = CSkillManager::instance().Get(vnum);
-	}
-	else
-		pkProto = CSkillManager::instance().Get(arg1);
-
-	if (!pkProto)
-	{
-		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "There is no such a skill.");
-		return;
-	}
-
-	const entt::entity item = ItemSystem::AutoGiveItemEcs(character, 50300);
-	ItemSystem::SetItemSocket(item, 0, pkProto->dwVnum);
 }
 
 ACMD(do_setskillother)
@@ -2133,10 +1959,6 @@ ACMD(do_reload)
                 const bool okay = quest::CQuestManager::instance().Reload(&error);
                 ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s", okay ? "Quest reload complete." : error.c_str());
 			}
-				break;
-
-			case 'f':
-				fishing::Initialize();
 				break;
 
 				//RELOAD_ADMIN
@@ -2518,48 +2340,6 @@ ACMD(do_polymorph)
 	}
 }
 
-ACMD(do_polymorph_item)
-{
-	if (!ecs::PlayerRuntime::IsPC(character))
-		return;
-	char arg1[256];
-
-	one_argument(argument, arg1, sizeof(arg1));
-
-	if (*arg1)
-	{
-		uint32_t dwVnum = 0;
-		str_to_number(dwVnum, arg1);
-
-		const entt::entity item = ITEM_MANAGER::instance().CreateItem(70104, 1, 0, true);
-		if (ItemSystem::IsValidItem(item))
-		{
-			ItemSystem::SetItemSocket(item, 0, dwVnum);
-			int iEmptyPos = ItemSystem::GetEmptyInventoryPositionEcs(character, item);
-
-			if (iEmptyPos != -1)
-			{
-				InventorySystem::AddToCharacter(item, character, TItemPos(INVENTORY, iEmptyPos));
-				LogManager::instance().ItemLogEntity(character, item, "GM", ItemSystem::GetItemName(item));
-			}
-			else
-			{
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 366, "");
-#endif
-			}
-		}
-		else
-		{
-			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "#%d item not exist by that vnum.", 70103);
-		}
-		//AffectSystem::SetPolymorph(ch->GetEntityHandle(), dwVnum, bMaintainStat);
-	}
-}
-
 ACMD(do_priv_empire)
 {
 	char arg1[256] = {0};
@@ -2677,47 +2457,6 @@ ACMD(do_mount_test)
 ACMD(do_observer)
 {
 	ecs::PlayerRuntime::SetObserverMode(character, !ecs::PlayerRuntime::IsObserverMode(character));
-}
-
-ACMD(do_socket_item)
-{
-	if (!ecs::PlayerRuntime::IsValid(character))
-		return;
-	char arg1[256], arg2[256];
-	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
-
-	if (*arg1)
-	{
-		uint32_t dwVnum = 0;
-		str_to_number(dwVnum, arg1);
-
-		int iSocketCount = 0;
-		str_to_number(iSocketCount, arg2);
-
-		if (!iSocketCount || iSocketCount >= ITEM_SOCKET_MAX_NUM)
-			iSocketCount = 3;
-
-		if (!dwVnum)
-		{
-			if (!ITEM_MANAGER::instance().GetVnum(arg1, dwVnum))
-			{
-				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "#%d item not exist by that vnum.", dwVnum);
-				return;
-			}
-		}
-
-		const entt::entity item = ItemSystem::AutoGiveItemEcs(character, dwVnum);
-
-		if (ItemSystem::IsValidItem(item))
-		{
-			for (int i = 0; i < iSocketCount; ++i)
-				ItemSystem::SetItemSocket(item, i, 1);
-		}
-		else
-		{
-			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "#%d cannot create item.", dwVnum);
-		}
-	}
 }
 
 // BLOCK_CHAT
@@ -3313,53 +3052,6 @@ ACMD(do_affect_remove)
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Not affected by that type and point.");
 }
 
-ACMD(do_change_attr)
-{
-	const entt::entity weapon = ItemSystem::GetWearItem(
-		character, WEAR_WEAPON);
-	if (ItemSystem::IsValidItem(weapon))
-		ItemSystem::ChangeItemAttributeEcs(weapon);
-}
-
-ACMD(do_add_attr)
-{
-	const entt::entity weapon = ItemSystem::GetWearItem(
-		character, WEAR_WEAPON);
-	if (ItemSystem::IsValidItem(weapon))
-		ItemSystem::AddItemAttributeEcs(weapon);
-}
-
-ACMD(do_add_socket)
-{
-	const entt::entity weapon = ItemSystem::GetWearItem(
-		character, WEAR_WEAPON);
-	if (!ItemSystem::IsValidItem(weapon))
-		return;
-	for (int socket = 0; socket < ITEM_SOCKET_MAX_NUM; ++socket) {
-		if (ItemSystem::GetItemSocket(weapon, socket) == 0) {
-			ItemSystem::SetItemSocketEcs(weapon, socket, 1);
-			break;
-		}
-	}
-}
-
-#ifdef ENABLE_NEWSTUFF
-ACMD(do_change_rare_attr)
-{
-	const entt::entity weapon = ItemSystem::GetWearItem(
-		character, WEAR_WEAPON);
-	if (ItemSystem::IsValidItem(weapon))
-		ItemSystem::ChangeItemRareAttributeEcs(weapon);
-}
-
-ACMD(do_add_rare_attr)
-{
-	const entt::entity weapon = ItemSystem::GetWearItem(
-		character, WEAR_WEAPON);
-	if (ItemSystem::IsValidItem(weapon))
-		ItemSystem::AddItemRareAttributeEcs(weapon);
-}
-#endif
 
 ACMD(do_show_arena_list)
 {
@@ -3719,11 +3411,6 @@ ACMD(do_clear_land)
 	building::CManager::instance().ClearLand(pLand->GetID());
 }
 
-ACMD(do_special_item)
-{
-    ITEM_MANAGER::instance().ConvSpecialDropItemFile();
-}
-
 ACMD(do_set_stat)
 {
 	char szName [256];
@@ -3842,54 +3529,12 @@ ACMD(do_set_stat)
 	}
 }
 
-ACMD(do_get_item_id_list)
-{
-	const entt::entity owner = character;
-	for (int i = 0; i < INVENTORY_AND_EQUIP_SLOT_MAX; i++)
-	{
-		const entt::entity item = ItemSystem::GetInventoryItem(owner, i);
-		if (item != entt::null)
-			ecs::ChatSystem::Send(owner, CHAT_TYPE_INFO, "cell : %d, name : %s, id : %d", ItemSystem::GetItemCell(item), ItemSystem::GetItemName(item), ItemSystem::GetItemID(item));
-	}
-}
-
-ACMD(do_set_socket)
-{
-	char arg1 [256];
-	char arg2 [256];
-	char arg3 [256];
-
-	one_argument (two_arguments (argument, arg1, sizeof (arg1), arg2, sizeof(arg2)), arg3, sizeof (arg3));
-
-	uint32_t item_id = 0;
-	int socket_num = 0, value = 0;
-	if (!ParseGMNumber(arg1, item_id) || !ParseGMNumber(arg2, socket_num) || !ParseGMNumber(arg3, value))
-		return;
-
-	if (socket_num < 0 || socket_num >= ITEM_SOCKET_MAX_NUM)
-		return;
-	const auto item = ItemSystem::FindItemByID(item_id);
-	if (ItemSystem::IsValidItem(item))
-		ItemSystem::SetItemSocket(item, socket_num, value);
-}
-
 ACMD (do_can_dead)
 {
 	if (subcmd)
 		CombatSystem::SetUndying(character, true);
 	else
 		CombatSystem::SetUndying(character, false);
-}
-
-ACMD (do_full_set)
-{
-	extern ACMD(do_all_skill_master);
-	do_all_skill_master(character, nullptr, 0, 0);
-	extern ACMD(do_item_full_set);
-	do_item_full_set(character, nullptr, 0, 0);
-	extern ACMD(do_attr_full_set);
-	do_attr_full_set(character, nullptr, 0, 0);
-
 }
 
 ACMD (do_all_skill_master)
@@ -3916,397 +3561,6 @@ ACMD (do_all_skill_master)
 	}
 	ecs::PointSystem::Compute(character);
 	SkillSystem::SendSkillLevelPacket(character);
-}
-
-ACMD (do_item_full_set)
-{
-	if (!ecs::PlayerRuntime::IsPC(character))
-		return;
-	uint8_t job = ecs::PlayerRuntime::GetJob(character);
-	const entt::entity owner = character;
-	for (int i = 0; i < 6; i++)
-	{
-		const entt::entity equippedItem = ItemSystem::GetWearItem(owner, i);
-		if (equippedItem != entt::null)
-			ItemSystem::UnequipItemEcs(owner, equippedItem);
-	}
-	const entt::entity shield = ItemSystem::GetWearItem(owner, WEAR_SHIELD);
-	if (shield != entt::null)
-		ItemSystem::UnequipItemEcs(owner, shield);
-
-	entt::entity item = entt::null;
-	switch (job)
-	{
-	case JOB_SURA:
-		{
-
-			item = ITEM_MANAGER::instance().CreateItem(19712);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1733);//pajzs
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1773 );//cipi
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(399 );//kard
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1713 );//sisak
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1753 );//karos
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1813 );//fli
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1793 );//nyaki
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-
-
-			item = ITEM_MANAGER::instance().CreateItem(85153);//SZARNY
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-
-			item = ITEM_MANAGER::instance().CreateItem(88211);//EFFECT FEGYO
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(88213);//EFFETC VERT
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-
-			item = ITEM_MANAGER::instance().CreateItem(10810);//tali
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-		}
-		break;
-	case JOB_WARRIOR:
-		{
-
-			item = ITEM_MANAGER::instance().CreateItem(19312);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1733);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1773 );
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(3269);//2kezes
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1713);//sisak
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1753 );
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1813 );
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1793 );
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(399);//kard
-			item = ITEM_MANAGER::instance().CreateItem(85153);//SZARNY
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-
-			item = ITEM_MANAGER::instance().CreateItem(88211);//EFFECT FEGYO
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(88213);//EFFETC VERT
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-
-			item = ITEM_MANAGER::instance().CreateItem(10810);//tali
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-		}
-		break;
-	case JOB_SHAMAN:
-		{
-
-			item = ITEM_MANAGER::instance().CreateItem(19912);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1733);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1773 );
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(7349);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1713);//sisak
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1753 );
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1813 );
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1793 );
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(5209);
-
-			item = ITEM_MANAGER::instance().CreateItem(85153);//SZARNY
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-
-			item = ITEM_MANAGER::instance().CreateItem(88211);//EFFECT FEGYO
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(88213);//EFFETC VERT
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-
-			item = ITEM_MANAGER::instance().CreateItem(10810);//tali
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-		}
-		break;
-	case JOB_ASSASSIN:
-		{
-
-			item = ITEM_MANAGER::instance().CreateItem(19512);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1733);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1773 );
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1229);//tr
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1713);//sisak
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1753);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1813);//fli
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1793);//nyaki
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-
-			item = ITEM_MANAGER::instance().CreateItem(2249);//j
-
-			item = ITEM_MANAGER::instance().CreateItem(85153);//SZARNY
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-
-			item = ITEM_MANAGER::instance().CreateItem(88211);//EFFECT FEGYO
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(88213);//EFFETC VERT
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-
-			item = ITEM_MANAGER::instance().CreateItem(10810);//tali
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-		}
-		break;
-	}
-}
-
-namespace {
-struct FullAttributeSpec {
-	uint8_t type;
-	int16_t value;
-};
-
-void ApplyFullAttributes(entt::entity owner, uint8_t wearSlot,
-	std::initializer_list<FullAttributeSpec> attributes)
-{
-	const entt::entity item = ItemSystem::GetWearItem(owner, wearSlot);
-	if (!ItemSystem::IsValidItem(item))
-		return;
-
-	ItemSystem::ModifyItemPointsEcs(item, false);
-	ItemSystem::ClearItemAttributesEcs(item);
-	int index = 0;
-	for (const FullAttributeSpec attribute : attributes)
-		ItemSystem::SetItemForceAttributeEcs(
-			item, index++, attribute.type, attribute.value);
-	ItemSystem::ModifyItemPointsEcs(item, true);
-}
-}
-
-ACMD (do_attr_full_set)
-{
-	if (!ecs::PlayerRuntime::IsPC(character))
-		return;
-	uint8_t job = ecs::PlayerRuntime::GetJob(character);
-	const entt::entity owner = character;
-	switch (job)
-	{
-		case JOB_WARRIOR:
-		case JOB_ASSASSIN:
-		case JOB_SURA:
-		case JOB_SHAMAN:
-		{
-
-			ApplyFullAttributes(owner, WEAR_HEAD, {
-				{APPLY_HP_REGEN, 25}, {APPLY_POISON_REDUCE, 10},
-				{APPLY_RESIST_MAGIC, 15}, {APPLY_RESIST_BOW, 60},
-				{APPLY_ATTBONUS_HUMAN, 10}, {APPLY_ATTBONUS_HUMAN, 10},
-				{APPLY_MAX_HP, 4000}});
-			ApplyFullAttributes(owner, WEAR_WEAPON, {
-				{APPLY_NORMAL_HIT_DAMAGE_BONUS, 53}, {APPLY_SKILL_DAMAGE_BONUS, 10},
-				{APPLY_ATTBONUS_HUMAN, 10}, {APPLY_ATTBONUS_DEVIL, 20},
-				{APPLY_ATTBONUS_ORC, 20}, {APPLY_ATTBONUS_HUMAN, 10},
-				{APPLY_MAX_HP, 4000}});
-			ApplyFullAttributes(owner, WEAR_SHIELD, {
-				{APPLY_ATTBONUS_HUMAN, 10}, {APPLY_BLOCK, 15},
-				{APPLY_REFLECT_MELEE, 10}, {APPLY_IMMUNE_STUN, 1},
-				{APPLY_IMMUNE_SLOW, 1}, {APPLY_ATTBONUS_HUMAN, 50},
-				{APPLY_MAX_HP, 4000}});
-			for (const uint8_t slot : {WEAR_BODY, WEAR_FOOTS, WEAR_NECK, WEAR_EAR})
-				ApplyFullAttributes(owner, slot, {
-					{APPLY_RESIST_SWORD, 15}, {APPLY_RESIST_TWOHAND, 15},
-					{APPLY_RESIST_DAGGER, 15}, {APPLY_RESIST_BELL, 15},
-					{APPLY_RESIST_FAN, 15}, {APPLY_ATTBONUS_HUMAN, 10},
-					{APPLY_MAX_HP, 4000}});
-			ApplyFullAttributes(owner, WEAR_WRIST, {
-				{APPLY_MAX_HP, 2500}, {APPLY_ATTBONUS_HUMAN, 10},
-				{APPLY_PENETRATE_PCT, 12}, {APPLY_STEAL_HP, 10},
-				{APPLY_RESIST_MAGIC, 15}, {APPLY_ATTBONUS_HUMAN, 10},
-				{APPLY_MAX_HP, 4000}});
-			ApplyFullAttributes(owner, WEAR_PENDANT, {
-				{APPLY_RESIST_MEZZIUOMINI, 10}, {APPLY_ATTBONUS_HUMAN, 10},
-				{APPLY_CRITICAL_PCT, 15}});
-		}
-		break;
-	}
-}
-
-ACMD (do_use_item)
-{
-	char arg1 [256];
-
-	one_argument (argument, arg1, sizeof (arg1));
-
-	int cell = 0;
-	str_to_number(cell, arg1);
-
-	const entt::entity owner = character;
-	const entt::entity item = ItemSystem::GetInventoryItem(owner, cell);
-	if (ItemSystem::IsValidItem(item))
-	{
-		ItemSystem::UseItemEcs(owner, item);
-	}
-#ifdef TEXTS_IMPROVEMENT
-	else {
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 811, "");
-	}
-#endif
 }
 
 ACMD (do_clear_affect)

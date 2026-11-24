@@ -3,6 +3,7 @@
 #include "PointSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
 #include "../../item/ItemStore.hpp"
+#include "../../item/TypedGathering.hpp"
 
 #include "ActivitySystem.hpp"
 #include "ItemSystem.hpp"
@@ -114,20 +115,6 @@ bool IsMining(entt::entity miner)
     return state && state->event;
 }
 
-void FinishMining(entt::entity miner)
-{
-    if (miner == entt::null || !g_registry.valid(miner))
-        return;
-
-    auto* state = g_registry.try_get<ecs::MiningState>(miner);
-    if (!state)
-        return;
-
-    state->event = nullptr;
-    state->load = entt::null;
-    g_registry.emplace_or_replace<ecs::DirtyTag>(miner);
-}
-
 void CancelMining(entt::entity miner)
 {
     if (miner == entt::null || !g_registry.valid(miner))
@@ -149,120 +136,7 @@ void CancelMining(entt::entity miner)
 
 bool StartMining(entt::entity miner, entt::entity load)
 {
-    if(g_registry.valid(miner) && g_registry.all_of<ecs::TypedItems>(miner))return false;
-    if (miner == entt::null || load == entt::null ||
-        !g_registry.valid(miner) || !g_registry.valid(load))
-        return false;
-
-    if (IsMining(miner)) {
-        CancelMining(miner);
-        return false;
-    }
-
-    if (ecs::PlayerRuntime::GetMapIndex(miner) != ecs::PlayerRuntime::GetMapIndex(load) ||
-        DISTANCE_APPROX(
-            ecs::PlayerRuntime::GetX(miner) - ecs::PlayerRuntime::GetX(load),
-            ecs::PlayerRuntime::GetY(miner) - ecs::PlayerRuntime::GetY(load)) > 1000 ||
-        mining::GetRawOreFromLoad(ecs::PlayerRuntime::GetRaceNum(load)) == 0)
-        return false;
-
-    const entt::entity pick = ItemSystem::GetWearItem(miner, WEAR_WEAPON);
-    if (!ItemSystem::IsValidItem(pick) || ItemSystem::GetItemType(pick) != ITEM_PICK)
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(miner, CHAT_TYPE_INFO, 252, "");
-#endif
-        return false;
-    }
-
-    const int count = number(5, 15);
-    TPacketGCDigMotion packet{};
-    packet.header = HEADER_GC_DIG_MOTION;
-    packet.vid = ecs::PlayerRuntime::GetPacketVID(miner);
-    packet.target_vid = ecs::PlayerRuntime::GetPacketVID(load);
-    packet.count = count;
-    ecs::NetworkService::BroadcastToView(
-        g_registry, miner, &packet, sizeof(packet), false);
-
-    LPEVENT event = mining::CreateMiningEvent(miner, load, count);
-    if (!event)
-        return false;
-
-    auto& state = g_registry.get_or_emplace<ecs::MiningState>(miner);
-    state.event = event;
-    state.load = load;
-    g_registry.emplace_or_replace<ecs::DirtyTag>(miner);
-    return true;
-}
-
-int RefineFishingRod(entt::entity owner, entt::entity rod)
-{
-    if (owner == entt::null || !g_registry.valid(owner) ||
-        !ItemSystem::IsValidItem(rod))
-        return 2;
-
-    const bool refinable = ItemSystem::GetItemType(rod) == ITEM_ROD &&
-        !ItemSystem::IsItemEquipped(rod) &&
-        ItemSystem::GetItemSocket(rod, 0) == ItemSystem::GetItemValue(rod, 2);
-    if (!refinable)
-    {
-        LOG_ERROR("REFINE_ROD_HACK pid({}) item({}:{})",
-            ecs::PlayerRuntime::GetPlayerID(owner), ItemSystem::GetItemName(rod),
-            ItemSystem::GetItemID(rod));
-        LogManager::instance().RefineLog(
-            ecs::PlayerRuntime::GetPlayerID(owner), ItemSystem::GetItemName(rod),
-            ItemSystem::GetItemID(rod), -1, 1, "ROD_HACK");
-        return 6;
-    }
-
-    const int advance = ItemSystem::GetItemValue(rod, 0) / 10;
-    const uint16_t cell = ItemSystem::GetItemCell(rod);
-    const bool success = number(1, 100) <= ItemSystem::GetItemValue(rod, 3);
-    LogManager::instance().RefineLog(
-        ecs::PlayerRuntime::GetPlayerID(owner), ItemSystem::GetItemName(rod),
-        ItemSystem::GetItemID(rod), advance, success ? 1 : 0, "ROD");
-
-    if (success)
-    {
-        const entt::entity newRod = ITEM_MANAGER::instance().CreateItem(
-            ItemSystem::GetItemRefineVnum(rod), 1);
-        if (!ItemSystem::IsValidItem(newRod))
-            return 4;
-
-        ItemSystem::DestroyItemEntityEcs(rod, "REMOVE (REFINE FISH_ROD)");
-        if (!ItemSystem::PlaceItemEcs(owner, newRod, INVENTORY, cell))
-        {
-            ItemSystem::DestroyItemEntityEcs(newRod, "REFINE_FISH_ROD_PLACE_FAIL");
-            return 4;
-        }
-        LogManager::instance().ItemLogEntity(
-            owner, newRod, "REFINE FISH_ROD SUCCESS",
-            ItemSystem::GetItemName(newRod));
-        return 1;
-    }
-
-#ifdef ENABLE_FISHINGROD_RENEWAL
-    const int current = ItemSystem::GetItemSocket(rod, 0);
-    ItemSystem::SetItemSocket(
-        rod, 0, current > 0 ? current - (current * 20 / 100) : 0);
-    LogManager::instance().ItemLogEntity(
-        owner, rod, "REFINE FISH_ROD FAIL", ItemSystem::GetItemName(rod));
-#else
-    const entt::entity newRod = ITEM_MANAGER::instance().CreateItem(
-        ItemSystem::GetItemValue(rod, 4), 1);
-    if (!ItemSystem::IsValidItem(newRod))
-        return 3;
-
-    ItemSystem::DestroyItemEntityEcs(rod, "REMOVE (REFINE FISH_ROD)");
-    if (!ItemSystem::PlaceItemEcs(owner, newRod, INVENTORY, cell))
-    {
-        ItemSystem::DestroyItemEntityEcs(newRod, "REFINE_FISH_ROD_PLACE_FAIL");
-        return 3;
-    }
-    LogManager::instance().ItemLogEntity(
-        owner, newRod, "REFINE FISH_ROD FAIL", ItemSystem::GetItemName(newRod));
-#endif
-    return 2;
+    return TryStartTypedMining(miner, load);
 }
 
 } // namespace ActivitySystem

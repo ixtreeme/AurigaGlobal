@@ -58,7 +58,6 @@ ACMD(do_mob_coward);
 ACMD(do_mob_map);
 ACMD(do_purge);
 ACMD(do_weaken);
-ACMD(do_item_purge);
 ACMD(do_state);
 ACMD(do_notice);
 ACMD(do_map_notice);
@@ -81,14 +80,10 @@ ACMD(do_set);
 ACMD(do_cmd);
 ACMD(do_reset);
 ACMD(do_greset);
-ACMD(do_refine_rod);
 
 // REFINE_PICK
-ACMD(do_max_pick);
-ACMD(do_refine_pick);
 // END_OF_REFINE_PICK
 
-ACMD(do_fishing_simul);
 ACMD(do_console);
 ACMD(do_restart);
 ACMD(do_advance);
@@ -115,7 +110,6 @@ ACMD(do_get_event_flag);
 ACMD(do_private);
 ACMD(do_qf);
 ACMD(do_clear_quest);
-ACMD(do_book);
 ACMD(do_reload);
 ACMD(do_war);
 ACMD(do_nowar);
@@ -123,7 +117,6 @@ ACMD(do_setskill);
 ACMD(do_setskillother);
 ACMD(do_level);
 ACMD(do_polymorph);
-ACMD(do_polymorph_item);
 ACMD(do_close_shop);
 ACMD(do_set_walk_mode);
 ACMD(do_set_run_mode);
@@ -171,7 +164,6 @@ ACMD(do_mount_test);
 ACMD(do_unmount);
 ACMD(do_observer);
 ACMD(do_observer_exit);
-ACMD(do_socket_item);
 ACMD(do_stat_minus);
 ACMD(do_stat_reset);
 ACMD(do_view_equip);
@@ -198,9 +190,6 @@ ACMD(do_horse_set_stat);
 ACMD(do_save_attribute_to_image);
 ACMD(do_affect_remove);
 
-ACMD(do_change_attr);
-ACMD(do_add_attr);
-ACMD(do_add_socket);
 ACMD(do_wheel_open);
 ACMD(do_inputall)
 {
@@ -248,29 +237,20 @@ ACMD(do_in_game_mall);
 ACMD(do_get_mob_count);
 
 ACMD(do_dice);
-ACMD(do_special_item);
 
 ACMD(do_click_mall);
 
 ACMD(do_ride);
-ACMD(do_get_item_id_list);
-ACMD(do_set_socket);
 
 ACMD(do_set_stat);
 
 //
 ACMD (do_can_dead);
 
-ACMD (do_full_set);
-ACMD (do_item_full_set);
-ACMD (do_attr_full_set);
 ACMD (do_all_skill_master);
-ACMD (do_use_item);
 ACMD (do_clear_affect);
 
 #ifdef ENABLE_NEWSTUFF
-ACMD(do_change_rare_attr);
-ACMD(do_add_rare_attr);
 
 ACMD(do_click_safebox);
 ACMD(do_force_logout);
@@ -360,8 +340,6 @@ ACMD(do_wheel_open)
 }
 
 #ifdef ENABLE_RUNE_SYSTEM
-ACMD(do_rune);
-ACMD(do_rune_charge);
 ACMD(do_rune_shop);
 ACMD(do_rune_effect);
 #endif
@@ -451,7 +429,6 @@ struct command_info cmd_info[] =
 	{ "mc",		do_mob_coward,		0,			POS_DEAD,	GM_HIGH_WIZARD	},
 	{ "mm",		do_mob_map,		0,			POS_DEAD,	GM_HIGH_WIZARD	},
 	{ "kill",		do_kill,		0,			POS_DEAD,	GM_HIGH_WIZARD	},
-	{ "ipurge",		do_item_purge,		0,			POS_DEAD,	GM_HIGH_WIZARD	},
 	{ "group",		do_group,		0,			POS_DEAD,	GM_HIGH_WIZARD	},
 	{ "grrandom",	do_group_random,	0,			POS_DEAD,	GM_IMPLEMENTOR	},
 #ifdef ENABLE_NEW_CRAFT_SYSTEM_RAZOR93
@@ -461,7 +438,6 @@ struct command_info cmd_info[] =
 	{ "reset",		do_reset,		0,			POS_DEAD,	GM_HIGH_WIZARD	},
 	{ "greset",		do_greset,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
 	{ "advance",	do_advance,		0,			POS_DEAD,	GM_IMPLEMENTOR		},
-	{ "book",		do_book,		0,			POS_DEAD,	GM_HIGH_WIZARD  },
 
 	{ "console",	do_console,		0,			POS_DEAD,	GM_HIGH_WIZARD	},
 
@@ -520,15 +496,11 @@ struct command_info cmd_info[] =
 	{ "ungroup",	do_ungroup,		0,			POS_DEAD,	GM_PLAYER	},
 
 	// REFINE_ROD_HACK_BUG_FIX
-	{ "refine_rod",	do_refine_rod,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
 	// END_OF_REFINE_ROD_HACK_BUG_FIX
 
 	// REFINE_PICK
-	{ "refine_pick",	do_refine_pick,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
-	{ "max_pick",	do_max_pick,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
 	// END_OF_REFINE_PICK
 
-	{ "fish_simul",	do_fishing_simul,	0,			POS_DEAD,	GM_IMPLEMENTOR	},
 	{ "invisible",	do_invisibility,	0,			POS_DEAD,	GM_LOW_WIZARD	},
 	{ "qf",		do_qf,			0,			POS_DEAD,	GM_IMPLEMENTOR	},
 	{ "clear_quest",	do_clear_quest,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
@@ -572,7 +544,6 @@ struct command_info cmd_info[] =
 	{ "pull_monster",	do_pull_monster,	0,			POS_DEAD,	GM_IMPLEMENTOR	},
 	{ "setblockmode",	do_setblockmode,	0,			POS_DEAD,	GM_PLAYER	},
 	{ "polymorph",	do_polymorph,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
-	{ "polyitem",	do_polymorph_item,	0,			POS_DEAD,	GM_IMPLEMENTOR },
 	{ "priv_empire",	do_priv_empire,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
 	{ "priv_guild",	do_priv_guild,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
 	{ "mount_test",	do_mount_test,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
@@ -583,7 +554,6 @@ struct command_info cmd_info[] =
 	{ "party_request_deny", do_party_request_deny,0,			POS_DEAD,	GM_PLAYER	},
 	{ "observer",	do_observer,		0,			POS_DEAD,	GM_HIGH_WIZARD	},
 	{ "observer_exit",	do_observer_exit,	0,			POS_DEAD,	GM_PLAYER	},
-	{ "socketitem",	do_socket_item,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
 	{ "saveati",	do_save_attribute_to_image, 0,			POS_DEAD,	GM_IMPLEMENTOR	},
 	{ "view_equip",	do_view_equip,		0,			POS_DEAD,	GM_PLAYER   	},
 	{ "jy",				do_block_chat,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
@@ -640,9 +610,6 @@ struct command_info cmd_info[] =
 	{ "exercise",		do_emotion,		0,			POS_FIGHTING,	GM_PLAYER	},
 	{ "pushup",		do_emotion,		0,			POS_FIGHTING,	GM_PLAYER	},
 
-	{ "change_attr",	do_change_attr,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
-	{ "add_attr",	do_add_attr,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
-	{ "add_socket",	do_add_socket,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
 
 	{ "user_horse_ride",	do_user_horse_ride,		0,		POS_FISHING,	GM_PLAYER	},
 	{ "user_horse_back",	do_user_horse_back,		0,		POS_FISHING,	GM_PLAYER	},
@@ -687,14 +654,11 @@ struct command_info cmd_info[] =
 	{ "get_mob_count",		do_get_mob_count,		0,	POS_DEAD,	GM_IMPLEMENTOR	},
 
 	{ "dice",				do_dice,				0,	POS_DEAD,	GM_PLAYER		},
-	{ "special_item",			do_special_item,	0,	POS_DEAD,	GM_IMPLEMENTOR		},
 
 	{ "click_mall",			do_click_mall,			0,	POS_DEAD,	GM_PLAYER		},
 
 	{ "ride",				do_ride,				0,	POS_DEAD,	GM_PLAYER	},
 
-	{ "item_id_list",	do_get_item_id_list,	0,	POS_DEAD,	GM_IMPLEMENTOR	},
-	{ "set_socket",		do_set_socket,			0,	POS_DEAD,	GM_IMPLEMENTOR	},
 
 	{ "tcon",			do_set_stat,	POINT_HT,	POS_DEAD,	GM_IMPLEMENTOR	},
 	{ "tint",			do_set_stat,	POINT_IQ,	POS_DEAD,	GM_IMPLEMENTOR	},
@@ -704,11 +668,7 @@ struct command_info cmd_info[] =
 	{ "cannot_dead",			do_can_dead,	1,	POS_DEAD,		GM_IMPLEMENTOR},
 	{ "can_dead",				do_can_dead,	0,	POS_DEAD,		GM_IMPLEMENTOR},
 
-	{ "full_set",	do_full_set, 0, POS_DEAD,		GM_HIGH_WIZARD},
-	{ "item_full_set",	do_item_full_set, 0, POS_DEAD,		GM_HIGH_WIZARD},
-	{ "attr_full_set",	do_attr_full_set, 0, POS_DEAD,		GM_IMPLEMENTOR},
 	{ "all_skill_master",	do_all_skill_master,	0,	POS_DEAD,	GM_HIGH_WIZARD},
-	{ "use_item",		do_use_item,	0, POS_DEAD,		GM_HIGH_WIZARD},
 
 	{ "do_clear_affect", do_clear_affect, 	0, POS_DEAD,		GM_IMPLEMENTOR},
 #ifdef __NEWPET_SYSTEM__
@@ -718,8 +678,6 @@ struct command_info cmd_info[] =
 #endif
 #ifdef ENABLE_NEWSTUFF
 	//item
-	{ "add_rare_attr",		do_add_rare_attr,			0,			POS_DEAD,	GM_IMPLEMENTOR	},
-	{ "change_rare_attr",	do_change_rare_attr,		0,			POS_DEAD,	GM_IMPLEMENTOR	},
 	//player
 	{ "click_safebox",		do_click_safebox,			0,			POS_DEAD,	GM_PLAYER	},
 	{ "force_logout",		do_force_logout,			0,			POS_DEAD,	GM_IMPLEMENTOR	},
@@ -758,8 +716,6 @@ struct command_info cmd_info[] =
 	{"drop_unblock", do_drop_unblock, 0, POS_DEAD, GM_PLAYER},
 #endif
 #ifdef ENABLE_RUNE_SYSTEM
-	{"rune", do_rune, 0, POS_DEAD, GM_PLAYER},
-	{"rune_charge", do_rune_charge, 0, POS_DEAD, GM_PLAYER},
 	{"rune_shop", do_rune_shop, 0, POS_DEAD, GM_PLAYER},
 	{"rune_effect", do_rune_effect, 0, POS_DEAD, GM_PLAYER},
 #endif

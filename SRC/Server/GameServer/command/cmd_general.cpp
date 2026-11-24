@@ -2672,7 +2672,6 @@ ACMD(do_ride)
 	if (ecs::PlayerRuntime::GetMapIndex(character) == 113)
 		return;
 
-	const entt::entity owner = character;
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 	if (AffectSystem::IsPolymorphed(character) == true){
 #ifdef TEXTS_IMPROVEMENT
@@ -2680,16 +2679,7 @@ ACMD(do_ride)
 #endif
 		return;
 	}
-	const entt::entity mount = ItemSystem::GetWearItem(owner, WEAR_COSTUME_MOUNT);
-	if (ItemSystem::IsValidItem(mount))
-	{
-		if (MountSystem::GetMountVnum(character))
-			MountSystem::UnmountCostume(character);
-		else
-			MountSystem::MountCostume(character, mount);
 
-		return;
-	}
 #endif
 
 	if (MountSystem::IsHorseRiding(character))
@@ -2704,19 +2694,6 @@ ACMD(do_ride)
 	    return;
 	}
 
-	for (UINT i=0; i< INVENTORY_MAX_NUM; ++i) //INVENTORY_MAX_NUM
-	{
-		const entt::entity item = ItemSystem::GetInventoryItem(owner, i);
-		if (!ItemSystem::IsValidItem(item))
-			continue;
-
-		if (ItemSystem::GetItemType(item) == ITEM_COSTUME &&
-			ItemSystem::GetItemSubType(item) == COSTUME_MOUNT) {
-			ItemSystem::UseItemEcs(owner, item);
-			return;
-		}
-	}
-//// belt inventory kereses
 
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 5, "");
@@ -2837,123 +2814,10 @@ ACMD(do_hide_costume)
 #endif
 
 #ifdef ENABLE_RUNE_SYSTEM
-#include "shop.h"
-#include "shop_manager.h"
-#include <common/rune_length.h>
-
-ACMD(do_rune)
-{
-	if (!ecs::PlayerRuntime::IsValid(character) || g_registry.all_of<ecs::TypedItems>(character))
-		return;
-	const entt::entity owner = character;
-
-	char arg1[512];
-	const char* rest = one_argument(argument, arg1, sizeof(arg1));
-	switch (arg1[0])
-	{
-		case 'a':
-			{
-				one_argument(rest, arg1, sizeof(arg1));
-				int slot;
-				if (str_to_number(slot, arg1) == false)
-					return;
-
-				if (slot < WEAR_RUNE1 || slot >= WEAR_RUNE7)
-					return;
-
-				const entt::entity item = ItemSystem::GetWearItem(owner, slot);
-				if (ItemSystem::IsValidItem(item))
-					ItemSystem::ActivateRune(item);
-			}
-			break;
-		case 'd':
-			{
-				one_argument(rest, arg1, sizeof(arg1));
-				int slot;
-				if (str_to_number(slot, arg1) == false)
-					return;
-
-				if (slot < WEAR_RUNE1 || slot >= WEAR_RUNE7)
-					return;
-
-				const entt::entity item = ItemSystem::GetWearItem(owner, slot);
-				if (ItemSystem::IsValidItem(item))
-					ItemSystem::DeactivateRune(item);
-			}
-			break;
-		case 'l':
-			{
-				one_argument(rest, arg1, sizeof(arg1));
-				int w;
-				if (str_to_number(w, arg1) == false)
-					return;
-
-				int iMaxSubTypes = RUNE_SUBTYPES - 1;
-				for (int i = 0; i < iMaxSubTypes; i++) {
-					const entt::entity item = ItemSystem::GetWearItem(
-						owner, WEAR_RUNE1 + i);
-					if (ItemSystem::IsValidItem(item)) {
-						if (w == 0)
-							ItemSystem::DeactivateRune(item);
-						else
-							ItemSystem::ActivateRune(item);
-					}
-				}
-			}
-			break;
-	}
-}
-
-ACMD(do_rune_charge)
-{
-	if (!ecs::PlayerRuntime::IsValid(character) || g_registry.all_of<ecs::TypedItems>(character))
-		return;
-	const entt::entity owner = character;
-
-	char arg1[256], arg2[256];
-	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
-
-	if ((!*arg1) || (!*arg2))
-		return;
-
-	int iArg1 = 0;
-	if (str_to_number(iArg1, arg1) == false)
-		return;
-
-	int iArg2 = 0;
-	if (str_to_number(iArg2, arg2) == false)
-		return;
-
-	// Validate before uint8_t/uint16_t narrowing in inventory accessors.
-	if (iArg1 < WEAR_RUNE1 || iArg1 >= WEAR_RUNE7 || iArg2 < 0 || iArg2 >= INVENTORY_MAX_NUM)
-		return;
-
-	ItemSystem::ChargeRune(owner, ItemSystem::GetWearItem(owner, iArg1),
-		ItemSystem::GetInventoryItem(owner, iArg2));
-}
-
 ACMD(do_rune_shop)
 {
-	if (!ecs::PlayerRuntime::IsPC(character))
-		return;
-	if (g_registry.all_of<ecs::TypedItems>(character))
-	{
-		OpenTypedRuneExchangeShop(character);
-		return;
-	}
-	if (ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SocialSystem::HasExchange(character) || ecs::SocialSystem::GetMyShop(character) != entt::null || ecs::SessionSystem::IsCubeOpen(character))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 294, "");
-#endif
-		return;
-	}
-
-	const entt::entity pkShop = CShopManager::instance().Get(RUNE_SHOP);
-	if (pkShop != entt::null) {
-		ShopSystem::AddGuest(pkShop, character, 0, false);
-		ecs::SocialSystem::SetShopOwner(character, entt::null);
-	}
+    if (ecs::PlayerRuntime::IsPC(character))
+        OpenTypedRuneExchangeShop(character);
 }
 
 ACMD(do_rune_effect)
@@ -2977,13 +2841,7 @@ ACMD(do_rune_effect)
 		return;
 
 	ecs::QuestSystem::SetFlag(character, "rune.hide_effect", iArg1);
-	if (g_registry.all_of<ecs::TypedItems>(character))
-		UpdateTypedCostumes(character);
-	else
-	{
-		ecs::PointSystem::Compute(character);
-		NetworkSyncSystem::UpdatePacket(character);
-	}
+	UpdateTypedCostumes(character);
 	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "rune_affect %d", iArg1);
 }
 #endif

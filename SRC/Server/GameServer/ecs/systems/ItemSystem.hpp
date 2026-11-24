@@ -44,7 +44,6 @@ bool EquipItemEcs(entt::entity owner, entt::entity item, int candidateCell = -1)
 bool IsEquipUniqueItem(entt::entity e, uint32_t itemVnum);
 bool IsEquipUniqueGroup(entt::entity e, uint32_t groupVnum);
 bool UnEquipSpecialRideUniqueItem(entt::entity e);
-bool UseItemEcs(entt::entity owner, entt::entity item, TItemPos destCell = NPOS);
 
 // Slice D - item creation / give / remove
 void AutoGiveItem(entt::entity e, entt::entity item, bool longOwnerShip = false
@@ -151,7 +150,6 @@ bool DropItem(entt::entity e, TItemPos Cell,
     uint8_t
 #endif
     bCount = 0);
-bool GiveItem(entt::entity e, entt::entity victim, TItemPos Cell);
 // Takes up to count of the inventory items of one type, skipping any on sale.
 void ModifyPoints(entt::entity item, bool bAdd);
 TItemExtraProto* GetItemExtraProto(entt::entity item);
@@ -315,7 +313,6 @@ bool PlaceItemEcs(entt::entity owner, entt::entity item, uint8_t window, uint16_
 bool RemoveItemEcs(entt::entity item);
 int GetEmptyInventoryPositionEcs(entt::entity owner, entt::entity item);
 bool HasMainInventorySpaceEcs(entt::entity owner, uint8_t itemSize = 1);
-bool HasInventorySpaceForItemVnum(entt::entity owner, uint32_t itemVnum);
 // Native entity placement. True means committed, even if a publication callback
 // subsequently moves/deletes the item. No CItem allocation/resynchronization.
 bool PlaceItemOnGround(entt::entity item, int32_t mapIndex,
@@ -341,26 +338,6 @@ bool DestroyLoadedDuplicateItem(entt::entity item);
 // A detached quest reward may be claimed before ground insertion.
 bool SetGroundOwnership(entt::entity item, entt::entity owner,
                         int seconds = 10);
-bool CanReceiveItemEcs(entt::entity receiver, entt::entity from, entt::entity item);
-bool ReceiveItemEcs(entt::entity receiver, entt::entity from, entt::entity item);
-struct SpecialItemGroupResult {
-    std::vector<entt::entity> itemEntities;
-    std::vector<uint32_t> itemVnums;
-    std::vector<uint32_t> itemCounts;
-    int count = 0;
-};
-SpecialItemGroupResult GiveItemFromSpecialItemGroup(entt::entity e, uint32_t groupNum);
-bool GiveItemFromSpecialItemGroup(entt::entity e, uint32_t groupNum, std::vector<uint32_t>& itemVnums,
-    std::vector<uint32_t>& itemCounts, std::vector<entt::entity>& itemEntities, int& count);
-
-bool CleanAcceAttr(entt::entity e, entt::entity pkItem, entt::entity pkTarget);
-void AutoRecoveryItemProcess(entt::entity e, int type);
 void GiveGold(entt::entity e, int64_t iAmount);
-void ProcessRecallItem(entt::entity e, entt::entity item);
-bool GiveRecallItem(entt::entity e, entt::entity item);
-bool UseItem(entt::entity e, TItemPos Cell, TItemPos DestCell = NPOS);
-bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell);
-bool ItemProcess_Hair(entt::entity e, entt::entity item, int iDestCell);
-bool ItemProcess_Polymorph(entt::entity e, entt::entity item);
 
 } // namespace ItemSystem

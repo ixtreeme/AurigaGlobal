@@ -13,7 +13,6 @@
 #include <Core/Logging.hpp>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/PersistentRace.hpp"
-#include "../ecs/systems/AcceSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
@@ -504,248 +503,9 @@ namespace quest
         return 0;
     }
 
-	ALUA(pc_give_item_from_special_item_group)
-	{
-		luaL_checknumber(L, 1);
-
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		if (chEntity == entt::null || !g_registry.valid(chEntity))
-			return 0;
-
-		const uint32_t dwGroupVnum = static_cast<uint32_t>(lua_tonumber(L, 1));
-		const ItemSystem::SpecialItemGroupResult result =
-			ItemSystem::GiveItemFromSpecialItemGroup(chEntity, dwGroupVnum);
-#ifdef TEXTS_IMPROVEMENT
-		for (int i = 0; i < result.count; ++i) {
-			if (result.itemEntities[i] == entt::null) {
-				ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 102, "%d", result.itemCounts[i]);
-			}
-		}
-#endif
-		return 0;
-	}
-
-	ALUA(pc_enough_inventory)
-	{
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		if (!lua_isnumber(L, 1))
-		{
-			lua_pushboolean(L, 0);
-			return 1;
-		}
-
-		const uint32_t itemVnum = static_cast<uint32_t>(lua_tonumber(L, 1));
-		lua_pushboolean(L, ItemSystem::HasInventorySpaceForItemVnum(chEntity, itemVnum));
-		return 1;
-	}
-
-	ALUA(pc_give_item)
-	{
-		PC* pPC = CQuestManager::instance().GetCurrentPC();
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		if (!lua_isstring(L, 1) || !(lua_isstring(L, 2)||lua_isnumber(L, 2)))
-		{
-			sys_err("QUEST : wrong argument");
-			return 0;
-		}
-
-		uint32_t dwVnum;
-
-		if (lua_isnumber(L,2))
-			dwVnum = static_cast<uint32_t>(lua_tonumber(L, 2));
-		else if (!ITEM_MANAGER::instance().GetVnum(lua_tostring(L, 2), dwVnum))
-		{
-			sys_err("QUEST Make item call error : wrong item name : {}", lua_tostring(L,1));
-			return 0;
-		}
-
-		int icount = 1;
-
-		if (lua_isnumber(L, 3) && lua_tonumber(L, 3) > 0)
-		{
-			icount = static_cast<int>(rint(lua_tonumber(L, 3)));
-
-			if (icount <= 0)
-			{
-				sys_err("QUEST Make item call error : wrong item count : {:g}", lua_tonumber(L, 2));
-				return 0;
-			}
-		}
-
-		pPC->GiveItem(lua_tostring(L, 1), dwVnum, icount);
-
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::PlayerRuntime::GetPlayerID(chEntity), ecs::PointSystem::GetLevel(chEntity), dwVnum, icount);
-		return 0;
-	}
-
-	ALUA(pc_give_or_drop_item)
-	{
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		if (!lua_isstring(L, 1) && !lua_isnumber(L, 1))
-		{
-			sys_err("QUEST Make item call error : wrong argument");
-			lua_pushnumber (L, 0);
-			return 1;
-		}
-
-		uint32_t dwVnum;
-
-		if (lua_isnumber(L, 1))
-		{
-			dwVnum = static_cast<uint32_t>(lua_tonumber(L, 1));
-		}
-		else if (!ITEM_MANAGER::instance().GetVnum(lua_tostring(L, 1), dwVnum))
-		{
-			sys_err("QUEST Make item call error : wrong item name : {}", lua_tostring(L,1));
-			lua_pushnumber (L, 0);
-
-			return 1;
-		}
-
-		int icount = 1;
-		if (lua_isnumber(L,2) && lua_tonumber(L,2)>0)
-		{
-			icount = (int)rint(lua_tonumber(L,2));
-			if (icount<=0)
-			{
-				sys_err("QUEST Make item call error : wrong item count : {:g}", lua_tonumber(L,2));
-				lua_pushnumber (L, 0);
-				return 1;
-			}
-		}
-
-		LOG_INFO("QUEST [REWARD] item {} to {}", lua_tostring(L, 1), ecs::PlayerRuntime::GetName(chEntity).data());
-
-		PC* pPC = CQuestManager::instance().GetCurrentPC();
-
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::PlayerRuntime::GetPlayerID(chEntity), ecs::PointSystem::GetLevel(chEntity), dwVnum, icount);
-
-		const entt::entity item = ItemSystem::AutoGiveItemEcs(chEntity, dwVnum, icount);
-		const uint32_t itemId = ItemSystem::GetItemID(item);
-
-		if ( dwVnum >= 80003 && dwVnum <= 80007 && itemId != 0 )
-		{
-			LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(chEntity), itemId, QUEST, "quest: give_item2");
-		}
-
-		if (item != entt::null)
-			lua_pushnumber (L, itemId);
-		else
-			lua_pushnumber (L, 0);
-		return 1;
-	}
-
 #ifdef ENABLE_DICE_SYSTEM
-	ALUA(pc_give_or_drop_item_with_dice)
-	{
-		if (!lua_isstring(L, 1) && !lua_isnumber(L, 1))
-		{
-			sys_err("QUEST Make item call error : wrong argument");
-			lua_pushnumber (L, 0);
-			return 1;
-		}
 
-		uint32_t dwVnum;
-
-		if (lua_isnumber(L, 1))
-		{
-			dwVnum = static_cast<uint32_t>(lua_tonumber(L, 1));
-		}
-		else if (!ITEM_MANAGER::instance().GetVnum(lua_tostring(L, 1), dwVnum))
-		{
-			sys_err("QUEST Make item call error : wrong item name : {}", lua_tostring(L,1));
-			lua_pushnumber (L, 0);
-
-			return 1;
-		}
-
-		int icount = 1;
-		if (lua_isnumber(L,2) && lua_tonumber(L,2)>0)
-		{
-			icount = static_cast<int>(rint(lua_tonumber(L, 2)));
-			if (icount<=0)
-			{
-				sys_err("QUEST Make item call error : wrong item count : {:g}", lua_tonumber(L,2));
-				lua_pushnumber(L, 0);
-				return 1;
-			}
-		}
-
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-
-		const entt::entity item = ITEM_MANAGER::instance().CreateItem(dwVnum, icount);
-		if (chEntity == entt::null || !g_registry.valid(chEntity) ||
-			!ItemSystem::IsValidItem(item))
-		{
-			lua_pushnumber(L, 0);
-			return 1;
-		}
-
-		entt::entity recipient = chEntity;
-		if (ecs::SocialSystem::GetParty(chEntity) != entt::null)
-			recipient = ItemSystem::RollPartyDropOwnership(item, chEntity);
-		ItemSystem::AutoGiveItem(recipient, item);
-
-		LOG_INFO("QUEST [REWARD] item {} to {}", lua_tostring(L, 1), ecs::PlayerRuntime::GetName(recipient).data());
-
-		LogManager::instance().QuestRewardLog(CQuestManager::instance().GetCurrentPC()->GetCurrentQuestName().c_str(), ecs::PlayerRuntime::GetPlayerID(recipient), ecs::PointSystem::GetLevel(recipient), dwVnum, icount);
-
-		lua_pushnumber(L, ItemSystem::GetItemID(item));
-		return 1;
-	}
 #endif
-
-	ALUA(pc_give_or_drop_item_and_select)
-	{
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		if (!lua_isstring(L, 1) && !lua_isnumber(L, 1))
-		{
-			sys_err("QUEST Make item call error : wrong argument");
-			return 0;
-		}
-
-		uint32_t dwVnum;
-
-		if (lua_isnumber(L, 1))
-		{
-			dwVnum = static_cast<uint32_t>(lua_tonumber(L, 1));
-		}
-		else if (!ITEM_MANAGER::instance().GetVnum(lua_tostring(L, 1), dwVnum))
-		{
-			sys_err("QUEST Make item call error : wrong item name : {}", lua_tostring(L,1));
-			return 0;
-		}
-
-		int icount = 1;
-		if (lua_isnumber(L,2) && lua_tonumber(L,2)>0)
-		{
-			icount = static_cast<int>(rint(lua_tonumber(L, 2)));
-			if (icount<=0)
-			{
-				sys_err("QUEST Make item call error : wrong item count : {:g}", lua_tonumber(L,2));
-				return 0;
-			}
-		}
-
-		LOG_INFO("QUEST [REWARD] item {} to {}", lua_tostring(L, 1), ecs::PlayerRuntime::GetName(chEntity).data());
-
-		PC* pPC = CQuestManager::instance().GetCurrentPC();
-
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::PlayerRuntime::GetPlayerID(chEntity), ecs::PointSystem::GetLevel(chEntity), dwVnum, icount);
-
-		const entt::entity item = ItemSystem::AutoGiveItemEcs(chEntity, dwVnum, icount);
-		const uint32_t itemId = ItemSystem::GetItemID(item);
-
-		if (item != entt::null)
-			CQuestManager::Instance().SetCurrentItem(item);
-
-		if ( dwVnum >= 80003 && dwVnum <= 80007 && itemId != 0 )
-		{
-			LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(chEntity), itemId, QUEST, "quest: give_item2");
-		}
-
-		return 0;
-	}
 
 	ALUA(pc_get_current_map_index)
 	{
@@ -823,90 +583,6 @@ namespace quest
 		const int32_t y = ecs::PlayerRuntime::GetY(character);
 		lua_pushnumber(L, pMap ? ((y - pMap->m_setting.iBaseY) / 100) : (y / 100));
 		return 1;
-	}
-
-	ALUA(pc_count_item)
-	{
-		const entt::entity character = CQuestManager::instance().GetCurrentPCEntity();
-		if (lua_isnumber(L, -1))
-			lua_pushnumber(L, ItemSystem::CountItem(character, static_cast<uint32_t>(lua_tonumber(L, -1))));
-		else if (lua_isstring(L, -1))
-		{
-			uint32_t item_vnum;
-
-			if (!ITEM_MANAGER::instance().GetVnum(lua_tostring(L,1), item_vnum))
-			{
-				sys_err("QUEST count_item call error : wrong item name : {}", lua_tostring(L,1));
-				lua_pushnumber(L, 0);
-			}
-			else
-			{
-				lua_pushnumber(L, ItemSystem::CountItem(character, item_vnum));
-			}
-		}
-		else
-			lua_pushnumber(L, 0);
-
-		return 1;
-	}
-
-	ALUA(pc_remove_item)
-	{
-		const entt::entity character = CQuestManager::instance().GetCurrentPCEntity();
-		if (lua_gettop(L) == 1)
-		{
-			uint32_t item_vnum;
-
-			if (lua_isnumber(L,1))
-			{
-				item_vnum = (uint32_t)lua_tonumber(L, 1);
-			}
-			else if (lua_isstring(L,1))
-			{
-				if (!ITEM_MANAGER::instance().GetVnum(lua_tostring(L,1), item_vnum))
-				{
-					sys_err("QUEST remove_item call error : wrong item name : {}", lua_tostring(L,1));
-					return 0;
-				}
-			}
-			else
-			{
-				sys_err("QUEST remove_item wrong argument");
-				return 0;
-			}
-
-			LOG_INFO("QUEST remove a item vnum {} of {}[{}]", item_vnum, ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetPlayerID(character));
-			ItemSystem::RemoveSpecifyItemEcs(character, item_vnum);
-		}
-		else if (lua_gettop(L) == 2)
-		{
-			uint32_t item_vnum;
-
-			if (lua_isnumber(L, 1))
-			{
-				item_vnum = static_cast<uint32_t>(lua_tonumber(L, 1));
-			}
-			else if (lua_isstring(L, 1))
-			{
-				if (!ITEM_MANAGER::instance().GetVnum(lua_tostring(L,1), item_vnum))
-				{
-					sys_err("QUEST remove_item call error : wrong item name : {}", lua_tostring(L,1));
-					return 0;
-				}
-			}
-			else
-			{
-				sys_err("QUEST remove_item wrong argument");
-				return 0;
-			}
-
-			int32_t item_count = static_cast<int32_t>(lua_tonumber(L, 2));
-			LOG_INFO("QUEST remove items(vnum {}) count {} of {}[{}]", item_vnum, item_count, ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetPlayerID(character));
-
-			if (item_count > 0)
-				ItemSystem::RemoveSpecifyItemEcs(character, item_vnum, static_cast<uint32_t>(item_count));
-		}
-		return 0;
 	}
 
 	ALUA(pc_get_leadership)
@@ -2015,28 +1691,6 @@ namespace quest
 		lua_pushnumber(L, 0);
         return 1;
     }
-
-	ALUA(pc_give_lotto)
-	{
-        // migrated from CHARACTER::GetPlayerID
-        // DUAL-PATH: legacy only during migration window
-		CQuestManager& q = CQuestManager::instance();
-		const entt::entity character = q.GetCurrentPCEntity();
-		const uint32_t playerID = ecs::PlayerRuntime::GetPlayerID(character);
-		LOG_INFO("TRY GIVE LOTTO TO pid {}", playerID);
-
-		uint32_t * pdw = new uint32_t[3];
-
-		pdw[0] = 50001;
-		pdw[1] = 1;
-		pdw[2] = q.GetEventFlag("lotto_round");
-
-		DBManager::instance().ReturnQuery(QID_LOTTO, playerID, pdw,
-				"INSERT INTO lotto_list VALUES(0, 'server%s', %u, NOW())",
-				get_table_postfix(), playerID);
-
-		return 0;
-	}
 
 	ALUA(pc_aggregate_monster)
 	{
@@ -3768,20 +3422,6 @@ teleport_area:
 #endif
 
 
-#ifdef ENABLE_ACCE_SYSTEM
-	int pc_open_acce(lua_State * L)
-	{
-		if (lua_isboolean(L, 1))
-		{
-			const entt::entity character = CQuestManager::instance().GetCurrentPCEntity();
-			if (character != entt::null)
-				ecs::AcceSystem::Open(character, lua_toboolean(L, 1));
-		}
-		else
-			sys_err("Invalid argument: arg1 must be boolean.");
-		return 0;
-	}
-#endif
 
 
 #ifdef ENABLE_MULTI_LANGUAGE
@@ -4399,12 +4039,11 @@ teleport_area:
 			{ "give_exp",		pc_give_exp		},
 			{ "give_exp_perc",		pc_give_exp_perc	},
 			{ "give_exp2",		pc_give_exp2		},
-			{ "give_item",		pc_give_item		},
-			{ "give_item2",		pc_give_or_drop_item	},
+
 #ifdef ENABLE_DICE_SYSTEM
-			{ "give_item2_with_dice",	pc_give_or_drop_item_with_dice	},
+
 #endif
-			{ "give_item2_select",		pc_give_or_drop_item_and_select	},
+
 			{ "give_gold",		pc_give_gold		},
 			{ "typed_item_count", pc_typed_item_count },
             { "typed_pet_egg_key", pc_typed_pet_egg_key },
@@ -4415,10 +4054,8 @@ teleport_area:
             { "typed_dungeon_item_redeem", pc_typed_dungeon_item_redeem },
             { "typed_mission_status", pc_typed_mission_status },
             { "typed_mission_action", pc_typed_mission_action },
-            { "count_item",		pc_count_item		},
-			{ "remove_item",		pc_remove_item		},
-			{ "countitem",		pc_count_item		},
-			{ "removeitem",		pc_remove_item		},
+
+
 			{ "reset_point",		pc_reset_point		},
 			{ "has_guild",		pc_hasguild		},
 			{ "hasguild",		pc_hasguild		},
@@ -4450,13 +4087,12 @@ teleport_area:
 			{ "mount_bonus",	pc_mount_bonus	},
 			{ "unmount",		pc_unmount		},
 			{ "warp_to_guild_war_observer_position", pc_warp_to_guild_war_observer_position	},
-			{ "give_item_from_special_item_group", pc_give_item_from_special_item_group	},
+
 			{ "get_warrior_expansion_skills", pc_get_warrior_expansion_skills },
             { "learn_grand_master_skill", pc_learn_grand_master_skill	},
 			{ "is_skill_book_no_delay",	pc_is_skill_book_no_delay},
 			{ "remove_skill_book_no_delay",	pc_remove_skill_book_no_delay},
 
-			{ "enough_inventory",	pc_enough_inventory	},
 			{ "get_horse_level",	pc_get_horse_level	}, // TO BE DELETED XXX
 			{ "is_horse_alive",		pc_is_horse_alive	}, // TO BE DELETED XXX
 			{ "revive_horse",		pc_revive_horse		}, // TO BE DELETED XXX
@@ -4466,7 +4102,6 @@ teleport_area:
 			{ "get_equip_refine_level",	pc_get_equip_refine_level },
 			{ "refine_equip",		pc_refine_equip		},
 			{ "get_skill_level",	pc_get_skill_level	},
-			{ "give_lotto",		pc_give_lotto		},
 			{ "aggregate_monster",	pc_aggregate_monster	},
 			{ "forget_my_attacker",	pc_forget_my_attacker	},
 			{ "pc_attract_ranger",	pc_attract_ranger	},
@@ -4618,10 +4253,6 @@ teleport_area:
 			{ "make_guild0",			pc_make_guild0	},	// it returns few state values which you can manage via lua [return lua number]
 #endif
 
-#ifdef ENABLE_ACCE_SYSTEM
-			{"open_acce",				pc_open_acce	},
-			{"open_sash",				pc_open_acce	},
-#endif
 
 #ifdef ENABLE_MULTI_LANGUAGE
 			{ "get_language", 								pc_get_language	},

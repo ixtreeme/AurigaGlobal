@@ -1067,11 +1067,6 @@ bool CanWarp(entt::entity e)
 		return false;
 #endif
 
-#ifdef ENABLE_ACCE_SYSTEM
-	if (const auto* acce = g_registry.try_get<ecs::AcceWindowComponent>(e);
-		acce && (acce->combinationOpen || acce->absorptionOpen))
-		return false;
-#endif
 
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
 	if (shop && shop->wheelDestiny)

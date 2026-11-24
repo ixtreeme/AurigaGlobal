@@ -278,7 +278,6 @@ protected:
 
 
 	// MYSHOP_PRICE_LIST
-	void		MyshopPricelistRes( LPDESC d, const TPacketMyshopPricelistHeader* p );
 	// END_OF_MYSHOP_PRICE_LIST
 	//
 	//RELOAD_ADMIN

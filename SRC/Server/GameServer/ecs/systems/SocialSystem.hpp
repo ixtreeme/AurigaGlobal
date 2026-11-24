@@ -96,11 +96,7 @@ bool GetNoOpenedShop(entt::entity e);
 void SetNoOpenedShop(entt::entity e, bool value);
 bool GetKasmirPaket(entt::entity e);
 void SetKasmirPaket(entt::entity e, bool value);
-void OpenPrivateShop(entt::entity e, bool bKasmir);
 // The silk bundle: sends the saved price list, then opens the shop window.
-void UseSilkBotaryReal(entt::entity e, const TPacketMyshopPricelistHeader* p);
-void SendMyShopPriceListCmd(entt::entity e, uint32_t dwItemVnum, int64_t dwItemPrice);
-void UseSilkBotary(entt::entity e);
 entt::entity GetShopOwner(entt::entity e);
 void SetShop(entt::entity e, entt::entity shop);
 void SetShopOwner(entt::entity e, entt::entity owner);

@@ -499,9 +499,6 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
 #ifdef __ATTR_TRANSFER_SYSTEM__
     reg.emplace_or_replace<ecs::AttrTransferWindowComponent>(entity, ecs::AttrTransferWindowComponent {});
 #endif
-#ifdef ENABLE_ACCE_SYSTEM
-    reg.emplace_or_replace<ecs::AcceWindowComponent>(entity, ecs::AcceWindowComponent {});
-#endif
 #ifdef ENABLE_SWITCHBOT
     reg.emplace_or_replace<ecs::SwitchbotRuntimeComponent>(entity, ecs::SwitchbotRuntimeComponent {});
 #endif

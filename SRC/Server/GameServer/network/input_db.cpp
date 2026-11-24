@@ -1491,12 +1491,6 @@ int CInputDB::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		WeddingEnd((TPacketWeddingEnd*) c_pData);
 		break;
 
-		// MYSHOP_PRICE_LIST
-	case HEADER_DG_MYSHOP_PRICELIST_RES:
-		MyshopPricelistRes(DESC_MANAGER::instance().FindByHandle(m_dwHandle), (TPacketMyshopPricelistHeader*) c_pData );
-		break;
-		// END_OF_MYSHOP_PRICE_LIST
-		//
 	// RELOAD_ADMIN
 	case HEADER_DG_RELOAD_ADMIN:
 		ReloadAdmin(c_pData );

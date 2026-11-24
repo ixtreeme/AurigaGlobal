@@ -155,16 +155,6 @@ namespace quest
 		return 0;
 	}
 
-	ALUA(oxevent_give_item)
-	{
-		if (lua_isnumber(L, 1) && lua_isnumber(L, 2))
-		{
-			COXEventManager::instance().GiveItemToAttender((int)lua_tonumber(L, 1), (int)lua_tonumber(L, 2));
-		}
-
-		return 0;
-	}
-
 	ALUA(oxevent_give_typed_item)
 	{
 		std::size_t size=0;
@@ -191,7 +181,6 @@ namespace quest
 			{	"get_attender",	oxevent_get_attender},
 			{	"end_event",	oxevent_end_event	},
 			{	"end_event_force",	oxevent_end_event_force	},
-			{	"give_item",	oxevent_give_item	},
 			{ "give_typed_item", oxevent_give_typed_item },
 #ifdef ENABLE_NEWSTUFF
 			{	"get_oxquiz_fn",	oxevent_get_oxquiz_fn	}, // [return lua string]

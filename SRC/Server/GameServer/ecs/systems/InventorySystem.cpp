@@ -286,11 +286,6 @@ bool CanHandleItems(entt::entity owner, bool skipRefine, bool skipObserver)
     const auto* events = g_registry.try_get<ecs::LegacyCharEvents>(owner);
     if (events && events->warp)
         return false;
-#ifdef ENABLE_ACCE_SYSTEM
-    const auto* acce = g_registry.try_get<ecs::AcceWindowComponent>(owner);
-    if (acce && (acce->combinationOpen || acce->absorptionOpen))
-        return false;
-#endif
     return true;
 }
 
@@ -2962,14 +2957,6 @@ bool HasMainInventorySpaceEcs(entt::entity owner, uint8_t itemSize)
     return FindEmptyMainInventoryPosition(owner, itemSize) != -1;
 }
 
-bool HasInventorySpaceForItemVnum(entt::entity owner, uint32_t itemVnum)
-{
-    const TItemTable* proto = ITEM_MANAGER::instance().GetTable(itemVnum);
-    if (!proto)
-        return false;
-
-    return FindEmptyMainInventoryPosition(owner, proto->bSize) != -1;
-}
 
 bool PlaceItemEcs(entt::entity owner, entt::entity item, uint8_t window, uint16_t cell)
 {

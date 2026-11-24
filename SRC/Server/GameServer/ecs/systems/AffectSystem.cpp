@@ -892,12 +892,6 @@ bool UpdateAffect(entt::entity e)
 		ecs::PointSystem::Change(e, POINT_SP, ecs::PointSystem::GetPrecise(e, POINT_SP_RECOVER_CONTINUE));
 	}
 
-	ItemSystem::AutoRecoveryItemProcess(e, AFFECT_AUTO_HP_RECOVERY);
-	ItemSystem::AutoRecoveryItemProcess(e, AFFECT_AUTO_SP_RECOVERY);
-#ifdef ENABLE_NEW_USE_POTION
-	ItemSystem::AutoRecoveryItemProcess(e, AFFECT_AUTO_HP_RECOVERY2);
-	ItemSystem::AutoRecoveryItemProcess(e, AFFECT_AUTO_SP_RECOVERY2);
-#endif
 #ifdef ENABLE_RECALL
 	AffectSystem::AutoRecallProcess(e);
 #endif

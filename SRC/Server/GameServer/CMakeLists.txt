@@ -308,7 +308,7 @@ add_executable(OXEventTests EXCLUDE_FROM_ALL
     world/event.cpp
     world/event_queue.cpp
 )
-target_link_libraries(OXEventTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
+target_link_libraries(OXEventTests PRIVATE SERVER EnTT::EnTT LUA S_Core AurigaItemCatalog)
 if(MSVC)
     target_compile_options(OXEventTests PRIVATE /Gy)
     target_link_options(OXEventTests PRIVATE /OPT:REF /OPT:NOICF)
@@ -968,7 +968,7 @@ add_executable(CharacterManagerTests EXCLUDE_FROM_ALL
     world/event.cpp
     world/event_queue.cpp
 )
-target_link_libraries(CharacterManagerTests PRIVATE SERVER EnTT::EnTT LUA)
+target_link_libraries(CharacterManagerTests PRIVATE SERVER EnTT::EnTT LUA AurigaItemCatalog)
 if(WIN32)
     target_link_libraries(CharacterManagerTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
 endif()

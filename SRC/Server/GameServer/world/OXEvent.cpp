@@ -1,5 +1,4 @@
 #include "stdafx.h"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/ViewSystem.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
 #include "../ecs/systems/ChatSystem.hpp"
@@ -399,34 +398,6 @@ bool COXEventManager::LogWinner()
         if (revision != m_roundRevision) break;
         if (m_attenders.contains(character) && IsOXPlayer(character))
             LogManager::instance().CharLog(character, 0, "OXEVENT", "LastManStanding");
-    }
-    return true;
-}
-
-bool COXEventManager::GiveItemToAttender(uint32_t itemVnum,
-#ifdef ENABLE_NEW_STACK_LIMIT
-    int
-#else
-    uint8_t
-#endif
-    count)
-{
-    if (!itemVnum || count <= 0 || m_rewarding || m_closing) return false;
-    ScopedOXFlag rewarding(m_rewarding);
-    const auto revision = m_roundRevision;
-    const auto attenders = m_attenders;
-    for (const auto character : attenders) {
-        if (revision != m_roundRevision) break;
-        if (!m_attenders.contains(character) || !IsOXPlayer(character)) continue;
-#ifdef ENABLE_BLOCK_MULTIFARM
-        if (!AffectSystem::FindAffect(character, AFFECT_DROP_UNBLOCK, APPLY_NONE)) continue;
-#endif
-        // Audit data is a value snapshot; item delivery may retire the recipient.
-        const auto pid = ecs::PlayerRuntime::GetPlayerID(character);
-        auto* desc = ecs::PlayerRuntime::GetDesc(character);
-        const std::string host = desc ? desc->GetHostName() : "";
-        ItemSystem::AutoGiveItemEcs(character, itemVnum, static_cast<uint32_t>(count));
-        LogManager::instance().ItemLog(pid, 0, count, itemVnum, "OXEVENT_REWARD", "", host.c_str(), itemVnum);
     }
     return true;
 }

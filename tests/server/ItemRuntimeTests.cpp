@@ -65,7 +65,6 @@ entt::entity pickupClaim = entt::null, creditedOwner = entt::null;
 bool npcTest = false;
 int revivals = 0, feeds = 0;
 std::string receivedItemName;
-std::function<bool(entt::entity)> onUse;
 bool failAllocation = false;
 bool wearStopTest = false;
 int wearUpdates = 0;
@@ -89,7 +88,7 @@ void Reset() {
     onPickupCredit = onPickupSave = onPickupNotify = onPickupFindCell = {};
     onPickupMerge = {}; pickupClaim = creditedOwner = entt::null;
     onCreate = onPublish = onComponent = {}; onCancel = {};
-    onUse = {}; npcTest = false; revivals = feeds = 0; receivedItemName.clear();
+    npcTest = false; revivals = feeds = 0; receivedItemName.clear();
     onUpdate = {}; wearStopTest = false; wearUpdates = 0;
     g_registry.clear(); queued.clear(); failAllocation = false; test_server = 0;
 }
@@ -213,7 +212,6 @@ void ModifyPoints(entt::entity, bool) { Unexpected(); }
 bool IsItemConsumptionPending(entt::entity) { return false; }
 bool RefreshItemOwnerPID(entt::entity) { Unexpected(); }
 bool SetGroundOwnership(entt::entity, entt::entity, int) { if (pickupTest) return true; Unexpected(); }
-bool UseItemEx(entt::entity, entt::entity item, TItemPos) { if (onUse) return onUse(item); Unexpected(); }
 bool CanConsumeOwnedItem(entt::entity owner, entt::entity item, uint32_t amount, ItemCostStorage) {
     // Full storage/payment policy is covered by ItemAttributeTests.
     return ecs::PlayerRuntime::IsPC(owner) && IsValidItem(item) && GetItemOwner(item) == owner &&
@@ -225,7 +223,6 @@ bool MountSystem::ReviveHorse(entt::entity) { ++revivals; return true; }
 void MountSystem::FeedHorse(entt::entity) { ++feeds; }
 void NetworkSyncSystem::BroadcastEffect(entt::registry&, entt::entity, uint8_t) {}
 void InventorySystem::SetRefineNPC(entt::entity, entt::entity) { Unexpected(); }
-bool fishing::GrillFishEcs(entt::entity, entt::entity) { Unexpected(); }
 quest::CQuestManager::CQuestManager() = default;
 quest::CQuestManager::~CQuestManager() = default;
 LogManager::LogManager() : m_bIsConnect(false) {}
@@ -239,8 +236,6 @@ bool quest::CQuestManager::TakeItem(unsigned int, unsigned int, entt::entity) { 
 CRuneDungeon& CRuneDungeon::instance() { static CRuneDungeon dungeon; return dungeon; }
 CHalloween2022Dungeon& CHalloween2022Dungeon::instance() { static CHalloween2022Dungeon dungeon; return dungeon; }
 CVikingDungeon& CVikingDungeon::instance() { static CVikingDungeon dungeon; return dungeon; }
-bool ItemSystem::GiveItemFromSpecialItemGroup(entt::entity, uint32_t, std::vector<uint32_t>&,
-    std::vector<uint32_t>&, std::vector<entt::entity>&, int&) { Unexpected(); }
 void PartySystem::ChatPacketToAllMemberNew(entt::entity, uint8_t, uint32_t, const char*, ...) { Unexpected(); }
 namespace ShopSystem {
 bool IsSellingItem(entt::entity, uint32_t) { Unexpected(); }
@@ -326,7 +321,7 @@ void LogManager::ItemLogEntity(entt::entity owner, entt::entity item, const char
 }
 
 namespace {
-void NativeInventoryAndUse() {
+void NativeInventory() {
     Reset(); Fixture f;
     const auto owner = g_registry.create();
     auto& main = g_registry.emplace<ecs::MainInventoryRuntimeComponent>(owner);
@@ -353,11 +348,7 @@ void NativeInventoryAndUse() {
 #ifdef ENABLE_SWITCHBOT
     g_registry.emplace<ecs::SwitchbotRuntimeComponent>(owner).items[0] = f.item;
 #endif
-    onUse = [](entt::entity item) { g_registry.get<ecs::ItemIdentity>(item).vnum = 4321; return true; };
-    Check(ItemSystem::UseItemEcs(owner, f.item, TItemPos(INVENTORY, 1)) && ItemSystem::GetItemVnum(f.item) == 4321,
-        "native use result was overwritten by legacy synchronization");
-    onUse = [](entt::entity item) { g_registry.destroy(item); return true; };
-    Check(ItemSystem::UseItemEcs(owner, f.item, TItemPos(INVENTORY, 1)), "consumed use lost its handled result");
+    g_registry.destroy(f.item);
     for (uint8_t window : {uint8_t(INVENTORY), uint8_t(EQUIPMENT)
 #ifdef ENABLE_EXTRA_INVENTORY
         , uint8_t(EXTRA_INVENTORY)
@@ -370,49 +361,6 @@ void NativeInventoryAndUse() {
     const auto replacement = g_registry.create();
     g_registry.emplace<ecs::ItemIdentity>(replacement);
     Check(ItemSystem::GetInventoryItem(owner, 0) == entt::null, "recycled entity replaced a stale inventory entry");
-}
-
-void NativeNpcItems() {
-    Reset(); Fixture f; npcTest = true;
-    const auto owner = g_registry.create(), npc = g_registry.create();
-    g_registry.emplace<Actor>(owner).pc = true;
-    g_registry.emplace<Actor>(npc).race = BLACKSMITH_WEAPON_MOB;
-    g_registry.emplace<ecs::ItemOwner>(f.item).owner = owner;
-    g_registry.emplace<ecs::ItemCount>(f.item).count = 1;
-    g_registry.get<ecs::ItemPrototypeMeta>(f.item).type = ITEM_WEAPON;
-    f.proto.dwRefinedVnum = 1001;
-    g_registry.get<ecs::ItemProtoRef>(f.item).refined_vnum = 1001;
-    Check(!ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "blacksmith accepted a retired forge request");
-    g_registry.get<Actor>(npc).race = ALCHEMIST_MOB;
-    Check(ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "alchemist rejected a refinable item");
-    g_registry.get<Actor>(npc).map = 2;
-    Check(!ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "cross-map NPC accepted an item");
-    g_registry.get<Actor>(npc).map = 1;
-    g_registry.get<Actor>(npc).x = INT32_MAX; g_registry.get<Actor>(owner).x = INT32_MIN;
-    Check(!ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "overflowing NPC distance accepted");
-    g_registry.get<Actor>(npc).x = g_registry.get<Actor>(owner).x = 0;
-    g_registry.get<Actor>(npc).pc = true;
-    Check(!ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "PC used NPC receive path");
-    g_registry.get<Actor>(npc).pc = false;
-    g_registry.get<ecs::ItemOwner>(f.item).owner = npc;
-    Check(!ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "foreign item accepted");
-    g_registry.get<ecs::ItemOwner>(f.item).owner = owner;
-    g_registry.get<Actor>(npc).race = DEVILTOWER_BLACKSMITH_WEAPON_MOB;
-    Check(!ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "tower blacksmith accepted a retired forge request");
-    auto& horse = g_registry.get<Actor>(npc); horse.race = 20101;
-    g_registry.get<ecs::ItemIdentity>(f.item).vnum = ITEM_REVIVE_HORSE_1;
-    Check(!ItemSystem::CanReceiveItemEcs(npc, owner, f.item), "live horse accepted revival");
-    horse.dead = true;
-    std::strcpy(f.proto.szName, "Revival herb");
-    std::strcpy(g_registry.get<ecs::ItemProtoRef>(f.item).name, "Revival herb");
-    Check(ItemSystem::ReceiveItemEcs(npc, owner, f.item) && revivals == 1 && !g_registry.valid(f.item),
-        "entity-only horse revival failed");
-#ifdef TEXTS_IMPROVEMENT
-    Check(receivedItemName == "Revival herb", "revival read item name after destroying it");
-#endif
-    Check(!ItemSystem::ReceiveItemEcs(npc, owner, f.item), "stale item was received twice");
-    g_registry.destroy(npc);
-    Check(!ItemSystem::ReceiveItemEcs(npc, owner, f.item), "stale receiver accepted an item");
 }
 
 void NativeIdentityRegistry() {
@@ -903,30 +851,7 @@ void PickupAdmission() {
         }
     }
 }
-void UseAdmission() {
-    namespace admission = ecs::resource_admission;
-    Reset(); Fixture fixture;
-    const auto owner = PickupActor();
-    const auto key = AdmissionKey(owner);
-    auto pause = admission::Prepare(owner, key, key.request);
-    Check(pause.has_value(), "item-use pause fixture failed");
-    onUse = [](entt::entity) -> bool { Unexpected(); };
-    Check(!ItemSystem::UseItemEcs(owner, fixture.item, TItemPos(INVENTORY, 1)) && ItemSystem::IsValidItem(fixture.item),
-        "paused native item use reached the subtype dispatcher");
-    pause.reset();
-    bool called = false;
-    onUse = [&](entt::entity item) {
-        called = true;
-        Check(!admission::Prepare(owner, key, key.request), "use callback paused an active item use");
-        admission::Invalidate(owner);
-        g_registry.destroy(item);
-        Check(!admission::Prepare(owner, key, key.request), "consumed item released use admission early");
-        return true;
-    };
-    Check(ItemSystem::UseItemEcs(owner, fixture.item, TItemPos(INVENTORY, 1)) && called && !ItemSystem::IsValidItem(fixture.item),
-        "committed native use lost its consumed result");
-    Check(admission::Prepare(owner, key, key.request).has_value(), "native item use leaked activity");
-}
+
 
 }
 int main() {
@@ -937,7 +862,7 @@ int main() {
     g_registry.on_construct<ecs::ItemEvents>().connect<&Constructed>();
     g_registry.on_construct<ecs::ItemIdentity>().connect<&FactoryIdentity>();
     g_dispatcher.sink<ecs::EvItemDestroyed>().connect<&Retired>();
-    try { NativeFactory(); NativePrototypeRefresh(); FactoryCallbacks(); NativePickups(); PickupAdmission(); UseAdmission(); NativeInventoryAndUse(); NativeNpcItems(); NativeIdentityRegistry(); LocalizedNames(); LevelChecks(); LoadedTimers(); WearTimers(); WearTimerStops(); TimerFailuresAndCallbacks(); Reset(); }
+    try { NativeFactory(); NativePrototypeRefresh(); FactoryCallbacks(); NativePickups(); PickupAdmission(); NativeInventory(); NativeIdentityRegistry(); LocalizedNames(); LevelChecks(); LoadedTimers(); WearTimers(); WearTimerStops(); TimerFailuresAndCallbacks(); Reset(); }
     catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
     std::cout << "Item runtime: " << checks << " checks passed\n";
 }

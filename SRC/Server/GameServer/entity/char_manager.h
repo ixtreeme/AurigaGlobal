@@ -118,7 +118,7 @@ public:
 		void			CompareEventSendData(TEMP_BUFFER* buf);
 		const TEventManagerData* CheckEventIsActive(uint8_t eventIndex, uint8_t empireIndex = 0);
 		bool			RollAurigaCoinEvent(entt::entity killer);
-		void			CheckEventForDrop(entt::entity character, entt::entity killer, std::vector<entt::entity>& vec_item);
+
 	protected:
 		std::map<uint8_t, std::vector<TEventManagerData>>	m_eventData;
 #endif

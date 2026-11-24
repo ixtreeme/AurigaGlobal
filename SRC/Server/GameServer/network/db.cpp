@@ -245,38 +245,6 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 			}
 			break;
 
-		case QID_LOTTO:
-			{
-				const entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(qi->dwIdent);
-				uint32_t * pdw = (uint32_t *) qi->pvData;
-
-				if (ecs::IsCharacter(ch))
-				{
-					if (pMsg->Get()->uiAffectedRows == 0 || pMsg->Get()->uiAffectedRows == (uint32_t)-1)
-					{
-						LOG_INFO("GIVE LOTTO FAIL TO pid {}", (ecs::PlayerRuntime::GetPlayerID(ch)));
-					}
-					else
-					{
-						const entt::entity pkItem = static_cast<int>(pdw[1]) > 0
-							? ItemSystem::AutoGiveItemEcs(ch, pdw[0], pdw[1])
-							: entt::null;
-
-						if (ItemSystem::IsValidItem(pkItem))
-						{
-							LOG_INFO("GIVE LOTTO SUCCESS TO {} (pid {})", ecs::PlayerRuntime::GetName(ch).data(), qi->dwIdent);
-							ItemSystem::SetItemSocket(pkItem, 0, pMsg->Get()->uiInsertID);
-							ItemSystem::SetItemSocket(pkItem, 1, pdw[2]);
-						}
-						else
-							LOG_INFO("GIVE LOTTO FAIL2 TO pid {}", (ecs::PlayerRuntime::GetPlayerID(ch)));
-					}
-				}
-
-				delete[] pdw;
-			}
-			break;
-
 		case QID_HIGHSCORE_REGISTER:
 			{
 				THighscoreRegisterQueryInfo * info = (THighscoreRegisterQueryInfo *) qi->pvData;

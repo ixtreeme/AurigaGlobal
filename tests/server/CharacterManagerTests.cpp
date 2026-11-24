@@ -204,56 +204,7 @@ void UpdateChecks(CHARACTER_MANAGER& manager) {
     manager.Update(1);
     Check(updates == 1, "state snapshot ignored removed membership");
 }
-void DropChecks(CHARACTER_MANAGER& manager) {
-    Reset(manager);
-    const auto victim = Actor(manager, 1, false), killer = Actor(manager, 2);
-    Event(manager, {DOUBLE_MISSION_BOOK_EVENT, DUNGEON_TICKET_LOOT_EVENT});
-    std::vector<entt::entity> items;
-    for (int i = 0; i < 128; ++i) items.push_back(Item(i % 2 ? 50300 : 71201, 7));
-    items.shrink_to_fit();
-    manager.CheckEventForDrop(victim, killer, items);
-    Check(items.size() == 256 && creates == 128, "drop clones count / vector growth");
-    Check(std::unordered_set<entt::entity>(items.begin(), items.end()).size() == items.size(), "duplicate item handles");
-    for (auto e : items) Check(g_registry.get<ItemData>(e).count == 7, "cloned item count");
-    creates = 0;
-    const auto stale = Item(50301); g_registry.destroy(stale);
-    std::vector<entt::entity> mixed{stale, entt::null, Item(50302), Item(777)};
-    manager.CheckEventForDrop(victim, killer, mixed);
-    Check(mixed.size() == 5 && creates == 1, "invalid/nonmatching drops");
-    rejectItem = true;
-    manager.CheckEventForDrop(victim, killer, mixed);
-    Check(mixed.size() == 5, "failed item creation appended");
-    rejectItem = false;
-    Event(manager, {DOUBLE_METIN_LOOT_EVENT, DOUBLE_MISSION_BOOK_EVENT});
-    g_registry.emplace<ecs::TagStone>(victim);
-    std::vector<entt::entity> stacking{Item(50300)};
-    manager.CheckEventForDrop(victim, killer, stacking);
-    Check(stacking.size() == 4, "stacked events changed");
-    manager.CheckEventForDrop(entt::null, killer, stacking);
-    manager.CheckEventForDrop(victim, entt::null, stacking);
-    Check(stacking.size() == 4, "invalid drop actors");
-    Event(manager, {DUPLA_SZILI_EVENT});
-    std::vector<entt::entity> soul{Item(30271), Item(50300), Item(71201)};
-    manager.CheckEventForDrop(victim, killer, soul);
-    Check(soul.size() == 4 && ItemSystem::GetItemVnum(soul.back()) == 30271, "soul event must not clone unrelated drops");
-    g_registry.remove<ecs::TagStone>(victim);
-    for (const auto [race, type] : {std::pair<uint32_t, uint8_t>{491, DOUBLE_BOSS_LOOT_EVENT}, {693, BUPLA_RUN_BOSS_LOOT_EVENT}}) {
-        g_registry.get<ActorData>(victim).race = race;
-        Event(manager, {type});
-        std::vector<entt::entity> bossItems{Item(777), Item(888)};
-        manager.CheckEventForDrop(victim, killer, bossItems);
-        Check(bossItems.size() == 4, "boss event clone behavior");
-    }
-    manager.ClearEventData();
-    std::vector<entt::entity> unchanged{Item(50300)};
-    manager.CheckEventForDrop(victim, killer, unchanged);
-    Check(unchanged.size() == 1, "inactive event cloned drops");
-    manager.LoadItemShopData(entt::null, true);
-    manager.LoadItemShopData(killer);
-    manager.LoadItemShopBuy(entt::null, 1, 1);
-    manager.LoadItemShopBuy(killer, 1, 1);
-    manager.LoadItemShopBuyReal(killer, nullptr);
-}
+
 }
 
 LPHEART thecore_heart = &despawnHeart;
@@ -355,7 +306,7 @@ uint32_t CMobManager::GetGroupFromGroupGroup(uint32_t) { Unexpected(); }
 const CMob* CMobManager::Get(uint32_t) { Unexpected(); }
 void ecs::ChatSystem::Send(entt::entity, uint8_t, const char*, ...) { Unexpected(); }
 void ecs::ChatSystem::SendNew(entt::entity, uint8_t, uint32_t, const char*, ...) { Unexpected(); }
-void ecs::PointSystem::ApplyPoint(entt::entity, uint8_t, int32_t) { Unexpected(); }
+void ecs::PointSystem::ApplyPoint(entt::entity, uint8_t, double) { Unexpected(); }
 void ecs::PointSystem::Compute(entt::entity) { Unexpected(); }
 namespace ecs::PlayerRuntime {
 LPDESC GetDesc(entt::entity) { return nullptr; }
@@ -438,7 +389,7 @@ void ecs::SocialSystem::SetDungeon(entt::entity, entt::entity) { Unexpected(); }
 void ItemSystem::AutoGiveItem(entt::entity, entt::entity, bool, bool) { Unexpected(); }
 const TItemTable* ItemSystem::GetItemProto(entt::entity) { Unexpected(); }
 bool ItemSystem::SetItemSocket(entt::entity, int, uint32_t, bool) { Unexpected(); }
-bool ItemSystem::SetItemForceAttributeEcs(entt::entity, int, uint8_t, int16_t) { Unexpected(); }
+bool ItemSystem::SetItemForceAttributeEcs(entt::entity, int, uint8_t, double) { Unexpected(); }
 void CLIENT_DESC::DBPacketHeader(uint8_t, uint32_t, uint32_t) { Unexpected(); }
 void CLIENT_DESC::Packet(const void*, int) { Unexpected(); }
 
@@ -548,7 +499,7 @@ int main() {
         CHARACTER_MANAGER manager;
         ITEM_MANAGER items;
         CShutdownManager shutdown;
-        DespawnChecks(manager); LookupChecks(manager); DestroyChecks(manager); ShutdownChecks(manager); SaveChecks(manager); UpdateChecks(manager); DropChecks(manager);
+        DespawnChecks(manager); LookupChecks(manager); DestroyChecks(manager); ShutdownChecks(manager); SaveChecks(manager); UpdateChecks(manager);
         Reset(manager);
         std::cout << "Character manager checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

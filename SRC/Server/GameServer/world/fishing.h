@@ -1,45 +1,10 @@
 #pragma once
 
-#include <common/service.h>
-#include <entt/entt.hpp>
-#include "item.h"
+#include <entt/entity/entity.hpp>
 
 namespace fishing
 {
-	enum
-	{
-		CAMPFIRE_MOB = 12000,
-		FISHER_MOB = 9009,
-		FISH_MIND_PILL_VNUM = 27610,
-	};
-
-	EVENTINFO(fishing_event_info)
-	{
-		uint32_t	pid;
-		int		step;
-		uint32_t	hang_time;
-		int		fish_id;
-		bool	canna;
-
-		fishing_event_info()
-		: pid(0)
-		, step(0)
-		, hang_time(0)
-		, fish_id(0)
-		{
-		}
-	};
-
-	extern void Initialize();
-    bool PredictFish(entt::entity ch);
-	extern LPEVENT CreateFishingEvent(entt::entity ch);
-	extern void Take(fishing_event_info* info, entt::entity ch);
-	extern void Simulation(int level, int count, int map_grade, entt::entity ch);
-	extern void UseFish(entt::entity owner, entt::entity item);
-	extern bool UseFishEcs(entt::entity owner, entt::entity item);
-	extern void Grill(entt::entity owner, entt::entity item);
-	extern bool GrillFishEcs(entt::entity owner, entt::entity item);
-
-	extern bool RefinableRod(entt::entity rod);
-	extern int RealRefineRod(entt::entity ch, entt::entity rod);
+inline constexpr unsigned CAMPFIRE_MOB = 12000;
+inline constexpr unsigned FISHER_MOB = 9009;
+bool PredictFish(entt::entity owner);
 }

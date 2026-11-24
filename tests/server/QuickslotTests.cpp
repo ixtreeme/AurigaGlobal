@@ -398,15 +398,6 @@ void InventoryGuards()
     Check(!InventorySystem::CanHandleItems(owner), "busy attribute transfer ignored");
     transfer.busy = false;
 #endif
-#ifdef ENABLE_ACCE_SYSTEM
-    auto& acce = g_registry.emplace<ecs::AcceWindowComponent>(owner);
-    acce.combinationOpen = true;
-    Check(!InventorySystem::CanHandleItems(owner), "accessory combination ignored");
-    acce.combinationOpen = false;
-    acce.absorptionOpen = true;
-    Check(!InventorySystem::CanHandleItems(owner), "accessory absorption ignored");
-    acce.absorptionOpen = false;
-#endif
     auto& events = g_registry.emplace<ecs::LegacyCharEvents>(owner);
     events.warp = LPEVENT(new EVENT);
     Check(!InventorySystem::CanHandleItems(owner, true, true), "warp bypassed");

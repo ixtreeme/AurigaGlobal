@@ -66,15 +66,6 @@ struct AttrTransferWindowComponent {
 };
 #endif
 
-#ifdef ENABLE_ACCE_SYSTEM
-struct AcceWindowComponent {
-    std::array<entt::entity, ACCE_WINDOW_MAX_MATERIALS> materials;
-    bool combinationOpen { false };
-    bool absorptionOpen { false };
-
-    AcceWindowComponent() { materials.fill(entt::null); }
-};
-#endif
 
 #ifdef ENABLE_SWITCHBOT
 struct SwitchbotRuntimeComponent {

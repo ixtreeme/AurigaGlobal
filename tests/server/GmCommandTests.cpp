@@ -70,8 +70,6 @@ bool DeferTypedBookMutation(entt::entity,std::function<void()>) { return false; 
 #include "../../SRC/Server/GameServer/core/constants.h"
 #include <Core/Logging.hpp>
 
-ACMD(do_item_purge);
-ACMD(do_set_socket);
 ACMD(do_user);
 ACMD(do_setskill);
 ACMD(do_set_skill_group);
@@ -135,65 +133,6 @@ entt::entity Give(entt::entity owner, uint8_t window = INVENTORY, uint16_t cell 
     g_registry.emplace<Item>(e, owner, pos, 1234u);
     slots[{owner, Key(pos)}] = e;
     return e;
-}
-void PurgeChecks() {
-    for (const char* arg : {"", "alligator", "invjunk", "equipmentjunk", "ds", "dragonsoul", "dsjunk", "beltjunk"}) {
-        Reset(); const auto owner = Actor(), item = Give(owner);
-        do_item_purge(owner, arg, 0, 0);
-        Check(g_registry.valid(item) && destroyed.empty(), "invalid purge selector accepted");
-    }
-    for (const char* arg : {"inv", "inventory", "equip", "equipment", "belt", "extra", "all"}) {
-        Reset(); const auto owner = Actor();
-        const auto inv = Give(owner), equip = Give(owner, INVENTORY, INVENTORY_MAX_NUM);
-        const auto belt = Give(owner, INVENTORY, BELT_INVENTORY_SLOT_START);
-        const auto extra = Give(owner, EXTRA_INVENTORY);
-        do_item_purge(owner, arg, 0, 0);
-        const std::string_view mode(arg);
-        const bool all = mode == "all";
-        Check(!g_registry.valid(inv) == (all || mode == "inv" || mode == "inventory"), "inventory selection");
-        Check(!g_registry.valid(equip) == (all || mode == "equip" || mode == "equipment"), "equipment selection");
-        Check(!g_registry.valid(belt) == (all || mode == "belt"), "belt selection");
-        Check(!g_registry.valid(extra) == (all || mode == "extra"), "extra selection");
-        Check(quickslots.size() == (all ? 4 : 1), "quickslot windows");
-    }
-    Reset(); auto owner = Actor(), item = Give(owner);
-    activePet = true;
-    do_item_purge(owner, "all", 0, 0);
-    Check(g_registry.valid(item) && destroyed.empty(), "active pet item destroyed");
-    activePet = false; rejectDestroy = true;
-    do_item_purge(owner, "all", 0, 0);
-    Check(g_registry.valid(item) && quickslots.empty(), "failed deletion cleared quickslot");
-    rejectDestroy = false;
-    slots[{owner, Key(TItemPos(INVENTORY, 1))}] = item; // Corrupt duplicate entry.
-    do_item_purge(owner, "all", 0, 0);
-    Check(destroyed.size() == 1, "duplicate item destroyed twice");
-    Reset(); owner = Actor(); item = Give(owner);
-    g_registry.remove<ecs::TagPC>(owner);
-    do_item_purge(owner, "all", 0, 0); do_item_purge(entt::null, "all", 0, 0);
-    Check(g_registry.valid(item) && destroyed.empty(), "invalid/non-player owner");
-    g_registry.destroy(owner); Actor();
-    do_item_purge(owner, "all", 0, 0);
-    Check(g_registry.valid(item), "stale owner inherited replacement");
-
-    for (int mode = 0; mode < 6; ++mode) {
-        Reset(); owner = Actor();
-        const auto first = Give(owner), second = Give(owner, INVENTORY, 1);
-        entt::entity replacement = entt::null;
-        onDestroy = [&](entt::entity e) {
-            if (e != first) return;
-            if (mode == 0) { g_registry.destroy(owner); replacement = Actor(); }
-            if (mode == 1) { g_registry.destroy(second); replacement = Give(owner, INVENTORY, 1); }
-            if (mode == 2) { g_registry.get<Item>(second).owner = Actor("Other"); }
-            if (mode == 3) { slots.erase({owner, Key(TItemPos(INVENTORY, 1))}); }
-            if (mode == 4) { replacement = Give(owner, INVENTORY, 0); }
-            if (mode == 5) { replacement = Give(owner, INVENTORY, 2); }
-        };
-        do_item_purge(owner, "all", 0, 0);
-        Check(destroyed.size() == (mode >= 4 ? 2 : 1), "snapshot/ownership/generation invalidation");
-        if (replacement != entt::null) Check(g_registry.valid(replacement), "purged callback replacement");
-        if (mode == 0) Check(quickslots.empty(), "owner teardown followed by quickslot write");
-        if (mode == 4) Check(quickslots.size() == 1 && quickslots[0].second == 1, "replacement slot cleared");
-    }
 }
 void NoticeChecks() {
     Reset(); const auto first = Actor("100%player"), second = Actor("Second"), offline = Actor("Offline");
@@ -613,19 +552,6 @@ void SkillTableChecks() {
     Check(!g_registry.valid(gone), "writing through a stale handle stays a no-op");
 }
 
-void SocketChecks() {
-    Reset(); const auto owner = Actor(), item = Give(owner);
-    for (const char* arg : {"", "-1 0 1", "4294967296 0 1", "1234 -1 1", "1234 999 1",
-        "1234 0 2147483648", "1234junk 0 1", "1234 0 2junk"}) {
-        do_set_socket(owner, arg, 0, 0);
-        Check(socketWrites == 0, "malformed socket command accepted");
-    }
-    do_set_socket(owner, "1234 0 42", 0, 0);
-    Check(socketWrites == 1, "native item-ID socket lookup");
-    g_registry.destroy(item); Give(owner);
-    do_set_socket(owner, "9999 0 1", 0, 0);
-    Check(socketWrites == 1, "missing item socket write");
-}
 }
 namespace ecs::PlayerRuntime {
 bool IsPC(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<TagPC>(e); }
@@ -776,7 +702,7 @@ void AffectSystem::ApplyPoison(entt::entity,entt::entity) { Unexpected(); }
 bool AffectSystem::IsImmune(entt::entity,unsigned int) { Unexpected(); }
 CAffect * AffectSystem::FindAffect(entt::entity,unsigned int,unsigned char) { Unexpected(); }
 bool AffectSystem::IsAffectFlag(entt::entity,unsigned int) { Unexpected(); }
-bool AffectSystem::AddAffect(entt::entity,unsigned int,unsigned char,int,unsigned int,int,int,bool,bool) { Unexpected(); }
+bool AffectSystem::AddAffect(entt::entity,unsigned int,unsigned char,double,unsigned int,int,int,bool,bool) { Unexpected(); }
 bool AffectSystem::RemoveAffect(entt::entity,unsigned int) { Unexpected(); }
 bool AffectSystem::RemoveAffect(entt::entity,CAffect *) { Unexpected(); }
 void AffectSystem::ClearAffect(entt::entity,bool) { Unexpected(); }
@@ -829,8 +755,6 @@ int MountSystem::GetHorseHealth(entt::entity) { Unexpected(); }
 int MountSystem::GetHorseMaxHealth(entt::entity) { Unexpected(); }
 int MountSystem::GetHorseStamina(entt::entity) { Unexpected(); }
 int MountSystem::GetHorseMaxStamina(entt::entity) { Unexpected(); }
-int mining::RealRefinePick(entt::entity,entt::entity) { Unexpected(); }
-void mining::CHEAT_MAX_PICK(entt::entity,entt::entity) { Unexpected(); }
 void ecs::PlayerRuntime::SetCoward(entt::entity) { Unexpected(); }
 namespace ecs::SessionSystem { bool WarpToPID(entt::entity, unsigned int) { Unexpected(); } }
 int ItemSystem::CountItem(entt::entity, uint32_t) { Unexpected(); }
@@ -839,7 +763,6 @@ void CombatSystem::ForgetMyAttacker(entt::entity) { Unexpected(); }
 void CombatSystem::AggregateMonster(entt::entity) { Unexpected(); }
 void CombatSystem::AttractRanger(entt::entity) { Unexpected(); }
 void CombatSystem::PullMonster(entt::entity) { Unexpected(); }
-void ecs::SessionSystem::ChangeSafeboxSize(entt::entity, uint8_t) { Unexpected(); }
 void CombatSystem::SetSkillHit(entt::entity, bool) { Unexpected(); }
 entt::entity MountSystem::GetRider(entt::entity) { Unexpected(); }
 bool ecs::PlayerRuntime::IsPet(entt::entity) { Unexpected(); }
@@ -903,8 +826,6 @@ void CGuildManager::ShowGuildWarList(entt::entity) { Unexpected(); }
 void CGuildManager::RequestEndWar(unsigned int,unsigned int) { Unexpected(); }
 void CGuildManager::RequestCancelWar(unsigned int,unsigned int) { Unexpected(); }
 _CCI * P2P_MANAGER::Find(char const *) { Unexpected(); }
-void fishing::Initialize(void) { Unexpected(); }
-void fishing::Simulation(int,int,int,entt::entity) { Unexpected(); }
 void quest::PC::EndRunning(void) { Unexpected(); }
 void quest::PC::SetQuest(std::string const &,quest::QuestState &) { Unexpected(); }
 void quest::PC::ClearQuest(std::string const &) { Unexpected(); }
@@ -956,7 +877,6 @@ void LogManager::CharLog(entt::entity,unsigned int,char const *,char const *) { 
 entt::entity ItemSystem::GetInventoryItem(entt::entity,unsigned short) { Unexpected(); }
 entt::entity ItemSystem::GetWearItem(entt::entity,unsigned char) { Unexpected(); }
 bool ItemSystem::UnequipItemEcs(entt::entity,entt::entity) { Unexpected(); }
-bool ItemSystem::UseItemEcs(entt::entity,entt::entity,SItemPos) { Unexpected(); }
 entt::entity ItemSystem::AutoGiveItemEcs(entt::entity,unsigned int,unsigned int,int,bool,bool) { Unexpected(); }
 bool ItemSystem::IsExtraItem(entt::entity) { Unexpected(); }
 unsigned int ItemSystem::GetItemID(entt::entity) { Unexpected(); }
@@ -964,7 +884,7 @@ char const * ItemSystem::GetItemName(entt::entity) { Unexpected(); }
 int ItemSystem::FindEquipCell(entt::entity,entt::entity,int) { Unexpected(); }
 unsigned int ItemSystem::GetItemSocket(entt::entity,int) { Unexpected(); }
 bool ItemSystem::SetItemSocketEcs(entt::entity,int,unsigned int) { Unexpected(); }
-bool ItemSystem::SetItemForceAttributeEcs(entt::entity,int,unsigned char,short) { Unexpected(); }
+bool ItemSystem::SetItemForceAttributeEcs(entt::entity,int,unsigned char,double) { Unexpected(); }
 bool ItemSystem::AddItemAttributeEcs(entt::entity) { Unexpected(); }
 bool ItemSystem::AddItemRareAttributeEcs(entt::entity) { Unexpected(); }
 bool ItemSystem::ChangeItemAttributeEcs(entt::entity,int const *) { Unexpected(); }
@@ -974,7 +894,6 @@ unsigned short ItemSystem::GetItemCell(entt::entity) { Unexpected(); }
 int ItemSystem::GetEmptyInventoryPositionEcs(entt::entity,entt::entity) { Unexpected(); }
 int ItemSystem::GetEmptyExtraInventory(entt::entity,entt::entity) { Unexpected(); }
 bool ItemSystem::ModifyItemPointsEcs(entt::entity,bool) { Unexpected(); }
-int ActivitySystem::RefineFishingRod(entt::entity,entt::entity) { Unexpected(); }
 void intrusive_ptr_add_ref(event *) { Unexpected(); }
 void intrusive_ptr_release(event *) { Unexpected(); }
 boost::intrusive_ptr<event> event_create_ex(int (__cdecl*)(boost::intrusive_ptr<event>,int),event_info_data *,int) { Unexpected(); }
@@ -985,7 +904,7 @@ void CSkillProto::SetPointVar(std::string_view,double) { Unexpected(); }
 void CSkillProto::SetDurationVar(std::string_view,double) { Unexpected(); }
 void CSkillProto::SetSPCostVar(std::string_view,double) { Unexpected(); }
 int CGuild::GetSkillLevel(unsigned int) { return guildSkillLevel; }
-int ecs::PointSystem::GetLimitPoint(entt::entity, unsigned char) { Unexpected(); }
+double ecs::PointSystem::GetLimitPoint(entt::entity, unsigned char) { Unexpected(); }
 const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity) { return nullptr; }
 bool ecs::PlayerRuntime::IsMonster(entt::entity) { return false; }
 float ecs::PlayerRuntime::GetRotation(entt::entity) { return 0.0f; }
@@ -1003,7 +922,7 @@ bool ecs::MovementSystem::CanMove(entt::entity) { Unexpected(); }
 bool ecs::MovementSystem::Sync(entt::entity,int32_t,int32_t) { Unexpected(); }
 void ecs::MovementSystem::OnMove(entt::entity, bool) { Unexpected(); }
 void ecs::MovementSystem::CalculateMoveDuration(entt::entity) { Unexpected(); }
-bool AffectSystem::IsGoodAffect(uint8_t) { Unexpected(); }
+bool AffectSystem::IsGoodAffect(uint32_t) { Unexpected(); }
 void AffectSystem::RemoveGoodAffects(entt::entity) { Unexpected(); }
 void AffectSystem::RemoveBadAffects(entt::entity) { Unexpected(); }
 bool CombatSystem::Damage(entt::entity,entt::entity,int64_t,unsigned char) { Unexpected(); }
@@ -1050,7 +969,7 @@ int main() {
             power.SetSkillPowerByLevelFromType(index, table.data());
         }
         static int dbToken; db_clientdesc = reinterpret_cast<CLIENT_DESC*>(&dbToken);
-        PurgeChecks(); NoticeChecks(); EventFlagCommandChecks(); SkillChecks(); SkillPublicationChecks(); SkillRuntimeChecks(); SkillPowerChecks(); SkillColorChecks(); SkillCommandChecks(); SkillTableChecks(); SocketChecks();
+        NoticeChecks(); EventFlagCommandChecks(); SkillChecks(); SkillPublicationChecks(); SkillRuntimeChecks(); SkillPowerChecks(); SkillColorChecks(); SkillCommandChecks(); SkillTableChecks();
         std::cout << "GM command checks passed: " << checks << '\n';
         return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
