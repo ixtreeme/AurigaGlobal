@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 import re
 import shutil
+import stat
 import tempfile
 from .legacy import PackageError
 
@@ -234,11 +235,27 @@ class DataBuilder:
         if native_quests.is_dir():
             hash_file = native_quests / 'source_hashes.json'
             source_hashes = json.loads(hash_file.read_text(encoding='utf-8')) if hash_file.is_file() else {}
-            sources = (path for path in native_quests.iterdir()
-                       if path.is_file() and path.suffix in {'.lua', '.quest'})
-            for source in sorted(sources):
-                approved_hash = source_hashes.get(source.name)
-                matches = list((data / 'quest/Quest').rglob(source.name))
+            quest_root = data / 'quest/Quest'
+            sources = {p.name for p in native_quests.iterdir() if p.is_file() and p.suffix in {'.lua', '.quest'}}
+            sources.update(name for name, entry in source_hashes.items() if isinstance(entry, dict))
+            for name in sorted(sources):
+                entry = source_hashes.get(name)
+                if isinstance(entry, dict):
+                    relative = Path(entry['resource'])
+                    if relative.anchor or '..' in relative.parts or relative.name != name:
+                        raise PackageError('Invalid quest resource path: ' + str(relative))
+                    source = TOOLS.parent / 'Server/Resources/quest/Quest' / relative
+                    key = '@quest-resources/' + relative.as_posix()
+                    approved_hash = entry['original_sha256']
+                    if not approved_hash or not source.is_file():
+                        raise PackageError('Incomplete guarded quest resource: ' + name)
+                    target = quest_root / relative
+                    matches = [target] if target.is_file() else []
+                else:
+                    source = native_quests / name
+                    key = '@native-quests/' + name
+                    approved_hash = entry
+                    matches = list(quest_root.rglob(name))
                 if not matches and approved_hash:
                     continue
                 if len(matches) != 1:
@@ -251,14 +268,22 @@ class DataBuilder:
                     if hashlib.sha256(original).hexdigest() != approved_hash:
                         self.notes.append('Preserved customized quest: ' + target.relative_to(data).as_posix())
                         continue
+                # The package copy may have inherited a source snapshot's read-only bit.
+                mode = target.stat().st_mode
+                if not mode & stat.S_IWUSR:
+                    target.chmod(mode | stat.S_IWUSR)
                 shutil.copy2(source, target)
-                key = '@native-quests/' + source.name
                 self.inputs[key] = dict(sha256=digest(source), size=source.stat().st_size)
                 self.operations.append(dict(source=key, target=target.relative_to(self.output).as_posix(), operation='native-replacement'))
 
     def verify_originals(self):
         for relative, metadata in self.inputs.items():
-            path = TOOLS.parents[1] / 'config/typed_quests' / relative.removeprefix('@native-quests/') if relative.startswith('@native-quests/') else self.source / relative
+            if relative.startswith('@quest-resources/'):
+                path = TOOLS.parent / 'Server/Resources/quest/Quest' / relative.removeprefix('@quest-resources/')
+            elif relative.startswith('@native-quests/'):
+                path = TOOLS.parents[1] / 'config/typed_quests' / relative.removeprefix('@native-quests/')
+            else:
+                path = self.source / relative
             if digest(path) != metadata['sha256']:
                 raise PackageError('Source changed during conversion: ' + relative)
 

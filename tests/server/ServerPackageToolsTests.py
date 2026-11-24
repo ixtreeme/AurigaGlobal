@@ -34,20 +34,58 @@ class PackageToolsTests(unittest.TestCase):
             source.mkdir()
             output.mkdir()
             builder = DataBuilder(source, output)
-            replacement_names = ('guild_rank_manager.lua', 'create_ore.lua')
-            for name in replacement_names:
-                original = source / name
-                original.write_text('original ' + name, encoding='utf-8')
-                builder.copy(original, output / 'data/quest/Quest/gilda' / name)
+            name = 'guild_rank_manager.lua'
+            original = source / name
+            replacement = REPO / 'config/typed_quests' / name
+            target = output / 'data/quest/Quest/gilda' / name
+            original.write_text('original ' + name, encoding='utf-8')
+            builder.copy(original, target)
             builder.apply_native_quests(output / 'data')
-            for name in replacement_names:
-                self.assertEqual((source / name).read_text(encoding='utf-8'), 'original ' + name)
-                self.assertEqual((output / 'data/quest/Quest/gilda' / name).read_bytes(),
-                                 (REPO / 'config/typed_quests' / name).read_bytes())
+            self.assertEqual(original.read_text(encoding='utf-8'), 'original ' + name)
+            self.assertEqual(target.read_bytes(), replacement.read_bytes())
             builder.verify_originals()
             from server_package import data
             real = data.digest
-            with mock.patch.object(data, 'digest', side_effect=lambda p: 'changed' if p == REPO / 'config/typed_quests/create_ore.lua' else real(p)):
+            with mock.patch.object(data, 'digest', side_effect=lambda p: 'changed' if p == replacement else real(p)):
+                with self.assertRaisesRegex(PackageError, 'Source changed'):
+                    builder.verify_originals()
+
+    def test_starter_chest_uses_the_guarded_server_resource_at_its_quest_path(self):
+        from server_package import data
+        name = 'begin_weapons.lua'
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            checkout, output = root / 'checkout', root / 'output'
+            registry = checkout / 'config/typed_quests'
+            registry.mkdir(parents=True)
+            spec = json.loads((REPO / 'config/typed_quests/source_hashes.json').read_bytes())[name].copy()
+            original = b'original\n'
+            spec['original_sha256'] = hashlib.sha256(original).hexdigest()
+            write_json(registry / 'source_hashes.json', {name: spec})
+            resource = checkout / 'SRC/Server/Resources/quest/Quest' / spec['resource']
+            resource.parent.mkdir(parents=True)
+            resource.write_bytes(b'typed\n')
+            target = output / 'data/quest/Quest/login' / name
+            other = output / 'data/quest/Quest/custom' / name
+            for path in (target, other):
+                path.parent.mkdir(parents=True)
+            other.write_bytes(original)
+            builder = DataBuilder(root, output)
+            with mock.patch.object(data, 'TOOLS', checkout / 'SRC/Tools'):
+                builder.apply_native_quests(output / 'data')
+                self.assertFalse(target.exists())
+                target.write_bytes(b'original\r\n')
+                target.chmod(0o444)
+                builder.apply_native_quests(output / 'data')
+                self.assertEqual(target.read_bytes(), resource.read_bytes())
+                builder.apply_native_quests(output / 'data')
+                self.assertEqual(len(builder.operations), 1)
+                target.write_bytes(b'custom')
+                builder.apply_native_quests(output / 'data')
+                self.assertEqual(target.read_bytes(), b'custom')
+                self.assertEqual(other.read_bytes(), original)
+                builder.verify_originals()
+                resource.write_bytes(b'edited during build')
                 with self.assertRaisesRegex(PackageError, 'Source changed'):
                     builder.verify_originals()
 
