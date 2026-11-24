@@ -32,6 +32,10 @@
     "resource": "events/dupa_run_pont.quest",
     "original_sha256": "10f7c57074e72067468c9a9fc6caf90c4847e22a9d8d2711cc17da353e93dba0"
   },
+  "events_mgr.lua": {
+    "resource": "events/events_mgr.lua",
+    "original_sha256": "163611b11486155dbc8e51ce7732e2ddd7c163d3003449acc2e9be329ffe8950"
+  },
   "fisher.lua": {
     "resource": "npc/fisher.lua",
     "original_sha256": "4cb74f5bc146f133ad4c889c389b422dd0cfdffbcc6656849447928e5855bddc"
