@@ -73,8 +73,6 @@
 #define sys_err(fmt, ...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), __VA_ARGS__)
 #endif
 
-const int ITEM_BROKEN_METIN_VNUM = 28960;
-
 // #define ENABLE_LOCALECHECK_CHANGENAME
 // #define ENABLE_PC_OPENSHOP
 
@@ -684,23 +682,25 @@ namespace quest
 
     ALUA(pc_change_sex)
     {
-        // migrated from CHARACTER::ChangeSex
-        // DUAL-PATH: ECS update + legacy call during migration window
-        entt::entity e = CQuestManager::instance().GetPCEntity(L);
-        if (e == entt::null || !g_registry.valid(e)) {
-            lua_pushnumber(L, 0);
+        namespace item = auriga::item;
+        const auto character = CQuestManager::instance().GetPCEntity(L);
+        const auto* inventory = g_registry.valid(character) ? g_registry.try_get<ecs::TypedItems>(character) : nullptr;
+        if (!inventory || g_registry.all_of<ecs::TypedItemBusy>(character)) {
+            lua_pushinteger(L, 0);
             return 1;
         }
-        if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(e, WEAR_COSTUME_BODY))) {
-            lua_pushnumber(L, 2);
-            return 1;
+        bool body = false, hair = false;
+        for (const auto& instance : inventory->state.items) {
+            const auto& placement = instance.placement;
+            if (instance.destroyed || instance.owner != inventory->state.fence.owner || !placement ||
+                placement->kind != item::ItemStorageKind::Equipment) continue;
+            body |= item::FitsEquipmentSlot(item::EquipmentSlot::CostumeBody, placement->anchor);
+            hair |= item::FitsEquipmentSlot(item::EquipmentSlot::CostumeHair, placement->anchor);
         }
-        if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(e, WEAR_COSTUME_HAIR))) {
-            lua_pushnumber(L, 3);
-            return 1;
-        }
-        const int result = ecs::PlayerRuntime::ChangeSex(e) ? 1 : 0;
-        lua_pushnumber(L, result);
+        if (body || hair)
+            lua_pushinteger(L, body ? 2 : 3);
+        else
+            lua_pushinteger(L, ecs::PlayerRuntime::ChangeSex(character) ? 1 : 0);
         return 1;
     }
 
@@ -1257,25 +1257,13 @@ namespace quest
         return 0;
     }
 
-	ALUA(pc_is_mount)
-	{
-		// migrated from CHARACTER::GetMountVnum
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		const auto* sf = ECS_TryGet<ecs::StatusFlags>(e);
-		const auto* mount = ECS_TryGet<ecs::MountState>(e);
-		if (sf || mount)
-		{
-			const bool ret = (sf && sf->isMountActive) || (mount && mount->mountVnum != 0);
-			lua_pushboolean(L, ret ? 1 : 0);
-			return 1;
-		}
-		const entt::entity character = CQuestManager::instance().GetCurrentPCEntity();
-		const bool ret = character != entt::null && g_registry.valid(character) &&
-			(MountSystem::GetMountVnum(character) != 0 ||
-			 ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_MOUNT)));
-		lua_pushboolean(L, ret ? 1 : 0);
-		return 1;
-	}
+    ALUA(pc_is_mount)
+    {
+        const auto rider = CQuestManager::instance().GetPCEntity(L);
+        const auto* flags = ECS_TryGet<ecs::StatusFlags>(rider);
+        lua_pushboolean(L, (flags && flags->isMountActive) || MountSystem::GetMountVnum(rider) != 0);
+        return 1;
+    }
 
     ALUA(pc_mount)
     {
@@ -2091,26 +2079,38 @@ teleport_area:
 		return 1;
 	}
 
-	ALUA(pc_get_empty_inventory_count)
-	{
-		// migrated from CHARACTER::CountEmptyInventory
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (const auto* inventory = ECS_TryGet<ecs::MainInventoryRuntimeComponent>(e))
-		{
-			int emptyCount = 0;
-			for (int cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
-			{
-				if (inventory->items[cell] == entt::null)
-				{
-					++emptyCount;
-				}
-			}
-			lua_pushnumber(L, emptyCount);
-			return 1;
-		}
-		lua_pushnumber(L, 0);
-		return 1;
-	}
+    ALUA(pc_get_empty_inventory_count)
+    {
+        namespace item = auriga::item;
+        const auto character = CQuestManager::instance().GetPCEntity(L);
+        const auto* inventory = g_registry.valid(character) ? g_registry.try_get<ecs::TypedItems>(character) : nullptr;
+        const auto catalog = item::runtime::CurrentCatalog();
+        if (!inventory || !catalog) {
+            lua_pushinteger(L, 0);
+            return 1;
+        }
+        const auto& state = inventory->state;
+        const item::ItemStorage bag{state.fence.owner, item::ItemStorageKind::Inventory, 1};
+        const auto layout = std::ranges::find(state.storages, bag, &item::ItemStorageLayout::storage);
+        if (layout == state.storages.end()) {
+            lua_pushinteger(L, 0);
+            return 1;
+        }
+        lua_Integer free = static_cast<lua_Integer>(layout->columns) * layout->rows * layout->pages;
+        for (const auto& instance : state.items) {
+            const auto& placement = instance.placement;
+            if (instance.destroyed || instance.owner != bag.owner || !placement ||
+                placement->kind != bag.kind || placement->storageId != bag.id) continue;
+            const auto cells = item::OccupiedItemCells(*catalog, instance, *layout);
+            if (!cells || cells->size() > static_cast<std::uint64_t>(free)) {
+                free = 0;
+                break;
+            }
+            free -= static_cast<lua_Integer>(cells->size());
+        }
+        lua_pushinteger(L, free);
+        return 1;
+    }
 
 	ALUA(pc_get_logoff_interval)
 	{
