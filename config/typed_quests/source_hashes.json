@@ -55,6 +55,10 @@
       "86effe1df13f98bfedff315d9f373037deeb18c946839d4299f9843a40ee23db"
     ]
   },
+  "reset_scroll.lua": {
+    "resource": "skill/reset_scroll.lua",
+    "original_sha256": "0dd8d8419b90fe039eb4379f8f4943ba33e1923d1f2b9ed4b4b473d4731b08b1"
+  },
   "tanaka.lua": "9563336e97caa347148c320a6387962127b7908ebeadad358fe37a350c7420a4",
   "teleportgyuru.quest": {
     "resource": "item/teleportgyuru.quest",
