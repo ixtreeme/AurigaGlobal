@@ -9,11 +9,19 @@
     "original_sha256": "c3fad283ffe5fcc3e04168f145e1b8230addc112a224a3a39e5740c38eb8b0fb"
   },
   "drop3.quest": "790c406e5d1c63b85cf6794b9d582eca1d2dd750c9be898cf41ce0ca4224f874",
+  "fisher.lua": {
+    "resource": "npc/fisher.lua",
+    "original_sha256": "4cb74f5bc146f133ad4c889c389b422dd0cfdffbcc6656849447928e5855bddc"
+  },
   "lvl_back.lua": {
     "resource": "item/lvl_back.lua",
     "original_sha256": "3db4d45fc2b18143ab81f9d589c9ac10d05424c503d55d3f3df5ef159693e4aa"
   },
   "miki_event.lua": "38efa0c00b292b5733bafb0be96666409cdd77ca947e43a45f768ff1e8dffa2e",
+  "mining.lua": {
+    "resource": "system/mining.lua",
+    "original_sha256": "513590b89cdc3aa72869e92c5e142ef35edc2d440560f237d2ba74dd55353cf6"
+  },
   "pda_perf_quest.lua": {
     "resource": "pda_perfetta/pda_perf_quest.lua",
     "original_sha256": "8d9a0f15ea4bace66bacfea7a7332ac5262d79d54d6d6e0db5c240dc14f74b51"
