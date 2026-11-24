@@ -220,8 +220,8 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
         const auto pid = U::UInt(r.owners.front().owner.id);
         const auto level = U::UInt(progress->currentLevel);
         tx.push_back({"SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' AND TABLE_NAME IN "
-                      "('guild','guild_member','guild_renewal_money','guild_renewal_storage','guild_renewal_tax',"
-                      "'guild_renewal_contrib','guild_renewal_kisado_item') HAVING COUNT(*)=7 AND SUM(ENGINE='InnoDB')=7", {}, {}, 1});
+                      "('guild','guild_member','guild_renewal_money','guild_renewal_storage',"
+                      "'guild_renewal_contrib','guild_renewal_kisado_item') HAVING COUNT(*)=6 AND SUM(ENGINE='InnoDB')=6", {}, {}, 1});
         tx.push_back({"SELECT id FROM player.guild WHERE id=? AND level=? FOR UPDATE", {guild, level}, {}, 1});
         tx.push_back({"SELECT pid FROM player.guild_member WHERE pid=? AND guild_id=? FOR UPDATE", {pid, guild}, {}, 1});
         tx.push_back({"INSERT IGNORE INTO player.guild_renewal_money(guild_id,money) VALUES(?,0)", {guild}, {}, {}});
@@ -250,7 +250,6 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
             tx.push_back({"DELETE FROM player.guild_renewal_storage WHERE guild_id=?", {guild}, {}, {}});
             tx.push_back({"DELETE FROM player.guild_renewal_contrib WHERE guild_id=?", {guild}, {}, {}});
             tx.push_back({"DELETE FROM player.guild_renewal_kisado_item WHERE guild_id=?", {guild}, {}, {}});
-            tx.push_back({"DELETE FROM player.guild_renewal_tax WHERE guild_id=?", {guild}, {}, {}});
         }
         else
         {

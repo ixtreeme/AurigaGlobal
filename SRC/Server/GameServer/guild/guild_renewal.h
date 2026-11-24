@@ -19,7 +19,7 @@ public:
 	static CGuildRenewal& instance();
 
 
-	// Sends full storage/tax/contribution state to a character.
+	// Sends full storage and contribution state to a character.
 	void SendFullStateTo(entt::entity chEntity);
 
 	// P2P: notify other cores that renewal storage/money/contrib changed
@@ -47,15 +47,6 @@ private:
 		uint32_t count{0};
 	};
 
-	struct Tax
-	{
-		bool active{false};
-		int64_t deadline{0};
-		int64_t perMemberMoney{0};
-		std::array<uint32_t,5> vnum{{0,0,0,0,0}};
-		std::array<uint32_t,5> count{{0,0,0,0,0}};
-	};
-
 	struct Contrib
 	{
 		int64_t paidMoney{ 0 };
@@ -76,7 +67,6 @@ private:
 	{
 		bool loaded{false};
 		int64_t money{0};
-		Tax tax{};
 		std::vector<StorageSlot> storage;
 		std::unordered_map<uint32_t, Contrib> contrib;
 	};

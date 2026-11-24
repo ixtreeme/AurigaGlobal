@@ -147,35 +147,6 @@ void CGuildRenewal::EnsureLoaded(uint32_t guildId)
 		}
 	}
 
-	// Tax
-	{
-		auto msg = std::unique_ptr<SQLMsg>(DBManager::instance().DirectQuery(
-			"SELECT active,deadline,per_member_money,"
-			"item1_vnum,item1_count,item2_vnum,item2_count,item3_vnum,item3_count,item4_vnum,item4_count,item5_vnum,item5_count "
-			"FROM guild_renewal_tax WHERE guild_id=%u", guildId));
-		if (msg && msg->Get() && msg->Get()->uiNumRows > 0)
-		{
-			MYSQL_ROW row = msg->Get()->FetchRow();
-			if (row)
-			{
-				c.tax.active = (atoi(row[0]) != 0);
-				str_to_number(c.tax.deadline, row[1]);
-				c.tax.perMemberMoney = atoll(row[2]);
-				for (int i = 0; i < 5; i++)
-				{
-					c.tax.vnum[i] = (uint32_t)atoi(row[3 + i * 2]);
-					c.tax.count[i] = (uint32_t)atoi(row[4 + i * 2]);
-				}
-			}
-		}
-		else
-		{
-			DBManager::instance().Query(
-				"INSERT IGNORE INTO guild_renewal_tax(guild_id,active,deadline,per_member_money) VALUES(%u,0,0,0)", guildId);
-			c.tax = Tax{};
-		}
-	}
-
 	// Storage slots
 	{
 		auto msg = std::unique_ptr<SQLMsg>(DBManager::instance().DirectQuery(
@@ -234,7 +205,6 @@ void CGuildRenewal::InvalidateCache(uint32_t guildId)
 	GuildCache& c = it->second;
 	c.loaded = false;
 	c.money = 0;
-	c.tax = Tax{};
 	c.contrib.clear();
 	c.storage.clear();
 	KisAdo_ClearGuild(guildId);
@@ -494,10 +464,6 @@ void CGuildRenewal::SendFullStateTo(entt::entity chEntity)
 				static_cast<unsigned long long>(PackedMaterial(s.vnum)), s.count);
 		}
 	}
-
-	// tax request state (kis ad rendszerben nincs kivetett ad)
-	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "gr_tax 0 0 0 0 0 0 0 0 0 0 0 0 0");
-
 
 	// contrib list
 	for (auto& kv : c.contrib)
