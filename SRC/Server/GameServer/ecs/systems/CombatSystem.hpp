@@ -114,7 +114,6 @@ void UpdateAggrPoint(entt::entity e, entt::entity attacker, EDamageType type, in
 entt::entity DistributeExp(entt::entity e);
 void DistributeSP(entt::entity e, entt::entity killer, int iMethod = 0);
 void DeathPenalty(entt::entity e, uint8_t bTown);
-void ItemDropPenalty(entt::entity e, entt::entity killer);
 void Reward(entt::entity e, bool bItemDrop);
 void RewardGold(entt::entity e, entt::entity attacker);
 void DistributeHP(entt::entity victim, entt::entity killer);
@@ -126,7 +125,6 @@ void Dead(entt::entity victim, entt::entity killer = entt::null, bool immediate 
 void DeathPenalty(entt::entity e, uint8_t bTown);
 void RewardGold(entt::entity victim, entt::entity attacker);
 void Reward(entt::entity victim, bool bItemDrop);
-void ItemDropPenalty(entt::entity victim, entt::entity killer);
 void DistributeSP(entt::entity victim, entt::entity killer, int iMethod);
 inline constexpr uint32_t MAX_ALIGNMENT = 50000000;
 uint32_t GetAlignment(entt::entity e);
