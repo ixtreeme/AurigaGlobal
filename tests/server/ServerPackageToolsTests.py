@@ -61,6 +61,7 @@ class PackageToolsTests(unittest.TestCase):
             spec = json.loads((REPO / 'config/typed_quests/source_hashes.json').read_bytes())[name].copy()
             original = b'original\n'
             spec['original_sha256'] = hashlib.sha256(original).hexdigest()
+            spec['previous_sha256'] = [hashlib.sha256(b'earlier typed version\n').hexdigest()]
             write_json(registry / 'source_hashes.json', {name: spec})
             resource = checkout / 'SRC/Server/Resources/quest/Quest' / spec['resource']
             resource.parent.mkdir(parents=True)
@@ -80,6 +81,9 @@ class PackageToolsTests(unittest.TestCase):
                 self.assertEqual(target.read_bytes(), resource.read_bytes())
                 builder.apply_native_quests(output / 'data')
                 self.assertEqual(len(builder.operations), 1)
+                target.write_bytes(b'earlier typed version\r\n')
+                builder.apply_native_quests(output / 'data')
+                self.assertEqual(target.read_bytes(), resource.read_bytes())
                 target.write_bytes(b'custom')
                 builder.apply_native_quests(output / 'data')
                 self.assertEqual(target.read_bytes(), b'custom')

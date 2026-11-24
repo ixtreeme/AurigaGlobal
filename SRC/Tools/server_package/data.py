@@ -240,6 +240,7 @@ class DataBuilder:
             sources.update(name for name, entry in source_hashes.items() if isinstance(entry, dict))
             for name in sorted(sources):
                 entry = source_hashes.get(name)
+                previous_hashes = ()
                 if isinstance(entry, dict):
                     relative = Path(entry['resource'])
                     if relative.anchor or '..' in relative.parts or relative.name != name:
@@ -247,6 +248,12 @@ class DataBuilder:
                     source = TOOLS.parent / 'Server/Resources/quest/Quest' / relative
                     key = '@quest-resources/' + relative.as_posix()
                     approved_hash = entry['original_sha256']
+                    previous_hashes = entry.get('previous_sha256', [])
+                    if not isinstance(previous_hashes, list) or any(
+                        not isinstance(value, str) or not re.fullmatch(r'[a-f0-9]{64}', value)
+                        for value in previous_hashes
+                    ):
+                        raise PackageError('Invalid previous quest hashes: ' + name)
                     if not approved_hash or not source.is_file():
                         raise PackageError('Incomplete guarded quest resource: ' + name)
                     target = quest_root / relative
@@ -265,7 +272,8 @@ class DataBuilder:
                     original = target.read_bytes().replace(b'\r\n', b'\n')
                     if original == source.read_bytes().replace(b'\r\n', b'\n'):
                         continue
-                    if hashlib.sha256(original).hexdigest() != approved_hash:
+                    source_hash = hashlib.sha256(original).hexdigest()
+                    if source_hash != approved_hash and source_hash not in previous_hashes:
                         self.notes.append('Preserved customized quest: ' + target.relative_to(data).as_posix())
                         continue
                 # The package copy may have inherited a source snapshot's read-only bit.
