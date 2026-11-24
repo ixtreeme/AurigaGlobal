@@ -2813,13 +2813,6 @@ void FinishEquip(entt::entity owner, entt::entity item) {
     else if (CItemVnumHelper::IsHalloweenCandy(vnum)) effect = SE_EQUIP_HALLOWEEN_CANDY;
     else if (CItemVnumHelper::IsHappinessRing(vnum)) effect = SE_EQUIP_HAPPINESS_RING;
     else if (CItemVnumHelper::IsLovePendant(vnum)) effect = SE_EQUIP_LOVE_PENDANT;
-    else if (type == ITEM_UNIQUE && GetItemSIGVnum(item)) {
-        if (const auto* group = ITEM_MANAGER::instance().GetSpecialItemGroup(GetItemSIGVnum(item)))
-            if (const auto* attributes = ITEM_MANAGER::instance().GetSpecialAttrGroup(group->GetAttrVnum(vnum))) {
-                const std::string filename = attributes->m_stEffectFileName;
-                NetworkSyncSystem::BroadcastSpecificEffect(g_registry, owner, filename.c_str());
-            }
-    }
 #ifdef ENABLE_ACCE_SYSTEM
     else if (type == ITEM_COSTUME && subtype == COSTUME_ACCE) effect = SE_EFFECT_ACCE_EQUIP;
 #endif
@@ -3508,24 +3501,6 @@ void ModifyPoints(entt::entity itemEntity, bool bAdd)
 			ecs::PlayerRuntime::SetPart(ownerEntity, (uint8_t)toSetPart, toSetValue);
 			NetworkSyncSystem::UpdatePacket(ownerEntity);
 
-		}
-	}
-	break;
-	case ITEM_UNIQUE:
-	{
-		if (0 != ItemSystem::GetItemSIGVnum(itemEntity))
-		{
-			const CSpecialItemGroup* pItemGroup = ITEM_MANAGER::instance().GetSpecialItemGroup(ItemSystem::GetItemSIGVnum(itemEntity));
-			if (nullptr == pItemGroup)
-				break;
-			uint32_t dwAttrVnum = pItemGroup->GetAttrVnum(ItemSystem::GetItemVnum(itemEntity));
-			const CSpecialAttrGroup* pAttrGroup = ITEM_MANAGER::instance().GetSpecialAttrGroup(dwAttrVnum);
-			if (nullptr == pAttrGroup)
-				break;
-			for (auto it = pAttrGroup->m_vecAttrs.begin(); it != pAttrGroup->m_vecAttrs.end(); ++it)
-			{
-				ecs::PointSystem::ApplyPoint(ownerEntity, it->apply_type, bAdd ? it->apply_value : it->apply_value); // -it->apply_value
-			}
 		}
 	}
 	break;

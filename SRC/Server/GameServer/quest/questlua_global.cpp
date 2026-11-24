@@ -1571,35 +1571,6 @@ namespace quest
 		}
 	}
 
-	ALUA(_get_special_item_group)
-	{
-		// migrated from CHARACTER::get_special_item_group
-		// DUAL-PATH: legacy only during migration window
-		if (!lua_isnumber (L, 1))
-		{
-			sys_err("invalid argument");
-			return 0;
-		}
-
-		const CSpecialItemGroup* pItemGroup = ITEM_MANAGER::instance().GetSpecialItemGroup((uint32_t)lua_tonumber(L, 1));
-
-		if (!pItemGroup)
-		{
-			sys_err("cannot find special item group {}", (uint32_t)lua_tonumber(L, 1));
-			return 0;
-		}
-
-		int count = pItemGroup->GetGroupSize();
-
-		for (int i = 0; i < count; i++)
-		{
-			lua_pushnumber(L, (int)pItemGroup->GetVnum(i));
-			lua_pushnumber(L, (int)pItemGroup->GetCount(i));
-		}
-
-		return count*2;
-	}
-
 #ifdef ENABLE_NEWSTUFF
 	ALUA(_get_table_postfix)
 	{
@@ -1812,7 +1783,6 @@ namespace quest
 			{	"get_locale_base_path",			_get_locale_base_path			},
 			{	"purge_area",					_purge_area						},
 			{	"warp_all_in_area_to_area",		_warp_all_in_area_to_area		},
-			{	"get_special_item_group",		_get_special_item_group			},
 #ifdef ENABLE_NEWSTUFF
 			{	"spawn_mob0",					_spawn_mob0						},
 			{	"spawn_mob_in_map",				_spawn_mob_in_map				},

@@ -362,8 +362,7 @@ entt::entity EntityFactory::CreateItemEntity(entt::registry& reg, const TItemTab
     const uint32_t display = mask ? mask : vnum;
     const auto prototype = MakeItemPrototype(proto, display);
     const auto flags = static_cast<int32_t>(proto->dwFlags);
-    const ecs::ItemIdentity identity {id, display, vnum, vid, mask, 0,
-        ITEM_MANAGER::instance().GetSpecialGroupFromItem(display), 0};
+    const ecs::ItemIdentity identity {id, display, vnum, vid, mask, 0, 0, 0};
     const entt::entity item = reg.create();
     const auto rollback = [&] {
         index.Unregister(item);

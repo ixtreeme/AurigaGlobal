@@ -848,8 +848,6 @@ void ecs::ViewSystem::PacketView(entt::entity item, void const* data, int size, 
     if (giving && onReward) { auto callback = onReward; callback("ownership", item); }
 }
 SItemTable * ITEM_MANAGER::GetTable(uint32_t vnum) { Check(giving, "unexpected prototype lookup"); return vnum == rewardProto.dwVnum ? &rewardProto : nullptr; }
-CSpecialItemGroup const * ITEM_MANAGER::GetSpecialItemGroup(uint32_t) { Unexpected(); }
-CSpecialAttrGroup const * ITEM_MANAGER::GetSpecialAttrGroup(uint32_t) { Unexpected(); }
 bool ecs::SpatialService::InsertEntity(entt::registry& reg, entt::entity item, uint32_t map, int x, int y, int z) {
     Check(map == 1 && RawOwner(item) == entt::null && ItemSystem::GetItemWindow(item) == GROUND,
         "invalid native ground insertion");

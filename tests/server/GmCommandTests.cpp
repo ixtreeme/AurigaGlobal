@@ -817,7 +817,6 @@ entt::entity CHARACTER_MANAGER::FindEntity(unsigned int) { Unexpected(); }
 entt::entity CHARACTER_MANAGER::FindPCEntity(char const *) { Unexpected(); }
 entt::entity ITEM_MANAGER::CreateItem(unsigned int,unsigned int,unsigned int,bool,int,bool) { Unexpected(); }
 bool ITEM_MANAGER::GetVnum(char const *,unsigned int &) { Unexpected(); }
-bool ITEM_MANAGER::ConvSpecialDropItemFile(void) { Unexpected(); }
 void regen_reset(int,int) { Unexpected(); }
 unsigned int CGuildManager::CreateGuild(TGuildCreateParameter &) { Unexpected(); }
 CGuild * CGuildManager::FindGuild(unsigned int) { Unexpected(); }

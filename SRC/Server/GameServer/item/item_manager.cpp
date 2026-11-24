@@ -571,24 +571,6 @@ bool ITEM_MANAGER::GetVnum(const char* c_pszName, uint32_t& r_dwVnum)
 	return false;
 }
 
-bool ITEM_MANAGER::GetVnumByOriginalName(const char* c_pszName, uint32_t& r_dwVnum)
-{
-	int len = strlen(c_pszName);
-
-	TItemTable* pTable = m_vec_prototype.data();
-
-	for (uint32_t i = 0; i < m_vec_prototype.size(); ++i, ++pTable)
-	{
-		if (!strncasecmp(c_pszName, pTable->szName, len))
-		{
-			r_dwVnum = pTable->dwVnum;
-			return true;
-		}
-	}
-
-	return false;
-}
-
 bool ITEM_MANAGER::GetDropPct(entt::entity victim, entt::entity killer,
 	OUT double& iDeltaPercent, OUT int& iRandRange)
 {
@@ -653,26 +635,6 @@ bool ITEM_MANAGER::GetDropPct(entt::entity victim, entt::entity killer,
 #endif
 
 	return true;
-}
-
-const CSpecialItemGroup* ITEM_MANAGER::GetSpecialItemGroup(uint32_t dwVnum)
-{
-	auto it = m_map_pkSpecialItemGroup.find(dwVnum);
-	if (it != m_map_pkSpecialItemGroup.end())
-	{
-		return it->second;
-	}
-	return nullptr;
-}
-
-const CSpecialAttrGroup* ITEM_MANAGER::GetSpecialAttrGroup(uint32_t dwVnum)
-{
-	auto it = m_map_pkSpecialAttrGroup.find(dwVnum);
-	if (it != m_map_pkSpecialAttrGroup.end())
-	{
-		return it->second;
-	}
-	return nullptr;
 }
 
 #ifdef ENABLE_EXTRA_INVENTORY

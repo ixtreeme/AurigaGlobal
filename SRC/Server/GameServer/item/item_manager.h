@@ -5,159 +5,6 @@
 
 #include <common/CommonDefines.h>
 
-class CSpecialAttrGroup
-{
-public:
-	CSpecialAttrGroup(uint32_t vnum)
-		: m_dwVnum(vnum)
-	{}
-	struct CSpecialAttrInfo
-	{
-		CSpecialAttrInfo (uint32_t _apply_type, uint32_t _apply_value)
-			: apply_type(_apply_type), apply_value(_apply_value)
-		{}
-		uint32_t apply_type;
-		uint32_t apply_value;
-
-	};
-	uint32_t m_dwVnum;
-	std::string	m_stEffectFileName;
-	std::vector<CSpecialAttrInfo> m_vecAttrs;
-};
-
-class CSpecialItemGroup
-{
-	public:
-		enum EGiveType
-		{
-			NONE,
-			GOLD,
-			EXP,
-			MOB,
-			SLOW,
-			DRAIN_HP,
-			POISON,
-			MOB_GROUP,
-		};
-
-		enum ESIGType { NORMAL, PCT, QUEST, SPECIAL };
-
-		struct CSpecialItemInfo
-		{
-			uint32_t vnum;
-			int count;
-			int rare;
-
-			CSpecialItemInfo(uint32_t _vnum, int _count, int _rare)
-				: vnum(_vnum), count(_count), rare(_rare)
-				{}
-		};
-
-		CSpecialItemGroup(uint32_t vnum, uint8_t type=0)
-			: m_dwVnum(vnum), m_bType(type)
-			{}
-
-		void AddItem(uint32_t vnum, int count, int prob, int rare)
-		{
-			if (!prob)
-				return;
-			if (!m_vecProbs.empty())
-				prob += m_vecProbs.back();
-			m_vecProbs.push_back(prob);
-			m_vecItems.push_back(CSpecialItemInfo(vnum, count, rare));
-		}
-
-		bool IsEmpty() const
-		{
-			return m_vecProbs.empty();
-		}
-
-		// by rtsummit
-		int GetMultiIndex(std::vector <int> &idx_vec) const
-		{
-			idx_vec.clear();
-			if (m_bType == PCT)
-			{
-				int count = 0;
-				if (number(1,100) <= m_vecProbs[0])
-				{
-					idx_vec.push_back(0);
-					count++;
-				}
-				for (uint32_t i = 1; i < m_vecProbs.size(); i++)
-				{
-					if (number(1,100) <= m_vecProbs[i] - m_vecProbs[i-1])
-					{
-						idx_vec.push_back(i);
-						count++;
-					}
-				}
-				return count;
-			}
-			else
-			{
-				idx_vec.push_back(GetOneIndex());
-				return 1;
-			}
-		}
-
-		int GetOneIndex() const
-		{
-			int n = number(1, m_vecProbs.back());
-			auto it = lower_bound(m_vecProbs.begin(), m_vecProbs.end(), n);
-			return std::distance(m_vecProbs.begin(), it);
-		}
-
-		int GetVnum(int idx) const
-		{
-			return m_vecItems[idx].vnum;
-		}
-
-		int GetCount(int idx) const
-		{
-			return m_vecItems[idx].count;
-		}
-
-		int GetRarePct(int idx) const
-		{
-			return m_vecItems[idx].rare;
-		}
-
-		bool Contains(uint32_t dwVnum) const
-		{
-			for (uint32_t i = 0; i < m_vecItems.size(); i++)
-			{
-				if (m_vecItems[i].vnum == dwVnum)
-					return true;
-			}
-			return false;
-		}
-
-		uint32_t GetAttrVnum(uint32_t dwVnum) const
-		{
-			if (CSpecialItemGroup::SPECIAL != m_bType)
-				return 0;
-			for (auto it = m_vecItems.begin(); it != m_vecItems.end(); ++it)
-			{
-				if (it->vnum == dwVnum)
-				{
-					return it->count;
-				}
-			}
-			return 0;
-		}
-
-		int GetGroupSize() const
-		{
-			return m_vecProbs.size();
-		}
-
-		uint32_t m_dwVnum;
-		uint8_t	m_bType;
-		std::vector<int> m_vecProbs;
-		std::vector<CSpecialItemInfo> m_vecItems; // vnum, count
-};
-
 class ITEM;
 
 class ITEM_MANAGER : public singleton<ITEM_MANAGER>
@@ -183,26 +30,13 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 
 		TItemTable *            GetTable(uint32_t vnum);
 		bool			GetVnum(const char * c_pszName, uint32_t & r_dwVnum);
-		bool			GetVnumByOriginalName(const char * c_pszName, uint32_t & r_dwVnum);
 
 		bool			GetDropPct(entt::entity victim, entt::entity killer, OUT double& iDeltaPercent, OUT int& iRandRange);
-		bool			ReadSpecialDropItemFile(const char * c_pszFileName);
 
-		// convert name -> vnum special_item_group.txt
-		bool			ConvSpecialDropItemFile();
-		// convert name -> vnum special_item_group.txt
-
-
-
-		const CSpecialItemGroup* GetSpecialItemGroup(uint32_t dwVnum);
-		const CSpecialAttrGroup* GetSpecialAttrGroup(uint32_t dwVnum);
 
 		const std::vector<TItemTable> & GetTable() { return m_vec_prototype; }
         uint64_t BonusCatalogRevision() const;
 
-		// CHECK_UNIQUE_GROUP
-		int			GetSpecialGroupFromItem(uint32_t dwVnum) const { const auto it = m_ItemToSpecialGroup.find(dwVnum); return (it == m_ItemToSpecialGroup.end()) ? 0 : it->second; }
-		// END_OF_CHECK_UNIQUE_GROUP
 
 	protected:
 		int                     RealNumber( uint32_t vnum) const;
@@ -229,14 +63,6 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		void DestroyItemNow(entt::entity item);
 	protected:
 		std::map<uint32_t, entt::entity>		m_map_pkItemByID;
-		std::map<uint32_t, CSpecialItemGroup*> m_map_pkSpecialItemGroup;
-		std::map<uint32_t, CSpecialItemGroup*> m_map_pkQuestItemGroup;
-		std::map<uint32_t, CSpecialAttrGroup*> m_map_pkSpecialAttrGroup;
-
-
-		// CHECK_UNIQUE_GROUP
-		std::map<uint32_t, int>		m_ItemToSpecialGroup;
-		// END_OF_CHECK_UNIQUE_GROUP
 
 
 	public:

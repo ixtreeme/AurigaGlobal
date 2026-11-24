@@ -66,9 +66,6 @@ class Manager : public ITEM_MANAGER {
 public:
     void Prototype(TItemTable proto) { m_vec_prototype = {proto}; }
     TItemTable& Prototype() { return m_vec_prototype.front(); }
-    void Group(CSpecialItemGroup& group, bool quest) {
-        (quest ? m_map_pkQuestItemGroup : m_map_pkSpecialItemGroup)[group.m_dwVnum] = &group;
-    }
     void Register(entt::entity item) {
         const auto& identity = g_registry.get<ecs::ItemIdentity>(item);
         m_VIDMap[identity.vid] = item;
