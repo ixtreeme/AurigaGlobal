@@ -8,26 +8,6 @@ namespace quest
 {
 	using namespace std;
 
-	struct RewardData
-	{
-		enum RewardType
-		{
-			REWARD_TYPE_NONE,
-			REWARD_TYPE_EXP,
-			REWARD_TYPE_ITEM,
-		} type;
-
-		uint32_t value1;
-		int value2;
-
-		RewardData(RewardType t, uint32_t value1, int value2 = 0) :
-			type(t),
-			value1(value1),
-			value2(value2)
-		{
-		}
-	};
-
 	class PC
 	{
 		public:
@@ -124,10 +104,9 @@ namespace quest
 			void		Build();
 			void		Save();
 
-			bool		HasReward() { return !m_vRewardData.empty() || m_bIsGivenReward; }
+			bool		HasReward() { return !m_pendingExperience.empty() || m_bIsGivenReward; }
 			void		Reward(entt::entity character);
 
-			void		GiveItem(const string& label, uint32_t dwVnum, int count);
 			void		GiveExp(const string& label, uint32_t exp);
 
 			void 		SetSendDoneFlag() { m_bShouldSendDone = true; }
@@ -154,7 +133,7 @@ namespace quest
 			void		SendQuestInfoPakcet();
 
 		private:
-			vector<RewardData>	m_vRewardData;
+			vector<uint32_t>	m_pendingExperience;
 			bool		m_bIsGivenReward;
 
 			bool		m_bShouldSendDone;

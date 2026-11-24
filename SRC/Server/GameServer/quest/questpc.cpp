@@ -1,5 +1,4 @@
 #include "stdafx.h"
-#include "../ecs/systems/ItemSystem.hpp"
 #include <Core/Logging.hpp>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/AIHelpers.hpp"
@@ -648,26 +647,13 @@ namespace quest
 		return m_QuestInfo[qi];
 	}
 
-	void PC::GiveItem(const string& label, uint32_t dwVnum, int count)
-	{
-		LOG_TRACE("QUEST GiveItem {} {} {}", label.c_str(), dwVnum, count);
-		if (!GetFlag(m_stCurQuest+"."+label))
-		{
-			m_vRewardData.emplace_back(RewardData::REWARD_TYPE_ITEM, dwVnum, count);
-			//SetFlag(m_stCurQuest+"."+label,1);
-		}
-		else
-			m_bIsGivenReward = true;
-	}
-
 	void PC::GiveExp(const string& label, uint32_t exp)
 	{
 		LOG_TRACE("QUEST GiveExp {} {}", label.c_str(), exp);
 
 		if (!GetFlag(m_stCurQuest+"."+label))
 		{
-			m_vRewardData.emplace_back(RewardData::REWARD_TYPE_EXP, exp);
-			//SetFlag(m_stCurQuest+"."+label,1);
+			m_pendingExperience.push_back(exp);
 		}
 		else
 			m_bIsGivenReward = true;
@@ -685,37 +671,21 @@ namespace quest
 
         // Claim this batch before invoking any service. Reentry may append a new
         // batch or disconnect this PC; neither invalidates these local values.
-        auto pending = std::exchange(m_vRewardData, {});
+        auto pending = std::exchange(m_pendingExperience, {});
         const bool alreadyGiven = std::exchange(m_bIsGivenReward, false);
 #ifdef TEXTS_IMPROVEMENT
         if (alreadyGiven) ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 191, "");
 #endif
-        for (const auto& reward : pending)
+        for (uint32_t experience : pending)
         {
             if (!recipientExists()) return;
-            switch (reward.type)
-            {
-                case RewardData::REWARD_TYPE_EXP:
-                {
-                    const uint64_t current = ecs::PlayerRuntime::GetExp(character);
-                    const uint64_t next = ecs::PlayerRuntime::GetNextExp(character);
-                    uint64_t amount = reward.value1;
-                    // Preserve the old strict-overshoot cap (equality may level
-                    // up), but never subtract EXP or wrap at/above the threshold.
-                    if (current > next || amount > next - current)
-                        amount = next > current ? next - current - 1 : 0;
-                    if (amount) ecs::PointSystem::Change(character, POINT_EXP, static_cast<int64_t>(amount));
-                    break;
-                }
-                case RewardData::REWARD_TYPE_ITEM:
-                    if (reward.value2 > 0)
-                        ItemSystem::AutoGiveItemEcs(character, reward.value1, static_cast<uint32_t>(reward.value2));
-                    break;
-                case RewardData::REWARD_TYPE_NONE:
-                default:
-                    LOG_ERROR("Invalid RewardData type");
-                    break;
-            }
+            const uint64_t current = ecs::PlayerRuntime::GetExp(character);
+            const uint64_t next = ecs::PlayerRuntime::GetNextExp(character);
+            uint64_t amount = experience;
+            // An exact threshold may level the player. An overshoot stops one point below it.
+            if (current > next || amount > next - current)
+                amount = next > current ? next - current - 1 : 0;
+            if (amount) ecs::PointSystem::Change(character, POINT_EXP, static_cast<int64_t>(amount));
         }
     }
 

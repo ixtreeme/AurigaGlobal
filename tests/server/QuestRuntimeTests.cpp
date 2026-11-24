@@ -84,9 +84,8 @@ std::vector<TPacketSetEventFlag> eventRequests;
 bool hasTarget=false, hasChat=false;
 TargetInfo targetInfo;
 std::map<uint32_t,entt::entity> players;
-std::vector<uint32_t> gifts;
 std::vector<int64_t> experience;
-std::function<void()> onGive, onTarget, onChat, onAttr, onPublish;
+std::function<void()> onExperience, onTarget, onChat, onAttr, onPublish;
 std::function<void(entt::entity)> onConstruct;
 std::function<void(quest::CQuestManager&)> onInitializeLua;
 bool initializeLuaResult = true;
@@ -124,9 +123,9 @@ entt::entity Character(uint32_t pid=0,uint32_t vid=100,uint32_t race=101) {
     return e;
 }
 void Reset() {
-    onGive=onTarget=onChat=onAttr=onPublish={};onConstruct={};
+    onExperience=onTarget=onChat=onAttr=onPublish={};onConstruct={};
     searchTree=nullptr;searchCandidates.clear();onMember={};
-    g_registry.clear();players.clear();gifts.clear();experience.clear();
+    g_registry.clear();players.clear();experience.clear();
     clicks=chats=attrCalls=affects=saves=pidLookups=0;hasTarget=hasChat=false;nextExp[1]=100;
 }
 void WideEventFlags(lua_State* L) {
@@ -401,16 +400,17 @@ void LuaAndDispatch(lua_State* L) {
 void RewardBatches() {
     Reset();quest::CQuestManager q;
     auto e=Character(7);auto* pc=q.GetPC(7);
-    pc->GiveItem("a",1001,2);pc->GiveItem("b",1002,1);
-    onGive=[&]{ pc->Reward(e); };
+    pc->GiveExp("a",1);pc->GiveExp("b",2);
+    onExperience=[&]{ pc->Reward(e); };
     pc->Reward(e);
-    Check(gifts==std::vector<uint32_t>({1001,1002}) && !pc->HasReward(),"reentry duplicated the reward batch");
-    gifts.clear();pc->GiveItem("c",1003,1);
-    onGive=[&]{onGive={};pc->GiveItem("new",1004,1);};
+    Check(experience==std::vector<int64_t>({1,2}) && !pc->HasReward(),"reentry duplicated the reward batch");
+    experience.clear();pc->GiveExp("c",3);
+    onExperience=[&]{onExperience={};pc->GiveExp("new",4);};
     pc->Reward(e);
-    Check(gifts==std::vector<uint32_t>({1003}) && pc->HasReward(),"publication discarded a newly queued reward");
-    pc->Reward(e);Check(gifts.back()==1004 && !pc->HasReward(),"new reward batch was not delivered");
-    onGive={};
+    Check(experience==std::vector<int64_t>({3}) && pc->HasReward(),"publication discarded a newly queued reward");
+    pc->Reward(e);Check(experience.back()==4 && !pc->HasReward(),"new reward batch was not delivered");
+    onExperience={};
+    g_registry.get<ecs::Experience>(e).current=90;
     pc->GiveExp("eq",10);pc->Reward(e);Check(experience.back()==10,"exact EXP threshold changed");
     g_registry.get<ecs::Experience>(e).current=90;
     pc->GiveExp("cap",11);pc->Reward(e);Check(experience.back()==9,"strict EXP overshoot cap changed");
@@ -420,26 +420,28 @@ void RewardBatches() {
     g_registry.get<ecs::Experience>(e).current=101;
     pc->GiveExp("over",UINT32_MAX);pc->Reward(e);
     Check(experience.size()==count,"EXP cap underflowed above the threshold");
-    pc->GiveItem("wrong",1005,1);
+    experience.clear();
+    g_registry.get<ecs::Experience>(e).current=90;
+    pc->GiveExp("wrong",1);
     const auto stranger=Character(8);pc->Reward(stranger);
     Check(pc->HasReward(),"reward was claimed by a different player");
-    gifts.clear();
-    pc->GiveItem("last",1006,1);
-    onGive=[&]{onGive={};q.DisconnectPC(e);g_registry.destroy(e);Character(7);};
+
+    pc->GiveExp("last",2);
+    onExperience=[&]{onExperience={};q.DisconnectPC(e);g_registry.destroy(e);Character(7);};
     pc->Reward(e);
-    Check(gifts==std::vector<uint32_t>({1005}),"reward continued into a replacement player generation");
+    Check(experience==std::vector<int64_t>({1}),"reward continued into a replacement player generation");
 }
 void RewardCompletion() {
     Reset();quest::CQuestManager q;
     auto e=Character(11);auto* pc=q.GetPC(e);
-    pc->GiveItem("completion",1001,1);
-    onGive=[&]{onGive={};q.DisconnectPC(e);g_registry.destroy(e);Character(11);};
+    pc->GiveExp("completion",1);
+    onExperience=[&]{onExperience={};q.DisconnectPC(e);g_registry.destroy(e);Character(11);};
     pc->EndRunning();
-    Check(saves==0 && gifts.size()==1,"EndRunning touched/saved a disconnected reward recipient");
+    Check(saves==0 && experience.size()==1,"EndRunning touched/saved a disconnected reward recipient");
     e=players[11];pc=q.GetPC(e);
-    pc->GiveItem("pending",1002,1);
-    onGive=[&]{
-        onGive={};pc->SetFlag(".claimed",1);pc->GiveExp("claimed",10);
+    pc->GiveExp("pending",1);
+    onExperience=[&]{
+        onExperience={};pc->SetFlag(".claimed",1);pc->GiveExp("claimed",10);
     };
     pc->EndRunning();
     Check(saves==1 && pc->HasReward(),"EndRunning discarded a reward notification queued by a callback");
@@ -511,10 +513,7 @@ int32_t ecs::PointSystem::GetLevel(entt::entity e) {
 void ecs::PointSystem::Change(entt::entity e,uint8_t point,int64_t amount,bool,bool,bool) {
     CheckLive(e);Check(point==POINT_EXP,"unexpected point");experience.push_back(amount);
     g_registry.get<ecs::Experience>(e).current+=amount;
-}
-entt::entity ItemSystem::AutoGiveItemEcs(entt::entity e,uint32_t vnum,uint32_t count,int,bool,bool) {
-    CheckLive(e);Check(count>0,"empty reward");gifts.push_back(vnum);
-    if(onGive){auto fn=onGive;fn();}return entt::null;
+    if(onExperience){auto fn=onExperience;fn();}
 }
 void ecs::ChatSystem::SendNew(entt::entity e,uint8_t,uint32_t,const char*,...) {
     CheckLive(e);if(onPublish){auto fn=onPublish;fn();}
