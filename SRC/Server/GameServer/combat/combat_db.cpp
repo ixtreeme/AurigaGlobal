@@ -21,6 +21,6 @@ void CInputDB::SkillColorLoad(LPDESC desc, const char* data)
         return;
     ecs::SkillColor colors {};
     std::memcpy(colors.data, data, sizeof(colors.data));
-    SkillSystem::SetSkillColors(player, colors);
+    SkillSystem::ApplyLoadedSkillColors(player, colors);
 }
 #endif

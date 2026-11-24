@@ -2,6 +2,7 @@
 
 #include <entt/entity/fwd.hpp>
 #include <item/ItemMissions.hpp>
+#include <item/SkillPalette.hpp>
 #include <functional>
 #include "../quest/quest.h"
 
@@ -22,3 +23,7 @@ std::expected<void, auriga::item::ItemMissionError> RequestTypedGuildExchange(en
     std::vector<auriga::item::MissionItemAmount> costs, std::uint64_t price,
     std::uint16_t outcome, std::vector<std::uint8_t> receipt, std::function<void(bool)> done,
     std::optional<auriga::item::ItemInstanceId> source = {}, bool inQuest = false);
+
+std::expected<void,auriga::item::ItemMissionError> RequestTypedSkillColor(entt::entity,
+    auriga::item::SkillPaletteEdit, std::function<void(bool)>);
+bool QueueSkillPaletteReset(entt::entity, std::function<void(bool)>);

@@ -1,6 +1,7 @@
 #pragma once
 #include <item/PersistentItems.hpp>
 #include <item/ItemMissions.hpp>
+#include <item/SkillPalette.hpp>
 #include <SQL/PreparedTransaction.h>
 #include <span>
 #include <map>
@@ -26,6 +27,8 @@ struct LoadedItemOwner
     BookLearning learning;
     std::map<std::uint32_t,std::uint64_t> petStudyCooldowns;
 };
+std::expected<PersonalSkillPalette,ItemPersistenceError> LoadSkillPalette(CAsyncSQL&, ItemOwnerFence);
+std::expected<void,ItemPersistenceError> ClearSkillPalette(CAsyncSQL&, ItemOwnerFence);
 // Dedicated existing CAsyncSQL direct connection; no second SQL engine.
 // Values are bound; all tables are fixed and fully qualified. The returned
 // transaction may also be dispatched through ReturnTransactionPrepared.

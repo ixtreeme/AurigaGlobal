@@ -189,12 +189,13 @@ static std::expected<void, items::ItemMissionError> RequestTypedItemExchange(ent
 		commit->items, [](const items::ItemChange& change) { return !change.before; })));
 	auto held = std::make_shared<auriga::resource_admission::Permit>(std::move(*permit));
 	g_registry.emplace<ecs::TypedItemBusy>(character);
+	const bool notifyWithoutSession = outcome && outcome != items::SkillPaletteOutcome;
 	if (!items::runtime::RequestCommit(fence.owner, fence.sessionGeneration, std::move(*commit),
-		[current, outcome, done = std::move(done), held = std::move(held)](items::runtime::CommitOutcome result) mutable {
+		[current, notifyWithoutSession, done = std::move(done), held = std::move(held)](items::runtime::CommitOutcome result) mutable {
 			const auto entity = current();
 			if (entity == entt::null)
 			{
-				if (outcome && done)
+				if (notifyWithoutSession && done)
 					done(result.write.has_value());
 				return;
 			}
@@ -203,7 +204,7 @@ static std::expected<void, items::ItemMissionError> RequestTypedItemExchange(ent
 			g_registry.remove<ecs::TypedItemBusy>(entity);
 			held.reset();
 			SendTypedInventory(entity);
-			if (!outcome && current() != entity)
+			if (!notifyWithoutSession && current() != entity)
 				return;
 			if (done)
 				done(result.write.has_value());
@@ -239,6 +240,31 @@ std::expected<void, items::ItemMissionError> RequestTypedGuildExchange(entt::ent
 {
 	return RequestTypedItemExchange(character, std::move(costs), {}, price, std::move(done), {}, 0,
 		inQuest, items::WalletCurrency::Gold, inQuest, outcome, std::move(receipt), source);
+}
+
+std::expected<void,items::ItemMissionError> RequestTypedSkillColor(entt::entity character,
+    items::SkillPaletteEdit palette, std::function<void(bool)> done)
+{
+    std::vector<items::MissionItemAmount> costs;
+    if (palette.CostsElixir()) costs.push_back({items::RainbowElixir, 0, 1});
+    return RequestTypedItemExchange(character, std::move(costs), {}, 0, std::move(done), {}, 0,
+        false, items::WalletCurrency::Gold, true, items::SkillPaletteOutcome, items::EncodeSkillPalette(palette));
+}
+
+bool QueueSkillPaletteReset(entt::entity character, std::function<void(bool)> done)
+{
+    const auto* typed = g_registry.valid(character) ? g_registry.try_get<ecs::TypedItems>(character) : nullptr;
+    if (!typed) return false;
+    const auto fence = typed->state.fence;
+    return items::runtime::ItemStore::Instance().Submit([character, fence, done = std::move(done)](CAsyncSQL& sql,
+            const items::ItemCatalog&) -> items::runtime::ItemStore::Completion {
+        const auto result = items::persistence::ClearSkillPalette(sql, fence);
+        if (!result) LOG_ERROR("Skill palette reset failed for pid {}: {}", fence.owner.id, static_cast<int>(result.error()));
+        return [character, fence, done = std::move(done), ok = result.has_value()] {
+            const auto* state = g_registry.valid(character) ? g_registry.try_get<ecs::TypedItems>(character) : nullptr;
+            if (state && state->state.fence.sessionGeneration == fence.sessionGeneration) done(ok);
+        };
+    });
 }
 
 void RequestTypedItemMove(entt::entity character, std::uint64_t itemId, std::uint8_t storageKind, std::uint64_t storageId, std::uint32_t cell)

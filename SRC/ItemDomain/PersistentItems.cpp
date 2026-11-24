@@ -22,6 +22,7 @@
 #include <item/ItemMissions.hpp>
 #include <item/GuildConstruction.hpp>
 #include <item/GuildProgress.hpp>
+#include <item/SkillPalette.hpp>
 #include <item/InventorySort.hpp>
 
 namespace auriga::item
@@ -935,7 +936,7 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
     if(r.owners.empty() || r.owners.size()>MaxItemCommitOwners || r.items.size()>(inventorySort ? MaxInventorySortCells : MaxItemCommitItems) ||
        r.storages.size()>MaxItemCommitStorages || r.wallets.size()>MaxItemCommitOwners || r.result.size()>MaxItemCommitResult)return std::unexpected(E::LimitExceeded);
     if((r.items.empty() && r.wallets.empty() && !r.recovery && !r.learning && !r.privateShop && !r.dungeonEntry &&
-        r.outcomeCode!=GuildConstructionOutcome && r.outcomeCode!=GuildProgressOutcome) || !r.outcomeCode || r.kind<ItemOperationKind::Grant || r.kind>ItemOperationKind::Trade ||
+        r.outcomeCode!=GuildConstructionOutcome && r.outcomeCode!=GuildProgressOutcome && r.outcomeCode!=SkillPaletteOutcome) || !r.outcomeCode || r.kind<ItemOperationKind::Grant || r.kind>ItemOperationKind::Trade ||
        (r.petStudyCooldown && r.outcomeCode!=PetStudyOutcome) ||
        std::ranges::all_of(r.operationId,[](auto n){return !n;}))return std::unexpected(E::InvalidOperation);
     if (inventorySort && !ValidInventorySort(c, r))
@@ -1166,6 +1167,13 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
     if(r.outcomeCode==GuildProgressOutcome)
     {
         if(!DecodeGuildProgress(r))return std::unexpected(E::InvalidChange);
+        usedOwners.insert(r.owners.front().owner);
+    }
+    if (r.outcomeCode == SkillPaletteOutcome)
+    {
+        if (r.ground || r.recovery || r.learning || r.petStudyCooldown || r.currencyAward ||
+            r.nativeAward || r.currencyDrop || r.privateShop || r.dungeonEntry || !DecodeSkillPalette(r))
+            return std::unexpected(E::InvalidChange);
         usedOwners.insert(r.owners.front().owner);
     }
     if(usedOwners!=owners || usedLayouts.size()!=layouts.size())return std::unexpected(E::InvalidFence);

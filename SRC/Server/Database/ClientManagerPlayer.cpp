@@ -1,4 +1,6 @@
 #include <cmath>
+#include <charconv>
+#include <string_view>
 
 #include "stdafx.h"
 #include "player_create.h"
@@ -43,7 +45,11 @@ bool CreateSkillColorTableFromRes(MYSQL_RES * res, uint32_t * dwSkillColor)
 	{
 		for (int i = 0; i < ESkillColorLength::MAX_EFFECT_COUNT; ++i)
 		{
-			*(dwSkillColor++) = atoi(row[i + (x*ESkillColorLength::MAX_EFFECT_COUNT)]);
+            const auto* field = row[i + x * ESkillColorLength::MAX_EFFECT_COUNT];
+            if (!field) return false;
+            const std::string_view value(field);
+            const auto [end, error] = std::from_chars(value.data(), value.data()+value.size(), *dwSkillColor++);
+            if (error != std::errc{} || end != value.data()+value.size()) return false;
 		}
 	}
 

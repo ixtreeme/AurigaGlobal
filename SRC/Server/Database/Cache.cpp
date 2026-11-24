@@ -48,7 +48,7 @@ void CSKillColorCache::OnFlush()
 {
 	char query[QUERY_MAX_LEN];
 	snprintf(query, sizeof(query),
-		"REPLACE INTO skill_color%s (`player_id`, "
+		"INSERT INTO skill_color%s (`player_id`, "
 		"`s1_col1`, `s1_col2`, `s1_col3`, `s1_col4`, `s1_col5`, "
 		"`s2_col1`, `s2_col2`, `s2_col3`, `s2_col4`, `s2_col5`, "
 		"`s3_col1`, `s3_col2`, `s3_col3`, `s3_col4`, `s3_col5`, "
@@ -60,18 +60,23 @@ void CSKillColorCache::OnFlush()
 		"`s9_col1`, `s9_col2`, `s9_col3`, `s9_col4`, `s9_col5`, "
 		"`s10_col1`, `s10_col2`, `s10_col3`, `s10_col4`, `s10_col5`, "
 		"`s11_col1`, `s11_col2`, `s11_col3`, `s11_col4`, `s11_col5`) "
-		"VALUES (%d, "
-		"%d, %d, %d, %d, %d, "
-		"%d, %d, %d, %d, %d, "
-		"%d, %d, %d, %d, %d, "
-		"%d, %d, %d, %d, %d, "
-		"%d, %d, %d, %d, %d, "
-		"%d, %d, %d, %d, %d, " // end of skills
-		"%d, %d, %d, %d, %d, " // begin buffs
-		"%d, %d, %d, %d, %d, "
-		"%d, %d, %d, %d, %d, "
-		"%d, %d, %d, %d, %d, "
-		"%d, %d, %d, %d, %d)", GetTablePostfix(), m_data.player_id,
+		"VALUES (%u, "
+		"%u, %u, %u, %u, %u, "
+		"%u, %u, %u, %u, %u, "
+		"%u, %u, %u, %u, %u, "
+		"%u, %u, %u, %u, %u, "
+		"%u, %u, %u, %u, %u, "
+		"%u, %u, %u, %u, %u, " // end of skills
+		"%u, %u, %u, %u, %u, " // begin buffs
+		"%u, %u, %u, %u, %u, "
+		"%u, %u, %u, %u, %u, "
+		"%u, %u, %u, %u, %u, "
+		"%u, %u, %u, %u, %u) ON DUPLICATE KEY UPDATE "
+		"s7_col1=VALUES(s7_col1),s7_col2=VALUES(s7_col2),s7_col3=VALUES(s7_col3),s7_col4=VALUES(s7_col4),s7_col5=VALUES(s7_col5),"
+		"s8_col1=VALUES(s8_col1),s8_col2=VALUES(s8_col2),s8_col3=VALUES(s8_col3),s8_col4=VALUES(s8_col4),s8_col5=VALUES(s8_col5),"
+		"s9_col1=VALUES(s9_col1),s9_col2=VALUES(s9_col2),s9_col3=VALUES(s9_col3),s9_col4=VALUES(s9_col4),s9_col5=VALUES(s9_col5),"
+		"s10_col1=VALUES(s10_col1),s10_col2=VALUES(s10_col2),s10_col3=VALUES(s10_col3),s10_col4=VALUES(s10_col4),s10_col5=VALUES(s10_col5),"
+		"s11_col1=VALUES(s11_col1),s11_col2=VALUES(s11_col2),s11_col3=VALUES(s11_col3),s11_col4=VALUES(s11_col4),s11_col5=VALUES(s11_col5)", GetTablePostfix(), m_data.player_id,
 		m_data.dwSkillColor[0][0], m_data.dwSkillColor[0][1], m_data.dwSkillColor[0][2], m_data.dwSkillColor[0][3], m_data.dwSkillColor[0][4],
 		m_data.dwSkillColor[1][0], m_data.dwSkillColor[1][1], m_data.dwSkillColor[1][2], m_data.dwSkillColor[1][3], m_data.dwSkillColor[1][4],
 		m_data.dwSkillColor[2][0], m_data.dwSkillColor[2][1], m_data.dwSkillColor[2][2], m_data.dwSkillColor[2][3], m_data.dwSkillColor[2][4],
@@ -87,7 +92,7 @@ void CSKillColorCache::OnFlush()
 	CDBManager::instance().ReturnQuery(query, QID_SKILL_COLOR_SAVE, 0, nullptr);
 
 	if (g_test_server)
-		LOG_INFO("SkillColorCache::Flush :REPLACE {} ({})", m_data.player_id, query);
+		LOG_INFO("SkillColorCache::Flush {} ({})", m_data.player_id, query);
 
 	m_bNeedQuery = false;
 }

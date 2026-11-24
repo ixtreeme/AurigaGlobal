@@ -340,6 +340,7 @@ static void LoadTypedItems(entt::entity character)
 			login->mode = ecs::TypedItemLogin::Mode::Native;
 			LOG_INFO("TypedItems: pid {} session {}: {} items", pid, result.session, result.loaded->items.size());
 			g_registry.emplace_or_replace<ecs::TypedItems>(entity, std::move(*result.loaded));
+            SkillSystem::InstallSkillPalette(entity, result.palette);
             if(!ApplyTypedBookLogin(entity)){if(auto* desc=ecs::PlayerRuntime::GetDesc(entity))desc->SetPhase(PHASE_CLOSE);return;}
             StartTypedAccessoryClock(entity);StartTypedRecoveryClock(entity);
 			InventorySystem::SetItemLoaded(entity);

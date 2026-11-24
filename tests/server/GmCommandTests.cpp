@@ -447,12 +447,15 @@ void SkillColorChecks() {
         Check(!SkillSystem::ChangeSkillColor(caster, uint8_t(slot), selected), "client wrote buff/out-of-bounds slot");
     Check(colorTokens == 1 && colorPayments == 0, "invalid slot consumed item");
     Check(SkillSystem::ChangeSkillColor(caster, 0, selected) && colorTokens == 0 && colorPayments == 1, "paid colors");
-    Check(savedColors.size() == 1 && savedColors.back().player_id == 7 &&
-        std::equal(selected.begin(), selected.end(), savedColors.back().dwSkillColor[0]), "persisted color row");
+    Check(savedColors.empty() && g_registry.get<auriga::item::PersonalSkillPalette>(caster)[0] == selected,
+        "paid edit used the legacy color cache");
+    SkillSystem::ApplyLoadedSkillColors(caster, initial);
+    Check(std::ranges::equal(selected, g_registry.get<ecs::SkillColor>(caster).data[0]),
+        "late cached load overwrote a committed paid color");
     Check(std::equal(std::begin(initial.data[1]), std::end(initial.data[1]),
         g_registry.get<ecs::SkillColor>(caster).data[1]), "unrelated row overwritten");
     Check(SkillSystem::ChangeSkillColor(caster, 0, reset) && colorPayments == 1, "free color reset charged");
-    Check(std::equal(reset.begin(), reset.end(), savedColors.back().dwSkillColor[0]), "reset not persisted");
+    Check(g_registry.get<auriga::item::PersonalSkillPalette>(caster)[0] == reset, "reset not persisted");
 
     SkillSystem::SetSkillColors(caster, initial);
     const std::array<uint32_t, 5> ids {94, 95, 96, 110, 111};
@@ -486,7 +489,7 @@ void SkillColorChecks() {
         };
         const bool accepted = SkillSystem::ChangeSkillColor(caster, 0, selected);
         Check(colorPayments == 1 && !nestedAccepted, "recursive purchase");
-        Check(accepted == (mode != 1), "payment callback lifecycle");
+        Check(accepted, "typed purchase did not settle");
         Check(!g_registry.all_of<ecs::SkillColorChangeInProgress>(mode == 1 ? target : caster), "purchase guard retained");
         if (mode == 1) Check(savedColors.empty() && !g_registry.all_of<ecs::SkillColor>(target), "replacement got stale purchase");
         if (mode == 2) Check(std::equal(std::begin(initial.data[3]), std::end(initial.data[3]),
@@ -495,14 +498,14 @@ void SkillColorChecks() {
     Reset(); caster = Actor(); colorTokens = 1;
     bool once = false;
     onColorUpdate = [&](entt::entity e) {
-        Check(!savedColors.empty(), "network update before persistence");
+        Check(g_registry.get<auriga::item::PersonalSkillPalette>(e)[0] == selected, "network update before typed confirmation");
         if (!std::exchange(once, true)) SkillSystem::SetSkillColors(e, initial, true);
     };
-    Check(SkillSystem::ChangeSkillColor(caster, 0, selected) && savedColors.size() == 2 &&
+    Check(SkillSystem::ChangeSkillColor(caster, 0, selected) && savedColors.size() == 1 &&
         savedColors.back().dwSkillColor[0][0] == initial.data[0][0], "nested update persisted stale colors last");
     Reset(); caster = Actor(); colorTokens = 1;
     onColorUpdate = [&](entt::entity e) { g_registry.destroy(e); target = Actor("Replacement"); };
-    Check(SkillSystem::ChangeSkillColor(caster, 0, selected) && savedColors.size() == 1 && messages.empty() &&
+    Check(SkillSystem::ChangeSkillColor(caster, 0, selected) && savedColors.empty() && messages.empty() &&
         !g_registry.all_of<ecs::SkillColorChangeInProgress>(target), "update callback stale owner access");
 
     Reset(); caster = Actor();
@@ -610,13 +613,6 @@ int32_t GetLevel(entt::entity e) { return g_registry.get<Player>(e).level; }
 }
 namespace ItemSystem {
 bool IsValidItem(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<Item>(e); }
-bool RemoveSpecifyItemEcs(entt::entity e, uint32_t vnum, uint32_t count, bool renewal) {
-    Check(ecs::PlayerRuntime::IsPC(e) && vnum == 164406 && count == 1 && !renewal, "native color item consumption");
-    if (refuseColorPayment || colorTokens == 0) return false;
-    --colorTokens; ++colorPayments;
-    if (onColorPayment) onColorPayment(e);
-    return true;
-}
 entt::entity GetItemOwner(entt::entity e) { return g_registry.get<Item>(e).owner; }
 entt::entity GetItem(entt::entity e, TItemPos pos) {
     Check(ecs::PlayerRuntime::IsPC(e), "invalid inventory owner");
@@ -719,6 +715,27 @@ ScopedSkillContext::~ScopedSkillContext() noexcept = default;
 bool RequestTypedAdminGayaChange(entt::entity, entt::entity, int64_t, std::function<void(bool)>) { Unexpected(); }
 bool ecs::PlayerRuntime::SaveRaceChange(entt::entity, uint8_t) { Unexpected(); }
 double ecs::PointSystem::GetPrecise(entt::entity player, uint8_t type) { return ecs::PointSystem::Get(player, type); }
+std::expected<void, auriga::item::ItemMissionError> RequestTypedSkillColor(entt::entity e,
+    auriga::item::SkillPaletteEdit edit, std::function<void(bool)> done)
+{
+    using namespace auriga::item;
+    if (edit.CostsElixir())
+    {
+        if (refuseColorPayment || !colorTokens) return std::unexpected(ItemMissionError::Requirements);
+        --colorTokens;
+        ++colorPayments;
+        if (onColorPayment) onColorPayment(e);
+    }
+    // A committed purchase belongs to the old player even if its entity was recycled.
+    done(true);
+    return {};
+}
+
+bool QueueSkillPaletteReset(entt::entity e, std::function<void(bool)>)
+{
+    return ecs::PlayerRuntime::IsPC(e);
+}
+
 std::expected<void, auriga::item::ItemMissionError> RequestTypedGuildExchange(entt::entity,
     std::vector<auriga::item::MissionItemAmount>, uint64_t, uint16_t, std::vector<uint8_t>,
     std::function<void(bool)>, std::optional<auriga::item::ItemInstanceId>, bool) { Unexpected(); }

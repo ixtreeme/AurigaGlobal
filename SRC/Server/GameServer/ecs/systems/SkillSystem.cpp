@@ -1,4 +1,5 @@
 #include "../../item/TypedBooks.hpp"
+#include "../../item/TypedQuestItems.hpp"
 #include "../../item/TypedUniqueAccessories.hpp"
 #include "../../item/ItemStore.hpp"
 #include "../../core/stdafx.h"
@@ -797,6 +798,25 @@ bool SetSkillColors(entt::entity player, const ecs::SkillColor& colors, bool per
     return true;
 }
 
+struct PersonalPaletteGeneration { std::uint64_t value = 0; };
+
+void ApplyLoadedSkillColors(entt::entity player, ecs::SkillColor colors)
+{
+    if (!ecs::PlayerRuntime::IsPC(player)) return;
+    if (const auto* slots = g_registry.try_get<auriga::item::PersonalSkillPalette>(player))
+        for (std::size_t i = 0; i < slots->size(); ++i)
+            if (const auto& row = (*slots)[i]) std::ranges::copy(*row, colors.data[i]);
+    SetSkillColors(player, colors);
+}
+
+void InstallSkillPalette(entt::entity player, const auriga::item::PersonalSkillPalette& palette)
+{
+    if (!ecs::PlayerRuntime::IsPC(player)) return;
+    g_registry.emplace_or_replace<auriga::item::PersonalSkillPalette>(player, palette);
+    if (std::ranges::any_of(palette, [](const auto& row){return row.has_value();}))
+        ApplyLoadedSkillColors(player, g_registry.get_or_emplace<ecs::SkillColor>(player));
+}
+
 bool ChangeSkillColor(entt::entity player, uint8_t slot, const std::array<uint32_t, 5>& colors)
 {
     static_assert(ESkillColorLength::MAX_EFFECT_COUNT == 5);
@@ -818,27 +838,26 @@ bool ChangeSkillColor(entt::entity player, uint8_t slot, const std::array<uint32
         }
     } guard { player };
 
-    const bool paid = std::any_of(colors.begin(), colors.end(), [](uint32_t color) { return color != 0; });
-    if (paid && !ItemSystem::RemoveSpecifyItemEcs(player, 164406, 1))
-    {
+    const auto generation = g_registry.get_or_emplace<PersonalPaletteGeneration>(player).value;
+    const auto write = RequestTypedSkillColor(player, {slot, colors}, [player, slot, colors, generation](bool written) {
+        if (!ecs::PlayerRuntime::IsPC(player) || g_registry.get<PersonalPaletteGeneration>(player).value != generation) return;
+        if (written)
+        {
+            g_registry.get_or_emplace<auriga::item::PersonalSkillPalette>(player)[slot] = colors;
+            auto updated = g_registry.get_or_emplace<ecs::SkillColor>(player);
+            std::ranges::copy(colors, updated.data[slot]);
+            SetSkillColors(player, updated);
+        }
 #ifdef TEXTS_IMPROVEMENT
         if (ecs::PlayerRuntime::IsPC(player))
-            ecs::ChatSystem::SendNew(player, CHAT_TYPE_INFO, 16, "");
+            ecs::ChatSystem::SendNew(player, CHAT_TYPE_INFO, written ? 15 : 16, "");
 #endif
-        return false;
-    }
-    if (!ecs::PlayerRuntime::IsPC(player))
-        return false;
-
-    auto updated = g_registry.get_or_emplace<ecs::SkillColor>(player);
-    std::copy(colors.begin(), colors.end(), updated.data[slot]);
-    if (!SetSkillColors(player, updated, true))
-        return false;
+    });
 #ifdef TEXTS_IMPROVEMENT
-    if (ecs::PlayerRuntime::IsPC(player))
-        ecs::ChatSystem::SendNew(player, CHAT_TYPE_INFO, 15, "");
+    if (!write && ecs::PlayerRuntime::IsPC(player))
+        ecs::ChatSystem::SendNew(player, CHAT_TYPE_INFO, 16, "");
 #endif
-    return true;
+    return write.has_value();
 }
 
 bool CopyBuffSkillColor(entt::entity caster, entt::entity target, uint32_t skillId)
@@ -1049,13 +1068,34 @@ void ComputeSkillPoints(entt::entity)
         return;
 }
 
-void ResetSkill(entt::entity e)
+static void ResetCharacterSkills(entt::entity e, bool refund)
 {
-    if(DeferTypedBookMutation(e,[=]{SkillSystem::ResetSkill(e);}))return;
 	auto* levels = TryGetSkillLevels(e);
 	if (!levels || !levels->loaded)
 		return;
 
+#ifdef __SKILL_COLOR_SYSTEM__
+    if (!QueueSkillPaletteReset(e, [e](bool written) {
+        if (!ecs::PlayerRuntime::IsPC(e)) return;
+        if (!written)
+        {
+            LOG_ERROR("Could not persist skill palette reset for {}", ecs::PlayerRuntime::GetPlayerID(e));
+            if (auto* desc = ecs::PlayerRuntime::GetDesc(e)) desc->SetPhase(PHASE_CLOSE);
+            return;
+        }
+        auriga::item::PersonalSkillPalette blank{};
+        blank.fill(auriga::item::SkillLayers{});
+        InstallSkillPalette(e, blank);
+    })) return;
+    ++g_registry.get_or_emplace<PersonalPaletteGeneration>(e).value;
+#endif
+    if (refund)
+    {
+        ecs::PointSystem::Change(e, POINT_SKILL,
+            4 + (ecs::PointSystem::GetLevel(e) - 5) - ecs::PointSystem::Get(e, POINT_SKILL));
+        levels = TryGetSkillLevels(e);
+        if (!levels || !levels->loaded) return;
+    }
 	std::vector<std::pair<uint32_t, TPlayerSkill>> preserved;
     // Expansion training uses its own point budget and is not reset/refunded by legacy scrolls.
     for (uint32_t id=WarriorExpansion::FirstSkill;id<=WarriorExpansion::LastSkill;++id)
@@ -1087,14 +1127,14 @@ void ResetSkill(entt::entity e)
 #endif
 }
 
+void ResetSkill(entt::entity e)
+{
+    if (!DeferTypedBookMutation(e, [e]{ ResetSkill(e); })) ResetCharacterSkills(e, false);
+}
+
 void ClearSkill(entt::entity e)
 {
-    if(DeferTypedBookMutation(e,[=]{SkillSystem::ClearSkill(e);}))return;
-	if (e == entt::null || !g_registry.valid(e))
-		return;
-	ecs::PointSystem::Change(e, POINT_SKILL,
-		4 + (ecs::PointSystem::GetLevel(e) - 5) - ecs::PointSystem::Get(e, POINT_SKILL));
-	ResetSkill(e);
+    if (!DeferTypedBookMutation(e, [e]{ ClearSkill(e); })) ResetCharacterSkills(e, true);
 }
 
 void ClearSubSkill(entt::entity e)

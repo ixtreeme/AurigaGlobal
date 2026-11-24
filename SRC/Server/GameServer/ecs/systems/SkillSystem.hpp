@@ -1,4 +1,5 @@
 #pragma once
+#include <item/SkillPalette.hpp>
 
 #include <array>
 #include <cstdint>
@@ -85,6 +86,8 @@ bool ConsumeSkillHit(entt::entity caster, uint32_t skillId);
 bool CheckSkillHit(entt::entity attacker, uint8_t skillId, entt::entity target);
 int GetUsedSkillMasterType(entt::entity caster, uint32_t skillId);
 #ifdef __SKILL_COLOR_SYSTEM__
+void InstallSkillPalette(entt::entity, const auriga::item::PersonalSkillPalette&);
+void ApplyLoadedSkillColors(entt::entity, ecs::SkillColor);
 bool SetSkillColors(entt::entity player, const ecs::SkillColor& colors, bool persist = false);
 bool ChangeSkillColor(entt::entity player, uint8_t slot, const std::array<uint32_t, 5>& colors);
 bool CopyBuffSkillColor(entt::entity caster, entt::entity target, uint32_t skillId);

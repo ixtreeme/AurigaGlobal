@@ -326,7 +326,16 @@ bool RequestLoginLoad(std::uint32_t pid, std::function<void(LoginLoad)> done)
             else {
                 const auto recovered=persistence::RecoverPrivateShop(sql,catalog,owner,*session);
                 if(!recovered && recovered.error()!=ItemPersistenceError::MissingOwner)result.loaded=std::unexpected(recovered.error());
-                else result.loaded = persistence::LoadItemOwner(sql, catalog, owner, *session);
+                else
+                {
+                    result.loaded = persistence::LoadItemOwner(sql, catalog, owner, *session);
+                    if (result.loaded)
+                    {
+                        auto palette = persistence::LoadSkillPalette(sql, result.loaded->fence);
+                        if (palette) result.palette = *palette;
+                        else result.loaded = std::unexpected(palette.error());
+                    }
+                }
             }
 		}
 		return [done = std::move(done), result = std::move(result)]() mutable { done(std::move(result)); };

@@ -4,6 +4,7 @@
 #include "ItemPersistenceSql.hpp"
 #include <item/GuildConstruction.hpp>
 #include <item/GuildProgress.hpp>
+#include <item/SkillPalette.hpp>
 #include <item/InventorySort.hpp>
 #include <item/ItemShopReceipt.hpp>
 #include "StoragePersistenceSql.hpp"
@@ -171,6 +172,53 @@ template<std::size_t N> std::array<std::uint8_t,N> Array(const Cell& cell)
 std::vector<std::uint8_t> Payload(const Cell& cell)
 {if(!cell || cell->size()>MaxItemCommitResult)throw Invalid{};std::vector<std::uint8_t> out;for(auto b:*cell)out.push_back(static_cast<unsigned char>(b));return out;}
 }
+namespace
+{
+SqlTransaction PaletteFence(ItemOwnerFence fence)
+{
+    return {{"SELECT owner_id FROM player.item_owner_fence WHERE owner_kind=1 AND owner_id=? "
+             "AND session_generation=? FOR UPDATE",{U::UInt(fence.owner.id),U::UInt(fence.sessionGeneration)}, {}, 1}};
+}
+}
+
+std::expected<PersonalSkillPalette,E> LoadSkillPalette(CAsyncSQL& db, ItemOwnerFence fence)
+{
+    if (fence.owner.kind != ItemOwnerKind::Character) return std::unexpected(E::InvalidOwner);
+    auto tx = PaletteFence(fence);
+    tx.push_back({"SELECT slot,c1,c2,c3,c4,c5 FROM player.item_skill_palette WHERE player_id=?",
+        {U::UInt(fence.owner.id)}, {}, {}});
+    Message msg(db.DirectTransactionPrepared(std::move(tx)));
+    if (!msg) return std::unexpected(E::SqlFailure);
+    auto rows = Result(*msg, 1, 6, 6);
+    if (!rows) return std::unexpected(rows.error());
+    PersonalSkillPalette palette{};
+    try
+    {
+        for (const auto& row : *rows)
+        {
+            auto slot = Number<unsigned>(row[0]);
+            if (slot >= palette.size() || palette[slot]) return std::unexpected(E::InvalidStoredData);
+            auto& layers = palette[slot].emplace();
+            for (unsigned i = 0; i < layers.size(); ++i) layers[i] = Number<std::uint32_t>(row[i+1]);
+        }
+    }
+    catch (const Invalid&) { return std::unexpected(E::InvalidStoredData); }
+    return palette;
+}
+
+std::expected<void,E> ClearSkillPalette(CAsyncSQL& db, ItemOwnerFence fence)
+{
+    if (fence.owner.kind != ItemOwnerKind::Character) return std::unexpected(E::InvalidOwner);
+    auto tx = PaletteFence(fence);
+    const auto pid = U::UInt(fence.owner.id);
+    tx.push_back({"INSERT INTO player.item_skill_palette(player_id,slot) VALUES(?,0),(?,1),(?,2),(?,3),(?,4),(?,5) "
+        "ON DUPLICATE KEY UPDATE c1=0,c2=0,c3=0,c4=0,c5=0",{pid,pid,pid,pid,pid,pid}, {}, {}});
+    Message msg(db.DirectTransactionPrepared(std::move(tx)));
+    if (!msg || msg->transactionOutcome != SqlTransactionOutcome::Committed)
+        return std::unexpected(msg ? Failure(*msg) : E::SqlFailure);
+    return {};
+}
+
 std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const ItemCommit& r)
 {
     const auto digest=ItemCommitDigest(c,r);if(!digest)return std::unexpected(digest.error());
@@ -314,6 +362,16 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
     {
         auto p=Owner(o.owner);Append(p,{U::UInt(o.sessionGeneration),U::UInt(o.revision)});
         tx.push_back({"UPDATE player.item_owner_fence SET state_revision=state_revision+1 WHERE owner_kind=? AND owner_id=? AND session_generation=? AND state_revision=?",std::move(p),1,{}});
+    }
+    if (const auto palette = DecodeSkillPalette(r))
+    {
+        tx.push_back({"SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA='player' "
+            "AND TABLE_NAME='item_skill_palette' AND ENGINE='InnoDB' AND TABLE_TYPE='BASE TABLE'", {}, {}, 1});
+        SqlParams params{U::UInt(r.owners.front().owner.id), U::UInt(palette->slot)};
+        for (auto layer : palette->layers) params.push_back(U::UInt(layer));
+        tx.push_back({"INSERT INTO player.item_skill_palette(player_id,slot,c1,c2,c3,c4,c5) VALUES(?,?,?,?,?,?,?) "
+            "ON DUPLICATE KEY UPDATE c1=VALUES(c1),c2=VALUES(c2),c3=VALUES(c3),c4=VALUES(c4),c5=VALUES(c5)",
+            std::move(params), {}, {}});
     }
     PrivateShopWriteBefore(tx,r);
     DungeonEntryWriteBefore(tx,r);

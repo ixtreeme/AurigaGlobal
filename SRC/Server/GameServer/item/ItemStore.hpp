@@ -96,6 +96,7 @@ struct LoginLoad
 	ItemOwner owner;
 	std::uint64_t session = 0;
 	std::expected<persistence::LoadedItemOwner, ItemPersistenceError> loaded;
+	PersonalSkillPalette palette{};
 };
 bool RequestLoginLoad(std::uint32_t pid, std::function<void(LoginLoad)> done);
 bool RequestPlayerLoginLoad(std::uint32_t pid, std::function<void(LoginLoad)> done);
