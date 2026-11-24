@@ -11,6 +11,10 @@
     "original_sha256": "5502646dfaa62138eb5cfc8a4781b0744515afdf37ac6183eb4b311deb02f8f8",
     "resource": "login/begin_weapons.lua"
   },
+  "change_yang.lua": {
+    "resource": "item/change_yang.lua",
+    "original_sha256": "cda308d1f11b2f658fff1f7602e105a3a9a69efee1dd6e231bcc166d6e465c32"
+  },
   "cooldown_reset.lua": {
     "resource": "item/cooldown_reset.lua",
     "original_sha256": "c3fad283ffe5fcc3e04168f145e1b8230addc112a224a3a39e5740c38eb8b0fb"
