@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../mission/TypedMissionRuntime.hpp"
 #include "../item/TypedStoneExchange.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
@@ -237,6 +238,9 @@ void ecs::PlayerRuntime::OnClick(entt::entity target, entt::entity causer)
     if (CaravanQuest::Click(causer,target)) return;
     if (WoodcuttingSystem::Start(causer, target)) return;
     if (HerbalismSystem::Start(causer, target)) return;
+    if (!IsValid(target) || !IsPC(causer)) return;
+    if (!IsPC(target))
+        TypedMissionNpcInteracted(causer, GetPacketVID(target));
     if (!SetQuestNPC(causer, target) || !IsPC(causer)) return;
 
     if (quest::CQuestManager::instance().Click(causer, target))

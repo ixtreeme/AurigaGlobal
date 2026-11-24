@@ -50,7 +50,26 @@ struct Reference {std::shared_ptr<Session> value;};
 int64_t Now(){return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();}
 entt::entity Current(const std::shared_ptr<Session>& s){const auto e=CHARACTER_MANAGER::instance().FindEntityByPID(s->pid);const auto* login=g_registry.valid(e)?g_registry.try_get<ecs::TypedItemLogin>(e):nullptr;const auto* ref=g_registry.valid(e)?g_registry.try_get<Reference>(e):nullptr;return login && login->token==s->login && ref && ref->value==s?e:entt::null;}
 std::shared_ptr<Session> Get(entt::entity e){const auto* ref=g_registry.valid(e)?g_registry.try_get<Reference>(e):nullptr;return ref?ref->value:nullptr;}
-bool Admitted(entt::entity e,bool quest=false){if(!g_registry.valid(e) || !ecs::PlayerRuntime::IsPC(e) || CombatSystem::IsDead(e) || ecs::PlayerRuntime::IsObserverMode(e) || !InventorySystem::CanHandleItems(e) || !g_registry.all_of<ecs::TypedItems,ecs::TypedItemLogin>(e) || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e) || ecs::SocialSystem::HasExchange(e) || ecs::SocialSystem::GetMyShop(e)!=entt::null || ecs::SocialSystem::GetShopOwner(e)!=entt::null)return false;const auto* flags=g_registry.try_get<ecs::StatusFlags>(e);if(flags && flags->isStunned)return false;auto* d=ecs::PlayerRuntime::GetDesc(e);const auto* q=g_registry.try_get<ecs::QuestPCState>(e);return d && d->IsPhase(PHASE_GAME) && q && q->pc && (quest || !q->pc->IsRunning());}
+bool Admitted(entt::entity e, bool fromLua = false)
+{
+    if (!g_registry.valid(e) || !ecs::PlayerRuntime::IsPC(e) || CombatSystem::IsDead(e) ||
+        ecs::PlayerRuntime::IsObserverMode(e) || !InventorySystem::CanHandleItems(e) ||
+        !g_registry.all_of<ecs::TypedItems, ecs::TypedItemLogin>(e) ||
+        ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e) ||
+        ecs::SocialSystem::HasExchange(e) || ecs::SocialSystem::GetMyShop(e) != entt::null ||
+        ecs::SocialSystem::GetShopOwner(e) != entt::null)
+        return false;
+    const auto* flags = g_registry.try_get<ecs::StatusFlags>(e);
+    const auto* desc = ecs::PlayerRuntime::GetDesc(e);
+    if ((flags && flags->isStunned) || !desc || !desc->IsPhase(PHASE_GAME))
+        return false;
+
+    // A legacy conversation can own the interaction while both engines coexist.
+    const auto* legacy = g_registry.try_get<ecs::QuestPCState>(e);
+    if (fromLua)
+        return legacy && legacy->pc;
+    return !legacy || !legacy->pc || !legacy->pc->IsRunning();
+}
 bool Near(entt::entity e,uint32_t vid,uint32_t race){const auto npc=CHARACTER_MANAGER::instance().FindEntity(vid);if(!g_registry.valid(npc) || ecs::PlayerRuntime::IsPC(npc) || ecs::PlayerRuntime::GetRaceNum(npc)!=race || ecs::PlayerRuntime::GetMapIndex(e)!=ecs::PlayerRuntime::GetMapIndex(npc))return false;const auto dx=std::abs(int64_t(ecs::PlayerRuntime::GetX(e))-ecs::PlayerRuntime::GetX(npc)),dy=std::abs(int64_t(ecs::PlayerRuntime::GetY(e))-ecs::PlayerRuntime::GetY(npc));return std::max(dx,dy)+std::min(dx,dy)/2<1000;}
 std::unique_ptr<m::MissionRuntime> Runtime(const std::shared_ptr<Session>& s){auto r=std::make_unique<m::MissionRuntime>(*s->registry,m::CharacterSession{s->pid,s->login},s->checkpoint.now);if(r->Restore(s->checkpoint,s->checkpoint.now).code!=m::ResultCode::Applied)throw std::runtime_error("Mission checkpoint restore failed");return r;}
 const m::MissionRuntime::SavedInstance* Instance(const Session& s,const std::string& code){const m::MissionRuntime::SavedInstance* out=nullptr;for(const auto& [id,v]:s.checkpoint.instances)if(v.mission==code)out=&v;return out;}
