@@ -9,7 +9,6 @@
 #include "../../SRC/Server/GameServer/ecs/systems/SkillSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/AcceSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/SocialSystem.hpp"
 #include <Core/Logging.hpp>
@@ -49,6 +48,11 @@
 #include "../../SRC/Server/GameServer/item/item_manager.h"
 #include "../../SRC/Server/GameServer/item/ItemCatalogRuntime.hpp"
 #include "../../SRC/Server/GameServer/item/TypedDrops.hpp"
+#include "../../SRC/Server/GameServer/item/TypedBooks.hpp"
+#include "../../SRC/Server/GameServer/item/TypedRecovery.hpp"
+#include "../../SRC/Server/GameServer/item/TypedFieldGathering.hpp"
+#include "../../SRC/Server/GameServer/dungeon/LostCastleDungeon.h"
+#include "../../SRC/Server/GameServer/warrior/WarriorSkillSystem.hpp"
 #include "../../SRC/Server/GameServer/item/TypedEquipment.hpp"
 #include "../../SRC/Server/GameServer/entity/mob_manager.h"
 #include "../../SRC/Server/GameServer/combat/battle.h"
@@ -507,7 +511,6 @@ int SkillSystem::ComputeSkill(entt::entity,uint32_t,entt::entity,uint8_t) { Unex
 int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetQuestFlag(entt::entity,std::string const &,int) { UnexpectedService(__func__); }
 int64_t ecs::PlayerRuntime::GetPremiumRemainSeconds(entt::entity, unsigned char) { UnexpectedService(__func__); }
-void ecs::AcceSystem::Close(entt::entity) { UnexpectedService(__func__); }
 int CombatSystem::GetSoulItemDamage(entt::entity,entt::entity,int,unsigned char) { UnexpectedService(__func__); }
 unsigned int PartySystem::GetLeaderPID(entt::entity) { UnexpectedService(__func__); }
 bool PartySystem::IsPositionNearLeader(entt::entity, entt::entity) { UnexpectedService(__func__); }
@@ -1280,20 +1283,22 @@ int main() {
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }
 
-// Optional story/raid ownership and telemetry are outside the combat-state fixture.
-// An ordinary arena has no scripted combat restriction or damage filter.
-namespace CaravanQuest {
-bool AllowCombat(entt::entity,entt::entity){return true;}
-void OnDeath(entt::entity,entt::entity){}
-}
-namespace EclipseRaid {
-bool AllowCombat(entt::entity,entt::entity){return true;}
-int64_t FilterDamage(entt::entity,entt::entity,int64_t amount){return amount;}
-void OnDeath(entt::entity,entt::entity){}
-}
 namespace nexoria::benchmark {
 void RecordMiss(entt::entity,entt::entity,uint8_t,std::string_view) noexcept {}
 void RecordDamage(entt::entity,entt::entity,int64_t,int64_t,uint8_t,bool,bool) noexcept {}
 }
 double ecs::PointSystem::GetPrecise(entt::entity e,uint8_t type){return static_cast<double>(Get(e,type));}
 void ecs::PointSystem::ChangePrecise(entt::entity e,uint8_t type,double amount,bool delta,bool broadcast){Change(e,type,static_cast<int64_t>(amount),delta,broadcast);}
+
+// These ordinary combatants have no pending book, revival item, gathering tool or dungeon encounter.
+bool DeferTypedBookMutation(entt::entity, std::function<void()>) { return false; }
+bool RequestTypedDeathProtection(entt::entity, std::function<void(bool)>) { return false; }
+uint64_t EquippedFieldTool(entt::entity, auriga::item::ToolKind) { return 0; }
+int64_t WarriorExpansion::ReduceIncoming(entt::entity, entt::entity, int64_t damage, uint8_t) { return damage; }
+bool CHARACTER_MANAGER::RollAurigaCoinEvent(entt::entity) { return false; }
+std::shared_ptr<const auriga::item::ItemCatalog> auriga::item::runtime::CurrentDropCatalog() noexcept { return {}; }
+CLostCastleDungeon& CLostCastleDungeon::instance() { static CLostCastleDungeon dungeon; return dungeon; }
+bool CLostCastleDungeon::IsCloneVID(uint32_t) const { return false; }
+bool CLostCastleDungeon::CheckCloneDamage(entt::entity, entt::entity) const { return true; }
+void CLostCastleDungeon::OnMobKilled(entt::entity, entt::entity) {}
+void CLostCastleDungeon::OnCloneDeath(entt::entity) { UnexpectedService(__func__); }
