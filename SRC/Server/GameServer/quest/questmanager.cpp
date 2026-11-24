@@ -30,6 +30,7 @@
 #include "locale_service.h"
 #include "dungeon.h"
 #include "../item/TypedInventorySync.hpp"
+#include "../item/TypedQuestSelection.hpp"
 #include "../ecs/VIDRegistry.hpp"
 
 
@@ -196,9 +197,29 @@ namespace quest
 		PC* pPC = GetPC(pc);
 		if (pPC && pPC->IsRunning() && pPC->GetRunningQuestState()->suspend_state == SUSPEND_STATE_SELECT_ITEM)
 		{
+			auto& state = *pPC->GetRunningQuestState();
+			uint32_t cell = 0;
+			std::string instance;
+			if (selection) {
+				const auto offered = std::ranges::find(state.itemChoices, selection, &QuestState::ItemChoice::token);
+				if (offered == state.itemChoices.end()) return;
+				const auto current = TypedQuestStoneChoices(GetCurrentPCEntity());
+				const auto found = std::ranges::find(current, offered->id, &QuestState::ItemChoice::id);
+				if (found == current.end() || found->revision != offered->revision || found->cell != offered->cell) {
+					GotoSelectItemState(state);
+					return;
+				}
+				cell = found->cell;
+				instance = std::to_string(found->id);
+			}
+			state.itemChoices.clear();
 			pPC->SetSendDoneFlag();
-			pPC->GetRunningQuestState()->args=1;
-			lua_pushnumber(pPC->GetRunningQuestState()->co,selection);
+			state.args = 2;
+			// Preserve the first Lua return for existing quests. A second,
+			// lossless instance ID distinguishes cell zero from cancellation.
+			lua_pushinteger(state.co, cell);
+			if (instance.empty()) lua_pushnil(state.co);
+			else lua_pushlstring(state.co, instance.data(), instance.size());
 
 			if (!RunState(*pPC->GetRunningQuestState()))
 			{

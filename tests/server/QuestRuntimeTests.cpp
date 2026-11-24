@@ -70,6 +70,7 @@ bool SpyQuest::Click(entt::entity, entt::entity) { return false; }
 bool CaravanQuest::Click(entt::entity, entt::entity) { return false; }
 void TypedMissionNpcInteracted(entt::entity, std::uint32_t) {}
 void SendTypedInventory(entt::entity) {}
+std::vector<quest::QuestState::ItemChoice> TypedQuestStoneChoices(entt::entity) { return {}; }
 
 namespace quest {
 int npc_lock(lua_State*);

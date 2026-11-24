@@ -9,6 +9,7 @@
 
 #include "lua_incl.h"
 #include <memory>
+#include <vector>
 
 #define ENABLE_QUEST_DIE_EVENT
 
@@ -124,6 +125,12 @@ namespace quest
 
 	struct QuestState
 	{
+		struct ItemChoice
+		{
+			uint32_t token, cell;
+			uint64_t id, revision;
+		};
+		std::vector<ItemChoice> itemChoices;
 		std::shared_ptr<RuntimeGeneration> runtime;
 		TypedItemUseSource typedItemUse;
 		lua_State *	co;

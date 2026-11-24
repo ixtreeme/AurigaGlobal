@@ -1,5 +1,6 @@
 
 #include "stdafx.h"
+#include "../item/TypedQuestSelection.hpp"
 #include <Core/Logging.hpp>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
@@ -908,7 +909,18 @@ namespace quest
 	void CQuestManager::GotoSelectItemState(QuestState& qs)
 	{
 		qs.suspend_state = SUSPEND_STATE_SELECT_ITEM;
-		AddScript("[SELECT_ITEM]");
+		qs.itemChoices = TypedQuestStoneChoices(GetCurrentPCEntity());
+		// Replies use the existing 32-bit field. Keep cell numbers outside
+		// the token space and bind each offered token to one saved instance.
+		static uint32_t serial = 0;
+		std::ostringstream script;
+		script << "[SELECT_TYPED_ITEM ";
+		for (auto& choice : qs.itemChoices) {
+			choice.token = 0x80000000u | (++serial & 0x7fffffffu);
+			script << choice.token << ':' << choice.id << ',';
+		}
+		script << ']';
+		AddScript(script.str());
 		SendScript();
 	}
 
