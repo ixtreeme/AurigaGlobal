@@ -82,7 +82,7 @@ std::vector<NativeSchema> MakeSchemas()
     predicate(0x200c, ConditionKind::ExactlyN, "condition.exactly_n",
               {{10, "children", PortType::Predicate, true, true},
                {11, "required", PortType::Int64, true, false, 0, 64}});
-    const auto event = [&](uint32_t id, EventKind kind, std::string_view name)
+    const auto event = [&](uint32_t id, EventKind kind, std::string_view name, bool gameplayBound)
     {
         schemas.push_back({id,
                            1,
@@ -91,17 +91,17 @@ std::vector<NativeSchema> MakeSchemas()
                            name,
                            name,
                            {{1, "payload", PortType::EventPayload, false}},
-                           {}});
+                           {}, gameplayBound});
     };
-    event(0x3001, EventKind::MobKilled, "event.mob_killed");
-    event(0x3002, EventKind::ItemCollected, "event.item_obtained");
-    event(0x3003, EventKind::ItemCrafted, "event.item_crafted");
-    event(0x3004, EventKind::NpcInteracted, "event.npc_interacted");
-    event(0x3005, EventKind::AreaDiscovered, "event.area_discovered");
-    event(0x3006, EventKind::DialogueChoiceCommitted, "event.dialogue_choice");
-    event(0x3007, EventKind::BossDefeated, "event.boss_defeated");
-    event(0x3008, EventKind::PuzzleSolved, "event.puzzle_solved");
-    event(0x3009, EventKind::EscortCompleted, "event.escort_completed");
+    event(0x3001, EventKind::MobKilled, "event.mob_killed", true);
+    event(0x3002, EventKind::ItemCollected, "event.item_obtained", true);
+    event(0x3003, EventKind::ItemCrafted, "event.item_crafted", true);
+    event(0x3004, EventKind::NpcInteracted, "event.npc_interacted", true);
+    event(0x3005, EventKind::AreaDiscovered, "event.area_discovered", false);
+    event(0x3006, EventKind::DialogueChoiceCommitted, "event.dialogue_choice", true);
+    event(0x3007, EventKind::BossDefeated, "event.boss_defeated", true);
+    event(0x3008, EventKind::PuzzleSolved, "event.puzzle_solved", false);
+    event(0x3009, EventKind::EscortCompleted, "event.escort_completed", false);
     // Payload schemas are separate from the future 0x400x action handlers.
     // Serialization/validation exists; no gameplay effect is advertised as bound.
     for (const auto &[id, kind, name] :

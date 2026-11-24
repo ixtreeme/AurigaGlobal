@@ -103,13 +103,22 @@ int main(int argc, char **argv)
                       << " -> " << output.string() << '\n';
             return 0;
         }
-        if (mode == "check" && argc == 3)
+        if ((mode == "check" || mode == "check-events") && argc == 3)
         {
             const auto loaded = LoadPackageFile(argv[2]);
             if (!loaded)
             {
                 Errors(loaded.errors);
                 return 1;
+            }
+            if (mode == "check-events")
+            {
+                for (const auto &graph : loaded.package->Graphs())
+                    for (const auto &node : graph->Nodes())
+                        if (node.value.kind == NodeKind::Objective &&
+                            !FindNativeSchema(NativeType(node.value.objective.event))->gameplayBound)
+                            throw std::invalid_argument(graph->Source().id + "/" + node.value.id +
+                                                        ": missing gameplay event adapter");
             }
             std::cout << "Package valid: " << loaded.package->Manifest().id
                       << " version=" << loaded.package->Manifest().version
@@ -125,7 +134,8 @@ int main(int argc, char **argv)
             return 0;
         }
         std::cerr << "Usage:\n  MissionCompiler compile <source.json> <package.aurmission>\n"
-                     "  MissionCompiler check <package.aurmission>\n  MissionCompiler schema <schema.json>\n";
+                     "  MissionCompiler check <package.aurmission>\n  MissionCompiler check-events <package.aurmission>\n"
+                     "  MissionCompiler schema <schema.json>\n";
         return 2;
     }
     catch (const std::exception &error)

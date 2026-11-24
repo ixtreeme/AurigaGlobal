@@ -51,8 +51,25 @@ class MissionPackageToolsTests(unittest.TestCase):
             self.assertEqual(schema["scripting"], "none")
             ids = [entry["type_id"] for entry in schema["types"]]
             self.assertEqual(len(ids), len(set(ids)))
-            self.assertTrue(all(not entry["gameplay_bound"] for entry in schema["types"]))
+            self.assertEqual({entry["type_id"] for entry in schema["types"] if entry["gameplay_bound"]},
+                             {0x3001, 0x3002, 0x3003, 0x3004, 0x3006, 0x3007})
             self.assertIn("core.await_reward_receipt", [entry["name"] for entry in schema["types"]])
+
+    def test_studio_checks_live_events_separately_from_domain_syntax(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            source = folder / "source.json"
+            package = folder / "story.aurmission"
+            content = json.loads(Path(ARGS.source).read_text(encoding="utf-8"))
+            self.run_tool("compile", ARGS.source, package)
+            self.assertIn("missing gameplay event adapter", self.run_tool("check-events", package, code=1).stderr)
+            for mission in content["missions"]:
+                for node in mission["nodes"]:
+                    if node.get("objective", {}).get("event") == "puzzle_solved":
+                        node["objective"]["event"] = "mob_killed"
+            source.write_text(json.dumps(content), encoding="utf-8")
+            self.run_tool("compile", source, package)
+            self.run_tool("check-events", package)
 
 
 if __name__ == "__main__":

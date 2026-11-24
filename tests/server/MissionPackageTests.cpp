@@ -116,7 +116,9 @@ void NativeTypesAndGatePolicies()
             Check(ports.insert(p.id).second, "duplicate port ID");
         for (const auto &p : s.parameters)
             Check(params.insert(p.id).second, "duplicate parameter ID");
-        Check(!s.gameplayBound, "schema falsely advertised a bound live producer");
+        const bool liveEvent = s.typeId == 0x3001 || s.typeId == 0x3002 || s.typeId == 0x3003 ||
+                               s.typeId == 0x3004 || s.typeId == 0x3006 || s.typeId == 0x3007;
+        Check(s.gameplayBound == liveEvent, "Studio schema and live event producers differ");
     }
     Check(NativeType(NodeKind::Objective) == 0x1001 && NativeType(EventKind::MobKilled) == 0x3001,
           "stable native ID drift");
