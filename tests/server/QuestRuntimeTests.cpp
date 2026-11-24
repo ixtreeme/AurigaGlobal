@@ -13,6 +13,8 @@
 #include "../../SRC/Server/GameServer/social/shop_manager.h"
 #include "../../SRC/Server/GameServer/social/shop.h"
 #include "../../SRC/Server/GameServer/item/attr_transfer.h"
+#include "../../SRC/Server/GameServer/item/TypedStoneExchange.hpp"
+#include "../../SRC/Server/GameServer/dungeon/LostCastleDungeon.h"
 #include "../../SRC/Server/GameServer/dungeon/OrcsDungeon.h"
 #include "../../SRC/Server/GameServer/dungeon/TritonTempleDungeon.h"
 #include "../../SRC/Server/GameServer/dungeon/ValentineDungeon.h"
@@ -518,7 +520,7 @@ void ecs::ChatSystem::SendNew(entt::entity e,uint8_t,uint32_t,const char*,...) {
     CheckLive(e);if(onPublish){auto fn=onPublish;fn();}
 }
 bool AffectSystem::RemoveAffect(entt::entity e,uint32_t) {CheckLive(e);++affects;return true;}
-bool AffectSystem::AddAffect(entt::entity e,uint32_t,uint8_t,int32_t,uint32_t,int32_t,int32_t,bool,bool) {
+bool AffectSystem::AddAffect(entt::entity e,uint32_t,uint8_t,double,uint32_t,int32_t,int32_t,bool,bool) {
     CheckLive(e);++affects;return true;
 }
 namespace {
@@ -690,6 +692,9 @@ CVikingDungeon& CVikingDungeon::instance() {Unexpected();}
 bool CVikingDungeon::OnClickNpc(entt::entity,entt::entity) {Unexpected();}
 CEasterDungeon& CEasterDungeon::instance() {Unexpected();}
 bool CEasterDungeon::OnClickNpc(entt::entity) {Unexpected();}
+CLostCastleDungeon& CLostCastleDungeon::instance() { static CLostCastleDungeon dungeon; return dungeon; }
+bool CLostCastleDungeon::TryHandleNpcClick(entt::entity, entt::entity) { return false; }
+bool TryOpenTypedStoneExchange(entt::entity, entt::entity) { Unexpected(); }
 
 namespace {
 int triggerCalls=0;
