@@ -28,6 +28,10 @@
     "resource": "item/lvl_back.lua",
     "original_sha256": "3db4d45fc2b18143ab81f9d589c9ac10d05424c503d55d3f3df5ef159693e4aa"
   },
+  "marriage_manage.lua": {
+    "resource": "npc/marriage_manage.lua",
+    "original_sha256": "4b69d6677b62ad12ec4065e1d1c75b8de196074a6615a1a82ce2189f56083976"
+  },
   "miki_event.lua": "38efa0c00b292b5733bafb0be96666409cdd77ca947e43a45f768ff1e8dffa2e",
   "mining.lua": {
     "resource": "system/mining.lua",

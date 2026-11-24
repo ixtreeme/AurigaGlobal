@@ -24,5 +24,6 @@ SRC/Server/Resources/quest/Quest/skill/pda_quest.lua text eol=lf
 SRC/Server/Resources/quest/Quest/system/passive_skills.lua text eol=lf
 SRC/Server/Resources/quest/Quest/login/baule_start.lua text eol=lf
 SRC/Server/Resources/quest/Quest/item/teleportgyuru.quest text eol=lf
+SRC/Server/Resources/quest/Quest/npc/marriage_manage.lua text eol=lf
 config/typed_quests/tanaka.lua text eol=lf
 config/typed_quests/miki_event.lua text eol=lf
