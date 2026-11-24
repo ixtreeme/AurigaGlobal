@@ -49,7 +49,6 @@
 #include "../../world/war_map.h"
 #include "../../social/marriage.h"
 #include "../../entity/polymorph.h"
-#include "../../item/blend_item.h"
 #include "../../world/BattleArena.h"
 #include "../../world/arena.h"
 #include "../../core/dev_log.h"

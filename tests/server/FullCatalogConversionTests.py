@@ -4,7 +4,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 sys.path[:0]=[str(ROOT/'SRC/Tools/ItemCatalogBuilder'),str(ROOT/'SRC/Tools/ServerManager')]
 from convert_full_catalog import FullCatalogCompiler,disabled_source
-from legacy_item_migration import PROTO_FIELDS,NAME_FIELDS,value_hash
+from legacy_item_migration import PROTO_FIELDS,NAME_FIELDS,file_hash,value_hash
 from upgrade_exported_catalog import native
 
 class Conversion(unittest.TestCase):
@@ -64,6 +64,8 @@ class Conversion(unittest.TestCase):
         self.assertEqual(len(result['blocked']),1);self.assertFalse(result['accepted']);self.validate(result)
     def test_original_energy_birth_distribution_and_lifetime_are_explicit(self):
         c=self.energy_compiler();result=c.compile();self.assertEqual(len(result['accepted']),1);self.validate(result)
+        self.assertEqual(result['rule_inputs']['GameServer/item/blend_item.cpp'],
+                         file_hash(ROOT/'config/item_combat/original_blend_item.source.cpp'))
         p=result['packet'];rows=lambda t:[dict(zip(p['columns'][t],r)) for r in p['tables'][t]]
         self.assertEqual([(r['percent'],r['chance_bp']) for r in rows('energy_crystal_tier')],[('1','500'),('3','1000'),('5','4500'),('7','2500'),('10','1500')])
         self.assertEqual(rows('timed_effect_profile')[0]['utility_kind'],'3');self.assertEqual(rows('timed_effect_profile')[0]['duration_ms'],'1800000');self.assertEqual(rows('item_base')[0]['min_level'],'35')

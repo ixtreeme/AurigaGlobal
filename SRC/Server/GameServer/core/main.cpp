@@ -65,7 +65,6 @@
 #include "arena.h"
 #include "OXEvent.h"
 #include "polymorph.h"
-#include "blend_item.h"
 
 
 #include "BattleArena.h"
@@ -513,7 +512,6 @@ int main(int argc, char **argv)
 	MessengerManager::instance().Initialize();
 	CGuildManager::instance().Initialize();
 	OXEvent_manager.Initialize();
-	Blend_Item_init();
 
 	// Phase 15E-final.LPENTITY.4-architect.D.3: connect the
 	// VisibilitySystem PositionChangedEvent handler to the global

@@ -19,7 +19,6 @@
 #include "questmanager.h"
 #include "unique_item.h"
 #include "safebox.h"
-#include "blend_item.h"
 #include "dev_log.h"
 #include <Core/Logging.hpp>
 #include <unordered_set>

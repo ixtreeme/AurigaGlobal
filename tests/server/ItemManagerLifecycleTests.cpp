@@ -13,7 +13,6 @@
 #include "../../SRC/Server/GameServer/combat/skill.h"
 #include "../../SRC/Server/GameServer/social/priv_manager.h"
 #include "../../SRC/Server/GameServer/quest/questmanager.h"
-#include "../../SRC/Server/GameServer/item/blend_item.h"
 #include "../../SRC/Server/GameServer/item/unique_item.h"
 #include "../../SRC/Server/GameServer/item/refine.h"
 #include "../../SRC/Server/GameServer/ecs/EntityFactory.hpp"
@@ -40,7 +39,7 @@ uint16_t quickslotType = 0, quickslotCell = 0;
 bool rejectFactory = false;
 bool rejectDetach = false;
 bool creationTest = false, rejectAllocation = false, rejectCount = false;
-bool rejectRune = false, rejectTimer = false, blendExists = false;
+bool rejectRune = false, rejectTimer = false;
 bool highDraw = false;
 uint32_t nextItemID = 1000;
 int allocations = 0;
@@ -85,7 +84,7 @@ public:
 void Reset() {
     db_clientdesc = nullptr;
     onCreation = {}; creationTest = rejectAllocation = rejectCount = false;
-    rejectRune = rejectTimer = blendExists = highDraw = false;
+    rejectRune = rejectTimer = highDraw = false;
     nextItemID = 1000; allocations = 0; creationStages.clear(); availableSkills.clear();
     g_bItemCountLimit = 200;
     g_registry.clear(); inventory.clear();
@@ -341,10 +340,6 @@ CSkillProto* CSkillManager::Get(uint32_t id) {
 int CPrivManager::GetPriv(entt::entity, uint8_t) { Unexpected(); }
 int64_t quest::CQuestManager::GetEventFlag(const std::string&) { Unexpected(); }
 void quest::CQuestManager::RegisterNPCVnum(uint32_t) { Unexpected(); }
-bool Blend_Item_set_value(entt::entity item) {
-    g_registry.get<ecs::ItemSockets>(item).sockets = {3, 7, 900}; CreationStage("blend", item); return true;
-}
-bool Blend_Item_find(uint32_t) { Check(creationTest, "unexpected blend query"); return blendExists; }
 bool ItemSystem::SetItemCountEcs(entt::entity item, uint32_t count) {
     if (rejectCount) return false;
     g_registry.get<ecs::ItemCount>(item).count = static_cast<int>(count); CreationStage("count", item); return true;

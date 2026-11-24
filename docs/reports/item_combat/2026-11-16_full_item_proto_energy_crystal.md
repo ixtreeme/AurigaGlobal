@@ -9,3 +9,9 @@ Katalógus53, példánymigráció036, csak energiás állapothoz RCS5/GC225v29/G
 10091 natív ellenőrzés, 101 konverterteszt és 81 szerkesztőpróba sikeres (az opcionális külön SQL-szerkesztőpróba kihagyva; a CTestben futott).84 tényleges SQL/ItemStore ellenőrzés12 állapottal, Unity6.3 fordítás és13120 ellenőrzés8 tényleges gombművelettel sikeres. A70 CTest közül69 elsőre sikeres; a sémapróba korábbi tiltott3 értékét az új tiltott4-re frissítettük, az új sémakorlátokat is ellenőriztük, majd az egyetlen sikertelen teszt friss saját adatbázison sikeres. GameServer/Database célok fordultak.15 független hash-orákulum és4 metadata referencia változását külön ellenőriztük; az utóbbiak csak a katalógushash mezőben változtak. A teljes konverzió bájtpontosan megismételhető.
 
 9849 konvertált és496 kivezetett forrássor,6931 natív definíció.637 valóban hiányos tétel a merge-re vár; négy további tétel feldolgozása folytatódik. Az eredmény nincs telepítve az aktív helyi játékra. Teljes TLS/ECS világmenet, eredeti questes kristálykibocsátás és Addressables játékosbuild nem volt próbálva.
+
+## A régi betöltő kivezetése (2026-11-24)
+
+A GameServer indulásakor megszűnt a `blend.json` beolvasása. Az offline katalóguskonverter az eredeti sorsolás forrását a `config/item_combat/original_blend_item.source.cpp` fájlból ellenőrzi. A konverziós jelentésben megmaradt az eredeti forrásútvonal.
+
+A helyi próbában a GameServer a fájl nélkül indult. A Unity 6.3 klienssel a karakter két energiakristályt kapott küldetésjutalomként. A leltárból megnyitott hatásablak 5%-os erősséget és 30 percet mutatott. Megerősítéskor pontosan egy kristály fogyott. Újrabelépés után a megmaradt kristály és az aktív 5%-os hatás is megvolt.
