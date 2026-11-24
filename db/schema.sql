@@ -675,6 +675,7 @@ CREATE TABLE IF NOT EXISTS `player`.`guild_renewal_storage` (
   `slot`     SMALLINT UNSIGNED NOT NULL,
   `vnum`     INT UNSIGNED NOT NULL DEFAULT 0,
   `count`    INT UNSIGNED NOT NULL DEFAULT 0,
+  `item_key` BIGINT UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (`guild_id`, `slot`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 CREATE TABLE IF NOT EXISTS `player`.`guild_renewal_contrib` (

@@ -43,12 +43,6 @@ namespace
 	using TKisAdoItemArr = std::array<uint32_t, 5>;
 	static std::unordered_map<uint32_t, std::unordered_map<uint32_t, TKisAdoItemArr>> s_kisAdoItemContrib;
 
-	uint64_t PackedMaterial(uint32_t historicalId)
-	{
-		const auto key = items::GuildProgressMaterial(historicalId);
-		return key ? items::PackItemKey(*key) : 0;
-	}
-
 	static TKisAdoItemArr KisAdo_GetItemArrCopy(uint32_t guildId, uint32_t pid)
 	{
 		TKisAdoItemArr z{ {0,0,0,0,0} };
@@ -150,21 +144,26 @@ void CGuildRenewal::EnsureLoaded(uint32_t guildId)
 	// Storage slots
 	{
 		auto msg = std::unique_ptr<SQLMsg>(DBManager::instance().DirectQuery(
-			"SELECT slot,vnum,count FROM guild_renewal_storage WHERE guild_id=%u", guildId));
-		if (msg && msg->Get() && msg->Get()->uiNumRows > 0)
+			"SELECT slot,item_key,count FROM guild_renewal_storage WHERE guild_id=%u", guildId));
+		if (!msg || msg->uiSQLErrno || !msg->Get() || !msg->Get()->pSQLResult)
+			return;
+		std::vector<items::GuildProgressSlot> slots(kGuildStorageSize);
+		for (uint64_t i = 0; i < msg->Get()->uiNumRows; ++i)
 		{
-			for (uint64_t i = 0; i < msg->Get()->uiNumRows; i++)
+			const auto row = msg->Get()->FetchRow();
+			if (!row || !row[0] || !row[1] || !row[2]) return;
+			const auto slot = strtoul(row[0], nullptr, 10);
+			const auto material = strtoull(row[1], nullptr, 10);
+			const auto count = static_cast<uint32_t>(strtoul(row[2], nullptr, 10));
+			if (!count) continue;
+			if (slot >= slots.size() || !items::UnpackItemKey(material))
 			{
-				MYSQL_ROW row = msg->Get()->FetchRow();
-				if (!row)
-					continue;
-				int slot = atoi(row[0]);
-				if (slot < 0 || slot >= kGuildStorageSize)
-					continue;
-				c.storage[slot].vnum = (uint32_t)atoi(row[1]);
-				c.storage[slot].count = (uint32_t)atoi(row[2]);
+				LOG_ERROR("Invalid material in guild {} storage slot {}", guildId, slot);
+				return;
 			}
+			slots[slot] = {material, count};
 		}
+		c.storage = std::move(slots);
 	}
 
 	// Contrib
@@ -322,47 +321,61 @@ bool CGuildRenewal::LoadLevelReqFromJson(const char* filename)
 		return false;
 	}
 
-	// ha tbb helyrl prbljuk, ne keveredjen ssze
-	m_levelReqByTargetLevel.clear();
+	// Publish the full validated requirement table at once.
+	decltype(m_levelReqByTargetLevel) requirements;
 
 	for (const auto& entry : doc.at("levels"))
 	{
-		if (!entry.contains("level") || !entry.contains("yang"))
-			continue;
-
-		int lvl = entry.value("level", 0);            // cl ch szint (pl 22, ha most 21 a ch)
-
-		if (lvl < 21 || lvl > NSBUZERANT)
-			continue;
-
+		if (!entry.is_object() || !entry.contains("level") || !entry["level"].is_number_unsigned() ||
+			!entry.contains("yang") || !entry["yang"].is_number_unsigned())
+			return false;
+		const auto lvl = entry["level"].get<uint64_t>();
+		const auto yang = entry["yang"].get<uint64_t>();
+		if (lvl < 21 || lvl > NSBUZERANT || yang > INT64_MAX)
+			return false;
 		LevelReq r;
-		r.yang = entry.value("yang", (long long)0);
-
-		if (entry.contains("items") && entry.at("items").is_array())
+		r.yang = static_cast<int64_t>(yang);
+		if (!entry.contains("items") || !entry.at("items").is_array() ||
+			entry.at("items").size() > r.materials.size())
+			return false;
+		std::size_t i = 0;
+		for (const auto& material : entry.at("items"))
 		{
-			const auto& items = entry.at("items");
-
-			for (int i = 0; i < 5 && i < (int)items.size(); ++i)
+			if (!material.is_object() || !material.contains("category_id") || !material.contains("local_id") ||
+				!material.contains("count") || !material["category_id"].is_number_unsigned() ||
+				!material["local_id"].is_number_unsigned() || !material["count"].is_number_unsigned())
+				return false;
+			const auto category = material["category_id"].get<uint64_t>();
+			const auto local = material["local_id"].get<uint64_t>();
+			const auto count = material["count"].get<uint64_t>();
+			if (category > UINT16_MAX || local > UINT32_MAX || count > UINT32_MAX ||
+				(!count && (category || local)))
+				return false;
+			if (count)
 			{
-				r.vnum[i] = items.at(i).value("vnum", 0u);
-				r.count[i] = items.at(i).value("count", 0u);
+				const auto key = items::ItemKey::Create(static_cast<uint16_t>(category), static_cast<uint32_t>(local));
+				if (!key) return false;
+				r.materials[i] = items::PackItemKey(*key);
+				r.count[i] = static_cast<uint32_t>(count);
 			}
+			++i;
 		}
-
-		m_levelReqByTargetLevel[(uint8_t)lvl] = r;
+		if (!requirements.emplace(static_cast<uint8_t>(lvl), r).second)
+			return false;
 	}
 
-	if (m_levelReqByTargetLevel.empty())
+	if (requirements.empty())
 	{
 		LOG_ERROR("GUILD_RENEWAL: file loaded but NO valid rows parsed: {}", filename);
 		return false;
 	}
 
+	m_levelReqByTargetLevel = std::move(requirements);
 	return true;
 }
 
 
-uint64_t CGuildRenewal::Storage_Count(uint32_t guildId, uint32_t vnum) const
+uint64_t CGuildRenewal::Storage_Count(uint32_t guildId, uint64_t material) const
 {
 	auto it = m_cache.find(guildId);
 	if (it == m_cache.end() || it->second.storage.empty())
@@ -370,7 +383,7 @@ uint64_t CGuildRenewal::Storage_Count(uint32_t guildId, uint32_t vnum) const
 
 	uint64_t sum = 0;
 	for (const auto& s : it->second.storage)
-		if (s.vnum == vnum)
+		if (s.material == material)
 			sum += s.count;
 	return sum;
 }
@@ -390,14 +403,15 @@ void CGuildRenewal::SendFullStateTo(entt::entity chEntity)
 	EnsureLevelReqLoaded();
 
 	auto& c = GetCache(guildId);
+	if (!c.loaded) return;
 
 	// UI reset + guild storage money
 	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "gr_clear");
 	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "gr_money %lld", (long long)c.money);
 	const auto catalog = items::runtime::CurrentCatalog();
 	std::set<items::ItemKey> sentMaterials;
-	const auto sendMaterial = [&](uint32_t material) {
-		const auto key = items::GuildProgressMaterial(material);
+	const auto sendMaterial = [&](uint64_t material) {
+		const auto key = items::UnpackItemKey(material);
 		if (!catalog || !key || !sentMaterials.insert(*key).second)
 			return;
 		const auto* entry = catalog->Find(*key);
@@ -434,8 +448,8 @@ void CGuildRenewal::SendFullStateTo(entt::entity chEntity)
 			reqYang = (long long)itReq->second.yang;
 			for (int i = 0; i < 5; ++i)
 			{
-				sendMaterial(itReq->second.vnum[i]);
-				rv[i] = PackedMaterial(itReq->second.vnum[i]);
+				sendMaterial(itReq->second.materials[i]);
+				rv[i] = itReq->second.materials[i];
 				rc[i] = itReq->second.count[i];
 			}
 		}
@@ -457,11 +471,11 @@ void CGuildRenewal::SendFullStateTo(entt::entity chEntity)
 	for (uint16_t i = 0; i < c.storage.size(); ++i)
 	{
 		auto& s = c.storage[i];
-		if (s.vnum && s.count)
+		if (s.material && s.count)
 		{
-			sendMaterial(s.vnum);
+			sendMaterial(s.material);
 			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "gr_item2 %u %llu %u", (unsigned)i,
-				static_cast<unsigned long long>(PackedMaterial(s.vnum)), s.count);
+				static_cast<unsigned long long>(s.material), s.count);
 		}
 	}
 
@@ -495,6 +509,7 @@ items::GuildProgress CGuildRenewal::ProgressSnapshot(uint32_t guildId, uint8_t c
 {
 	EnsureLoaded(guildId);
 	const auto& cached = GetCache(guildId);
+	if (!cached.loaded) return {};
 	items::GuildProgress progress;
 	progress.guild = guildId;
 	progress.currentLevel = currentLevel;
@@ -502,8 +517,8 @@ items::GuildProgress CGuildRenewal::ProgressSnapshot(uint32_t guildId, uint8_t c
 	for (std::size_t i = 0; i < cached.storage.size() && i < progress.before.size(); ++i)
 	{
 		const auto& slot = cached.storage[i];
-		if (slot.vnum && slot.count)
-			progress.before[i] = {slot.vnum, slot.count};
+		if (slot.material && slot.count)
+			progress.before[i] = {slot.material, slot.count};
 	}
 	progress.after = progress.before;
 	return progress;
@@ -558,6 +573,7 @@ bool CGuildRenewal::PayCustom(entt::entity character, uint32_t target, int64_t y
 		return false;
 	const auto& req = requirement->second;
 	auto progress = ProgressSnapshot(guild->GetID(), guild->GetLevel());
+	if (!progress.guild) return false;
 	const auto& state = typed->state;
 	const auto owner = state.fence.owner;
 	const items::PersistentItem* selected = nullptr;
@@ -575,10 +591,10 @@ bool CGuildRenewal::PayCustom(entt::entity character, uint32_t target, int64_t y
 		progress.moneyPaid = std::min({static_cast<uint64_t>(yang), static_cast<uint64_t>(req.yang) - progress.moneyBefore, wallet->balance});
 
 	std::vector<items::MissionItemAmount> costs;
-	for (std::size_t index = 0; index < req.vnum.size(); ++index)
+	for (std::size_t index = 0; index < req.materials.size(); ++index)
 	{
-		const auto material = req.vnum[index];
-		const auto key = items::GuildProgressMaterial(material);
+		const auto material = req.materials[index];
+		const auto key = items::UnpackItemKey(material);
 		if (!key || !req.count[index] || (selected && selected->key != *key))
 			continue;
 		const auto existing = std::ranges::find(costs, *key, &items::MissionItemAmount::key);
@@ -628,17 +644,18 @@ bool CGuildRenewal::TryLevelUp(entt::entity character)
 		return false;
 	const auto& req = requirement->second;
 	auto progress = ProgressSnapshot(guild->GetID(), guild->GetLevel());
+	if (!progress.guild) return false;
 	if (req.yang < 0 || progress.moneyBefore < static_cast<uint64_t>(req.yang))
 	{
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Nincs elegendő Yang a céh leltárában.");
 		return false;
 	}
-	std::unordered_map<uint32_t, uint64_t> required;
-	for (std::size_t index = 0; index < req.vnum.size(); ++index)
+	std::unordered_map<uint64_t, uint64_t> required;
+	for (std::size_t index = 0; index < req.materials.size(); ++index)
 		if (req.count[index])
-			required[req.vnum[index]] += req.count[index];
+			required[req.materials[index]] += req.count[index];
 	for (const auto& [material, count] : required)
-		if (!items::GuildProgressMaterial(material) || Storage_Count(progress.guild, material) < count)
+		if (!items::UnpackItemKey(material) || Storage_Count(progress.guild, material) < count)
 		{
 			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Hiányzik fejlesztési tárgy a céh leltárából.");
 			return false;

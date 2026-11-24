@@ -8,28 +8,10 @@ namespace auriga::item
 inline constexpr std::uint16_t GuildProgressOutcome = 0x4212;
 inline constexpr std::size_t GuildProgressSlots = 15, GuildProgressRequirements = 5;
 
-// Historical requirements and guild storage used a numeric reference. It is
-// preserved in guild bookkeeping so existing contributions remain readable.
-inline constexpr auto GuildProgressMaterials = std::to_array<std::pair<std::uint32_t, ItemKey>>({
-    {8881, *ItemKey::Create(6, 611)}, {27987, *ItemKey::Create(8, 381)},
-    {27992, *ItemKey::Create(6, 117)}, {27993, *ItemKey::Create(6, 118)},
-    {27994, *ItemKey::Create(6, 119)}, {30271, *ItemKey::Create(6, 346)},
-    {30284, *ItemKey::Create(6, 355)}, {30617, *ItemKey::Create(5, 772)},
-    {39066, *ItemKey::Create(10, 963)}, {71084, *ItemKey::Create(5, 346)},
-    {71123, *ItemKey::Create(6, 564)}, {71129, *ItemKey::Create(6, 565)},
-    {88980, *ItemKey::Create(10, 1381)}, {99998, *ItemKey::Create(10, 1390)},
-    {99999, *ItemKey::Create(10, 1391)},
-});
-
-inline std::optional<ItemKey> GuildProgressMaterial(std::uint32_t id)
-{
-    const auto found = std::ranges::find_if(GuildProgressMaterials, [id](const auto& entry) { return entry.first == id; });
-    return found == GuildProgressMaterials.end() ? std::nullopt : std::optional{found->second};
-}
-
 struct GuildProgressSlot
 {
-    std::uint32_t material = 0, count = 0;
+    std::uint64_t material = 0; // packed ItemKey, zero for an empty slot
+    std::uint32_t count = 0;
     bool operator==(const GuildProgressSlot&) const = default;
 };
 
@@ -57,7 +39,7 @@ inline std::vector<std::uint8_t> EncodeGuildProgress(const GuildProgress& progre
     for (const auto& slots : {&progress.before, &progress.after})
         for (const auto& slot : *slots)
         {
-            write(slot.material, 4);
+            write(slot.material, 8);
             write(slot.count, 4);
         }
     for (auto count : progress.contributed)
@@ -69,7 +51,7 @@ inline std::optional<GuildProgress> DecodeGuildProgress(const ItemCommit& commit
 {
     if (commit.outcomeCode != GuildProgressOutcome || commit.kind != ItemOperationKind::Service ||
         commit.owners.size() != 1 || commit.owners.front().owner.kind != ItemOwnerKind::Character ||
-        commit.result.size() != 22 + GuildProgressSlots * 16 + GuildProgressRequirements * 4)
+        commit.result.size() != 22 + GuildProgressSlots * 24 + GuildProgressRequirements * 4)
         return {};
     std::size_t offset = 0;
     const auto read = [&](unsigned size) {
@@ -91,9 +73,9 @@ inline std::optional<GuildProgress> DecodeGuildProgress(const ItemCommit& commit
     for (auto* slots : {&progress.before, &progress.after})
         for (auto& slot : *slots)
         {
-            slot.material = static_cast<std::uint32_t>(read(4));
+            slot.material = read(8);
             slot.count = static_cast<std::uint32_t>(read(4));
-            if ((slot.material == 0) != (slot.count == 0))
+            if ((slot.material == 0) != (slot.count == 0) || (slot.material && !UnpackItemKey(slot.material)))
                 return {};
         }
     std::uint64_t contributed = 0;
@@ -122,7 +104,7 @@ inline std::optional<GuildProgress> DecodeGuildProgress(const ItemCommit& commit
         const auto& after = progress.after[index];
         if (before == after)
             continue;
-        const auto key = GuildProgressMaterial(after.material);
+        const auto key = UnpackItemKey(after.material);
         if (!key || (before.material && before.material != after.material) || before.count >= after.count)
             return {};
         credited[*key] += after.count - before.count;

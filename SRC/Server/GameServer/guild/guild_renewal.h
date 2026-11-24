@@ -41,12 +41,6 @@ public:
 private:
 	CGuildRenewal();
 
-	struct StorageSlot
-	{
-		uint32_t vnum{0};
-		uint32_t count{0};
-	};
-
 	struct Contrib
 	{
 		int64_t paidMoney{ 0 };
@@ -59,7 +53,7 @@ private:
 	struct LevelReq
 	{
 		int64_t yang{0};
-		std::array<uint32_t,5> vnum{{0,0,0,0,0}};
+		std::array<uint64_t,5> materials{};
 		std::array<uint32_t,5> count{{0,0,0,0,0}};
 	};
 
@@ -67,7 +61,7 @@ private:
 	{
 		bool loaded{false};
 		int64_t money{0};
-		std::vector<StorageSlot> storage;
+		std::vector<auriga::item::GuildProgressSlot> storage;
 		std::unordered_map<uint32_t, Contrib> contrib;
 	};
 
@@ -82,7 +76,7 @@ private:
 	auriga::item::GuildProgress ProgressSnapshot(uint32_t guildId, uint8_t currentLevel);
 	bool RequestProgress(entt::entity character, auriga::item::GuildProgress progress,
 		std::vector<auriga::item::MissionItemAmount> costs, std::optional<auriga::item::ItemInstanceId> source = {});
-	uint64_t Storage_Count(uint32_t guildId, uint32_t vnum) const;
+	uint64_t Storage_Count(uint32_t guildId, uint64_t material) const;
 
 private:
 	std::unordered_map<uint32_t, GuildCache> m_cache;

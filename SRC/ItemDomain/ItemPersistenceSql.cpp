@@ -233,14 +233,14 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
             const auto& before = progress->before[index];
             const auto& after = progress->after[index];
             if (before.count)
-                tx.push_back({"SELECT slot FROM player.guild_renewal_storage WHERE guild_id=? AND slot=? AND vnum=? AND count=? FOR UPDATE",
+                tx.push_back({"SELECT slot FROM player.guild_renewal_storage WHERE guild_id=? AND slot=? AND item_key=? AND count=? FOR UPDATE",
                     {guild, slot, U::UInt(before.material), U::UInt(before.count)}, {}, 1});
             else
                 tx.push_back({"SELECT slot FROM player.guild_renewal_storage WHERE guild_id=? AND slot=? AND count<>0 FOR UPDATE",
                     {guild, slot}, {}, 0});
             if (!progress->levelUp && before != after)
-                tx.push_back({"INSERT INTO player.guild_renewal_storage(guild_id,slot,vnum,count) VALUES(?,?,?,?) "
-                              "ON DUPLICATE KEY UPDATE vnum=VALUES(vnum),count=VALUES(count)",
+                tx.push_back({"INSERT INTO player.guild_renewal_storage(guild_id,slot,item_key,count) VALUES(?,?,?,?) "
+                              "ON DUPLICATE KEY UPDATE item_key=VALUES(item_key),count=VALUES(count)",
                     {guild, slot, U::UInt(after.material), U::UInt(after.count)}, {}, {}});
         }
         if (progress->levelUp)

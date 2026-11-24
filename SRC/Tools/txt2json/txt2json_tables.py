@@ -304,6 +304,34 @@ def convert_gaya(in_path, out_path):
 
 # ---------------------------------------------------------------- guild renewal
 
+GUILD_MATERIAL_KEYS = {
+    8881: (6, 611),
+    27987: (8, 381),
+    27992: (6, 117),
+    27993: (6, 118),
+    27994: (6, 119),
+    30271: (6, 346),
+    30284: (6, 355),
+    30617: (5, 772),
+    39066: (10, 963),
+    71084: (5, 346),
+    71123: (6, 564),
+    71129: (6, 565),
+    88980: (10, 1381),
+    99998: (10, 1390),
+    99999: (10, 1391),
+}
+
+
+def guild_material(vnum, count):
+    if not count:
+        return {"category_id": 0, "local_id": 0, "count": 0}
+    if vnum not in GUILD_MATERIAL_KEYS or not 0 < count <= 0xffffffff:
+        raise ConversionError("guild: unknown material or invalid count: %s x %s" % (vnum, count))
+    category, local = GUILD_MATERIAL_KEYS[vnum]
+    return {"category_id": category, "local_id": local, "count": count}
+
+
 def convert_guild(in_path, out_path):
     levels = []
 
@@ -329,7 +357,7 @@ def convert_guild(in_path, out_path):
         for i in range(5):
             vnum = str_to_int(tokens[2 + i * 2]) if len(tokens) > 2 + i * 2 else 0
             count = str_to_int(tokens[3 + i * 2]) if len(tokens) > 3 + i * 2 else 0
-            items.append(collections.OrderedDict([("vnum", vnum), ("count", count)]))
+            items.append(guild_material(vnum, count))
 
         levels.append(collections.OrderedDict([("level", lvl), ("yang", yang), ("items", items)]))
 
