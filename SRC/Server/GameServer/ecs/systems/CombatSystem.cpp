@@ -1,4 +1,5 @@
 #include "../../item/TypedBooks.hpp"
+#include "../../item/TypedUniqueAccessories.hpp"
 #include "../../item/TypedCraft.hpp"
 #include "../../mission/TypedMissionRuntime.hpp"
 #include "../../item/TypedSoulClock.hpp"
@@ -137,6 +138,9 @@ static inline bool HasMoveState(entt::entity character)
     return character != entt::null && g_registry.valid(character) &&
         g_registry.all_of<ecs::MovementDestination>(character);
 }
+
+using auriga::item::runtime::UniqueAccessory;
+using auriga::item::runtime::HasEquippedAccessory;
 
 namespace CombatSystem {
 
@@ -1603,7 +1607,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 	rate_t rateFactor = 100;
 
 	rateFactor += CPrivManager::instance().GetPriv(toEntity, PRIV_EXP_PCT);
-	if (ItemSystem::IsEquipUniqueItem(toEntity, UNIQUE_ITEM_LARBOR_MEDAL))
+	if (HasEquippedAccessory(toEntity, {UniqueAccessory::DiligenceMedal}))
 		rateFactor += 20;
 	if (ecs::PlayerRuntime::GetMapIndex(toEntity) >= 660000 && ecs::PlayerRuntime::GetMapIndex(toEntity) < 670000)
 		rateFactor += 20;
@@ -1631,7 +1635,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 		if ((number(1, 100000000) / 1000000.0) <= ecs::PointSystem::GetPrecise(toEntity, POINT_EXP_DOUBLE_BONUS))
 			rateFactor += 30;
 #endif
-	if (ItemSystem::IsEquipUniqueItem(toEntity, UNIQUE_ITEM_DOUBLE_EXP))
+	if (HasEquippedAccessory(toEntity, {UniqueAccessory::ExperienceRing}))
 		rateFactor += 50;
 
 	switch (MountSystem::GetMountVnum(toEntity))
@@ -1743,7 +1747,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 #endif
 
 	{
-		if (ItemSystem::IsEquipUniqueItem(toEntity, UNIQUE_ITEM_LARBOR_MEDAL))
+		if (HasEquippedAccessory(toEntity, {UniqueAccessory::DiligenceMedal}))
 			iExp += iExp * 20 / 100;
 
 		if (ecs::PlayerRuntime::GetMapIndex(toEntity) >= 660000 && ecs::PlayerRuntime::GetMapIndex(toEntity) < 670000)
@@ -1753,7 +1757,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 			if ((number(1, 100000000) / 1000000.0) <= ecs::PointSystem::GetPrecise(toEntity, POINT_EXP_DOUBLE_BONUS))
 				iExp += iExp * 30 / 100; // 1.3 (30%)
 
-		if (ItemSystem::IsEquipUniqueItem(toEntity, UNIQUE_ITEM_DOUBLE_EXP))
+		if (HasEquippedAccessory(toEntity, {UniqueAccessory::ExperienceRing}))
 			iExp += iExp * 50 / 100;
 
 		switch (MountSystem::GetMountVnum(toEntity))
@@ -3018,7 +3022,7 @@ void DeathPenalty(entt::entity e, uint8_t bTown)
 		if (bTown)
 			iLoss = 0;
 
-		if (ItemSystem::IsEquipUniqueItem(e, UNIQUE_ITEM_TEARDROP_OF_GODNESS))
+		if (HasEquippedAccessory(e, {UniqueAccessory::GoddessTear}))
 			iLoss /= 2;
 
 		LOG_INFO("DEATH_PENALTY({}) EXP_LOSS: {} percent {}%", ecs::PlayerRuntime::GetName(e).data(), iLoss, __GetExpLossPerc(ecs::PointSystem::GetLevel(e)));

@@ -1,5 +1,5 @@
 #include "../pet/AccountCollectionSystem.hpp"
-#include "../item/TypedLanguageRing.hpp"
+#include "../item/TypedUniqueAccessories.hpp"
 #include "stdafx.h"
 #include "../social/SocialActions.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
@@ -110,7 +110,7 @@ int CInputP2P::Relay(LPDESC d, const char * c_pData, size_t uiBytes)
 		if(p2->bType == 0x0F) {
 			p2->bType = WHISPER_TYPE_SYSTEM;
 		} else {
-			if (!HasTypedLanguageRing(chr))
+			if (!auriga::item::runtime::HasTypedLanguageRing(chr))
 				if (bToEmpire >= 1 && bToEmpire <= 3 && ecs::PlayerRuntime::GetEmpire(chr) != bToEmpire)
 				{
 					ConvertEmpireText(bToEmpire,

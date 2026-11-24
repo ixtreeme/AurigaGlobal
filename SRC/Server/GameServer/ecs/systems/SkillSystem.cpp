@@ -1,5 +1,5 @@
 #include "../../item/TypedBooks.hpp"
-#include "../../item/TypedLanguageRing.hpp"
+#include "../../item/TypedUniqueAccessories.hpp"
 #include "../../item/ItemStore.hpp"
 #include "../../core/stdafx.h"
 #include "../../dungeon/DungeonUiEvents.hpp"
@@ -1022,7 +1022,7 @@ int GetSkillPower(entt::entity caster, uint32_t skillId, uint8_t level)
     if (caster == entt::null || !g_registry.valid(caster))
         return 0;
     if (skillId >= SKILL_LANGUAGE1 && skillId <= SKILL_LANGUAGE3 &&
-        HasTypedLanguageRing(caster))
+        auriga::item::runtime::HasTypedLanguageRing(caster))
         return 100;
     if (skillId >= GUILD_SKILL_START && skillId <= GUILD_SKILL_END)
     {

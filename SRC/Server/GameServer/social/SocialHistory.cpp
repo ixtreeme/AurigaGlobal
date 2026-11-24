@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "../item/TypedLanguageRing.hpp"
+#include "../item/TypedUniqueAccessories.hpp"
 #include "SocialHistory.hpp"
 #include "SocialHistoryCrypto.hpp"
 #include "SocialActions.hpp"
@@ -78,7 +78,7 @@ std::string Display(entt::entity viewer,const Record& record)
 {
     auto text=record.text;const auto& m=record.metadata;
     // History must not bypass the game's language restrictions for the recipient.
-    if(m.kind==1&&m.sender!=P::GetPlayerID(viewer)&&g_bEmpireWhisper&&!m.gm&&P::GetGMLevel(viewer)==GM_PLAYER&&P::GetEmpire(viewer)&&m.empire&&P::GetEmpire(viewer)!=m.empire&&!HasTypedLanguageRing(viewer)){
+    if(m.kind==1&&m.sender!=P::GetPlayerID(viewer)&&g_bEmpireWhisper&&!m.gm&&P::GetGMLevel(viewer)==GM_PLAYER&&P::GetEmpire(viewer)&&m.empire&&P::GetEmpire(viewer)!=m.empire&&!auriga::item::runtime::HasTypedLanguageRing(viewer)){
         auto start=text.find(" : ");if(start!=std::string::npos)ConvertEmpireText(m.empire,text.data()+start+3,text.size()-start-3,10+2*SkillSystem::GetSkillPower(viewer,SKILL_LANGUAGE1+m.empire-1));
     }return text;
 }

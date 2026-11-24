@@ -1,5 +1,6 @@
 #include "../../SRC/Server/GameServer/core/stdafx.h"
 #include "../../SRC/Server/GameServer/item/TypedBooks.hpp"
+#include "../../SRC/Server/GameServer/item/TypedUniqueAccessories.hpp"
 bool DeferTypedBookMutation(entt::entity,std::function<void()>) { return false; } // isolated command fixtures have no pending book write
 #include "../../SRC/Server/GameServer/entity/char.h"
 #include "../../SRC/Server/GameServer/command/cmd.h"
@@ -379,6 +380,33 @@ void SkillPowerChecks() {
     namespace item = auriga::item;
     auto& owner = g_registry.emplace<ecs::TypedItems>(caster).state;
     owner.fence.owner = {item::ItemOwnerKind::Character, ecs::PlayerRuntime::GetPlayerID(caster)};
+    using item::runtime::HasEquippedAccessory;
+    using item::runtime::UniqueAccessory;
+    for (auto kind : {UniqueAccessory::DiligenceMedal, UniqueAccessory::ExperienceRing,
+                      UniqueAccessory::GoddessTear, UniqueAccessory::ThiefGloves}) {
+        const auto key = *item::ItemKey::Create(item::ItemCategory::Accessory, static_cast<std::uint32_t>(kind));
+        item::PersistentItem accessory{*item::ItemInstanceId::Create(1), key, owner.fence.owner};
+        accessory.placement = item::ItemPlacement{item::ItemStorageKind::Inventory, 1, 22};
+        accessory.costume = item::CostumeLifetimeState{true, false, 0, 60000};
+        owner.items.push_back(accessory);
+        auto& worn = owner.items.front();
+        Check(!HasEquippedAccessory(caster, {kind}), "bag grants no unique bonus");
+        worn.placement->kind = item::ItemStorageKind::Equipment;
+        for (auto cell : {22u, 23u}) {
+            worn.placement->anchor = cell;
+            Check(HasEquippedAccessory(caster, {kind}), "both unique slots grant combat bonus");
+            Check(!item::runtime::HasTypedLanguageRing(caster), "combat accessory grants no language bonus");
+        }
+        worn.placement->anchor = 0;
+        Check(!HasEquippedAccessory(caster, {kind}), "wrong equipment slot grants no bonus");
+        worn.placement->anchor = 22;
+        worn.costume->expired = true;
+        Check(!HasEquippedAccessory(caster, {kind}), "expired accessory grants no bonus");
+        worn.costume->expired = false;
+        worn.destroyed = true;
+        Check(!HasEquippedAccessory(caster, {kind}), "destroyed accessory grants no bonus");
+        owner.items.clear();
+    }
     for (const auto local : {705u, 709u}) {
         item::PersistentItem ring{*item::ItemInstanceId::Create(1), *item::ItemKey::Create(3, local), owner.fence.owner};
         ring.placement = item::ItemPlacement{item::ItemStorageKind::Equipment, 1, 22};

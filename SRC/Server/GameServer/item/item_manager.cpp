@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "TypedUniqueAccessories.hpp"
 #include <common/retired_content.h>
 #include "../ecs/CharacterAccessors.hpp"
 #include "../ecs/systems/InventorySystem.hpp"
@@ -34,6 +35,9 @@
 #ifdef ENABLE_STOLE_COSTUME
 #include <common/stole_length.h>
 #endif
+
+using auriga::item::runtime::UniqueAccessory;
+using auriga::item::runtime::HasEquippedAccessory;
 
 namespace
 {
@@ -622,7 +626,7 @@ bool ITEM_MANAGER::GetDropPct(entt::entity victim, entt::entity killer,
 	iRandRange = 4000000;
 #ifdef ENABLE_EVENT_MANAGER
 	int extraDrop = CPrivManager::instance().GetPriv(killer, PRIV_ITEM_DROP) +
-		(ItemSystem::IsEquipUniqueItem(killer, UNIQUE_ITEM_DOUBLE_ITEM) ? 100 : 0);
+		(HasEquippedAccessory(killer, {UniqueAccessory::ThiefGloves}) ? 100 : 0);
 	const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(
 		ITEM_DROP_EVENT, ecs::PlayerRuntime::GetEmpire(killer));
 	if (event != nullptr)
@@ -630,7 +634,7 @@ bool ITEM_MANAGER::GetDropPct(entt::entity victim, entt::entity killer,
 	iRandRange = iRandRange * 100 / (100 + extraDrop);
 #else
 	const int extraDrop = CPrivManager::instance().GetPriv(killer, PRIV_ITEM_DROP) +
-		(ItemSystem::IsEquipUniqueItem(killer, UNIQUE_ITEM_DOUBLE_ITEM) ? 100 : 0);
+		(HasEquippedAccessory(killer, {UniqueAccessory::ThiefGloves}) ? 100 : 0);
 	iRandRange = iRandRange * 100 / (100 + extraDrop);
 #endif
 
