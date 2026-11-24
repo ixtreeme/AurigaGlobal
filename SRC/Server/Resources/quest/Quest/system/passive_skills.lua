@@ -1,12 +1,13 @@
 quest passive_skills begin
 	state start begin
 		when "catalog.10.stone_of_soul_boost_e79b666e1446".typed_use begin
+			local item_title = game.typed_item_use_name("Stone of Soul Boost")
 			if not pc.can_warp() then
 				syschat(gameforge[pc.get_language()].reset_scroll._35)
 				return
 			end
 
-			say_title(string.format("%s:", item_name(50526)))
+			say_title(string.format("%s:", item_title))
 			say("")
 			local lang = pc.get_language()
 			if pc.get_skill_group() == 0 then
@@ -76,7 +77,7 @@ quest passive_skills begin
 				return
 			end
 
-			say_title(string.format("%s:", item_name(50526)))
+			say_title(string.format("%s:", item_title))
 			say("")
 			say(gameforge[lang].passive_skills._13)
 			table.insert(skill_name_list, gameforge[lang].common.cancel)
@@ -91,7 +92,7 @@ quest passive_skills begin
 			local cur_alignment = pc.get_real_alignment()
 			local need_alignment = 1000 + 500 * (level - 30)
 
-			say_title(string.format("%s:", item_name(50526)))
+			say_title(string.format("%s:", item_title))
 			say("")
 			if cur_alignment <- 19000+need_alignment then
 				say_reward(gameforge[lang].passive_skills._14)
@@ -112,7 +113,7 @@ quest passive_skills begin
 
 				pc.setqf("next_time_pda1", get_time() + 60 * 60 * 4)
 
-				say_title(string.format("%s:", item_name(50526)))
+				say_title(string.format("%s:", item_title))
 				say("")
 				if pc.learn_grand_master_skill(vnum) then
 					if pc.get_skill_level(vnum) >= 40 then
@@ -133,12 +134,13 @@ quest passive_skills begin
 		end
 
 		when "catalog.10.stone_of_souls_counterattack_19aabe994d0c".typed_use begin
+			local item_title = game.typed_item_use_name("Stone of Souls (Counterattack)")
 			if not pc.can_warp() then
 				syschat(gameforge[pc.get_language()].reset_scroll._35)
 				return
 			end
 
-			say_title(string.format("%s:", item_name(50527)))
+			say_title(string.format("%s:", item_title))
 			say("")
 			local lang = pc.get_language()
 			if pc.get_skill_group() == 0 then
@@ -208,7 +210,7 @@ quest passive_skills begin
 				return
 			end
 
-			say_title(string.format("%s:", item_name(50527)))
+			say_title(string.format("%s:", item_title))
 			say("")
 			say(gameforge[lang].passive_skills._13)
 			table.insert(skill_name_list, gameforge[lang].common.cancel)
@@ -223,7 +225,7 @@ quest passive_skills begin
 			local cur_alignment = pc.get_real_alignment()
 			local need_alignment = 1000 + 500 * (level - 30)
 
-			say_title(string.format("%s:", item_name(50527)))
+			say_title(string.format("%s:", item_title))
 			say("")
 			if cur_alignment <- 19000+need_alignment then
 				say_reward(gameforge[lang].passive_skills._14)
@@ -244,7 +246,7 @@ quest passive_skills begin
 
 				pc.setqf("next_time_pda2", get_time() + 60 * 60 * 6)
 
-				say_title(string.format("%s:", item_name(50527)))
+				say_title(string.format("%s:", item_title))
 				say("")
 				if pc.learn_grand_master_skill(vnum) then
 					if pc.get_skill_level(vnum) >= 40 then

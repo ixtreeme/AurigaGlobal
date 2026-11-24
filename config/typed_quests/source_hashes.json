@@ -26,9 +26,23 @@
     "resource": "system/mining.lua",
     "original_sha256": "513590b89cdc3aa72869e92c5e142ef35edc2d440560f237d2ba74dd55353cf6"
   },
+  "passive_skills.lua": {
+    "resource": "system/passive_skills.lua",
+    "original_sha256": "f6c0a14f1845557c6edc681f0eb1017fb624fecd1fdefccbf9fbb55c91ddcc6b",
+    "previous_sha256": [
+      "d642bd6341274ad4cf2e220508d7380ece4cea65de9014e42a6e8c0b97c09e3e"
+    ]
+  },
   "pda_perf_quest.lua": {
     "resource": "pda_perfetta/pda_perf_quest.lua",
     "original_sha256": "8d9a0f15ea4bace66bacfea7a7332ac5262d79d54d6d6e0db5c240dc14f74b51"
+  },
+  "pda_quest.lua": {
+    "resource": "skill/pda_quest.lua",
+    "original_sha256": "654c86650ac56d3fe7bfa4e40f1578f430992b8c287cc92bd090f56fdec863de",
+    "previous_sha256": [
+      "86effe1df13f98bfedff315d9f373037deeb18c946839d4299f9843a40ee23db"
+    ]
   },
   "tanaka.lua": "9563336e97caa347148c320a6387962127b7908ebeadad358fe37a350c7420a4"
 }

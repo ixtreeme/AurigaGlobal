@@ -17,12 +17,13 @@ quest pda_quest begin
 		end
 
 		when "catalog.10.soul_stone_fc0c0404af91".typed_use begin
+			local item_title = game.typed_item_use_name("Soul Stone")
 			if not pc.can_warp() then
 				syschat(gameforge[pc.get_language()].reset_scroll._35)
 				return
 			end
 
-			say_title(string.format("%s:", item_name(50513)))
+			say_title(string.format("%s:", item_title))
 			say("")
 			local lang = pc.get_language()
 			if pc.get_skill_group() == 0 then
@@ -69,7 +70,7 @@ quest pda_quest begin
 			local skill_level = pc.get_skill_level(skill_vnum)
 			local cur_alignment = pc.get_real_alignment()
 			local need_alignment = 0
-			say_title(string.format("%s:", item_name(50513)))
+			say_title(string.format("%s:", item_title))
 			say("")
 			-- if cur_alignment < (need_alignment - 19000) then
 				-- say(gameforge[lang].pda_quest._4)
@@ -99,7 +100,7 @@ quest pda_quest begin
 				return
 			end
 
-			say_title(string.format("%s:", item_name(50513)))
+			say_title(string.format("%s:", item_title))
 			say("")
 			local saved = pc.typed_item_redeem({}, 0)
 			if not saved then
