@@ -1,5 +1,12 @@
 {
   "baule_pet.lua": "d26c92f22e9cd8d90f4201db90890dd3b0f1626bca6d5faba65a01599d47de9d",
+  "baule_start.lua": {
+    "resource": "login/baule_start.lua",
+    "original_sha256": "0c3962dbadcf18003f5ab0a00d805d893c775df7486f041ae1861f77398bb024",
+    "previous_sha256": [
+      "29f4e62c2a41081c839848216f397d38aee740b242589275d082b4a837084df1"
+    ]
+  },
   "begin_weapons.lua": {
     "original_sha256": "5502646dfaa62138eb5cfc8a4781b0744515afdf37ac6183eb4b311deb02f8f8",
     "resource": "login/begin_weapons.lua"
