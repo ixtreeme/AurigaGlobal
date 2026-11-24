@@ -1464,207 +1464,12 @@ namespace quest
 		return 0;
 	}
 
-	ALUA(pc_have_map_scroll)
-	{
-        // migrated from CHARACTER::GetInventoryItem
-        // DUAL-PATH: legacy only during migration window
-		if (!lua_isstring(L, 1))
-		{
-			lua_pushboolean(L, 0);
-			return 1;
-		}
-
-		const char * szMapName = lua_tostring(L, 1);
-		const TMapRegion * region = SECTREE_MANAGER::instance().FindRegionByPartialName(szMapName);
-
-		if (!region)
-		{
-			lua_pushboolean(L, 0);
-			return 1;
-		}
-
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		bool bFind = false;
-		for (int iCell = 0; iCell < INVENTORY_MAX_NUM; iCell++)
-		{
-			const entt::entity item = ItemSystem::GetInventoryItem(chEntity, iCell);
-			if (!ItemSystem::IsValidItem(item))
-				continue;
-
-			if (ItemSystem::GetItemType(item) == ITEM_USE &&
-					ItemSystem::GetItemSubType(item) == USE_TALISMAN &&
-					(ItemSystem::GetItemValue(item, 0) == 1 || ItemSystem::GetItemValue(item, 0) == 2))
-			{
-				int x = ItemSystem::GetItemSocket(item, 0);
-				int y = ItemSystem::GetItemSocket(item, 1);
-				//if ((x-item_x)*(x-item_x)+(y-item_y)*(y-item_y)<r*r)
-				if (region->sx <=x && region->sy <= y && x <= region->ex && y <= region->ey)
-				{
-					bFind = true;
-					break;
-				}
-			}
-		}
-
-		lua_pushboolean(L, bFind);
-		return 1;
-	}
-
 	ALUA(pc_get_war_map)
 	{
 		// migrated from CHARACTER::GetWarMap
 		const entt::entity e = CQuestManager::instance().GetPCEntity(L);
 		CWarMap* pWarMap = ecs::SocialSystem::GetWarMap(e);
 		lua_pushnumber(L, pWarMap ? pWarMap->GetMapIndex() : 0);
-		return 1;
-	}
-
-	ALUA(pc_have_pos_scroll)
-	{
-        // migrated from CHARACTER::GetInventoryItem
-        // DUAL-PATH: legacy only during migration window
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		if (!lua_isnumber(L,1) || !lua_isnumber(L,2))
-		{
-			sys_err("invalid x y position");
-			lua_pushboolean(L, 0);
-			return 1;
-		}
-
-		if (!lua_isnumber(L,3))
-		{
-			sys_err("invalid radius");
-			lua_pushboolean(L, 0);
-			return 1;
-		}
-
-		int x = (int)lua_tonumber(L, 1);
-		int y = (int)lua_tonumber(L, 2);
-		float r = (float)lua_tonumber(L, 3);
-
-		bool bFind = false;
-		for (int iCell = 0; iCell < INVENTORY_MAX_NUM; iCell++)
-		{
-			const entt::entity item = ItemSystem::GetInventoryItem(chEntity, iCell);
-			if (!ItemSystem::IsValidItem(item))
-				continue;
-
-			if (ItemSystem::GetItemType(item) == ITEM_USE &&
-					ItemSystem::GetItemSubType(item) == USE_TALISMAN &&
-					(ItemSystem::GetItemValue(item, 0) == 1 || ItemSystem::GetItemValue(item, 0) == 2))
-			{
-				int item_x = ItemSystem::GetItemSocket(item, 0);
-				int item_y = ItemSystem::GetItemSocket(item, 1);
-				if ((x-item_x)*(x-item_x)+(y-item_y)*(y-item_y)<r*r)
-				{
-					bFind = true;
-					break;
-				}
-			}
-		}
-
-		lua_pushboolean(L, bFind);
-		return 1;
-	}
-
-	ALUA(pc_get_equip_refine_level)
-	{
-		// migrated from CHARACTER::GetWear
-		const int cell = static_cast<int>(lua_tonumber(L, 1));
-		if (cell < 0 || cell >= WEAR_MAX_NUM)
-		{
-			sys_err("invalid wear position {}", cell);
-			lua_pushnumber(L, 0);
-			return 1;
-		}
-		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
-		const entt::entity item = ItemSystem::GetWearItem(character, cell);
-		lua_pushnumber(L, ItemSystem::IsValidItem(item) ? ItemSystem::GetItemRefineLevel(item) : 0);
-		return 1;
-	}
-
-	ALUA(pc_refine_equip)
-	{
-		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2))
-		{
-			sys_err("invalid argument");
-			lua_pushboolean(L, 0);
-			return 1;
-		}
-
-		const int cell = static_cast<int>(lua_tonumber(L, 1));
-		const int levelLimit = static_cast<int>(lua_tonumber(L, 2));
-		const int pct = lua_isnumber(L, 3) ? static_cast<int>(lua_tonumber(L, 3)) : 100;
-		const entt::entity character = CQuestManager::instance().GetCurrentPCEntity();
-		if (cell < 0 || cell >= WEAR_MAX_NUM ||
-			character == entt::null || !g_registry.valid(character))
-		{
-			lua_pushboolean(L, 0);
-			return 1;
-		}
-
-		const entt::entity source = ItemSystem::GetWearItem(character, cell);
-		const uint32_t refinedVnum = ItemSystem::GetItemRefineVnum(source);
-		if (!ItemSystem::IsValidItem(source) || refinedVnum == 0 ||
-			ItemSystem::GetItemRefineLevel(source) > levelLimit ||
-			(pct != 100 && number(1, 100) > pct))
-		{
-			lua_pushboolean(L, 0);
-			return 1;
-		}
-
-		const entt::entity replacement = ITEM_MANAGER::instance().CreateItem(refinedVnum, 1, 0, false);
-		if (!ItemSystem::IsValidItem(replacement))
-		{
-			lua_pushboolean(L, 0);
-			return 1;
-		}
-
-		bool initialized = true;
-		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-		{
-			if (ItemSystem::GetItemSocket(source, i) == 0)
-				break;
-			initialized = initialized && ItemSystem::SetItemSocket(replacement, i, 1);
-		}
-
-		int targetSocket = 0;
-		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-		{
-			const uint32_t socket = ItemSystem::GetItemSocket(source, i);
-			if (socket > 2 && socket != ITEM_BROKEN_METIN_VNUM && targetSocket < ITEM_SOCKET_MAX_NUM)
-				initialized = initialized && ItemSystem::SetItemSocket(replacement, targetSocket++, socket);
-		}
-
-		initialized = initialized && ItemSystem::CopyItemAttributesEcs(source, replacement);
-		if (!initialized || !ItemSystem::RemoveItemEcs(source))
-		{
-			ItemSystem::DestroyItemEntityEcs(replacement, "QUEST_REFINE_INIT_ROLLBACK");
-			lua_pushboolean(L, 0);
-			return 1;
-		}
-
-		if (!ItemSystem::EquipItemEcs(character, replacement, cell))
-		{
-			ItemSystem::EquipItemEcs(character, source, cell);
-			ItemSystem::DestroyItemEntityEcs(replacement, "QUEST_REFINE_EQUIP_ROLLBACK");
-			lua_pushboolean(L, 0);
-			return 1;
-		}
-
-		if (!ItemSystem::DestroyItemEntityEcs(source, "REMOVE (REFINE SUCCESS)"))
-		{
-			ItemSystem::RemoveItemEcs(replacement);
-			ItemSystem::EquipItemEcs(character, source, cell);
-			ItemSystem::DestroyItemEntityEcs(replacement, "QUEST_REFINE_SOURCE_ROLLBACK");
-			lua_pushboolean(L, 0);
-			return 1;
-		}
-
-		LogManager::instance().ItemLogEntity(
-			character, replacement,
-			"REFINE SUCCESS (QUEST)", ItemSystem::GetItemName(replacement));
-		lua_pushboolean(L, 1);
 		return 1;
 	}
 
@@ -2286,39 +2091,6 @@ teleport_area:
 		return 1;
 	}
 
-	ALUA(pc_get_socket_items)
-	{
-		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
-		lua_newtable(L);
-		int idx = 1;
-		for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
-		{
-			const entt::entity item = ItemSystem::GetInventoryItem(character, i);
-			if (!ItemSystem::IsValidItem(item))
-				continue;
-			int j = 0;
-			for (; j < ITEM_SOCKET_MAX_NUM; ++j)
-			{
-				const int32_t socket = ItemSystem::GetItemSocket(item, j);
-				if (socket > 2 && socket != ITEM_BROKEN_METIN_VNUM)
-				{
-					TItemTable* pItemInfo = ITEM_MANAGER::instance().GetTable(socket);
-					if (pItemInfo != nullptr && pItemInfo->bType == ITEM_METIN)
-						break;
-				}
-			}
-			if (j >= ITEM_SOCKET_MAX_NUM)
-				continue;
-			lua_newtable(L);
-			lua_pushstring(L, ItemSystem::GetItemName(item));
-			lua_rawseti(L, -2, 1);
-			lua_pushnumber(L, i);
-			lua_rawseti(L, -2, 2);
-			lua_rawseti(L, -2, idx++);
-		}
-		return 1;
-	}
-
 	ALUA(pc_get_empty_inventory_count)
 	{
 		// migrated from CHARACTER::CountEmptyInventory
@@ -2418,42 +2190,6 @@ teleport_area:
 		return 1;
 	}
 
-	ALUA(pc_get_special_ride_vnum)
-	{
-		const entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (e != entt::null && g_registry.valid(e))
-		{
-			const entt::entity unique1 = ItemSystem::GetWearItem(e, WEAR_UNIQUE1);
-			const entt::entity unique2 = ItemSystem::GetWearItem(e, WEAR_UNIQUE2);
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-			const entt::entity mountCostume = ItemSystem::GetWearItem(e, WEAR_COSTUME_MOUNT);
-#endif
-			if (unique1 != entt::null && ItemSystem::GetItemSpecialGroup(unique1) == UNIQUE_GROUP_SPECIAL_RIDE)
-			{
-				lua_pushnumber(L, ItemSystem::GetItemVnum(unique1));
-				lua_pushnumber(L, ItemSystem::GetItemSocket(unique1, 0));
-				return 2;
-			}
-			if (unique2 != entt::null && ItemSystem::GetItemSpecialGroup(unique2) == UNIQUE_GROUP_SPECIAL_RIDE)
-			{
-				lua_pushnumber(L, ItemSystem::GetItemVnum(unique2));
-				lua_pushnumber(L, ItemSystem::GetItemSocket(unique2, 0));
-				return 2;
-			}
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-			if (mountCostume != entt::null)
-			{
-				lua_pushnumber(L, ItemSystem::GetItemVnum(mountCostume));
-				lua_pushnumber(L, ItemSystem::GetItemSocket(mountCostume, 0));
-				return 2;
-			}
-#endif
-		}
-		lua_pushnumber(L, 0);
-		lua_pushnumber(L, 0);
-		return 2;
-	}
-
 	ALUA(pc_can_warp)
 	{
 		// migrated from CHARACTER::CanWarp
@@ -2508,23 +2244,6 @@ teleport_area:
 		lua_pushnumber(L, g_bChannel);
 
 		return 1;
-	}
-
-	ALUA(pc_get_sig_items)
-	{
-		const uint32_t group_vnum = static_cast<uint32_t>(lua_tonumber(L, 1));
-		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
-		int count = 0;
-		for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
-		{
-			const entt::entity item = ItemSystem::GetInventoryItem(character, i);
-			if (ItemSystem::IsValidItem(item) && ItemSystem::GetItemSIGVnum(item) == group_vnum)
-			{
-				lua_pushnumber(L, ItemSystem::GetItemID(item));
-				++count;
-			}
-		}
-		return count;
 	}
 
 	ALUA(pc_charge_cash)
@@ -3020,28 +2739,6 @@ teleport_area:
 	{
 		lua_pushboolean(L, ecs::PlayerRuntime::IsArenaObserverMode(
 			CQuestManager::instance().GetPCEntity(L)) ? 1 : 0);
-		return 1;
-	}
-
-	ALUA(pc_equip_slot0)
-	{
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		const int cell = lua_isnumber(L, 1) ? static_cast<int>(lua_tonumber(L, 1)) : -1;
-		const entt::entity item = cell >= 0 && cell < INVENTORY_MAX_NUM
-			? ItemSystem::GetInventoryItem(chEntity, static_cast<uint16_t>(cell))
-			: entt::null;
-		lua_pushboolean(L, ItemSystem::IsValidItem(item) && ItemSystem::EquipItemEcs(chEntity, item));
-		return 1;
-	}
-
-	ALUA(pc_unequip_slot0)
-	{
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		const int wearCell = static_cast<int>(lua_tonumber(L, 1));
-		const entt::entity item = wearCell >= 0 && wearCell < WEAR_MAX_NUM
-			? ItemSystem::GetWearItem(chEntity, static_cast<uint8_t>(wearCell))
-			: entt::null;
-		lua_pushboolean(L, ItemSystem::IsValidItem(item) && ItemSystem::UnequipItemEcs(chEntity, item));
 		return 1;
 	}
 
@@ -3832,11 +3529,7 @@ teleport_area:
 			{ "get_horse_level",	pc_get_horse_level	}, // TO BE DELETED XXX
 			{ "is_horse_alive",		pc_is_horse_alive	}, // TO BE DELETED XXX
 			{ "revive_horse",		pc_revive_horse		}, // TO BE DELETED XXX
-			{ "have_pos_scroll",	pc_have_pos_scroll	},
-			{ "have_map_scroll",	pc_have_map_scroll	},
 			{ "get_war_map",		pc_get_war_map		},
-			{ "get_equip_refine_level",	pc_get_equip_refine_level },
-			{ "refine_equip",		pc_refine_equip		},
 			{ "get_skill_level",	pc_get_skill_level	},
 			{ "aggregate_monster",	pc_aggregate_monster	},
 			{ "forget_my_attacker",	pc_forget_my_attacker	},
@@ -3895,13 +3588,11 @@ teleport_area:
 
 			{ "is_near_vid",		pc_is_near_vid	},
 
-			{ "get_socket_items",	pc_get_socket_items	},
 			{ "get_empty_inventory_count",	pc_get_empty_inventory_count	},
 
 			{ "get_logoff_interval",	pc_get_logoff_interval	},
 
 			{ "is_riding",			pc_is_riding	},
-			{ "get_special_ride_vnum",	pc_get_special_ride_vnum	},
 
 			{ "can_warp",			pc_can_warp		},
 
@@ -3909,8 +3600,6 @@ teleport_area:
 			{ "get_skill_point",	pc_get_skill_point	},
 
 			{ "get_channel_id",		pc_get_channel_id	},
-
-			{ "get_sig_items",		pc_get_sig_items	},
 
 			{ "charge_cash",		pc_charge_cash		},
 
@@ -3967,10 +3656,6 @@ teleport_area:
 			{ "is_busy0",			pc_is_busy0		},	// get if player is "busy" (if trade, safebox, npc/myshop, cube are open) [return lua boolean]
 			{ "is_arena0",			pc_is_arena0		},	// get if player is in arena [return lua boolean]
 			{ "is_arena_observer0",	pc_is_arena_observer0		},	// get if player is in arena as observer [return lua boolean]
-			// pc.equip_slot0(cell)
-			{ "equip_slot0",		pc_equip_slot0		},	// [return lua boolean: successfulness]
-			// pc.unequip_slot0(cell)
-			{ "unequip_slot0",		pc_unequip_slot0	},	// [return lua boolean: successfulness]
 			{ "is_available0",		pc_is_available0	},	// [return lua boolean]
 			{ "is_pvp0",			pc_is_pvp0			},	// [return lua boolean]
 #endif
