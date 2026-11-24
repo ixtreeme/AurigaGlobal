@@ -499,8 +499,8 @@ void StorageRemovalIntegration() {
             Check(storage != entt::null && SafeboxSystem::Add(storage, 0, item), "managed bank add failed");
             // The storage entry points revalidate the entity after callbacks,
             // so the manager does not need a separate container lease.
-            if (scenario == 1) onDetach = [&](entt::entity) { SafeboxSystem::Close(owner, window, false); };
-            if (scenario == 2) onLog = [&](entt::entity) { SafeboxSystem::Close(owner, window, false); };
+            if (scenario == 1) onDetach = [&](entt::entity) { SafeboxSystem::Close(owner, window); };
+            if (scenario == 2) onLog = [&](entt::entity) { SafeboxSystem::Close(owner, window); };
             if (scenario == 3) rejectDetach = true;
             if (scenario == 4) onDetach = [&](entt::entity current) { Owner(current, INVENTORY, 17); };
             manager.RemoveItem(item);
@@ -510,7 +510,7 @@ void StorageRemovalIntegration() {
             if (scenario == 1 || scenario == 2) Check(!g_registry.valid(storage) && SafeboxSystem::Get(owner, window) == entt::null, "closed storage retained");
             onLog = onDetach = {}; rejectDetach = false;
             if (g_registry.valid(item)) manager.RemoveItem(item);
-            SafeboxSystem::Close(owner, window, false);
+            SafeboxSystem::Close(owner, window);
             Check(!g_registry.valid(item), "bank retry/close left live item");
         }
     }
