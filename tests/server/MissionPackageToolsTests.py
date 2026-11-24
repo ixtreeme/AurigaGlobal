@@ -1,9 +1,11 @@
 """Exercise the actual offline compiler and loader across filesystem boundaries."""
 import argparse
+import copy
 import hashlib
 import json
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -70,6 +72,44 @@ class MissionPackageToolsTests(unittest.TestCase):
             source.write_text(json.dumps(content), encoding="utf-8")
             self.run_tool("compile", source, package)
             self.run_tool("check-events", package)
+
+    def test_campaign_edges_preserve_native_prerequisites_and_layout(self):
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "SRC/Tools/MissionStudio"))
+        try:
+            from campaign import empty_board, gate, links, place_missing, set_link
+            from mission_source import add_objective, build_draft, new_mission, new_package
+        finally:
+            sys.path.pop(0)
+        source = new_package()
+        rules = {}
+        for title in ("First", "Second", "Afterwards"):
+            graph = new_mission(source, title, title)
+            add_objective(source, graph, title, "npc_interacted", "9003", 1)
+            rules[graph["mission"]] = [9003, 1]
+        first, second, target = [g["mission"] for g in source["missions"]]
+        native_rule = {"op": "not_flag", "key": "existing.story.rule"}
+        graph["prerequisite"] = native_rule.copy()
+        board = empty_board()
+        place_missing(board, source)
+        for parent in (first, second):
+            set_link(source, parent, target)
+        before = copy.deepcopy(source)
+        with self.assertRaises(ValueError):
+            set_link(source, target, first)
+        with self.assertRaises(ValueError):
+            set_link(source, second, target)
+        self.assertEqual(source, before)
+        gate(graph)["op"] = "any_of"
+        with tempfile.TemporaryDirectory() as directory:
+            folder = build_draft(ARGS.compiler, source, rules, Path(directory), board)
+            recovered = json.loads((folder / "forras.json").read_bytes())
+            self.assertEqual(links(recovered), [(first, target), (second, target)])
+            self.assertEqual(gate(recovered["missions"][-1])["op"], "any_of")
+            self.assertEqual(json.loads((folder / "kampanyterv.json").read_bytes())["campaign"], board)
+        for parent in (first, second):
+            set_link(source, parent, target, remove=True)
+        self.assertEqual(graph["prerequisite"], native_rule)
+        self.assertFalse(links(source))
 
 
 if __name__ == "__main__":

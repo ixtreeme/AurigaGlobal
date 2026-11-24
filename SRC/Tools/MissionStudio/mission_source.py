@@ -1,6 +1,7 @@
 """Author Mission package sources. The server's MissionCompiler validates every export."""
 import json
 import os
+from hashlib import sha256
 from pathlib import Path
 import subprocess
 import tempfile
@@ -24,10 +25,15 @@ def new_package():
             "presentation": {"locales": {"hu": {}}, "missions": {}}}
 
 
+def done_flag(code):
+    return "studio.done." + sha256(code.encode("utf-8")).hexdigest()[:32]
+
+
 def new_mission(source, title, summary):
     mission_id = "quest." + uuid4().hex
     graph = {"schema": 2, "mission": mission_id, "version": 1, "root": "steps",
-             "nodes": [{"id": "steps", "kind": "sequence", "children": []}]}
+             "nodes": [{"id": "steps", "kind": "sequence", "children": [],
+                        "completion_flags": [done_flag(mission_id)]}]}
     source["missions"].append(graph)
     source["presentation"]["missions"][mission_id] = {
         "title": mission_id + ".title", "summary": mission_id + ".summary", "objectives": []}
@@ -180,11 +186,13 @@ def compile_source(compiler, source, directory, check_events=False):
         return output
 
 
-def build_draft(compiler, source, rules, directory):
-    import hashlib
+def build_draft(compiler, source, rules, directory, board=None):
     runtime = runtime_config(source, rules)
-    content = json.dumps([source, runtime], sort_keys=True, ensure_ascii=False).encode("utf-8")
-    target = directory / hashlib.sha256(content).hexdigest()
+    components = [source, runtime]
+    if board is not None:
+        components.append(board)
+    content = json.dumps(components, sort_keys=True, ensure_ascii=False).encode("utf-8")
+    target = directory / sha256(content).hexdigest()
     directory.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=directory) as temp:
         bundle = Path(temp) / "csomag"
@@ -192,6 +200,9 @@ def build_draft(compiler, source, rules, directory):
         compile_source(compiler, source, bundle, check_events=True)
         save_draft(bundle / "typed_mission_runtime.json", runtime)
         save_draft(bundle / "forras.json", source)
+        if board is not None:
+            save_draft(bundle / "kampanyterv.json",
+                       {"package": source["package"], "version": source["version"], "campaign": board})
         try:
             bundle.rename(target)
         except OSError:

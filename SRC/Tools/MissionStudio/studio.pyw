@@ -1,4 +1,5 @@
 import os
+from copy import deepcopy
 from pathlib import Path
 import shutil
 import subprocess
@@ -11,6 +12,8 @@ from mission_source import EVENTS, add_objective, build_draft, check_source, com
 from mission_source import completion_reward, objective_subject, read_json, save_draft, set_completion_reward
 from mission_source import edit_translation
 from target_names import display, folded, target_names
+from campaign import check_board, crown_example, empty_board, remove_mission
+from campaign_view import BG, PANEL, CampaignView, button
 
 
 class TargetPicker(simpledialog.Dialog):
@@ -124,14 +127,23 @@ class Studio:
         self.compiler = os.environ.get("AURIGA_MISSION_COMPILER") or (
             str(adjacent) if adjacent.is_file() else shutil.which("MissionCompiler"))
         self.root.title("Auriga · Mission Studio")
-        self.root.geometry("980x550")
-        self.root.minsize(760, 420)
-        toolbar = ttk.Frame(root, padding=8)
+        width = min(1330, root.winfo_screenwidth()-30)
+        height = min(860, root.winfo_screenheight()-90)
+        self.root.geometry(f"{width}x{height}")
+        self.root.minsize(min(width, 900), min(height, 540))
+        self.root.configure(bg=BG)
+        toolbar = tk.Frame(root, bg=PANEL, padx=8, pady=4)
         toolbar.pack(fill="x")
         for label, command in (("Új csomag", self.blank), ("Forrás megnyitása…", self.open_source),
-                               ("Küldetés hozzáadása…", self.add_mission), ("Ellenőrzés és csomagolás…", self.build)):
-            ttk.Button(toolbar, text=label, command=command).pack(side="left", padx=3)
-        panels = ttk.Panedwindow(root, orient="horizontal")
+                               ("Korona mintaterv", self.example), ("Ellenőrzés és csomagolás…", self.build)):
+            button(toolbar, label, command).pack(side="left", padx=3)
+        self.tabs = ttk.Notebook(root)
+        self.tabs.pack(fill="both", expand=True, padx=8, pady=(5, 0))
+        self.campaign = CampaignView(self.tabs, self)
+        self.tabs.add(self.campaign, text="  Kampánygráf  ")
+        editor = ttk.Frame(self.tabs)
+        self.tabs.add(editor, text="  Küldetés részletei  ")
+        panels = ttk.Panedwindow(editor, orient="horizontal")
         panels.pack(fill="both", expand=True, padx=10)
         left = ttk.Labelframe(panels, text="Küldetések", padding=6)
         right = ttk.Frame(panels, padding=(8, 0))
@@ -139,7 +151,7 @@ class Studio:
         panels.add(right, weight=3)
         self.missions = tk.Listbox(left, exportselection=False, width=28)
         self.missions.pack(fill="both", expand=True)
-        self.missions.bind("<<ListboxSelect>>", lambda _: self.show_mission())
+        self.missions.bind("<<ListboxSelect>>", self.list_selected)
         self.heading = ttk.Label(right, font=("Segoe UI", 15, "bold"))
         self.heading.pack(anchor="w", pady=4)
         self.description = ttk.Label(right, wraplength=540)
@@ -153,14 +165,15 @@ class Studio:
         self.steps.bind("<Double-1>", lambda _: self.edit_step())
         actions = ttk.Frame(right)
         actions.pack(fill="x")
+        ttk.Button(left, text="Új küldetés…", command=self.add_mission).pack(fill="x",pady=(5,0))
         for label, command in (("Név és leírás…", self.edit_text), ("Küldetésadó…", self.admission), ("Új cél…", self.add_step),
                                ("Cél szerkesztése…", self.edit_step), ("Zárójutalom…", self.reward)):
             ttk.Button(actions, text=label, command=command).pack(side="left", padx=3)
         self.status = tk.StringVar()
         ttk.Label(root, textvariable=self.status, padding=10, wraplength=920).pack(fill="x")
-        self.blank()
+        self.example()
 
-    def load(self, source, rules, imported=False):
+    def load(self, source, rules, imported=False, board=None):
         # A damaged local draft must leave the currently open work available.
         locales = source["presentation"]["locales"]
         texts = locales[source["default_locale"]]
@@ -178,10 +191,59 @@ class Studio:
                 raise ValueError("Érvénytelen küldetésadó a tervezetben.")
         versions = {g["mission"]: g["version"] for g in source["missions"]} if imported else {}
         version = source["version"] if imported else None
-        self.source, self.rules = source, rules
+        verified_board = check_board(board if board is not None else empty_board(), source)
+        self.source, self.rules, self.board = source, rules, verified_board
         self.path = self.drafts / uuid4().hex / "tervezet.json"
         self.original_versions, self.original_package = versions, version
+        self.campaign.reset()
+        if source["missions"]:
+            self.campaign.selected = source["missions"][0]["mission"]
+            self.campaign.act = self.board["cards"].get(self.campaign.selected, {}).get("act", 0)
         self.refresh()
+        self.tabs.select(self.campaign)
+
+    def example(self):
+        source, board = crown_example()
+        self.load(source, {}, board=board)
+        self.status.set("Mintaterv · A játékbeli csomagoláshoz add meg a küldetésadókat és a teljesítési célokat.")
+
+    def select_mission(self, code):
+        index = next(i for i,g in enumerate(self.source["missions"]) if g["mission"] == code)
+        self.missions.selection_clear(0, "end")
+        self.missions.selection_set(index)
+        self.missions.see(index)
+        self.show_mission()
+
+    def open_details(self, code):
+        self.select_mission(code)
+        self.tabs.select(1)
+
+    def remove_card(self, code):
+        candidate = deepcopy(self.source)
+        affected = remove_mission(candidate, code)
+        self.source = candidate
+        self.rules.pop(code, None)
+        self.board["cards"].pop(code)
+        if self.original_package is not None:
+            self.source["version"] = self.original_package + 1
+        for graph in self.source["missions"]:
+            key = graph["mission"]
+            if key in affected and key in self.original_versions:
+                graph["version"] = self.original_versions[key] + 1
+        self.campaign.selected = next(iter(self.campaign.shown()), None)
+        self.campaign.edge = None
+        self.refresh()
+        self.save_layout()
+
+    def list_selected(self, _):
+        self.show_mission()
+        graph = self.current()
+        if graph and self.tabs.index(self.tabs.select()) == 1:
+            code = graph["mission"]
+            self.campaign.act = self.board["cards"][code]["act"]
+            self.campaign.selected = code
+            self.campaign.edge = None
+            self.campaign.refresh()
 
     def blank(self):
         self.load(new_package(), {})
@@ -217,7 +279,13 @@ class Studio:
                     for row in read_json(config)["missions"]:
                         if any(g["mission"] == row["code"] and g["version"] == row["version"] for g in source["missions"]):
                             rules[row["code"]] = [row["npc_race"], row["min_level"]]
-            self.load(source, rules, True)
+            board = document.get("campaign") if own else None
+            sidecar = path.with_name("kampanyterv.json")
+            if not own and sidecar.is_file():
+                layout = read_json(sidecar)
+                if layout["package"] == source["package"] and layout["version"] == source["version"]:
+                    board = layout["campaign"]
+            self.load(source, rules, True, board)
             self.status.set("Megnyitva · " + str(path))
         except (ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError) as error:
             messagebox.showerror("A forrás megnyitása sikertelen", str(error), parent=self.root)
@@ -231,6 +299,7 @@ class Studio:
             self.missions.selection_set(index)
             self.missions.see(index)
         self.show_mission()
+        self.campaign.refresh()
 
     def current(self):
         selected = self.missions.curselection()
@@ -265,18 +334,27 @@ class Studio:
             self.steps.insert("", "end", iid=key, text=labels.get(key, n["kind"]),
                               values=(EVENTS.get(event, (event, ""))[0], display(obj.get("subject", "")), obj.get("goal", "")))
 
-    def changed(self, graph):
+    def changed(self, graph, affected=None):
         if self.original_package is not None:
             self.source["version"] = self.original_package + 1
-        if graph["mission"] in self.original_versions:
-            graph["version"] = self.original_versions[graph["mission"]] + 1
+        for changed_graph in affected or [graph]:
+            if changed_graph["mission"] in self.original_versions:
+                changed_graph["version"] = self.original_versions[changed_graph["mission"]] + 1
         index = self.source["missions"].index(graph)
         self.refresh(index)
-        self.save()
+        self.save_layout()
+
+    def save_layout(self):
+        try:
+            self.save()
+        except OSError as error:
+            self.status.set("A helyi mentés sikertelen.")
+            messagebox.showerror("Tervezet mentése",str(error),parent=self.root)
+            return
         self.status.set(f"Tervezet mentve · {self.path}")
 
     def save(self):
-        save_draft(self.path, {"mission_studio": 1, "source": self.source, "admissions": self.rules})
+        save_draft(self.path, {"mission_studio": 1, "source": self.source, "admissions": self.rules, "campaign": self.board})
 
     def admission(self):
         graph = self.current()
@@ -299,7 +377,9 @@ class Studio:
             return
         summary = simpledialog.askstring("Új küldetés", "Leírás a missziónaplóhoz", parent=self.root)
         if summary and summary.strip():
-            self.changed(new_mission(self.source, name.strip(), summary.strip()))
+            graph = new_mission(self.source, name.strip(), summary.strip())
+            self.campaign.selected = graph["mission"]
+            self.changed(graph)
 
     def edit_text(self):
         graph = self.current()
@@ -374,7 +454,7 @@ class Studio:
             return
         try:
             self.save()
-            output = build_draft(compiler, self.source, self.rules, self.path.parent / "csomagok")
+            output = build_draft(compiler, self.source, self.rules, self.path.parent / "csomagok", self.board)
             self.status.set(f"Ellenőrzött helyi csomag · {output}")
             if messagebox.askyesno("A csomag elkészült", "Megnyitod az ellenőrzött helyi csomag mappáját?",
                                    parent=self.root):

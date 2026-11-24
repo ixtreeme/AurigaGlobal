@@ -28,6 +28,7 @@ def main():
                         "--name", "MissionStudio", "--distpath", str(output),
                         "--workpath", str(Path(work)/"build"), "--specpath", work,
                         "--add-binary", f"{compiler}:.", "--add-binary", f"{crypto}:.", "--add-data", f"{index}:.",
+                        "--add-data", f"{Path(__file__).with_name('art').resolve()}:art",
                         str(Path(__file__).with_name("studio.pyw").resolve())], check=True)
 
 

@@ -40,6 +40,14 @@ A `SRC/Tools/MissionStudio/studio.pyw` önálló Windows-szerkesztő. A tervezet
 
 Az **Ellenőrzés és csomagolás** egy helyi mappába teszi a forrást, a lefordított `mission.aurmission` csomagot és a vele egyező `typed_mission_runtime.json` küldetésadó-szabályokat. A C++ fordító ellenőrzi a csomagot és a célokhoz tartozó játékbeli eseményeket. A közös szerverkezelő jóváhagyási és telepítési folyamatába a Mission-csomagokat még be kell kötni.
 
+### Kampánygráf
+
+A **Kampánygráf** fülön egy kártya egy küldetést jelöl. A kártya testét húzva átrendezheted a felvonást. A jobb oldali csatlakozópontot egy másik kártyára húzva az első küldetés teljesítése a második felvételének előfeltétele lesz. Több bejövő nyílnál a **Mindegyik** vagy **Bármelyik** szabály alkalmazható. Egy kijelölt nyíl a **Kapcsolat bontása** gombbal távolítható el. A **Kapcsolatok…** ablakban két külön felvonás küldetései is összekapcsolhatók. A kártyára duplán kattintva a küldetés tényleges céljai és jutalma szerkeszthetők.
+
+A felvételi feltételeket a Studio a C++ motor meglévő `has_flag`, `all_of` és `any_of` szabályaival írja a csomagba. Az importált küldetés korábbi felvételi feltétele és egyéb történeti jelzői megmaradnak. Új küldetésnél a Studio eleve felveszi a teljesítési jelzőt. Ha egy korábbi, ilyen jelző nélküli küldetéshez utólag kerül kimenő nyíl, a régebbi verzióban már teljesítő karakterekhez külön adatátvezetés szükséges.
+
+Az **Elveszett korona** mintaterv a szerző által megosztott látványterv részleteit használja. Az első felvonás hét mintakártyát tartalmaz, a további négy felvonás szabadon kitölthető. A felvonások, szereplők, helyszínek, főküldetés/mellékküldetés/titkos besorolások, párbeszédjegyzetek és kártyapozíciók a szerkesztő tervezetébe kerülnek. Csomagoláskor a `kampanyterv.json` is elkészül a `forras.json` mellett, így a forrás megnyitásakor visszakapod az elrendezést. A mintakártyákhoz a szerző választ játékbeli küldetésadót és teljesítési célokat.
+
 Windowsos kiadáshoz a `MissionCompiler` CMake-cél és a mellette található OpenSSL DLL szükséges. A `build_studio.py --compiler <MissionCompiler.exe> --catalog <katalógus-olvasat.json> --output <kiadási-mappa>` a PyInstaller segítségével önállóan indítható alkalmazást készít. A választólistákhoz az aktív katalógus típusait és a szerverkezelő magyar névjegyzékét csomagolja.
 
 ## Kipróbált játékbeli folyamatok
