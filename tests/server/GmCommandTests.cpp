@@ -68,6 +68,13 @@ bool DeferTypedBookMutation(entt::entity,std::function<void()>) { return false; 
 #include "../../SRC/Server/GameServer/ecs/systems/ActivitySystem.hpp"
 #include "../../SRC/Server/GameServer/dungeon/LostCastleDungeon.h"
 #include "../../SRC/Server/GameServer/core/constants.h"
+#include "../../SRC/Server/GameServer/benchmark/BenchmarkSession.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/PersistentRace.hpp"
+#include "../../SRC/Server/GameServer/item/TypedQuestItems.hpp"
+#include "../../SRC/Server/GameServer/item/TypedMoney.hpp"
+#include "../../SRC/Server/GameServer/item/ItemStore.hpp"
+#include "../../SRC/Server/GameServer/warrior/WarriorSkillSystem.hpp"
+#include "../../SRC/Server/GameServer/raid/EclipseRaidSystem.hpp"
 #include <Core/Logging.hpp>
 
 ACMD(do_user);
@@ -89,7 +96,6 @@ struct Player {
     std::string name;
     int level = 90, map = 1;
     uint8_t empire = 1, gm = GM_PLAYER, job = JOB_WARRIOR;
-    bool languageRing = false;
     bool online = true;
 };
 struct Item { entt::entity owner; TItemPos pos; uint32_t id; };
@@ -370,11 +376,20 @@ void SkillPowerChecks() {
     Check(SkillSystem::GetSkillPower(caster, SKILL_PALBANG) == 0, "invalid group indexed skill table");
     g_registry.get<ecs::SkillLevels>(caster).group = 0;
     Check(SkillSystem::GetSkillPower(caster, SKILL_PALBANG) == 0, "unselected group");
-    for (uint32_t skill = SKILL_LANGUAGE1; skill <= SKILL_LANGUAGE3; ++skill) {
-        g_registry.get<Player>(caster).languageRing = true;
-        Check(SkillSystem::GetSkillPower(caster, skill) == 100, "language ring");
-        g_registry.get<Player>(caster).languageRing = false;
-        Check(SkillSystem::GetSkillPower(caster, skill) == 0, "unequipped language ring");
+    namespace item = auriga::item;
+    auto& owner = g_registry.emplace<ecs::TypedItems>(caster).state;
+    owner.fence.owner = {item::ItemOwnerKind::Character, ecs::PlayerRuntime::GetPlayerID(caster)};
+    for (const auto local : {705u, 709u}) {
+        item::PersistentItem ring{*item::ItemInstanceId::Create(1), *item::ItemKey::Create(3, local), owner.fence.owner};
+        ring.placement = item::ItemPlacement{item::ItemStorageKind::Equipment, 1, 22};
+        owner.items.push_back(ring);
+        for (uint32_t skill = SKILL_LANGUAGE1; skill <= SKILL_LANGUAGE3; ++skill) {
+            owner.items.front().placement->kind = item::ItemStorageKind::Equipment;
+            Check(SkillSystem::GetSkillPower(caster, skill) == 100, "equipped typed language ring");
+            owner.items.front().placement->kind = item::ItemStorageKind::Inventory;
+            Check(SkillSystem::GetSkillPower(caster, skill) == 0, "unequipped typed language ring");
+        }
+        owner.items.clear();
     }
     Check(SkillSystem::GetSkillPower(caster, GUILD_SKILL_START) == 0, "missing guild");
     hasGuild = true; guildSkillLevel = 7;
@@ -567,10 +582,6 @@ int32_t GetLevel(entt::entity e) { return g_registry.get<Player>(e).level; }
 }
 namespace ItemSystem {
 bool IsValidItem(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<Item>(e); }
-bool IsEquipUniqueGroup(entt::entity e, uint32_t group) {
-    Check(group == UNIQUE_GROUP_RING_OF_LANGUAGE, "language ring group");
-    return g_registry.get<Player>(e).languageRing;
-}
 bool RemoveSpecifyItemEcs(entt::entity e, uint32_t vnum, uint32_t count, bool renewal) {
     Check(ecs::PlayerRuntime::IsPC(e) && vnum == 164406 && count == 1 && !renewal, "native color item consumption");
     if (refuseColorPayment || colorTokens == 0) return false;
@@ -666,6 +677,30 @@ namespace {
 }
 // Link-only service doubles for unexecuted GM/combat/quest paths. Any accidental
 // call fails the test; these are not alternate production implementations.
+
+namespace nexoria::benchmark {
+bool Start(entt::entity, int, std::string_view, std::string&) { Unexpected(); }
+bool AddTarget(entt::entity, entt::entity, std::string&) { Unexpected(); }
+bool Reset(entt::entity, std::string&) { Unexpected(); }
+bool Stop(entt::entity, std::string&) { Unexpected(); }
+std::string Report(entt::entity) { Unexpected(); }
+ScopedSkillContext::ScopedSkillContext(uint32_t) noexcept : previous_(0) {}
+ScopedSkillContext::~ScopedSkillContext() noexcept = default;
+}
+
+bool RequestTypedAdminGayaChange(entt::entity, entt::entity, int64_t, std::function<void(bool)>) { Unexpected(); }
+bool ecs::PlayerRuntime::SaveRaceChange(entt::entity, uint8_t) { Unexpected(); }
+double ecs::PointSystem::GetPrecise(entt::entity player, uint8_t type) { return ecs::PointSystem::Get(player, type); }
+std::expected<void, auriga::item::ItemMissionError> RequestTypedGuildExchange(entt::entity,
+    std::vector<auriga::item::MissionItemAmount>, uint64_t, uint16_t, std::vector<uint8_t>,
+    std::function<void(bool)>, std::optional<auriga::item::ItemInstanceId>, bool) { Unexpected(); }
+std::optional<TPacketGDCreateObject> building::CLand::PrepareCreateObject(uint32_t, int32_t, int32_t,
+    int32_t, float, float, float, bool) { Unexpected(); }
+std::pair<uint32_t, uint32_t> building::CLand::ObjectRevision() const { Unexpected(); }
+bool WarriorExpansion::IsCasting(entt::entity) { return false; }
+bool WarriorExpansion::IsServerHit(entt::entity, uint32_t) { return false; }
+int WarriorExpansion::ScaleHit(entt::entity, uint32_t, int damage) { return damage; }
+void EclipseRaid::OnSkill(entt::entity, uint32_t) { Unexpected(); }
 
 CMob const * CMobManager::Get(unsigned int) { Unexpected(); }
 CMob const * CMobManager::Get(char const *,bool) { Unexpected(); }
