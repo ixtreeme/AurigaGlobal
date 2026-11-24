@@ -4,6 +4,10 @@
     "original_sha256": "5502646dfaa62138eb5cfc8a4781b0744515afdf37ac6183eb4b311deb02f8f8",
     "resource": "login/begin_weapons.lua"
   },
+  "cooldown_reset.lua": {
+    "resource": "item/cooldown_reset.lua",
+    "original_sha256": "c3fad283ffe5fcc3e04168f145e1b8230addc112a224a3a39e5740c38eb8b0fb"
+  },
   "drop3.quest": "790c406e5d1c63b85cf6794b9d582eca1d2dd750c9be898cf41ce0ca4224f874",
   "miki_event.lua": "38efa0c00b292b5733bafb0be96666409cdd77ca947e43a45f768ff1e8dffa2e",
   "tanaka.lua": "9563336e97caa347148c320a6387962127b7908ebeadad358fe37a350c7420a4"

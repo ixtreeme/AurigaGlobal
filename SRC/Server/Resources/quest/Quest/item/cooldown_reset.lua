@@ -20,18 +20,19 @@ quest cooldown_reset begin
                 { key = "nightmare_zone_razor93_prepare", name = "Nightmare Zone" },
                 { key = "dungeonpyramid_razor93",         name = "Pyramid Run" },
                 { key = "tritontemple_razor93",           name = "Triton Temple" },
-                { key = "valentine_dungeon",              name = "valentine_dungeon" },
+                { key = "valentine_dungeon",              name = "Valentin-napi kazamata" },
                 { key = "halloween2022",                name = "Bloody Cathedral" },
                 { key = "vikingdungeon_zone",           name = "Viking Dungeon" },
             }
             local active = {}
             local menu = {}
             for _, dungeon in ipairs(dungeons) do
-                local remaining = pc.getf(dungeon.key, "cooldown") - get_global_time()
+                local deadline = pc.getf(dungeon.key, "cooldown")
+                local remaining = deadline - get_global_time()
                 if remaining > 0 then
                     local hours = math.floor(remaining / 3600)
                     local minutes = math.floor((remaining % 3600) / 60)
-                    active[#active + 1] = dungeon
+                    active[#active + 1] = { key = dungeon.key, name = dungeon.name, deadline = deadline }
                     menu[#menu + 1] = string.format("%s - %d óra %d perc", dungeon.name, hours, minutes)
                 end
             end
@@ -43,8 +44,13 @@ quest cooldown_reset begin
             say("Válaszd ki a kazamatát.")
             local selected = active[select_table(menu)]
             if not selected then return end
-            if pc.getf(selected.key, "cooldown") <= get_global_time() then
+            local current = pc.getf(selected.key, "cooldown")
+            if current <= get_global_time() then
                 say("A kazamata várakozása közben lejárt.")
+                return
+            end
+            if current ~= selected.deadline then
+                say("Közben megváltozott a várakozási idő. Nyisd meg újra a listát.")
                 return
             end
             if pc.typed_reset_dungeon_cooldown(selected.key) ~= 1 then
