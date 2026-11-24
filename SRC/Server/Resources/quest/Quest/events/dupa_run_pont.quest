@@ -1,0 +1,23 @@
+quest dupla_run_pont begin
+	state start begin
+		when 693.kill or
+			6191.kill or 
+			768.kill or 
+			3491.kill or 
+			2493.kill or 
+			4158.kill or 
+			4203.kill or 
+			2598.kill or 
+			719.kill or 
+			6393.kill or 
+			6192.kill or 
+			6091.kill or 
+			2092.kill or 
+			20432.kill or 
+			4011.kill or 
+			6193.kill or 
+			3960.kill with not npc.is_pc() and game.get_event_flag("dupladildo") == 1 begin
+			game.drop_typed_item_with_ownership(10, 1391, 0, 1)
+		end
+	end
+end

@@ -1,0 +1,7 @@
+quest drop2 begin
+	state start begin
+		when 8001.kill or 8002.kill or 8003.kill or 8004.kill or 8005.kill or 8006.kill or 8007.kill or 8008.kill or 8009.kill or 8010.kill or 8011.kill or 8012.kill or 8013.kill or 8014.kill or 20432.kill or 8015.kill or 8016.kill or 8017.kill or 8018.kill or 8019.kill or 8037.kill or 8430.kill or 353.kill or 394.kill or 395.kill with not npc.is_pc() and game.get_event_flag("focdxla") == 1 begin
+			game.drop_typed_item_with_ownership(6, 346, 0, 1)
+		end
+	end
+end

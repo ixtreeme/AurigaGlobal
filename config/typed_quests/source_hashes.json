@@ -19,10 +19,26 @@
     "resource": "gilda/create_ore.lua",
     "original_sha256": "815b2e4e35b6a88f3ac06b1c70914b88c692e37e3111529c568b5d2a7caeca3e"
   },
+  "drop2.quest": {
+    "resource": "events/drop2.quest",
+    "original_sha256": "b545506d421cdc49581c00c2a5673540857162eee115fba98ee207180bcfa0bd"
+  },
   "drop3.quest": "790c406e5d1c63b85cf6794b9d582eca1d2dd750c9be898cf41ce0ca4224f874",
+  "drop4.quest": {
+    "resource": "events/drop4.quest",
+    "original_sha256": "da04b24c2371f8d6deda3714dc82ffc38af4d6111c6a52a426e2aa142c2dd838"
+  },
+  "dupa_run_pont.quest": {
+    "resource": "events/dupa_run_pont.quest",
+    "original_sha256": "10f7c57074e72067468c9a9fc6caf90c4847e22a9d8d2711cc17da353e93dba0"
+  },
   "fisher.lua": {
     "resource": "npc/fisher.lua",
     "original_sha256": "4cb74f5bc146f133ad4c889c389b422dd0cfdffbcc6656849447928e5855bddc"
+  },
+  "halloween.lua": {
+    "resource": "events/halloween.lua",
+    "original_sha256": "9178dff67382d5be0dda135eb733982db92a9f8879f98f3bfcbdc9b4ef81378d"
   },
   "lvl_back.lua": {
     "resource": "item/lvl_back.lua",

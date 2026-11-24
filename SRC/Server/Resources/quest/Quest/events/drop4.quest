@@ -1,0 +1,10 @@
+quest drop4 begin
+	state start begin
+		when kill with not npc.is_pc() and game.get_event_flag("hatszoglada") == 1 begin
+			local talan = math.random(1,303)
+			if talan == 2 then
+			game.drop_typed_item_with_ownership(16, 9, 0, 1)
+			end
+		end
+	end
+end
