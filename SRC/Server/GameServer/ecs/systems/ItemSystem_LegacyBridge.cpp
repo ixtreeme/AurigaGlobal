@@ -133,14 +133,6 @@ static ecs::MainInventoryRuntimeComponent* EnsureMainInventoryRuntimeComponent(e
     return &g_registry.emplace<ecs::MainInventoryRuntimeComponent>(character);
 }
 
-static const ecs::MainInventoryRuntimeComponent* TryGetMainInventoryRuntimeComponent(entt::entity character)
-{
-    if (character == entt::null || !g_registry.valid(character))
-        return nullptr;
-
-    return g_registry.try_get<ecs::MainInventoryRuntimeComponent>(character);
-}
-
 #ifdef ENABLE_EXTRA_INVENTORY
 static ecs::ExtraInventoryRuntimeComponent* EnsureExtraInventoryRuntimeComponent(entt::entity character)
 {
@@ -168,93 +160,6 @@ static ecs::SwitchbotRuntimeComponent* EnsureSwitchbotRuntimeComponent(entt::ent
 }
 
 #endif
-
-#ifndef ENABLE_SWITCHBOT
-const int MAX_NORM_ATTR_NUM = ITEM_MANAGER::MAX_NORM_ATTR_NUM;
-const int MAX_RARE_ATTR_NUM = ITEM_MANAGER::MAX_RARE_ATTR_NUM;
-#endif
-
-bool IsExtraEnchantUseSubtype(uint8_t subtype)
-{
-	switch (subtype)
-	{
-	case USE_CHANGE_ATTRIBUTE:
-	case USE_ADD_ATTRIBUTE:
-	case USE_ADD_ATTRIBUTE2:
-	case USE_CHANGE_ATTRIBUTE2:
-	case USE_CHANGE_COSTUME_ATTR:
-	case USE_RESET_COSTUME_ATTR:
-	case USE_CHANGE_ATTRIBUTE_PLUS:
-#ifdef ATTR_LOCK
-	case USE_ADD_ATTRIBUTE_LOCK:
-	case USE_CHANGE_ATTRIBUTE_LOCK:
-	case USE_DELETE_ATTRIBUTE_LOCK:
-#endif
-#ifdef ENABLE_ATTR_COSTUMES
-	case USE_CHANGE_ATTR_COSTUME:
-	case USE_ADD_ATTR_COSTUME1:
-	case USE_ADD_ATTR_COSTUME2:
-	case USE_REMOVE_ATTR_COSTUME:
-#endif
-#ifdef ENABLE_STOLE_COSTUME
-	case USE_ENCHANT_STOLE:
-#endif
-		return true;
-	}
-
-	return false;
-}
-
-bool IsExtraPotionUseSubtype(uint8_t subtype)
-{
-	switch (subtype)
-	{
-	case USE_POTION:
-	case USE_POTION_NODELAY:
-	case USE_POTION_CONTINUE:
-	case USE_ABILITY_UP:
-	case USE_AFFECT:
-#ifdef ENABLE_NEW_USE_POTION
-	case USE_NEW_POTIION:
-#endif
-		return true;
-	}
-
-	return false;
-}
-
-#ifdef ENABLE_PVP_ADVANCED
-static bool IS_POTION_PVP_BLOCKED(int vnum)
-{
-	switch (vnum)
-	{
-	case 72725:
-	case 72726:
-		return true;
-	}
-	return false;
-}
-#endif
-
-static bool IS_SUMMON_ITEM(int vnum)
-{
-	switch (vnum)
-	{
-	case 22000:
-	case 22010:
-	case 22011:
-	case 22020:
-	case ITEM_MARRIAGE_RING:
-		return true;
-	}
-
-	return false;
-}
-
-
-
-
-
 
 } // namespace
 
@@ -378,64 +283,6 @@ EVENTFUNC(kill_campfire_event)
 	return 0;
 }
 
-int64_t CalculateConsume(entt::entity chEntity)
-{
-	static const int WARP_NEED_LIFE_PERCENT = 30;
-	static const int WARP_MIN_LIFE_PERCENT = 10;
-	// CONSUME_LIFE_WHEN_USE_WARP_ITEM
-	int64_t consumeLife = 0;
-	{
-		// CheckNeedLifeForWarp
-		const int64_t curLife = static_cast<int64_t>(ecs::PlayerRuntime::GetHP(chEntity));
-		const int needPercent = WARP_NEED_LIFE_PERCENT;
-		const int64_t needLife = static_cast<int64_t>(ecs::PointSystem::GetMaxHP(chEntity)) * needPercent / 100;
-		if (curLife < needLife)
-		{
-#ifdef TEXTS_IMPROVEMENT
-			if (ecs::IsCharacter(chEntity)) {
-				ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 284, "");
-			}
-#endif
-			return -1;
-		}
-
-		consumeLife = needLife;
-
-
-		const int minPercent = WARP_MIN_LIFE_PERCENT;
-		const int64_t minLife = static_cast<int64_t>(ecs::PointSystem::GetMaxHP(chEntity)) * minPercent / 100;
-		if (curLife - needLife < minLife)
-			consumeLife = curLife - minLife;
-
-		if (consumeLife < 0)
-			consumeLife = 0;
-	}
-	// END_OF_CONSUME_LIFE_WHEN_USE_WARP_ITEM
-	return consumeLife;
-}
-
-int64_t CalculateConsumeSP(entt::entity lpCharEntity)
-{
-	static const int NEED_WARP_SP_PERCENT = 30;
-
-	const int64_t curSP = static_cast<int64_t>(ecs::PlayerRuntime::GetSP(lpCharEntity));
-	const int64_t needSP = static_cast<int64_t>(ecs::PointSystem::GetMaxSP(lpCharEntity)) * NEED_WARP_SP_PERCENT / 100;
-
-	if (curSP < needSP)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		if (ecs::IsCharacter(lpCharEntity)) {
-			ecs::ChatSystem::SendNew(lpCharEntity, CHAT_TYPE_INFO, 287, "");
-		}
-#endif
-		return -1;
-	}
-
-	return needSP;
-}
-
-// #define ENABLE_FIREWORK_STUN
-#define ENABLE_ADDSTONE_FAILURE
 int g_nPortalLimitTime = 10;
 
 const uint8_t g_aBuffOnAttrPoints[] = { POINT_ENERGY, POINT_COSTUME_ATTR_BONUS };
@@ -859,96 +706,6 @@ void InventorySystem::ClearItem(entt::entity e)
 }
 
 
-#ifdef ENABLE_LOCKED_EXTRA_INVENTORY
-static int NeedKeysForExtraInventory(uint8_t stage) {
-	static const int legacyNeedKeys[] = {
-		1, 1, 1,
-		2, 2, 2,
-		3, 3, 3,
-		4, 4, 4,
-		5,
-		6,
-	};
-
-	const int legacyNeedKeyCount = sizeof(legacyNeedKeys) / sizeof(legacyNeedKeys[0]);
-	if (stage < legacyNeedKeyCount)
-		return legacyNeedKeys[stage];
-
-	return 6 + ((stage - legacyNeedKeyCount) / 6);
-}
-
-void InventorySystem::UnlockExtraInventory(entt::entity e, uint8_t category) {
-	if (!ecs::IsCharacter(e))
-		return;
-
-	if (category > 5) {
-		return;
-	}
-
-#ifdef ENABLE_SPAM_CHECK
-	int32_t time = InventorySystem::GetLastUnlock(e) - get_global_time();
-	if (time > 0) {
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 234, "%d", time);
-#endif
-		return;
-	}
-#endif
-
-	std::string stageName;
-	switch (category) {
-	case 1: {
-		stageName = "lock_extra.cat2";
-	} break;
-	case 2: {
-		stageName = "lock_extra.cat3";
-	} break;
-	case 3: {
-		stageName = "lock_extra.cat4";
-	} break;
-	case 4: {
-		stageName = "lock_extra.cat5";
-	} break;
-	case 5: {
-		stageName = "lock_extra.cat6";
-	} break;
-	default: {
-		stageName = "lock_extra.cat1";
-	} break;
-	}
-
-	uint8_t stage = ecs::PlayerRuntime::GetQuestFlag(e, stageName.c_str());
-	const int freeSlots = (EXTRA_INVENTORY_PAGE_SIZE * 2) + 20;
-	const uint8_t maxStage = (EXTRA_INVENTORY_CATEGORY_MAX_NUM - freeSlots) / 5;
-	if (stage >= maxStage)
-		return;
-
-	int needKeys = NeedKeysForExtraInventory(stage);
-	if (ItemSystem::CountItem(e, 72320) >= needKeys) {
-		ItemSystem::RemoveSpecifyItemEcs(e, 72320, needKeys);
-
-		ecs::PlayerRuntime::SetQuestFlag(e, stageName.c_str(), stage + 1);
-		ecs::PointSystem::Change(e, POINT_EXTRA_INVENTORY1 + category, stage + 1);
-		ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "RefreshExpandInventory");
-#ifdef ENABLE_SPAM_CHECK
-		InventorySystem::SetLastUnlock(e);
-#endif
-	}
-	else {
-		ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "update_envanter_need %d", needKeys - ItemSystem::CountItem(e, 72320));
-	}
-}
-#endif
-
-
-
-
-// CHECK_UNIQUE_GROUP
-// END_OF_CHECK_UNIQUE_GROUP
-
-// NEW_HAIR_STYLE_ADD
-// END_NEW_HAIR_STYLE_ADD
-
 #ifdef ENABLE_RECALL
 void AffectSystem::AutoRecallProcess(entt::entity e)
 {
@@ -1246,40 +1003,6 @@ EVENTFUNC(soul_item_event)
 
 
 #endif
-
-namespace ItemSystem {
-
-// Legacy metin extraction is independent of the retired refinement preview.
-static bool DetachMetinStones(entt::entity owner, entt::entity scroll, entt::entity target)
-{
-    if (!InventorySystem::CanHandleItems(owner) || !IS_SET(GetItemFlags(target), ITEM_FLAG_REFINEABLE))
-        return false;
-
-    LogManager::instance().ItemLogEntity(owner, target, "USE_DETACHMENT", GetItemName(target));
-    bool extracted = false;
-    for (int slot = 0; slot < ITEM_SOCKET_MAX_NUM; ++slot)
-    {
-        const auto stone = static_cast<int32_t>(GetItemSocket(target, slot));
-        if (stone <= 2 || stone == ITEM_BROKEN_METIN_VNUM)
-            continue;
-
-        AutoGiveItemEcs(owner, stone);
-        SetItemSocketEcs(target, slot, ITEM_BROKEN_METIN_VNUM);
-        extracted = true;
-    }
-    if (!extracted)
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 360, "");
-#endif
-        return false;
-    }
-
-    ConsumeItemEcs(scroll);
-    return true;
-}
-
-} // namespace ItemSystem
 
 namespace InventorySystem {
 

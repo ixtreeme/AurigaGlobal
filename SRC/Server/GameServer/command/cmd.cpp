@@ -314,17 +314,6 @@ ACMD(do_manage_exp)
 	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "manage_exp_status %d", arg ? 1 : 0);
 }
 
-#ifdef ENABLE_LOCKED_EXTRA_INVENTORY
-ACMD(do_unlock_extra)
-{
-	char arg1[256];
-	one_argument(argument, arg1, sizeof(arg1));
-	if (!*arg1)
-		return;
-
-	InventorySystem::UnlockExtraInventory(character, atoi(arg1));
-}
-#endif
 ACMD(do_wheel_open)
 {
 	if ((ecs::PlayerRuntime::IsObserverMode(character)) || (CombatSystem::IsDead(character)) || (CombatSystem::IsStun(character)))
@@ -708,9 +697,6 @@ struct command_info cmd_info[] =
 	{"ranking_subcategory", do_ranking_subcategory, 0, POS_DEAD, GM_PLAYER},
 #endif
 	{"manage_exp", do_manage_exp, 0, POS_DEAD, GM_PLAYER},
-#ifdef ENABLE_LOCKED_EXTRA_INVENTORY
-	{"unlock_extra", do_unlock_extra, 0, POS_DEAD, GM_PLAYER},
-#endif
 #ifdef ENABLE_BLOCK_MULTIFARM
 	{"drop_block", do_drop_block, 0, POS_DEAD, GM_PLAYER},
 	{"drop_unblock", do_drop_unblock, 0, POS_DEAD, GM_PLAYER},

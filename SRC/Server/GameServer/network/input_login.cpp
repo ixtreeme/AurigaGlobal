@@ -965,15 +965,6 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	ecs::PlayerRuntime::SetCostumeHidden(ch, 4, ecs::QuestSystem::GetFlag(ch, "costume_option.hide_weapon") == 1 ? true : false, true);
 #endif
 #endif
-#ifdef ENABLE_LOCKED_EXTRA_INVENTORY
-	ecs::PointSystem::Change(ch, POINT_EXTRA_INVENTORY1, ecs::QuestSystem::GetFlag(ch, "lock_extra.cat1"));
-	ecs::PointSystem::Change(ch, POINT_EXTRA_INVENTORY2, ecs::QuestSystem::GetFlag(ch, "lock_extra.cat2"));
-	ecs::PointSystem::Change(ch, POINT_EXTRA_INVENTORY3, ecs::QuestSystem::GetFlag(ch, "lock_extra.cat3"));
-	ecs::PointSystem::Change(ch, POINT_EXTRA_INVENTORY4, ecs::QuestSystem::GetFlag(ch, "lock_extra.cat4"));
-	ecs::PointSystem::Change(ch, POINT_EXTRA_INVENTORY5, ecs::QuestSystem::GetFlag(ch, "lock_extra.cat5"));
-	ecs::PointSystem::Change(ch, POINT_EXTRA_INVENTORY6, ecs::QuestSystem::GetFlag(ch, "lock_extra.cat6"));
-	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "RefreshExpandInventory");
-#endif
 #ifdef ENABLE_ANTICHEAT
 	ecs::PlayerRuntime::ClearCheatChecks(ch);
 #endif

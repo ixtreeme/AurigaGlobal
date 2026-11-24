@@ -47,20 +47,6 @@ void ClearItem(entt::entity e);
 // Whether the database item load has been applied; the load sets it once.
 bool IsItemLoaded(entt::entity e);
 void SetItemLoaded(entt::entity e);
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-// Spends the keys for the next inventory page and opens it.
-bool ExpandInventory(entt::entity e);
-#endif
-#ifdef ENABLE_LOCKED_EXTRA_INVENTORY
-// Spends the keys for the next stage of an extra inventory category.
-void UnlockExtraInventory(entt::entity e, uint8_t category);
-#endif
-#ifdef ENABLE_SPAM_CHECK
-// Inventory unlocks are three seconds apart: when the next is allowed, and
-// the call that starts the wait.
-int32_t GetLastUnlock(entt::entity e);
-void SetLastUnlock(entt::entity e);
-#endif
 bool IsEmptyItemGrid(entt::entity owner, TItemPos cell, uint8_t size, int exceptionCell = -1);
 bool HasBeltItems(entt::entity owner);
 bool IsRefining(entt::entity owner);

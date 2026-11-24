@@ -128,7 +128,7 @@ CPacketInfoCG::CPacketInfoCG()
 	Set(HEADER_CG_ITEM_DIVISION, sizeof(TPacketCGItemDivision), "ItemDivision", true);
 	Set(HEADER_CG_ITEM_MOVE, sizeof(TPacketCGItemMove), "ItemMove", true);
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	Set(ENVANTER_BLACK, sizeof(TPacketCGEnvanter), "InventoryExpansion", true);
+	Set(ENVANTER_BLACK, sizeof(TPacketCGEnvanter), "RetiredInventoryExpansion", true);
 #endif
 	Set(HEADER_CG_ITEM_PICKUP, sizeof(TPacketCGItemPickup), "ItemPickup", true);
 
