@@ -18,7 +18,10 @@ quest leveldown_66_to_65 begin
                 say("Ezt a tárgyat 66-os szinten használhatod. / Requires level 66.")
             elseif result == 5 then
                 say("Nincs elég szabad pontod a visszaállításhoz.")
-                say("You do not have enough unspent points to reset your level.")
+                say("Szükséges: 1 képességpont, 1 mellékképességpont")
+                say("és a szinten belüli haladástól függően 0–3 státuszpont.")
+                say("Requires 1 unspent skill point, 1 sub-skill point")
+                say("and 0–3 stat points, depending on level progress.")
             else
                 say("A tárgy most nem használható. / Item unavailable.")
             end

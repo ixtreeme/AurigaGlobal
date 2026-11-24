@@ -15,5 +15,6 @@ db/migrations/item_combat/007_bonus_registry_seed.sql text eol=lf
 # Keep packaged quests byte-identical to their reviewed drafts on Windows.
 SRC/Server/Resources/quest/Quest/login/begin_weapons.lua text eol=lf
 SRC/Server/Resources/quest/Quest/item/cooldown_reset.lua text eol=lf
+SRC/Server/Resources/quest/Quest/item/lvl_back.lua text eol=lf
 config/typed_quests/tanaka.lua text eol=lf
 config/typed_quests/miki_event.lua text eol=lf
