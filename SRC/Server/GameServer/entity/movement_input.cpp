@@ -440,7 +440,7 @@ void CInputMain::Target(entt::entity character, const char * pcData)
 
 	if (buildingEntity != entt::null)
 	{
-		TPacketGCTarget pckTarget;
+		TPacketGCTarget pckTarget{};
 		pckTarget.header = HEADER_GC_TARGET;
 		pckTarget.dwVID = p->dwVID;
 		ecs::PlayerRuntime::GetDesc(character)->Packet(&pckTarget, sizeof(TPacketGCTarget));

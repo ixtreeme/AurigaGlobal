@@ -1,5 +1,6 @@
 #pragma once
 #include <item/EquipmentStats.hpp>
+#include <item/PendantElement.hpp>
 #include "../ecs/Registry.hpp"
 #include "../entity/char.h"
 #include "../ecs/systems/ItemSystem.hpp"
@@ -17,6 +18,7 @@ struct TypedEquipmentProjection
     std::uint64_t revision=0;
     std::uint64_t collectionRevision=0;
     bool applied=false;
+    auriga::item::TargetElement targetElement = auriga::item::TargetElement::None;
 };
 // Clones already copy the player's effective points. The weapon facts are
 // used for motion and skills without applying those stats a second time.

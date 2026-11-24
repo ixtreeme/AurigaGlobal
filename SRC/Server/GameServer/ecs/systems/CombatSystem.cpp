@@ -6663,16 +6663,41 @@ entt::entity GetSelectedTarget(entt::entity e)
     return selected->target;
 }
 
+#ifdef ELEMENT_TARGET
+static uint8_t TargetElementByte(entt::entity target)
+{
+    using auriga::item::TargetElement;
+    if (!g_registry.valid(target)) return 0;
+    if (ecs::PlayerRuntime::IsPC(target)) {
+        const auto* gear = g_registry.try_get<ecs::TypedEquipmentProjection>(target);
+        return gear ? static_cast<uint8_t>(gear->targetElement) : 0;
+    }
+    if (ecs::PlayerRuntime::IsMonster(target) || ecs::PlayerRuntime::IsStone(target)) {
+        constexpr std::pair<uint32_t, TargetElement> flags[] = {
+            {RACE_FLAG_ATT_ELEC, TargetElement::Lightning}, {RACE_FLAG_ATT_FIRE, TargetElement::Fire},
+            {RACE_FLAG_ATT_ICE, TargetElement::Ice}, {RACE_FLAG_ATT_WIND, TargetElement::Wind},
+            {RACE_FLAG_ATT_EARTH, TargetElement::Earth}, {RACE_FLAG_ATT_DARK, TargetElement::Dark},
+        };
+        for (const auto& [flag, element] : flags)
+            if (ecs::PlayerRuntime::IsRaceFlag(target, flag)) return static_cast<uint8_t>(element);
+    }
+    return 0;
+}
+#endif
+
 void BroadcastTargetPacket(entt::entity e)
 {
 	auto* selectedBy = g_registry.try_get<ecs::SelectedBy>(e);
 	if (!selectedBy || selectedBy->selectors.empty())
 		return;
 
-	TPacketGCTarget p;
+	TPacketGCTarget p{};
 
 	p.header = HEADER_GC_TARGET;
 	p.dwVID = ecs::PlayerRuntime::GetPacketVID(e);
+#ifdef ELEMENT_TARGET
+    p.bElement = TargetElementByte(e);
+#endif
 
 #ifdef __VIEW_TARGET_DECIMAL_HP__
 	if (ecs::PointSystem::GetMaxHP(e) <= 0)
@@ -6721,7 +6746,7 @@ void ClearTarget(entt::entity e)
 		selected->target = entt::null;
 	}
 
-	TPacketGCTarget p;
+	TPacketGCTarget p{};
 
 	p.header = HEADER_GC_TARGET;
 	p.dwVID = 0;
@@ -6767,7 +6792,7 @@ void SetTarget(entt::entity e, entt::entity target)
 
 	selected.target = target;
 
-	TPacketGCTarget p;
+	TPacketGCTarget p{};
 	p.header = HEADER_GC_TARGET;
 
 	if (target != entt::null && g_registry.valid(target))
@@ -6885,55 +6910,7 @@ void SetTarget(entt::entity e, entt::entity target)
 	}
 #endif
 #ifdef ELEMENT_TARGET
-	p.bElement = 0;
-	if (target != entt::null && g_registry.valid(target)) {
-		const entt::entity chrTarget = target;
-		if (ecs::PlayerRuntime::IsPC(chrTarget)) {
-			const entt::entity item = CombatWearItem(
-				chrTarget, WEAR_PENDANT);
-			if (ItemSystem::IsValidItem(item)) {
-				uint32_t vnum = ItemSystem::GetItemVnum(item);
-				if (vnum >= 10750 && vnum <= 10950) {
-					p.bElement = 1;
-				}
-				else if (vnum >= 9600 && vnum <= 9800) {
-					p.bElement = 2;
-				}
-				else if (vnum >= 9830 && vnum <= 10030) {
-					p.bElement = 3;
-				}
-				else if (vnum >= 10520 && vnum <= 10720) {
-					p.bElement = 4;
-				}
-				else if (vnum >= 10060 && vnum <= 10260) {
-					p.bElement = 5;
-				}
-				else if (vnum >= 10290 && vnum <= 10490) {
-					p.bElement = 6;
-				}
-			}
-		}
-		else if (ecs::PlayerRuntime::IsMonster(target) || ecs::PlayerRuntime::IsStone(chrTarget)) {
-			if (ecs::PlayerRuntime::IsRaceFlag(target, RACE_FLAG_ATT_ELEC)) {
-				p.bElement = 1;
-			}
-			else if (ecs::PlayerRuntime::IsRaceFlag(target, RACE_FLAG_ATT_FIRE)) {
-				p.bElement = 2;
-			}
-			else if (ecs::PlayerRuntime::IsRaceFlag(target, RACE_FLAG_ATT_ICE)) {
-				p.bElement = 3;
-			}
-			else if (ecs::PlayerRuntime::IsRaceFlag(target, RACE_FLAG_ATT_WIND)) {
-				p.bElement = 4;
-			}
-			else if (ecs::PlayerRuntime::IsRaceFlag(target, RACE_FLAG_ATT_EARTH)) {
-				p.bElement = 5;
-			}
-			else if (ecs::PlayerRuntime::IsRaceFlag(target, RACE_FLAG_ATT_DARK)) {
-				p.bElement = 6;
-			}
-		}
-	}
+    p.bElement = TargetElementByte(target);
 #endif
 	ecs::PlayerRuntime::GetDesc(e)->Packet(&p, sizeof(TPacketGCTarget));
 }

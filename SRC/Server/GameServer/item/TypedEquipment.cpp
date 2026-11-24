@@ -7,6 +7,7 @@
 #include "TypedCompanions.hpp"
 #include "TypedCostumes.hpp"
 #include <item/EffectRuntime.hpp>
+#include "../ecs/systems/CombatSystem.hpp"
 #include <item/AccessoryRuntime.hpp>
 #include "ItemStore.hpp"
 #include "ItemCatalogRuntime.hpp"
@@ -48,7 +49,10 @@ void RefreshTypedEquipment(entt::entity e)
     auto stats=built ? std::optional{*built} : std::optional<auriga::item::EquipmentStats>{};
     if(stats){stats->petBonuses=petBonuses;stats->fixedCompanion=companion;}
     const bool changed=!old || old->stats!=stats;const bool recompute=changed || !old->applied;
+    const auto oldElement = old ? old->targetElement : auriga::item::TargetElement::None;
+    const auto newElement = auriga::item::EquippedPendantElement(*catalog, stats ? &*stats : nullptr);
     ecs::TypedEquipmentProjection next;next.fence=items->state.fence;next.stats=stats;next.collectionRevision=collectionRevision;next.revision=old ? old->revision+(changed ? 1 : 0) : 1;
+    next.targetElement = newElement;
     next.applied=g_registry.all_of<ecs::CharacterStatsComponent,ecs::CharacterPoints,ecs::Health,ecs::Mana,ecs::Stamina>(e);
     g_registry.emplace_or_replace<ecs::TypedEquipmentProjection>(e,std::move(next));
     if(!built)LOG_ERROR("TypedEquipment: pid {} rejected equipment projection (error {})",ecs::PlayerRuntime::GetPlayerID(e),static_cast<unsigned>(built.error()));
@@ -57,6 +61,7 @@ void RefreshTypedEquipment(entt::entity e)
         ecs::PointSystem::Compute(e);
         NetworkSyncSystem::PointsPacket(e);
     }
+    if (oldElement != newElement && g_registry.valid(e)) CombatSystem::BroadcastTargetPacket(e);
 }
 void TickTypedEquipment()
 {

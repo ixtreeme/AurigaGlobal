@@ -1,5 +1,6 @@
 #include "PersistentItemFixture.hpp"
 #include <item/EquipmentStats.hpp>
+#include <item/PendantElement.hpp>
 #include <algorithm>
 #include <iostream>
 #include <fstream>
@@ -72,6 +73,23 @@ std::vector<std::byte> Run()
     Check(reflective.petBonuses.Bonus(PetEffect::CharacterMeleeReflection)==1000 && PetBonusValues{}.size()==31,"reflection has its own appended native pet property");
     const auto natural=EncodeEquipmentStats(&pet,12345,9,9,{});
     Check(natural[5]==std::byte{4} && natural.size()==petWire.size()+56,"v4 adds the tier and separate natural/skill groups to the total view");
+    for (const auto& [family, element] : std::initializer_list<std::pair<std::string_view,TargetElement>>{
+            {"fire",TargetElement::Fire}, {"ice",TargetElement::Ice}, {"wind",TargetElement::Wind},
+            {"earth",TargetElement::Earth}, {"dark",TargetElement::Dark}, {"lightning",TargetElement::Lightning},
+            {"other",TargetElement::None}}) {
+        auto pendantCatalog = f::Catalog();
+        pendantCatalog.armors[0].slot = EquipmentSlot::Pendant;
+        std::ranges::find(pendantCatalog.items, armor.key, &ItemBaseRow::key)->contentCode =
+            "catalog.2." + std::string(family) + "_talisman_0_fixture";
+        const auto definitions = BuildItemCatalog(pendantCatalog);
+        Check(definitions.has_value(), "pendant catalog");
+        auto pendant = armor;
+        pendant.refinementLevel = 0;
+        pendant.placement->anchor = static_cast<unsigned>(EquipmentSlot::Pendant) - 1;
+        const auto equipped = BuildEquipmentStats(**definitions, f::Character(), std::span(&pendant,1));
+        Check(equipped && EquippedPendantElement(**definitions, &*equipped) == element, "equipped pendant element");
+        Check(EquippedPendantElement(**definitions, nullptr) == TargetElement::None, "no equipped pendant");
+    }
     return wire;
 }
 }
