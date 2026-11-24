@@ -17,6 +17,7 @@
 #include "../item/ItemCatalogRuntime.hpp"
 #include "../item/ItemStore.hpp"
 #include "../item/TypedLoot.hpp"
+#include "../social/TypedQuiz.hpp"
 
 #ifdef ADVANCED_GUILD_INFO
 	#include "guild_manager.h"
@@ -131,6 +132,27 @@ namespace quest
 			lua_pushlstring(L, fallback.data(), fallback.size());
 		return 1;
 	}
+
+    ALUA(game_start_typed_quiz)
+    {
+        const auto answer = luaL_checkinteger(L, 1);
+        std::size_t codeLength, questionLength;
+        const char* code = luaL_checklstring(L, 2, &codeLength);
+        const auto count = luaL_checkinteger(L, 3);
+        const auto preset = luaL_checkinteger(L, 4);
+        const char* question = luaL_checklstring(L, 5, &questionLength);
+        luaL_argcheck(L, count > 0 && count <= UINT32_MAX, 3, "invalid reward quantity");
+        luaL_argcheck(L, preset == 0 || preset == 100 || preset == 1000, 4, "invalid quiz preset");
+        StartQuestQuiz(CQuestManager::instance().GetPCEntity(L),answer,std::string_view(code,codeLength),
+            static_cast<std::uint32_t>(count),static_cast<unsigned>(preset),std::string(question,questionLength));
+        return 0;
+    }
+
+    ALUA(game_cancel_typed_quiz)
+    {
+        CloseQuestQuiz(CQuestManager::instance().GetPCEntity(L));
+        return 0;
+    }
 
 	ALUA(game_typed_item_name)
 	{
@@ -327,6 +349,8 @@ namespace quest
 			{ "drop_typed_item_with_ownership", game_drop_typed_item_with_ownership },
 			{ "typed_item_key", game_typed_item_key },
 			{ "typed_item_name", game_typed_item_name },
+            { "start_typed_quiz", game_start_typed_quiz },
+            { "cancel_typed_quiz", game_cancel_typed_quiz },
 			{ "typed_item_use_name", game_typed_item_use_name },
 #ifdef ADVANCED_GUILD_INFO
 			{ "give_guild_reward",			game_give_guild_reward			},

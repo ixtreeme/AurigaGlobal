@@ -79,7 +79,8 @@ void Tell(entt::entity actor, const char* message)
 std::expected<std::optional<Round>,Error> FindRound(CAsyncSQL& db, std::int64_t answer)
 {
     const std::unique_ptr<SQLMsg> query(db.DirectQueryPrepared(
-        "SELECT id,category_id,local_id,refinement_level,stack_count FROM player.item_quiz_round WHERE active_slot=1 AND answer=?",
+        "SELECT id,category_id,local_id,refinement_level,stack_count FROM player.item_quiz_round WHERE active_slot=1 AND answer=? "
+        "AND (expires_at IS NULL OR expires_at>CURRENT_TIMESTAMP(6))",
         {SqlParam::Int(answer)}));
     if (!query || query->uiSQLErrno || !query->Get())
         return std::unexpected(Error::SqlFailure);
@@ -102,7 +103,8 @@ Claim WriteClaim(CAsyncSQL& db, const item::ItemCatalog& catalog, const Round& r
 {
     const std::string operationBytes(reinterpret_cast<const char*>(operation.data()), operation.size());
     SqlTransaction transaction{{
-        "UPDATE player.item_quiz_round SET active_slot=NULL,winner_pid=?,claim_operation=? WHERE id=? AND active_slot=1 AND answer=?",
+        "UPDATE player.item_quiz_round SET active_slot=NULL,winner_pid=?,claim_operation=? WHERE id=? AND active_slot=1 AND answer=? "
+        "AND (expires_at IS NULL OR expires_at>CURRENT_TIMESTAMP(6))",
         {SqlParam::UInt(answer.pid), SqlParam::Blob(operationBytes), SqlParam::UInt(round.id), SqlParam::Int(answer.value)}, 1, {}
     }};
     if (inventory)
@@ -243,6 +245,153 @@ void CheckTypedQuizAnswer(entt::entity character, std::string_view text)
     });
 }
 
+namespace
+{
+struct QuizPrompt
+{
+    unsigned preset;
+    std::string question;
+};
+
+void AnnounceQuiz(const QuizPrompt& prompt, const std::string& nameKey, std::uint32_t count)
+{
+#ifdef TEXTS_IMPROVEMENT
+    if (prompt.preset)
+        BroadcastNoticeNew(CHAT_TYPE_NOTICE,0,0,prompt.preset == 100 ? 2182 : 2183,"");
+    else
+        BroadcastNoticeNew(CHAT_TYPE_NOTICE,0,0,2175,"%s",prompt.question.c_str());
+    BroadcastNoticeNew(CHAT_TYPE_NOTICE,0,0,2176,"%s",nameKey.c_str());
+    BroadcastNoticeNew(CHAT_TYPE_NOTICE,0,0,2177,"%u",count);
+    BroadcastNoticeNew(CHAT_TYPE_NOTICE,0,0,2179,"");
+#else
+    const auto question = prompt.preset ? fmt::format("Gondoltam egy számra 1 és {} között.",prompt.preset) : prompt.question;
+    BroadcastNotice(question.c_str());
+    const auto reward = fmt::format("Kvízjutalom: {} × {}. A választ a globális chatbe írd.",nameKey,count);
+    BroadcastNotice(reward.c_str());
+#endif
+}
+
+void StartRound(entt::entity character, std::int64_t answer, std::string_view code,
+    std::uint16_t level, std::uint32_t count, std::optional<QuizPrompt> prompt)
+{
+    const auto catalog = item::runtime::CurrentCatalog();
+    if (!catalog)
+    {
+        Tell(character,"A típusos tárgykatalógus jelenleg nem érhető el.");
+        return;
+    }
+    const auto found = std::ranges::find_if(catalog->Entries(),[&](const auto& row){return row.second.base.contentCode==code;});
+    if (found == catalog->Entries().end() || found->second.base.retired || !sql::CanQueueNativeItemAward(*catalog,found->first,level,count))
+    {
+        Tell(character,"A megadott tárgy, fejlesztési szint vagy darabszám nem adható kvízjutalomként.");
+        return;
+    }
+    const bool queued = item::runtime::ItemStore::Instance().Submit(
+        [character,answer,key=found->first,level,count,prompt=std::move(prompt)](CAsyncSQL& db,const item::ItemCatalog& current) -> item::runtime::ItemStore::Completion {
+        const auto* definition = current.Find(key);
+        if (!definition || definition->base.retired || !sql::CanQueueNativeItemAward(current,key,level,count))
+            return [character]{Tell(character,"A jutalom már nem érhető el a tárgykatalógusban.");};
+        const std::unique_ptr<SQLMsg> write(db.DirectQueryPrepared(
+            "INSERT INTO player.item_quiz_round(active_slot,answer,category_id,local_id,refinement_level,stack_count,expires_at) "
+            "VALUES(1,?,?,?,?,?,IF(?=1,CURRENT_TIMESTAMP(6)+INTERVAL 60 SECOND,NULL))",
+            {SqlParam::Int(answer),SqlParam::UInt(static_cast<unsigned>(key.Category())),SqlParam::UInt(key.LocalId()),
+                SqlParam::UInt(level),SqlParam::UInt(count),SqlParam::UInt(prompt.has_value())}));
+        const auto error = !write ? 1 : write->uiSQLErrno ? write->uiSQLErrno : !write->Get();
+        return [character,error,prompt,name=definition->base.nameKey,count] {
+            if (!error && prompt) AnnounceQuiz(*prompt,name,count);
+            Tell(character,!error ? "A kvíz elindult." : error == 1062 ? "Már fut egy kvízforduló." : "A kvíz indítása nem sikerült.");
+        };
+    });
+    if (!queued) Tell(character,"A kvíz indítása nem sikerült.");
+}
+
+struct ClosedQuiz
+{
+    std::int64_t answer;
+    bool expired;
+};
+
+std::expected<std::optional<ClosedQuiz>,Error> CloseRound(CAsyncSQL& db, bool expiredOnly)
+{
+    const char* select = expiredOnly
+        ? "SELECT id,answer,1 FROM player.item_quiz_round WHERE active_slot=1 AND expires_at<=CURRENT_TIMESTAMP(6)"
+        : "SELECT id,answer,IFNULL(expires_at<=CURRENT_TIMESTAMP(6),0) FROM player.item_quiz_round WHERE active_slot=1";
+    const std::unique_ptr<SQLMsg> round(db.DirectQueryPrepared(select,{}));
+    if (!round || round->uiSQLErrno || !round->Get()) return std::unexpected(Error::SqlFailure);
+    const auto row = round->Get()->FetchRow();
+    if (!row) return std::optional<ClosedQuiz>{};
+    std::uint64_t id = 0;
+    std::int64_t answer = 0;
+    if (!row[0] || !row[1] || !row[2] || !Parse(row[0],id) || !Parse(row[1],answer))
+        return std::unexpected(Error::InvalidStoredData);
+    const bool expired = *row[2] == '1';
+    const std::unique_ptr<SQLMsg> result(db.DirectQueryPrepared(
+        "UPDATE player.item_quiz_round SET active_slot=NULL WHERE id=? AND active_slot=1",{SqlParam::UInt(id)}));
+    if (!result || result->uiSQLErrno || !result->Get()) return std::unexpected(Error::SqlFailure);
+    if (!result->Get()->uiAffectedRows) return std::optional<ClosedQuiz>{};
+    return ClosedQuiz{answer,expired};
+}
+
+void AnnounceClose(const ClosedQuiz& round)
+{
+#ifdef TEXTS_IMPROVEMENT
+    BroadcastNoticeNew(CHAT_TYPE_NOTICE,0,0,round.expired ? 2180 : 2178,"%lld",static_cast<long long>(round.answer));
+#else
+    const auto notice = fmt::format("A kvíz véget ért. A helyes válasz: {}.",round.answer);
+    BroadcastNotice(notice.c_str());
+#endif
+}
+
+void CancelRound(entt::entity character, bool announce)
+{
+    const bool queued = item::runtime::ItemStore::Instance().Submit(
+        [character,announce](CAsyncSQL& db,const item::ItemCatalog&) -> item::runtime::ItemStore::Completion {
+        const auto closed = CloseRound(db,false);
+        return [character,announce,closed] {
+            if (closed && *closed && (announce || (**closed).expired)) AnnounceClose(**closed);
+            Tell(character,!closed ? "A kvíz lezárása nem sikerült." : *closed ? "A kvízforduló lezárva." : "Nincs nyitott kvízforduló.");
+        };
+    });
+    if (!queued) Tell(character,"A kvíz lezárása nem sikerült.");
+}
+}
+
+void StartQuestQuiz(entt::entity gm, std::int64_t answer, std::string_view code,
+    std::uint32_t count, unsigned preset, std::string question)
+{
+    if (!Player::IsPC(gm) || Player::GetGMLevel(gm) < GM_HIGH_WIZARD) return;
+    if ((preset != 0 && preset != 100 && preset != 1000) ||
+        (preset && (answer < 1 || answer > preset)) || (!preset && (question.empty() || question.size() > 220 ||
+            question.find_first_of("#|\r\n") != std::string::npos || question.find('\0') != std::string::npos)))
+    {
+        Tell(gm,"Érvénytelen kvízkérdés vagy válasz.");
+        return;
+    }
+    StartRound(gm,answer,code,0,count,QuizPrompt{preset,std::move(question)});
+}
+
+void CloseQuestQuiz(entt::entity gm)
+{
+    if (Player::IsPC(gm) && Player::GetGMLevel(gm) >= GM_HIGH_WIZARD) CancelRound(gm,true);
+}
+
+void PollExpiredQuiz()
+{
+    using Clock = std::chrono::steady_clock;
+    static Clock::time_point next{};
+    static bool pending = false;
+    if (pending || Clock::now() < next || !item::runtime::CurrentCatalog()) return;
+    next = Clock::now() + std::chrono::seconds(2);
+    pending = item::runtime::ItemStore::Instance().Submit([](CAsyncSQL& db,const item::ItemCatalog&) -> item::runtime::ItemStore::Completion {
+        const auto closed = CloseRound(db,true);
+        return [closed] {
+            pending = false;
+            if (!closed) next = Clock::now() + std::chrono::minutes(1);
+            else if (*closed) AnnounceClose(**closed);
+        };
+    });
+}
+
 ACMD(do_quiz_start)
 {
     std::istringstream args{argument};
@@ -256,46 +405,10 @@ ACMD(do_quiz_start)
         Tell(character,"Használat: /quiz_start válasz tárgykód fejlesztési_szint darabszám");
         return;
     }
-    const auto catalog = item::runtime::CurrentCatalog();
-    if (!catalog)
-    {
-        Tell(character,"A típusos tárgykatalógus jelenleg nem érhető el.");
-        return;
-    }
-    const auto found = std::ranges::find_if(catalog->Entries(),[&](const auto& row){return row.second.base.contentCode==code;});
-    if (found == catalog->Entries().end() || !sql::CanQueueNativeItemAward(*catalog,found->first,level,count))
-    {
-        Tell(character,"A megadott tárgy, fejlesztési szint vagy darabszám nem adható kvízjutalomként.");
-        return;
-    }
-    const auto key = found->first;
-    const bool queued = item::runtime::ItemStore::Instance().Submit(
-        [character,answer,key,level,count](CAsyncSQL& db,const item::ItemCatalog& current) -> item::runtime::ItemStore::Completion {
-        if (!sql::CanQueueNativeItemAward(current,key,level,count))
-            return [character]{Tell(character,"A jutalom már nem érhető el a tárgykatalógusban.");};
-        const std::unique_ptr<SQLMsg> write(db.DirectQueryPrepared(
-            "INSERT INTO player.item_quiz_round(active_slot,answer,category_id,local_id,refinement_level,stack_count) VALUES(1,?,?,?,?,?)",
-            {SqlParam::Int(answer),SqlParam::UInt(static_cast<unsigned>(key.Category())),
-                SqlParam::UInt(key.LocalId()),SqlParam::UInt(level),SqlParam::UInt(count)}));
-        const auto code = write ? write->uiSQLErrno : 1;
-        return [character,code] {
-            Tell(character,code == 0 ? "A kvíz elindult." : code == 1062 ? "Már fut egy kvízforduló." : "A kvíz indítása nem sikerült.");
-        };
-    });
-    if (!queued) Tell(character,"A kvíz indítása nem sikerült.");
+    StartRound(character,answer,code,level,count,std::nullopt);
 }
 
 ACMD(do_quiz_cancel)
 {
-    const bool queued = item::runtime::ItemStore::Instance().Submit(
-        [character](CAsyncSQL& db,const item::ItemCatalog&) -> item::runtime::ItemStore::Completion {
-        const std::unique_ptr<SQLMsg> write(db.DirectQueryPrepared(
-            "UPDATE player.item_quiz_round SET active_slot=NULL WHERE active_slot=1",{}));
-        const bool ok = write && !write->uiSQLErrno && write->Get();
-        const bool cancelled = ok && write->Get()->uiAffectedRows != 0;
-        return [character,ok,cancelled] {
-            Tell(character,!ok ? "A kvíz lezárása nem sikerült." : cancelled ? "A kvízforduló lezárva." : "Nincs nyitott kvízforduló.");
-        };
-    });
-    if (!queued) Tell(character,"A kvíz lezárása nem sikerült.");
+    CancelRound(character,false);
 }

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../social/TypedQuiz.hpp"
 #include "GameConfig.h"
 #include "../dungeon/DungeonUi.hpp"
 #include "../combat/DeathRecap.hpp"
@@ -256,6 +257,7 @@ void heartbeat(LPHEART ht, int pulse)
         HerbalismSystem::Tick(get_dword_time());
         AurigaMissionPass::Tick();
         DungeonUi::Tick();
+        PollExpiredQuiz();
         DeathRecap::Tick();
     }
     if (pulse % std::max(1, passes_per_sec / 5) == 0)

@@ -44,6 +44,10 @@
     "resource": "npc/fisher.lua",
     "original_sha256": "4cb74f5bc146f133ad4c889c389b422dd0cfdffbcc6656849447928e5855bddc"
   },
+  "gm_quiz.lua": {
+    "resource": "events/gm_quiz.lua",
+    "original_sha256": "c09e6e798d302261fa06dab388225ea9fe87c04d859a8b0ceebafeca393b1953"
+  },
   "halloween.lua": {
     "resource": "events/halloween.lua",
     "original_sha256": "9178dff67382d5be0dda135eb733982db92a9f8879f98f3bfcbdc9b4ef81378d"
