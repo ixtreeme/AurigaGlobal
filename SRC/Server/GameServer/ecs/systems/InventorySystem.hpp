@@ -71,7 +71,6 @@ ecs::QuickSlots MakeQuickSlots(std::span<const TQuickslot, QUICKSLOT_MAX_NUM> sa
 void SendQuickslots(entt::entity e);
 bool GetQuickslot(entt::entity e, uint8_t pos, TQuickslot& out);
 bool SetQuickslot(entt::entity e, uint8_t pos, const TQuickslot& slot);
-bool SetQuickslotFromClient(entt::entity e, uint8_t pos, TQuickslot slot);
 bool DelQuickslot(entt::entity e, uint8_t pos);
 bool SwapQuickslot(entt::entity e, uint8_t posA, uint8_t posB);
 

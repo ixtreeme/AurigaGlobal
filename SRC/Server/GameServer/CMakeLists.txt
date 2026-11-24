@@ -845,6 +845,7 @@ add_executable(QuickslotTests EXCLUDE_FROM_ALL
 )
 target_link_libraries(QuickslotTests PRIVATE SERVER EnTT::EnTT LUA S_Core AurigaItemCatalog)
 add_test(NAME quickslots COMMAND QuickslotTests)
+add_test(NAME quickslot_bindings COMMAND QuickslotTests --bindings)
 
 add_executable(SpatialLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/SpatialLifecycleTests.cpp

@@ -278,14 +278,8 @@ void ValueRanges() {
     for (unsigned type = 0; type <= 255; ++type) {
         for (unsigned pos = 0; pos <= 255; ++pos) {
             const TQuickslot candidate {static_cast<uint8_t>(type), static_cast<uint8_t>(pos)};
-            const TItemPos location(INVENTORY, pos);
             const bool expected = type == QUICKSLOT_TYPE_COMMAND ||
-                (type == QUICKSLOT_TYPE_SKILL && pos < SKILL_MAX_NUM) ||
-                (type == QUICKSLOT_TYPE_ITEM && (location.IsDefaultInventoryPosition() || location.IsBeltInventoryPosition()))
-#ifdef ENABLE_EXTRA_INVENTORY
-                || (type == QUICKSLOT_TYPE_ITEM_EXTRA && pos < EXTRA_INVENTORY_MAX_NUM)
-#endif
-                ;
+                (type == QUICKSLOT_TYPE_SKILL && pos < SKILL_MAX_NUM);
             const auto previous = Read(owner, 0);
             const auto packetCount = packets.size();
             Check(InventorySystem::SetQuickslot(owner, 0, candidate) == expected, "value range acceptance mismatch");
@@ -297,36 +291,13 @@ void ValueRanges() {
 
 void ClientValidation() {
     const auto owner = Reset();
-    Check(!InventorySystem::SetQuickslotFromClient(owner, 0, {QUICKSLOT_TYPE_ITEM, 3}), "missing client item accepted");
-    const auto item = g_registry.create();
-    auto& data = g_registry.emplace<Item>(item, Item {owner, ITEM_USE, USE_POTION});
-    inventory[{INVENTORY, 3}] = item;
-    Check(InventorySystem::SetQuickslotFromClient(owner, 0, {QUICKSLOT_TYPE_ITEM, 3}), "inventory potion rejected");
-    data.type = ITEM_QUEST;
-    Check(InventorySystem::SetQuickslotFromClient(owner, 0, {QUICKSLOT_TYPE_ITEM, 3}), "quest shortcut rejected");
-    const auto before = packets.size();
-    data.type = ITEM_WEAPON;
-    Check(!InventorySystem::SetQuickslotFromClient(owner, 0, {QUICKSLOT_TYPE_ITEM, 3}), "weapon shortcut accepted");
-    data.type = ITEM_USE; data.owner = g_registry.create();
-    Check(!InventorySystem::SetQuickslotFromClient(owner, 0, {QUICKSLOT_TYPE_ITEM, 3}), "foreign item accepted");
-    Check(packets.size() == before && Read(owner, 0).pos == 3, "rejected client item mutated quickslots");
-    data.owner = owner;
-#ifdef ENABLE_EXTRA_INVENTORY
-    inventory[{EXTRA_INVENTORY, 3}] = item;
-    for (const uint8_t type : {static_cast<uint8_t>(QUICKSLOT_TYPE_ITEM_EXTRA), uint8_t{12}}) {
-        const TQuickslot incoming {type, 3};
-        Check(!InventorySystem::SetQuickslotFromClient(owner, 0, incoming), "extra potion restriction bypassed");
-        data.type = ITEM_QUEST;
-        Check(InventorySystem::SetQuickslotFromClient(owner, 0, incoming), "extra quest/alias rejected");
-        Check(incoming.type == type && Read(owner, 0).type == QUICKSLOT_TYPE_ITEM_EXTRA, "alias mutated caller or not normalized");
-        data.type = ITEM_USE;
+    Check(InventorySystem::SetQuickslot(owner, 0, {QUICKSLOT_TYPE_SKILL, 3}), "skill shortcut");
+    const auto count = packets.size();
+    for (auto type : {1, 4, 12, 13}) {
+        Check(!InventorySystem::SetQuickslot(owner, 0, {static_cast<uint8_t>(type), 3}), "numeric item shortcut accepted");
     }
-#endif
-    g_registry.destroy(item);
-    const auto replacement = g_registry.create();
-    g_registry.emplace<Item>(replacement, Item {owner, ITEM_USE, USE_POTION});
-    Check(!InventorySystem::SetQuickslotFromClient(owner, 0, {QUICKSLOT_TYPE_ITEM, 3}), "recycled item accepted through stale slot");
-    Check(!InventorySystem::SetQuickslotFromClient(entt::null, 0, {QUICKSLOT_TYPE_ITEM, 3}), "null client owner accepted");
+    Check(packets.size() == count && Same(Read(owner, 0), {QUICKSLOT_TYPE_SKILL, 3}), "rejected shortcut changed skill");
+    Check(!InventorySystem::SetQuickslot(entt::null, 0, {QUICKSLOT_TYPE_COMMAND, 3}), "null shortcut owner");
 }
 
 void HydrationAndRelocation() {
@@ -334,8 +305,9 @@ void HydrationAndRelocation() {
     TQuickslot saved[QUICKSLOT_MAX_NUM] {};
     saved[0] = saved[4] = {QUICKSLOT_TYPE_COMMAND, 8};
     saved[1] = {255, 9}; saved[2] = {QUICKSLOT_TYPE_ITEM, 5};
+    saved[3] = {QUICKSLOT_TYPE_SKILL, 6};
     const auto loaded = InventorySystem::MakeQuickSlots(saved);
-    Check(loaded.slots[0].type == 0 && loaded.slots[1].type == 0 && loaded.slots[2].pos == 5 && loaded.slots[4].pos == 8,
+    Check(loaded.slots[0].type == 0 && loaded.slots[1].type == 0 && loaded.slots[2].type == QUICKSLOT_TYPE_NONE && loaded.slots[4].pos == 8,
         "hydration did not normalize invalid/duplicate entries");
     g_registry.emplace<ecs::QuickSlots>(owner, loaded);
     expectDirty = false;
@@ -348,12 +320,8 @@ void HydrationAndRelocation() {
         Check(packets[i].pos == i && packets[i].kind == (loaded.slots[i].type ? 0 : 1), "login packet mismatch");
     onPacket = {}; expectDirty = true; packets.clear();
     InventorySystem::SyncQuickslot(owner, QUICKSLOT_TYPE_ITEM, 5, 10);
-    Check(Read(owner, 2).pos == 10 && packets.size() == 1 && packets[0].kind == 0, "relocation packet missing");
-    auto& state = g_registry.get<ecs::QuickSlots>(owner);
-    state.slots[3] = {QUICKSLOT_TYPE_ITEM, 10};
-    state.slots[6] = {QUICKSLOT_TYPE_ITEM, 11};
-    InventorySystem::SyncQuickslot(owner, QUICKSLOT_TYPE_ITEM, 10, 11);
-    Check(Read(owner, 2).type == 0 && Read(owner, 3).pos == 11 && Read(owner, 6).type == 0, "relocation left duplicates");
+    Check(Read(owner, 2).type == QUICKSLOT_TYPE_NONE && packets.empty(), "retired item cell reappeared");
+    Check(Read(owner, 3).pos == 6 && Read(owner, 3).type == QUICKSLOT_TYPE_SKILL, "skill lost on login");
     // Use the same value-copy reads as the character-save call site.
     for (uint8_t i = 0; i < QUICKSLOT_MAX_NUM; ++i) InventorySystem::GetQuickslot(owner, i, saved[i]);
     const auto roundtrip = InventorySystem::MakeQuickSlots(saved);
@@ -3191,7 +3159,7 @@ void GroundDropCallbacks() {
         "committed drop was refunded or stolen after callback pickup");
 }
 }
-int main() {
+int main(int argc, char** argv) {
     try {
 
         SECTREE_MANAGER sectors;
@@ -3203,6 +3171,12 @@ int main() {
 #ifdef ENABLE_SWITCHBOT
         CSwitchbotManager switchbots;
 #endif
+        if (argc == 2 && std::string_view(argv[1]) == "--bindings") {
+            Basic(); DuplicatesAndValidation(); SyncAndLifetime(); ValueRanges(); ClientValidation(); HydrationAndRelocation();
+            Reset();
+            std::cout << "Quickslot binding checks passed: " << checks << '\n';
+            return 0;
+        }
         MoveAdmissionGuards();
         EquipmentAdmissionGuards();
         NpcTransactions();

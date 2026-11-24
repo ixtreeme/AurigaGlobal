@@ -445,14 +445,6 @@ static bool IsQuickslotValueValid(const TQuickslot& slot)
 {
     switch (slot.type)
     {
-#ifdef ENABLE_EXTRA_INVENTORY
-        case QUICKSLOT_TYPE_ITEM_EXTRA: return slot.pos < EXTRA_INVENTORY_MAX_NUM;
-#endif
-        case QUICKSLOT_TYPE_ITEM:
-        {
-            const TItemPos position(INVENTORY, slot.pos);
-            return position.IsDefaultInventoryPosition() || position.IsBeltInventoryPosition();
-        }
         case QUICKSLOT_TYPE_SKILL: return slot.pos < SKILL_MAX_NUM;
         case QUICKSLOT_TYPE_COMMAND: return true;
         default: return false;
@@ -573,44 +565,6 @@ bool SetQuickslot(entt::entity e, uint8_t pos, const TQuickslot& value)
     if (HasQuickslotRevision(e, revision))
         NetworkSyncSystem::SendQuickslotAdd(e, pos, slot);
     return true;
-}
-
-bool SetQuickslotFromClient(entt::entity e, uint8_t pos, TQuickslot slot)
-{
-    if (!g_registry.valid(e) || pos >= QUICKSLOT_MAX_NUM)
-        return false;
-#ifdef ENABLE_EXTRA_INVENTORY
-    // Older clients use 12 for the extra-inventory shortcut. Normalize a copy,
-    // never modify the incoming packet buffer.
-    if (slot.type == 12) slot.type = QUICKSLOT_TYPE_ITEM_EXTRA;
-#endif
-    if (!IsQuickslotValueValid(slot))
-        return false;
-#ifdef ENABLE_BUG_FIXES
-    if (slot.type == QUICKSLOT_TYPE_ITEM
-#ifdef ENABLE_EXTRA_INVENTORY
-        || slot.type == QUICKSLOT_TYPE_ITEM_EXTRA
-#endif
-    )
-    {
-        uint8_t window = INVENTORY;
-#ifdef ENABLE_EXTRA_INVENTORY
-        if (slot.type == QUICKSLOT_TYPE_ITEM_EXTRA) window = EXTRA_INVENTORY;
-#endif
-        const auto item = ItemSystem::GetItem(e, TItemPos(window, slot.pos));
-        if (!ItemSystem::IsValidItem(item) || ItemSystem::GetItemOwner(item) != e)
-            return false;
-        const auto itemType = ItemSystem::GetItemType(item);
-        if (itemType != ITEM_USE && itemType != ITEM_QUEST)
-            return false;
-#ifdef ENABLE_EXTRA_INVENTORY
-        if (slot.type == QUICKSLOT_TYPE_ITEM_EXTRA && itemType == ITEM_USE &&
-            ItemSystem::GetItemSubType(item) == USE_POTION)
-            return false;
-#endif
-    }
-#endif
-    return SetQuickslot(e, pos, slot);
 }
 
 bool DelQuickslot(entt::entity e, uint8_t pos)

@@ -57,7 +57,7 @@ void CInputMain::QuickslotAdd(entt::entity character, const char* data)
     if (!data) return;
     command_quickslot_add packet {};
     memcpy(&packet, data, sizeof(packet));
-    InventorySystem::SetQuickslotFromClient(character, packet.pos, packet.slot);
+    InventorySystem::SetQuickslot(character, packet.pos, packet.slot);
 }
 
 void CInputMain::QuickslotDelete(entt::entity character, const char* data)
