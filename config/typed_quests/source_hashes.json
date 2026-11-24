@@ -51,5 +51,9 @@
       "86effe1df13f98bfedff315d9f373037deeb18c946839d4299f9843a40ee23db"
     ]
   },
-  "tanaka.lua": "9563336e97caa347148c320a6387962127b7908ebeadad358fe37a350c7420a4"
+  "tanaka.lua": "9563336e97caa347148c320a6387962127b7908ebeadad358fe37a350c7420a4",
+  "teleportgyuru.quest": {
+    "resource": "item/teleportgyuru.quest",
+    "original_sha256": "7db3c1c54c5add0d46c3b73cf332af11a0f0e467ebac76b1bb31aaf4f97fcb88"
+  }
 }
