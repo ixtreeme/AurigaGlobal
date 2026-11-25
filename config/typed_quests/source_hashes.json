@@ -48,6 +48,13 @@
     "resource": "events/gm_quiz.lua",
     "original_sha256": "c09e6e798d302261fa06dab388225ea9fe87c04d859a8b0ceebafeca393b1953"
   },
+  "guild_building_alter_of_power.lua": {
+    "resource": "gilda/guild_building_alter_of_power.lua",
+    "original_sha256": "0812b4fc94684367d3d6a9e2768db8acf68844741a28ce8b87aedae2783eba6a",
+    "previous_sha256": [
+      "e6dd3159e7a778257a883d7f00c13ff8eefac9dad1b305abb6bc561f81070807"
+    ]
+  },
   "halloween.lua": {
     "resource": "events/halloween.lua",
     "original_sha256": "9178dff67382d5be0dda135eb733982db92a9f8879f98f3bfcbdc9b4ef81378d"
@@ -83,6 +90,14 @@
       "86effe1df13f98bfedff315d9f373037deeb18c946839d4299f9843a40ee23db"
     ]
   },
+  "pet_system.lua": {
+    "resource": "system/pet_system.lua",
+    "original_sha256": "6d7196c9fd7494b396644cd239d2acfc2faa6a41183d046354cdb20187c83356",
+    "previous_sha256": [
+      "7171467425d19341dd984fef35878292b0ecd527724cb69296461a002c25de11",
+      "8df23fa3dca10982f83ca14f148f7110353ba5cc6af40dd043c6269306de4d58"
+    ]
+  },
   "reset_scroll.lua": {
     "resource": "skill/reset_scroll.lua",
     "original_sha256": "0dd8d8419b90fe039eb4379f8f4943ba33e1923d1f2b9ed4b4b473d4731b08b1"
@@ -95,5 +110,9 @@
   "teleportgyuru.quest": {
     "resource": "item/teleportgyuru.quest",
     "original_sha256": "7db3c1c54c5add0d46c3b73cf332af11a0f0e467ebac76b1bb31aaf4f97fcb88"
+  },
+  "tera_companions.lua": {
+    "resource": "system/tera_companions.lua",
+    "original_sha256": "63d7698521f97f65ebf3bfaccc203674b092dc61bac651da3c70a16fb39a4c49"
   }
 }
