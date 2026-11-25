@@ -219,7 +219,7 @@ end
 
 TeleportRing.hasItemNeeded = function(index)
 	local category, local_id, amount = fare(index)
-	return category ~= nil and (pc.typed_item_count(category, local_id, 0) or 0) >= amount
+	return category ~= nil and (pc.typed_item_count(category, local_id, 0, true) or 0) >= amount
 end
 
 local function payAndWarp(index, destination)
@@ -229,7 +229,7 @@ local function payAndWarp(index, destination)
 	end
 	if TeleportRing.TeleportIsItemsCheck(index) then
 		local category, local_id, amount = fare(index)
-		if not category or not pc.typed_item_exchange({{category, local_id, 0, amount}}, {}, 0) then
+		if not category or not pc.typed_item_exchange({{category, local_id, 0, amount}}, {}, 0, true) then
 			return false
 		end
 	end
