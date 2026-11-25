@@ -3261,6 +3261,32 @@ teleport_area:
         return 2;
     }
 
+    ALUA(pc_typed_has_equipped)
+    {
+        const auto entity = CQuestManager::instance().GetCurrentCharacter();
+        const auto* typed = g_registry.valid(entity) ? g_registry.try_get<ecs::TypedItems>(entity) : nullptr;
+        if (!typed || g_registry.all_of<ecs::TypedItemBusy>(entity))
+        {
+            lua_pushnil(L);
+            return 1;
+        }
+
+        std::array<bool, item::EquipmentSlotCount> slots{};
+        for (int index = 1; index <= lua_gettop(L); ++index)
+        {
+            const auto slot = luaL_checkinteger(L, index);
+            luaL_argcheck(L, slot >= 1 && slot <= item::EquipmentSlotCount, index, "invalid typed equipment slot");
+            slots[static_cast<std::size_t>(slot - 1)] = true;
+        }
+        const bool equipped = std::ranges::any_of(typed->state.items, [&](const auto& instance) {
+            return !instance.destroyed && instance.owner == typed->state.fence.owner && instance.placement &&
+                instance.placement->kind == item::ItemStorageKind::Equipment &&
+                instance.placement->anchor < slots.size() && slots[instance.placement->anchor];
+        });
+        lua_pushboolean(L, equipped);
+        return 1;
+    }
+
     ALUA(pc_typed_item_grant)
     {
         const auto amount = ReadQuestItem(L, 1, true);
@@ -3438,6 +3464,7 @@ teleport_area:
 			{ "give_gold",		pc_give_gold		},
 			{ "typed_item_count", pc_typed_item_count },
             { "typed_pet_egg_key", pc_typed_pet_egg_key },
+            { "typed_has_equipped", pc_typed_has_equipped },
             { "typed_item_grant", pc_typed_item_grant },
             { "typed_item_exchange", pc_typed_item_exchange },
             { "typed_item_redeem", pc_typed_item_redeem },
