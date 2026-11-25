@@ -89,9 +89,25 @@ def compile_catalog(before,operations):
     import item_catalog as catalog
     from reward_catalog import Rewards
     model=catalog.Catalog(before) if any(op['type']=='item' for op in operations) else None
+    # Scripted rewards refer to content codes. Allocate their new definitions
+    # against the selected live baseline so two reviews can ship in either order.
+    next_local={int(category):int(local) for category,local in before['sequences'].items()} if model else {}
+    reserved={tuple(op['key']) for op in operations if op['type']=='item' and not op.get('allocate_by_code')}
     for op in operations:
         if op['type']!='item':continue
         key=tuple(op['key'])
+        if op.get('allocate_by_code'):
+            base=op['document']['base']
+            if any(row['content_code']==base['content_code'] for row in model.tables['item_base']):
+                raise api.EditorError('Ez a tervezett tárgykód már szerepel a katalógusban: '+base['content_code'])
+            category=key[0]
+            local=next_local[category]
+            while (category,local) in reserved:local+=1
+            next_local[category]=local+1
+            document=rebind_profiles(op['document'],{})
+            document['base']['local_id']=document['child']['local_id']=str(local)
+            model.apply(document,encode_result=False)
+            continue
         if op.get('socket_profile_only'):
             local=str(key[1])
             child=next((row for row in model.tables['item_accessory'] if row['local_id']==local and row['category_id']==str(key[0])),None)
@@ -209,6 +225,30 @@ class PendingChanges(QObject):
             if len(raw)>256*1024*1024 or review.digest(raw)!=key:raise api.EditorError('A tervezet eredeti katalógusa megsérült.')
             self.baselines[key]=api.strict_json(raw.decode('utf-8'))
         return self.baselines[key]
+
+    def complete_review_bundles(self, selected):
+        """Keep an authored quest and its new catalog definitions in the same review."""
+        bundles={e['body']['payload']['review_bundle'] for e in selected if e['body']['payload'].get('review_bundle')}
+        if not bundles:return selected
+        current=self.entries()
+        ids={e['id'] for e in selected}
+        for name in bundles:
+            members=[e for e in current if e['body']['payload'].get('review_bundle')==name]
+            slots={e['slot'] for e in members}
+            expected=set(members[0]['body']['payload']['bundle_slots']) if members else set()
+            missing=expected-slots
+            # A prior upload may have committed SQL and stopped before the quest
+            # file. Only an applied record from the exact same review satisfies it.
+            for record in self.index:
+                if record['slot'] not in missing or record.get('scope')!=review.scope(self.owner):continue
+                stage=review.Stage(self.root/record['id'],record['checksum'])
+                body,status=stage.read()
+                if status['state']=='applied' and body['payload'].get('review_bundle')==name:
+                    missing.remove(record['slot'])
+            if missing or not members or slots-expected or any(set(e['body']['payload']['bundle_slots'])!=expected for e in members):
+                raise api.EditorError('A tervezet összetétele megváltozott. A kiadás előtt új összeállítás szükséges.')
+            ids.update(e['id'] for e in members)
+        return [e for e in current if e['id'] in ids]
 
     def store_baseline(self,packet):
         known=self.baseline_refs.get(id(packet))
@@ -405,6 +445,10 @@ class PendingChanges(QObject):
             elif kind in ('pet_chest', 'pet_evolution'):
                 if catalog_changed and not is_empty_schema_upgrade(before, current):
                     conflicts[entry['id']] = 'A több tárgyat és profilt létrehozó tervezet új ellenőrzést igényel.'
+            elif operation.get('allocate_by_code'):
+                code=operation['document']['base']['content_code']
+                if any(row['content_code']==code for row in read_model(current).tables['item_base']):
+                    conflicts[entry['id']]='A tervezett tárgykód már foglalt.'
             elif catalog_changed or drop_changed:
                 for packet in (before, current):
                     if id(packet) not in snapshots:

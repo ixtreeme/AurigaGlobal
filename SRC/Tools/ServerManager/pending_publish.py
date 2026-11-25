@@ -67,6 +67,7 @@ class PendingPublisher(QObject):
         try:
             self.queue.root.mkdir(parents=True,exist_ok=True,mode=0o700);self.lock=QLockFile(str(self.queue.root/'publication.lock'))
             if not self.lock.tryLock(0):self.lock=None;raise api.EditorError('Másik kezelőablakban csomagjóváhagyás vagy feltöltés van folyamatban.')
+            entries=self.queue.complete_review_bundles(entries)
             if any(e['state']!='staged' for e in entries):raise api.EditorError('Előbb ellenőrizd a bizonytalan korábbi feltöltés eredményét.')
             for e in entries:
                 body,_=e['stage'].read()
