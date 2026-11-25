@@ -205,106 +205,166 @@ quest pet_system begin
 			pet_system.exchange_fixed_seal("companion.timed.christmas_reindeer_7g_49c94c6c148d")
 		end
 
-		function get_pet_info(itemVnum)
-			if pet_system.pet_info_map==nil then
-				pet_system.pet_info_map = {
-				-- [ITEM VNUM] MOB_VNUM, DEFAULT NAME
-					--[53001] = {34001, pet_system.petname_34001, 0}, --			no bonus	120giorni
-					-- [53002] = {34002, pet_system.petname_34002, 0}, --		 	+1500 HP e +15% danno, Permette di droppare le calze se lo si tiene al proprio fianco mentre si uccidono mob.				20giorni
-					--[53003] = {34003, pet_system.petname_34003, 0}, --			no bonus	120giorni
-					-- [53005] = {34004, pet_system.petname_34004, 1}, --			+1500 HP e +15% di danno, se il PG si trova dal 2° piano della Torre dei Demoni in su, o se si trova all'interno delle Catacombe del Diavolo	30giorni
-					[53019] = {34019}, --			+1500 HP e +15% di danno	30giorni
-					[53020] = {34017}, --			+1500 HP e +15% di danno	30giorni
-					[53021] = {34018}, --			+1500 HP, +15% Forte contro Mostri	30giorni
-					[53022] = {34021}, --			+1500 HP e +15% di danno	30giorni
-					[53023] = {34022}, --			+1500 HP e +15% di danno	30giorni
-					[53024] = {34023}, --			+1500 HP, +5% Trafiggente, +5% Resistenza Abilità		7giorni
-
-
-					[53218] = {34023}, --			+1500 HP, +5% Trafiggente, +5% Resistenza Abilità		30giorni
-					[53219] = {34023}, --			+1500 HP, +5% Trafiggente, +5% Resistenza Abilità		120giorni
-					[53220] = {34024}, --			+1500 HP e +5% Critico, +10% Resistenza ai Danni Medi	30giorni
-					[53221] = {34024}, --			+1500 HP e +5% Critico, +10% Resistenza ai Danni Medi	120giorni
-					[53222] = {34026}, --			1500 HP, +15% danno		30giorni
-					[53223] = {34027}, --			+1500 HP, +15% danno	30giorni
-					[53224] = {34028}, --			+1500 HP, +15% danno	30giorni
-					[53225] = {34029}, --			+15% danno, +5% danno critico, +15% danno magico	30giorni
-					[53226] = {34030}, --			+1500 HP +5% Trafiggenti	120giorni
-					[53227] = {34031}, --			+1500 HP +5% Critico		120giorni
-					[53228] = {34033}, --			+1500 HP, +15% danno fisico e danno magico	30giorni
-					[53229] = {34032}, --			+5% colpi critici, +15% danno fisico e danno magico	30giorni
-					[53230] = {34034}, --			+5% colpi trafiggenti e +1500 HP	30giorni
-					[53231] = {34035}, --			+5% colpi critici e +1500 HP	30giorni
-					[53232] = {34039}, --			+1500 HP e +5% Trafiggenti		30giorni
-					[53233] = {34055}, --			+5% colpi critici e +1500 HP	30giorni	Il pet raccoglierà automaticamente tutti gli oggetti a terra nelle sue vicinanze.
-					[53234] = {34056}, --			+5% colpi trafiggenti e +1500 HP	30giorni	Il pet raccoglierà automaticamente tutti gli oggetti a terra nelle sue vicinanze.
-					[53235] = {34057}, --			+5% colpi critici e +1500 HP	1giorno Il pet raccoglierà automaticamente tutti gli oggetti a terra nelle sue vicinanze.
-					[53236] = {34060}, --			+15% Forte contro Mostri e +1500 HP		30giorni	Se insieme al Pet evocato si sta utilizzando un Icona Amuleto del Cioccolato.pngAmuleto del Cioccolato, si otterrà 50% Exp Bonus.
-					[53237] = {34061}, --			+5% colpi critici e +1500 HP			30giorni	Se insieme al Pet evocato si sta utilizzando un Icona Amuleto del Cioccolato.pngAmuleto del Cioccolato, si otterrà 50% Exp Bonus.
-					[53240] = {34063}, --			+5% colpi critici e +1500 HP		30giorni
-					[53241] = {34062}, --			+1500 HP, +15% Forte contro Mostri	30giorni
-					--[53242] = {34066, pet_system.petname_34066p, 0}, --			+5% colpi critici e +1500 HP		30giorni		Il pet raccoglierà automaticamente tutti gli oggetti a terra nelle sue vicinanze.
-					--[53243] = {34066, pet_system.petname_34066pp, 0}, --			20% exp								30giorni
-					--[53244] = {34067, pet_system.petname_34067, 0}, --			+5% colpi critici e +15% di danno		30giorni		Equipaggiandolo con un'armatura Vampiro+ , un elmo Vampiro+ e il Leccalecca garantisce un bonus di +20% Exp e + 5% Danni Medi e Abilità
-					--[53245] = {34068, pet_system.petname_34068, 0}, --			+5% colpi trafiggenti e +15% di danno	30giorni		Equipaggiandolo con un'armatura Vampiro+ , un elmo Vampiro+ e il Leccalecca garantisce un bonus di +20% Exp e + 5% Danni Medi e Abilità
-					--[53246] = {34069, pet_system.petname_34069, 0}, --			no bonus								1giorno			Equipaggiandolo con un'armatura ed elmo Vampiro garantisce un bonus di +20% Exp
-					--[53247] = {34070, pet_system.petname_34070, 0}, --			+5% colpi critici e +5% Possibilità di Svenimento		30giorni	Equipaggiandolo con il Vestito da festa+, il Copricapo+ o il Basco+ si riceveranno, in aggiunta, due bonus del set. Aggiungendo un Anello della Felicità, si riceverà un altro bonus del set.
-					-- [53248] = {34071, pet_system.petname_34071, 0}, --			+5% colpi trafiggenti e +5% Possibilità di Svenimento	1giorno		Equipaggiandolo con il Vestito da festa+, il Copricapo+ o il Basco+ si riceveranno, in aggiunta, due bonus del set. Aggiungendo un Anello della Felicità, si riceverà un altro bonus del set.
-					--[53249] = {34072, pet_system.petname_34072, 0}, --			no bonus												30giorni	Equipaggiandolo con il vestito da festa, il copricapo o il basco si riceveranno, in aggiunta, un bonus del set. Aggiungendo un Anello della Felicità, si riceverà un altro bonus del set.
-					[53284] = {34116}, --			no bonus							3600giorni
-					-- GF specials
-
-
-				}
-			end
-
-			return pet_system.pet_info_map[itemVnum]
-		end
-
-		function get_spawn_effect_file(idx)
-			if pet_system.effect_table==nil then
-				pet_system.effect_table = {
-					[0] = nil,
-					--[1] = "d:\\\\ymir work\\\\effect\\\\etc\\\\appear_die\\\\npc2_appear.mse",
-				}
-			end
-
-			return pet_system.effect_table[idx]
-		end
-
-		when 53019.use or 53020.use or 53021.use or 53022.use or 53023.use or 53024.use or
-			53218.use or 53219.use or 53220.use or 53221.use or 53222.use or 53223.use or
-			53224.use or 53225.use or 53226.use or 53227.use or 53228.use or 53229.use or
-			53230.use or 53231.use or 53232.use or 53233.use or 53234.use or 53235.use or
-			53236.use or 53237.use or 53240.use or 53241.use or 53284.use or 53297.use
-			begin
-			if not pc.can_warp() then
-				syschat(gameforge[pc.get_language()].reset_scroll._35)
-				return
-			end
-
-			local pet_info = pet_system.get_pet_info(item.vnum)
-			if null ~= pet_info then
-				local mobVnum = pet_info[1]
-				local spawn_effect_file_name = pet_system.get_spawn_effect_file(pet_info[3])
-				if true == pet.is_summon(mobVnum) then
-					if spawn_effect_file_name ~= nil then
-						pet.spawn_effect(mobVnum, spawn_effect_file_name)
-					end
-
-					pet.unsummon(mobVnum)
-				else
-					if pet.count_summoned() < 1 then
-						pet.summon(mobVnum, false)
-					else
-						syschat(gameforge[pc.get_language()].pet_system._1)
-					end
-
-					if spawn_effect_file_name ~= nil then
-						pet.spawn_effect(mobVnum, spawn_effect_file_name)
-					end
-				end
-			end
-		end
-	end
+        when "quest.pet_seal.arctic_khan".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.arctic_khan")
+        end
+        when "quest.pet_seal.polar_porky".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.polar_porky")
+        end
+        when "quest.pet_seal.frosty_rufus".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.frosty_rufus")
+        end
+        when "quest.pet_seal.sheldon".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.sheldon")
+        end
+        when "quest.pet_seal.cooper".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.cooper")
+        end
+        when "quest.pet_seal.panther_7d".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.panther_7d")
+        end
+        when "quest.pet_seal.panther_30d".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.panther_30d")
+        end
+        when "quest.pet_seal.panther_120d".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.panther_120d")
+        end
+        when "quest.pet_seal.leopard_30d".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.leopard_30d")
+        end
+        when "quest.pet_seal.leopard_120d".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.leopard_120d")
+        end
+        when "quest.pet_seal.pumpkin".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.pumpkin")
+        end
+        when "quest.pet_seal.little_broom".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.little_broom")
+        end
+        when "quest.pet_seal.snowflake".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.snowflake")
+        end
+        when "quest.pet_seal.sleigh_bell".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.sleigh_bell")
+        end
+        when "quest.pet_seal.cupid".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.cupid")
+        end
+        when "quest.pet_seal.wild_heart".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.wild_heart")
+        end
+        when "quest.pet_seal.blue_crescent".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.blue_crescent")
+        end
+        when "quest.pet_seal.red_crescent".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.red_crescent")
+        end
+        when "quest.pet_seal.eweriel".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.eweriel")
+        end
+        when "quest.pet_seal.ramblue".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.ramblue")
+        end
+        when "quest.pet_seal.baby_huashin".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.baby_huashin")
+        end
+        when "quest.pet_seal.bruce".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.bruce")
+        end
+        when "quest.pet_seal.wayne".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.wayne")
+        end
+        when "quest.pet_seal.robin".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.robin")
+        end
+        when "quest.pet_seal.valentino".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.valentino")
+        end
+        when "quest.pet_seal.valentinia".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.valentinia")
+        end
+        when "quest.pet_seal.moon_lantern_blue".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.moon_lantern_blue")
+        end
+        when "quest.pet_seal.moon_lantern_orange".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.moon_lantern_orange")
+        end
+        when "quest.pet_seal.poisoned_spirit_dragon".typed_use begin
+            pet_system.exchange_fixed_seal("companion.timed.redesign.poisoned_spirit_dragon")
+        end
+        function choose(worn_time)
+            local hu = pc.get_language() == "hu"
+            if not pc.can_warp() then return end
+            local pets = {
+                {"Sarkvidéki Kán", "Arctis Khan", "1500 TP, 15% sebzés", "1,500 HP, +15% damage", "arctic_khan"},
+                {"Sarki Porky", "Polar Porkie", "1500 TP, 15% sebzés", "1,500 HP, +15% damage", "polar_porky"},
+                {"Fagyos Rufusz", "Frost Rufus", "1500 TP, 15% szörnyek ellen", "1,500 HP, +15% damage against monsters", "frosty_rufus"},
+                {"Sheldon", "Sheldon", "1500 TP, 15% sebzés", "1,500 HP, +15% damage", "sheldon"},
+                {"Cooper", "Cooper", "1500 TP, 15% sebzés", "1,500 HP, +15% damage", "cooper"},
+                {"Párduckölyök", "Panther Cub", "1500 TP, 5% átható találat, 5% készségellenállás", "1,500 HP, +5% piercing chance, +5% skill resistance", "panther_7d"},
+                {"Leopárdkölyök", "Leopard Cub", "1500 TP, 5% kritikus találat, 10% átlagkár-ellenállás", "1,500 HP, +5% critical chance, +10% normal damage resistance", "leopard_30d"},
+                {"Tökfej", "Pumpkin Head", "1500 TP, 15% sebzés", "1,500 HP, +15% damage", "pumpkin"},
+                {"Kis seprű", "Little Broomstick", "1500 TP, 15% sebzés", "1,500 HP, +15% damage", "little_broom"},
+                {"Hópehely", "Snowflake", "1500 TP, 15% sebzés", "1,500 HP, +15% damage", "snowflake"},
+                {"Száncsengő", "Snowbell", "15% sebzés, 5% kritikus sebzés, 15% mágikus sebzés", "+15% damage, +5% critical damage, +15% magic damage", "sleigh_bell"},
+                {"Cupido", "Cupido", "1500 TP, 5% átható találat", "1,500 HP, +5% piercing chance", "cupid"},
+                {"Tomboló szív", "Raging Heart", "1500 TP, 5% kritikus találat", "1,500 HP, +5% critical chance", "wild_heart"},
+                {"Kék holdsarló", "Blue Crescent Moon", "1500 TP, 15% fizikai és mágikus sebzés", "1,500 HP, +15% physical and magic damage", "blue_crescent"},
+                {"Piros holdsarló", "Red Crescent Moon", "5% kritikus találat, 15% fizikai és mágikus sebzés", "+5% critical chance, +15% physical and magic damage", "red_crescent"},
+                {"Eweriel", "Eweriel", "1500 TP, 5% átható találat", "1,500 HP, +5% piercing chance", "eweriel"},
+                {"Ramblue", "Ramblue", "1500 TP, 5% kritikus találat", "1,500 HP, +5% critical chance", "ramblue"},
+                {"Baby Huashin", "Baby Huashin", "1500 TP, 5% átható találat", "1,500 HP, +5% piercing chance", "baby_huashin"},
+                {"Bruce", "Bruce", "1500 TP, 5% kritikus találat, tárgyfelvétel", "1,500 HP, +5% critical chance, collects nearby items", "bruce"},
+                {"Wayne", "Wayne", "1500 TP, 5% átható találat, tárgyfelvétel", "1,500 HP, +5% piercing chance, collects nearby items", "wayne"},
+                {"Robin", "Robin", "1500 TP, 5% kritikus találat, tárgyfelvétel", "1,500 HP, +5% critical chance, collects nearby items", "robin"},
+                {"Valentino", "Valentino", "1500 TP, 15% szörnyek ellen, csokoládéamulettel 50% tapasztalatbónusz", "1,500 HP, +15% damage against monsters, +50% experience with the Chocolate Amulet", "valentino"},
+                {"Valentinia", "Valentinia", "1500 TP, 5% kritikus találat, csokoládéamulettel 50% tapasztalatbónusz", "1,500 HP, +5% critical chance, +50% experience with the Chocolate Amulet", "valentinia"},
+                {"Holdlámpás (Kék)", "Lantern Moon (Blue)", "1500 TP, 5% kritikus találat", "1,500 HP, +5% critical chance", "moon_lantern_blue"},
+                {"Holdlámpás (Narancs)", "Lantern Moon (Orange)", "1500 TP, 15% szörnyek ellen", "1,500 HP, +15% damage against monsters", "moon_lantern_orange"},
+                {"Mergezett Szellem Sarkany", "Poisoned Spirit Dragon", "Bónusz nélküli társ", "Companion without stat bonuses", "poisoned_spirit_dragon"},
+            }
+            local first = 1
+            while true do
+                local last = math.min(first + 4, #pets)
+                local options = {}
+                for i = first, last do
+                    options[#options + 1] = hu and pets[i][1] or pets[i][2]
+                end
+                local next_page = 0
+                if last < #pets then
+                    next_page = #options + 1
+                    options[next_page] = hu and "Tovább" or "Next"
+                end
+                local prev_page = 0
+                if first > 1 then
+                    prev_page = #options + 1
+                    options[prev_page] = hu and "Vissza" or "Previous"
+                end
+                options[#options + 1] = hu and "Mégse" or "Cancel"
+                local selected = select_table(options)
+                if not selected or selected < 1 or selected >= #options then return end
+                if selected == next_page then
+                    first = last + 1
+                elseif selected == prev_page then
+                    first = first - 5
+                else
+                    local pet = pets[first + selected - 1]
+                    say(hu and pet[1] or pet[2])
+                    say(hu and pet[3] or pet[4])
+                    say(hu and "A pecsét meglévő idejét kapja meg." or "Your seal's remaining time carries over.")
+                    if select(hu and "Beváltás" or "Redeem", hu and "Mégse" or "Cancel") == 1 then
+                        local prefix = worn_time and "companion.timed.inherited." or "companion.timed.redesign."
+                        pet_system.exchange_fixed_seal(prefix .. pet[5])
+                    end
+                    return
+                end
+            end
+        end
+        when "quest.pet_choice.deadline".typed_use begin
+            pet_system.choose(false)
+        end
+        when "quest.pet_choice.remaining".typed_use begin
+            pet_system.choose(true)
+        end
+    end
 end

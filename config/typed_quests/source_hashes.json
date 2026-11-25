@@ -24,6 +24,10 @@
     "resource": "item/cooldown_reset.lua",
     "original_sha256": "c3fad283ffe5fcc3e04168f145e1b8230addc112a224a3a39e5740c38eb8b0fb"
   },
+  "costume_system.lua": {
+    "resource": "system/costume_system.lua",
+    "original_sha256": "21c6dcd3d1431c3e1c61fdcdd897f1da883471ef6093a4252c4a970eae0dd870"
+  },
   "create_ore.lua": {
     "resource": "gilda/create_ore.lua",
     "original_sha256": "815b2e4e35b6a88f3ac06b1c70914b88c692e37e3111529c568b5d2a7caeca3e"
@@ -103,7 +107,9 @@
     "original_sha256": "6d7196c9fd7494b396644cd239d2acfc2faa6a41183d046354cdb20187c83356",
     "previous_sha256": [
       "7171467425d19341dd984fef35878292b0ecd527724cb69296461a002c25de11",
-      "8df23fa3dca10982f83ca14f148f7110353ba5cc6af40dd043c6269306de4d58"
+      "8df23fa3dca10982f83ca14f148f7110353ba5cc6af40dd043c6269306de4d58",
+      "fd60d860c9f719e8164a30181341bbe247aa01fd7745f65ef164b1e5031f8057",
+      "c607d3c7745242c90ff175709721d13e3b6f64b1879728466c697e0cc50528e9"
     ]
   },
   "reset_scroll.lua": {

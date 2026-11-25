@@ -1,0 +1,86 @@
+quest costume_system begin
+    state start begin
+        function redeem(pool)
+            local language = pc.get_language()
+            if not pc.can_warp() then
+                syschat(gameforge[language].reset_scroll._35)
+                return
+            end
+            local slot = game.typed_item_draw(#pool)
+            if not slot then return end
+            local category, reward = game.typed_item_key(pool[slot])
+            if category ~= 4 then
+                syschat(language == "hu" and "Ez a jutalom most nem elérhető." or "This reward is unavailable.")
+                return
+            end
+            local ok, reason = pc.typed_item_redeem({{category, reward, 0, 1}}, 0)
+            if not ok then
+                if reason == "inventory_full" then
+                    syschat(language == "hu" and "Nincs elég hely a leltárban." or "Make room in your inventory.")
+                else
+                    syschat(language == "hu" and "Az utalvány beváltása sikertelen." or "Could not redeem the voucher.")
+                end
+            end
+        end
+        when "quest.costume_voucher.weapon".typed_use begin
+            costume_system.redeem({
+                "catalog.4.bone_glory_bell_fe0ed6006901",
+                "catalog.4.bone_glory_fan_06c9ad084cf5",
+                "catalog.4.bone_glory_knife_393cd56a500e",
+                "catalog.4.bone_glory_sword_f9b5b5b6961b",
+                "catalog.4.bone_glory_blade_e8f7d2b28d60",
+                "catalog.4.bone_glory_bow_228db283690c",
+                "catalog.4.necromancer_bell_4cb37662df4e",
+                "catalog.4.necromancer_fan_5dc64e649ad1",
+                "catalog.4.necromancer_blade_4277a10ccae2",
+                "catalog.4.necromancer_bow_a1741971fa3b",
+                "catalog.4.necromancer_dagger_3e1063e139ce",
+                "catalog.4.necromancer_sword_805568b450f6",
+            })
+        end
+        when "quest.costume_voucher.outfit".typed_use begin
+            costume_system.redeem({
+                "catalog.4.desert_warrior_m_aee282a45025",
+                "catalog.4.desert_warrior_f_c848c19c6c5e",
+                "catalog.4.bone_glory_costume_man_eaf88dd7d0c4",
+                "catalog.4.bone_glory_costume_woman_7fd20c766680",
+                "catalog.4.necromancer_costume_man_b102a41a1eed",
+                "catalog.4.necromancer_costume_woman_783647053d21",
+                "catalog.4.santa_s_armor_f_30d_2c82c1b08477",
+                "catalog.4.santa_s_armor_m_30d_c65072e72e8a",
+                "catalog.4.crescent_warrior_4cafa05e38f6",
+                "catalog.4.crescent_warrioress_39fde7a1583e",
+                "catalog.4.pumpkin_tuxedo_d2767ed35178",
+                "catalog.4.pumpkin_dress_f6f03582deb5",
+            })
+        end
+        when "quest.costume_voucher.headwear".typed_use begin
+            costume_system.redeem({
+                "catalog.4.bone_glory_hair_man_1493e0330bdc",
+                "catalog.4.bone_glory_hair_woman_1b46c38b6918",
+                "catalog.4.necromancer_hair_man_fb1fee9faf50",
+                "catalog.4.necromancer_woman_0edcab0824ca",
+                "catalog.4.purple_moon_hairstyle_m_78b8afd04b56",
+                "catalog.4.purple_moon_hairstyle_w_c2609ee147ab",
+                "catalog.4.azrael_s_helmet_m_9b48714cbf0b",
+                "catalog.4.azrael_s_helmet_f_2df298f11d8f",
+                "catalog.4.black_braids_m_6ae921484777",
+                "catalog.4.black_braids_f_a878f614ad13",
+            })
+        end
+        when "quest.costume_voucher.timed_headwear".typed_use begin
+            costume_system.redeem({
+                "catalog.4.black_turban_m_ae15ef3d2299",
+                "catalog.4.black_turban_f_cd01e08faf2f",
+                "catalog.4.musketeer_hairstyle_99c247d48087",
+                "catalog.4.maid_bonnet_30cc37095b99",
+                "catalog.4.brown_headscarf_589650cf719b",
+                "catalog.4.green_headscarf_cf2618b21aef",
+                "catalog.4.cobra_hairstyle_m_7eeaeda7fc2a",
+                "catalog.4.cobra_hairstyle_f_d5022ea7fc84",
+                "catalog.4.crescent_hairstyle_m_52cfdaf4bec2",
+                "catalog.4.crescent_hairstyle_f_525e8b73d131",
+            })
+        end
+    end
+end
