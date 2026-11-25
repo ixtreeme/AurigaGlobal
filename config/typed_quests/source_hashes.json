@@ -1,4 +1,9 @@
 {
+  "TeleportRingLib.lua": {
+    "directory": "libraries",
+    "resource": "TeleportRingLib.lua",
+    "original_sha256": "cb3fa1a029230c146613650042459314e0dcad3142a30d002cb04895aa163513"
+  },
   "baule_pet.lua": "d26c92f22e9cd8d90f4201db90890dd3b0f1626bca6d5faba65a01599d47de9d",
   "baule_start.lua": {
     "resource": "login/baule_start.lua",

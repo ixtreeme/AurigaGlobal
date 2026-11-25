@@ -245,8 +245,12 @@ class DataBuilder:
                     relative = Path(entry['resource'])
                     if relative.anchor or '..' in relative.parts or relative.name != name:
                         raise PackageError('Invalid quest resource path: ' + str(relative))
-                    source = TOOLS.parent / 'Server/Resources/quest/Quest' / relative
-                    key = '@quest-resources/' + relative.as_posix()
+                    folder = entry.get('directory', 'Quest')
+                    prefixes = {'Quest': '@quest-resources/', 'libraries': '@quest-libraries/'}
+                    if folder not in prefixes:
+                        raise PackageError('Invalid quest resource directory: ' + str(folder))
+                    source = TOOLS.parent / 'Server/Resources/quest' / folder / relative
+                    key = prefixes[folder] + relative.as_posix()
                     approved_hash = entry['original_sha256']
                     previous_hashes = entry.get('previous_sha256', [])
                     if not isinstance(previous_hashes, list) or any(
@@ -256,7 +260,7 @@ class DataBuilder:
                         raise PackageError('Invalid previous quest hashes: ' + name)
                     if not approved_hash or not source.is_file():
                         raise PackageError('Incomplete guarded quest resource: ' + name)
-                    target = quest_root / relative
+                    target = data / 'quest' / folder / relative
                     matches = [target] if target.is_file() else []
                 else:
                     source = native_quests / name
@@ -286,7 +290,9 @@ class DataBuilder:
 
     def verify_originals(self):
         for relative, metadata in self.inputs.items():
-            if relative.startswith('@quest-resources/'):
+            if relative.startswith('@quest-libraries/'):
+                path = TOOLS.parent / 'Server/Resources/quest/libraries' / relative.removeprefix('@quest-libraries/')
+            elif relative.startswith('@quest-resources/'):
                 path = TOOLS.parent / 'Server/Resources/quest/Quest' / relative.removeprefix('@quest-resources/')
             elif relative.startswith('@native-quests/'):
                 path = TOOLS.parents[1] / 'config/typed_quests' / relative.removeprefix('@native-quests/')
