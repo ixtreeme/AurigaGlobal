@@ -51,6 +51,39 @@ class MigrationTests(unittest.TestCase):
         self.assertEqual(json.loads((target / 'lua55-migration.json').read_text())['source_hashes']['a.quest'],
                          hashlib.sha256(before[Path('a.quest')]).hexdigest())
 
+
+    def test_retired_item_helpers_preserve_custom_lua_and_line_endings(self):
+        defaults = b'''function say_item_vnum(vnum)
+	say_item(item_name(vnum), vnum, "")
+end
+function say_item_vnum_inline(vnum,index,total)
+	if index >= total then
+		return
+	end
+	if total > 3 then
+		return
+	end
+	raw_script("[INSERT_IMAGE image_type;item|idx;"..vnum.."|title;"..item_name(vnum).."|desc;".."".."|index;"..index.."|total;"..total.."]")
+end
+function drop_gamble_with_flag(drop_flag)
+		local dp, range = pc.get_killee_drop_pct()
+		dp = 40000 * dp / game.get_event_flag(drop_flag)
+		if dp < 0 or range < 0 then
+			return false
+		end
+		return dp >= number(1, range)
+end
+'''
+        for newline in (b'\n', b'\r\n'):
+            original = defaults.replace(b'\n', newline)
+            tail = b'-- custom locale: \xe1\xe9' + newline
+            self.assertEqual(prepare_quests.retire_item_helpers(original + tail), tail)
+            customized = original.replace(b'pc.get_killee_drop_pct()', b'custom.drop_modifiers()')
+            result = prepare_quests.retire_item_helpers(customized)
+            self.assertIn(b'custom.drop_modifiers()', result)
+            self.assertNotIn(b'function say_item_vnum(', result)
+            self.assertEqual(prepare_quests.retire_item_helpers(result), result)
+
     def test_state_id_changes_and_missing_states_are_rejected(self):
         (self.source / 'object/state/retained').write_text('retained={["start"]=0,["removed"]=42}')
         with self.assertRaisesRegex(ValueError, 'Stored state ID changed'):

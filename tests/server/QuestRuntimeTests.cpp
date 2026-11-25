@@ -35,7 +35,6 @@
 #include "../../SRC/Server/GameServer/ecs/components/ai_components.hpp"
 #include "../../SRC/Server/GameServer/combat/affect.h"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ChatSystem.hpp"
@@ -336,12 +335,7 @@ void References() {
     Check(entt::to_entity(replacement)==entt::to_entity(npc),"fixture did not recycle the NPC slot");
     Check(q.GetCurrentNPCEntity()==entt::null,"reused NPC VID/index inherited the quest target");
     Check(!ecs::PlayerRuntime::SetQuestNPC(pc,npc),"stale target accepted");
-    const auto item=g_registry.create();
-    ecs::PlayerRuntime::SetQuestItem(pc,item);
-    Check(ecs::PlayerRuntime::GetQuestItem(pc)==item && ecs::PlayerRuntime::SetQuestBy(pc,42) &&
-        ecs::PlayerRuntime::GetQuestBy(pc)==42,"native quest item/by context failed");
-    g_registry.destroy(item);(void)g_registry.create();
-    Check(ecs::PlayerRuntime::GetQuestItem(pc)==entt::null,"recycled item inherited quest selection");
+    Check(ecs::PlayerRuntime::SetQuestBy(pc,42) && ecs::PlayerRuntime::GetQuestBy(pc)==42,"quest by context failed");
     Check(ecs::PlayerRuntime::SetQuestNPC(pc,replacement),"replacement could not be explicitly selected");
     Check(ecs::PlayerRuntime::SetQuestNPCLockOwner(replacement,pc),"replacement NPC lock failed");
     g_registry.destroy(pc);const auto reconnected=Character(1);
@@ -452,8 +446,8 @@ void RewardCompletion() {
     Check(experience.size()==oldCount,"notification callback continued into stale reward recipient");
 }
 void ConstructionCallbacks() {
-    for(int operation=0;operation<4;++operation) for(int mode=0;mode<3;++mode) {
-        Reset();const auto pc=Character(1),npc=Character(),item=g_registry.create();
+    for(int operation=0;operation<3;++operation) for(int mode=0;mode<3;++mode) {
+        Reset();const auto pc=Character(1),npc=Character();
         const auto e=operation==1?npc:pc;
         onConstruct=[&](entt::entity current){
             if(mode==0)g_registry.destroy(current);
@@ -466,7 +460,6 @@ void ConstructionCallbacks() {
                 case 0:okay=ecs::PlayerRuntime::SetQuestNPC(e,npc);break;
                 case 1:okay=ecs::PlayerRuntime::SetQuestNPCLockOwner(e,pc);break;
                 case 2:okay=ecs::PlayerRuntime::SetQuestBy(e,42);break;
-                case 3:ecs::PlayerRuntime::SetQuestItem(e,item);break;
             }
         } catch(const std::runtime_error&) {threw=true;}
         onConstruct={};
@@ -608,22 +601,16 @@ bool NPC::OnQuestDamage(PC&) {Unexpected();}
 bool NPC::OnTimer(PC&) {if(onTimer) {onTimer(); return true;} Unexpected();}
 bool NPC::OnLevelUp(PC&) {Unexpected();}
 bool NPC::OnLogout(PC&) {Unexpected();}
-bool NPC::OnTakeItem(PC&) {Unexpected();}
 bool NPC::OnUnmount(PC&) {Unexpected();}
 bool NPC::OnLogin(PC&,const char*) {Unexpected();}
 bool NPC::OnButton(PC&,uint32_t) {Unexpected();}
 bool NPC::OnInfo(PC&,uint32_t) {Unexpected();}
 bool NPC::OnItemInformer(PC&,uint32_t) {Unexpected();}
-bool NPC::OnUseItem(PC&,bool) {Unexpected();}
 bool NPC::OnTypedItemUse(PC&, TypedItemUseSource) {Unexpected();}
-bool NPC::OnSIGUse(PC&,bool) {Unexpected();}
 bool NPC::OnEnterState(PC&,uint32_t,int) {Unexpected();}
 bool NPC::OnLeaveState(PC&,uint32_t,int) {Unexpected();}
 bool NPC::OnLetter(PC&,uint32_t,int) {Unexpected();}
 }
-bool ItemSystem::IsValidItem(entt::entity e) { return g_registry.valid(e) && !g_registry.all_of<ecs::CharacterType>(e); }
-uint32_t ItemSystem::GetItemVnum(entt::entity) {Unexpected();}
-uint32_t ItemSystem::GetItemOriginalVnum(entt::entity) {Unexpected();}
 void ecs::ChatSystem::Send(entt::entity e,uint8_t,const char*,...) {CheckLive(e);if(onPublish){auto fn=onPublish;fn();}}
 void ecs::SessionSystem::Save(entt::entity e) {CheckLive(e);++saves;}
 void CombatSystem::Dead(entt::entity,entt::entity,bool) {Unexpected();}

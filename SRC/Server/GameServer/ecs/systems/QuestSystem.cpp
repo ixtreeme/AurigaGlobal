@@ -2,7 +2,6 @@
 
 #include "QuestSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
-#include "ItemSystem.hpp"
 #include "../components/quest_components.hpp"
 
 #include "../Registry.hpp"
@@ -91,16 +90,6 @@ bool SetQuestBy(entt::entity e, uint32_t questVnum)
     if (!context) return false;
     context->byVnum = questVnum;
     return true;
-}
-entt::entity GetQuestItem(entt::entity e)
-{
-    const auto* context = g_registry.valid(e) ? g_registry.try_get<ecs::QuestContext>(e) : nullptr;
-    return context && ItemSystem::IsValidItem(context->questItem) ? context->questItem : entt::null;
-}
-void SetQuestItem(entt::entity e, entt::entity item)
-{
-    if (auto* context = EnsureQuestContext(e))
-        context->questItem = ItemSystem::IsValidItem(item) ? item : entt::null;
 }
 
 } // namespace ecs::PlayerRuntime

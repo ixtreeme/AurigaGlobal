@@ -641,9 +641,6 @@ namespace quest
 		RegisterGameFunctionTable();
 		RegisterGuildFunctionTable();
 		RegisterHorseFunctionTable();
-#ifdef __PET_SYSTEM__
-		RegisterPetFunctionTable();
-#endif
 		RegisterMarriageFunctionTable();
 		RegisterNPCFunctionTable();
 		RegisterPartyFunctionTable();

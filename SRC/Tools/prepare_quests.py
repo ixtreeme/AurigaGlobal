@@ -47,6 +47,27 @@ RETIRED_EQUIPMENT_QUERIES = {
     b'pc.get_wear', b'pc.getweapon', b'pc.get_weapon', b'pc.getarmor', b'pc.get_armor',
 }
 
+RETIRED_ITEM_APIS = {
+    b'item_name', b'item_log', b'pc.get_killee_drop_pct',
+    b'pet.summon', b'pet.unsummon', b'pet.is_summon', b'pet.count_summoned', b'pet.spawn_effect',
+}
+RETIRED_ITEM_HELPERS = {
+    b'say_item_vnum': '629a3e7e5f0a05097378bb1edd7d118c90f2554ee4962c76de8caa99d2a0ff45',
+    b'say_item_vnum_inline': '02b4224a6ae9015fb5786efbe22ada47ecb9356715fe0189dcc42e5dff4450d9',
+    b'drop_gamble_with_flag': 'f73892efd823a788aff1bf1a6ee94225b3ef931126c730daa0a7217a72da70fa',
+}
+
+
+def retire_item_helpers(library):
+    for name, expected in RETIRED_ITEM_HELPERS.items():
+        pattern = rb'^function ' + name + rb'\([^\r\n]*\)\r?\n.*?^end\r?\n'
+        matches = list(re.finditer(pattern, library, re.MULTILINE | re.DOTALL))
+        if len(matches) == 1:
+            match = matches[0]
+            if hashlib.sha256(match.group().replace(b'\r\n', b'\n')).hexdigest() == expected:
+                library = library[:match.start()] + library[match.end():]
+    return library
+
 
 def retire_equipment_queries(root):
     changes = []
@@ -63,10 +84,11 @@ def retire_equipment_queries(root):
     functions = root / 'quest_functions'
     if functions.is_file():
         lines = functions.read_bytes().splitlines(keepends=True)
-        kept = [line for line in lines if line.strip() not in RETIRED_EQUIPMENT_QUERIES]
+        retired = RETIRED_EQUIPMENT_QUERIES | RETIRED_ITEM_APIS | RETIRED_ITEM_HELPERS.keys()
+        kept = [line for line in lines if line.strip() not in retired]
         if len(kept) != len(lines):
             functions.write_bytes(b''.join(kept))
-            changes.append(dict(file=functions.name, change='retire numeric equipment queries',
+            changes.append(dict(file=functions.name, change='retire numeric item queries',
                                 replacements=len(lines) - len(kept)))
     return changes
 
@@ -134,6 +156,10 @@ def reconcile(root, checker, legacy=None, duplicate_policy='error'):
         migrated = retire_item_metatable(updated)
         if migrated != updated:
             changes.append(dict(file='questlib.lua', change='retire legacy item metatable', replacements=1))
+        retired = retire_item_helpers(migrated)
+        if retired != migrated:
+            changes.append(dict(file='questlib.lua', change='retire legacy item helpers', replacements=1))
+        migrated = retired
         if migrated != raw:
             library.write_bytes(migrated)
     changes.extend(retire_equipment_queries(root))

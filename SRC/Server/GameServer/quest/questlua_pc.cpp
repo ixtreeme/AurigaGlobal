@@ -34,7 +34,6 @@
 #include "../ecs/CharacterAccessors.hpp"
 #include "affect.h"
 #include "item.h"
-#include "item_manager.h"
 #include "guild_manager.h"
 #include "war_map.h"
 #include "start_position.h"
@@ -2261,25 +2260,6 @@ teleport_area:
 		return 1;
 	}
 
-	ALUA(pc_get_killee_drop_pct)
-	{
-		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
-		const entt::entity killee = ecs::PlayerRuntime::GetQuestNPC(character);
-		double iDeltaPercent = -1;
-		int iRandRange = -1;
-		if (!ITEM_MANAGER::instance().GetDropPct(
-			killee, character, iDeltaPercent, iRandRange))
-		{
-			sys_err("killee is null");
-			lua_pushnumber(L, -1);
-			lua_pushnumber(L, -1);
-			return 2;
-		}
-		lua_pushnumber(L, iDeltaPercent);
-		lua_pushnumber(L, iRandRange);
-		return 2;
-	}
-
 #ifdef ENABLE_NEWSTUFF
 
     ALUA(pc_set_race0)
@@ -3592,7 +3572,6 @@ teleport_area:
 			{ "get_informer_item",  pc_get_informer_item	},
 
 
-			{ "get_killee_drop_pct",	pc_get_killee_drop_pct	},
 
 #ifdef ENABLE_NEWSTUFF
 			//pc.set_race0(race=[0. Warrior, 1. Ninja, 2. Sura, 3. Shaman, 4. Lycan])

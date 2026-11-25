@@ -21,7 +21,6 @@ struct QuestContext {
     entt::entity npc { entt::null };
     entt::entity lockOwner { entt::null };
     uint32_t byVnum { 0 };
-    entt::entity questItem { entt::null };
 };
 
 // The quest runtime this character owns (flags, quest states and timers). The

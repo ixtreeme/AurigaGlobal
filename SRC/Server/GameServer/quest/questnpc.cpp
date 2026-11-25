@@ -162,23 +162,6 @@ namespace quest
 		return HandleEvent(pc, QUEST_ATTR_OUT_EVENT);
 	}
 
-	bool NPC::OnTakeItem(PC& pc)
-	{
-        auto& runtimeManager = CQuestManager::instance();
-        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
-		return HandleEvent(pc, QUEST_ITEM_TAKE_EVENT);
-	}
-
-	bool NPC::OnUseItem(PC& pc, bool bReceiveAll)
-	{
-        auto& runtimeManager = CQuestManager::instance();
-        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
-		if (bReceiveAll)
-			return HandleReceiveAllEvent(pc, QUEST_ITEM_USE_EVENT);
-		else
-			return HandleEvent(pc, QUEST_ITEM_USE_EVENT);
-	}
-
 	bool NPC::OnTypedItemUse(PC& pc, TypedItemUseSource source)
 	{
 		auto& manager = CQuestManager::instance();
@@ -200,16 +183,6 @@ namespace quest
 			}
 		}
 		return false;
-	}
-
-	bool NPC::OnSIGUse(PC& pc, bool bReceiveAll)
-	{
-        auto& runtimeManager = CQuestManager::instance();
-        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
-		if (bReceiveAll)
-			return HandleReceiveAllEvent(pc, QUEST_SIG_USE_EVENT);
-		else
-			return HandleEvent(pc, QUEST_SIG_USE_EVENT);
 	}
 
 	bool NPC::OnClick(PC& pc)

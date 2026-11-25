@@ -21,9 +21,6 @@
 #include "../ecs/components/quest_components.hpp"
 #include "../ecs/EntityFactory.hpp"
 #include "../ecs/Registry.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
-#include "item.h"
-#include "item_manager.h"
 #include "config.h"
 #include "target.h"
 #include "party.h"
@@ -125,17 +122,14 @@ namespace quest
 		m_mapEventName.insert(TEventNameMap::value_type("chat", QUEST_CHAT_EVENT));
 		m_mapEventName.insert(TEventNameMap::value_type("in", QUEST_ATTR_IN_EVENT));
 		m_mapEventName.insert(TEventNameMap::value_type("out", QUEST_ATTR_OUT_EVENT));
-		m_mapEventName.insert(TEventNameMap::value_type("use", QUEST_ITEM_USE_EVENT));
 		m_mapEventName.emplace("typed_use", QUEST_TYPED_ITEM_USE_EVENT);
 		m_mapEventName.insert(TEventNameMap::value_type("server_timer", QUEST_SERVER_TIMER_EVENT));
 		m_mapEventName.insert(TEventNameMap::value_type("enter", QUEST_ENTER_STATE_EVENT));
 		m_mapEventName.insert(TEventNameMap::value_type("leave", QUEST_LEAVE_STATE_EVENT));
 		m_mapEventName.insert(TEventNameMap::value_type("letter", QUEST_LETTER_EVENT));
-		m_mapEventName.insert(TEventNameMap::value_type("take", QUEST_ITEM_TAKE_EVENT));
 		m_mapEventName.insert(TEventNameMap::value_type("target", QUEST_TARGET_EVENT));
 		m_mapEventName.insert(TEventNameMap::value_type("party_kill", QUEST_PARTY_KILL_EVENT));
 		m_mapEventName.insert(TEventNameMap::value_type("unmount", QUEST_UNMOUNT_EVENT));
-		m_mapEventName.insert(TEventNameMap::value_type("sig_use", QUEST_SIG_USE_EVENT));
 		m_mapEventName.insert(TEventNameMap::value_type("item_informer", QUEST_ITEM_INFORMER_EVENT));
 #ifdef ENABLE_QUEST_DIE_EVENT
 		m_mapEventName.insert(TEventNameMap::value_type("die", QUEST_DIE_EVENT));
@@ -736,35 +730,6 @@ namespace quest
 		}
 	}
 
-	bool CQuestManager::TakeItem(unsigned int pc, unsigned int npc, entt::entity item)
-	{
-		//m_CurrentNPCRace = npc;
-		PC* pPC;
-
-		if ((pPC = GetPC(pc)))
-		{
-			if (!CheckQuestLoaded(pPC))
-			{
-#ifdef TEXTS_IMPROVEMENT
-				const entt::entity ch = GetCurrentPCEntity();
-				if (ch != entt::null) {
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 510, "");
-				}
-#endif
-				return false;
-			}
-			// call script
-			SetCurrentItem(item);
-			return GetNPC(npc).OnTakeItem(*pPC);
-		}
-		else
-		{
-			//cout << "no such pc id : " << pc;
-			LOG_ERROR("QUEST USE_ITEM_EVENT no such pc id : {}", pc);
-			return false;
-		}
-	}
-
 	bool CQuestManager::UseTypedQuestItem(entt::entity character, std::string_view contentCode, TypedItemUseSource source)
 	{
 		auto* pc = GetPC(character);
@@ -773,7 +738,6 @@ namespace quest
 		const auto handler = m_typedItemUses.find(contentCode);
 		if (handler == m_typedItemUses.end())
 			return false;
-		SetCurrentItem(entt::null);
 		ecs::PlayerRuntime::SetQuestNPC(character, entt::null);
 		return handler->second.OnTypedItemUse(*pc, source);
 	}
@@ -783,66 +747,6 @@ namespace quest
 		for (const auto character : SnapshotQuestPlayers())
 			if (g_registry.valid(character))
 				SendTypedInventory(character);
-	}
-
-	bool CQuestManager::UseItem(unsigned int pc, entt::entity item, bool bReceiveAll)
-	{
-		if (test_server)
-			LOG_TRACE("questmanager::UseItem Start : itemVnum : {} PC : {}", ItemSystem::GetItemOriginalVnum(item), pc);
-		PC* pPC;
-		if ((pPC = GetPC(pc)))
-		{
-			if (!CheckQuestLoaded(pPC))
-			{
-#ifdef TEXTS_IMPROVEMENT
-				const entt::entity ch = GetCurrentPCEntity();
-				if (ch != entt::null) {
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 510, "");
-				}
-#endif
-				return false;
-			}
-			// call script
-			SetCurrentItem(item);
-
-			return GetNPC(ItemSystem::GetItemVnum(item)).OnUseItem(*pPC, bReceiveAll);
-		}
-		else
-		{
-			//cout << "no such pc id : " << pc;
-			LOG_ERROR("QUEST USE_ITEM_EVENT no such pc id : {}", pc);
-			return false;
-		}
-	}
-
-	bool CQuestManager::SIGUse(unsigned int pc, uint32_t sig_vnum, entt::entity item, bool bReceiveAll)
-	{
-		if (test_server)
-			LOG_TRACE("questmanager::SIGUse Start : itemVnum : {} PC : {}", ItemSystem::GetItemOriginalVnum(item), pc);
-		PC* pPC;
-		if ((pPC = GetPC(pc)))
-		{
-			if (!CheckQuestLoaded(pPC))
-			{
-#ifdef TEXTS_IMPROVEMENT
-				const entt::entity ch = GetCurrentPCEntity();
-				if (ch != entt::null) {
-					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 510, "");
-				}
-#endif
-				return false;
-			}
-			// call script
-			SetCurrentItem(item);
-
-			return GetNPC(sig_vnum).OnSIGUse(*pPC, bReceiveAll);
-		}
-		else
-		{
-			//cout << "no such pc id : " << pc;
-			LOG_ERROR("QUEST USE_ITEM_EVENT no such pc id : {}", pc);
-			return false;
-		}
 	}
 
 	bool CQuestManager::GiveItemToPC(unsigned int pc, entt::entity pkChr)
@@ -1275,21 +1179,6 @@ namespace quest
 	unsigned int CQuestManager::GetCurrentNPCRace()
 	{
 		return ecs::PlayerRuntime::GetRaceNum(GetCurrentNPCEntity());
-	}
-
-	entt::entity CQuestManager::GetCurrentItemEntity()
-	{
-		return ecs::PlayerRuntime::GetQuestItem(GetCurrentCharacter());
-	}
-
-	void CQuestManager::ClearCurrentItem()
-	{
-		ecs::PlayerRuntime::SetQuestItem(GetCurrentCharacter(), entt::null);
-	}
-
-	void CQuestManager::SetCurrentItem(entt::entity item)
-	{
-		ecs::PlayerRuntime::SetQuestItem(GetCurrentCharacter(), item);
 	}
 
 	const std::string & CQuestManager::GetCurrentQuestName()

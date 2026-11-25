@@ -18,7 +18,6 @@ namespace quest
 	extern void RegisterQuestFunctionTable();
 	extern void RegisterPartyFunctionTable();
 	extern void RegisterHorseFunctionTable();
-	extern void RegisterPetFunctionTable();
 	extern void RegisterGuildFunctionTable();
 	extern void RegisterGameFunctionTable();
 	extern void RegisterArenaFunctionTable();

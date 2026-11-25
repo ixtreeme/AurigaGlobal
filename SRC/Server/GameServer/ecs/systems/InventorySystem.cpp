@@ -2639,14 +2639,6 @@ void FinishEquip(entt::entity owner, entt::entity item) {
     if (!unchanged()) return;
     if (effect >= 0) NetworkSyncSystem::BroadcastEffect(g_registry, owner, static_cast<uint8_t>(effect));
     if (!unchanged()) return;
-    const bool questUse = type == ITEM_UNIQUE &&
-        (subtype == UNIQUE_SPECIAL_RIDE || subtype == UNIQUE_SPECIAL_MOUNT_RIDE) &&
-        (GetItemFlags(item) & ITEM_FLAG_QUEST_USE);
-    if (questUse
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-        || (type == ITEM_COSTUME && subtype == COSTUME_MOUNT)
-#endif
-    ) quest::CQuestManager::instance().UseItem(ecs::PlayerRuntime::GetPlayerID(owner), item, false);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
     if (!unchanged()) return;
     if (type == ITEM_COSTUME && subtype == COSTUME_MOUNT)

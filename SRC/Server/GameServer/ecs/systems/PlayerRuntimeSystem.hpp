@@ -275,8 +275,6 @@ uint32_t GetPlayStartTime(entt::entity e);
 uint32_t GetLoginPlayTime(entt::entity e);
 uint32_t GetLastShoutPulse(entt::entity e);
 void SetLastShoutPulse(entt::entity e, uint32_t pulse);
-entt::entity GetQuestItem(entt::entity e);
-void SetQuestItem(entt::entity e, entt::entity item);
 int64_t GetRankPoints(entt::entity e, int category);
 bool SetRankPoints(entt::entity e, int category, int64_t value);
 #endif

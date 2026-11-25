@@ -21,7 +21,6 @@
 #include "priv_manager.h"
 #include "utils.h"
 #include "p2p.h"
-#include "item_manager.h"
 #include "mob_manager.h"
 #include "start_position.h"
 #include "over9refine.h"
@@ -35,7 +34,6 @@
 #include "desc.h"
 #include "../ecs/EntityFactory.hpp"
 #include "../ecs/Registry.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/ActivitySystem.hpp"
 
 #undef sys_err
@@ -383,28 +381,6 @@ namespace quest
 		return 0;
 	}
 
-	ALUA(_item_log)
-	{
-		// migrated from CHARACTER::item_log
-		// DUAL-PATH: legacy only during migration window
-		CQuestManager& q = CQuestManager::instance();
-		const entt::entity chEntity = q.GetCurrentPCEntity();
-		uint32_t dwItemID = 0;
-		const char* how = "";
-		const char* hint = "";
-
-		if ( lua_isnumber(L, 1) ) dwItemID = (uint32_t)lua_tonumber(L, 1);
-		if ( lua_isstring(L, 2) ) how = lua_tostring(L, 2);
-		if ( lua_tostring(L, 3) ) hint = lua_tostring(L, 3);
-
-		const entt::entity item = ItemSystem::FindItemByID(dwItemID);
-
-		if (item != entt::null)
-			LogManager::instance().ItemLogEntity(chEntity, item, how, hint);
-
-		return 0;
-	}
-
 	ALUA(_syslog)
 	{
 		// migrated from CHARACTER::syslog
@@ -677,33 +653,6 @@ namespace quest
 		int type = (int)lua_tonumber(L,2);
 		int value = CPrivManager::instance().GetPrivByGuild(guild,type);
 		lua_pushnumber(L, value);
-		return 1;
-	}
-
-	ALUA(_item_name)
-	{
-		// migrated from CHARACTER::item_name
-		// DUAL-PATH: legacy only during migration window
-		if (lua_isnumber(L,1))
-		{
-			uint32_t dwVnum = (uint32_t)lua_tonumber(L,1);
-			TItemTable* pTable = ITEM_MANAGER::instance().GetTable(dwVnum);
-#ifdef ENABLE_MULTI_NAMES
-			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-			LPDESC desc = ecs::PlayerRuntime::GetDesc(chEntity);
-#endif
-
-			if (pTable)
-#ifdef ENABLE_MULTI_NAMES
-				lua_pushstring(L,pTable->szLocaleName[desc ? desc->GetLanguage() : 0]);
-#else
-				lua_pushstring(L,pTable->szLocaleName);
-#endif
-			else
-				lua_pushstring(L,"");
-		}
-		else
-			lua_pushstring(L,"");
 		return 1;
 	}
 
@@ -1703,7 +1652,6 @@ namespace quest
 			{	"sys_err",					_syserr					},
 			{	"sys_log",					_syslog					},
 			{	"char_log",					_char_log				},
-			{	"item_log",					_item_log				},
 			{	"set_state",				quest_setstate			},
 			{	"set_skin",					_set_skin				},
 			{	"setskin",					_set_skin				},
@@ -1751,7 +1699,6 @@ namespace quest
 			{	"__get_guild_priv_string",		_get_guild_privilege_string		},
 			{	"__get_guildid_byname",			_get_guildid_byname				},
 			{	"__get_guild_priv",				_get_guild_privilege			},
-			{	"item_name",					_item_name						},
 			{	"mob_name",						_mob_name						},
 			{	"mob_vnum",						_mob_vnum						},
 			{	"get_time",						_get_global_time				},

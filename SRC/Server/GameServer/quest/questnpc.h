@@ -66,9 +66,7 @@ namespace quest
 			bool	OnInfo(PC& pc, unsigned int quest_index);
 			bool	OnAttrIn(PC& pc);
 			bool	OnAttrOut(PC& pc);
-			bool	OnUseItem(PC& pc, bool bReceiveAll);
 			bool	OnTypedItemUse(PC& pc, TypedItemUseSource source);
-			bool	OnTakeItem(PC& pc);
 			bool	OnEnterState(PC& pc, uint32_t quest_index, int state);
 			bool	OnLeaveState(PC& pc, uint32_t quest_index, int state);
 			bool	OnLetter(PC& pc, uint32_t quest_index, int state);
@@ -81,7 +79,6 @@ namespace quest
 			bool	OnUnmount(PC& pc);
 
 			// Special item group USE EVENT
-			bool	OnSIGUse(PC& pc, bool bReceiveAll);
 
 
 			bool	HandleEvent(PC& pc, int EventIndex);

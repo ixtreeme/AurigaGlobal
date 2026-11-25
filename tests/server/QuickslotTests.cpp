@@ -1217,7 +1217,6 @@ quest::PC* quest::CQuestManager::GetPCForce(unsigned int pid) {
     }
     return nullptr;
 }
-bool quest::CQuestManager::UseItem(unsigned int, entt::entity item, bool) { Meta(item); Service("quest-use"); return true; }
 
 int ecs::PlayerRuntime::GetDuelOption(entt::entity e, const char*) { return Actor(e).duelBlock; }
 uint8_t ecs::PlayerRuntime::GetJob(entt::entity e) { return Actor(e).job; }

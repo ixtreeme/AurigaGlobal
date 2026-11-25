@@ -232,7 +232,6 @@ CSemaphore::~CSemaphore() = default;
 CAsyncSQL::CAsyncSQL() : m_queueLane(0) {}
 CAsyncSQL::~CAsyncSQL() = default;
 quest::NPC::~NPC() = default;
-bool quest::CQuestManager::TakeItem(unsigned int, unsigned int, entt::entity) { Unexpected(); }
 CRuneDungeon& CRuneDungeon::instance() { static CRuneDungeon dungeon; return dungeon; }
 CHalloween2022Dungeon& CHalloween2022Dungeon::instance() { static CHalloween2022Dungeon dungeon; return dungeon; }
 CVikingDungeon& CVikingDungeon::instance() { static CVikingDungeon dungeon; return dungeon; }
