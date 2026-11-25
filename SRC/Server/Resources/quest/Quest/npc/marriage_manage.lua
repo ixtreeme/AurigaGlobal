@@ -4,18 +4,10 @@ quest marriage_manage begin
 			return marriage.typed_attire()
 		end
 
-		function get_wedding_dress ( pc_job )
-			if 0 == pc_job then
-				return 11901
-			elseif 1 == pc_job then
-				return 11903
-			elseif 2 == pc_job then
-				return 11902
-			elseif 3 == pc_job then
-				return 11904
-			else
-				return 0
-			end
+		function wedding_attire_name(job, fallback)
+			local attire = {[0] = 193, [1] = 195, [2] = 194, [3] = 196}
+			if not attire[job] then return fallback end
+			return game.typed_item_name(2, attire[job], fallback)
 		end
 
 		when 9006.click begin
@@ -51,25 +43,19 @@ quest marriage_manage begin
 					say(gameforge[lang].marriage_manage._9)
 					say(gameforge[lang].marriage_manage._10)
 					say("")
-					say_item(gameforge[lang].marriage_manage._11 , 70301 , "")
+					say(game.typed_item_name(10, 1310, gameforge[lang].marriage_manage._11))
 					say(gameforge[lang].marriage_manage._12)
 					npc.unlock()
 					return
 				end
 
-				local m_sex = pc.get_sex()
 				if not marriage_manage.is_equip_wedding_dress() then
 					say(gameforge[lang].marriage_manage._13)
 					say(gameforge[lang].marriage_manage._14)
 					say(gameforge[lang].marriage_manage._15)
 					say("")
-					if m_sex == 0 then
-						say_item (gameforge[lang].marriage_manage._16, marriage_manage.get_wedding_dress(pc.get_job()), "")
-						say_reward(gameforge[lang].marriage_manage._17)
-					else
-						say_item (gameforge[lang].marriage_manage._16, marriage_manage.get_wedding_dress(pc.get_job()), "")
-						say_reward(gameforge[lang].marriage_manage._17)
-					end
+					say(marriage_manage.wedding_attire_name(pc.get_job(), gameforge[lang].marriage_manage._16))
+					say_reward(gameforge[lang].marriage_manage._17)
 
 					npc.unlock()
 					return
@@ -122,7 +108,6 @@ quest marriage_manage begin
 				local u_level = pc.get_level()
 				local u_lang = pc.get_language()
 				local u_job = pc.get_job()
-				local u_sex = pc.get_sex()
 				local u_name = pc.name
 				local u_gold = pc.get_money()
 				local u_married = pc.is_married()
@@ -173,7 +158,7 @@ quest marriage_manage begin
 				if not u_has_ring then
 					say(gameforge[lang].marriage_manage._49)
 					say(gameforge[lang].marriage_manage._50)
-					say_item ("", 70301, "")
+					say(game.typed_item_name(10, 1310, gameforge[lang].marriage_manage._11))
 					say_reward(gameforge[lang].marriage_manage._51)
 					npc.unlock()
 					return
@@ -184,13 +169,8 @@ quest marriage_manage begin
 					say(gameforge[lang].marriage_manage._53)
 					say(gameforge[lang].marriage_manage._54)
 					say("")
-					if u_sex == 0 then
-						say_item (gameforge[lang].marriage_manage._16, marriage_manage.get_wedding_dress(u_job), "")
-						say_reward(gameforge[lang].marriage_manage._17)
-					else
-						say_item(gameforge[lang].marriage_manage._16, marriage_manage.get_wedding_dress(u_job), "")
-						say_reward(gameforge[lang].marriage_manage._17)
-					end
+					say(marriage_manage.wedding_attire_name(u_job, gameforge[lang].marriage_manage._16))
+					say_reward(gameforge[lang].marriage_manage._17)
 
 					npc.unlock()
 					return
@@ -510,13 +490,15 @@ quest marriage_manage begin
 
 				if not m_have_ring then
 					say(gameforge[lang].marriage_manage._130)
-					say_item(gameforge[lang].marriage_manage._131, "70302", gameforge[lang].marriage_manage._132)
+					say(game.typed_item_name(10, 1587, gameforge[lang].marriage_manage._131))
+					say(gameforge[lang].marriage_manage._132)
 					return
 				end
 
 				if not u_have_ring then
 					say(gameforge[lang].marriage_manage._133)
-					say_item(gameforge[lang].marriage_manage._131, "70302", gameforge[lang].marriage_manage._132)
+					say(game.typed_item_name(10, 1587, gameforge[lang].marriage_manage._131))
+					say(gameforge[lang].marriage_manage._132)
 					return
 				end
 

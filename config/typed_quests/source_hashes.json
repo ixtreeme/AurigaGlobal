@@ -65,7 +65,10 @@
   },
   "marriage_manage.lua": {
     "resource": "npc/marriage_manage.lua",
-    "original_sha256": "4b69d6677b62ad12ec4065e1d1c75b8de196074a6615a1a82ce2189f56083976"
+    "original_sha256": "4b69d6677b62ad12ec4065e1d1c75b8de196074a6615a1a82ce2189f56083976",
+    "previous_sha256": [
+      "5a5901de564fb72e4c78b7e964438596009bfd3e025bc71f313d9f2650a9c327"
+    ]
   },
   "miki_event.lua": "38efa0c00b292b5733bafb0be96666409cdd77ca947e43a45f768ff1e8dffa2e",
   "mining.lua": {
