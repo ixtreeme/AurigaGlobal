@@ -27,7 +27,6 @@
 #include "../../core/locale_service.h"
 #include "../../world/arena.h"
 #include "../../network/desc.h"
-#include "../../pet/PetSystem.h"
 #include "../EntityFactory.hpp"
 #include "../Registry.hpp"
 #include "../VIDRegistry.hpp"
@@ -1098,13 +1097,6 @@ void UpdateMountSkin(entt::entity e)
 void MountUnsummon(entt::entity e, entt::entity)
 {
     DestroyCostumeMountRuntime(e);
-}
-
-void UpdatePetSkin(entt::entity e)
-{
-#ifdef __PET_SYSTEM__
-    PetSystem::UpdatePetSkin(e);
-#endif
 }
 
 } // namespace MountSystem

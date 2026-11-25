@@ -44,7 +44,6 @@
 void SendTypedEquipment(entt::entity) {} // packet encoder is covered by the shared native/Unity fixture
 bool DeferTypedBookMutation(entt::entity,std::function<void()>) { return false; } // no pending book write in these legacy-actor fixtures
 entt::registry g_registry;
-namespace EclipseRaid { int64_t FilterHealing(entt::entity, int64_t amount) { return amount; } }
 entt::dispatcher g_dispatcher;
 TJobInitialPoints JobInitialPoints[JOB_MAX_NUM] {};
 THorseStat c_aHorseStat[HORSE_MAX_LEVEL + 1] {};
@@ -127,7 +126,6 @@ double CPoly::Eval() { Unexpected(); }
 CHARACTER_MANAGER::CHARACTER_MANAGER() = default;
 CHARACTER_MANAGER::~CHARACTER_MANAGER() = default;
 void CHARACTER_MANAGER::CheckBonusEvent(entt::entity) {}
-void PetSystem::RefreshBuff(entt::entity) {}
 // Native singleton diagnostics reference RTTI even when these services are
 // isolated by test doubles and never constructed in this fixture.
 LogManager::~LogManager() = default;
@@ -462,12 +460,14 @@ void TypedEquipmentChecks() {
     gear.bonuses[unsigned(B::PhysicalAttackPercent)]=2500;gear.bonuses[unsigned(B::AttackSpeedPercent)]=1250;
     gear.bonuses[unsigned(B::MovementSpeedPercent)]=500;gear.bonuses[unsigned(B::CastSpeedPercent)]=1000;
     g_registry.emplace<ecs::TypedEquipmentProjection>(e).stats=gear;
+    constexpr int64_t expectedHealthWithoutEquipment = 1000 + 20 + 10 * 10 + 100 + 50;
+    constexpr int64_t expectedHealthWithEquipment = expectedHealthWithoutEquipment + 4 * 10;
     for(int i=0;i<10;++i) {
         P::Compute(e);
         Check(P::Get(e,POINT_ST)==13 && P::GetReal(e,POINT_ST)==10 && P::Get(e,POINT_HT)==14 && P::Get(e,POINT_IQ)==12,"typed primary contributions never alter base authority");
         Check(P::Get(e,POINT_ATT_GRADE)==108 && P::Get(e,POINT_MAGIC_ATT_GRADE)==74 && P::Get(e,POINT_DEF_GRADE)==38 && P::Get(e,POINT_MAGIC_DEF_GRADE)==45,"typed flat, percent and magic inputs apply exactly once");
         Check(P::Get(e,POINT_ATT_SPEED)==113 && P::GetLimitPoint(e,POINT_ATT_SPEED)==113 && P::Get(e,POINT_MOV_SPEED)==210 && P::Get(e,POINT_CASTING_SPEED)==110,"speed uses effective projection and existing engine limits");
-        Check(P::GetMaxHP(e)==1710 && P::GetMaxSP(e)==290 && modifies==0,"constitution and intelligence affect vitals; legacy gear is excluded");
+        Check(P::GetMaxHP(e)==expectedHealthWithEquipment && P::GetMaxSP(e)==290 && modifies==0,"constitution and intelligence affect vitals; legacy gear is excluded");
     }
     P::Change(e,POINT_DEF_GRADE_BONUS,11);
     Check(P::Get(e,POINT_DEF_GRADE)==49 && P::Get(e,POINT_MAGIC_DEF_GRADE)==50,"late defense affect refreshes its magic-defense contribution");
@@ -485,12 +485,12 @@ void TypedEquipmentChecks() {
     pet.bonuses.traits[2]=1000;pet.bonuses.skills[2]=250;
     for(unsigned i=0;i<5;++i) {
         P::Compute(e);
-        Check(P::GetMaxHP(e)==2205,"ranked pet flat and percent HP apply once on every compute");
+        Check(P::GetMaxHP(e)==(expectedHealthWithEquipment + 250) * 11250 / 10000,"ranked pet flat and percent HP apply once on every compute");
     }
     pet={};P::Compute(e);
-    Check(P::GetMaxHP(e)==1710,"removing the pet source restores pre-pet maximum HP");
+    Check(P::GetMaxHP(e)==expectedHealthWithEquipment,"removing the pet source restores pre-pet maximum HP");
     g_registry.get<ecs::TypedEquipmentProjection>(e).stats=auriga::item::EquipmentStats{};P::Compute(e);
-    Check(P::Get(e,POINT_ATT_GRADE)==60 && P::Get(e,POINT_MAGIC_ATT_GRADE)==60 && P::GetMaxHP(e)==1670 && modifies==0,"unequip clears contribution without falling back to legacy gear");
+    Check(P::Get(e,POINT_ATT_GRADE)==60 && P::Get(e,POINT_MAGIC_ATT_GRADE)==60 && P::GetMaxHP(e)==expectedHealthWithoutEquipment && modifies==0,"unequip clears contribution without falling back to legacy gear");
 
     const auto target=ActorEntity();auriga::item::EquipmentStats a,b;a.weapon=auriga::item::WeaponSubtype::Sword;
     a.bonuses[unsigned(B::NormalOutgoing)]=1000;a.bonuses[unsigned(B::SkillOutgoing)]=500;a.bonuses[unsigned(B::PveOutgoing)]=2000;a.bonuses[unsigned(B::GlobalOutgoing)]=500;

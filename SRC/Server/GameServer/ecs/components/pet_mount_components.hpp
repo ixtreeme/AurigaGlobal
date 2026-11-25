@@ -37,17 +37,6 @@ struct NewPetSkillState {
     entt::entity immortalSource { entt::null };
 };
 
-struct PetComponent {
-    entt::entity owner { entt::null };
-    entt::entity item { entt::null };
-    uint32_t itemID { 0 };
-    uint32_t itemVID { 0 };
-    uint32_t itemVnum { 0 };
-    std::array<int32_t, ITEM_SOCKET_MAX_NUM> sockets {};
-    uint32_t level { 0 };
-    uint32_t state { 0 };
-};
-
 struct MountComponent {
     entt::entity owner { entt::null };
     entt::entity item { entt::null };
@@ -72,10 +61,7 @@ struct PetActorState {
     uint32_t vnum { 0 };
     uint32_t options { 0 };
     entt::entity character { entt::null };
-    entt::entity summonItem { entt::null };
     uint64_t typedSeal { 0 };
-    uint32_t ridingVnum { 0 };
-    std::array<TItemApply, ITEM_APPLY_MAX_NUM> buffApplies {};
 };
 
 struct PetRuntime {
@@ -83,8 +69,7 @@ struct PetRuntime {
     uint32_t lastUpdateTime { 0 };
     LPEVENT updateEvent;
     bool destroying { false };
-    // Summon returns a pointer into this container, so records must keep their
-    // address when another pet is summoned; a deque never moves its elements.
+    // Actor lookups remain stable when a different follower form is added.
     std::deque<PetActorState> actors;
 };
 

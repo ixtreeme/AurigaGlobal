@@ -69,7 +69,6 @@
 #define __NEWPET_SYSTEM_CHECK
 #endif
 #ifdef __PET_SYSTEM__
-#include "../../pet/PetSystem.h"
 #endif
 #ifdef ENABLE_NEWSTUFF
 #include "../../combat/pvp.h"
@@ -720,24 +719,6 @@ void AffectSystem::AutoRecallProcess(entt::entity e)
 		MountSystem::CheckMount(e);
 #endif
 
-#ifdef __PET_SYSTEM__
-	{
-		const CAffect* pAffect = AffectSystem::FindAffect(e, AFFECT_RECALL1);
-		if (pAffect) {
-			const entt::entity pItem = ItemSystem::FindItemByID(e, pAffect->dwFlag);
-			if (ItemSystem::IsValidItem(pItem)) {
-				// Socket 2 is persisted and can still be 1 after a core transfer.
-				// Live ECS actors, not that stale marker, decide whether to recall.
-				if (PetSystem::CountSummoned(e) == 0)
-					PetSystem::Summon(e, ItemSystem::GetItemValue(pItem, 1), pItem, "", false);
-				// Keep recall intent on transient spawn failure; Summon can replace
-				// the affect, so the old pAffect must not be dereferenced afterwards.
-			}
-			else
-				AffectSystem::RemoveAffect(e, const_cast<CAffect*>(pAffect));
-		}
-	}
-#endif
 #ifdef __NEWPET_SYSTEM__
 	{
 		const CAffect* pAffect = AffectSystem::FindAffect(e, AFFECT_RECALL2);

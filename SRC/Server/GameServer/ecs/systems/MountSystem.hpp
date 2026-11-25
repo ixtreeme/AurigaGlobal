@@ -16,7 +16,6 @@ bool IsRiding(entt::entity rider);
 void UpdateMountSkin(entt::entity e);
 void MountUnsummon(entt::entity e, entt::entity mountItem);
 void CheckMount(entt::entity e);
-void UpdatePetSkin(entt::entity e);
 bool IsSummoned(entt::entity rider);
 bool IsRidingCostume(entt::entity rider);
 bool IsOwnedHorse(entt::entity rider, entt::entity horse);

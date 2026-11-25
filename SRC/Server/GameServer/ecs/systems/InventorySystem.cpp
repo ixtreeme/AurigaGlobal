@@ -2121,12 +2121,6 @@ bool Unequip(entt::entity itemEntity)
 
 	NetworkSyncSystem::UpdatePacket(charEntity);
 	if (!stillDetached()) return true;
-#ifdef ENABLE_COSTUME_PET
-    if (!stillDetached()) return true;
-	if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_PET_SKIN)) {
-		MountSystem::UpdatePetSkin(charEntity);
-	}
-#endif
 #ifdef ENABLE_COSTUME_MOUNT
 	if (!stillDetached()) return true;
 	if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_MOUNT_SKIN)) {
@@ -2207,13 +2201,6 @@ void PublishEquipmentInsertion(entt::entity itemEntity, entt::entity charEntity,
         NetworkSyncSystem::UpdateItemOnTitleName(g_registry, charEntity, true);
 #endif
 
-#ifdef ENABLE_COSTUME_PET
-	if (!stillWorn()) return;
-	if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_PET_SKIN)) {
-		if (!stillWorn()) return;
-		MountSystem::UpdatePetSkin(charEntity);
-	}
-#endif
 #ifdef ENABLE_COSTUME_MOUNT
     if (!stillWorn()) return;
 	if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_MOUNT_SKIN)) {

@@ -18,7 +18,6 @@
 #include "../../core/constants.h"
 #include "../../entity/char_manager.h"
 #include "../../combat/skill.h"
-#include "../../pet/PetSystem.h"
 #include "../../pet/horse_rider.h"
 #include <Core/Logging.hpp>
 #include <algorithm>
@@ -228,10 +227,6 @@ void Compute(entt::entity e)
     // Existing leaf services; their full lifecycle migration is separate.
     AffectSystem::RefreshAffect(e);
     if (!HasPointState(e)) return;
-#ifdef __PET_SYSTEM__
-    PetSystem::RefreshBuff(e);
-    if (!HasPointState(e)) return;
-#endif
     ApplyAlignmentPoints(e);
     if (!HasPointState(e)) return;
     if (player || Get(e, POINT_HP) > GetMaxHP(e))

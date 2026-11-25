@@ -389,7 +389,6 @@ void ecs::PointSystem::Compute(entt::entity e) {
     State(e).petBonus = 0;
     ++computes;
     if (onCompute) onCompute();
-    PetSystem::RefreshBuff(e);
 }
 void ecs::PointSystem::ApplyPoint(entt::entity e, uint8_t, double value) {
     State(e).petBonus += value;
@@ -417,95 +416,6 @@ void ecs::ChatSystem::SendNew(entt::entity e, uint8_t, uint32_t, const char*, ..
 #endif
 
 namespace {
-entt::entity PetItem(entt::entity owner, int value = 10)
-{
-    const auto item = Item(owner);
-    auto& material = g_registry.get<ItemState>(item);
-    material.proto.aApplies[0] = { APPLY_MOV_SPEED, static_cast<double>(value) };
-    material.attributeBonus = 7;
-    return item;
-}
-
-void PetLifecycle()
-{
-    Reset();
-    const auto owner = Character(), item = PetItem(owner);
-    PetSystem::SetUpdatePeriod(owner, 0);
-    auto* actor = PetSystem::Summon(owner, 34001, item, "", false);
-    Check(actor && actor->character != entt::null, "pet native summon failed");
-    const auto pet = actor->character;
-    Check(g_registry.get<ecs::StatusFlags>(pet).isPet, "pet marker missing");
-    Check(g_registry.get<ecs::PlayerName>(pet).value == "owner's Pet", "pet name missing");
-    Check(State(owner).petBonus == 17 && modifications == 1, "pet bonuses not rebuilt on summon");
-    Check(g_registry.get<ItemState>(item).locked && ItemSystem::GetItemSocket(item, 2) == 1, "pet item not locked");
-    Check(g_registry.get<ecs::PetComponent>(owner).item == item
-        && g_registry.get<ecs::PetComponent>(owner).sockets[2] == 1, "pet component not synchronized");
-    Check(PetSystem::FindActorByVID(owner, ecs::PlayerRuntime::GetPacketVID(pet)) == actor
-        && !PetSystem::FindActorByVID(owner, 0), "pet VID lookup failed");
-    const auto timer = scheduled;
-    State(pet).x = State(owner).x + 500;
-    Check(PetSystem::Update(owner, 0) && State(pet).walking && moves == 1, "near pet did not walk");
-    State(pet).x += 1000;
-    Check(PetSystem::Update(owner, 0) && !State(pet).walking && moves == 2, "far pet did not run");
-    State(pet).map = 2;
-    Check(PetSystem::Update(owner, 0) && State(pet).map == State(owner).map, "pet cross-map return failed");
-    State(owner).dead = true;
-    Check(PetSystem::Update(owner, 0) && actor->character != entt::null, "owner death changed pet survival rule");
-    Check(timer->func(timer, 0) != 0, "pet owner-entity timer rejected");
-    onCompute = [&] { Check(actor->character == entt::null && actor->summonItem == entt::null,
-        "unsummon reentered with still-published handles"); };
-    PetSystem::Unsummon(owner, 34001);
-    onCompute = {};
-    Check(!g_registry.valid(pet) && State(owner).petBonus == 0 && clearCalls == 1, "pet cleanup lost bonuses/character");
-    Check(!g_registry.get<ItemState>(item).locked && ItemSystem::GetItemSocket(item, 2) == 0, "pet item remained locked");
-    Check(g_registry.get<ecs::PetComponent>(owner).item == entt::null, "pet component not cleared");
-    const auto computed = computes;
-    PetSystem::Unsummon(owner, 34001);
-    PetSystem::DestroyRuntime(owner);
-    Check(computes == computed && destroyed == 1, "pet teardown repeated side effects");
-    Check(timer->func(timer, 0) == 0 && !g_registry.try_get<ecs::PetRuntime>(owner), "pet timer/runtime outlived system");
-}
-
-void PetMultipleAndReentrantDeletion()
-{
-    Reset();
-    const auto owner = Character(), first = PetItem(owner), second = PetItem(owner, 20);
-    PetSystem::SetUpdatePeriod(owner, 0);
-    auto* a = PetSystem::Summon(owner, 34001, first, "", false);
-    auto* b = PetSystem::Summon(owner, 34002, second, "", false);
-    Check(a && b && State(owner).petBonus == 44, "multiple-pet bonuses incorrect");
-    Check(a->vnum == 34001 && b->vnum == 34002, "summoning another pet invalidated an actor pointer");
-    State(a->character).hasMob = State(b->character).hasMob = false;
-    mobQueries = 0;
-    Check(!PetSystem::Update(owner, 0) && mobQueries == 2, "failed pet AI skipped another pet");
-    onCompute = [&] { Check(!PetSystem::FindActor(owner, 34001), "deleting actor still visible during RefreshBuff"); };
-    PetSystem::DeleteActor(owner, a->vnum);
-    onCompute = {};
-    Check(PetSystem::CountSummoned(owner) == 1 && State(owner).petBonus == 27, "single deletion removed remaining bonus");
-    Check(!g_registry.get<ItemState>(first).locked && g_registry.get<ItemState>(second).locked, "single deletion unlocked wrong item");
-    a = PetSystem::Summon(owner, 34001, first, "", false);
-    Check(a && PetSystem::CountSummoned(owner) == 2, "pet resummon failed");
-    PetSystem::UnsummonAll(owner);
-    Check(PetSystem::CountSummoned(owner) == 0 && State(owner).petBonus == 0, "UnsummonAll left a pet/bonus behind");
-    Check(!g_registry.get<ItemState>(first).locked && !g_registry.get<ItemState>(second).locked, "UnsummonAll left item locks");
-    Check(PetSystem::FindActor(owner, 34001) && PetSystem::FindActor(owner, 34002), "UnsummonAll unexpectedly deleted actors");
-    Check(scheduled->func(scheduled, 0) == 0, "UnsummonAll left active timer");
-    a = PetSystem::Summon(owner, 34001, first, "", false);
-    b = PetSystem::Summon(owner, 34002, second, "", false);
-    int callbacks = 0;
-    onCompute = [&] {
-        ++callbacks;
-        Check(PetSystem::CountSummoned(owner) == static_cast<size_t>(2 - callbacks), "destructor published a dying actor");
-        Check(!PetSystem::Summon(owner, 34003, first, "", false), "summon reentered Destroy");
-        PetSystem::DestroyRuntime(owner); // Recursive teardown is harmless.
-    };
-    PetSystem::DestroyRuntime(owner);
-    onCompute = {};
-    Check(callbacks == 2 && State(owner).petBonus == 0 && PetSystem::CountSummoned(owner) == 0,
-        "multi-actor Destroy failed during reentrant point calculation");
-    Check(!PetSystem::FindActor(owner, 34001) && !PetSystem::FindActor(owner, 34002), "Destroy retained actors");
-}
-
 void TypedFollowerLifecycle()
 {
     Reset();
@@ -534,183 +444,97 @@ void TypedFollowerLifecycle()
     Check(!g_registry.valid(mount) && !PetSystem::LiveTypedSeal(owner), "logout left a typed follower in the world");
 }
 
-void PetStaleHandles()
-{
-    for (int which = 0; which < 4; ++which)
-    {
-        Reset();
-        const auto owner = Character(), item = PetItem(owner);
-        PetSystem::SetUpdatePeriod(owner, 0);
-        auto* actor = PetSystem::Summon(owner, 34001, item, "", false);
-        const auto timer = scheduled;
-        const auto pet = actor->character;
-        const auto old = which == 0 ? owner : which == 1 ? item : pet;
-        if (which == 0)
-            PetSystem::DestroyRuntime(owner);
-        if (which == 3)
-            g_registry.get<ItemState>(item).owner = Character();
-        else
-            g_registry.destroy(old);
-        const auto replacement = Character();
-        Check(which == 3 || (entt::to_entity(old) == entt::to_entity(replacement) && old != replacement),
-            "pet fixture did not recycle an entity generation");
-        if (which == 0)
-        {
-            Check(timer->func(timer, 0) == 0, "stale-owner timer reached recycled character");
-            Check(!g_registry.valid(pet) && !g_registry.get<ItemState>(item).locked
-                && ItemSystem::GetItemSocket(item, 2) == 0, "stale pet owner teardown not cleaned");
-        }
-        else
-        {
-            Check(PetSystem::Update(owner, 0) && actor->character == entt::null && actor->summonItem == entt::null,
-                "stale pet owner/item/follower not cleaned");
-        }
-        Check(g_registry.valid(replacement), "pet cleanup destroyed recycled entity");
-        if (which != 0)
-            Check(State(owner).petBonus == 0, "stale pet retained owner bonus");
-        if (which == 3)
-        {
-            const auto newOwner = ItemSystem::GetItemOwner(item);
-            Check(State(newOwner).petBonus == 0 && g_registry.get<ItemState>(item).locked,
-                "pet cleanup modified transferred item's new owner or lock");
-        }
-        PetSystem::DestroyRuntime(owner);
-        Check(g_registry.valid(replacement), "pet destructor destroyed recycled entity");
-    }
-}
-
-void PetFailuresSkinsAndBonuses()
+void TypedFollowerFailuresAndReplacement()
 {
     Reset();
-    const auto owner = Character(), item = PetItem(owner), other = Character();
-    PetSystem::SetUpdatePeriod(owner, 0);
-    Check(!PetSystem::Summon(owner, 34004, entt::null, "", false), "null pet item accepted");
-    g_registry.get<ItemState>(item).owner = other;
-    Check(!PetSystem::Summon(owner, 34004, item, "", false) && spawned == 0, "foreign pet item spawned");
-    g_registry.get<ItemState>(item).owner = owner;
-    g_registry.get<ItemState>(item).hasProto = false;
-    Check(!PetSystem::Summon(owner, 34004, item, "", false) && spawned == 0, "pet missing proto accepted");
-    g_registry.get<ItemState>(item).hasProto = true;
-    failSpawn = true;
-    Check(!PetSystem::Summon(owner, 34004, item, "", false) && !scheduled, "failed pet spawn started timer");
-    failSpawn = false; failShow = true;
-    Check(!PetSystem::Summon(owner, 34004, item, "", false) && destroyed == 1 && !scheduled,
-        "failed pet show leaked follower or timer");
-    Check(!g_registry.get<ItemState>(item).locked && State(owner).petBonus == 0, "failed pet show applied side effects");
-    failShow = false;
-    const auto skin = Item(owner);
-    State(owner).skin = skin;
-    g_registry.get<ItemState>(skin).proto.alValues[0] = 34500;
-    auto* actor = PetSystem::Summon(owner, 34004, item, "", false);
-    Check(actor && actor->vnum == 34004 && spawnedVnum == 34500, "skin replaced pet's stable identity");
-    Check(State(owner).petBonus == 0, "skin bypassed dungeon-only pet bonus restriction");
-    State(owner).dungeon = true;
-    ecs::PointSystem::Compute(owner);
-    Check(State(owner).petBonus == 17, "dungeon pet bonus missing");
-    const auto second = PetItem(owner);
-    const auto pet = actor->character;
-    Check(!PetSystem::Summon(owner, 34004, second, "", false) && actor->summonItem == item,
-        "active pet rebound to a different item");
-    Check(!PetSystem::Summon(owner, 34001, item, "", false), "one item became owned by two pet actors");
-    Check(PetSystem::Summon(owner, 34004, item, "", true) == actor && actor->character == pet,
-        "repeat summon duplicated active follower");
-    State(owner).skin = entt::null;
-    PetSystem::UpdatePetSkin(owner);
-    actor = PetSystem::FindActor(owner, 34004);
-    Check(actor && actor->vnum == 34004 && spawnedVnum == 34004 && actor->summonItem == item,
-        "removing pet skin lost base identity/item");
-    State(owner).dungeon = false;
-    const auto beforeClear = clearCalls;
-    PetSystem::Unsummon(owner, actor->vnum, true);
-    Check(!PetSystem::FindActor(owner, 34004) && clearCalls == beforeClear + 1 && lastClearValue == -10,
-        "dungeon exit prevented removal of previously applied bonus");
-    Check(State(owner).petBonus == 0, "pet attributes survived removal");
-    auto& material = g_registry.get<ItemState>(item);
-    material.proto.aApplies[0].bType = MAX_APPLY_NUM;
-    actor = PetSystem::Summon(owner, 34001, item, "", false);
-    Check(actor && State(owner).petBonus == 0, "malformed pet apply entered point system");
-    PetSystem::Unsummon(owner, 34001);
-    material.proto.aApplies[0] = { APPLY_MOV_SPEED, std::numeric_limits<int>::min() };
-    actor = PetSystem::Summon(owner, 34001, item, "", false);
-    Check(actor && State(owner).petBonus == 0, "unnegatable pet bonus accepted");
-    PetSystem::Unsummon(owner, 34001);
-    material.proto.aApplies[0] = { APPLY_SKILL, 0x00800020 };
-    PetSystem::Summon(owner, 34001, item, "", false);
-    PetSystem::Unsummon(owner, 34001);
-    Check(lastClearValue == 0x20, "skill bonus removal did not toggle the add bit");
-}
-
-void PetReplacementRuntimeAndItem()
-{
-    Reset();
-    const auto owner = Character(), item = PetItem(owner);
-    PetSystem::Summon(owner, 34001, item, "", false);
-    const auto oldTimer = scheduled;
-    PetSystem::DestroyRuntime(owner);
-    PetSystem::DestroyRuntime(owner);
-    Check(oldTimer->func(oldTimer, 0) == 0, "old pet timer entered replacement runtime");
-    auto* actor = PetSystem::Summon(owner, 34001, item, "", false);
-    Check(actor && scheduled->func(scheduled, 0) != 0, "new pet timer rejected");
-    const auto oldVID = ItemSystem::GetItemVID(item);
-    g_registry.destroy(item);
-    const auto replacement = PetItem(owner);
-    Check(item != replacement && entt::to_entity(item) == entt::to_entity(replacement), "item generation not recycled");
-    g_registry.get<ItemState>(replacement).vid = oldVID;
-    g_registry.get<ItemState>(replacement).locked = true;
-    g_registry.get<ItemState>(replacement).sockets[2] = 1;
-    auto& state = g_registry.get<ecs::PetComponent>(owner);
-    state.item = replacement;
-    state.itemVID = oldVID;
-    PetSystem::Unsummon(owner, actor->vnum);
-    Check(g_registry.get<ItemState>(replacement).locked && ItemSystem::GetItemSocket(replacement, 2) == 1,
-        "stale pet unlocked another item with same VID");
-    Check(state.item == replacement && state.itemVID == oldVID, "pet cleared replacement ECS state");
-    PetSystem::DestroyRuntime(owner);
-}
-
-void PetNullOwnerAndMounting()
-{
-    Reset();
-    PetSystem::UpdatePetSkin(entt::null);
-    PetSystem::Unmount(entt::null, 34001);
-    PetSystem::DestroyRuntime(entt::null);
-    Check(!PetSystem::Summon(entt::null, 34001, entt::null, "", false),
-        "null-owner pet entered services");
     const auto owner = Character();
-    auto* first = PetSystem::Summon(owner, 34001, PetItem(owner), "", false);
-    Check(first && !PetSystem::Mount(owner, 34001), "non-mountable pet mounted");
-    auto* mountableFirst = PetSystem::Summon(owner, 34003, PetItem(owner), "", false,
-        PetSystem::EPetOption_Mountable);
-    auto* mountableSecond = PetSystem::Summon(owner, 34002, PetItem(owner), "", false,
-        PetSystem::EPetOption_Mountable);
-    PetSystem::Unsummon(owner, 34001);
-    Check(mountableFirst && mountableSecond, "entity pet fixture summon failed");
-    Check(PetSystem::Mount(owner, 34003) && PetSystem::Mount(owner, 34002), "entity pet mounting failed");
-    PetSystem::Unsummon(owner, 34003);
-    Check(State(owner).mount == 34002, "old pet actor unmounted replacement");
-    PetSystem::Unsummon(owner, 34002);
-    Check(State(owner).mount == 0, "pet mount survived actor teardown");
+    constexpr auto seal = UINT64_C(0x10000000021);
+    Check(!PetSystem::SummonTyped(entt::null, 34001, seal, false), "null owner admitted");
+    Check(!PetSystem::SummonTyped(owner, 34001, 0, false), "missing typed seal admitted");
+    Check(!PetSystem::SummonTyped(owner, 0, seal, false), "missing follower form admitted");
+    failSpawn = true;
+    Check(!PetSystem::SummonTyped(owner, 34001, seal, false) && !scheduled,
+        "failed typed spawn started a timer");
+    failSpawn = false;
+    failShow = true;
+    Check(!PetSystem::SummonTyped(owner, 34001, seal, false) && destroyed == 1 &&
+        !PetSystem::CountSummoned(owner) && !PetSystem::LiveTypedSeal(owner) && !scheduled,
+        "failed typed show leaked a follower, seal or timer");
+    failShow = false;
+    Check(PetSystem::SummonTyped(owner, 34001, seal, false, "Named pet"), "typed retry failed");
+    const auto pet = PetSystem::FindActor(owner, 34001)->character;
+    Check(State(pet).name == "Named pet" && !modifications && !computes,
+        "typed summon used legacy item bonuses or lost its name");
+    const auto firstTimer = scheduled;
+    PetSystem::DestroyRuntime(owner);
+    PetSystem::DestroyRuntime(owner);
+    Check(!g_registry.valid(pet) && firstTimer->func(firstTimer, 0) == 0,
+        "typed teardown was not idempotent");
+    Check(PetSystem::SummonTyped(owner, 34002, seal + 1, false), "replacement typed runtime failed");
+    Check(firstTimer->func(firstTimer, 0) == 0 && scheduled->func(scheduled, 0) != 0,
+        "old timer entered replacement typed runtime");
+    PetSystem::DestroyRuntime(owner);
 }
 
-void PetDeathOptionsAndSkinFailure()
+void TypedFollowerFollowingAndDeath()
 {
     Reset();
-    const auto owner = Character(), item = PetItem(owner);
+    const auto owner = Character();
+    constexpr auto seal = UINT64_C(0x10000000031);
+    PetSystem::SetUpdatePeriod(owner, 0);
+    Check(PetSystem::SummonTyped(owner, 34001, seal, false), "typed follow fixture failed");
+    auto* actor = PetSystem::FindActor(owner, 34001);
+    const auto pet = actor->character;
+    State(pet).x = State(owner).x + 500;
+    Check(PetSystem::Update(owner, 0) && State(pet).walking && moves == 1,
+        "near typed follower did not walk");
+    State(pet).x = State(owner).x + 1500;
+    Check(PetSystem::Update(owner, 0) && !State(pet).walking && moves == 2,
+        "far typed follower did not run");
+    State(pet).map = 2;
+    Check(PetSystem::Update(owner, 0) && State(pet).map == State(owner).map,
+        "typed follower did not follow the map change");
+    State(owner).dead = true;
+    Check(PetSystem::Update(owner, 0) && PetSystem::LiveTypedSeal(owner) == seal,
+        "owner death changed the typed follower survival rule");
+    State(owner).dead = false;
+    actor->options = 0;
+    const auto queries = mobQueries;
+    Check(PetSystem::Update(owner, 0) && mobQueries == queries,
+        "disabled follow option still ran movement");
     PetSystem::SetUpdatePeriod(owner, 1000);
-    auto* actor = PetSystem::Summon(owner, 34001, item, "", false, PetSystem::EPetOption_Summonable);
-    Check(actor && PetSystem::Update(owner, 0) && mobQueries == 0, "non-followable pet ran follow AI");
-    State(actor->character).dead = true;
-    Check(PetSystem::Update(owner, 0) && actor->character != entt::null, "update period was ignored");
+    State(pet).dead = true;
+    Check(PetSystem::Update(owner, 0) && g_registry.valid(pet), "typed update period ignored");
     tick += 1000;
-    Check(PetSystem::Update(owner, 0) && actor->character == entt::null && State(owner).petBonus == 0,
-        "dead pet was not detached or retained its bonuses");
-    Check(!g_registry.get<ItemState>(item).locked, "dead pet left summon item locked");
-    Check(PetSystem::Summon(owner, 34001, item, "", false) == actor, "dead actor could not resummon");
-    failShow = true;
-    PetSystem::UpdatePetSkin(owner);
-    Check(actor->character == entt::null && !g_registry.get<ItemState>(item).locked && State(owner).petBonus == 0,
-        "failed skin respawn leaked follower/item lock/bonus");
-    Check(scheduled->func(scheduled, 0) == 0, "failed skin respawn retained timer");
+    Check(PetSystem::Update(owner, 0) && !g_registry.valid(pet) && !PetSystem::LiveTypedSeal(owner),
+        "dead typed follower retained the creature or seal");
+    Check(PetSystem::SummonTyped(owner, 34001, seal, false), "typed follower could not respawn");
+    PetSystem::DestroyRuntime(owner);
+}
+
+void TypedFollowerStaleEntities()
+{
+    Reset();
+    const auto owner = Character();
+    constexpr auto seal = UINT64_C(0x10000000041);
+    PetSystem::SetUpdatePeriod(owner, 0);
+    Check(PetSystem::SummonTyped(owner, 34001, seal, false), "typed stale fixture failed");
+    const auto pet = PetSystem::FindActor(owner, 34001)->character;
+    g_registry.destroy(pet);
+    const auto replacement = Character();
+    Check(pet != replacement && entt::to_entity(pet) == entt::to_entity(replacement),
+        "typed creature generation was not recycled");
+    Check(PetSystem::Update(owner, 0) && g_registry.valid(replacement) &&
+        !PetSystem::LiveTypedSeal(owner), "stale follower destroyed a recycled creature");
+    Check(PetSystem::SummonTyped(owner, 34002, seal + 1, false), "typed respawn after stale creature failed");
+    const auto timer = scheduled;
+    PetSystem::DestroyRuntime(owner);
+    g_registry.destroy(owner);
+    const auto newOwner = Character();
+    Check(newOwner != owner && entt::to_entity(newOwner) == entt::to_entity(owner),
+        "typed owner generation was not recycled");
+    Check(timer->func(timer, 0) == 0 && !g_registry.try_get<ecs::PetRuntime>(newOwner),
+        "stale pet timer entered a recycled owner");
 }
 
 entt::entity GrowthSeal(entt::entity owner)
@@ -1007,14 +831,10 @@ int main()
         CHARACTER_MANAGER factory;
         DBManager database;
         MountFlightChecks();
-        PetLifecycle();
         TypedFollowerLifecycle();
-        PetMultipleAndReentrantDeletion();
-        PetStaleHandles();
-        PetFailuresSkinsAndBonuses();
-        PetReplacementRuntimeAndItem();
-        PetNullOwnerAndMounting();
-        PetDeathOptionsAndSkinFailure();
+        TypedFollowerFailuresAndReplacement();
+        TypedFollowerFollowingAndDeath();
+        TypedFollowerStaleEntities();
         GrowthLifecycleAndExpiry();
         GrowthDatabaseValidation();
         GrowthSkillBookInputs();

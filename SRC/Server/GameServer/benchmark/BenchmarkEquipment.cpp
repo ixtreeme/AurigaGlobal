@@ -46,7 +46,6 @@ struct SavedCharacter {
     std::vector<uint8_t> skills;
     std::array<entt::entity, WEAR_MAX_NUM> previousWears {};
     std::vector<entt::entity> temporaryItems;
-    uint32_t petMob {0};
 };
 
 std::map<uint32_t, SavedCharacter> applied;
@@ -488,8 +487,6 @@ void Undo(SavedCharacter& saved, std::ostringstream& errors) {
         errors << "Character disconnected; state requires recovery. ";
         return;
     }
-    if (saved.petMob)
-        PetSystem::Unsummon(character, saved.petMob, true);
     for (const auto item : saved.temporaryItems) {
         if (!ItemSystem::IsValidItem(item)) continue;
         if (ItemSystem::GetItemOwner(item) == character &&
@@ -902,23 +899,6 @@ bool Apply(entt::entity character, int tier, std::string_view defenseWeapon,
         if (!activated) return fail("Rune activation rejected by real GameServer.");
     }
 #endif
-    // Exactly one pet. The real pet system reads the summon mob from item
-    // value1 and applies the normal pet buff logic, including extra proto.
-    {
-        const auto petItem = ITEM_MANAGER::instance().CreateItem(49010, 1, 0, false, -1, true);
-        if (!ItemSystem::IsValidItem(petItem)) return fail("Cannot create 49010 PvP pet.");
-        saved.temporaryItems.push_back(petItem);
-        const int cell = InventorySystem::GetEmptyInventory(character, ItemSystem::GetItemSize(petItem));
-        if (cell < 0 || !InventorySystem::AddToCharacter(petItem, character,
-                TItemPos(INVENTORY, static_cast<uint16_t>(cell))))
-            return fail("No inventory space for PvP pet.");
-        saved.petMob = static_cast<uint32_t>(ItemSystem::GetItemValue(petItem, 1));
-        if (saved.petMob == 0 ||
-            !PetSystem::Summon(character, saved.petMob, petItem, "", false)) {
-            saved.petMob = 0;
-            return fail("PvP pet summon failed.");
-        }
-    }
     ecs::PointSystem::Compute(character);
     // Apply only self-cast buffs through real skill use/affect logic; never
     // fake external buffs by writing points directly. Unavailable buffs remain

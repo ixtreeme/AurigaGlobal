@@ -32,8 +32,6 @@ ecs::PetActorState* FindActorByVID(entt::entity owner, uint32_t vid);
 bool IsPetSummoned(entt::entity owner, uint32_t vnum);
 size_t CountSummoned(entt::entity owner);
 
-ecs::PetActorState* Summon(entt::entity owner, uint32_t vnum, entt::entity item,
-    const char* petName, bool spawnFar, uint32_t options = DefaultPetOptions);
 bool SummonTyped(entt::entity owner, uint32_t vnum, uint64_t seal, bool mount, std::string_view name = {});
 uint64_t LiveTypedSeal(entt::entity owner);
 void RecallTyped(entt::entity owner, uint64_t seal);
@@ -44,11 +42,7 @@ void DestroyRuntime(entt::entity owner);
 
 bool Update(entt::entity owner, uint32_t deltaTime);
 void SetUpdatePeriod(entt::entity owner, uint32_t ms);
-void RefreshBuff(entt::entity owner);
-void UpdatePetSkin(entt::entity owner);
 
-bool Mount(entt::entity owner, uint32_t vnum);
-void Unmount(entt::entity owner, uint32_t vnum);
 
 } // namespace PetSystem
 

@@ -11,14 +11,8 @@
 #include "../ecs/components/status_components.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
-#include "../ecs/systems/AffectSystem.hpp"
-#include "../ecs/systems/MountSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
-#include "../ecs/systems/PointSystem.hpp"
-#include "../ecs/systems/SocialSystem.hpp"
 #include <algorithm>
-#include <limits>
 #include <utility>
 #include <vector>
 
@@ -33,22 +27,6 @@ namespace
 {
 using PetRecord = ecs::PetActorState;
 using PetRuntime = ecs::PetRuntime;
-
-bool IsOwnedSummonItem(entt::entity owner, entt::entity item)
-{
-    return ecs::PlayerRuntime::IsValid(owner) && ItemSystem::IsValidItem(item)
-        && ItemSystem::GetItemOwner(item) == owner;
-}
-
-uint32_t PetSkin(entt::entity owner)
-{
-#ifdef ENABLE_COSTUME_PET
-    const auto skin = ItemSystem::GetWearItem(owner, WEAR_COSTUME_PET_SKIN);
-    if (ItemSystem::IsValidItem(skin))
-        return ItemSystem::GetItemValue(skin, 0);
-#endif
-    return 0;
-}
 
 bool SnapFollowerToOwner(entt::entity follower, entt::entity owner, int32_t x, int32_t y, int32_t z)
 {
@@ -84,59 +62,6 @@ PetRecord* FreeRecordSlot(PetRuntime& runtime)
         if (record.vnum == 0)
             return &record;
     return nullptr;
-}
-
-void UpdatePetComponent(entt::entity owner, entt::entity item, bool summoned)
-{
-    if (!ecs::PlayerRuntime::IsValid(owner))
-        return;
-    auto& state = g_registry.get_or_emplace<ecs::PetComponent>(owner);
-    if (!ItemSystem::IsValidItem(item))
-    {
-        state = {};
-        return;
-    }
-    state.owner = owner;
-    state.item = item;
-    state.itemID = ItemSystem::GetItemID(item);
-    state.itemVID = ItemSystem::GetItemVID(item);
-    state.itemVnum = ItemSystem::GetItemVnum(item);
-    state.level = 0;
-    state.state = summoned ? 1u : 0u;
-    for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-        state.sockets[i] = static_cast<int32_t>(ItemSystem::GetItemSocket(item, i));
-}
-
-void ClearBuff(entt::entity owner, PetRecord& actor)
-{
-    const auto applies = std::exchange(actor.buffApplies, {});
-    if (!ecs::PlayerRuntime::IsValid(owner))
-        return;
-    for (const auto& apply : applies)
-        if (apply.bType != APPLY_NONE)
-            ecs::PointSystem::ApplyPoint(owner, apply.bType,
-                apply.bType == APPLY_SKILL ? static_cast<int>(apply.lValue) ^ 0x00800000 : -apply.lValue);
-}
-
-bool CanGiveBuff(entt::entity owner, const PetRecord& actor)
-{
-    return PetSystem::IsSummoned(actor) && IsOwnedSummonItem(owner, actor.summonItem)
-        && ((actor.vnum != 34004 && actor.vnum != 34009) || ecs::SocialSystem::GetDungeon(owner) != entt::null);
-}
-
-void GiveBuff(entt::entity owner, PetRecord& actor)
-{
-    actor.buffApplies = {};
-    if (!CanGiveBuff(owner, actor))
-        return;
-    const auto* proto = ItemSystem::GetItemProto(actor.summonItem);
-    if (!proto)
-        return;
-    for (const auto& apply : proto->aApplies)
-        if (apply.bType >= MAX_APPLY_NUM || apply.lValue == std::numeric_limits<int>::min())
-            return;
-    std::copy(std::begin(proto->aApplies), std::end(proto->aApplies), actor.buffApplies.begin());
-    ItemSystem::ModifyPoints(actor.summonItem, true);
 }
 
 bool Follow(entt::entity owner, PetRecord& actor, float minDistance)
@@ -190,7 +115,7 @@ bool UpdateFollowAI(entt::entity owner, PetRecord& actor)
 bool UpdateActor(entt::entity owner, PetRecord& actor)
 {
     // Preserve pets across owner death; only follower death ends the summon.
-    if ((!actor.typedSeal && !IsOwnedSummonItem(owner, actor.summonItem)) || !PetSystem::IsSummoned(actor)
+    if (!actor.typedSeal || !PetSystem::IsSummoned(actor)
         || CombatSystem::IsDead(actor.character))
     {
         PetSystem::Unsummon(owner, actor.vnum);
@@ -200,42 +125,12 @@ bool UpdateActor(entt::entity owner, PetRecord& actor)
         || UpdateFollowAI(owner, actor);
 }
 
-void UnmountActor(entt::entity owner, PetRecord& actor)
+void TeardownActor(PetRecord& actor, bool keepRecord)
 {
-    const auto ridingVnum = std::exchange(actor.ridingVnum, 0u);
-    if (!ecs::PlayerRuntime::IsValid(owner))
-        return;
-    if (ridingVnum && MountSystem::GetMountVnum(owner) == ridingVnum)
-        MountSystem::SetMountVnum(owner, 0);
-    if (MountSystem::IsHorseRiding(owner))
-        MountSystem::StopRiding(owner);
-}
-
-void TeardownActor(entt::entity owner, PetRecord& actor, bool keepRecord)
-{
-    if (actor.ridingVnum)
-        UnmountActor(owner, actor);
-    const auto character = actor.character;
-    const auto item = actor.summonItem;
-    const bool hadSummon = character != entt::null || item != entt::null;
-    actor.character = entt::null;
-    actor.summonItem = entt::null;
-    const bool typed = std::exchange(actor.typedSeal, 0u) != 0;
-    // Clear the owner-side snapshot only when it still names this summon item;
-    // a callback may already have installed a replacement.
-    if (const auto* state = g_registry.try_get<ecs::PetComponent>(owner);
-        state && item != entt::null && state->item == item)
-        UpdatePetComponent(owner, entt::null, false);
-    if (ItemSystem::IsValidItem(item) && ItemSystem::GetItemOwner(item) == owner)
-    {
-        ItemSystem::SetItemSocket(item, 2, 0);
-        ItemSystem::UnlockItem(item);
-    }
-    ClearBuff(owner, actor);
+    const auto character = std::exchange(actor.character, entt::null);
+    actor.typedSeal = 0;
     if (!keepRecord)
         actor.vnum = 0;
-    if (hadSummon && !typed && ecs::PlayerRuntime::IsValid(owner))
-        ecs::PointSystem::Compute(owner);
     if (ecs::PlayerRuntime::IsValid(character))
         ecs::PlayerRuntime::DestroyCharacter(character);
 }
@@ -319,85 +214,6 @@ size_t CountSummoned(entt::entity owner)
         [](const auto& record) { return g_registry.valid(record.character); });
 }
 
-ecs::PetActorState* Summon(entt::entity owner, uint32_t vnum, entt::entity item,
-    const char* petName, bool spawnFar, uint32_t options)
-{
-    if (!IsOwnedSummonItem(owner, item) || !ItemSystem::GetItemProto(item) || LiveTypedSeal(owner))
-        return nullptr;
-    auto* runtime = Runtime(owner);
-    if (!runtime || runtime->destroying)
-        return nullptr;
-    for (const auto& record : runtime->actors)
-        if (record.vnum != vnum && record.vnum != 0 && record.summonItem == item)
-            return nullptr;
-
-    auto* actor = FindLiveRecord(*runtime, vnum);
-    if (!actor)
-    {
-        actor = FreeRecordSlot(*runtime);
-        if (!actor)
-        {
-            runtime->actors.push_back({});
-            actor = &runtime->actors.back();
-        }
-        *actor = {};
-        actor->vnum = vnum;
-        actor->options = options;
-    }
-
-    int32_t x = ecs::PlayerRuntime::GetX(owner);
-    int32_t y = ecs::PlayerRuntime::GetY(owner);
-    const auto z = ecs::PlayerRuntime::GetZ(owner);
-    x += spawnFar ? (number(0, 1) * 2 - 1) * number(2000, 2500) : number(-100, 100);
-    y += spawnFar ? (number(0, 1) * 2 - 1) * number(2000, 2500) : number(-100, 100);
-
-    if (IsSummoned(*actor))
-    {
-        // Do not silently adopt a different item and leave the old one locked.
-        if (item != actor->summonItem || !SnapFollowerToOwner(actor->character, owner, x, y, z))
-            return nullptr;
-        return actor;
-    }
-
-    TeardownActor(owner, *actor, true);
-    runtime = Runtime(owner);
-    actor = runtime ? FindLiveRecord(*runtime, vnum) : nullptr;
-    if (!actor)
-        return nullptr;
-    actor->character = CHARACTER_MANAGER::instance().SpawnMobEntity(
-        PetSkin(owner) ? PetSkin(owner) : vnum,
-        ecs::PlayerRuntime::GetMapIndex(owner), x, y, z, false,
-        static_cast<int>(ecs::PlayerRuntime::GetRotation(owner) + 180), false);
-    if (!IsSummoned(*actor))
-        return nullptr;
-    g_registry.get_or_emplace<ecs::StatusFlags>(actor->character).isPet = true;
-    ecs::PlayerRuntime::SetEmpire(actor->character, ecs::PlayerRuntime::GetEmpire(owner));
-    g_registry.emplace_or_replace<ecs::PlayerName>(actor->character,
-        std::string(ecs::PlayerRuntime::GetName(owner)) + "'s Pet");
-    if (!ecs::MovementSystem::Show(actor->character, ecs::PlayerRuntime::GetMapIndex(owner), x, y, z))
-    {
-        TeardownActor(owner, *actor, true);
-        return nullptr;
-    }
-    ItemSystem::SetItemSocket(item, 2, 1);
-    ItemSystem::LockItem(item);
-    actor->summonItem = item;
-    UpdatePetComponent(owner, item, true);
-    ecs::PointSystem::Compute(owner);
-    runtime = Runtime(owner);
-    actor = runtime ? FindLiveRecord(*runtime, vnum) : nullptr;
-    if (!actor)
-        return nullptr;
-#ifdef ENABLE_RECALL
-    AffectSystem::RemoveAffect(owner, AFFECT_RECALL1);
-    AffectSystem::AddAffect(owner, AFFECT_RECALL1, APPLY_NONE, 0,
-        ItemSystem::GetItemID(item), INFINITE_AFFECT_DURATION, 0, true, false);
-#endif
-    EnsureFollowEvent(owner, *runtime);
-    (void)petName;
-    return actor;
-}
-
 bool SummonTyped(entt::entity owner, uint32_t vnum, uint64_t seal, bool mount, std::string_view name)
 {
     if (!seal || !vnum || !ecs::PlayerRuntime::IsValid(owner) || CountSummoned(owner))
@@ -412,7 +228,7 @@ bool SummonTyped(entt::entity owner, uint32_t vnum, uint64_t seal, bool mount, s
         runtime->actors.emplace_back();
         actor = &runtime->actors.back();
     }
-    TeardownActor(owner, *actor, false);
+    TeardownActor(*actor, false);
     const auto map = ecs::PlayerRuntime::GetMapIndex(owner);
     const auto x = ecs::PlayerRuntime::GetX(owner) + number(-100, 100);
     const auto y = ecs::PlayerRuntime::GetY(owner) + number(-100, 100);
@@ -436,7 +252,7 @@ bool SummonTyped(entt::entity owner, uint32_t vnum, uint64_t seal, bool mount, s
     ecs::PlayerRuntime::SetEmpire(follower, ecs::PlayerRuntime::GetEmpire(owner));
     if (!ecs::MovementSystem::Show(follower, map, x, y, z))
     {
-        TeardownActor(owner, *actor, false);
+        TeardownActor(*actor, false);
         return false;
     }
     EnsureFollowEvent(owner, *runtime);
@@ -474,7 +290,7 @@ void Unsummon(entt::entity owner, uint32_t vnum, bool deleteFromList)
     auto* actor = FindLiveRecord(*runtime, vnum);
     if (!actor)
         return;
-    TeardownActor(owner, *actor, !deleteFromList);
+    TeardownActor(*actor, !deleteFromList);
     runtime = g_registry.try_get<ecs::PetRuntime>(owner);
     if (runtime && CountSummoned(owner) == 0)
         event_cancel(&runtime->updateEvent);
@@ -489,7 +305,7 @@ void UnsummonAll(entt::entity owner)
     event_cancel(&runtime->updateEvent);
     for (auto& actor : runtime->actors)
         if (actor.vnum != 0)
-            TeardownActor(owner, actor, true);
+            TeardownActor(actor, true);
 }
 
 void DeleteActor(entt::entity owner, uint32_t vnum)
@@ -509,7 +325,7 @@ void DestroyRuntime(entt::entity owner)
     // only living actors, never one whose teardown is in progress.
     for (auto& actor : runtime->actors)
         if (actor.vnum != 0)
-            TeardownActor(owner, actor, true);
+            TeardownActor(actor, true);
     runtime->actors.clear();
     if (g_registry.valid(owner))
         g_registry.remove<ecs::PetRuntime>(owner);
@@ -528,7 +344,7 @@ bool Update(entt::entity owner, uint32_t deltaTime)
     std::vector<uint32_t> vnums;
     vnums.reserve(runtime->actors.size());
     for (const auto& actor : runtime->actors)
-        if (actor.character != entt::null || actor.summonItem != entt::null)
+        if (actor.character != entt::null)
             vnums.push_back(actor.vnum);
     for (const uint32_t vnum : vnums)
     {
@@ -552,67 +368,6 @@ void SetUpdatePeriod(entt::entity owner, uint32_t ms)
 {
     if (auto* runtime = Runtime(owner))
         runtime->updatePeriod = ms;
-}
-
-void RefreshBuff(entt::entity owner)
-{
-    auto* runtime = owner == entt::null || !g_registry.valid(owner)
-        ? nullptr : g_registry.try_get<ecs::PetRuntime>(owner);
-    if (!runtime || runtime->destroying)
-        return;
-    std::vector<std::pair<uint32_t, entt::entity>> actors;
-    for (const auto& actor : runtime->actors)
-        actors.push_back({actor.vnum, actor.summonItem});
-    for (const auto& [vnum, item] : actors)
-    {
-        auto* current = g_registry.try_get<ecs::PetRuntime>(owner);
-        if (!current || current->destroying)
-            return;
-        auto* actor = FindLiveRecord(*current, vnum);
-        if (!actor || !IsSummoned(*actor) || actor->summonItem != item)
-            continue;
-        GiveBuff(owner, *actor);
-    }
-}
-
-bool Mount(entt::entity owner, uint32_t vnum)
-{
-    auto* actor = FindActor(owner, vnum);
-    if (!actor || !ecs::PlayerRuntime::IsValid(owner) ||
-        !HasOption(*actor, EPetOption_Mountable))
-        return false;
-    const auto skin = PetSkin(owner);
-    actor->ridingVnum = skin ? skin : actor->vnum;
-    MountSystem::SetMountVnum(owner, actor->ridingVnum);
-    return MountSystem::GetMountVnum(owner) == actor->ridingVnum;
-}
-
-void Unmount(entt::entity owner, uint32_t vnum)
-{
-    auto* actor = FindActor(owner, vnum);
-    if (!actor)
-        return;
-    UnmountActor(owner, *actor);
-}
-
-void UpdatePetSkin(entt::entity owner)
-{
-    auto* runtime = owner == entt::null || !g_registry.valid(owner)
-        ? nullptr : g_registry.try_get<ecs::PetRuntime>(owner);
-    if (!runtime)
-        return;
-    std::vector<std::pair<uint32_t, entt::entity>> pending;
-    for (const auto& actor : runtime->actors)
-        if (actor.vnum != 0 && IsSummoned(actor) && IsOwnedSummonItem(owner, actor.summonItem))
-            pending.push_back({actor.vnum, actor.summonItem});
-    for (const auto& [vnum, item] : pending)
-    {
-        Unsummon(owner, vnum);
-        Summon(owner, vnum, item, "", false);
-    }
-    if (auto* current = g_registry.try_get<ecs::PetRuntime>(owner);
-        current && CountSummoned(owner) == 0)
-        event_cancel(&current->updateEvent);
 }
 
 } // namespace PetSystem
