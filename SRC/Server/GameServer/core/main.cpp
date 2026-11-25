@@ -65,7 +65,6 @@
 #include "locale_service.h"
 #include "arena.h"
 #include "OXEvent.h"
-#include "polymorph.h"
 
 
 #include "BattleArena.h"
@@ -483,7 +482,6 @@ int main(int argc, char **argv)
 
 
 	CTableBySkill SkillPowerByLevel;
-	CPolymorphUtils polymorph_utils;
 	CProfiler		profiler;
 	CBattleArena	ba;
 	COver9RefineManager	o9r;
