@@ -50,7 +50,6 @@
 #include "../ecs/quest_helpers.hpp"
 #include "../ecs/EntityFactory.hpp"
 #include "../ecs/events.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/components/appearance_components.hpp"
 #include "../ecs/components/inventory_components.hpp"
 #include "../ecs/components/social_components.hpp"
@@ -843,42 +842,6 @@ namespace quest
 		ecs::PointSystem::SetLevelFromQuest(chEntity, newLevel);
         return 0;
     }
-
-	ALUA(pc_get_weapon)
-	{
-		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
-		const entt::entity item = ItemSystem::GetWearItem(character, WEAR_WEAPON);
-		lua_pushnumber(L, ItemSystem::IsValidItem(item) ? ItemSystem::GetItemVnum(item) : 0);
-		return 1;
-	}
-
-	ALUA(pc_get_armor)
-	{
-		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
-		const entt::entity item = ItemSystem::GetWearItem(character, WEAR_BODY);
-		lua_pushnumber(L, ItemSystem::IsValidItem(item) ? ItemSystem::GetItemVnum(item) : 0);
-		return 1;
-	}
-
-	ALUA(pc_get_wear)
-	{
-		// migrated from CHARACTER::GetWear
-		if (!lua_isnumber(L, 1))
-		{
-			sys_err("QUEST wrong set flag");
-			return 0;
-		}
-		const uint8_t bCell = static_cast<uint8_t>(lua_tonumber(L, 1));
-		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
-		const entt::entity item = bCell < WEAR_MAX_NUM
-			? ItemSystem::GetWearItem(character, bCell)
-			: entt::null;
-		if (!ItemSystem::IsValidItem(item))
-			lua_pushnil(L);
-		else
-			lua_pushnumber(L, ItemSystem::GetItemVnum(item));
-		return 1;
-	}
 
 	ALUA(pc_get_money)
     {
@@ -3410,7 +3373,6 @@ teleport_area:
 	{
 		luaL_reg pc_functions[] =
 		{
-			{ "get_wear",		pc_get_wear			},
 			{ "get_player_id",	pc_get_player_id	},
 			{ "get_account_id", pc_get_account_id	},
 			{ "get_account",	pc_get_account		},
@@ -3437,10 +3399,6 @@ teleport_area:
 
 			{ "get_real_alignment",	pc_get_real_alignment	},
 			{ "get_alignment",		pc_get_alignment	},
-			{ "getweapon",		pc_get_weapon		},
-			{ "get_weapon",		pc_get_weapon		},
-			{ "getarmor",		pc_get_armor		},
-			{ "get_armor",		pc_get_armor		},
 			{ "getgold",		pc_get_money		},
 			{ "get_gold",		pc_get_money		},
 			{ "changegold",		pc_change_money		},

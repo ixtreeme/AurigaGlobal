@@ -43,6 +43,34 @@ def retire_item_metatable(library):
     return library
 
 
+RETIRED_EQUIPMENT_QUERIES = {
+    b'pc.get_wear', b'pc.getweapon', b'pc.get_weapon', b'pc.getarmor', b'pc.get_armor',
+}
+
+
+def retire_equipment_queries(root):
+    changes = []
+    library = root / 'questlib.lua'
+    if library.is_file():
+        raw = library.read_bytes()
+        table = re.search(rb'^pc_index_table[ \t]*=[ \t]*\{[^{}]*\}', raw, re.MULTILINE)
+        if table:
+            body, count = re.subn(rb"""^[ \t]*\[['"]weapon['"]\][ \t]*=[ \t]*pc\.getweapon[ \t]*,[ \t]*\r?\n""",
+                                  b'', table.group(), flags=re.MULTILINE)
+            if count:
+                library.write_bytes(raw[:table.start()] + body + raw[table.end():])
+                changes.append(dict(file=library.name, change='retire numeric weapon accessor', replacements=count))
+    functions = root / 'quest_functions'
+    if functions.is_file():
+        lines = functions.read_bytes().splitlines(keepends=True)
+        kept = [line for line in lines if line.strip() not in RETIRED_EQUIPMENT_QUERIES]
+        if len(kept) != len(lines):
+            functions.write_bytes(b''.join(kept))
+            changes.append(dict(file=functions.name, change='retire numeric equipment queries',
+                                replacements=len(lines) - len(kept)))
+    return changes
+
+
 def reconcile(root, checker, legacy=None, duplicate_policy='error'):
     """Validate an already copied tree and rewrite only its quest_list."""
     root, checker = Path(root).resolve(), Path(checker).resolve()
@@ -108,6 +136,7 @@ def reconcile(root, checker, legacy=None, duplicate_policy='error'):
             changes.append(dict(file='questlib.lua', change='retire legacy item metatable', replacements=1))
         if migrated != raw:
             library.write_bytes(migrated)
+    changes.extend(retire_equipment_queries(root))
     result = native(checker, '--check-quests', root).strip()
     return dict(runtime='Lua 5.5.1', source_count=len(parsed), active_quests=len(last),
                 disabled_duplicates=disabled, preserved_state_ids=state_checks, lua_changes=changes, check=result)
