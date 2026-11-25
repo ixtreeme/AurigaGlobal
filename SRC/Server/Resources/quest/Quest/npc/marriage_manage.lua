@@ -10,7 +10,7 @@ quest marriage_manage begin
 			return game.typed_item_name(2, attire[job], fallback)
 		end
 
-		when 9006.click begin
+		when 9006.chat."Házasság / Marriage" begin
 			say_title(string.format("%s:", mob_name(npc.get_race())))
 			say("")
 			local lang = pc.get_language()
