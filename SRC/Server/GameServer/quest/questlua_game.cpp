@@ -18,6 +18,7 @@
 #include "../item/ItemStore.hpp"
 #include "../item/TypedLoot.hpp"
 #include "../social/TypedQuiz.hpp"
+#include <openssl/evp.h>
 
 #ifdef ADVANCED_GUILD_INFO
 	#include "guild_manager.h"
@@ -92,6 +93,34 @@ namespace quest
 		const auto local = QuestItemInteger(L, 2, 1, UINT32_MAX);
 		return auriga::item::ItemKey::Create(static_cast<uint16_t>(category.value_or(0)),
 			static_cast<uint32_t>(local.value_or(0)));
+	}
+
+	// One draw per concrete voucher. Moving it or retrying after a full bag
+	// must not change the result. Rejection sampling avoids modulo bias.
+	ALUA(game_typed_item_draw)
+	{
+		const auto count = luaL_checkinteger(L, 1);
+		auto& quest = CQuestManager::instance();
+		const auto* state = quest.GetCurrentState();
+		if (!state || state->co != L || quest.IsInOtherPCBlock() || !state->typedItemUse.id ||
+			count < 1 || count > 256)
+			return 0;
+		const auto limit = 256 - 256 % count;
+		for (unsigned block = 0; block < 16; ++block)
+		{
+			const auto seed = fmt::format("auriga/voucher/v1/{}/{}", state->typedItemUse.id, block);
+			unsigned char bytes[EVP_MAX_MD_SIZE];
+			unsigned size = 0;
+			if (!EVP_Digest(seed.data(), seed.size(), bytes, &size, EVP_sha256(), nullptr))
+				return 0;
+			for (unsigned i = 0; i < size; ++i)
+				if (bytes[i] < limit)
+				{
+					lua_pushinteger(L, 1 + bytes[i] % count);
+					return 1;
+				}
+		}
+		return 0;
 	}
 
 	ALUA(game_typed_item_key)
@@ -348,6 +377,7 @@ namespace quest
 			{ "drop_typed_item", game_drop_typed_item },
 			{ "drop_typed_item_with_ownership", game_drop_typed_item_with_ownership },
 			{ "typed_item_key", game_typed_item_key },
+			{ "typed_item_draw", game_typed_item_draw },
 			{ "typed_item_name", game_typed_item_name },
             { "start_typed_quiz", game_start_typed_quiz },
             { "cancel_typed_quiz", game_cancel_typed_quiz },

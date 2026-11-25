@@ -41,7 +41,7 @@ FUNCTIONS = {'': ('__get_empire_priv', '__get_empire_priv_string', '__get_guild_
           'get_event_flag', 'get_event_flag_string', 'give_guild_reward', 'mysql_query',
           'open_gaya', 'open_gaya_market', 'open_mall', 'open_safebox', 'open_web_mall',
           'request_make_guild', 'reset_guild_war_stats', 'set_event_flag', 'start_typed_quiz',
-          'typed_item_key', 'typed_item_name', 'typed_item_use_name'),
+          'typed_item_draw', 'typed_item_key', 'typed_item_name', 'typed_item_use_name'),
  'guild': ('add_comment0', 'around_ranking_string', 'change_master', 'change_master_with_limit',
            'get_any_war', 'get_draw_count0', 'get_exp_level0', 'get_id', 'get_ladder_point',
            'get_loss_count0', 'get_max_member0', 'get_maxsp0', 'get_member_count', 'get_money0',
