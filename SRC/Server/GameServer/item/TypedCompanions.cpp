@@ -2,6 +2,7 @@
 #include "TypedCostumes.hpp"
 #include "stdafx.h"
 #include "TypedCompanions.hpp"
+#include "TypedLoot.hpp"
 #include "ItemCatalogRuntime.hpp"
 #include "ItemStore.hpp"
 #include "TypedInventorySync.hpp"
@@ -37,6 +38,14 @@ namespace item = auriga::item;
 namespace store = item::runtime;
 using Action = item::CompanionAction;
 using Clock = std::chrono::steady_clock;
+
+std::string_view RedesignedPetKind(std::string_view code)
+{
+    for (std::string_view prefix : {item::RedesignedPetPrefix, item::WornTimePetPrefix})
+        if (code.starts_with(prefix))
+            return code.substr(prefix.size());
+    return {};
+}
 
 struct GrowthPetClock
 {
@@ -473,9 +482,21 @@ item::FixedCompanionSource TypedFixedCompanionBonuses(entt::entity owner)
         OtherFollower(owner,PetSystem::LiveTypedSeal(owner)))return {};
     const bool riding=row->kind==item::CompanionKind::Mount;
     if(riding ? !OwnRiding(owner) || !WorldAllowsRiding(owner) : PetSystem::LiveTypedSeal(owner)!=seal->id.Value())return {};
-    const auto bonuses=item::CollectFixedCompanionBonuses(*catalog,*seal,true,riding,ecs::SocialSystem::GetDungeon(owner)!=entt::null,
+    auto bonuses=item::CollectFixedCompanionBonuses(*catalog,*seal,true,riding,ecs::SocialSystem::GetDungeon(owner)!=entt::null,
         TypedItemEffectNow(),TypedFixedCompanionElapsed(owner,seal->id.Value()));
     if(!bonuses){LOG_ERROR("Fixed companion bonus projection failed owner {}",typed->state.fence.owner.id);return {};}
+    const auto code = RedesignedPetKind(catalog->Find(seal->key)->base.contentCode);
+    if (bonuses->seal && (code == "valentino" || code == "valentinia") &&
+        std::ranges::any_of(typed->state.items, [&](const auto& worn) {
+            if (worn.destroyed || !worn.placement || worn.placement->kind != item::ItemStorageKind::Equipment)
+                return false;
+            const auto* amulet = catalog->Find(worn.key);
+            if (!amulet || amulet->base.retired || amulet->base.contentCode != "accessory.chocolate_amulet")
+                return false;
+            return !worn.costume || (!worn.costume->expired &&
+                (!worn.costume->deadlineUtcMs || TypedItemEffectNow() < worn.costume->deadlineUtcMs));
+        }))
+        bonuses->bonuses.push_back({item::BonusId::ExperiencePercent, 5000});
     return *bonuses;
 }
 void StopTypedGrowthPetClock(entt::entity owner)
@@ -642,8 +663,24 @@ void TickTypedCompanions()
         if (!projection || !InGame(owner))
             continue;
         const auto before = projection->live;
-        if (RefreshTypedCompanion(owner) != before)
+        const auto live = RefreshTypedCompanion(owner);
+        if (live != before)
             SendTypedInventory(owner);
+        if (live && PetSystem::LiveTypedSeal(owner) == live)
+        {
+            const auto* typed = g_registry.try_get<ecs::TypedItems>(owner);
+            const auto* seal = typed ? FindSeal(typed->state, live) : nullptr;
+            const auto catalog = store::CurrentCatalog();
+            const auto* entry = seal && catalog ? catalog->Find(seal->key) : nullptr;
+            const auto* refreshed = g_registry.try_get<CompanionProjection>(owner);
+            const auto kind = entry ? RedesignedPetKind(entry->base.contentCode) : std::string_view{};
+            if (refreshed && (kind == "bruce" || kind == "wayne" || kind == "robin"))
+            {
+                const auto* pet = PetSystem::FindActor(owner, refreshed->race);
+                if (pet && pet->typedSeal == live)
+                    CollectNearbyPetLoot(owner, pet->character);
+            }
+        }
     }
     TickGrowthClocks();
     TickTypedPetSkins();
@@ -718,10 +755,24 @@ bool ApplyCompanionAction(entt::entity owner, Action action, std::uint64_t seal)
     const auto live = PetSystem::LiveTypedSeal(owner);
     const auto facts = TypedItemEffectFacts(owner);
     const bool worldAllowsFollower = WorldAllowsFollower(owner);
-    if (!row || (summon && (!facts.allowed || !facts.alive || !worldAllowsFollower || !CanSummonFromBag(owner)
-        || (active && active->id != found->id) || OtherFollower(owner, live) || !FollowerRace(*catalog, *row, *found,owner))))
+    if (!row || (summon && (!facts.allowed || !facts.alive || !worldAllowsFollower || !CanSummonFromBag(owner))))
     {
         SendRefusal(owner, "A társ ebben az állapotban nem idézhető meg.");
+        return true;
+    }
+    if (summon && active && active->id != found->id)
+    {
+        SendRefusal(owner, "Előbb hívd vissza a már kiválasztott petedet vagy hátasodat.");
+        return true;
+    }
+    if (summon && OtherFollower(owner, live))
+    {
+        SendRefusal(owner, "Előbb hívd vissza a jelenlegi társadat vagy hátasodat.");
+        return true;
+    }
+    if (summon && !FollowerRace(*catalog, *row, *found, owner))
+    {
+        SendRefusal(owner, "Ehhez a pethez vagy hátashoz nem érhető el a lény a szerveren.");
         return true;
     }
     if(action==Action::Mount && (!facts.allowed || !facts.alive || !CanSummonFromBag(owner) ||

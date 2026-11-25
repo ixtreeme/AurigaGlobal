@@ -1,6 +1,6 @@
 # A félretett küldetéses petpecsétek újratervezése
 
-**Jóváhagyásra váró játékterv · 2026. november 25.**
+**Megvalósítás jóváhagyva. A helyi kiadás külön tervezetben vár jóváhagyásra. 2026. november 25.**
 
 A javaslat szerint a játékos a leltárból egyetlen pecsétet vált be egy típusos, megidézhető petre. A forráspéldány elfogyasztása és a jutalom egy közös tranzakció. Megismételt kéréskor ugyanaz az eredmény jár.
 
@@ -34,12 +34,12 @@ A régi küldetés 29 bejegyzéshez ad lényazonosítót. Az időtartamok és a 
 | Robin | 53235 | 34057 | 1 nap | 1500 TP, 5% kritikus találat, tárgyfelvétel | Prefab megtalálva |
 | Valentino | 53236 | 34060 | 30 nap | 1500 TP, 15% szörnyek ellen, csokoládéamulettel 50% tapasztalatbónusz | Prefab megtalálva |
 | Valentinia | 53237 | 34061 | 30 nap | 1500 TP, 5% kritikus találat, csokoládéamulettel 50% tapasztalatbónusz | Prefab megtalálva |
-| Holdlámpás (Kék) | 53240 | 34063 | 30 nap | 1500 TP, 5% kritikus találat | Eredeti prefab pótlása szükséges |
-| Holdlámpás (Narancs) | 53241 | 34062 | 30 nap | 1500 TP, 15% szörnyek ellen | Eredeti prefab pótlása szükséges |
+| Holdlámpás (Kék) | 53240 | 34063 | 30 nap | 1500 TP, 5% kritikus találat | Eredeti modell és textúra ellenőrizve |
+| Holdlámpás (Narancs) | 53241 | 34062 | 30 nap | 1500 TP, 15% szörnyek ellen | Eredeti modell és textúra ellenőrizve |
 | Mergezett Szellem Sarkany | 53284 | 34116 | 3600 nap | Bónusz nélküli társ | Prefab megtalálva |
 | Választható petcsere | 53297 | – | Meglévő lejárat | A kiválasztott típus szerint | A listában elérhető modell |
 
-A két Holdlámpás az eredeti modellt kapná. Az 53297-es pecséthez csak használati esemény tartozik, a régi küldetésben hiányzik a lény. Ehhez egyszeri választást javaslunk a megjeleníthető típusok közül, a választott pet nevének és hatásának előzetes megjelenítésével. Megszakításkor a pecsét a leltárban marad. A tárgyfelvételt és az amulettel járó kombinált bónuszt a kapcsolódó szerveroldali szabállyal együtt kell kiadni.
+A két Holdlámpás az eredeti animált modellt és a hozzá tartozó kék, illetve narancs textúrát kapta. Az 53297-es pecséthez csak használati esemény tartozik, a régi küldetésben hiányzik a lény. Ehhez egyszeri választást javaslunk a megjeleníthető típusok közül, a választott pet nevének és hatásának előzetes megjelenítésével. Megszakításkor a pecsét a leltárban marad. Bruce, Wayne és Robin a típusos zsákmányfelvételt használja. Valentino és Valentinia +50% tapasztalatbónuszának feltétele a felszerelt csokoládéamulett. Az amulett jelenleg hiányzik a helyi típusos katalógusból.
 
 **Meglévő játékostárgyak.** A mentésből egyeztetni kell a tulajdonost, a tárgypéldányt, az elhelyezést, a kötést, a bónuszokat, az óra típusát és az abszolút lejáratot vagy a hátralévő viselési időt. A már lejárt példány lejárt marad. Ismeretlen állapot esetén a beváltás várakozik, az eredeti tárgy megmarad. A fenti napok kizárólag új példányokra vonatkoznak.
 

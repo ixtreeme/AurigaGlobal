@@ -1,0 +1,411 @@
+[
+  {
+    "code": "arctic_khan",
+    "source_id": 53019,
+    "race": 34019,
+    "days": 30,
+    "hu": "Sarkvidéki Kán",
+    "en": "Arctis Khan",
+    "bonuses": {
+      "35": 1500000,
+      "34": 1500
+    },
+    "effect_hu": "1500 TP, 15% sebzés",
+    "effect_en": "1,500 HP, +15% damage"
+  },
+  {
+    "code": "polar_porky",
+    "source_id": 53020,
+    "race": 34017,
+    "days": 30,
+    "hu": "Sarki Porky",
+    "en": "Polar Porkie",
+    "bonuses": {
+      "35": 1500000,
+      "34": 1500
+    },
+    "effect_hu": "1500 TP, 15% sebzés",
+    "effect_en": "1,500 HP, +15% damage"
+  },
+  {
+    "code": "frosty_rufus",
+    "source_id": 53021,
+    "race": 34018,
+    "days": 30,
+    "hu": "Fagyos Rufusz",
+    "en": "Frost Rufus",
+    "bonuses": {
+      "35": 1500000,
+      "91": 1500
+    },
+    "effect_hu": "1500 TP, 15% szörnyek ellen",
+    "effect_en": "1,500 HP, +15% damage against monsters"
+  },
+  {
+    "code": "sheldon",
+    "source_id": 53022,
+    "race": 34021,
+    "days": 30,
+    "hu": "Sheldon",
+    "en": "Sheldon",
+    "bonuses": {
+      "35": 1500000,
+      "34": 1500
+    },
+    "effect_hu": "1500 TP, 15% sebzés",
+    "effect_en": "1,500 HP, +15% damage"
+  },
+  {
+    "code": "cooper",
+    "source_id": 53023,
+    "race": 34022,
+    "days": 30,
+    "hu": "Cooper",
+    "en": "Cooper",
+    "bonuses": {
+      "35": 1500000,
+      "34": 1500
+    },
+    "effect_hu": "1500 TP, 15% sebzés",
+    "effect_en": "1,500 HP, +15% damage"
+  },
+  {
+    "code": "panther_7d",
+    "source_id": 53024,
+    "race": 34023,
+    "days": 7,
+    "hu": "Párduckölyök",
+    "en": "Panther Cub",
+    "bonuses": {
+      "35": 1500000,
+      "46": 500,
+      "101": 500
+    },
+    "effect_hu": "1500 TP, 5% átható találat, 5% készségellenállás",
+    "effect_en": "1,500 HP, +5% piercing chance, +5% skill resistance"
+  },
+  {
+    "code": "panther_30d",
+    "source_id": 53218,
+    "race": 34023,
+    "days": 30,
+    "hu": "Párduckölyök",
+    "en": "Panther Cub",
+    "bonuses": {
+      "35": 1500000,
+      "46": 500,
+      "101": 500
+    },
+    "effect_hu": "1500 TP, 5% átható találat, 5% készségellenállás",
+    "effect_en": "1,500 HP, +5% piercing chance, +5% skill resistance"
+  },
+  {
+    "code": "panther_120d",
+    "source_id": 53219,
+    "race": 34023,
+    "days": 120,
+    "hu": "Párduckölyök",
+    "en": "Panther Cub",
+    "bonuses": {
+      "35": 1500000,
+      "46": 500,
+      "101": 500
+    },
+    "effect_hu": "1500 TP, 5% átható találat, 5% készségellenállás",
+    "effect_en": "1,500 HP, +5% piercing chance, +5% skill resistance"
+  },
+  {
+    "code": "leopard_30d",
+    "source_id": 53220,
+    "race": 34024,
+    "days": 30,
+    "hu": "Leopárdkölyök",
+    "en": "Leopard Cub",
+    "bonuses": {
+      "35": 1500000,
+      "45": 500,
+      "102": 1000
+    },
+    "effect_hu": "1500 TP, 5% kritikus találat, 10% átlagkár-ellenállás",
+    "effect_en": "1,500 HP, +5% critical chance, +10% normal damage resistance"
+  },
+  {
+    "code": "leopard_120d",
+    "source_id": 53221,
+    "race": 34024,
+    "days": 120,
+    "hu": "Leopárdkölyök",
+    "en": "Leopard Cub",
+    "bonuses": {
+      "35": 1500000,
+      "45": 500,
+      "102": 1000
+    },
+    "effect_hu": "1500 TP, 5% kritikus találat, 10% átlagkár-ellenállás",
+    "effect_en": "1,500 HP, +5% critical chance, +10% normal damage resistance"
+  },
+  {
+    "code": "pumpkin",
+    "source_id": 53222,
+    "race": 34026,
+    "days": 30,
+    "hu": "Tökfej",
+    "en": "Pumpkin Head",
+    "bonuses": {
+      "35": 1500000,
+      "34": 1500
+    },
+    "effect_hu": "1500 TP, 15% sebzés",
+    "effect_en": "1,500 HP, +15% damage"
+  },
+  {
+    "code": "little_broom",
+    "source_id": 53223,
+    "race": 34027,
+    "days": 30,
+    "hu": "Kis seprű",
+    "en": "Little Broomstick",
+    "bonuses": {
+      "35": 1500000,
+      "34": 1500
+    },
+    "effect_hu": "1500 TP, 15% sebzés",
+    "effect_en": "1,500 HP, +15% damage"
+  },
+  {
+    "code": "snowflake",
+    "source_id": 53224,
+    "race": 34028,
+    "days": 30,
+    "hu": "Hópehely",
+    "en": "Snowflake",
+    "bonuses": {
+      "35": 1500000,
+      "34": 1500
+    },
+    "effect_hu": "1500 TP, 15% sebzés",
+    "effect_en": "1,500 HP, +15% damage"
+  },
+  {
+    "code": "sleigh_bell",
+    "source_id": 53225,
+    "race": 34029,
+    "days": 30,
+    "hu": "Száncsengő",
+    "en": "Snowbell",
+    "bonuses": {
+      "34": 1500,
+      "23": 500,
+      "109": 1500
+    },
+    "effect_hu": "15% sebzés, 5% kritikus sebzés, 15% mágikus sebzés",
+    "effect_en": "+15% damage, +5% critical damage, +15% magic damage"
+  },
+  {
+    "code": "cupid",
+    "source_id": 53226,
+    "race": 34030,
+    "days": 120,
+    "hu": "Cupido",
+    "en": "Cupido",
+    "bonuses": {
+      "35": 1500000,
+      "46": 500
+    },
+    "effect_hu": "1500 TP, 5% átható találat",
+    "effect_en": "1,500 HP, +5% piercing chance"
+  },
+  {
+    "code": "wild_heart",
+    "source_id": 53227,
+    "race": 34031,
+    "days": 120,
+    "hu": "Tomboló szív",
+    "en": "Raging Heart",
+    "bonuses": {
+      "35": 1500000,
+      "45": 500
+    },
+    "effect_hu": "1500 TP, 5% kritikus találat",
+    "effect_en": "1,500 HP, +5% critical chance"
+  },
+  {
+    "code": "blue_crescent",
+    "source_id": 53228,
+    "race": 34033,
+    "days": 30,
+    "hu": "Kék holdsarló",
+    "en": "Blue Crescent Moon",
+    "bonuses": {
+      "35": 1500000,
+      "110": 1500
+    },
+    "effect_hu": "1500 TP, 15% fizikai és mágikus sebzés",
+    "effect_en": "1,500 HP, +15% physical and magic damage"
+  },
+  {
+    "code": "red_crescent",
+    "source_id": 53229,
+    "race": 34032,
+    "days": 30,
+    "hu": "Piros holdsarló",
+    "en": "Red Crescent Moon",
+    "bonuses": {
+      "45": 500,
+      "110": 1500
+    },
+    "effect_hu": "5% kritikus találat, 15% fizikai és mágikus sebzés",
+    "effect_en": "+5% critical chance, +15% physical and magic damage"
+  },
+  {
+    "code": "eweriel",
+    "source_id": 53230,
+    "race": 34034,
+    "days": 30,
+    "hu": "Eweriel",
+    "en": "Eweriel",
+    "bonuses": {
+      "35": 1500000,
+      "46": 500
+    },
+    "effect_hu": "1500 TP, 5% átható találat",
+    "effect_en": "1,500 HP, +5% piercing chance"
+  },
+  {
+    "code": "ramblue",
+    "source_id": 53231,
+    "race": 34035,
+    "days": 30,
+    "hu": "Ramblue",
+    "en": "Ramblue",
+    "bonuses": {
+      "35": 1500000,
+      "45": 500
+    },
+    "effect_hu": "1500 TP, 5% kritikus találat",
+    "effect_en": "1,500 HP, +5% critical chance"
+  },
+  {
+    "code": "baby_huashin",
+    "source_id": 53232,
+    "race": 34039,
+    "days": 30,
+    "hu": "Baby Huashin",
+    "en": "Baby Huashin",
+    "bonuses": {
+      "35": 1500000,
+      "46": 500
+    },
+    "effect_hu": "1500 TP, 5% átható találat",
+    "effect_en": "1,500 HP, +5% piercing chance"
+  },
+  {
+    "code": "bruce",
+    "source_id": 53233,
+    "race": 34055,
+    "days": 30,
+    "hu": "Bruce",
+    "en": "Bruce",
+    "bonuses": {
+      "35": 1500000,
+      "45": 500
+    },
+    "effect_hu": "1500 TP, 5% kritikus találat, tárgyfelvétel",
+    "effect_en": "1,500 HP, +5% critical chance, collects nearby items"
+  },
+  {
+    "code": "wayne",
+    "source_id": 53234,
+    "race": 34056,
+    "days": 30,
+    "hu": "Wayne",
+    "en": "Wayne",
+    "bonuses": {
+      "35": 1500000,
+      "46": 500
+    },
+    "effect_hu": "1500 TP, 5% átható találat, tárgyfelvétel",
+    "effect_en": "1,500 HP, +5% piercing chance, collects nearby items"
+  },
+  {
+    "code": "robin",
+    "source_id": 53235,
+    "race": 34057,
+    "days": 1,
+    "hu": "Robin",
+    "en": "Robin",
+    "bonuses": {
+      "35": 1500000,
+      "45": 500
+    },
+    "effect_hu": "1500 TP, 5% kritikus találat, tárgyfelvétel",
+    "effect_en": "1,500 HP, +5% critical chance, collects nearby items"
+  },
+  {
+    "code": "valentino",
+    "source_id": 53236,
+    "race": 34060,
+    "days": 30,
+    "hu": "Valentino",
+    "en": "Valentino",
+    "bonuses": {
+      "35": 1500000,
+      "91": 1500
+    },
+    "effect_hu": "1500 TP, 15% szörnyek ellen, csokoládéamulettel 50% tapasztalatbónusz",
+    "effect_en": "1,500 HP, +15% damage against monsters, +50% experience with the Chocolate Amulet"
+  },
+  {
+    "code": "valentinia",
+    "source_id": 53237,
+    "race": 34061,
+    "days": 30,
+    "hu": "Valentinia",
+    "en": "Valentinia",
+    "bonuses": {
+      "35": 1500000,
+      "45": 500
+    },
+    "effect_hu": "1500 TP, 5% kritikus találat, csokoládéamulettel 50% tapasztalatbónusz",
+    "effect_en": "1,500 HP, +5% critical chance, +50% experience with the Chocolate Amulet"
+  },
+  {
+    "code": "moon_lantern_blue",
+    "source_id": 53240,
+    "race": 34063,
+    "days": 30,
+    "hu": "Holdlámpás (Kék)",
+    "en": "Lantern Moon (Blue)",
+    "bonuses": {
+      "35": 1500000,
+      "45": 500
+    },
+    "effect_hu": "1500 TP, 5% kritikus találat",
+    "effect_en": "1,500 HP, +5% critical chance"
+  },
+  {
+    "code": "moon_lantern_orange",
+    "source_id": 53241,
+    "race": 34062,
+    "days": 30,
+    "hu": "Holdlámpás (Narancs)",
+    "en": "Lantern Moon (Orange)",
+    "bonuses": {
+      "35": 1500000,
+      "91": 1500
+    },
+    "effect_hu": "1500 TP, 15% szörnyek ellen",
+    "effect_en": "1,500 HP, +15% damage against monsters"
+  },
+  {
+    "code": "poisoned_spirit_dragon",
+    "source_id": 53284,
+    "race": 34116,
+    "days": 3600,
+    "hu": "Mergezett Szellem Sarkany",
+    "en": "Poisoned Spirit Dragon",
+    "bonuses": {},
+    "effect_hu": "Bónusz nélküli társ",
+    "effect_en": "Companion without stat bonuses"
+  }
+]

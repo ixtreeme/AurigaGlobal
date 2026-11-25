@@ -2,6 +2,7 @@
 #include "CatalogSnapshotFixture.hpp"
 #include <item/CompanionItems.hpp>
 #include <item/EquipmentStats.hpp>
+#include <item/ItemMissions.hpp>
 #include <item/AccessoryRuntime.hpp>
 #include <algorithm>
 #include <iomanip>
@@ -25,6 +26,66 @@ ItemCatalogSource Fixture() {
                   {Key(2),CompanionKind::Mount,2,2,CompanionClock::ActiveTime,5000,false}};
     return s;
 }
+void QuestPetClocks() {
+    auto data=Fixture();
+    const auto sourceKey=ItemKey::Create(10,91).value();
+    const auto fixed=Key(1), worn=Key(2);
+    for(auto& base:data.items) {
+        if(base.key==fixed)base.contentCode="companion.timed.redesign.test";
+        if(base.key==worn)base.contentCode="companion.timed.inherited.test";
+    }
+    data.companions[1]={worn,CompanionKind::Pet,1,{},CompanionClock::ActiveTime,5000,false};
+    auto base=*std::ranges::find(data.items,f::Leather(),&ItemBaseRow::key);
+    base.key=sourceKey;base.contentCode="quest.pet_seal.test";base.maxStack=1;
+    data.items.push_back(base);
+    data.questItems.push_back({sourceKey,QuestItemDispatch::FirstHandler,"companion.timed.redesign.test",1,false});
+    ItemDefinitionRules rules{sourceKey};rules.clock=CostumeClock::SinceFirstUse;rules.durationMs=3000;
+    data.definitionRules.push_back(rules);
+    const ItemOwner owner{ItemOwnerKind::Character,7};
+    PersistentItem seal{ItemInstanceId::Create(9).value(),sourceKey,owner};
+    seal.count=1;seal.placement=ItemPlacement{ItemStorageKind::Inventory,1,0};
+    seal.costume=CostumeLifetimeState{};
+    auto catalog=BuildItemCatalog(data).value();
+    auto converted=CarryTimedQuestPetSeal(*catalog,seal,fixed,4000);
+    Check(converted && converted->lifetime.deadlineUtcMs==7000,"new pet starts at redemption");
+    seal.costume=CostumeLifetimeState{true,false,6100,0};
+    converted=CarryTimedQuestPetSeal(*catalog,seal,fixed,4000);
+    Check(converted && converted->lifetime.deadlineUtcMs==6100,"started pet keeps its own deadline");
+    data.questItems.back().groupCode=PetChoiceGroup;
+    data.definitionRules.back().clock=CostumeClock::SinceCreation;
+    catalog=BuildItemCatalog(data).value();
+    converted=CarryTimedQuestPetSeal(*catalog,seal,fixed,4000);
+    Check(converted && converted->lifetime.deadlineUtcMs==6100,"chosen pet inherits deadline");
+    data.definitionRules.back().clock=CostumeClock::EquippedTime;
+    catalog=BuildItemCatalog(data).value();
+    seal.costume=CostumeLifetimeState{true,false,0,1234};
+    converted=CarryTimedQuestPetSeal(*catalog,seal,worn,4000);
+    Check(converted && converted->lifetime.remainingMs==1234,"chosen pet inherits exact worn-time budget");
+    Check(!CarryTimedQuestPetSeal(*catalog,seal,fixed,4000),"cannot convert worn time into a fresh deadline");
+    const auto redeem = [&](const ItemCatalog& items, ItemKey chosen) {
+        ItemMission mission{1,1,"quest.pet.choice","Pet exchange","",0,{},{{sourceKey,0,1}},{{chosen,0,1}}};
+        ItemMissionProof proof{owner};
+        proof.action[0]=1;
+        const std::array bags{ItemStorageLayout{{owner,ItemStorageKind::Inventory,1},5,9,1}};
+        const std::array ids{ItemInstanceId::Create(10).value()};
+        return MakeGameplayItemExchangeCommit(items,mission,proof,{owner,1,1},bags,
+            std::span(&seal,1),{},ids,4000,WalletCurrency::Gold,seal.id);
+    };
+    const auto spent = redeem(*catalog,worn);
+    Check(spent && spent->items.size()==2 && ValidateItemCommit(*catalog,*spent).has_value(),
+          "worn-time exchange passes durable commit validation");
+    const auto issued = std::ranges::find_if(spent->items,[](const auto& change){return !change.before;});
+    Check(issued!=spent->items.end() && issued->after.key==worn && issued->after.companion->lifetime.remainingMs==1234,
+          "worn-time reward retains selected form and budget in the final transaction");
+    data.definitionRules.back().clock=CostumeClock::SinceCreation;
+    catalog=BuildItemCatalog(data).value();
+    seal.costume=CostumeLifetimeState{true,false,6100,0};
+    const auto dated=redeem(*catalog,fixed);
+    Check(dated && ValidateItemCommit(*catalog,*dated).has_value(),"deadline choice is a valid durable exchange");
+    seal.costume.reset();
+    Check(!CarryTimedQuestPetSeal(*catalog,seal,worn,4000),"missing instance clock blocks exchange");
+}
+
 CompanionRequest Request(const ItemCatalog& c,unsigned local=1) {
     CompanionRequest r{Key(local)};r.state=MakeCompanionState(c,r.key,100).value();
     r.instanceId=10;r.revision=5;r.ownerId=r.actorId=7;r.rulesetRevision=3;r.operationId[0]=1;
@@ -184,6 +245,6 @@ void PersistentClocksAndBonuses() {
 }
 int main(int argc,char** argv) {
     try{if(argc==2 && std::string_view(argv[1])=="--hash-fixture"){auto c=BuildItemCatalog(Fixture()).value();for(auto b:c->ContentHash())std::cout<<std::hex<<std::setw(2)<<std::setfill('0')<<unsigned(b);std::cout<<'\n';return 0;}
-        Actions();Rejections();PersistentClocksAndBonuses();std::cout<<checks<<" Companion checks passed\n";return 0;
+        Actions();Rejections();PersistentClocksAndBonuses();QuestPetClocks();std::cout<<checks<<" Companion checks passed\n";return 0;
     }catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}
 }

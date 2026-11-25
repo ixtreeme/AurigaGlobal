@@ -311,6 +311,28 @@ bool PickupTypedLoot(entt::entity character, std::uint32_t vid)
 	return true;
 }
 
+void CollectNearbyPetLoot(entt::entity owner, entt::entity pet)
+{
+    if (!g_registry.valid(pet) || !GroundAdmission(owner))
+        return;
+    const auto pid = ecs::PlayerRuntime::GetPlayerID(owner);
+    const auto now = NowMs();
+    std::uint32_t candidate = 0;
+    ecs::SpatialService::ForEachAround(g_registry, pet, 500, [&](entt::entity entity) {
+        const auto* view = g_registry.try_get<ecs::TypedLootView>(entity);
+        if (!view || !InReach(entity, owner) || (candidate && candidate <= view->vid))
+            return;
+        const auto found = Loot().find(view->vid);
+        if (found == Loot().end() || found->second.pending)
+            return;
+        const auto& loot = found->second.loot;
+        if (!items::GroundLootExpired(loot, now) && (!items::GroundClaimActive(loot, now) || loot.claimPid == pid))
+            candidate = view->vid;
+    });
+    if (candidate)
+        PickupTypedLoot(owner, candidate);
+}
+
 void TickTypedLoot()
 {
     TickTypedMoney();

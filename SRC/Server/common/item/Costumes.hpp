@@ -52,6 +52,9 @@ struct CostumeClockStep
 // content identity. No synthetic costume prototype is needed for a pet skin.
 struct CostumeClockDefinition { CostumeClock clock; std::uint64_t durationMs; };
 class ItemCatalog;
+inline constexpr char PetChoiceGroup[] = "companion.timed.choice";
+inline constexpr char RedesignedPetPrefix[] = "companion.timed.redesign.";
+inline constexpr char WornTimePetPrefix[] = "companion.timed.inherited.";
 // Costumes and the independent six-bonus stole share the same persisted clock.
 // Permanent stoles retain their historical, clock-free instance representation.
 std::optional<CostumeClockDefinition> FindWearableClock(const ItemCatalog&,ItemKey);

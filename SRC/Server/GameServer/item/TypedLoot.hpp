@@ -25,6 +25,7 @@ void CancelTypedCurrencyDrop(const auriga::item::CurrencyDropIntent&);
 // CG_ITEM_PICKUP for a typed loot VID. True when the VID is typed loot
 // (handled, whatever the outcome); false lets the legacy pickup run.
 bool PickupTypedLoot(entt::entity character, std::uint32_t vid);
+void CollectNearbyPetLoot(entt::entity owner, entt::entity pet);
 // Once a second from the heartbeat: lapsed claims and expired loot.
 void TickTypedLoot();
 // CG_TYPED_ITEM_DROP (228): concrete inventory instance, 0 means whole stack.

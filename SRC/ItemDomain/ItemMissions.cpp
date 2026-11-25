@@ -39,7 +39,7 @@ bool ExchangeItemUsable(const PersistentItem& item,ItemOwner owner)
 }
 bool MissionItemUsable(const PersistentItem& item,ItemOwner owner)
 {return PlainInventoryItem(item,owner);}
-std::optional<CompanionState> CarryTimedQuestPetSeal(const ItemCatalog& catalog,const PersistentItem& source,ItemKey target)
+std::optional<CompanionState> CarryTimedQuestPetSeal(const ItemCatalog& catalog,const PersistentItem& source,ItemKey target,std::uint64_t nowUtcMs)
 {
     const auto clock=FindTimedQuestPetSealClock(catalog,source.key);
     if(!clock || !source.costume || source.costume->expired || source.count!=1 || source.refinementLevel ||
@@ -47,12 +47,27 @@ std::optional<CompanionState> CarryTimedQuestPetSeal(const ItemCatalog& catalog,
     const auto& quest=std::get<ItemQuestRow>(catalog.Find(source.key)->category);
     const auto* reward=catalog.Find(target);
     const auto* row=reward ? std::get_if<ItemCompanionRow>(&reward->category) : nullptr;
-    if(!row || reward->base.retired || quest.groupCode!=reward->base.contentCode || row->kind!=CompanionKind::Pet ||
-       static_cast<unsigned>(row->clock)!=static_cast<unsigned>(clock->clock) || row->durationMs!=clock->durationMs)
+    if(!row || reward->base.retired || row->kind!=CompanionKind::Pet)
         return {};
+    const auto& code=reward->base.contentCode;
+    if(quest.groupCode==PetChoiceGroup) {
+        if(!source.costume->started)return {};
+        if(clock->clock==CostumeClock::EquippedTime) {
+            if(!code.starts_with(WornTimePetPrefix) || row->clock!=CompanionClock::ActiveTime ||
+               !source.costume->remainingMs)return {};
+        } else if(!code.starts_with(RedesignedPetPrefix) || row->clock!=CompanionClock::SinceFirstUse ||
+                  !source.costume->deadlineUtcMs)return {};
+    } else if(quest.groupCode!=code || static_cast<unsigned>(row->clock)!=static_cast<unsigned>(clock->clock) ||
+              row->durationMs!=clock->durationMs)return {};
     CompanionState result;
     result.lifetime.started=source.costume->started;
     result.lifetime.deadlineUtcMs=source.costume->deadlineUtcMs;
+    result.lifetime.remainingMs=source.costume->remainingMs;
+    if(!result.lifetime.started && code.starts_with(RedesignedPetPrefix)) {
+        if(!nowUtcMs || nowUtcMs>uint64_t(INT64_MAX)-row->durationMs)return {};
+        result.lifetime.started=true;
+        result.lifetime.deadlineUtcMs=nowUtcMs+row->durationMs;
+    }
     return ValidCompanionState(*row,result) ? std::optional{result} : std::nullopt;
 }
 std::uint64_t CountMissionItems(std::span<const PersistentItem> items,ItemOwner owner,ItemKey key,std::uint16_t level)
@@ -137,8 +152,8 @@ static std::expected<ItemCommit,E> MakeExchangeCommit(const ItemCatalog& c,const
             if(m.costs.front().count!=1 || m.rewards.size()!=1 || m.rewards.front().count!=1 ||
                m.rewards.front().level || !m.requirements.empty() || m.goldCost || m.goldReward)
                 return std::unexpected(E::Invalid);
-            carriedClock=CarryTimedQuestPetSeal(c,*source,m.rewards.front().key);
-            if(!carriedClock || !nowUtcMs || (carriedClock->lifetime.started && carriedClock->lifetime.deadlineUtcMs<=nowUtcMs))
+            carriedClock=CarryTimedQuestPetSeal(c,*source,m.rewards.front().key,nowUtcMs);
+            if(!carriedClock || !nowUtcMs || (carriedClock->lifetime.deadlineUtcMs && carriedClock->lifetime.deadlineUtcMs<=nowUtcMs))
                 return std::unexpected(E::Requirements);
             timedSeal=&*source;
         }
@@ -163,7 +178,19 @@ static std::expected<ItemCommit,E> MakeExchangeCommit(const ItemCatalog& c,const
     std::size_t usedIds=0;
     for(const auto& reward:m.rewards)
     {
-        const auto grant=MakeGrantCommit(c,*op,fence,layouts,working,{reward.key,reward.level,reward.count,{},{},{},nowUtcMs},ids.subspan(usedIds));
+        // A worn-time replacement has no issuable default lifetime. Use the matching
+        // regular pet to locate a free cell, then install the verified instance state.
+        auto placementKey=reward.key;
+        const auto& target=c.Find(reward.key)->base;
+        if(target.contentCode.starts_with(WornTimePetPrefix)) {
+            if(!timedSeal || !carriedClock)return std::unexpected(E::Requirements);
+            const auto normal=std::string(RedesignedPetPrefix)+target.contentCode.substr(sizeof(WornTimePetPrefix)-1);
+            const auto found=std::ranges::find_if(c.Entries(),[&](const auto& pair){return pair.second.base.contentCode==normal;});
+            if(found==c.Entries().end() || found->first.Category()!=ItemCategory::Companion || found->second.base.retired)
+                return std::unexpected(E::Invalid);
+            placementKey=found->first;
+        }
+        const auto grant=MakeGrantCommit(c,*op,fence,layouts,working,{placementKey,reward.level,reward.count,{},{},{},nowUtcMs},ids.subspan(usedIds));
         if(!grant)return std::unexpected(grant.error()==ItemPersistenceError::InvalidPlacement ? E::NoRoom : grant.error()==ItemPersistenceError::LimitExceeded ? E::Unavailable : E::Invalid);
         for(const auto& change:grant->items)
         {
@@ -171,13 +198,14 @@ static std::expected<ItemCommit,E> MakeExchangeCommit(const ItemCatalog& c,const
                 *std::ranges::find(working,change.after.id,&PersistentItem::id)=change.after;
             else
             {
-                auto reward=change.after;
+                auto issued=change.after;
                 if(timedSeal)
                 {
-                    reward.companion=carriedClock;
-                    if(timedSeal->boundTo)reward.boundTo=timedSeal->boundTo;
+                    issued.key=reward.key;
+                    issued.companion=carriedClock;
+                    if(timedSeal->boundTo)issued.boundTo=timedSeal->boundTo;
                 }
-                working.push_back(std::move(reward));
+                working.push_back(std::move(issued));
                 ++usedIds;
             }
         }

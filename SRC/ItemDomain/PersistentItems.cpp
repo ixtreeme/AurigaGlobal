@@ -981,7 +981,12 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
                issued->after.owner!=consumed->before->owner || issued->after.owner!=r.owners.front().owner ||
                !issued->after.placement || issued->after.placement->kind!=ItemStorageKind::Inventory)
                 return std::unexpected(E::InvalidChange);
-            const auto expected=CarryTimedQuestPetSeal(c,*consumed->before,issued->after.key);
+            const auto* entry=c.Find(issued->after.key);
+            const auto* pet=entry ? std::get_if<ItemCompanionRow>(&entry->category) : nullptr;
+            if(!pet || !issued->after.companion)return std::unexpected(E::InvalidChange);
+            const auto deadline=issued->after.companion->lifetime.deadlineUtcMs;
+            const auto activation=deadline>pet->durationMs ? deadline-pet->durationMs : 0;
+            const auto expected=CarryTimedQuestPetSeal(c,*consumed->before,issued->after.key,activation);
             if(!expected || issued->after.companion!=expected)
                 return std::unexpected(E::InvalidChange);
             auto binding=consumed->before->boundTo;
@@ -1114,6 +1119,8 @@ std::expected<void,E> ValidateItemCommit(const ItemCatalog& c,const ItemCommit& 
             const auto initial=InitialPetSupplyState(c,p.key,p.petSupply->createdAtUtcMs);
             if(!initial || *initial!=*p.petSupply)return std::unexpected(E::InvalidChange);
         }
+        if(!change.before && c.Find(p.key)->base.contentCode.starts_with(WornTimePetPrefix) && carriedSeal!=&change)
+            return std::unexpected(E::InvalidChange);
         if(!change.before && !p.costume && FindTimedQuestPetSealClock(c,p.key))return std::unexpected(E::InvalidChange);
         if(!change.before && p.costume) {
             const auto row=FindPersistentItemClock(c,p.key);if(!row)return std::unexpected(E::InvalidChange);
@@ -1875,6 +1882,9 @@ std::expected<ItemCommit,E> MakeGrantCommit(const ItemCatalog& c,std::array<std:
     if(std::ranges::all_of(operationId,[](auto b){return b==0;}))return std::unexpected(E::InvalidOperation);
     const auto* entry=c.Find(grant.key);
     if(!entry || entry->base.retired)return std::unexpected(E::InvalidItem);
+    const auto* quest=std::get_if<ItemQuestRow>(&entry->category);
+    if((quest && quest->groupCode==PetChoiceGroup) || entry->base.contentCode.starts_with(WornTimePetPrefix))
+        return std::unexpected(E::UnsupportedState);
     if(!grant.count)return std::unexpected(E::InvalidChange);
     const auto currencyMode=c.CurrencyMode(grant.key);
     if(currencyMode==CurrencyTokenMode::DynamicGold ? !grant.currencyAmount || !*grant.currencyAmount || *grant.currencyAmount>MaxTokenUnitAmount || grant.count!=1 || grant.tryMagic || grant.magicChanceBp.has_value() : grant.currencyAmount.has_value())return std::unexpected(E::InvalidChange);

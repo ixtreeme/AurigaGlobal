@@ -62,7 +62,8 @@ std::optional<CostumeClockDefinition> FindTimedQuestPetSealClock(const ItemCatal
     if(!quest || quest->dispatch!=QuestItemDispatch::FirstHandler || entry->base.maxStack!=1 ||
        !quest->groupCode.starts_with("companion.timed."))return {};
     const auto* rule=catalog.FindDefinitionRules(key,0);
-    if(!rule || (rule->clock!=CostumeClock::SinceCreation && rule->clock!=CostumeClock::SinceFirstUse) ||
+    if(!rule || (rule->clock!=CostumeClock::SinceCreation && rule->clock!=CostumeClock::SinceFirstUse &&
+       !(quest->groupCode==PetChoiceGroup && rule->clock==CostumeClock::EquippedTime)) ||
        !rule->durationMs)return {};
     return CostumeClockDefinition{rule->clock,rule->durationMs};
 }
