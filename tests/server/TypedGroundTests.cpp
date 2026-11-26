@@ -1,3 +1,4 @@
+#include <item/TypedPickupReceipt.hpp>
 // Typed ground loot (F4 C7c, IC-035): the pickup rule and the
 // GC_TYPED_GROUND_ADD v1 wire. The golden file pins the bytes the Unity
 // decoder is tested against. --write-golden rewrites it.
@@ -95,6 +96,14 @@ int main(int argc, char** argv)
 			Check(EncodeTypedGround(bad).error() == TypedGroundWireError::BadValue, "invalid view refused");
 		Check(EncodeTypedGround({ 1, 0, 0, 0, view.key, 0, 1, std::string(96, 'a') }).has_value(), "a 96-character code fits");
 
+        const ItemGrant receiptGrant{view.key,2,7};
+        const auto receipt=TypedPickupReceipt(receiptGrant,"item.fixture.name");
+        Check(receipt && *receipt=="7#|Hti:"+std::to_string(static_cast<unsigned>(view.key.Category()))+
+            ":"+std::to_string(view.key.LocalId())+":2:7:0::|h[item.fixture.name]|h","canonical pickup receipt");
+        Check(!TypedPickupReceipt(receiptGrant,"bad|hname") && !TypedPickupReceipt(receiptGrant,"bad#name"),
+            "receipt markup injection refused");
+        auto emptyGrant=receiptGrant;emptyGrant.count=0;
+        Check(!TypedPickupReceipt(emptyGrant,"item.fixture.name"),"zero pickup receipt refused");
 		const auto text = Hex(b);
 		if (argc == 2 && std::string(argv[1]) == "--write-golden")
 		{

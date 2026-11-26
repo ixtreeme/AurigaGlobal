@@ -48,6 +48,7 @@
 #include <Core/Logging.hpp>
 #include <item/ItemCatalog.hpp>
 #include <item/TypedGround.hpp>
+#include <item/TypedPickupReceipt.hpp>
 
 #include <algorithm>
 #include <chrono>
@@ -240,6 +241,17 @@ bool PickupOwned(entt::entity character,std::uint32_t vid);
 bool GroundAdmission(entt::entity character);
 }
 
+namespace {
+void SendTypedPickupReceipt(entt::entity receiver, const items::ItemGrant& grant)
+{
+    const auto catalog=items::runtime::CurrentCatalog();
+    if(!g_registry.valid(receiver)||!catalog)return;
+    const auto* entry=catalog->Find(grant.key);
+    if(!entry||catalog->CurrencyMode(grant.key)==items::CurrencyTokenMode::GroundGold)return;
+    if(const auto text=items::TypedPickupReceipt(grant,entry->base.nameKey))
+        ecs::ChatSystem::SendNew(receiver,CHAT_TYPE_INFO_ITEM,102,"%s",text->c_str());
+}
+}
 bool PickupTypedLoot(entt::entity character, std::uint32_t vid)
 {
 	auto& all = Loot();
@@ -278,13 +290,20 @@ bool PickupTypedLoot(entt::entity character, std::uint32_t vid)
 	}
 	const entt::entity receiver = decision == items::GroundPickup::Claimant ? claimant : character;
 	// The loot stays on the ground until the store has written the item.
-	const auto done = [vid](bool written) {
+	const auto* receiverLogin=g_registry.try_get<ecs::TypedItemLogin>(receiver);
+    const auto receiptToken=receiverLogin?receiverLogin->token:0;
+    const auto receiptGrant=entry.loot.grant;
+    const auto done = [vid,receiver,receiptToken,receiptGrant](bool written) {
 		auto& all = Loot();
 		const auto found = all.find(vid);
 		if (found == all.end())
 			return;
 		if (written)
-			Retire(vid);
+        {
+            const auto* login=g_registry.valid(receiver)?g_registry.try_get<ecs::TypedItemLogin>(receiver):nullptr;
+            if(login&&login->token==receiptToken)SendTypedPickupReceipt(receiver,receiptGrant);
+            Retire(vid);
+        }
 		else
 			found->second.pending = false;
 	};
@@ -505,9 +524,18 @@ void TransferOwned(std::uint32_t vid,entt::entity picker)
 				else LOG_ERROR("OwnedGround: vid {} planning refused (error {})",vid,static_cast<int>(commit.error()));
 				failure();return;
 			}
-			if(!runtime::RequestCommitMany(std::move(reads),std::move(*commit),[vid,locks](runtime::MultiCommitOutcome outcome) mutable {
+			if(!runtime::RequestCommitMany(std::move(reads),std::move(*commit),[vid,locks,receiver](runtime::MultiCommitOutcome outcome) mutable {
 				FinishOwners(std::move(outcome.states),locks);
-				if(outcome.write)Retire(vid);
+				if(outcome.write)
+                {
+                    const auto found=Loot().find(vid);
+                    const auto target=Online(receiver);
+                    const auto fence=std::ranges::find(locks,receiver,&Lock::first);
+                    const auto* login=target!=entt::null?g_registry.try_get<ecs::TypedItemLogin>(target):nullptr;
+                    if(found!=Loot().end()&&login&&fence!=locks.end()&&login->token==fence->second)
+                        SendTypedPickupReceipt(target,found->second.loot.grant);
+                    Retire(vid);
+                }
 				else {if(auto it=Loot().find(vid);it!=Loot().end())it->second.pending=false;LOG_ERROR("OwnedGround: vid {} write refused (error {})",vid,static_cast<int>(outcome.write.error()));}
 			}))failure();
 		};
