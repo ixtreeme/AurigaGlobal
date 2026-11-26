@@ -814,7 +814,6 @@ void SkillSystem::StopMuyeongEvent(entt::entity) { UnexpectedService(__func__); 
 void SkillSystem::StartGyeongGongEvent(entt::entity) { UnexpectedService(__func__); }
 void SkillSystem::StopGyeongGongEvent(entt::entity) { UnexpectedService(__func__); }
 int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { UnexpectedService(__func__); }
-void AffectSystem::AutoRecallProcess(entt::entity) { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetDropStatus(entt::entity) { UnexpectedService(__func__); }
 bool MountSystem::StopRiding(entt::entity) { UnexpectedService(__func__); }
 void ecs::VisibilitySystem::Reencode(entt::registry &,entt::entity) { UnexpectedService(__func__); }
@@ -916,7 +915,6 @@ std::optional<bool> TypedMountFlightPermission(entt::entity){return std::nullopt
 double ecs::PointSystem::GetPrecise(entt::entity e,uint8_t type){return static_cast<double>(Get(e,type));}
 void ecs::PointSystem::ChangePrecise(entt::entity e,uint8_t type,double amount,bool delta,bool broadcast){Change(e,type,static_cast<int64_t>(amount),delta,broadcast);}
 namespace WarriorExpansion { bool AllowBuff(entt::entity,uint32_t){return false;} }
-namespace EclipseRaid { void Dispel(entt::entity){} }
 // Key functions emit RTTI for singleton service doubles used by the production TU.
 CHARACTER_MANAGER::~CHARACTER_MANAGER() = default;
 quest::CQuestManager::~CQuestManager() = default;

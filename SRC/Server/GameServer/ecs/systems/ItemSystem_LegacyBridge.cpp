@@ -698,22 +698,6 @@ void InventorySystem::ClearItem(entt::entity e)
 
 
 #ifdef ENABLE_RECALL
-void AffectSystem::AutoRecallProcess(entt::entity e)
-{
-	const auto* descriptor = ecs::PlayerRuntime::GetDesc(e);
-	if (!descriptor || !descriptor->IsPhase(PHASE_GAME) || !ecs::PlayerRuntime::GetSectree(e)
-		|| !InventorySystem::IsItemLoaded(e))
-		return;
-
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-	// ENABLE_01092021 disables the old LoadAffect mount-restore branch.
-	// Restore only after inventory, placement and the GAME phase are ready.
-	if (ecs::PlayerRuntime::GetMapIndex(e) != 113 &&
-		!CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(e)))
-		MountSystem::CheckMount(e);
-#endif
-
-}
 #endif
 
 #
@@ -879,11 +863,6 @@ EVENTFUNC(real_time_expire_event)
 	const time_t current = get_global_time();
 	if (current > ItemSystem::GetItemSocket(item, 0))
 	{
-		if (ItemSystem::IsNewMountItem(item)) {
-			if (ItemSystem::GetItemSocket(item, 2) != 0)
-				ItemSystem::ClearMountAttributeAndAffect(item);
-		}
-
 		ITEM_MANAGER::instance().RemoveItem(item, "REAL_TIME_EXPIRE");
 		return 0;
 	}

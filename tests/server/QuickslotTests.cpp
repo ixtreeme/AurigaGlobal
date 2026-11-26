@@ -676,13 +676,7 @@ SECTREE * SECTREE_MANAGER::Get(int map, int, int) {
     static SECTREE ground;
     return map == 1 && !rejectGround ? &ground : nullptr;
 }
-void MountSystem::UpdateMountSkin(entt::entity) { Unexpected(); }
-void MountSystem::MountUnsummon(entt::entity, entt::entity) { Unexpected(); }
-void MountSystem::MountSummon(entt::entity, entt::entity) { Unexpected(); }
-void MountSystem::MountCostume(entt::entity, entt::entity) { Unexpected(); }
 bool ItemSystem::IsExtraItem(entt::entity e) { return Meta(e).extra; }
-bool ItemSystem::IsRideItem(entt::entity e) { Meta(e); return false; }
-bool ItemSystem::IsMountItem(entt::entity e) { Meta(e); return false; }
 bool ItemSystem::IsRuneItem(entt::entity e) { return Meta(e).rune; }
 uint32_t ItemSystem::GetItemID(entt::entity e) { return g_registry.get<ecs::ItemIdentity>(e).id; }
 uint32_t ItemSystem::GetItemVID(entt::entity) { Unexpected(); }
@@ -739,7 +733,6 @@ uint32_t ItemSystem::GetItemSocket(entt::entity e, int i) { return g_registry.ge
 TPlayerItemAttribute ItemSystem::GetItemAttribute(entt::entity e, int i) { return g_registry.get<ecs::ItemAttributes>(e).attrs[i]; }
 int ItemSystem::GetItemAttributeType(entt::entity e, int i) { return GetItemAttribute(e, i).bType; }
 bool ItemSystem::SetItemSocket(entt::entity e, int i, uint32_t value, bool) { g_registry.get<ecs::ItemSockets>(e).sockets[i] = value; Service("set-socket"); return true; }
-void ItemSystem::ClearMountAttributeAndAffect(entt::entity) { Unexpected(); }
 int64_t ItemSystem::GetItemShopBuyPrice(entt::entity e) { return Meta(e).proto.dwShopBuyPrice; }
 void ItemSystem::PublishItemCount(entt::entity e) { if (IsValidItem(e) && !IsItemConsumptionPending(e)) Service("item-count-update"); }
 bool ItemSystem::HaveSameStackPayload(entt::entity a, entt::entity b, bool) {

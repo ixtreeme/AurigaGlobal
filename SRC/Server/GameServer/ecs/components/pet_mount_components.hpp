@@ -30,19 +30,7 @@ struct TypedPetLevel {
     uint16_t value { 1 };
 };
 
-struct MountComponent {
-    entt::entity owner { entt::null };
-    entt::entity item { entt::null };
-    uint32_t itemID { 0 };
-    uint32_t itemVID { 0 };
-    uint32_t itemVnum { 0 };
-    std::array<int32_t, ITEM_SOCKET_MAX_NUM> sockets {};
-    uint32_t level { 0 };
-    uint32_t state { 0 };
-};
-
-// Creature-side ownership for costume mounts. The actor map is keyed by
-// vnum, but cleanup must also work when skins or transmutations change it.
+// Owner of a typed mount follower; independent of its current appearance.
 struct MountOwner {
     entt::entity owner { entt::null };
 };
@@ -63,23 +51,6 @@ struct PetRuntime {
     bool destroying { false };
     // Actor lookups remain stable when a different follower form is added.
     std::deque<PetActorState> actors;
-};
-
-// Authoritative runtime state for costume mounts. A record is keyed by the
-// stable mount vnum; the spawned creature and summon item are entity handles.
-struct CostumeMountActorState {
-    uint32_t vnum { 0 };
-    entt::entity character { entt::null };
-    entt::entity summonItem { entt::null };
-    uint32_t lastActionTime { 0 };
-};
-
-struct CostumeMountRuntime {
-    uint32_t updatePeriod { 400 };
-    uint32_t lastUpdateTime { 0 };
-    LPEVENT updateEvent;
-    bool destroying { false };
-    std::vector<CostumeMountActorState> actors;
 };
 
 // The rider on this horse. CHARACTER kept it as m_chRider, a pointer the

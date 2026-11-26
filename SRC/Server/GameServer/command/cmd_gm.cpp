@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../item/TypedMountCommands.hpp"
 #include "../benchmark/BenchmarkSession.hpp"
 #include "../item/TypedMoney.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
@@ -2936,7 +2937,7 @@ ACMD(do_horse_summon)
 {
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-	if (MountSystem::IsRidingCostume(character))
+	if (HasTypedMountIntent(character))
 		return;
 #endif
 

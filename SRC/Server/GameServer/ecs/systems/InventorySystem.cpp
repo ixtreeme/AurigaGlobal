@@ -2040,14 +2040,7 @@ bool Unequip(entt::entity itemEntity)
 	}
 
 
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-	if (ItemSystem::IsMountItem(itemEntity))
-		MountSystem::MountUnsummon(charEntity, itemEntity);
-#endif
 
-	if (!unchanged()) return false;
-	if (ItemSystem::IsRideItem(itemEntity))
-		ItemSystem::ClearMountAttributeAndAffect(itemEntity);
 
 	if (!unchanged()) return false;
 #ifdef ENABLE_RUNE_SYSTEM
@@ -2121,12 +2114,6 @@ bool Unequip(entt::entity itemEntity)
 
 	NetworkSyncSystem::UpdatePacket(charEntity);
 	if (!stillDetached()) return true;
-#ifdef ENABLE_COSTUME_MOUNT
-	if (!stillDetached()) return true;
-	if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_MOUNT_SKIN)) {
-		MountSystem::UpdateMountSkin(charEntity);
-	}
-#endif
     if (!stillDetached()) return true;
     SendStorageSlot(charEntity, TItemPos(EQUIPMENT, originalCell), false);
     if (!stillDetached()) return true;
@@ -2188,11 +2175,6 @@ void PublishEquipmentInsertion(entt::entity itemEntity, entt::entity charEntity,
 	if (!stillWorn()) return;
 	ecs::PointSystem::ComputeBattlePoints(charEntity);
 
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-	if (!stillWorn()) return;
-	if (ItemSystem::IsMountItem(itemEntity))
-		MountSystem::MountSummon(charEntity, itemEntity);
-#endif
 	if (!stillWorn()) return;
 	NetworkSyncSystem::UpdatePacket(charEntity);
 #ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
@@ -2201,13 +2183,6 @@ void PublishEquipmentInsertion(entt::entity itemEntity, entt::entity charEntity,
         NetworkSyncSystem::UpdateItemOnTitleName(g_registry, charEntity, true);
 #endif
 
-#ifdef ENABLE_COSTUME_MOUNT
-    if (!stillWorn()) return;
-	if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_MOUNT_SKIN)) {
-		if (!stillWorn()) return;
-		MountSystem::UpdateMountSkin(charEntity);
-	}
-#endif
 
     if (!stillWorn()) return;
     SendStorageSlot(charEntity, target, false);
@@ -2513,16 +2488,6 @@ bool EquipItemEcs(entt::entity owner, entt::entity item, int candidateCell) {
                 return original.cell < inventory.items.size() && inventory.items[original.cell] == item;
             }) : InventorySystem::Unowned(item);
     };
-    if (IsRideItem(item) && MountSystem::IsRiding(owner) && MountSystem::GetMountVnum(owner) &&
-        GetWearItem(owner, WEAR_COSTUME_MOUNT) == entt::null)
-        MountSystem::ForceClearRidingState(owner);
-    if (!sourceUnchanged()) return false;
-    if (IsRideItem(item) && MountSystem::IsRiding(owner)) {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 532, "");
-#endif
-        return false;
-    }
 #ifdef ENABLE_WEAPON_COSTUME_SYSTEM
     if (wear == WEAR_WEAPON) {
         const auto costume = GetWearItem(owner, WEAR_COSTUME_WEAPON);
@@ -2626,11 +2591,6 @@ void FinishEquip(entt::entity owner, entt::entity item) {
     if (!unchanged()) return;
     if (effect >= 0) NetworkSyncSystem::BroadcastEffect(g_registry, owner, static_cast<uint8_t>(effect));
     if (!unchanged()) return;
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-    if (!unchanged()) return;
-    if (type == ITEM_COSTUME && subtype == COSTUME_MOUNT)
-        MountSystem::MountCostume(owner, item);
-#endif
 }
 } // namespace
 
@@ -2884,10 +2844,6 @@ void ModifyPoints(entt::entity itemEntity, bool bAdd)
 #endif
 			continue;
 
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-		if (ItemSystem::IsMountItem(itemEntity))
-			continue;
-#endif
 
 		double value = proto->aApplies[i].lValue;
 #ifdef ENABLE_ACCE_SYSTEM

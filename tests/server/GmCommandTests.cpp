@@ -34,6 +34,7 @@ bool DeferTypedBookMutation(entt::entity,std::function<void()>) { return false; 
 #include "../../SRC/Server/GameServer/ecs/systems/SocialSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/QuestSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MountSystem.hpp"
+#include "../../SRC/Server/GameServer/item/TypedMountCommands.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.hpp"
 #include "../../SRC/Server/GameServer/core/utils.h"
 #include "../../SRC/Server/GameServer/network/desc_manager.h"
@@ -819,7 +820,7 @@ void CGuild::RequestDisband(unsigned int) { Unexpected(); }
 unsigned int CGuild::UnderAnyWar(unsigned char) { Unexpected(); }
 void ecs::PlayerRuntime::SetObserverMode(entt::entity, bool) { Unexpected(); }
 bool MountSystem::IsHorseRiding(entt::entity) { Unexpected(); }
-bool MountSystem::IsRidingCostume(entt::entity) { Unexpected(); }
+bool HasTypedMountIntent(entt::entity) { Unexpected(); }
 bool MountSystem::StartRiding(entt::entity) { Unexpected(); }
 bool MountSystem::StopRiding(entt::entity) { Unexpected(); }
 int MountSystem::GetHorseLevel(entt::entity) { Unexpected(); }

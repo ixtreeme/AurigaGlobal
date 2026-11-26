@@ -43,7 +43,6 @@ bool UnequipItemToEcs(entt::entity owner, entt::entity item, TItemPos destinatio
 bool EquipItemEcs(entt::entity owner, entt::entity item, int candidateCell = -1);
 bool IsEquipUniqueItem(entt::entity e, uint32_t itemVnum);
 bool IsEquipUniqueGroup(entt::entity e, uint32_t groupVnum);
-bool UnEquipSpecialRideUniqueItem(entt::entity e);
 
 // Slice D - item creation / give / remove
 void AutoGiveItem(entt::entity e, entt::entity item, bool longOwnerShip = false
@@ -64,9 +63,6 @@ bool IsExtraItem(entt::entity item);
 bool CheckItemUseLevel(entt::entity item, int level);
 bool OnAfterCreatedItem(entt::entity item);
 void AttrLog(entt::entity item);
-bool IsRideItem(entt::entity item);
-bool IsMountItem(entt::entity item);
-bool IsNewMountItem(entt::entity item);
 #ifdef ENABLE_RUNE_SYSTEM
 bool IsRuneItem(entt::entity item);
 int32_t GetRuneAttributeType(entt::entity item, int index);
@@ -295,7 +291,6 @@ bool IsItemBound(entt::entity item);
 int16_t GetItemLockedAttributeIndex(entt::entity item);
 bool LockItem(entt::entity item, bool locked = true);
 bool UnlockItem(entt::entity item);
-void ClearMountAttributeAndAffect(entt::entity item);
 bool GetItemSkipSave(entt::entity item);
 void SetItemOwnerEntity(entt::entity item, entt::entity owner);
 uint32_t GetItemLastOwnerPID(entt::entity item);

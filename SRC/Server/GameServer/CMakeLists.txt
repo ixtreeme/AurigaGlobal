@@ -382,7 +382,7 @@ add_executable(HorseRuntimeTests EXCLUDE_FROM_ALL
     world/event.cpp
     world/event_queue.cpp
 )
-target_link_libraries(HorseRuntimeTests PRIVATE SERVER EnTT::EnTT LUA)
+target_link_libraries(HorseRuntimeTests PRIVATE SERVER EnTT::EnTT LUA AurigaItemCatalog)
 add_test(NAME horse_runtime COMMAND HorseRuntimeTests)
 
 add_executable(WeddingLifecycleTests EXCLUDE_FROM_ALL

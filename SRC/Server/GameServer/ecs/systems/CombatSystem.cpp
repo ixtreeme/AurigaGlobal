@@ -2231,7 +2231,6 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 		else if (MountSystem::GetMountVnum(victim)) {
 			AffectSystem::RemoveAffect(victim, AFFECT_MOUNT_BONUS);
 			MountSystem::SetMountVnum(victim, 0);
-			ItemSystem::UnEquipSpecialRideUniqueItem(victim);
 			NetworkSyncSystem::UpdatePacket(victim);
 		}
 	}

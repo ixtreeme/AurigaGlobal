@@ -2556,7 +2556,6 @@ void DestroyCharacterStatePre(entt::entity character)
     }
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-    MountSystem::DestroyCostumeMountRuntime(character);
 
     if (MountSystem::GetMountVnum(character))
     {
@@ -2858,7 +2857,6 @@ void ecs::PlayerRuntime::SetPlayerProto(entt::entity e, const TPlayerTable* t)
 #endif
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-    MountSystem::DestroyCostumeMountRuntime(e);
 #endif
 
 }

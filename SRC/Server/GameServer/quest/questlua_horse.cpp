@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../item/TypedMountCommands.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include "../ecs/systems/AffectSystem.hpp"
@@ -53,7 +54,7 @@ namespace quest
 #endif
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-		if (MountSystem::IsRidingCostume(character))
+		if (HasTypedMountIntent(character))
 			return 0;
 		if (ecs::PlayerRuntime::GetMapIndex(character) == 113 ||
 			CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(character)))
@@ -83,7 +84,7 @@ namespace quest
 #endif
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-		if (MountSystem::IsRidingCostume(character))
+		if (HasTypedMountIntent(character))
 			return 0;
 		if (ecs::PlayerRuntime::GetMapIndex(character) == 113 ||
 			CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(character)))

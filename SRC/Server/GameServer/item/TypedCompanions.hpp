@@ -1,5 +1,6 @@
 #pragma once
 #include "ItemStore.hpp"
+#include "TypedMountCommands.hpp"
 #include <item/EquipmentStats.hpp>
 #include <cstdint>
 #include <entt/entity/entity.hpp>

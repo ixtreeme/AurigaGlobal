@@ -163,7 +163,7 @@ bool WorldAllowsFollower(entt::entity owner)
 bool OtherFollower(entt::entity owner, std::uint64_t live)
 {
     return PetSystem::CountSummoned(owner) > (live ? 1u : 0u)
-        || MountSystem::IsCostumeMountSummoned(owner) || (MountSystem::IsRiding(owner) && !OwnRiding(owner))
+        || (MountSystem::IsRiding(owner) && !OwnRiding(owner))
         || MountSystem::GetSummonedHorse(owner) != entt::null
         ;
 }
@@ -883,6 +883,30 @@ bool ApplyCompanionAction(entt::entity owner, Action action, std::uint64_t seal)
     }
     return true;
 }
+}
+
+namespace {
+const auriga::item::PersistentItem* SelectedTypedMount(entt::entity owner)
+{
+    const auto* typed = g_registry.valid(owner) ? g_registry.try_get<ecs::TypedItems>(owner) : nullptr;
+    const auto catalog = store::CurrentCatalog();
+    const auto* seal = typed ? Requested(*typed) : nullptr;
+    const auto* row = seal && catalog ? CompanionRow(*catalog, seal->key) : nullptr;
+    return row && row->kind == item::CompanionKind::Mount && seal->companion ? seal : nullptr;
+}
+}
+bool HasTypedMountIntent(entt::entity owner)
+{
+    return SelectedTypedMount(owner) != nullptr;
+}
+bool HandleTypedMountCommand(entt::entity owner, TypedMountCommand command)
+{
+    const auto* seal = SelectedTypedMount(owner);
+    if (!seal) return false;
+    // Reuse the exact typed packet path, including admission, fences and SQL receipt.
+    const auto action = command == TypedMountCommand::Recall ? Action::Dismiss :
+        command == TypedMountCommand::Dismount || seal->companion->ridingRequested ? Action::Dismount : Action::Mount;
+    return ApplyCompanionAction(owner, action, seal->id.Value());
 }
 
 bool HandleTypedCompanionPacket(entt::entity owner, const char* data)

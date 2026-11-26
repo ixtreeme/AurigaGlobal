@@ -6,6 +6,8 @@
 #include "../item/ItemStore.hpp"
 #include "../item/TypedQuestItems.hpp"
 #include "stdafx.h"
+#include "../item/TypedMountCommands.hpp"
+#include "../item/TypedCompanions.hpp"
 #include "../combat/DeathRecapEvents.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
@@ -111,6 +113,7 @@ static std::string MakeDailyRewardHWKey(entt::entity ch)
 
 ACMD(do_user_horse_ride)
 {
+    if (HandleTypedMountCommand(character, TypedMountCommand::ToggleRide)) return;
 	if (ecs::PlayerRuntime::IsObserverMode(character))
 		return;
 
@@ -163,14 +166,8 @@ ACMD(do_user_horse_back)
 	if (!ecs::IsCharacter(character))
 		return;
 
-	if (MountSystem::CountCostumeMounts(character) > 0 || MountSystem::GetMountVnum(character)) {
-			const entt::entity owner = character;
-			const entt::entity item = ItemSystem::GetWearItem(owner, WEAR_COSTUME_MOUNT);
-			if (item != entt::null) {
-				ItemSystem::UnequipItemEcs(owner, item);
-				return;
-			}
-		}
+    if (HandleTypedMountCommand(character, TypedMountCommand::Recall))
+        return;
 
 	if (MountSystem::GetSummonedHorse(character) != entt::null)
 	{
@@ -684,7 +681,7 @@ ACMD(do_restart)
 						ecs::PointSystem::Change(character, POINT_SP, ecs::PointSystem::GetMaxSP(character) - ecs::PlayerRuntime::GetSP(character));
 						CombatSystem::ReviveInvisible(character, 5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-						MountSystem::CheckMount(character);
+						RefreshTypedCompanion(character);
 #endif
 					}
 					break;
@@ -697,7 +694,7 @@ ACMD(do_restart)
 						ecs::PointSystem::Change(character, POINT_SP, ecs::PointSystem::GetMaxSP(character) - ecs::PlayerRuntime::GetSP(character));
 						CombatSystem::ReviveInvisible(character, 5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-						MountSystem::CheckMount(character);
+						RefreshTypedCompanion(character);
 #endif
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
 						AffectSystem::LoadAffectSkills(character);
@@ -1283,7 +1280,7 @@ ACMD(do_restart)
 				if (showed)
 				{
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-					MountSystem::CheckMount(character);
+					RefreshTypedCompanion(character);
 #endif
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
 					AffectSystem::LoadAffectSkills(character);
@@ -1305,7 +1302,7 @@ ACMD(do_restart)
 				CombatSystem::DeathPenalty(character, 0);
 				CombatSystem::ReviveInvisible(character, 5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-				MountSystem::CheckMount(character);
+				RefreshTypedCompanion(character);
 #endif
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
 				AffectSystem::LoadAffectSkills(character);
@@ -2265,32 +2262,15 @@ ACMD(do_setblockmode)
 
 ACMD(do_unmount)
 {
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-	const entt::entity owner = character;
-	const entt::entity mount = ItemSystem::GetWearItem(owner, WEAR_COSTUME_MOUNT);
-	if (ItemSystem::IsValidItem(mount))
-	{
-		if (MountSystem::GetMountVnum(character))
-			MountSystem::UnmountCostume(character);
-		return;
-	}
-#endif
-
-	if (true == ItemSystem::UnEquipSpecialRideUniqueItem(character))
-	{
-		AffectSystem::RemoveAffect(character, AFFECT_MOUNT);
-		AffectSystem::RemoveAffect(character, AFFECT_MOUNT_BONUS);
-
-		if (MountSystem::IsHorseRiding(character))
-		{
-			MountSystem::StopRiding(character);
-		}
-	}
-#ifdef TEXTS_IMPROVEMENT
-	else {
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 366, "");
-	}
-#endif
+    if (HandleTypedMountCommand(character, TypedMountCommand::Dismount)) return;
+    if (MountSystem::IsHorseRiding(character)) MountSystem::StopRiding(character);
+    else if (MountSystem::GetMountVnum(character))
+    {
+        // Timed quest/GM mount appearances are not item-backed seals.
+        AffectSystem::RemoveAffect(character, AFFECT_MOUNT);
+        AffectSystem::RemoveAffect(character, AFFECT_MOUNT_BONUS);
+        MountSystem::ForceClearRidingState(character);
+    }
 }
 
 ACMD(do_observer_exit)
@@ -2629,6 +2609,7 @@ ACMD(do_click_mall)
 
 ACMD(do_ride)
 {
+    if (HandleTypedMountCommand(character, TypedMountCommand::ToggleRide)) return;
 #ifdef DISABLE_CORE_PULSE_RAZOR93
 
 	if (!MountSystem::GetMountStateRef(character)) {

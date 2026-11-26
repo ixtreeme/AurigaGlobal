@@ -59,7 +59,6 @@ void CheckBiologistReward(entt::entity e);
 bool UpdateAffect(entt::entity e);
 #ifdef ENABLE_RECALL
 // Summons the pet a recall affect points at when none is out, or drops the affect.
-void AutoRecallProcess(entt::entity e);
 #endif
 void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement* pElements);
 bool IsGoodAffect(uint32_t bAffectType);

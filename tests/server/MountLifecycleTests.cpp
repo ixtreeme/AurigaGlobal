@@ -42,6 +42,7 @@ std::shared_ptr<spdlog::logger> logging::GetLogger() {
 // integration path instead of this harness.
 entt::registry g_registry;
 entt::dispatcher g_dispatcher;
+std::optional<bool> typedFlightPermission;
 int passes_per_sec = 25;
 const TApplyInfo aApplyInfo[MAX_APPLY_NUM] = {};
 
@@ -326,7 +327,7 @@ void SummonHorse(entt::entity, bool, bool, uint32_t, const char*) { throw std::r
 uint32_t GetMountVnum(entt::entity e) { return State(e).mount; }
 void SetMountVnum(entt::entity e, uint32_t vnum) { State(e).mount = vnum; }
 }
-std::optional<bool> TypedMountFlightPermission(entt::entity) { return std::nullopt; }
+std::optional<bool> TypedMountFlightPermission(entt::entity) { return typedFlightPermission; }
 void ReplayTypedCostumeAppearances(entt::entity) {}
 
 namespace CombatSystem {
@@ -534,7 +535,7 @@ void TypedFollowerStaleEntities()
 
 void MountFlightChecks()
 {
-    auto previousTick=tick;Reset();auto owner=Character();auto item=Item(owner);State(owner).mount=32155;
+    auto previousTick=tick;Reset();typedFlightPermission.reset();auto owner=Character();auto item=Item(owner);State(owner).mount=32155;
     auto& proto=g_registry.get<ItemState>(item).proto;
     Check(!ecs::MountFlightSystem::CanFly(owner),"unflagged mount can fly");
     TPacketCGMountFlight request{};request.header=HEADER_CG_MOUNT_FLIGHT;
@@ -542,9 +543,11 @@ void MountFlightChecks()
     Check(g_registry.all_of<ecs::MountFlightSystem::Supported>(owner),"flight hello was not registered");
     request.action=1;request.altitude=10000;ecs::MountFlightSystem::Request(owner,request);
     Check(!g_registry.get<ecs::MountFlightSystem::State>(owner).active,"unflagged takeoff accepted");
-    proto.alValues[5]=1;proto.alValues[1]=32154;
+    proto.alValues[5]=1;proto.alValues[1]=32155;
+    Check(!ecs::MountFlightSystem::CanFly(owner),"legacy prototype granted flight without typed admission");
+    typedFlightPermission=false;
     Check(!ecs::MountFlightSystem::CanFly(owner),"another mount borrowed the worn seal's capability");
-    proto.alValues[1]=32155;State(owner).mount=0;
+    typedFlightPermission=true;State(owner).mount=0;
     Check(!ecs::MountFlightSystem::CanFly(owner),"unmounted player can fly");
     State(owner).mount=32155;
     State(owner).affectsLoaded=false;
@@ -552,7 +555,7 @@ void MountFlightChecks()
     Check(!ecs::MountFlightSystem::CanFly(owner)&&!g_registry.get<ecs::MountFlightSystem::State>(owner).active,
         "takeoff was accepted before login finished restoring mount affects");
     State(owner).affectsLoaded=true;
-    Check(ecs::MountFlightSystem::CanFly(owner),"flagged worn mount rejected");
+    Check(ecs::MountFlightSystem::CanFly(owner),"typed flying mount rejected");
     tick=1000;ecs::MountFlightSystem::Request(owner,request);
     auto& flight=g_registry.get<ecs::MountFlightSystem::State>(owner);
     Check(flight.active&&flight.altitude==10000,"valid takeoff failed");
@@ -591,8 +594,8 @@ void MountFlightChecks()
     ecs::MountFlightSystem::Reset(owner);Check(!flight.active&&flight.ready,"mount reset lost the protocol handshake");
     Check(HEADER_CG_MOUNT_FLIGHT==221&&HEADER_GC_MOUNT_FLIGHT==221,"flight packet ID changed");
     Check(HEADER_CG_TYPED_ITEM_MOVE==225&&HEADER_GC_TYPED_INVENTORY==225,"flight reused the typed item packet IDs");
-    proto.alValues[5]=0;Check(!ecs::MountFlightSystem::CanFly(owner),"revoked proto flag retained permission");
-    Reset();tick=previousTick;
+    typedFlightPermission=false;Check(!ecs::MountFlightSystem::CanFly(owner),"revoked typed capability retained permission");
+    Reset();typedFlightPermission.reset();tick=previousTick;
 }
 
 int main()

@@ -443,7 +443,6 @@ unsigned int ecs::PlayerRuntime::GetNextExp(entt::entity) { UnexpectedService(__
 bool ecs::PointSystem::Set(entt::entity,unsigned char,int64_t) { UnexpectedService(__func__); }
 double ecs::PointSystem::GetLimitPoint(entt::entity, unsigned char) { UnexpectedService(__func__); }
 bool ecs::SocialSystem::HasReviverInParty(entt::entity) { UnexpectedService(__func__); }
-bool ItemSystem::UnEquipSpecialRideUniqueItem(entt::entity) { UnexpectedService(__func__); }
 bool MountSystem::IsHorseRiding(entt::entity) { UnexpectedService(__func__); }
 bool MountSystem::StopRiding(entt::entity) { UnexpectedService(__func__); }
 uint32_t MountSystem::GetMountVnum(entt::entity) { UnexpectedService(__func__); }

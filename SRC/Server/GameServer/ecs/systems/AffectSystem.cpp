@@ -892,9 +892,6 @@ bool UpdateAffect(entt::entity e)
 		ecs::PointSystem::Change(e, POINT_SP, ecs::PointSystem::GetPrecise(e, POINT_SP_RECOVER_CONTINUE));
 	}
 
-#ifdef ENABLE_RECALL
-	AffectSystem::AutoRecallProcess(e);
-#endif
 
 	if (ecs::PlayerRuntime::GetMaxStamina(e) > ecs::PlayerRuntime::GetStamina(e))
 	{
@@ -1077,6 +1074,10 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
         if (WarriorExpansion::IsBuffAffect(pElements->dwType) && !WarriorExpansion::AllowBuff(e,WarriorExpansion::SkillFromAffect(pElements->dwType))) continue;
 		////if (pElements->dwType == SKILL_MUYEONG)
 		////	continue;
+#ifdef ENABLE_RECALL
+        if (pElements->dwType == AFFECT_RECALL1 || pElements->dwType == AFFECT_RECALL2)
+            continue; // Recall intent is persistent typed seal state.
+#endif
 		if (AFFECT_AUTO_HP_RECOVERY == pElements->dwType || AFFECT_AUTO_SP_RECOVERY == pElements->dwType)
 		{
 			const entt::entity item = ItemSystem::FindItemByID(
@@ -1108,31 +1109,6 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 		//			item->Lock(false);
 		//			item->SetSocket(1, 0);
 #endif
-#ifdef ENABLE_RECALL
-#ifdef __PET_SYSTEM__
-		else if (pElements->dwType == AFFECT_RECALL1)
-		{
-			const entt::entity item = ItemSystem::FindItemByID(
-				character, pElements->dwFlag);
-			if (ItemSystem::IsValidItem(item))
-				ItemSystem::LockItem(item);
-			else
-				continue;
-		}
-#endif
-#ifdef __NEWPET_SYSTEM__
-		else if (pElements->dwType == AFFECT_RECALL2)
-		{
-			const entt::entity item = ItemSystem::FindItemByID(
-				character, pElements->dwFlag);
-			if (ItemSystem::IsValidItem(item))
-				ItemSystem::LockItem(item);
-			else
-				continue;
-		}
-#endif
-#endif
-
 #ifdef ENABLE_SOUL_SYSTEM
 		if(pElements->dwType == AFFECT_SOUL_RED || pElements->dwType == AFFECT_SOUL_BLUE)
 		{
@@ -1181,7 +1157,7 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 	AffectSystem::RemoveAffect(e, AFFECT_MOUNT_BONUS);
 	if (ecs::PlayerRuntime::GetMapIndex(e) != 113 && CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(e)) == false) {
-		MountSystem::CheckMount(e);
+
 	}
 #endif
 #endif

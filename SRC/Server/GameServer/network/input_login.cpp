@@ -636,9 +636,6 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	ecs::MovementSystem::Show(ch, ecs::PlayerRuntime::GetMapIndex(ch), pos.x, pos.y, pos.z);
 	CombatSystem::ReviveInvisible(ch, 5);
 	d->SetPhase(PHASE_GAME);
-#ifdef ENABLE_RECALL
-	AffectSystem::AutoRecallProcess(ch);
-#endif
 	// Inventory/recall can spawn followers during PHASE_LOADING. Publish the
 	// current scene again after GAME so a loading client's discarded inserts do
 	// not leave stationary mounts/pets invisible until they leave view range.
@@ -856,14 +853,9 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 			MountSystem::SummonHorse(rider, false);
 		}
 
-		const entt::entity mount = ItemSystem::GetWearItem(ch, WEAR_COSTUME_MOUNT);
-		if (MountSystem::GetMountVnum(ch) && mount != entt::null) {
-			MountSystem::UnmountCostume(ch);
-		}
-		else {
-			AffectSystem::RemoveAffect(ch, AFFECT_MOUNT);
-			AffectSystem::RemoveAffect(ch, AFFECT_MOUNT_BONUS);
-		}
+        MountSystem::ForceClearRidingState(ch);
+        AffectSystem::RemoveAffect(ch, AFFECT_MOUNT);
+        AffectSystem::RemoveAffect(ch, AFFECT_MOUNT_BONUS);
 #endif
 		// ox ?T
 		if (COXEventManager::instance().Enter(d->GetEntity()) == false)
@@ -935,14 +927,9 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 			MountSystem::SummonHorse(rider, false);
 		}
 
-		const entt::entity mount = ItemSystem::GetWearItem(ch, WEAR_COSTUME_MOUNT);
-		if (MountSystem::GetMountVnum(ch) && mount != entt::null) {
-			MountSystem::UnmountCostume(ch);
-		}
-		else {
-			AffectSystem::RemoveAffect(ch, AFFECT_MOUNT);
-			AffectSystem::RemoveAffect(ch, AFFECT_MOUNT_BONUS);
-		}
+        MountSystem::ForceClearRidingState(ch);
+        AffectSystem::RemoveAffect(ch, AFFECT_MOUNT);
+        AffectSystem::RemoveAffect(ch, AFFECT_MOUNT_BONUS);
 	}
 #endif
 

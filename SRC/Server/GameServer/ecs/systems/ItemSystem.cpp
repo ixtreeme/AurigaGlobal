@@ -748,17 +748,6 @@ bool IsEquipUniqueGroup(entt::entity e, uint32_t groupVnum)
     return false;
 }
 
-bool UnEquipSpecialRideUniqueItem(entt::entity e)
-{
-    for (const uint8_t wearSlot : { WEAR_UNIQUE1, WEAR_UNIQUE2, WEAR_COSTUME_MOUNT })
-    {
-        const entt::entity item = GetWearItem(e, wearSlot);
-        if (IsValidItem(item) && GetItemSpecialGroup(item) == UNIQUE_GROUP_SPECIAL_RIDE)
-            return UnequipItemEcs(e, item);
-    }
-    return true;
-}
-
 bool IsValidItem(entt::entity item)
 {
     return item != entt::null && g_registry.valid(item) &&
@@ -831,39 +820,6 @@ bool IsExtraItem(entt::entity item)
     (void)item;
 #endif
     return false;
-}
-
-bool IsRideItem(entt::entity item)
-{
-    if (!IsValidItem(item))
-        return false;
-    const uint8_t type = GetItemType(item);
-    const uint8_t subType = GetItemSubType(item);
-    if (type == ITEM_UNIQUE &&
-        (subType == UNIQUE_SPECIAL_RIDE || subType == UNIQUE_SPECIAL_MOUNT_RIDE))
-        return true;
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-    return type == ITEM_COSTUME && subType == COSTUME_MOUNT;
-#else
-    return false;
-#endif
-}
-
-bool IsMountItem(entt::entity item)
-{
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-    return IsValidItem(item) && GetItemType(item) == ITEM_COSTUME &&
-        GetItemSubType(item) == COSTUME_MOUNT;
-#else
-    (void)item;
-    return false;
-#endif
-}
-
-bool IsNewMountItem(entt::entity item)
-{
-    const uint32_t vnum = GetItemVnum(item);
-    return vnum >= 76000 && vnum <= 76014;
 }
 
 #ifdef ENABLE_RUNE_SYSTEM
@@ -2214,22 +2170,6 @@ bool LockItem(entt::entity item, bool locked)
 bool UnlockItem(entt::entity item)
 {
     return LockItem(item, false);
-}
-
-void ClearMountAttributeAndAffect(entt::entity item)
-{
-	const entt::entity chEntity = GetItemOwner(item);
-
-
-	AffectSystem::RemoveAffect(chEntity, AFFECT_MOUNT);
-	AffectSystem::RemoveAffect(chEntity, AFFECT_MOUNT_BONUS);
-
-	::MountSystem::ForceClearRidingState(chEntity);
-
-	ecs::PointSystem::Change(chEntity, POINT_ST, 0);
-	ecs::PointSystem::Change(chEntity, POINT_DX, 0);
-	ecs::PointSystem::Change(chEntity, POINT_HT, 0);
-	ecs::PointSystem::Change(chEntity, POINT_IQ, 0);
 }
 
 bool GetItemSkipSave(entt::entity item)

@@ -6,7 +6,6 @@
 #include "../NetworkService.hpp"
 #include "../components/visibility_components.hpp"
 #include "MountSystem.hpp"
-#include "ItemSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
 #include "MovementSystem.hpp"
 #include "CombatSystem.hpp"
@@ -30,10 +29,7 @@ inline bool CanFly(entt::entity e) {
     if(!PlayerRuntime::IsPC(e)||!MountSystem::GetMountVnum(e)||CombatSystem::IsDead(e)||PlayerRuntime::IsObserverMode(e))return false;
     // Login restores mount affects after entering the game phase.
     if (!AffectSystem::IsLoaded(e)) return false;
-    if(const auto typed=TypedMountFlightPermission(e))return *typed;
-    auto item=ItemSystem::GetWearItem(e,WEAR_COSTUME_MOUNT);
-    return ItemSystem::IsValidItem(item)&&ItemSystem::GetItemValue(item,5)==1&&
-        ItemSystem::GetItemValue(item,1)==MountSystem::GetMountVnum(e);
+    return TypedMountFlightPermission(e).value_or(false);
 }
 inline void Reset(entt::entity e) { if(auto* s=g_registry.try_get<State>(e)){const auto map=s->map;const bool ready=s->ready;*s=State{};s->map=map;s->ready=ready;} }
 inline void Send(entt::entity source,entt::entity viewer) {
