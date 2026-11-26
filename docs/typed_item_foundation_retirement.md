@@ -54,8 +54,9 @@ transfer and travel entry points remain in their respective services.
 
 The old raw bonus-catalog publisher is removed; native equipment/details packets
 continue to provide item and combat data. No Unity packet layout changes are
-required by this server-only foundation removal. Remaining Unity legacy
-receivers/tooltip branches are the separate fourth retirement task.
+required by this server-only foundation removal. The subsequent fourth work
+unit retires Unity legacy receivers and retains typed hover tooltips; see
+[the Unity retirement record](typed_unity_item_receivers_retirement.md).
 
 The removed raw-engine tests retire with those engines. Mixed character,
 combat, points and spatial suites now use native projection/world fixtures;
@@ -94,4 +95,5 @@ unrelated Mission Studio/mission-engine edits are not part of the built image.
 
 Unity checks and game flow ran in batch mode without graphics. Rendered visual
 inspection was not performed. This is targeted verification, not the entire
-repository test suite; the separate Unity legacy-code removal is still pending.
+repository test suite. The subsequent Unity receiver/tooltip work has its own
+verification record linked above.
