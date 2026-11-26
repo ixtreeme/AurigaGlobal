@@ -48,6 +48,10 @@ RETIRED_EQUIPMENT_QUERIES = {
 }
 
 RETIRED_ITEM_APIS = {
+    b'pc.count_item', b'pc.give_item', b'pc.give_item2', b'pc.give_item2_select',
+    b'pc.give_item2_with_dice', b'pc.give_item_from_special_item_group', b'pc.remove_item',
+    b'item.get_vnum', b'd.remove_item', b'oxevent.give_item', b'count_item_range', b'remove_item_range',
+
     b'item_name', b'item_log', b'pc.get_killee_drop_pct',
     b'pet.summon', b'pet.unsummon', b'pet.is_summon', b'pet.count_summoned', b'pet.spawn_effect',
 }
@@ -85,7 +89,7 @@ def retire_equipment_queries(root):
     if functions.is_file():
         lines = functions.read_bytes().splitlines(keepends=True)
         retired = RETIRED_EQUIPMENT_QUERIES | RETIRED_ITEM_APIS | RETIRED_ITEM_HELPERS.keys()
-        kept = [line for line in lines if line.strip() not in retired]
+        kept = [line for line in lines if line.strip() not in retired and not line.strip().startswith(b'item.')]
         if len(kept) != len(lines):
             functions.write_bytes(b''.join(kept))
             changes.append(dict(file=functions.name, change='retire numeric item queries',

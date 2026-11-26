@@ -49,30 +49,15 @@ struct PositionChangedEvent {
     int32_t      newMapIndex { 0 };
 };
 
-struct EvItemPickup {
-    entt::entity picker { entt::null };
-    uint32_t itemVnum { 0 };
-};
 
-struct EvItemEquipped {
-    entt::entity charEntity { entt::null };
-    entt::entity itemEntity { entt::null };
-};
 
-struct EvItemUnequipped {
-    entt::entity charEntity { entt::null };
-    entt::entity itemEntity { entt::null };
-};
 
-struct EvItemDestroyed {
-    entt::entity itemEntity { entt::null };
-    uint32_t itemID { 0 };
-};
 
-struct EvItemExpired {
-    entt::entity itemEntity { entt::null };
-    uint32_t itemID { 0 };
-};
+
+
+
+
+
 
 struct EvLevelUp {
     entt::entity entity { entt::null };

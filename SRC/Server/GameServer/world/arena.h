@@ -14,9 +14,6 @@ enum MEMBER_IDENTITY
 };
 
 // #ifdef ENABLE_NEWSTUFF
-extern bool IsAllowedPotionOnPVP(uint32_t dwVnum);
-extern bool IsLimitedPotionOnPVP(uint32_t dwVnum);
-extern bool IsLimitedPotion(uint32_t dwVnum);
 // #endif
 
 class CArena
@@ -145,5 +142,4 @@ class CArenaManager : public singleton<CArenaManager>
 		// that outlived its arena reads as no arena.
 		bool IsLiveArena(const CArena* arena);
 
-		bool IsLimitedItem(int32_t lMapIndex, uint32_t dwVnum );
 };

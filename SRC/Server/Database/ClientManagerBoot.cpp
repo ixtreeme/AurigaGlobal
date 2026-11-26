@@ -855,30 +855,7 @@ bool CClientManager::InitializeMobTableFromDB()
 	return true;
 }
 
-namespace IProto
-{
-	enum IProtoT
-	{
-		vnum, type, subtype, name,
-#ifdef ENABLE_MULTI_NAMES
-		locale_name_en, locale_name_ro, locale_name_it, locale_name_tr, locale_name_de, locale_name_pl, locale_name_pt, locale_name_es, locale_name_cz, locale_name_hu,
-#else
-		locale_name,
-#endif
-		gold, shop_buy_price, weight, size,
-		flag, wearflag, antiflag, immuneflag, refined_vnum, refine_set, magic_pct,
-		socket_pct, addon_type, limittype0, limitvalue0, limittype1, limitvalue1,
-#ifdef ENABLE_APPLYTYPE5_RAZOR93
-		applytype0, applyvalue0, applytype1, applyvalue1, applytype2, applyvalue2, applytype3, applyvalue3, applytype4, applyvalue4,
-#else
-		applytype0, applyvalue0, applytype1, applyvalue1, applytype2, applyvalue2,
-#endif
-		value0, value1, value2, value3, value4, value5
-#if !defined(ENABLE_AUTODETECT_VNUMRANGE)
-		, vnum_range
-#endif
-	};
-}
+
 
 
 #endif

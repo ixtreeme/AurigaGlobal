@@ -104,19 +104,10 @@ quest meleylair_zone begin
 					-- for _, pid in ipairs({party.get_member_pids()}) do
 						-- q.begin_other_pc_block(pid);
 								-- --
-							-- --	pc.give_item2(50101, 1)
-						-- pc.give_item2(61122, 1)--zodi töredék
-						-- pc.give_item2(86060, 10)--zodi büvölö
-						-- pc.give_item2(30271, 10)--metinkö szilánk 10
-						-- pc.give_item2(71084, 20)--1-5 fori 20db
 								-- --
 						-- q.end_other_pc_block();
 					-- end -- for
 				-- else
-					-- pc.give_item2(61122, 1)--zodi töredék
-					-- pc.give_item2(86060, 5)--zodi büvölö
-					-- pc.give_item2(30271, 5)--metinkö szilánk 5
-					-- pc.give_item2(71084, 10)--1-5 fori 20db
 				-- end
 				local f = d.getf(idx, "floor")
 				if f >= 13 then
