@@ -40,7 +40,6 @@
 #include "../../SRC/Server/GameServer/combat/battle.h"
 #include "../../SRC/Server/GameServer/guild/guild.h"
 #include "../../SRC/Server/GameServer/pet/horsename_manager.h"
-#include "../../SRC/Server/GameServer/item/item.h"
 #include "../../SRC/Server/GameServer/core/locale_service.h"
 #include "../../SRC/Server/GameServer/core/lua_incl.h"
 #include "../../SRC/Server/GameServer/core/packet.h"
@@ -48,7 +47,6 @@
 #include "../../SRC/Server/GameServer/social/party.h"
 #include "../../SRC/Server/GameServer/core/utils.h"
 #include "../../SRC/Server/GameServer/ecs/EntityFactory.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/dirty_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/identity_components.hpp"
@@ -924,14 +922,14 @@ void MountSystem::SummonHorse(entt::entity e, bool summon, bool fromFar, uint32_
     if (onHorse) { const auto callback = onHorse; callback(e, summon); }
 }
 int64_t quest::CQuestManager::GetEventFlag(std::string const &) { UnexpectedService(__func__); }
-entt::entity ItemSystem::FindItemByID(entt::entity,unsigned int) { UnexpectedService(__func__); }
-entt::entity ItemSystem::GetWearItem(entt::entity,unsigned char) { UnexpectedService(__func__); }
-bool ItemSystem::IsValidItem(entt::entity) { UnexpectedService(__func__); }
-bool ItemSystem::LockItem(entt::entity,bool) { UnexpectedService(__func__); }
+
+
+
+
 uint32_t ecs::PlayerRuntime::GetPacketVID(entt::entity) { UnexpectedService(__func__); }
 bool ecs::PlayerRuntime::IsObserverMode(entt::entity) { UnexpectedService(__func__); }
 bool RequestTypedPolymorphClear(entt::entity) { UnexpectedService(__func__); }
-int ItemSystem::GetItemValue(entt::entity,uint32_t) { UnexpectedService(__func__); }
+
 uint32_t MountSystem::GetMountVnum(entt::entity) { UnexpectedService(__func__); }
 
 int main() {

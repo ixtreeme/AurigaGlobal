@@ -1,13 +1,13 @@
 #include "../core/stdafx.h"
+#include <item/EquipmentChecks.hpp>
+#include "TypedEquipment.hpp"
 #include "../core/config.h"
 #include "../entity/char.h" // EPointTypes: POINT_HP, POINT_SP
 #include "BenchmarkSession.hpp"
-#include "BenchmarkEquipment.hpp"
 
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/SkillSystem.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -86,8 +86,8 @@ void WriteEvent(Session& s, std::string_view event, entt::entity attacker,
                 uint8_t damageType, bool critical, bool penetrate,
                 std::string_view reason) {
     if (!s.file) return;
-    const auto weapon = ItemSystem::GetWearItem(attacker, WEAR_WEAPON);
-    const auto weaponVnum = ItemSystem::IsValidItem(weapon) ? ItemSystem::GetItemVnum(weapon) : 0;
+    const auto weapon = auriga::item::EquippedWeapon(TypedEquipmentView(attacker));
+    const auto weaponInstance = weapon ? weapon->instance : 0;
     const int64_t actual = std::max<int64_t>(0, hpBefore - hpAfter);
     s.file << NowMs() << ',' << s.id << ',' << s.round << ','
            << Csv(event) << ',' << s.tier << ',' << Csv(s.weaponType) << ','
@@ -101,7 +101,7 @@ void WriteEvent(Session& s, std::string_view event, entt::entity attacker,
            << int(ecs::PlayerRuntime::GetJob(victim)) << ','
            << int(SkillSystem::GetSkillGroup(victim)) << ','
            << ecs::PointSystem::GetLevel(victim) << ','
-           << weaponVnum << ',' << currentSkillVnum << ','
+           << weaponInstance << ',' << currentSkillVnum << ','
            << int(damageType) << ',' << (critical ? 1 : 0) << ','
            << (penetrate ? 1 : 0) << ',' << hpBefore << ',' << hpAfter << ','
            << actual << ',' << Csv(reason) << '\n';
@@ -156,16 +156,10 @@ bool Start(entt::entity gm, int tier, std::string_view weaponType, std::string& 
             return false;
         }
     }
-    std::string profileMessage;
-    if (!equipment::Apply(gm, tier, weaponType, false, profileMessage)) {
-        message = "Attacker setup failed: " + profileMessage;
-        return false;
-    }
-
+    if (!HasTypedEquipment(gm)) { message = "Typed equipment is still loading."; return false; }
     std::error_code ec;
     std::filesystem::create_directories("benchmark_logs", ec);
     if (ec) {
-        equipment::Restore(gm, profileMessage);
         message = "Cannot create benchmark_logs directory: " + ec.message(); return false;
     }
     auto session = std::make_unique<Session>();
@@ -181,15 +175,10 @@ bool Start(entt::entity gm, int tier, std::string_view weaponType, std::string& 
         ("pvp_" + std::to_string(pid) + "_" + std::to_string(session->id) + ".csv");
     session->file.open(session->path, std::ios::out | std::ios::trunc);
     if (!session->file) {
-        equipment::Restore(gm, profileMessage);
         message = "Cannot create CSV log."; return false;
     }
-    session->file << "timestamp_ms,session_id,round,event,tier,defense_weapon,attacker_pid,attacker_name,attacker_job,attacker_spec,attacker_level,victim_pid,victim_name,victim_job,victim_spec,victim_level,weapon_vnum,skill_vnum,damage_type,critical,penetrate,hp_before,hp_after,actual_hp_loss,reason\n";
-    message = "GM geared to level " + std::to_string(tier) +
-              " (max STR/DEX/INT/VIT and PvP items). "
-              "Target via /benchmark target <name> gets level " + std::to_string(tier) +
-              " and maximum " + std::string(weaponType) +
-              " protection. File: " + session->path.string();
+    session->file << "timestamp_ms,session_id,round,event,tier,defense_weapon,attacker_pid,attacker_name,attacker_job,attacker_spec,attacker_level,victim_pid,victim_name,victim_job,victim_spec,victim_level,weapon_instance,skill_vnum,damage_type,critical,penetrate,hp_before,hp_after,actual_hp_loss,reason\n";
+    message = "Recording current typed equipment. Target via /benchmark target <name>. File: " + session->path.string();
     {
         std::lock_guard<std::mutex> lock(sessionsMutex);
         active[pid] = std::move(session);
@@ -223,24 +212,18 @@ bool AddTarget(entt::entity gm, entt::entity target, std::string& message) {
         tier = s.tier;
         weapon = s.weaponType;
     }
-    if (!equipment::Apply(target, tier, weapon, true, message)) {
-        message = "Target setup failed: " + message;
-        return false;
-    }
+    if (!HasTypedEquipment(target)) { message = "Target typed equipment is still loading."; return false; }
     {
         std::lock_guard<std::mutex> lock(sessionsMutex);
         const auto found = active.find(ownerPid);
         if (found == active.end()) {
-            std::string rollback;
-            equipment::Restore(target, rollback);
-            message = "Session was stopped during target setup: " + rollback;
+            message = "Session was stopped during target registration.";
             return false;
         }
         found->second->targets.insert(targetPid);
         found->second->targetEntities.emplace(targetPid, target);
     }
-    message = "Target geared to level " + std::to_string(tier) + ", max base stats, P skills and " +
-              weapon + " resistance: " + std::string(ecs::PlayerRuntime::GetName(target));
+    message = "Recording target's current typed equipment: " + std::string(ecs::PlayerRuntime::GetName(target));
     return true;
 }
 
@@ -283,71 +266,13 @@ bool Stop(entt::entity gm, std::string& message) {
         }
     }
 
-    // A setup/rollback failure can leave an equipment snapshot in `applied`
-    // after the telemetry session is gone. Previously /benchmark stop rejected
-    // this state, permanently trapping the GM profile until process restart.
-    // Retry the normal snapshot-based restoration, never clear the profile map
-    // or destroy items by force: the originals must remain recoverable.
-    if (!session) {
-        if (!equipment::IsActive(gm)) {
-            message = "No running benchmark and no GM profile to restore.";
-            return false;
-        }
-        std::string restoreStatus;
-        equipment::Restore(gm, restoreStatus);
-        if (equipment::IsActive(gm)) {
-            message = "Orphan GM profile restore INCOMPLETE: " + restoreStatus +
-                      " Do not log out or restart; resolve the restore error and retry /benchmark stop.";
-            return false;
-        }
-        message = "Orphan GM benchmark profile restored: " + restoreStatus +
-                  " You may now use /benchmark start max <weapon>.";
-        return true;
-    }
-
-    // Stop telemetry before restoring items. Restoration can publish ECS events.
-    Session& s = *session;
-    message = Summary(s);
-    s.file.flush();
-    s.file.close();
-    bool pendingRestore = false;
-    std::string restoreStatus;
-    for (const auto& [targetPid, target] : s.targetEntities) {
-        if (!ecs::PlayerRuntime::IsPC(target) ||
-            ecs::PlayerRuntime::GetPlayerID(target) != targetPid) {
-            pendingRestore = true;
-            message += " | target " + std::to_string(targetPid) +
-                       ": OFFLINE / entity changed; cannot restore safely.";
-            continue;
-        }
-        if (equipment::IsActive(target)) {
-            equipment::Restore(target, restoreStatus);
-            message += " | target " + std::to_string(targetPid) + ": " + restoreStatus;
-            if (equipment::IsActive(target)) pendingRestore = true;
-        }
-    }
-    if (equipment::IsActive(gm)) {
-        equipment::Restore(gm, restoreStatus);
-        message += " | GM: " + restoreStatus;
-        if (equipment::IsActive(gm)) pendingRestore = true;
-    }
-
-    if (pendingRestore) {
-        // Do not discard the session's target handles while their original
-        // equipment/points are still in the in-memory equipment snapshots.
-        // A second /benchmark stop can then retry restoration.
-        {
-            std::lock_guard<std::mutex> lock(sessionsMutex);
-            active[ownerPid] = std::move(session);
-        }
-        message += " | RESTORE INCOMPLETE; session retained for retry. "
-                   "Do not log out or restart. Fix the reported issue, then /benchmark stop again.";
-        return false;
-    }
-
+    if (!session) { message = "No running benchmark."; return false; }
+    message = Summary(*session);
+    session->file.flush();
+    session->file.close();
     {
         std::lock_guard<std::mutex> lock(sessionsMutex);
-        finished[s.ownerPid] = {s.path.string(), s.hits, s.misses, s.damage};
+        finished[ownerPid] = {session->path.string(), session->hits, session->misses, session->damage};
     }
     return true;
 }

@@ -1,3 +1,4 @@
+#include "TypedUniqueAccessories.hpp"
 #include "stdafx.h"
 #include "../ecs/systems/CombatSystem.hpp"
 #include <Core/Logging.hpp>
@@ -8,7 +9,6 @@
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/NetworkSyncSystem.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/Registry.hpp"
 #include "utils.h"
@@ -1900,12 +1900,9 @@ namespace PartySystem
 
 		// UPGRADE_PARTY_BONUS
 		int iMemberCount=MIN(8, state->nearMemberCount);
+        if (auriga::item::runtime::HasTypedLeadershipBook(leaderEntity)) iBonusPartyExpFromItem = 30;
 
-		if (leaderEntity != entt::null && (ItemSystem::IsEquipUniqueItem(leaderEntity, UNIQUE_ITEM_PARTY_BONUS_EXP) || ItemSystem::IsEquipUniqueItem(leaderEntity, UNIQUE_ITEM_PARTY_BONUS_EXP_MALL)
-			|| ItemSystem::IsEquipUniqueItem(leaderEntity, UNIQUE_ITEM_PARTY_BONUS_EXP_GIFT) || ItemSystem::IsEquipUniqueGroup(leaderEntity, 10010)))
-		{
-			iBonusPartyExpFromItem = 30;
-		}
+
 
 #ifdef ENABLE_NEW_USE_POTION
 		if (leaderEntity != entt::null && ecs::PointSystem::GetPrecise(leaderEntity, POINT_PARTY_DROPEXP) > 0) {

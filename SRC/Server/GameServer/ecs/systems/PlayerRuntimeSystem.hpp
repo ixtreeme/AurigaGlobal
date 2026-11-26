@@ -50,11 +50,6 @@ void SetBlockModeForce(entt::entity e, uint8_t flags);
 uint32_t GetPacketVID(entt::entity e);
 uint32_t GetRaceNum(entt::entity e);
 uint8_t GetSex(entt::entity e);
-void BuffOnAttr_AddBuffsFromItem(entt::entity e, entt::entity item);
-void BuffOnAttr_RemoveBuffsFromItem(entt::entity e, entt::entity item);
-void BuffOnAttr_ClearAll(entt::entity e);
-void BuffOnAttr_Destroy(entt::entity e);
-void BuffOnAttr_ValueChange(entt::entity e, uint8_t bType, double bOldValue, double bNewValue);
 #ifdef __HIGHLIGHT_SYSTEM__
 void SetItem(entt::entity e, TItemPos Cell, entt::entity item, bool isHighLight = false);
 #else
@@ -151,7 +146,6 @@ void SetPotionLimit(entt::entity e, int count);
 void SetPart(entt::entity e, uint8_t partPos, uint16_t value);
 uint16_t GetPart(entt::entity e, uint8_t bPartPos);
 uint16_t GetOriginalPart(entt::entity e, uint8_t bPartPos);
-uint16_t GetRuneEffect(entt::entity e);
 
 // The point writers and readers PointSystem::Change needs.
 void SetHP(entt::entity e, uint64_t hp);

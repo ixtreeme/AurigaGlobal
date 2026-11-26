@@ -13,7 +13,7 @@
 #include "../ecs/components/character_runtime_components.hpp"
 #include "../ecs/components/social_components.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
@@ -78,8 +78,8 @@ bool Current(const Session& s,int side)
 }
 bool Admitted(entt::entity e)
 {
-    if(!g_registry.valid(e) || !ecs::PlayerRuntime::IsPC(e) || CombatSystem::IsDead(e) || !InventorySystem::CanHandleItems(e) ||
-       ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e) || ExchangeSystem::GetSession(e)!=entt::null ||
+    if(!g_registry.valid(e) || !ecs::PlayerRuntime::IsPC(e) || CombatSystem::IsDead(e) || !PlayerItemActions::CanHandleItems(e) ||
+       ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e) ||
        ecs::SocialSystem::GetMyShop(e)!=entt::null || ecs::SocialSystem::GetShopOwner(e)!=entt::null ||
        !g_registry.all_of<ecs::TypedItems,ecs::TypedItemLogin>(e))return false;
     const auto* flags=g_registry.try_get<ecs::StatusFlags>(e);
@@ -102,7 +102,7 @@ bool Near(const Session& s)
     if(ecs::PlayerRuntime::GetMapIndex(a)!=ecs::PlayerRuntime::GetMapIndex(b))return false;
     const auto dx=std::abs(std::int64_t(ecs::PlayerRuntime::GetX(a))-ecs::PlayerRuntime::GetX(b));
     const auto dy=std::abs(std::int64_t(ecs::PlayerRuntime::GetY(a))-ecs::PlayerRuntime::GetY(b));
-    return std::max(dx,dy)+std::min(dx,dy)/2<EXCHANGE_MAX_DISTANCE;
+    return std::max(dx,dy)+std::min(dx,dy)/2<1000;
 }
 bool RebasePassive(const std::shared_ptr<Session>& s)
 {
@@ -317,4 +317,9 @@ bool HandleTypedTradePacket(entt::entity e,const char* data)
     }
     if(changed){ResetApprovals(*s);last.result=Status::Updated;}
     Reply(s,last.result,changed ? -1 : side);return true;
+}
+
+bool HasTypedTrade(entt::entity e)
+{
+    return g_registry.valid(e) && g_registry.all_of<ecs::TypedTradeActive>(e);
 }

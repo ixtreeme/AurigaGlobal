@@ -11,7 +11,6 @@
 #include "../ecs/systems/QuestSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../item/ItemCatalogRuntime.hpp"
 #include "../item/ItemStore.hpp"
 #include "../item/TypedQuestItems.hpp"

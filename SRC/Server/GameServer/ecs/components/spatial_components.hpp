@@ -18,7 +18,7 @@ struct SpatialRetiring {};
 // Runtime world-object kind. Identity and state live exclusively in components.
 enum class SpatialKind : uint8_t {
     Character = 0,
-    Item = 1,
+    // 1 was the retired raw item entity kind.
     Building = 2,
     TypedLoot = 3, // typed ground loot (item system F4 C7c, IC-035)
 };

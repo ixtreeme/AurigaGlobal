@@ -9,10 +9,8 @@
 #include "../ecs/SpatialHelpers.hpp"
 #include "../ecs/services/SpatialService.hpp"
 #include "../ecs/components/identity_components.hpp"
-#include "../ecs/components/item_components.hpp"
 #include "../ecs/components/transform_components.hpp"
 #include "../ecs/components/visibility_components.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/VisibilitySystem.hpp"
 #include "desc_manager.h"
 
@@ -119,9 +117,7 @@ void SECTREE::Destroy() {
         // Detach before callbacks. This region cannot accept new members.
         ecs::SpatialService::RemoveEntity(g_registry, e);
         if (!g_registry.valid(e) || ecs::SectorOf(g_registry, e)) continue;
-        if (type == ecs::SpatialKind::Item)
-            ItemSystem::DestroyItemEntityEcs(e, "SECTREE_DESTROY_ITEM");
-        else if (type == ecs::SpatialKind::Character) {
+        if (type == ecs::SpatialKind::Character) {
             if (auto* desc = ecs::PlayerRuntime::GetDesc(e))
                 DESC_MANAGER::instance().DestroyDesc(desc);
             else CHARACTER_MANAGER::instance().DestroyCharacter(e);
@@ -162,14 +158,10 @@ void SECTREE::DecreasePC() {
     }
 }
 bool SECTREE::InsertEntity(entt::entity e) {
-    return InsertEntityImpl(e, {});
+    return InsertEntityImpl(e);
 }
-bool SECTREE::InsertItemWithCommit(entt::entity e, const std::function<bool()>& commit) {
-    if (!commit || !g_registry.valid(e) || !g_registry.all_of<ecs::ItemIdentity>(e) ||
-        g_registry.all_of<ecs::TagPC>(e) || ecs::SectorOf(g_registry, e)) return false;
-    return InsertEntityImpl(e, commit);
-}
-bool SECTREE::InsertEntityImpl(entt::entity e, const std::function<bool()>& commit) {
+
+bool SECTREE::InsertEntityImpl(entt::entity e) {
     if (IsDestroying() || !g_registry.valid(e) || g_registry.all_of<ecs::SpatialRetiring>(e) ||
         ecs::VisibilitySystem::IsRemoving(g_registry, e)) return false;
     Relocation action(e);
@@ -178,12 +170,7 @@ bool SECTREE::InsertEntityImpl(entt::entity e, const std::function<bool()>& comm
     if (previous == this && Contains(e)) return false;
     const auto eligible = [&] {
         if (IsDestroying() || !g_registry.valid(e) || g_registry.all_of<ecs::SpatialRetiring>(e)) return false;
-        if (!commit && g_registry.all_of<ecs::ItemIdentity>(e)) {
-            const auto* owner = g_registry.try_get<ecs::ItemOwner>(e);
-            const auto* location = g_registry.try_get<ecs::ItemLocation>(e);
-            if ((owner && (owner->owner != entt::null || owner->ownerPID != 0)) ||
-                !location || location->window != GROUND) return false;
-        }
+
         const auto* pos = g_registry.try_get<ecs::Position>(e);
         const auto* map = g_registry.try_get<ecs::MapIndex>(e);
         return pos && map && ecs::SectorAt(map->value, pos->x, pos->y) == this;
@@ -214,12 +201,7 @@ bool SECTREE::InsertEntityImpl(entt::entity e, const std::function<bool()>& comm
         SECTREE& tree; entt::entity entity; bool& accepted;
         ~Reservation() { if (!accepted) tree.m_entities.erase(entity); }
     } reservation{*this, e, accepted};
-    if (commit && !commit()) {
-        m_entities.erase(e);
-        if (!hadPlacement && g_registry.valid(e) && !ecs::SectorOf(g_registry, e))
-            g_registry.remove<ecs::SectorPlacement>(e);
-        return false;
-    }
+
     accepted = true;
     bool previousPC = false;
     if (previous) {

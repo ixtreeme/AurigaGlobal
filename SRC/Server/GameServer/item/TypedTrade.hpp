@@ -8,3 +8,6 @@ void TickTypedTrades();
 bool HandleTypedTradePacket(entt::entity participant,const char* data);
 
 bool TypedTradeAllowsRecoveryTick(entt::entity);
+
+namespace ecs { struct TypedTradeActive {}; }
+bool HasTypedTrade(entt::entity);

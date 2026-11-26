@@ -10,8 +10,11 @@ namespace auriga::item::runtime
 {
 enum class UniqueAccessory : std::uint32_t
 {
-    DiligenceMedal = 703, ExperienceRing = 704, LanguageRing = 705,
-    GoddessTear = 706, ThiefGloves = 708, SampleLanguageRing = 709
+    LeadershipBook = 702, DiligenceMedal = 703, ExperienceRing = 704, LanguageRing = 705,
+    GoddessTear = 706, ThiefGloves = 708, SampleLanguageRing = 709,
+    EmotionMask = 725, LeadershipBookSample = 726,
+    EmotionMaskShop = 762, EmotionMaskBound = 763, EmotionMaskTimed = 764,
+    LeadershipBookShop = 765, LeadershipBookBound = 766, LeadershipBookGift = 775
 };
 
 inline bool HasEquippedAccessory(entt::entity character, std::initializer_list<UniqueAccessory> choices)
@@ -38,5 +41,18 @@ inline bool HasEquippedAccessory(entt::entity character, std::initializer_list<U
 inline bool HasTypedLanguageRing(entt::entity character)
 {
     return HasEquippedAccessory(character, {UniqueAccessory::LanguageRing, UniqueAccessory::SampleLanguageRing});
+}
+}
+
+namespace auriga::item::runtime {
+inline bool HasTypedEmotionMask(entt::entity e)
+{
+    return HasEquippedAccessory(e, {UniqueAccessory::EmotionMask, UniqueAccessory::EmotionMaskShop,
+        UniqueAccessory::EmotionMaskBound, UniqueAccessory::EmotionMaskTimed});
+}
+inline bool HasTypedLeadershipBook(entt::entity e)
+{
+    return HasEquippedAccessory(e, {UniqueAccessory::LeadershipBook, UniqueAccessory::LeadershipBookSample,
+        UniqueAccessory::LeadershipBookShop, UniqueAccessory::LeadershipBookBound, UniqueAccessory::LeadershipBookGift});
 }
 }

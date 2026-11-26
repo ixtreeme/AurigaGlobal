@@ -1,3 +1,7 @@
+#include "TypedCostumeTransfer.hpp"
+#include "TypedShop.hpp"
+#include "TypedPrivateShops.hpp"
+#include "TypedTrade.hpp"
 #include "../../item/TypedSoulClock.hpp"
 #include "../../item/TypedBooks.hpp"
 #include "../../core/stdafx.h"
@@ -24,7 +28,7 @@
 #include <Core/Time.h>
 #include "SkillSystem.hpp"
 #include "../EcsDiagnostics.hpp"
-#include "InventorySystem.hpp"
+#include "PlayerItemActions.hpp"
 #include "SessionSystem.hpp"
 #include "MountSystem.hpp"
 #include "QuestSystem.hpp"
@@ -32,7 +36,6 @@
 #include "MovementSystem.hpp"
 #include "../CharacterAccessors.hpp"
 #include "../VIDRegistry.hpp"
-#include "ItemSystem.hpp"
 #include "../components/visibility_components.hpp"
 #include "../services/SpatialService.hpp"
 
@@ -72,11 +75,8 @@
 #include "../components/status_components.hpp"
 #include "../components/transform_components.hpp"
 #include "../components/vital_components.hpp"
-#include "../../social/exchange.h"
 #include "../../command/gm.h"
 #include "../../guild/guild_manager.h"
-#include "../../item/item.h"
-#include "../../item/item_manager.h"
 #include "../../core/log.h"
 #include "../../social/marriage.h"
 #include "../components/spatial_components.hpp"
@@ -89,9 +89,7 @@
 #include "../../social/party.h"
 #include "../../quest/questmanager.h"
 #include "../../world/regen.h"
-#include "../../item/safebox.h"
 #include "../../social/shop.h"
-#include "../../social/shop_manager.h"
 #include "../../world/start_position.h"
 #include "GayaSystem.hpp"
 #include "../../combat/skill_power.h"
@@ -1054,7 +1052,7 @@ bool CanWarp(entt::entity e)
 		return false;
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-	if (AttrTransfer_is_open(e))
+	if (HasTypedCostumeTransfer(e))
 		return false;
 #endif
 
@@ -2093,78 +2091,13 @@ void ecs::ChatSystem::ReadOfflineMessages(entt::entity e)
 #ifdef ENABLE_RUNE_SYSTEM
 namespace ecs::PlayerRuntime {
 
-uint16_t GetRuneEffect(entt::entity e)
-{
 
-    if (!(GetDesc(e) != nullptr))
-        return 0;
-
-    if (ecs::QuestSystem::GetFlag(e, "rune.hide_effect") == 1)
-        return 0;
-
-    uint16_t r = 1;
-    int iMaxSubTypes = RUNE_SUBTYPES - 1;
-    int32_t lMaxTime = 0;
-    int32_t lOnePercent = 0;
-    int32_t lRemainPercent = 0;
-
-    for (int i = 0; i < iMaxSubTypes; i++) {
-        const entt::entity item = ItemSystem::GetWearItem(e, WEAR_RUNE1 + i);
-        if (!ItemSystem::IsValidItem(item)) {
-            r = 0;
-            break;
-        }
-        else {
-            if (ItemSystem::GetItemSocket(item, 1) != 1) {
-                r = 0;
-                break;
-            }
-            else {
-                lMaxTime = ItemSystem::GetItemValue(item, 0);
-                lOnePercent = lMaxTime / 100;
-                if (lOnePercent <= 0) {
-                    r = 0;
-                    break;
-                }
-                lRemainPercent = ItemSystem::GetItemSocket(item, ITEM_SOCKET_REMAIN_SEC) / lOnePercent;
-                if (lRemainPercent < RUNE_EFFECT_FROM) {
-                    r = 0;
-                    break;
-                }
-            }
-        }
-    }
-
-    return r;
-}
 
 } // namespace ecs::PlayerRuntime
 
 #endif
 
-bool InventorySystem::CanTakeInventoryItem(entt::entity e, entt::entity item, TItemPos* cell)
-{
-    if (!cell || !ItemSystem::IsValidItem(item))
-        return false;
 
-    const int iEmpty = ItemSystem::GetEmptyInventoryPositionEcs(e, item);
-    if (iEmpty == -1)
-        return false;
-
-#ifdef ENABLE_EXTRA_INVENTORY
-    if (ItemSystem::IsExtraItem(item))
-    {
-        cell->window_type = EXTRA_INVENTORY;
-    }
-#endif
-    else
-    {
-        cell->window_type = INVENTORY;
-    }
-
-    cell->cell = static_cast<uint16_t>(iEmpty);
-    return true;
-}
 
 // ShopState is the only copy. ShopSystem::RemoveGuest clears it through
 // normal close path and stayed pointing at the NPC. Eleven "is this
@@ -2318,151 +2251,24 @@ void SetPart(entt::entity e, uint8_t partPos, uint16_t value)
 
 namespace ecs::PlayerRuntime {
 
-uint16_t GetPart(entt::entity e, uint8_t bPartPos)
+uint16_t GetPart(entt::entity e, uint8_t part)
 {
-    assert(bPartPos < PART_MAX_NUM);
-	const entt::entity character = e;
-
-#ifdef __HIDE_COSTUME_SYSTEM__
-    if (bPartPos == PART_MAIN &&
-		ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_BODY)) &&
-		IsCostumeHidden(e, 1) == true) {
-		const entt::entity armor = ItemSystem::GetWearItem(character, WEAR_BODY);
-		if (!ItemSystem::IsValidItem(armor))
-			return 0;
-		const uint32_t transmutation = ItemSystem::GetItemTransmutationVnum(armor);
-		return transmutation != 0 ? transmutation : ItemSystem::GetItemVnum(armor);
-    }
-    else if (bPartPos == PART_HAIR &&
-		ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_HAIR)) &&
-		IsCostumeHidden(e, 2) == true)
-        return 0;
-#ifdef ENABLE_STOLE_COSTUME
-    else if (bPartPos == PART_ACCE &&
-		ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_ACCE)) &&
-		IsCostumeHidden(e, 3) == true) {
-		const entt::entity acce = ItemSystem::GetWearItem(character, WEAR_COSTUME_ACCE_SLOT);
-        if (ItemSystem::IsValidItem(acce)) {
-            uint32_t toSetValue = ItemSystem::GetItemVnum(acce);
-            toSetValue -= 85000;
-            if (ItemSystem::GetItemSocket(acce, ACCE_ABSORPTION_SOCKET) >= ACCE_EFFECT_FROM_ABS)
-                toSetValue += 1000;
-
-            return toSetValue;
-        }
-        else
-            return 0;
-    }
-#else
-    else if (bPartPos == PART_ACCE &&
-		ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_ACCE_SLOT)) &&
-		IsCostumeHidden(e, 3) == true)
-        return 0;
-#endif
-    else if (bPartPos == PART_WEAPON &&
-		ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_WEAPON)) &&
-		IsCostumeHidden(e, 4) == true)
-    {
-		const entt::entity weapon = ItemSystem::GetWearItem(character, WEAR_WEAPON);
-		if (!ItemSystem::IsValidItem(weapon))
-			return 0;
-		const uint32_t transmutation = ItemSystem::GetItemTransmutationVnum(weapon);
-		return transmutation != 0 ? transmutation : ItemSystem::GetItemVnum(weapon);
-    }
-#endif
-
-    if (const auto* appearance = TryGetAppearancePartsComponent(e))
-        return appearance->parts[bPartPos];
-
-    return 0;
+    if (part >= PART_MAX_NUM) return 0;
+    const auto* appearance = TryGetAppearancePartsComponent(e);
+    return appearance ? appearance->parts[part] : 0;
 }
 
 } // namespace ecs::PlayerRuntime
 
 namespace ecs::PlayerRuntime {
 
-uint16_t GetOriginalPart(entt::entity e, uint8_t bPartPos)
+uint16_t GetOriginalPart(entt::entity e, uint8_t part)
 {
-	const entt::entity character = e;
-    switch (bPartPos)
-    {
-    case PART_MAIN:
-    {
-        if (!(GetDesc(e) != nullptr))
-            return GetPart(e, PART_MAIN);
-
-#ifdef __HIDE_COSTUME_SYSTEM__
-        if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_BODY)) &&
-			IsCostumeHidden(e, 1) == true) {
-			const entt::entity armor = ItemSystem::GetWearItem(character, WEAR_BODY);
-			if (ItemSystem::IsValidItem(armor))
-				return ItemSystem::GetItemVnum(armor);
-        }
-#endif
-
-        if (const auto* appearance = TryGetAppearancePartsComponent(e))
-            return appearance->basePart;
-
-        return 0;
+    if (part == PART_MAIN) {
+        const auto* appearance = TryGetAppearancePartsComponent(e);
+        return appearance ? appearance->basePart : 0;
     }
-    case PART_HAIR:
-    {
-#ifdef __HIDE_COSTUME_SYSTEM__
-        if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_HAIR)) &&
-			IsCostumeHidden(e, 2) == true)
-            return 0;
-#endif
-
-        return GetPart(e, PART_HAIR);
-    }
-#ifdef ENABLE_ACCE_SYSTEM
-    case PART_ACCE:
-    {
-#ifdef __HIDE_COSTUME_SYSTEM__
-#ifdef ENABLE_STOLE_COSTUME
-        if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_ACCE)) &&
-			IsCostumeHidden(e, 3) == true) {
-			const entt::entity acce = ItemSystem::GetWearItem(character, WEAR_COSTUME_ACCE_SLOT);
-            if (ItemSystem::IsValidItem(acce)) {
-                uint32_t toSetValue = ItemSystem::GetItemVnum(acce);
-                toSetValue -= 85000;
-                if (ItemSystem::GetItemSocket(acce, ACCE_ABSORPTION_SOCKET) >= ACCE_EFFECT_FROM_ABS)
-                    toSetValue += 1000;
-
-                return toSetValue;
-            }
-            else
-                return 0;
-        }
-#else
-        if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_ACCE_SLOT)) &&
-			IsCostumeHidden(e, 3) == true)
-            return 0;
-#endif
-#else
-        if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_ACCE_SLOT)))
-            return 0;
-#endif
-        return GetPart(e, PART_ACCE);
-    }
-#endif
-#ifdef ENABLE_WEAPON_COSTUME_SYSTEM
-    case PART_WEAPON:
-    {
-#ifdef __HIDE_COSTUME_SYSTEM__
-        if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_WEAPON)) &&
-			IsCostumeHidden(e, 4) == true) {
-			const entt::entity weapon = ItemSystem::GetWearItem(character, WEAR_WEAPON);
-			if (ItemSystem::IsValidItem(weapon))
-				return ItemSystem::GetItemVnum(weapon);
-        }
-#endif
-        return GetPart(e, PART_WEAPON);
-#endif
-    }
-    default:
-        return 0;
-    }
+    return part == PART_HAIR || part == PART_ACCE || part == PART_WEAPON ? GetPart(e, part) : 0;
 }
 
 } // namespace ecs::PlayerRuntime
@@ -2525,14 +2331,14 @@ void DestroyCharacterStatePre(entt::entity character)
         ecs::PlayerRuntime::GetDesc(entityToDestroy)->BindCharacter(entt::null);
     }
 
-    ExchangeSystem::Cancel(character);
+    CancelTypedTrade(character);
 
     CombatSystem::SetVictim(character, entt::null);
 
     const entt::entity currentShop = ecs::SocialSystem::GetShop(character);
     if (currentShop != entt::null)
     {
-        ShopSystem::RemoveGuest(currentShop, character);
+        CloseTypedShop(character);
         ecs::SocialSystem::SetShop(character, entt::null);
     }
 
@@ -2542,8 +2348,7 @@ void DestroyCharacterStatePre(entt::entity character)
 
     if (nullptr == ecs::PlayerRuntime::GetMobTable(character))
     {
-        InventorySystem::ClearItem(character);
-    }
+        }
 
     const entt::entity party = ecs::SocialSystem::GetParty(character);
     if (party != entt::null)
@@ -2567,10 +2372,7 @@ void DestroyCharacterStatePre(entt::entity character)
     if (g_registry.valid(character))
         g_registry.remove<ecs::MobInstanceState>(character);
 
-    SafeboxSystem::Close(character, SAFEBOX);
-    SafeboxSystem::Close(character, MALL);
 
-    ecs::PlayerRuntime::BuffOnAttr_Destroy(character);
 
 
     SkillSystem::StopMuyeongEvent(character);

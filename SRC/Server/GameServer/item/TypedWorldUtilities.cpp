@@ -36,7 +36,24 @@
 #include <cmath>
 
 bool IS_SUMMONABLE_ZONE(int);
-extern int32_t kill_campfire_event(LPEVENT,int32_t);
+EVENTFUNC(kill_campfire_event)
+{
+	char_event_info* info = dynamic_cast<char_event_info*>(event->info);
+
+	if (info == nullptr)
+	{
+		LOG_ERROR("kill_campfire_event> <Factor> Null pointer");
+		return 0;
+	}
+
+	if (!ecs::IsCharacter(info->ch)) { // <Factor>
+		return 0;
+	}
+	ecs::PlayerRuntime::SetCharEvent(
+		info->ch, ecs::PlayerRuntime::CharEvent::Mining, nullptr);
+	CHARACTER_MANAGER::instance().DestroyCharacter(info->ch);
+	return 0;
+}
 namespace {
 namespace item=auriga::item;namespace store=item::runtime;namespace P=ecs::PlayerRuntime;
 void Tell(entt::entity e,const char* text){ecs::ChatSystem::Send(e,CHAT_TYPE_INFO,"%s",text);}

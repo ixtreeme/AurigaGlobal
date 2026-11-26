@@ -13,7 +13,7 @@
 #include <item/StorageRuntime.hpp>
 #include "../ecs/ResourceAdmission.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
@@ -40,7 +40,7 @@ struct Bundle {sql::LoadedItemOwner actor,account;std::optional<sql::LoadedItemO
 struct TypedStorageSession {Request request;std::uint64_t nonce=0;std::array<std::uint8_t,16> operation{};std::optional<Bundle> loaded;std::optional<item::StoragePlan> quote;bool pending=false,attempted=false;Status status=Ready;};
 struct TypedStorageReference {std::shared_ptr<TypedStorageSession> value;};
 entt::entity Current(std::uint32_t pid,std::uint64_t token){const auto e=CHARACTER_MANAGER::instance().FindEntityByPID(pid);const auto* l=g_registry.valid(e)?g_registry.try_get<ecs::TypedItemLogin>(e):nullptr;return l && l->token==token?e:entt::null;}
-bool Admitted(entt::entity e){if(!g_registry.valid(e) || !ecs::PlayerRuntime::IsPC(e) || CombatSystem::IsDead(e) || !InventorySystem::CanHandleItems(e) || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e) || ecs::SocialSystem::HasExchange(e) || ecs::SocialSystem::GetMyShop(e)!=entt::null || ecs::SocialSystem::GetShopOwner(e)!=entt::null || !g_registry.all_of<ecs::TypedItems,ecs::TypedItemLogin>(e))return false;const auto* flags=g_registry.try_get<ecs::StatusFlags>(e);const auto* q=g_registry.try_get<ecs::QuestPCState>(e);auto* d=ecs::PlayerRuntime::GetDesc(e);if(!d || !d->IsPhase(PHASE_GAME) || !q || !q->pc || q->pc->IsRunning() || (flags && (flags->isStunned || flags->isObserverMode)))return false;
+bool Admitted(entt::entity e){if(!g_registry.valid(e) || !ecs::PlayerRuntime::IsPC(e) || CombatSystem::IsDead(e) || !PlayerItemActions::CanHandleItems(e) || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e) || ecs::SocialSystem::HasExchange(e) || ecs::SocialSystem::GetMyShop(e)!=entt::null || ecs::SocialSystem::GetShopOwner(e)!=entt::null || !g_registry.all_of<ecs::TypedItems,ecs::TypedItemLogin>(e))return false;const auto* flags=g_registry.try_get<ecs::StatusFlags>(e);const auto* q=g_registry.try_get<ecs::QuestPCState>(e);auto* d=ecs::PlayerRuntime::GetDesc(e);if(!d || !d->IsPhase(PHASE_GAME) || !q || !q->pc || q->pc->IsRunning() || (flags && (flags->isStunned || flags->isObserverMode)))return false;
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
 if(ecs::PlayerRuntime::GetGMLevel(e)>GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(e)<GM_IMPLEMENTOR)return false;
 #endif

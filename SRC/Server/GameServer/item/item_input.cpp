@@ -4,7 +4,6 @@
 #include "../ecs/Registry.hpp"
 #include "../ecs/systems/ChatSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/MountSystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
@@ -22,15 +21,11 @@
 #include "packet.h"
 #include "protocol.h"
 #include "utils.h"
-#include "item_manager.h"
-#include "item.h"
-#include "safebox.h"
 #include "refine.h"
 #include "unique_item.h"
-#include "belt_inventory_helper.h"
 #include "../ecs/components/dirty_components.hpp"
 #include "../ecs/systems/ActivitySystem.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
 #include "../ecs/systems/NetworkSyncSystem.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
@@ -57,7 +52,7 @@ void CInputMain::QuickslotAdd(entt::entity character, const char* data)
     if (!data) return;
     command_quickslot_add packet {};
     memcpy(&packet, data, sizeof(packet));
-    InventorySystem::SetQuickslot(character, packet.pos, packet.slot);
+    PlayerItemActions::SetQuickslot(character, packet.pos, packet.slot);
 }
 
 void CInputMain::QuickslotDelete(entt::entity character, const char* data)
@@ -65,7 +60,7 @@ void CInputMain::QuickslotDelete(entt::entity character, const char* data)
     if (!data) return;
     command_quickslot_del packet {};
     memcpy(&packet, data, sizeof(packet));
-    InventorySystem::DelQuickslot(character, packet.pos);
+    PlayerItemActions::DelQuickslot(character, packet.pos);
 }
 
 void CInputMain::QuickslotSwap(entt::entity character, const char* data)
@@ -73,7 +68,7 @@ void CInputMain::QuickslotSwap(entt::entity character, const char* data)
     if (!data) return;
     command_quickslot_swap packet {};
     memcpy(&packet, data, sizeof(packet));
-    InventorySystem::SwapQuickslot(character, packet.pos, packet.change_pos);
+    PlayerItemActions::SwapQuickslot(character, packet.pos, packet.change_pos);
 }
 
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)

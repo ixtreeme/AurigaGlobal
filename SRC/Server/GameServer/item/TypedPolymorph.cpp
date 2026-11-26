@@ -16,7 +16,7 @@
 #include "../ecs/systems/SkillSystem.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/MountSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
@@ -46,7 +46,7 @@ std::optional<std::uint16_t> Roll(){std::uint32_t n;do{if(RAND_bytes(reinterpret
 bool InGame(entt::entity e){const auto* d=g_registry.valid(e) ? ecs::PlayerRuntime::GetDesc(e) : nullptr;return d && d->IsPhase(PHASE_GAME);}
 bool Admitted(entt::entity e,bool cancel=false)
 {
-    if(!InGame(e) || (!cancel && (!InventorySystem::CanHandleItems(e) || CombatSystem::IsDead(e))) || ecs::SocialSystem::HasExchange(e) || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e) || ecs::SocialSystem::GetShopOwner(e)!=entt::null || ecs::SocialSystem::GetMyShop(e)!=entt::null)return false;
+    if(!InGame(e) || (!cancel && (!PlayerItemActions::CanHandleItems(e) || CombatSystem::IsDead(e))) || ecs::SocialSystem::HasExchange(e) || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e) || ecs::SocialSystem::GetShopOwner(e)!=entt::null || ecs::SocialSystem::GetMyShop(e)!=entt::null)return false;
     const auto* flags=g_registry.try_get<ecs::StatusFlags>(e);const auto* q=g_registry.try_get<ecs::QuestPCState>(e);return q && q->pc && !q->pc->IsRunning() && (!flags || (!flags->isObserverMode && (cancel || !flags->isStunned)));
 }
 std::string Name(std::uint32_t mob)

@@ -12,8 +12,7 @@
 #include "../ecs/systems/ActivitySystem.hpp"
 #include "../ecs/systems/ChatSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
 #include "../ecs/systems/NetworkSyncSystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
@@ -55,8 +54,7 @@ static inline std::string MakeNameWithPrefix(entt::entity chEntity)
 	const char* name = valid ? ecs::PlayerRuntime::GetName(chEntity).data() : "";
 
 	std::string out;
-	if (valid)
-		out = NetworkSyncSystem::GetItemOnTitlePrefix(g_registry, chEntity); // std::string
+
 
 
 	if (!out.empty() && out.back() != ' ')
@@ -644,7 +642,7 @@ int HandleChat(entt::entity character, const char* data, uint32_t uiBytes, bool 
 		}
 
 
-		const std::string prefix = NetworkSyncSystem::GetItemOnTitlePrefix(g_registry, character);
+		const std::string prefix;
 		const char* name = ecs::PlayerRuntime::GetName(character).data();
 
 		len = snprintf(chatbuf, sizeof(chatbuf),

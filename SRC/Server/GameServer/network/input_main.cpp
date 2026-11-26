@@ -7,7 +7,7 @@
 #include "../item/TypedFishProcessing.hpp"
 #include "stdafx.h"
 #include <Core/packet_string.h>
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
 #include "../ecs/systems/MountSystem.hpp"
 #include "../ecs/systems/ViewSystem.hpp"
@@ -34,13 +34,9 @@
 #include "protocol.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
-#include "item.h"
-#include "item_manager.h"
 #include "cmd.h"
-#include "safebox.h"
 #include "regen.h"
 #include "battle.h"
-#include "exchange.h"
 #include "questmanager.h"
 #include "profiler.h"
 #include "messenger_manager.h"
@@ -64,20 +60,16 @@
 #include "locale_service.h"
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/EntityFactory.hpp"
-#include "belt_inventory_helper.h" // @fixme119
 #include "input.h"
-#include "input_item_helpers.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/VIDRegistry.hpp"
 #include "../ecs/components/combat_components.hpp"
 #include "../ecs/components/identity_components.hpp"
 #include "../ecs/components/dirty_components.hpp"
 #include "../ecs/components/movement_components.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 
 #ifdef ENABLE_SWITCHBOT
-#include "new_switchbot.h"
 #endif
 
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
@@ -139,40 +131,13 @@ void CInputMain::SetSkillColor(entt::entity character, const char* pcData)
 // END_OF_SCRIPT_SELECT_ITEM
 
 
-bool IsInputInventoryPosition(TItemPos position)
-{
-    return position.window_type == INVENTORY
-#ifdef ENABLE_EXTRA_INVENTORY
-        || position.window_type == EXTRA_INVENTORY
-#endif
-        ;
-}
 
-bool IsInputItemAt(entt::entity owner, entt::entity item, TItemPos position)
-{
-    if (!ecs::PlayerRuntime::IsPC(owner) || !ItemSystem::IsValidItem(item))
-        return false;
-    const auto* ownership = g_registry.try_get<ecs::ItemOwner>(item);
-    const auto* location = g_registry.try_get<ecs::ItemLocation>(item);
-    return ownership && ownership->owner == owner && location &&
-        location->window == position.window_type && location->cell == position.cell;
-}
 
-bool IsDetachedInputItem(entt::entity item)
-{
-    if (!ItemSystem::IsValidItem(item))
-        return false;
-    const auto* owner = g_registry.try_get<ecs::ItemOwner>(item);
-    const auto* location = g_registry.try_get<ecs::ItemLocation>(item);
-    return owner && owner->owner == entt::null && location && location->window == RESERVED_WINDOW;
-}
 
-bool RestoreInputItem(entt::entity owner, entt::entity item, TItemPos position)
-{
-    return ecs::PlayerRuntime::IsPC(owner) && IsDetachedInputItem(item) &&
-        InventorySystem::IsEmptyItemGrid(owner, position, ItemSystem::GetItemSize(item)) &&
-        ItemSystem::PlaceItemEcs(owner, item, position.window_type, position.cell);
-}
+
+
+
+
 
 
 // PARTY_JOIN_BUG_FIX
@@ -520,7 +485,7 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 #endif
 #ifdef ENABLE_MAP_TELEPORTER
 		case HEADER_CG_MAP_TELEPORTER:
-			MapTeleporter(character, (TPacketCGMapTeleporter*) c_pData);
+
 			break;
 #endif
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)

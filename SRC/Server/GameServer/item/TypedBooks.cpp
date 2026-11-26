@@ -16,7 +16,7 @@
 #include "../ecs/systems/SkillSystem.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
 #include "../ecs/systems/NetworkSyncSystem.hpp"
@@ -100,7 +100,7 @@ item::SkillBookAdmission Facts(entt::entity e,const item::PersistentItem& source
     return a;
 }
 bool Admitted(entt::entity e)
-{if(!InGame(e) || !InventorySystem::CanHandleItems(e) || ecs::SocialSystem::HasExchange(e) || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e) || ecs::SocialSystem::GetShopOwner(e)!=entt::null || ecs::SocialSystem::GetMyShop(e)!=entt::null)return false;const auto* flags=g_registry.try_get<ecs::StatusFlags>(e);if(flags && (flags->isObserverMode || flags->isStunned))return false;const auto* q=g_registry.try_get<ecs::QuestPCState>(e);return q && q->pc && !q->pc->IsRunning();}
+{if(!InGame(e) || !PlayerItemActions::CanHandleItems(e) || ecs::SocialSystem::HasExchange(e) || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e) || ecs::SocialSystem::GetShopOwner(e)!=entt::null || ecs::SocialSystem::GetMyShop(e)!=entt::null)return false;const auto* flags=g_registry.try_get<ecs::StatusFlags>(e);if(flags && (flags->isObserverMode || flags->isStunned))return false;const auto* q=g_registry.try_get<ecs::QuestPCState>(e);return q && q->pc && !q->pc->IsRunning();}
 TypedBookSession* State(entt::entity e){auto* s=g_registry.try_get<TypedBookSession>(e);if(!s){TypedBookSession next;next.control=Nonce();if(!next.control)return nullptr;s=&g_registry.emplace<TypedBookSession>(e,std::move(next));}return s;}
 void Reply(entt::entity e,Status status,std::uint8_t error=255)
 {

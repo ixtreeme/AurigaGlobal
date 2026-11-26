@@ -20,7 +20,6 @@
 #include "utils.h"
 #include "questmanager.h"
 #ifdef ENABLE_NEW_USE_POTION
-#include "item.h"
 #include "../ecs/EntityFactory.hpp"
 #include "unique_item.h"
 #endif

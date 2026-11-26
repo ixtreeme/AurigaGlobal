@@ -31,14 +31,11 @@
 #include "packet.h"
 #include "desc_manager.h"
 #include "../ecs/CharacterAccessors.hpp"
-#include "item_manager.h"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "char_interface.hpp"
 #include "char_manager.h"
 #include "mob_manager.h"
 #include "motion.h"
 #include "sectree_manager.h"
-#include "shop_manager.h"
 #include "regen.h"
 #include "skill.h"
 #include "pvp.h"
@@ -68,7 +65,6 @@
 
 
 #include "BattleArena.h"
-#include "over9refine.h"
 #include "horsename_manager.h"
 #include "MarkManager.h"
 #include "spam.h"
@@ -105,7 +101,6 @@
 #include <execinfo.h>
 #endif
 #ifdef ENABLE_SWITCHBOT
-#include "new_switchbot.h"
 #endif
 #ifdef _WIN32
 	#define _USE_SERVER_KEY_
@@ -321,7 +316,6 @@ void heartbeat(LPHEART ht, int pulse)
 
 	if (!(pulse % (passes_per_sec * 5 + 2)))
 	{
-		ItemSystem::ProcessPendingItemConsumptions();
 		DESC_MANAGER::instance().UpdateLocalUserCount();
 	}
 
@@ -441,8 +435,6 @@ int main(int argc, char **argv)
 #endif
 	SECTREE_MANAGER	sectree_manager;
 	CHARACTER_MANAGER	char_manager;
-	ITEM_MANAGER	item_manager;
-	CShopManager	shop_manager;
 	CMobManager		mob_manager;
 	CMotionManager	motion_manager;
 	CPartyManager	party_manager;
@@ -481,13 +473,11 @@ int main(int argc, char **argv)
 	CTableBySkill SkillPowerByLevel;
 	CProfiler		profiler;
 	CBattleArena	ba;
-	COver9RefineManager	o9r;
 	SpamManager		spam_mgr;
 #ifdef ENABLE_HWID
 	CHwidManager	hwid_manager;
 #endif
 #ifdef ENABLE_SWITCHBOT
-	CSwitchbotManager switchbot;
 #endif
 
 	if (!start(argc, argv, gameConfig)) {
@@ -532,19 +522,14 @@ int main(int argc, char **argv)
 
 	LOG_INFO("<shutdown> Shutting down CHARACTER_MANAGER...");
 	char_manager.GracefulShutdown();
-	ItemSystem::ProcessPendingItemConsumptions();
 
 	LOG_INFO("<shutdown> Flushing db_clientdesc...");
 	db_clientdesc->FlushOutput();
 	LOG_INFO("<shutdown> Flushing p2p_manager...");
 	p2p_manager.FlushOutput();
 
-	LOG_INFO("<shutdown> Destroying CShopManager...");
-	shop_manager.Destroy();
 	LOG_INFO("<shutdown> Destroying CHARACTER_MANAGER...");
 	char_manager.Destroy();
-	LOG_INFO("<shutdown> Destroying ITEM_MANAGER...");
-	item_manager.Destroy();
 	LOG_INFO("<shutdown> Destroying DESC_MANAGER...");
 	desc_manager.Destroy();
 #ifdef __NEW_EVENT_HANDLER__

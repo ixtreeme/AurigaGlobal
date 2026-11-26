@@ -10,9 +10,10 @@
 #include "../../SRC/Server/GameServer/network/desc_client.h"
 #include "../../SRC/Server/GameServer/network/desc_manager.h"
 #include "../../SRC/Server/GameServer/world/sectree_manager.h"
-#include "../../SRC/Server/GameServer/social/shop_manager.h"
 #include "../../SRC/Server/GameServer/social/shop.h"
-#include "../../SRC/Server/GameServer/item/attr_transfer.h"
+#include "../../SRC/Server/GameServer/item/TypedShop.hpp"
+#include "../../SRC/Server/GameServer/item/TypedPrivateShops.hpp"
+#include "../../SRC/Server/GameServer/item/TypedCostumeTransfer.hpp"
 #include "../../SRC/Server/GameServer/item/TypedStoneExchange.hpp"
 #include "../../SRC/Server/GameServer/dungeon/LostCastleDungeon.h"
 #include "../../SRC/Server/GameServer/dungeon/OrcsDungeon.h"
@@ -621,7 +622,11 @@ void CombatSystem::SetDamageMultiplier(entt::entity,float) {Unexpected();}
 entt::entity ecs::SocialSystem::GetPartyLeader(entt::entity) {Unexpected();}
 CGuild* ecs::SocialSystem::GetGuild(entt::entity) {Unexpected();}
 uint64_t ecs::PointSystem::GetMaxHP(entt::entity e) {CheckLive(e);return g_registry.get<TargetData>(e).maxHP;}
-bool CShopManager::StartShopping(entt::entity,entt::entity,int) {Unexpected();}
+
+bool TryOpenTypedShop(entt::entity,entt::entity,uint32_t) {Unexpected();}
+bool TryOpenTypedPrivateShop(entt::entity,entt::entity) {Unexpected();}
+bool HasTypedCostumeTransfer(entt::entity) {Unexpected();}
+void CloseTypedShop(entt::entity) {Unexpected();}
 bool map_allow_find(int32_t) {Unexpected();}
 bool SECTREE_MANAGER::GetMapBasePositionByMapIndex(int32_t,PIXEL_POSITION&) {Unexpected();}
 bool DropEvent_CharStone_SetValue(const std::string&,int) {Unexpected();}
@@ -645,12 +650,12 @@ LPSECTREE ecs::PlayerRuntime::GetSectree(entt::entity e) {CheckLive(e);return se
 bool ecs::PlayerRuntime::IsBuilding(entt::entity e) {CheckLive(e);return g_registry.get<ecs::CharacterType>(e).value==CHAR_TYPE_BUILDING;}
 bool ecs::PlayerRuntime::IsMonster(entt::entity e) {CheckLive(e);return g_registry.all_of<ecs::TagMonster>(e);}
 bool CombatSystem::IsDead(entt::entity e) {CheckLive(e);return g_registry.get<TargetData>(e).dead;}
-bool AttrTransfer_is_open(entt::entity) {Unexpected();}
+
 bool ecs::SessionSystem::IsSafeboxOpen(entt::entity) {Unexpected();}
 bool ecs::SessionSystem::IsCubeOpen(entt::entity) {Unexpected();}
-void ShopSystem::RemoveGuest(entt::entity, entt::entity) {Unexpected();}
-bool ShopSystem::AddGuest(entt::entity, entt::entity, uint32_t, bool) {Unexpected();}
-bool ShopSystem::IsValid(entt::entity) {Unexpected();}
+
+
+
 bool SectreeMember(entt::entity e,const SECTREE*) {
     if(onMember){auto fn=onMember;fn(e);}
     const auto* data=g_registry.valid(e)?g_registry.try_get<TargetData>(e):nullptr;
@@ -730,7 +735,7 @@ void NativeVictimSearch() {
     flags.isAggressive=false;flags.isAttackMob=false;
     Check(CombatSystem::FindVictim(self,500)==nearer,"passive searcher used candidate's attack-mob flag");
     const auto item=Target(CHAR_TYPE_PC,1);
-    g_registry.get<ecs::SpatialKindTag>(item).kind=ecs::SpatialKind::Item;
+    g_registry.get<ecs::SpatialKindTag>(item).kind=ecs::SpatialKind::TypedLoot;
     Check(CombatSystem::FindVictim(self,500)==nearer,"item spatial kind entered character target search");
     g_registry.remove<ecs::SpatialKindTag>(item);
     Check(CombatSystem::FindVictim(self,500)==nearer,"untyped entity entered character target search");

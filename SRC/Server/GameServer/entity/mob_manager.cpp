@@ -4,7 +4,6 @@
 #include <Core/Logging.hpp>
 #include "char_interface.hpp"
 #include "char_manager.h"
-#include "item_manager.h"
 #include "mob_manager.h"
 #include "regen.h"
 #include "sectree.h"

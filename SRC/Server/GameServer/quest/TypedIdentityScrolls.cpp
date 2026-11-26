@@ -6,7 +6,7 @@
 #include "../ecs/components/status_components.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
 #include "../ecs/systems/ChatSystem.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/NetworkSyncSystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
@@ -59,7 +59,7 @@ struct ScrollUse
 std::optional<ScrollUse> ReadScrollUse(entt::entity actor, TypedItemUseSource selected, bool requireCanWarp)
 {
     if (!player::IsPC(actor) || g_registry.any_of<ecs::TypedItemBusy, ecs::DeadTag, ecs::StunTag>(actor) ||
-        !InventorySystem::CanHandleItems(actor) || (requireCanWarp && !player::CanWarp(actor)))
+        !PlayerItemActions::CanHandleItems(actor) || (requireCanWarp && !player::CanWarp(actor)))
         return {};
 
     const auto* inventory = g_registry.try_get<ecs::TypedItems>(actor);

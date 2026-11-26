@@ -12,7 +12,6 @@
 #include "char_interface.hpp"
 #include "char_manager.h"
 #include "affect.h"
-#include "item.h"
 #include "config.h"
 #include "desc.h"
 #include "desc_manager.h"
@@ -25,7 +24,6 @@
 #include "../ecs/events.hpp"
 #include "../ecs/EntityFactory.hpp"
 #include "../ecs/Registry.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 
 // The events outlive neither the map nor its index, but an armed event can
@@ -294,30 +292,7 @@ uint32_t CWarMap::GetWinnerGuild()
 	return (win_gid);
 }
 
-void CWarMap::UsePotion(entt::entity ch, entt::entity item)
-{
-	if (m_pkEndEvent)
-		return;
 
-	if (ecs::PlayerRuntime::IsObserverMode(ch))
-		return;
-
-	if (!ecs::SocialSystem::GetGuild(ch))
-		return;
-
-	const TItemTable* itemProto = ItemSystem::GetItemProto(item);
-	if (!itemProto)
-		return;
-
-	int iPrice = itemProto->dwGold;
-
-	uint32_t gid = ecs::SocialSystem::GetGuild(ch)->GetID();
-
-	if (gid == m_TeamData[0].dwID)
-		m_TeamData[0].iUsePotionPrice += iPrice;
-	else if (gid == m_TeamData[1].dwID)
-		m_TeamData[1].iUsePotionPrice += iPrice;
-}
 
 int CWarMap::STeamData::GetAccumulatedJoinerCount()
 {

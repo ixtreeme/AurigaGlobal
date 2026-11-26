@@ -1,6 +1,8 @@
 #ifndef __INC_METIN_II_CHAR_H__
 #define __INC_METIN_II_CHAR_H__
 
+#include "../core/typedef.h"
+#include "../world/event.h"
 #include <unordered_map>
 #include <chrono>
 #include <span>
@@ -26,7 +28,6 @@
 
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-#include "attr_transfer.h"
 #endif
 
 
@@ -37,7 +38,6 @@ using namespace std::literals::chrono_literals;
 #define ENABLE_OPEN_SHOP_WITH_ARMOR
 enum eMountType { MOUNT_TYPE_NONE = 0, MOUNT_TYPE_NORMAL = 1, MOUNT_TYPE_COMBAT = 2, MOUNT_TYPE_MILITARY = 3 };
 eMountType GetMountLevelByVnum(uint32_t dwMountVnum, bool IsNew);
-const uint32_t GetRandomSkillVnum(uint8_t bJob = JOB_MAX_NUM);
 
 	
 #define INSTANT_FLAG_DEATH_PENALTY		(1 << 0)

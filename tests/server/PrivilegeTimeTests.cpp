@@ -5,7 +5,6 @@
 #include "../../SRC/Server/GameServer/core/log.h"
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/SocialSystem.hpp"
 #include <Core/Logging.hpp>
 #include <algorithm>
@@ -43,7 +42,7 @@ const char* c_apszEmpireNames[EMPIRE_MAX_NUM] {"all", "one", "two", "three"};
 const char* c_apszPrivNames[MAX_PRIV_NUM] {};
 uint32_t ecs::PlayerRuntime::GetPlayerID(entt::entity) { Unexpected(); }
 uint8_t ecs::PlayerRuntime::GetEmpire(entt::entity) { Unexpected(); }
-bool ItemSystem::IsEquipUniqueItem(entt::entity, uint32_t) { Unexpected(); }
+
 CGuild* ecs::SocialSystem::GetGuild(entt::entity) { Unexpected(); }
 std::shared_ptr<spdlog::logger> logging::GetLogger() {
     static auto logger = std::make_shared<spdlog::logger>("privilege-time-test"); return logger;

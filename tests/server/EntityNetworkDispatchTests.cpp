@@ -16,7 +16,6 @@
 #include "../../SRC/Server/GameServer/ecs/systems/SocialSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MountSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MountFlightSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/identity_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/appearance_components.hpp"
@@ -636,9 +635,9 @@ void SendSnapshot(entt::entity source, entt::entity viewer) { Live(source); Live
 namespace HerbalismSystem {
 void SendSnapshot(entt::entity source, entt::entity viewer) { Live(source); Live(viewer); }
 }
-entt::entity ItemSystem::GetWearItem(entt::entity owner, uint8_t) { Live(owner); return entt::null; }
-bool ItemSystem::IsValidItem(entt::entity item) { return item != entt::null && g_registry.valid(item); }
-uint32_t ItemSystem::GetItemVnum(entt::entity) { Unexpected(); }
+
+
+
 
 // Unrelated entry points in the complete production translation units remain
 // linked, but must never supply behavior to these direct encoding tests.
@@ -690,13 +689,11 @@ entt::entity CHARACTER_MANAGER::FindEntity(uint32_t vid) {
     return entt::null;
 }
 entt::entity PartySystem::GetLeader(entt::entity) { Unexpected(); }
-namespace ShopSystem {
-bool IsValid(entt::entity) { return false; }
-}
+
 uint8_t PartySystem::GetRole(entt::entity, uint32_t) { Unexpected(); }
 int PartySystem::GetPartyBonusExpPercent(entt::entity) { Unexpected(); }
-int ItemSystem::GetItemValue(entt::entity, uint32_t) { Unexpected(); }
-const char* ItemSystem::GetItemName(entt::entity) { Unexpected(); }
+
+
 bool battle_is_attackable(entt::entity, entt::entity) { Unexpected(); }
 
 void MountFlightInsertIsolation() {

@@ -7,7 +7,6 @@
 #include "TypedInventorySync.hpp"
 #include "TypedLoot.hpp"
 #include "unique_item.h"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../entity/char.h"
 #include "../network/desc.h"
@@ -92,8 +91,7 @@ items::MobDropContext MakeTypedMobDropContext(entt::entity victim, entt::entity 
 	kill.mobRank = static_cast<std::uint8_t>(ecs::PlayerRuntime::GetMobRank(victim));
 	kill.stone = ecs::PlayerRuntime::IsStone(victim);
 	kill.killerLevel = static_cast<std::uint16_t>(std::clamp(ecs::PointSystem::GetLevel(killer), 1, 65535));
-	kill.doubleDrop = ecs::PlayerRuntime::GetPremiumRemainSeconds(killer, PREMIUM_ITEM) > 0 ||
-		ItemSystem::IsEquipUniqueGroup(killer, UNIQUE_GROUP_DOUBLE_ITEM)
+	kill.doubleDrop = ecs::PlayerRuntime::GetPremiumRemainSeconds(killer, PREMIUM_ITEM) > 0
 #ifdef ENABLE_NEW_COMMON_BONUSES
 		|| ecs::PointSystem::GetPrecise(killer, POINT_DOUBLE_DROP_ITEM) > 0
 #endif

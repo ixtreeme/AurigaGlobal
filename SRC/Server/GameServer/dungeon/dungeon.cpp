@@ -18,8 +18,6 @@
 #include "config.h"
 #include "regen.h"
 #include "start_position.h"
-#include "item.h"
-#include "item_manager.h"
 #include "utils.h"
 #include "questmanager.h"
 #include "../ecs/EventDispatcher.hpp"

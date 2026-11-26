@@ -19,9 +19,6 @@
 #include "../ecs/EntityFactory.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/components/spatial_components.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
-#include "item.h"
-#include "item_manager.h"
 #include "buffer_manager.h"
 #include "packet.h"
 #include "start_position.h"
@@ -1231,13 +1228,8 @@ class FRemoveIfAttr
 			if (!m_pkTree->IsAttr(ecs::PlayerRuntime::GetX(entity), ecs::PlayerRuntime::GetY(entity), m_dwCheckAttr))
 				return;
 
-			if (ItemSystem::IsValidItem(entity))
-			{
-				ItemSystem::DestroyItemEntityEcs(
-					entity,
-					"SECTREE_ATTR_ITEM_CLEANUP");
-			}
-			else if (const auto* kind = g_registry.try_get<ecs::SpatialKindTag>(entity);
+
+			if (const auto* kind = g_registry.try_get<ecs::SpatialKindTag>(entity);
                 kind && kind->kind == ecs::SpatialKind::Character)
 			{
 				const entt::entity chEntity = entity;

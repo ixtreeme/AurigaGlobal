@@ -8,7 +8,6 @@
 
 #include "../../world/event.h"
 
-#include "../../combat/buff_on_attributes.h"
 
 namespace ecs {
 

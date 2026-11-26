@@ -29,10 +29,6 @@ bool BuildCharAdditionalInfo(entt::registry& reg, entt::entity source, TPacketGC
 void SendCharAdditionalInfo(entt::registry& reg, entt::entity source, entt::entity recipient);
 bool BuildCharacterUpdatePacket(entt::registry& reg, entt::entity source, TPacketGCCharacterUpdate& packet);
 bool BuildPointsPacket(entt::registry& reg, entt::entity source, TPacketGCPoints& packet);
-std::string GetItemOnTitlePrefix(entt::registry& reg, entt::entity source);
-std::string GetDisplayedNameWithItemOnTitle(entt::registry& reg, entt::entity source);
-void SendItemOnTitleNameToDesc(entt::registry& reg, entt::entity source, entt::entity recipient);
-void UpdateItemOnTitleName(entt::registry& reg, entt::entity source, bool force = false);
 entt::entity FindCharacterInView(entt::registry& reg, entt::entity source, const char* name, bool findPCOnly);
 bool BuildPartyUpdatePacket(entt::registry& reg, entt::entity member, TPacketGCPartyUpdate& packet);
 void BroadcastSyncPacket(entt::registry& reg, entt::entity source);
@@ -41,10 +37,3 @@ void BroadcastSpecificEffect(entt::registry& reg, entt::entity source, const cha
 void SendConfirmWithMsg(entt::registry& reg, entt::entity recipient, const char* message, int timeout, uint32_t requestPID);
 
 } // namespace NetworkSyncSystem
-
-namespace ecs::ItemNetworkSystem {
-
-// Rebuilds and sends the owner-facing item packet from native components.
-void SendItemUpdate(entt::registry& reg, entt::entity item);
-
-} // namespace ecs::ItemNetworkSystem

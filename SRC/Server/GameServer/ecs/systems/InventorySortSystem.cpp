@@ -3,7 +3,7 @@
 
 #ifdef ENABLE_SORT_INVEN
 
-#include "InventorySystem.hpp"
+#include "PlayerItemActions.hpp"
 #include "ChatSystem.hpp"
 #include "CombatSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
@@ -47,7 +47,7 @@ void SortWindow(entt::entity character, std::uint8_t scope)
     if (!descriptor || !descriptor->IsPhase(PHASE_GAME))
         return;
     if (g_registry.all_of<ecs::TypedItemBusy>(character) || CombatSystem::IsDead(character) ||
-        !InventorySystem::CanHandleItems(character) || TypedGatheringActive(character) ||
+        !PlayerItemActions::CanHandleItems(character) || TypedGatheringActive(character) ||
         ecs::SocialSystem::HasExchange(character) || ecs::SocialSystem::GetShopOwner(character) != entt::null ||
         ecs::SessionSystem::IsSafeboxOpen(character))
         return Reply(character, scope, "busy");

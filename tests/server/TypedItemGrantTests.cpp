@@ -1,10 +1,11 @@
+#include "../../SRC/Server/GameServer/item/TypedMoney.hpp"
 // Exercise the real grant completion against logout/relogin. The SQL boundary
 // is controlled here; the planner, ECS login fence and completion are real.
 #include "../../SRC/Server/GameServer/core/stdafx.h"
 #include "../../SRC/Server/GameServer/entity/char_manager.h"
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/InventorySystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/PlayerItemActions.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.hpp"
@@ -91,7 +92,7 @@ bool ecs::PlayerRuntime::IsPC(entt::entity) { Unexpected(); }
 void ecs::PlayerRuntime::SetPotionLimit(entt::entity, int) { Unexpected(); }
 int ecs::PlayerRuntime::GetPotionLimit(entt::entity) { Unexpected(); }
 int ecs::PlayerRuntime::GetPosition(entt::entity) { Unexpected(); }
-bool InventorySystem::CanHandleItems(entt::entity, bool, bool) { Unexpected(); }
+bool PlayerItemActions::CanHandleItems(entt::entity, bool, bool) { Unexpected(); }
 int64_t ecs::PointSystem::Get(entt::entity, uint8_t) { Unexpected(); }
 uint64_t ecs::PointSystem::GetMaxHP(entt::entity) { Unexpected(); }
 uint64_t ecs::PointSystem::GetMaxSP(entt::entity) { Unexpected(); }
@@ -156,3 +157,8 @@ int main()
     }
     catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }
+
+// The regular-item grant fixture never credits currency tokens.
+std::expected<void,TypedGrantRefusal> RequestTypedGoldCredit(entt::entity,std::uint64_t,
+    std::optional<items::CurrencyDropIntent>,std::function<void(bool)>) { Unexpected(); }
+std::uint64_t TypedItemEffectNow() { return 123456789; }

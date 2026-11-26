@@ -43,8 +43,7 @@
 #include "../CharacterAccessors.hpp"
 #include "../EntityFactory.hpp"
 #include "../Registry.hpp"
-#include "ItemSystem.hpp"
-#include "InventorySystem.hpp"
+#include "PlayerItemActions.hpp"
 #include "PointSystem.hpp"
 #include "MountSystem.hpp"
 #include "../SpatialHelpers.hpp"
@@ -66,7 +65,6 @@
 #include "../../core/log.h"
 #include "../services/EntityNetworkDispatch.hpp"
 #ifdef ENABLE_SWITCHBOT
-#include "../../social/new_switchbot.h"
 #endif
 #include "../../entity/char_manager.h"
 #include "../EntityInvariants.hpp"
@@ -195,7 +193,10 @@ namespace
     int MovementDurationFactor(entt::entity e)
     {
         // GetLimitPoint(POINT_MOV_SPEED) used the same instant-point authority.
-        const auto speed = std::clamp<int64_t>(ecs::PointSystem::GetPrecise(e, POINT_MOV_SPEED), 0, 350);
+        const double raw = ecs::PointSystem::GetPrecise(e, POINT_MOV_SPEED);
+        // Clamp before conversion: an extreme point value can exceed int64_t
+        // after its double projection rounds to the next representable value.
+        const auto speed = static_cast<int64_t>(std::clamp(std::isnan(raw) ? 0.0 : raw, 0.0, 350.0));
         return speed <= 100 ? int(200 - speed) : int(10000 / speed);
     }
 
@@ -786,14 +787,7 @@ static bool WarpSetImpl(entt::entity e, int32_t x, int32_t y, int32_t lPrivateMa
     p.lAddr = lAddr;
     p.wPort = wPort;
 
-#ifdef ENABLE_SWITCHBOT
-    CSwitchbotManager::Instance().SetIsWarping(ecs::PlayerRuntime::GetPlayerID(e), true);
 
-    if (p.wPort != mother_port)
-    {
-        CSwitchbotManager::Instance().P2PSendSwitchbot(ecs::PlayerRuntime::GetPlayerID(e), p.wPort);
-    }
-#endif
 
     LPDESC desc = IsValid(e) ? ecs::PlayerRuntime::GetDesc(e) : nullptr;
     if (!desc)
@@ -932,7 +926,7 @@ namespace {
             if (ecs::PlayerRuntime::IsHack(character))
                 return;
 
-            if (!InventorySystem::CanHandleItems(character, false, true))
+            if (!PlayerItemActions::CanHandleItems(character, false, true))
                 return;
 
             if (m_bUseWarp)

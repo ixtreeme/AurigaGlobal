@@ -23,7 +23,6 @@
 #include "p2p.h"
 #include "mob_manager.h"
 #include "start_position.h"
-#include "over9refine.h"
 #include "OXEvent.h"
 #include "regen.h"
 #include "cmd.h"
@@ -1151,20 +1150,7 @@ namespace quest
 		return 0;
 	}
 
-	ALUA(_enable_over9refine)
-	{
-		// migrated from CHARACTER::enable_over9refine
-		// DUAL-PATH: legacy only during migration window
-		if ( lua_isnumber(L, 1) == true && lua_isnumber(L, 2) == true )
-		{
-			uint32_t dwVnumFrom = (uint32_t)lua_tonumber(L, 1);
-			uint32_t dwVnumTo = (uint32_t)lua_tonumber(L, 2);
 
-			COver9RefineManager::instance().enableOver9Refine(dwVnumFrom, dwVnumTo);
-		}
-
-		return 0;
-	}
 
 	ALUA(_add_ox_quiz)
 	{
@@ -1724,7 +1710,6 @@ namespace quest
 			{	"say_in_map",					_say_in_map						},
 			{	"kill_all_in_map",				_kill_all_in_map				},
 			{	"regen_in_map",					_regen_in_map					},
-			{	"enable_over9refine",			_enable_over9refine				},
 			{	"block_chat",					_block_chat						},
 			{	"spawn_mob",					_spawn_mob						},
 			{	"get_locale_base_path",			_get_locale_base_path			},

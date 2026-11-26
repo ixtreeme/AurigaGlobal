@@ -10,7 +10,6 @@
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/SkillSystem.hpp"
 #include "../ecs/systems/ChatSystem.hpp"
 #include "../guild/guild.h"

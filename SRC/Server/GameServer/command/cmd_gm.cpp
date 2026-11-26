@@ -3,7 +3,7 @@
 #include "../benchmark/BenchmarkSession.hpp"
 #include "../item/TypedMoney.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include <Core/Logging.hpp>
 #include <common/event_flag.h>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
@@ -25,7 +25,6 @@
 #include "../item/TypedQuestItems.hpp"
 #include <item/GuildConstruction.hpp>
 #include <charconv>
-#include "item_manager.h"
 #include "sectree_manager.h"
 #include "mob_manager.h"
 #include "packet.h"
@@ -58,7 +57,6 @@
 #include "../ecs/PIDRegistry.hpp"
 #include <charconv>
 #include <unordered_set>
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/ActivitySystem.hpp"
 #include <common/CommonDefines.h>
 #include "LostCastleDungeon.h"

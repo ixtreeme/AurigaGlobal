@@ -38,7 +38,6 @@
 #include "../../combat/battle.h"
 #include "../../guild/guild.h"
 #include "../../pet/horsename_manager.h"
-#include "../../item/item.h"
 #include "../../core/locale_service.h"
 #include "../../core/lua_incl.h"
 #include "../../core/packet.h"

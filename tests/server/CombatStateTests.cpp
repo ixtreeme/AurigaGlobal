@@ -37,15 +37,12 @@
 #include "../../SRC/Server/GameServer/ecs/EntityInvariants.hpp"
 #include "../../SRC/Server/GameServer/ecs/NetworkService.hpp"
 #include "../../SRC/Server/GameServer/ecs/VIDRegistry.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/InventorySystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/PlayerItemActions.hpp"
 #include "../../SRC/Server/GameServer/core/utils.h"
 #include "../../SRC/Server/GameServer/core/constants.h"
 #include "../../SRC/Server/GameServer/network/desc.h"
 #include "../../SRC/Server/GameServer/network/desc_manager.h"
 #include "../../SRC/Server/GameServer/entity/char_manager.h"
-#include "../../SRC/Server/GameServer/item/item.h"
-#include "../../SRC/Server/GameServer/item/item_manager.h"
 #include "../../SRC/Server/GameServer/item/ItemCatalogRuntime.hpp"
 #include "../../SRC/Server/GameServer/item/TypedDrops.hpp"
 #include "../../SRC/Server/GameServer/item/TypedBooks.hpp"
@@ -70,8 +67,6 @@
 #include "../../SRC/Server/GameServer/social/marriage.h"
 #include "../../SRC/Server/GameServer/world/arena.h"
 #include "../../SRC/Server/GameServer/world/regen.h"
-#include "../../SRC/Server/GameServer/social/exchange.h"
-#include "../../SRC/Server/GameServer/social/shop_manager.h"
 #include "../../SRC/Server/GameServer/core/dev_log.h"
 #include "../../SRC/Server/GameServer/entity/ani.h"
 #include "../../SRC/Server/GameServer/world/BattleArena.h"
@@ -113,8 +108,6 @@ CPVPManager::~CPVPManager() = default;
 quest::CQuestManager::~CQuestManager() = default;
 CGuildManager::~CGuildManager() = default;
 LogManager::~LogManager() = default;
-CShopManager::~CShopManager() = default;
-ITEM_MANAGER::~ITEM_MANAGER() = default;
 CSkillManager::~CSkillManager() = default;
 CAsyncSQL::~CAsyncSQL() = default;
 CSemaphore::~CSemaphore() = default;
@@ -341,7 +334,7 @@ void MultiplierAndValidityChecks() {
 [[noreturn]] void UnexpectedService(const char* service) { throw std::runtime_error(service); }
 // Spatial traversal is outside this combat fixture; SpatialLifecycleTests
 // exercises the real native index and callback dispatch.
-void ecs::SessionSystem::CloseSafebox(entt::entity) { UnexpectedService(__func__); }
+
 uint8_t SkillSystem::GetSkillGroup(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).skillGroup; }
 bool SectreeMember(entt::entity, const SECTREE*) { UnexpectedService(__func__); }
 FCollectEntity SECTREE::SnapshotAround(int) const { UnexpectedService(__func__); }
@@ -495,12 +488,12 @@ void ecs::MovementSystem::SendMovePacket(entt::entity e,unsigned char,unsigned c
     if (!g_registry.all_of<FollowFixture>(e)) UnexpectedService(__func__);
     ++g_registry.get<FollowFixture>(e).movePackets;
 }
-void InventorySystem::SyncQuickslot(entt::entity,uint16_t,uint16_t,uint16_t) { UnexpectedService(__func__); }
+
 void AffectSystem::ClearAffectSkills(entt::entity) { UnexpectedService(__func__); }
 void ecs::SocialSystem::SetDungeon(entt::entity, entt::entity) { UnexpectedService(__func__); }
-bool ItemSystem::IsEquipUniqueItem(entt::entity,unsigned int) { UnexpectedService(__func__); }
-bool ItemSystem::IsEquipUniqueGroup(entt::entity,unsigned int) { UnexpectedService(__func__); }
-void ItemSystem::GiveGold(entt::entity, int64_t) { UnexpectedService(__func__); }
+
+
+
 void ecs::SocialSystem::CloseMyShop(entt::entity) { UnexpectedService(__func__); }
 entt::entity ecs::SocialSystem::GetMarryPartner(entt::entity) { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetQuestDamage(entt::entity,int,int) { UnexpectedService(__func__); }
@@ -541,41 +534,36 @@ int MountSystem::GetHorseMaxHealth(entt::entity) { UnexpectedService(__func__); 
 void DESC::Packet(void const *,int) { UnexpectedService(__func__); }
 bool DESC::DelayedDisconnect(int) { UnexpectedService(__func__); }
 char const * get_table_postfix(void) { UnexpectedService(__func__); }
-entt::entity ItemSystem::GetInventoryItem(entt::entity,unsigned short) { UnexpectedService(__func__); }
-entt::entity ItemSystem::GetExtraInventoryItem(entt::entity,unsigned short) { UnexpectedService(__func__); }
-entt::entity ItemSystem::FindSpecifyItem(entt::entity,unsigned int,bool) { UnexpectedService(__func__); }
-entt::entity ItemSystem::GetWearItem(entt::entity e,unsigned char) { AssertActor(e); return g_registry.get<BattleFixture>(e).weapon; }
-bool ItemSystem::EquipItemEcs(entt::entity,entt::entity,int) { UnexpectedService(__func__); }
-bool ItemSystem::IsValidItem(entt::entity e) { return e != entt::null && g_registry.valid(e) && g_registry.all_of<WeaponFixture>(e); }
-bool ItemSystem::IsExtraItem(entt::entity) { UnexpectedService(__func__); }
-unsigned int ItemSystem::GetItemVnum(entt::entity) { UnexpectedService(__func__); }
-unsigned int ItemSystem::GetItemOriginalVnum(entt::entity) { UnexpectedService(__func__); }
-unsigned char ItemSystem::GetItemType(entt::entity e) { Check(IsValidItem(e), "invalid item type read"); return g_registry.get<WeaponFixture>(e).type; }
-unsigned char ItemSystem::GetItemSubType(entt::entity e) { Check(IsValidItem(e), "invalid item subtype read"); return g_registry.get<WeaponFixture>(e).subtype; }
-unsigned int ItemSystem::GetItemCount(entt::entity) { UnexpectedService(__func__); }
-char const * ItemSystem::GetItemName(entt::entity) { UnexpectedService(__func__); }
-unsigned int ItemSystem::GetItemAntiFlag(entt::entity) { UnexpectedService(__func__); }
-SItemTable const * ItemSystem::GetItemProto(entt::entity e) {
-    Check(IsValidItem(e), "invalid item prototype read");
-    auto& weapon=g_registry.get<WeaponFixture>(e);
-    weapon.proto.bType=weapon.type;weapon.proto.bSubType=weapon.subtype;
-    return &weapon.proto;
-}
-bool ItemSystem::SetItemCountEcs(entt::entity,unsigned int) { UnexpectedService(__func__); }
-bool ItemSystem::AddItemCountEcs(entt::entity,int) { UnexpectedService(__func__); }
-bool ItemSystem::DestroyItemEntityEcs(entt::entity,char const *) { UnexpectedService(__func__); }
-unsigned int ItemSystem::GetItemSocket(entt::entity,int) { UnexpectedService(__func__); }
-TPlayerItemAttribute ItemSystem::GetItemAttribute(entt::entity,int) { UnexpectedService(__func__); }
-int ItemSystem::GetItemAttributeType(entt::entity,int) { UnexpectedService(__func__); }
-double ItemSystem::GetItemAttributeValue(entt::entity,int) { UnexpectedService(__func__); }
-bool ItemSystem::SetItemSocket(entt::entity,int,unsigned int,bool) { UnexpectedService(__func__); }
-bool ItemSystem::SetItemAttribute(entt::entity,int,int,double) { UnexpectedService(__func__); }
-bool ItemSystem::PlaceItemEcs(entt::entity,entt::entity,unsigned char,unsigned short) { UnexpectedService(__func__); }
-bool ItemSystem::RemoveItemEcs(entt::entity) { UnexpectedService(__func__); }
-int ItemSystem::GetEmptyInventoryPositionEcs(entt::entity,entt::entity) { UnexpectedService(__func__); }
-bool ItemSystem::PlaceItemOnGround(entt::entity,int,pixel_position_s const &,int) { UnexpectedService(__func__); }
-bool ItemSystem::IsItemVnumStackable(unsigned int) { UnexpectedService(__func__); }
-bool ItemSystem::SetGroundOwnership(entt::entity,entt::entity,int) { UnexpectedService(__func__); }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 CPIDRegistry & CPIDRegistry::Instance(void) { UnexpectedService(__func__); }
 std::vector<entt::entity,std::allocator<entt::entity> > CPIDRegistry::Snapshot(void)const { UnexpectedService(__func__); }
 void CHARACTER_MANAGER::DestroyCharacter(entt::entity) { UnexpectedService(__func__); }
@@ -593,14 +581,14 @@ int CHARACTER_MANAGER::GetMobGoldDropRate(entt::entity) { UnexpectedService(__fu
 int CHARACTER_MANAGER::GetMobExpRate(entt::entity) { UnexpectedService(__func__); }
 int CHARACTER_MANAGER::GetUserDamageRate(entt::entity) { UnexpectedService(__func__); }
 event_struct_ const * CHARACTER_MANAGER::CheckEventIsActive(unsigned char,unsigned char) { UnexpectedService(__func__); }
-entt::entity ITEM_MANAGER::CreateItem(unsigned int,unsigned int,unsigned int,bool,int,bool) { UnexpectedService(__func__); }
-bool ITEM_MANAGER::GetDropPct(entt::entity,entt::entity,double&,int&) { UnexpectedService(__func__); }
+
+
 auriga::item::MobDropContext MakeTypedMobDropContext(entt::entity, entt::entity) { UnexpectedService(__func__); }
 std::vector<auriga::item::MobDrop> RollTypedMobDrops(const auriga::item::MobDropContext&) { UnexpectedService(__func__); }
 void QueueTypedItemGrant(entt::entity,const auriga::item::ItemGrant&) { UnexpectedService(__func__); }
 bool auriga::item::runtime::TypedDropsEnabled() noexcept { return false; }
 bool CPVPManager::Dead(entt::entity,unsigned int) { UnexpectedService(__func__); }
-void LogManager::ItemLogEntity(entt::entity,entt::entity,char const *,char const *) { UnexpectedService(__func__); }
+
 void LogManager::CharLog(entt::entity,unsigned int,char const *,char const *) { UnexpectedService(__func__); }
 void LogManager::HackLog(char const *,entt::entity) { UnexpectedService(__func__); }
 int CPrivManager::GetPriv(entt::entity,unsigned char) { UnexpectedService(__func__); }
@@ -621,8 +609,8 @@ bool marriage::MarriageSystem::IsNear(entt::entity) { UnexpectedService(__func__
 void marriage::MarriageSystem::Update(entt::entity, uint32_t) { UnexpectedService(__func__); }
 entt::entity marriage::CManager::Get(uint32_t) { UnexpectedService(__func__); }
 bool CArenaManager::OnDead(entt::entity,entt::entity) { UnexpectedService(__func__); }
-void ExchangeSystem::Cancel(entt::entity) { UnexpectedService(__func__); }
-void CShopManager::StopShopping(entt::entity) { UnexpectedService(__func__); }
+
+
 bool CBattleArena::IsBattleArenaMap(int) { UnexpectedService(__func__); }
 void CGuildManager::Kill(entt::entity,entt::entity) { UnexpectedService(__func__); }
 void quest::CQuestManager::Kill(unsigned int,unsigned int) { UnexpectedService(__func__); }
@@ -652,7 +640,7 @@ void Map1MassSpawnEvent_OnMobDead(unsigned int) { UnexpectedService(__func__); }
 
 
 double ecs::PointSystem::GetPolymorphPoint(entt::entity e, uint8_t p) { return static_cast<int>(Get(e,p)); }
-int ItemSystem::GetItemValue(entt::entity e, uint32_t p) { Check(IsValidItem(e), "invalid item value read"); return g_registry.get<WeaponFixture>(e).values.at(p); }
+
 bool AffectSystem::IsPolyMaintainStat(entt::entity e) { AssertActor(e); return false; }
 uint32_t AffectSystem::GetPolymorphVnum(entt::entity e) {const auto* p=g_registry.try_get<ecs::TypedPolymorphProjection>(e);if(p && p->race)return p->race;UnexpectedService(__func__); }
 int AffectSystem::GetPolymorphPower(entt::entity) { UnexpectedService(__func__); }
@@ -747,18 +735,20 @@ void BattleMathChecks() {
     g_registry.get<BattleFixture>(v).points[POINT_DX]=90;
     g_registry.get<BattleFixture>(a).points[POINT_ATT_GRADE]=100;
     g_registry.get<BattleFixture>(v).points[POINT_DEF_GRADE]=20;
-    g_registry.get<BattleFixture>(a).weapon=weapon;
     Check(std::abs(CalcAttackRating(a,v)-0.7f)<0.0001f && CalcAttackRating(a,v,true)==1, "attack rating changed");
-    Check(CalcMeleeDamage(a,v,true,true)==124, "weapon/refine damage changed");
-    Check(CalcMeleeDamage(a,v,false,true)==104, "defense damage changed");
-    Check(CalcMeleeDamage(a,v)==122, "rated melee damage changed");
-    g_registry.get<WeaponFixture>(weapon).subtype=WEAPON_BOW;
-    Check(CalcMeleeDamage(a,v)==0, "bow entered melee damage");
-    const auto arrow=Weapon();
-    g_registry.get<WeaponFixture>(arrow).subtype=WEAPON_ARROW;
-    Check(CalcArrowDamage(a,v,weapon,arrow)>0, "entity-only arrow damage");
-    g_registry.destroy(arrow); Check(CalcArrowDamage(a,v,weapon,arrow)==0, "stale arrow");
-    g_registry.get<BattleFixture>(a).weapon=entt::null;
+    // Authoritative points already include the native weapon projection.
+    auriga::item::EquipmentStats native;
+    native.weapon = auriga::item::WeaponSubtype::Sword;
+    g_registry.emplace<ecs::TypedEquipmentProjection>(a).stats = native;
+    Check(CalcMeleeDamage(a,v,true,true)==100, "native weapon damage applied twice");
+    Check(CalcMeleeDamage(a,v,false,true)==80, "native defense damage changed");
+    native.weapon = auriga::item::WeaponSubtype::Bow;
+    g_registry.get<ecs::TypedEquipmentProjection>(a).stats = native;
+    Check(CalcMeleeDamage(a,v)==0, "typed bow entered melee damage");
+    Check(CalcArrowDamage(a,v)>0, "native arrow damage");
+    g_registry.get<ecs::TypedEquipmentProjection>(a).stats.reset();
+    Check(CalcArrowDamage(a,v)==0, "unavailable equipment allowed arrow damage");
+    g_registry.remove<ecs::TypedEquipmentProjection>(a);
     g_registry.remove<ecs::TagPC>(a); g_registry.emplace<ecs::TagMonster>(a);
     CMob proto {};
     proto.m_table.dwVnum=4711;
@@ -850,11 +840,11 @@ void AttackAuditChecks() {
     Check(GET_ATTACK_SPEED(a)==1000, "attack speed");
     g_registry.get<BattleFixture>(a).riding=true;
     Check(GET_ATTACK_SPEED(a)==666, "riding attack speed");
-    const auto dagger=Weapon();
-    g_registry.get<WeaponFixture>(dagger).subtype=WEAPON_DAGGER;
-    g_registry.get<BattleFixture>(a).weapon=dagger;
+    auriga::item::EquipmentStats dagger;
+    dagger.weapon = auriga::item::WeaponSubtype::Dagger;
+    g_registry.emplace<ecs::TypedEquipmentProjection>(a).stats = dagger;
     Check(GET_ATTACK_SPEED(a)==333, "dagger attack speed");
-    g_registry.get<BattleFixture>(a).weapon=entt::null;
+    g_registry.remove<ecs::TypedEquipmentProjection>(a);
     g_registry.get<BattleFixture>(a).points[POINT_ATT_SPEED]=-150;
     Check(GET_ATTACK_SPEED(a)==1000, "zero speed denominator");
     g_registry.get<BattleFixture>(a).points[POINT_ATT_SPEED]=0;
@@ -1293,3 +1283,12 @@ bool CLostCastleDungeon::IsCloneVID(uint32_t) const { return false; }
 bool CLostCastleDungeon::CheckCloneDamage(entt::entity, entt::entity) const { return true; }
 void CLostCastleDungeon::OnMobKilled(entt::entity, entt::entity) {}
 void CLostCastleDungeon::OnCloneDeath(entt::entity) { UnexpectedService(__func__); }
+
+// Dedicated inactive transaction boundaries; native domain tests cover settlement.
+void CancelTypedTrade(entt::entity) {}
+bool HasTypedCostumeTransfer(entt::entity) { return false; }
+bool CloseTypedCostumeTransfer(entt::entity) { UnexpectedService(__func__); }
+void CloseTypedShop(entt::entity) {}
+bool ComputeTypedDropRate(entt::entity,entt::entity,double&,int&) { UnexpectedService(__func__); }
+void QueueTypedGold(entt::entity,std::uint64_t) { UnexpectedService(__func__); }
+void ecs::SessionSystem::SetSafeboxOpen(entt::entity,bool) { UnexpectedService(__func__); }

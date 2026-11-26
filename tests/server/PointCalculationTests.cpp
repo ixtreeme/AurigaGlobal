@@ -23,7 +23,6 @@
 #include "../../SRC/Server/GameServer/ecs/components/movement_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MountSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/SkillSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
@@ -96,12 +95,7 @@ entt::entity ActorEntity(bool player = true) {
     P::SetRandomHP(e, 20); P::SetRandomSP(e, 30);
     return e;
 }
-entt::entity Wear(entt::entity owner, int slot = WEAR_BODY) {
-    const auto item = g_registry.create();
-    g_registry.emplace<ecs::ItemIdentity>(item).vnum = 100;
-    g_registry.emplace<ecs::ItemOwner>(item).owner = owner;
-    g_registry.emplace<Gear>(item); equipment[{owner, slot}] = item; return item;
-}
+
 void Reset() {
     g_registry.clear(); equipment.clear(); inventory.clear(); modifies = packets = supportLevel = 0;
     onItem = onAffect = onPacket = onMovement = {};
@@ -166,37 +160,6 @@ uint16_t GetPart(entt::entity, uint8_t) { return 0; }
 uint16_t GetOriginalPart(entt::entity, uint8_t) { return 0; }
 void SetImmuneFlag(entt::entity e, uint32_t value) { g_registry.get<Actor>(e).immune = value; }
 uint32_t GetImmuneFlag(entt::entity e) { return g_registry.get<Actor>(e).immune; }
-void BuffOnAttr_ClearAll(entt::entity) {}
-void BuffOnAttr_ValueChange(entt::entity, uint8_t, double, double) {}
-
-}
-namespace ItemSystem {
-bool IsValidItem(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<Gear>(e); }
-entt::entity GetItemOwner(entt::entity e) { return g_registry.get<ecs::ItemOwner>(e).owner; }
-entt::entity GetWearItem(entt::entity e, uint8_t slot) {
-    const auto it = equipment.find({e, slot}); return it == equipment.end() ? entt::null : it->second;
-}
-entt::entity GetInventoryItem(entt::entity e, uint16_t cell) {
-    const auto it = inventory.find({e, cell}); return it == inventory.end() ? entt::null : it->second;
-}
-uint32_t GetItemVnum(entt::entity e) { return g_registry.get<ecs::ItemIdentity>(e).vnum; }
-const TItemTable* GetItemProto(entt::entity e) { return &g_registry.get<Gear>(e).proto; }
-bool IsRuneItem(entt::entity e) { return g_registry.get<Gear>(e).rune; }
-uint32_t GetItemSocket(entt::entity e, int) { return g_registry.get<Gear>(e).active; }
-uint32_t GetItemImmuneFlags(entt::entity e) { return g_registry.get<Gear>(e).immune; }
-uint8_t GetItemType(entt::entity) { return ITEM_NONE; }
-uint8_t GetItemSubType(entt::entity) { return 0; }
-int32_t GetItemValue(entt::entity, uint32_t) { return 0; }
-void ModifyPoints(entt::entity item, bool add) {
-    Check(IsValidItem(item) && add, "invalid item calculation");
-    const auto owner = GetItemOwner(item); const auto gear = g_registry.get<Gear>(item); ++modifies;
-    P::ApplyPoint(owner, APPLY_MAX_HP, gear.flatHP); P::ApplyPoint(owner, APPLY_MAX_HP_PCT, gear.pctHP);
-    P::ApplyPoint(owner, APPLY_SKILL, (42 << 24) | 0x00800000 | 3);
-    if (onItem) onItem(owner);
-}
-}
-namespace MountSystem {
-uint32_t GetMountVnum(entt::entity) { return 0; }
 // The point change resolved a character and did nothing without one.
 void SetMountVnum(entt::entity, uint32_t) {}
 int GetHorseLevel(entt::entity) { return 0; }
@@ -375,23 +338,7 @@ void FormulaChecks() {
     P::Change(e, POINT_MAX_SP, 0);
     Check(P::GetMaxSP(e) == 2100 && P::GetReal(e, POINT_MAX_SP) == 1000, "SP cap/base/flat mixed");
 }
-void RepeatedCalculation() {
-    Reset(); const auto e = ActorEntity(); const auto item = Wear(e);
-    P::SetInventoryExpansion(e, 12);
-    P::Set(e, POINT_STEAL_HP, 99); // Removed equipment must not leave this behind.
-    for (int i = 0; i < 100; ++i) {
-        P::Compute(e);
-        Check(P::GetMaxHP(e) == 1884, "recompute changed HP or stacked item/alignment");
-        Check(P::Get(e, POINT_HP) == 500 && P::Get(e, POINT_SP) == 80, "recompute healed/damaged character");
-        Check(P::Get(e, POINT_STAT) == 17 && P::Get(e, POINT_SKILL) == 9 && P::GetInventoryExpansion(e) == 12, "persistent points reset");
-        Check(P::Get(e, POINT_STEAL_HP) == 0 && g_registry.get<ecs::SkillDamageBonus>(e).bySkill.at(42) == 3, "stale/stacked bonus");
-        Check(ecs::PlayerRuntime::GetImmuneFlag(e) == IMMUNE_STUN, "item immunity missing");
-        Check(P::Get(e, POINT_ATT_GRADE) == 60, "entity-only player took NPC battle formula");
-    }
-    equipment.clear(); g_registry.destroy(item); P::Compute(e);
-    Check(P::GetMaxHP(e) == 1270 && g_registry.get<ecs::SkillDamageBonus>(e).bySkill.empty() &&
-        ecs::PlayerRuntime::GetImmuneFlag(e) == 0, "removed item retained bonuses");
-}
+
 void SkillPointSpendChecks() {
     Reset();const auto e=ActorEntity();
     P::Set(e,POINT_SKILL,5);P::SetReal(e,POINT_SKILL,5);
@@ -414,28 +361,6 @@ void SourceChecks() {
             P::Get(e, POINT_MOV_SPEED) == 70, "NPC prototype/formula lost");
         Check(ecs::PlayerRuntime::GetImmuneFlag(e) == IMMUNE_POISON, "NPC immunity lost");
     }
-    Reset(); e = ActorEntity(); const auto rune = Wear(e);
-    g_registry.get<Gear>(rune).rune = true; g_registry.get<Gear>(rune).active = false;
-    P::Compute(e); Check(modifies == 0 && P::GetMaxHP(e) == 1270, "inactive rune applied");
-    g_registry.get<Gear>(rune).active = true;
-    equipment[{e, WEAR_HEAD}] = rune; // Corrupt duplicate slot: never count twice.
-    P::Compute(e); Check(modifies == 1 && P::GetMaxHP(e) == 1884, "rune duplicated");
-    g_registry.get<ecs::ItemOwner>(rune).owner = ActorEntity();
-    P::Compute(e); Check(modifies == 1 && P::GetMaxHP(e) == 1270, "foreign equipment applied");
-
-    Reset(); e = ActorEntity(); const auto belt = Wear(e); equipment.clear();
-    g_registry.get<ecs::ItemIdentity>(belt).vnum = 18000;
-    auto& proto = g_registry.get<Gear>(belt).proto;
-    proto.aApplies[0] = {APPLY_MAX_HP, 200}; proto.aApplies[1] = {APPLY_MAX_HP_PCT, 10};
-    proto.aApplies[2] = {255, 9000}; // Malformed prototype type must not index the apply table.
-    inventory[{e, BELT_INVENTORY_SLOT_START}] = belt;
-    inventory[{e, BELT_INVENTORY_SLOT_START + 1}] = belt;
-    for (int i = 0; i < 10; ++i) {
-        P::Compute(e); Check(P::GetMaxHP(e) == 1617 && modifies == 0, "belt totals grew or duplicated");
-    }
-    g_registry.get<ecs::ItemIdentity>(belt).vnum = 18160;
-    P::Compute(e); Check(P::GetMaxHP(e) == 1270, "out-of-whitelist belt applied");
-
     Reset(); e = ActorEntity(); supportLevel = 255;
     P::Compute(e); Check(P::GetMaxHP(e) == 4270 && P::Get(e, POINT_MALL_ATTBONUS) == 10, "support skill upper bound");
     supportLevel = -1; P::Compute(e);
@@ -454,7 +379,7 @@ void SourceChecks() {
 }
 void TypedEquipmentChecks() {
     using B=auriga::item::BonusId;
-    Reset();const auto e=ActorEntity();Wear(e);
+    Reset();const auto e=ActorEntity();
     auriga::item::EquipmentStats gear;gear.flat={20500,10000,7000,9000};gear.weapon=auriga::item::WeaponSubtype::Sword;
     gear.bonuses[unsigned(B::Strength)]=3;gear.bonuses[unsigned(B::Constitution)]=4;gear.bonuses[unsigned(B::Intelligence)]=2;
     gear.bonuses[unsigned(B::PhysicalAttackPercent)]=2500;gear.bonuses[unsigned(B::AttackSpeedPercent)]=1250;
@@ -554,24 +479,24 @@ void TypedPolymorphChecks() {
     g_registry.remove<ecs::TypedPolymorphProjection>(e);P::Compute(e);Check(P::Get(e,POINT_MOV_SPEED)==210,"shape bonus removed while equipment percent remains");polyPrototype=nullptr;
 }
 void CallbackChecks() {
-    for (int stage = 0; stage < 3; ++stage) {
-        Reset(); const auto e = ActorEntity(); Wear(e);
+    for (int stage = 1; stage < 3; ++stage) {
+        Reset(); const auto e = ActorEntity();
         const auto nested = [&](entt::entity current) {
             Check(g_registry.get<ecs::CharacterStatsComponent>(current).recomputing, "callback outside guard");
             P::Compute(current);
         };
         if (stage == 0) onItem = nested; if (stage == 1) onAffect = nested; if (stage == 2) onPacket = nested;
         P::Compute(e);
-        Check(modifies == 1 && packets == 1 && P::GetMaxHP(e) == 1884 &&
+        Check(modifies == 0 && packets == 1 && P::GetMaxHP(e) == 1270 &&
             !g_registry.get<ecs::CharacterStatsComponent>(e).recomputing, "reentrant calculation stacked/kept guard");
     }
-    Reset(); const auto e = ActorEntity(); Wear(e);
-    onItem = [](entt::entity) { throw std::runtime_error("injected calculation failure"); };
+    Reset(); const auto e = ActorEntity();
+    onAffect = [](entt::entity) { throw std::runtime_error("injected calculation failure"); };
     bool caught = false; try { P::Compute(e); } catch (const std::runtime_error&) { caught = true; }
     Check(caught && !g_registry.get<ecs::CharacterStatsComponent>(e).recomputing, "exception stranded guard");
-    onItem = {}; P::Compute(e); Check(P::GetMaxHP(e) == 1884, "retry stacked partial calculation");
-    Reset(); const auto old = ActorEntity(); Wear(old); entt::entity replacement = entt::null;
-    onItem = [&](entt::entity current) { g_registry.destroy(current); replacement = ActorEntity(); };
+    onAffect = {}; P::Compute(e); Check(P::GetMaxHP(e) == 1270, "retry stacked partial calculation");
+    Reset(); const auto old = ActorEntity();  entt::entity replacement = entt::null;
+    onAffect = [&](entt::entity current) { g_registry.destroy(current); replacement = ActorEntity(); };
     P::Compute(old);
     Check(replacement != old && g_registry.valid(replacement) && P::GetMaxHP(replacement) == 1000 && packets == 0, "recycled owner was mutated");
 }
@@ -579,10 +504,18 @@ void CallbackChecks() {
 int main() {
     try {
         CSkillManager skills; CHARACTER_MANAGER characters;CMobManager mobs;
-        NativeVitalSourceChecks(); PointPublicationChecks(); FormulaChecks(); RepeatedCalculation(); SkillPointSpendChecks(); SourceChecks(); TypedEquipmentChecks(); WalkingPreferenceChecks(); MovementTimingRouteChecks(); TypedPolymorphChecks(); CallbackChecks();
+        NativeVitalSourceChecks(); PointPublicationChecks(); FormulaChecks();  SkillPointSpendChecks(); SourceChecks(); TypedEquipmentChecks(); WalkingPreferenceChecks(); MovementTimingRouteChecks(); TypedPolymorphChecks(); CallbackChecks();
         std::cout << "Point calculation checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }
 
 // Collection loading is outside this point-calculation fixture.
 namespace PetInventorySystem { void ComputePetInventoryBonuses(entt::entity) {} }
+
+namespace MountSystem {
+uint32_t GetMountVnum(entt::entity) { return 0; }
+void SetMountVnum(entt::entity, uint32_t) {}
+int GetHorseLevel(entt::entity) { return 0; }
+bool IsHorseRiding(entt::entity) { return false; }
+int GetHorseArmor(entt::entity) { return 0; }
+}

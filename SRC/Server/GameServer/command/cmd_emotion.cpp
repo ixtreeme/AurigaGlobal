@@ -1,3 +1,4 @@
+#include "TypedUniqueAccessories.hpp"
 #include "stdafx.h"
 #include "../ecs/systems/ViewSystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
@@ -8,7 +9,6 @@
 #include "../ecs/systems/ChatSystem.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/systems/MountSystem.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "packet.h"
 #include "buffer_manager.h"
 #include "unique_item.h"
@@ -98,13 +98,9 @@ static bool CanEmotion(entt::entity character)
 	if (marriage::WeddingManager::instance().IsWeddingMap(ecs::PlayerRuntime::GetMapIndex(character)))
 		return true;
 
-	if (ItemSystem::IsEquipUniqueItem(character, UNIQUE_ITEM_EMOTION_MASK))
-		return true;
 
-	if (ItemSystem::IsEquipUniqueItem(character, UNIQUE_ITEM_EMOTION_MASK2))
-		return true;
 
-	return false;
+    return auriga::item::runtime::HasTypedEmotionMask(character);
 }
 
 ACMD(do_emotion)

@@ -11,7 +11,7 @@
 #include "AffectSystem.hpp"
 #include "ChatSystem.hpp"
 #include "CombatSystem.hpp"
-#include "InventorySystem.hpp"
+#include "PlayerItemActions.hpp"
 #include "MountSystem.hpp"
 #include "MovementSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
@@ -99,7 +99,7 @@ bool InReach(entt::entity worker, entt::entity plant) {
 bool CanWork(entt::entity worker) {
     return g_registry.valid(worker) && ecs::PlayerRuntime::IsPC(worker) && ecs::PlayerRuntime::GetDesc(worker) &&
         !CombatSystem::IsDead(worker) && !CombatSystem::IsStun(worker) && !AffectSystem::IsPolymorphed(worker) &&
-        MountSystem::GetMountVnum(worker) == 0 && InventorySystem::CanHandleItems(worker) &&
+        MountSystem::GetMountVnum(worker) == 0 && PlayerItemActions::CanHandleItems(worker) &&
         TypedGatheringAdmitted(worker) && !TypedResourceActive(worker) &&
         !g_registry.all_of<WoodcuttingSystem::ChoppingState>(worker);
 }

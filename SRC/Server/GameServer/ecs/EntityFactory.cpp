@@ -1,18 +1,15 @@
+#include "TypedTrade.hpp"
 #include "../core/stdafx.h"
-#include "../social/exchange.h"
 #include "systems/PlayerRuntimeSystem.hpp"
 
 #include "EntityFactory.hpp"
-#include "../item/item_manager.h"
 #include "systems/CombatSystem.hpp"
-#include "systems/InventorySystem.hpp"
+#include "systems/PlayerItemActions.hpp"
 #include "EntityInvariants.hpp"
-#include "ItemInvariants.hpp"
 
 #include <algorithm>
 #include <cstring>
 
-#include "ItemRegistry.hpp"
 #include "PointSemantic.hpp"
 #include "Registry.hpp"
 #include "VIDRegistry.hpp"
@@ -24,8 +21,6 @@
 #include "components/combat_components.hpp"
 #include "components/identity_components.hpp"
 #include "components/inventory_components.hpp"
-#include "components/item_components.hpp"
-#include "components/item_proto_components.hpp"
 #include "components/movement_components.hpp"
 #include "components/quest_components.hpp"
 #include "components/session_components.hpp"
@@ -42,7 +37,6 @@
 #include "../command/gm.h"
 #include "../entity/mob_manager.h"
 #include "../core/utils.h"
-#include "systems/ItemSystem.hpp"
 #include "systems/AISystem.hpp"
 #include "../quest/questmanager.h"
 
@@ -492,18 +486,14 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
     reg.emplace_or_replace<ecs::LoginInfo>(entity, MakeLoginInfo(data, desc, now));
     reg.emplace_or_replace<ecs::AntiFlood>(entity, ecs::AntiFlood { 0, 0u, 0, 0u });
 
-    reg.emplace_or_replace<ecs::MainInventoryRuntimeComponent>(entity, ecs::MainInventoryRuntimeComponent {});
 #ifdef ENABLE_EXTRA_INVENTORY
-    reg.emplace_or_replace<ecs::ExtraInventoryRuntimeComponent>(entity, ecs::ExtraInventoryRuntimeComponent {});
 #endif
 #ifdef __ATTR_TRANSFER_SYSTEM__
-    reg.emplace_or_replace<ecs::AttrTransferWindowComponent>(entity, ecs::AttrTransferWindowComponent {});
 #endif
 #ifdef ENABLE_SWITCHBOT
-    reg.emplace_or_replace<ecs::SwitchbotRuntimeComponent>(entity, ecs::SwitchbotRuntimeComponent {});
 #endif
     reg.emplace_or_replace<ecs::GoldAmount>(entity, data.gold);
-    reg.emplace_or_replace<ecs::QuickSlots>(entity, InventorySystem::MakeQuickSlots(data.quickslot));
+    reg.emplace_or_replace<ecs::QuickSlots>(entity, PlayerItemActions::MakeQuickSlots(data.quickslot));
     reg.emplace_or_replace<ecs::SafeboxRef>(entity);
 
     // Assigned rather than emplaced from a value: the component is an
@@ -568,12 +558,8 @@ void EntityFactory::Destroy(entt::registry& reg, entt::entity e)
         return;
     }
 
-    if (reg.all_of<ecs::ItemIdentity>(e)) {
-        ITEM_MANAGER::instance().RemoveItem(e, "ENTITY_FACTORY_DESTROY");
-        return;
-    }
 
-    ExchangeSystem::Cancel(e);
+    CancelTypedTrade(e);
     if (!reg.valid(e)) return;
     CleanupCombatReferences(reg, e);
 

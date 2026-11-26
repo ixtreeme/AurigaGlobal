@@ -5,7 +5,6 @@
 #include "../../SRC/Server/GameServer/guild/guild.h"
 #include "../../SRC/Server/GameServer/guild/guild_manager.h"
 #include "../../SRC/Server/GameServer/quest/questmanager.h"
-#include "../../SRC/Server/GameServer/item/item_manager.h"
 #include "../../SRC/Server/GameServer/network/desc.h"
 #include "../../SRC/Server/GameServer/network/desc_manager.h"
 #include "../../SRC/Server/GameServer/network/desc_client.h"
@@ -15,6 +14,7 @@
 #include "../../SRC/Server/GameServer/ecs/services/SpatialService.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/SocialSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
+#include "../../SRC/Server/GameServer/item/TypedQuestItems.hpp"
 #include <Core/Logging.hpp>
 #include <functional>
 #include <iostream>
@@ -130,6 +130,11 @@ quest::PC* quest::CQuestManager::GetPC(unsigned int) { throw std::runtime_error(
 void quest::PC::SetFlag(const std::string&, int64_t, bool) { throw std::runtime_error("unexpected quest flag"); }
 void intrusive_ptr_add_ref(EVENT*) { throw std::runtime_error("unexpected building event"); }
 void intrusive_ptr_release(EVENT*) { throw std::runtime_error("unexpected building event"); }
+uint32_t ecs::PlayerRuntime::GetPlayerID(entt::entity) { Unexpected(); }
+CGuild* ecs::SocialSystem::GetGuild(entt::entity) { Unexpected(); }
+std::expected<void, auriga::item::ItemMissionError> RequestTypedGuildExchange(entt::entity,
+    std::vector<auriga::item::MissionItemAmount>, uint64_t, uint16_t, std::vector<uint8_t>,
+    std::function<void(bool)>, std::optional<auriga::item::ItemInstanceId>, bool) { Unexpected(); }
 int32_t ecs::PlayerRuntime::GetMapIndex(entt::entity) { Unexpected(); }
 uint8_t ecs::PlayerRuntime::GetCharType(entt::entity) { Unexpected(); }
 int32_t ecs::PlayerRuntime::GetX(entt::entity) { Unexpected(); }
@@ -139,7 +144,7 @@ bool SectreeMember(entt::entity, const SECTREE*) { Unexpected(); }
 void SECTREE::Collect(FCollectEntity&) const { Unexpected(); }
 LPSECTREE_MAP SECTREE_MANAGER::GetMap(int32_t) { Unexpected(); }
 const TMapRegion* SECTREE_MANAGER::GetMapRegion(int32_t) { Unexpected(); }
-TItemTable* ITEM_MANAGER::GetTable(uint32_t) { Unexpected(); }
+
 bool CHARACTER_MANAGER::GetCharactersByRaceNum(uint32_t, std::vector<entt::entity>&) { Unexpected(); }
 void DESC::BufferedPacket(const void*, int) { Unexpected(); }
 void DESC::Packet(const void*, int) { Unexpected(); }

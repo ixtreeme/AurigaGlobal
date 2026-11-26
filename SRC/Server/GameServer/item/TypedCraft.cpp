@@ -10,7 +10,7 @@
 #include "../ecs/components/status_components.hpp"
 #include "../ecs/components/quest_components.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
@@ -58,7 +58,7 @@ bool InRange(entt::entity e,entt::entity npc)
 }
 bool Admitted(entt::entity e,bool write)
 {
-    if(!g_registry.valid(e) || !ecs::PlayerRuntime::IsPC(e) || CombatSystem::IsDead(e) || !InventorySystem::CanHandleItems(e) ||
+    if(!g_registry.valid(e) || !ecs::PlayerRuntime::IsPC(e) || CombatSystem::IsDead(e) || !PlayerItemActions::CanHandleItems(e) ||
        ecs::SocialSystem::HasExchange(e) || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SocialSystem::GetMyShop(e)!=entt::null ||
        ecs::SocialSystem::GetShopOwner(e)!=entt::null || !g_registry.all_of<ecs::TypedItems,ecs::TypedItemLogin>(e))return false;
     if(ecs::SessionSystem::IsCubeOpen(e) && !g_registry.all_of<TypedCraftSession>(e))return false;

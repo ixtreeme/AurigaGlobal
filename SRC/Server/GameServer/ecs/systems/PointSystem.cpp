@@ -19,7 +19,6 @@
 #include "NetworkSyncSystem.hpp"
 #include "MountSystem.hpp"
 #include "AffectSystem.hpp"
-#include "ItemSystem.hpp"
 
 #include <array>
 #include <common/VnumHelper.h>
@@ -45,18 +44,14 @@
 #include "../../network/desc_client.h"
 #include "../../network/desc_manager.h"
 #include "../../core/buffer_manager.h"
-#include "../../item/item_manager.h"
 #include "../../entity/motion.h"
 #include "../../core/vector.h"
 #include "../../core/packet.h"
 #include "../../command/cmd.h"
 #include "../../world/fishing.h"
-#include "../../social/exchange.h"
 #include "../../combat/battle.h"
 #include "../../combat/affect.h"
 #include "../../social/shop.h"
-#include "../../social/shop_manager.h"
-#include "../../item/safebox.h"
 #include "../../world/regen.h"
 #include "../../combat/pvp.h"
 #include "../../social/party.h"
@@ -82,7 +77,6 @@
 #include "../../command/gm.h"
 #include "../../world/map_location.h"
 #include "../../combat/skill_power.h"
-#include "../../combat/buff_on_attributes.h"
 #include "../../core/constants.h"
 
 
@@ -555,7 +549,6 @@ bool SetExperienceBlocked(entt::entity e, bool blocked)
 #include <iterator>
 #endif
 #ifdef ENABLE_SWITCHBOT
-#include "../../social/new_switchbot.h"
 #endif
 #ifdef ENABLE_RUNE_SYSTEM
 #include <common/rune_length.h>
@@ -1345,7 +1338,6 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		double old_val = g_registry.get<CharacterStatsComponent>(e).bonusPreviousValue;
 		Set(e, type, Get(e, type) + amount);
 		val = Get(e, type);
-		ecs::PlayerRuntime::BuffOnAttr_ValueChange(e, type, old_val, GetPrecise(e, type));
 	}
 	break;
 
@@ -1519,22 +1511,6 @@ void ComputeBattlePoints(entt::entity e)
 		int iDef = GetLevel(e) + (int)(Get(e, POINT_HT) / 1.25); // For Other
 		int iArmor = EquipmentLegacyInt(TypedEquipmentBonus(e,auriga::item::BonusId::ArmorPhysicalDefense)/auriga::item::ItemStatRawPerPoint);
 
-		for (int i = 0; i < WEAR_MAX_NUM; ++i)
-		{
-			const entt::entity worn = CombatWearItem(e, i);
-			if (ItemSystem::GetItemType(worn) == ITEM_ARMOR)
-			{
-#ifdef ENABLE_PENDANT
-				if (ItemSystem::GetItemSubType(worn) == ARMOR_BODY || ItemSystem::GetItemSubType(worn) == ARMOR_HEAD || ItemSystem::GetItemSubType(worn) == ARMOR_FOOTS || ItemSystem::GetItemSubType(worn) == ARMOR_SHIELD || ItemSystem::GetItemSubType(worn) == ARMOR_PENDANT)
-#else
-				if (ItemSystem::GetItemSubType(worn) == ARMOR_BODY || ItemSystem::GetItemSubType(worn) == ARMOR_HEAD || ItemSystem::GetItemSubType(worn) == ARMOR_FOOTS || ItemSystem::GetItemSubType(worn) == ARMOR_SHIELD)
-#endif
-				{
-					iArmor += ItemSystem::GetItemValue(worn, 1);
-					iArmor += (2 * ItemSystem::GetItemValue(worn, 5));
-				}
-			}
-		}
 
 		if (true == MountSystem::IsHorseRiding(e))
 		{

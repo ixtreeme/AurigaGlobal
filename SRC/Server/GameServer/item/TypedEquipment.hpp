@@ -3,7 +3,6 @@
 #include <item/PendantElement.hpp>
 #include "../ecs/Registry.hpp"
 #include "../entity/char.h"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include <algorithm>
 #include "EquipmentPointBindings.hpp"
@@ -39,8 +38,7 @@ inline std::int64_t TypedEquipmentBonus(entt::entity e,auriga::item::BonusId id)
 {const auto* p=g_registry.valid(e) ? g_registry.try_get<ecs::TypedEquipmentProjection>(e) : nullptr;return p && p->stats ? p->stats->Bonus(id) : 0;}
 inline std::int64_t TypedPetBonus(entt::entity e,auriga::item::PetEffect effect)
 {const auto* stats=TypedEquipmentView(e);return stats ? stats->petBonuses.Bonus(effect) : 0;}
-inline entt::entity CombatWearItem(entt::entity e,std::uint8_t slot)
-{return HasTypedEquipment(e) ? entt::null : ItemSystem::GetWearItem(e,slot);}
+
 inline const ecs::ClonedWeaponStats* ClonedWeaponView(entt::entity e)
 {
     return g_registry.valid(e) ? g_registry.try_get<ecs::ClonedWeaponStats>(e) : nullptr;
@@ -58,9 +56,7 @@ inline int CombatWeaponSubtype(entt::entity e)
         case auriga::item::WeaponSubtype::Bell:return WEAPON_BELL;case auriga::item::WeaponSubtype::Fan:return WEAPON_FAN;
         case auriga::item::WeaponSubtype::MountSpear:return WEAPON_MOUNT_SPEAR;}return -1;
     }
-    const auto weapon=ItemSystem::GetWearItem(e,WEAR_WEAPON);
-    const auto* proto=ItemSystem::IsValidItem(weapon) ? ItemSystem::GetItemProto(weapon) : nullptr;
-    return proto ? proto->bSubType : -1;
+    return -1;
 }
 inline bool HasCombatWeapon(entt::entity e){return CombatWeaponSubtype(e)>=0;}
 inline int EquipmentLegacyInt(std::int64_t value)

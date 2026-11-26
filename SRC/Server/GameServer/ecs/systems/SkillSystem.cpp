@@ -43,7 +43,6 @@
 #include "../../combat/skill.h"
 #include "../../combat/skill_power.h"
 #include "../../combat/affect.h"
-#include "../../item/item.h"
 #include "../../world/sectree_manager.h"
 #include "../../entity/mob_manager.h"
 #include "../../world/start_position.h"
@@ -71,7 +70,6 @@ extern bool RaceToJob(unsigned race, unsigned* ret_job);
 #include "../components/skill_components.hpp"
 #include "../components/session_components.hpp"
 #include "../components/vital_components.hpp"
-#include "ItemSystem.hpp"
 #include "../CharacterAccessors.hpp"
 #include "SessionSystem.hpp"
 
@@ -116,8 +114,8 @@ int ExpansionAttack(entt::entity caster,entt::entity victim,bool ignoreRating=fa
 {
     if(ecs::PlayerRuntime::GetJob(caster)==3) return CalcMagicDamage(caster,victim);
     if(ExpansionUsesBow(caster)) {
-        entt::entity bow=entt::null,arrow=entt::null;
-        return CombatSystem::GetArrowAndBow(caster,&bow,&arrow,1)==1?CalcArrowDamage(caster,victim,bow,arrow,true):0;
+
+        return CombatSystem::CanShootBow(caster)?CalcArrowDamage(caster, victim,true):0;
     }
     return CalcMeleeDamage(caster,victim,true,ignoreRating);
 }
@@ -2107,7 +2105,7 @@ EVENTFUNC(ChainLightningEvent)
 	return 0;
 }
 
-void SetPolyVarForAttack(entt::entity character, CSkillProto * pkSk, entt::entity pkWeapon)
+void SetPolyVarForAttack(entt::entity character, CSkillProto * pkSk)
 {
     if (const auto* weapon = ClonedWeaponView(character))
     {
@@ -2125,27 +2123,11 @@ void SetPolyVarForAttack(entt::entity character, CSkillProto * pkSk, entt::entit
         pkSk->SetPointVar("mtk",magic);pkSk->SetPointVar("mwep",magic);return;
     }
 
-	if (ecs::PlayerRuntime::IsPC(character))
-	{
-		if (ItemSystem::IsValidItem(pkWeapon) && ItemSystem::GetItemType(pkWeapon) == ITEM_WEAPON)
-		{
-			int iWep = number(ItemSystem::GetItemValue(pkWeapon, 3), ItemSystem::GetItemValue(pkWeapon, 4));
-			iWep += ItemSystem::GetItemValue(pkWeapon, 5);
-
-			int iMtk = number(ItemSystem::GetItemValue(pkWeapon, 1), ItemSystem::GetItemValue(pkWeapon, 2));
-			iMtk += ItemSystem::GetItemValue(pkWeapon, 5);
-
-			pkSk->SetPointVar("wep", iWep);
-			pkSk->SetPointVar("mtk", iMtk);
-			pkSk->SetPointVar("mwep", iMtk);
-		}
-		else
-		{
-			pkSk->SetPointVar("wep", 0);
-			pkSk->SetPointVar("mtk", 0);
-			pkSk->SetPointVar("mwep", 0);
-		}
-	}
+	if (ecs::PlayerRuntime::IsPC(character)) {
+        pkSk->SetPointVar("wep", 0);
+        pkSk->SetPointVar("mtk", 0);
+        pkSk->SetPointVar("mwep", 0);
+    }
 	else
 	{
 		const int iWep = ecs::IsCharacter(character)
@@ -2159,11 +2141,11 @@ void SetPolyVarForAttack(entt::entity character, CSkillProto * pkSk, entt::entit
 
 struct FuncSplashDamage
 {
-	FuncSplashDamage(int x, int y, CSkillProto * pkSk, entt::entity character, int iAmount, int iAG, int iMaxHit, entt::entity pkWeapon, bool bDisableCooltime, uint8_t bUseSkillPower)
+	FuncSplashDamage(int x, int y, CSkillProto * pkSk, entt::entity character, int iAmount, int iAG, int iMaxHit, bool bDisableCooltime, uint8_t bUseSkillPower)
 		:
 		m_x(x), m_y(y), m_pkSk(pkSk),
 		m_character(character),
-		m_iAmount(iAmount), m_iAG(iAG), m_iCount(0), m_iMaxHit(iMaxHit), m_pkWeapon(pkWeapon), m_bDisableCooltime(bDisableCooltime), m_bUseSkillPower(bUseSkillPower)
+		m_iAmount(iAmount), m_iAG(iAG), m_iCount(0), m_iMaxHit(iMaxHit), m_bDisableCooltime(bDisableCooltime), m_bUseSkillPower(bUseSkillPower)
 		{
 		}
 
@@ -2248,10 +2230,9 @@ struct FuncSplashDamage
 			m_pkSk->SetPointVar("atk", CalcMeleeDamage(chr, chrVictim, true, bIgnoreTargetRating));
 		else if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_USE_ARROW_DAMAGE))
 		{
-			entt::entity pkBow = entt::null, pkArrow = entt::null;
 
-			if (1 == CombatSystem::GetArrowAndBow(m_character, &pkBow, &pkArrow, 1))
-				m_pkSk->SetPointVar("atk", CalcArrowDamage(chr, chrVictim, pkBow, pkArrow, true));
+			if (CombatSystem::CanShootBow(m_character))
+				m_pkSk->SetPointVar("atk", CalcArrowDamage(chr, chrVictim, true));
 			else
 				m_pkSk->SetPointVar("atk", 0);
 		}
@@ -2269,7 +2250,7 @@ struct FuncSplashDamage
 
 		m_pkSk->SetPointVar("ek", SkillSystem::GetAffectedEunhyung(m_character)*1./100);
 		//SkillSystem::ClearAffectedEunhyung(m_character);
-		SetPolyVarForAttack(m_character, m_pkSk, m_pkWeapon);
+		SetPolyVarForAttack(m_character, m_pkSk);
 
 		int iAmount = 0;
 
@@ -2302,8 +2283,6 @@ struct FuncSplashDamage
 #endif
 		;
 
-		const entt::entity equippedWeapon = CombatWearItem(
-			m_character, WEAR_WEAPON);
 		if (m_pkSk->dwVnum == SKILL_AMSEOP)
 		{
 			float fDelta = GetDegreeDelta(ecs::PlayerRuntime::GetRotation(m_character), ecs::PlayerRuntime::GetRotation(victimEntity));
@@ -2847,7 +2826,6 @@ struct FuncSplashDamage
 	int		m_iAG;
 	int		m_iCount;
 	int		m_iMaxHit;
-	entt::entity	m_pkWeapon;
 	bool m_bDisableCooltime;
 	uint8_t m_bUseSkillPower;
 
@@ -3030,10 +3008,9 @@ int SkillSystem::ComputeSkillAtPosition(entt::entity e, uint32_t dwVnum, const P
 	}
 	else if (IS_SET(pkSk->dwFlag, SKILL_FLAG_USE_ARROW_DAMAGE))
 	{
-		entt::entity pkBow = entt::null, pkArrow = entt::null;
-		if (1 == CombatSystem::GetArrowAndBow(character, &pkBow, &pkArrow, 1))
+		if (CombatSystem::CanShootBow(character))
 		{
-			pkSk->SetPointVar("atk", CalcArrowDamage(character, character, pkBow, pkArrow, true));
+			pkSk->SetPointVar("atk", CalcArrowDamage(character, character, true));
 		}
 		else
 		{
@@ -3065,9 +3042,8 @@ int SkillSystem::ComputeSkillAtPosition(entt::entity e, uint32_t dwVnum, const P
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
 		ecs::MovementSystem::OnMove(e, true);
 
-	entt::entity pkWeapon = CombatWearItem(character, WEAR_WEAPON);
 
-	SetPolyVarForAttack(character, pkSk, pkWeapon);
+	SetPolyVarForAttack(character, pkSk);
 
 	pkSk->SetDurationVar("k", k/*bSkillLevel*/);
 
@@ -3107,7 +3083,7 @@ int SkillSystem::ComputeSkillAtPosition(entt::entity e, uint32_t dwVnum, const P
 		{
 			int iAG = 0;
 
-			FuncSplashDamage f(posTarget.x, posTarget.y, pkSk, e, iAmount, iAG, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(e), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
+			FuncSplashDamage f(posTarget.x, posTarget.y, pkSk, e, iAmount, iAG, pkSk->lMaxHit, SkillSystem::IsCooltimeDisabled(e), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
 
 			if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 			{
@@ -3344,10 +3320,9 @@ int SkillSystem::ComputeGyeongGongSkill(entt::entity e, uint32_t dwVnum, entt::e
 	const float k = 1.0 * SkillSystem::GetSkillPower(character, pkSk->dwVnum, bSkillLevel) * pkSk->bMaxLevel / 100;
 	pkSk->SetPointVar("k", k);
 	pkSk->kSplashAroundDamageAdjustPoly.SetVar("k", k);
-	entt::entity pkBow = entt::null, pkArrow = entt::null;
 
-	if (1 == CombatSystem::GetArrowAndBow(character, &pkBow, &pkArrow, 1)) {
-		pkSk->SetPointVar("atk", CalcArrowDamage(character, victim, pkBow, pkArrow, true));
+	if (CombatSystem::CanShootBow(character)) {
+		pkSk->SetPointVar("atk", CalcArrowDamage(character, victim, true));
 	} else {
 		pkSk->SetPointVar("atk", CalcMeleeDamage(character, victim, true, false));
 	}
@@ -3371,15 +3346,14 @@ int SkillSystem::ComputeGyeongGongSkill(entt::entity e, uint32_t dwVnum, entt::e
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
 		ecs::MovementSystem::OnMove(e, true);
 
-	entt::entity pkWeapon = CombatWearItem(character, WEAR_WEAPON);
 
-	SetPolyVarForAttack(character, pkSk, pkWeapon);
+	SetPolyVarForAttack(character, pkSk);
 	int iAmount = (int) pkSk->kPointPoly2.Eval();
 
 		// END_OF_ADD_GRANDMASTER_SKILL
 	if (iAmount > 0 && dwVnum == SKILL_GYEONGGONG)
 	{
-		FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, e, -iAmount, 0, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(e), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
+		FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, e, -iAmount, 0, pkSk->lMaxHit, SkillSystem::IsCooltimeDisabled(e), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
 		if (ecs::PlayerRuntime::GetSectree(victimEntity))
 			ecs::PlayerRuntime::GetSectree(victimEntity)->ForEachAround(f);
 		else
@@ -3482,10 +3456,9 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 
 	if (pkSk->dwType == SKILL_TYPE_HORSE)
 	{
-		entt::entity pkBow = entt::null, pkArrow = entt::null;
-		if (1 == CombatSystem::GetArrowAndBow(character, &pkBow, &pkArrow, 1))
+		if (CombatSystem::CanShootBow(character))
 		{
-			pkSk->SetPointVar("atk", CalcArrowDamage(character, victim, pkBow, pkArrow, true));
+			pkSk->SetPointVar("atk", CalcArrowDamage(character, victim, true));
 		}
 		else
 		{
@@ -3507,10 +3480,9 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 	}
 	else if (IS_SET(pkSk->dwFlag, SKILL_FLAG_USE_ARROW_DAMAGE))
 	{
-		entt::entity pkBow = entt::null, pkArrow = entt::null;
-		if (1 == CombatSystem::GetArrowAndBow(character, &pkBow, &pkArrow, 1))
+		if (CombatSystem::CanShootBow(character))
 		{
-			pkSk->SetPointVar("atk", CalcArrowDamage(character, victim, pkBow, pkArrow, true));
+			pkSk->SetPointVar("atk", CalcArrowDamage(character, victim, true));
 		}
 		else
 		{
@@ -3542,9 +3514,8 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
 		ecs::MovementSystem::OnMove(e, true);
 
-	entt::entity pkWeapon = CombatWearItem(character, WEAR_WEAPON);
 
-	SetPolyVarForAttack(character, pkSk, pkWeapon);
+	SetPolyVarForAttack(character, pkSk);
 
 	pkSk->kDurationPoly.SetVar("k", k/*bSkillLevel*/);
 	pkSk->kDurationPoly2.SetVar("k", k/*bSkillLevel*/);
@@ -3587,7 +3558,7 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 			CombatSystem::SetSkillHit(e, true);
 #endif
 
-			FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, e, iAmount, iAG, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(e), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
+			FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, e, iAmount, iAG, pkSk->lMaxHit, SkillSystem::IsCooltimeDisabled(e), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
 			if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 			{
 				if (ecs::PlayerRuntime::GetSectree(victimEntity))
@@ -3838,7 +3809,7 @@ int SkillSystem::ComputeSkill(entt::entity e, uint32_t dwVnum, entt::entity vict
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
 		if (pkSk->bPointOn2 == POINT_NONE && iAmount2 > 0 && dwVnum == SKILL_GYEONGGONG)
 		{
-			FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, e, -iAmount2, 0, pkSk->lMaxHit, pkWeapon, SkillSystem::IsCooltimeDisabled(e), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
+			FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, e, -iAmount2, 0, pkSk->lMaxHit, SkillSystem::IsCooltimeDisabled(e), SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
 			if (ecs::PlayerRuntime::GetSectree(victimEntity))
 				ecs::PlayerRuntime::GetSectree(victimEntity)->ForEachAround(f);
 
@@ -3967,13 +3938,6 @@ bool SkillSystem::UseSkill(entt::entity e, uint32_t dwVnum, entt::entity victim,
 		bUseGrandMaster = false;
 	// END_OF_NO_GRANDMASTER
 
-	// MINING
-	const entt::entity equippedWeapon = CombatWearItem(character, WEAR_WEAPON);
-	if (ItemSystem::IsValidItem(equippedWeapon) &&
-		(ItemSystem::GetItemType(equippedWeapon) == ITEM_ROD ||
-		 ItemSystem::GetItemType(equippedWeapon) == ITEM_PICK))
-		return false;
-	// END_OF_MINING
 
 	if (pkSk->IsChargeSkill())
 	{

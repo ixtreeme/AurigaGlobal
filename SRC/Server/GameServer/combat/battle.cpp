@@ -17,8 +17,6 @@
 #include "char_interface.hpp"
 #include "char_manager.h"
 #include "battle.h"
-#include "item.h"
-#include "item_manager.h"
 #include "mob_manager.h"
 #include "vector.h"
 #include "packet.h"
@@ -43,7 +41,6 @@
 #include <algorithm>
 #include "../ecs/EntityFactory.hpp"
 #include "../ecs/Registry.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 
 #include "db.h"
 //#include <Database/DBManager.h>
@@ -510,61 +507,17 @@ int CalcAttBonus(entt::entity attacker, entt::entity victim, int input)
 	return static_cast<int>(iAtk);
 }
 
-void Item_GetDamage(entt::entity item, int* pdamMin, int* pdamMax)
-{
-	*pdamMin = 0;
-	*pdamMax = 1;
 
-	if (!ItemSystem::IsValidItem(item))
-		return;
-
-	switch (ItemSystem::GetItemType(item))
-	{
-		case ITEM_ROD:
-		case ITEM_PICK:
-			return;
-	}
-
-	if (ItemSystem::GetItemType(item) != ITEM_WEAPON)
-		LOG_ERROR("Item_GetDamage - !ITEM_WEAPON vnum={}, type={}", ItemSystem::GetItemOriginalVnum(item), static_cast<int>(ItemSystem::GetItemType(item)));
-
-	*pdamMin = ItemSystem::GetItemValue(item, 3);
-	*pdamMax = ItemSystem::GetItemValue(item, 4);
-}
 
 int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefense, bool bIgnoreTargetRating)
 {
     if (!IsBattlePair(attacker, victim))
         return 0;
-	const entt::entity weapon = CombatWearItem(attacker, WEAR_WEAPON);
     const bool typed = HasTypedEquipment(attacker);
     if (typed && !TypedEquipmentView(attacker)) return 0;
 	bool bPolymorphed = AffectSystem::IsPolymorphed(attacker);
     if (typed && CombatWeaponSubtype(attacker) == WEAPON_BOW && !bPolymorphed) return 0;
 
-	if (ItemSystem::IsValidItem(weapon) && !(bPolymorphed && !AffectSystem::IsPolyMaintainStat(attacker)))
-	{
-		if (ItemSystem::GetItemType(weapon) != ITEM_WEAPON)
-			return 0;
-
-		switch (ItemSystem::GetItemSubType(weapon))
-		{
-			case WEAPON_SWORD:
-			case WEAPON_DAGGER:
-			case WEAPON_TWO_HANDED:
-			case WEAPON_BELL:
-			case WEAPON_FAN:
-			case WEAPON_MOUNT_SPEAR:
-				break;
-
-			case WEAPON_BOW:
-				LOG_ERROR("CalcMeleeDamage should not handle bows (name: {})", ecs::PlayerRuntime::GetName(attacker).data());
-				return 0;
-
-			default:
-				return 0;
-		}
-	}
 
 	int iDam = 0;
 	float fAR = CalcAttackRating(attacker, victim, bIgnoreTargetRating);
@@ -577,9 +530,6 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 
 	if (bPolymorphed && !AffectSystem::IsPolyMaintainStat(attacker))
 	{
-		// MONKEY_ROD_ATTACK_BUG_FIX
-		Item_GetDamage(weapon, &iDamMin, &iDamMax);
-		// END_OF_MONKEY_ROD_ATTACK_BUG_FIX
 
 		uint32_t dwMobVnum = AffectSystem::GetPolymorphVnum(attacker);
 		const CMob * pMob = CMobManager::instance().Get(dwMobVnum);
@@ -593,12 +543,6 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
             }
             else{int iPower=AffectSystem::GetPolymorphPower(attacker);iDamMin+=pMob->m_table.dwDamageRange[0]*iPower/100;iDamMax+=pMob->m_table.dwDamageRange[1]*iPower/100;}
 		}
-	}
-	else if (ItemSystem::IsValidItem(weapon))
-	{
-		// MONKEY_ROD_ATTACK_BUG_FIX
-		Item_GetDamage(weapon, &iDamMin, &iDamMax);
-		// END_OF_MONKEY_ROD_ATTACK_BUG_FIX
 	}
 	else if (!ecs::PlayerRuntime::IsPC(attacker))
 	{
@@ -620,14 +564,7 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 	iAtk = static_cast<int64_t>(static_cast<float>(iAtk) * fAR);
 	iAtk += ecs::PointSystem::GetLevel(attacker) * 2; // and add again
 
-	if (ItemSystem::IsValidItem(weapon))
-	{
-		iAtk += ItemSystem::GetItemValue(weapon, 5) * 2;
 
-		// 2004.11.12.myevan.TESTSERVER_SHOW_ATTACKINFO
-		DEBUG_iDamBonus = ItemSystem::GetItemValue(weapon, 5) * 2;
-		///////////////////////////////////////////////
-	}
 
 	iAtk += ecs::PointSystem::GetPrecise(attacker, POINT_PARTY_ATTACKER_BONUS); // party attacker role bonus
 	iAtk = (int64_t) (iAtk * (100 + (ecs::PointSystem::GetPrecise(attacker, POINT_ATT_BONUS) + ecs::PointSystem::GetPrecise(attacker, POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100);
@@ -712,21 +649,13 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 	return CalcBattleDamage(iDam, ecs::PointSystem::GetLevel(attacker), ecs::PointSystem::GetLevel(victim));
 }
 
-int CalcArrowDamage(entt::entity attacker, entt::entity victim, entt::entity bow, entt::entity arrow, bool bIgnoreDefense)
+int CalcArrowDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefense)
 {
-    const bool typed = HasTypedEquipment(attacker);
-    if (typed && (!TypedEquipmentView(attacker) || CombatWeaponSubtype(attacker) != WEAPON_BOW)) return 0;
-    if (!IsBattlePair(attacker, victim) || (!typed && (!ItemSystem::IsValidItem(bow) || !ItemSystem::IsValidItem(arrow))))
+    if (!IsBattlePair(attacker, victim) || !TypedEquipmentView(attacker) || CombatWeaponSubtype(attacker) != WEAPON_BOW)
         return 0;
-	if (!typed && (bow == entt::null || ItemSystem::GetItemType(bow) != ITEM_WEAPON || ItemSystem::GetItemSubType(bow) != WEAPON_BOW))
-		return 0;
-
-	if (!typed && arrow == entt::null)
-		return 0;
 
 	// Y??g ????
 	int iDist = (int) (DISTANCE_SQRT(ecs::PlayerRuntime::GetX(attacker) - ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(attacker) - ecs::PlayerRuntime::GetY(victim)));
-	//double iGap = (iDist / 100) - 5 - ItemSystem::GetItemValue((pkBow ? pkBow->GetEntityHandle() : entt::null), 5) - ecs::PointSystem::GetPrecise(attacker, POINT_BOW_DISTANCE);
 	double iGap = (iDist / 100) - 5 - ecs::PointSystem::GetPrecise(attacker, POINT_BOW_DISTANCE);
 	int iPercent = 100 - (iGap * 5);
 
@@ -738,7 +667,7 @@ int CalcArrowDamage(entt::entity attacker, entt::entity victim, entt::entity bow
 	int iDam = 0;
 
 	float fAR = CalcAttackRating(attacker, victim, false);
-	iDam = typed ? 0 : number(ItemSystem::GetItemValue(bow, 3), ItemSystem::GetItemValue(bow, 4)) * 2 + ItemSystem::GetItemValue(arrow, 3);
+	iDam = 0;
 	int64_t iAtk;
 
 	// level must be ignored when multiply by fAR, so subtract it before calculation.
@@ -747,7 +676,6 @@ int CalcArrowDamage(entt::entity attacker, entt::entity victim, entt::entity bow
 	iAtk += ecs::PointSystem::GetLevel(attacker) * 2; // and add again
 
 	// Refine Grade
-	if (!typed) iAtk += ItemSystem::GetItemValue(bow, 5) * 2;
 
 	iAtk += ecs::PointSystem::GetPrecise(attacker, POINT_PARTY_ATTACKER_BONUS);
 	iAtk = (int64_t) (iAtk * (100 + (ecs::PointSystem::GetPrecise(attacker, POINT_ATT_BONUS) + ecs::PointSystem::GetPrecise(attacker, POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100);
@@ -833,8 +761,6 @@ int battle_hit(entt::entity attacker, entt::entity victim, int & iRetDam)
 
 	// ?????? ???
 	//iDam = iDam * (100 - ecs::PointSystem::Get(victim, POINT_RESIST)) / 100;
-	const entt::entity weapon = CombatWearItem(
-		attacker, WEAR_WEAPON);
 
 	if (HasCombatWeapon(attacker))
 		switch (CombatWeaponSubtype(attacker))
@@ -968,7 +894,6 @@ int32_t GET_ATTACK_SPEED(entt::entity character)
     if (denominator <= 0)
         return 1000;
     int64_t speed = static_cast<int64_t>(ani_attack_speed(character)) * 100 / denominator;
-    const auto weapon = CombatWearItem(character, WEAR_WEAPON);
     if (CombatWeaponSubtype(character) == WEAPON_DAGGER)
         speed /= 2;
     return static_cast<int32_t>(std::clamp<int64_t>(speed, 0, INT32_MAX));

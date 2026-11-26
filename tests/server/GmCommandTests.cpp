@@ -22,8 +22,7 @@ bool DeferTypedBookMutation(entt::entity,std::function<void()>) { return false; 
 #include "../../SRC/Server/GameServer/ecs/systems/ChatSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/SkillSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/InventorySystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/PlayerItemActions.hpp"
 #include <functional>
 #include <iostream>
 #include <stdexcept>
@@ -40,7 +39,6 @@ bool DeferTypedBookMutation(entt::entity,std::function<void()>) { return false; 
 #include "../../SRC/Server/GameServer/network/desc_manager.h"
 #include "../../SRC/Server/GameServer/entity/char_interface.hpp"
 #include "../../SRC/Server/GameServer/entity/char_manager.h"
-#include "../../SRC/Server/GameServer/item/item_manager.h"
 #include "../../SRC/Server/GameServer/world/sectree_manager.h"
 #include "../../SRC/Server/GameServer/entity/mob_manager.h"
 #include "../../SRC/Server/GameServer/world/regen.h"
@@ -611,33 +609,8 @@ uint8_t GetGMLevel(entt::entity e) { return g_registry.get<Player>(e).gm; }
 namespace ecs::PointSystem {
 int32_t GetLevel(entt::entity e) { return g_registry.get<Player>(e).level; }
 }
-namespace ItemSystem {
-bool IsValidItem(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<Item>(e); }
-entt::entity GetItemOwner(entt::entity e) { return g_registry.get<Item>(e).owner; }
-entt::entity GetItem(entt::entity e, TItemPos pos) {
-    Check(ecs::PlayerRuntime::IsPC(e), "invalid inventory owner");
-    auto it = slots.find({e, Key(pos)}); return it == slots.end() ? entt::null : it->second;
-}
-bool DestroyItemEntityEcs(entt::entity e, const char* reason) {
-    Check(IsValidItem(e) && std::string_view(reason) == "PURGE", "invalid destroy request");
-    if (rejectDestroy) return false;
-    destroyed.push_back(e); std::erase_if(slots, [&](const auto& p) { return p.second == e; });
-    g_registry.destroy(e); if (onDestroy) onDestroy(e); return true;
-}
-entt::entity FindItemByID(uint32_t id) {
-    for (auto [e, item] : g_registry.view<Item>().each()) if (item.id == id) return e;
-    return entt::null;
-}
-bool SetItemSocket(entt::entity e, int index, uint32_t value, bool) {
-    Check(IsValidItem(e) && index == 0 && value == 42, "socket arguments"); ++socketWrites; return true;
-}
-}
-namespace InventorySystem {
-void SyncQuickslot(entt::entity owner, uint16_t type, uint16_t oldPos, uint16_t newPos) {
-    Check(ecs::PlayerRuntime::IsPC(owner) && newPos == 255, "quickslot invalid owner/destination");
-    quickslots.emplace_back(type, oldPos);
-}
-}
+
+
 namespace ecs {
 void ChatSystem::SendV(entt::entity e, uint8_t type, const char* format, va_list args) {
     SendNewV(e, type, 0, format, args);
@@ -749,8 +722,8 @@ CMob const * CMobManager::Get(char const *,bool) { Unexpected(); }
 CMob const * ecs::PlayerRuntime::GetProto(entt::entity) { Unexpected(); }
 unsigned int CombatSystem::GetRealAlignment(entt::entity) { Unexpected(); }
 void CombatSystem::UpdateAlignment(entt::entity,int64_t) { Unexpected(); }
-bool InventorySystem::AddToCharacter(entt::entity,entt::entity,SItemPos,bool) { Unexpected(); }
-bool InventorySystem::EquipTo(entt::entity,entt::entity,unsigned char) { Unexpected(); }
+
+
 unsigned int ecs::PlayerRuntime::GetPlayerID(entt::entity e) { Check(IsPC(e), "invalid PID lookup"); return 7; }
 unsigned int ecs::PlayerRuntime::GetRaceNum(entt::entity) { Unexpected(); }
 unsigned char ecs::PlayerRuntime::GetSex(entt::entity) { Unexpected(); }
@@ -834,7 +807,7 @@ int MountSystem::GetHorseStamina(entt::entity) { Unexpected(); }
 int MountSystem::GetHorseMaxStamina(entt::entity) { Unexpected(); }
 void ecs::PlayerRuntime::SetCoward(entt::entity) { Unexpected(); }
 namespace ecs::SessionSystem { bool WarpToPID(entt::entity, unsigned int) { Unexpected(); } }
-int ItemSystem::CountItem(entt::entity, uint32_t) { Unexpected(); }
+
 void CombatSystem::Dead(entt::entity,entt::entity,bool) { Unexpected(); }
 void CombatSystem::ForgetMyAttacker(entt::entity) { Unexpected(); }
 void CombatSystem::AggregateMonster(entt::entity) { Unexpected(); }
@@ -892,8 +865,8 @@ bool CHARACTER_MANAGER::SpawnGroupGroup(unsigned int,int,int,int,int,int,regen *
 entt::entity CHARACTER_MANAGER::SpawnMobRandomPosition(unsigned int,int) { Unexpected(); }
 entt::entity CHARACTER_MANAGER::FindEntity(unsigned int) { Unexpected(); }
 entt::entity CHARACTER_MANAGER::FindPCEntity(char const *) { Unexpected(); }
-entt::entity ITEM_MANAGER::CreateItem(unsigned int,unsigned int,unsigned int,bool,int,bool) { Unexpected(); }
-bool ITEM_MANAGER::GetVnum(char const *,unsigned int &) { Unexpected(); }
+
+
 void regen_reset(int,int) { Unexpected(); }
 unsigned int CGuildManager::CreateGuild(TGuildCreateParameter &) { Unexpected(); }
 CGuild * CGuildManager::FindGuild(unsigned int) { Unexpected(); }
@@ -948,28 +921,28 @@ bool CArenaManager::StartDuel(entt::entity,entt::entity,int,int) { Unexpected();
 void CArenaManager::SendArenaMapListTo(entt::entity) { Unexpected(); }
 void CArenaManager::EndAllDuel(void) { Unexpected(); }
 bool CArenaManager::EndDuel(unsigned int) { Unexpected(); }
-void LogManager::ItemLogEntity(entt::entity,entt::entity,char const *,char const *) { Unexpected(); }
+
 void LogManager::CharLog(entt::entity,unsigned int,char const *,char const *) { Unexpected(); }
-entt::entity ItemSystem::GetInventoryItem(entt::entity,unsigned short) { Unexpected(); }
-entt::entity ItemSystem::GetWearItem(entt::entity,unsigned char) { Unexpected(); }
-bool ItemSystem::UnequipItemEcs(entt::entity,entt::entity) { Unexpected(); }
-entt::entity ItemSystem::AutoGiveItemEcs(entt::entity,unsigned int,unsigned int,int,bool,bool) { Unexpected(); }
-bool ItemSystem::IsExtraItem(entt::entity) { Unexpected(); }
-unsigned int ItemSystem::GetItemID(entt::entity) { Unexpected(); }
-char const * ItemSystem::GetItemName(entt::entity) { Unexpected(); }
-int ItemSystem::FindEquipCell(entt::entity,entt::entity,int) { Unexpected(); }
-unsigned int ItemSystem::GetItemSocket(entt::entity,int) { Unexpected(); }
-bool ItemSystem::SetItemSocketEcs(entt::entity,int,unsigned int) { Unexpected(); }
-bool ItemSystem::SetItemForceAttributeEcs(entt::entity,int,unsigned char,double) { Unexpected(); }
-bool ItemSystem::AddItemAttributeEcs(entt::entity) { Unexpected(); }
-bool ItemSystem::AddItemRareAttributeEcs(entt::entity) { Unexpected(); }
-bool ItemSystem::ChangeItemAttributeEcs(entt::entity,int const *) { Unexpected(); }
-bool ItemSystem::ChangeItemRareAttributeEcs(entt::entity) { Unexpected(); }
-bool ItemSystem::ClearItemAttributesEcs(entt::entity) { Unexpected(); }
-unsigned short ItemSystem::GetItemCell(entt::entity) { Unexpected(); }
-int ItemSystem::GetEmptyInventoryPositionEcs(entt::entity,entt::entity) { Unexpected(); }
-int ItemSystem::GetEmptyExtraInventory(entt::entity,entt::entity) { Unexpected(); }
-bool ItemSystem::ModifyItemPointsEcs(entt::entity,bool) { Unexpected(); }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void intrusive_ptr_add_ref(event *) { Unexpected(); }
 void intrusive_ptr_release(event *) { Unexpected(); }
 boost::intrusive_ptr<event> event_create_ex(int (__cdecl*)(boost::intrusive_ptr<event>,int),event_info_data *,int) { Unexpected(); }
@@ -1005,7 +978,7 @@ bool CombatSystem::Damage(entt::entity,entt::entity,int64_t,unsigned char) { Une
 bool CombatSystem::CanBeginFight(entt::entity) { Unexpected(); }
 void CombatSystem::BeginFight(entt::entity, entt::entity) { Unexpected(); }
 bool CombatSystem::IsStun(entt::entity) { Unexpected(); }
-int CombatSystem::GetArrowAndBow(entt::entity,entt::entity *,entt::entity *,int) { Unexpected(); }
+bool CombatSystem::CanShootBow(entt::entity) { Unexpected(); }
 int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { Unexpected(); }
 void ecs::PlayerRuntime::SetQuestFlag(entt::entity,std::string const &,int) { Unexpected(); }
 int ecs::PlayerRuntime::GetSkillPowerByLevel(entt::entity,int,bool) { Unexpected(); }
@@ -1023,16 +996,16 @@ int CalcAttBonus(entt::entity,entt::entity,int) { Unexpected(); }
 int CalcBattleDamage(int,int,int) { Unexpected(); }
 int CalcMeleeDamage(entt::entity,entt::entity,bool,bool) { Unexpected(); }
 int CalcMagicDamage(entt::entity,entt::entity) { Unexpected(); }
-int CalcArrowDamage(entt::entity,entt::entity,entt::entity,entt::entity,bool) { Unexpected(); }
+int CalcArrowDamage(entt::entity,entt::entity,bool) { Unexpected(); }
 float CalcAttackRating(entt::entity,entt::entity,bool) { Unexpected(); }
 bool battle_is_attackable(entt::entity,entt::entity) { Unexpected(); }
 int64_t quest::PC::GetFlag(std::string const &) { Unexpected(); }
 int64_t quest::CQuestManager::GetEventFlag(std::string const &) { Unexpected(); }
 bool RaceToJob(unsigned int,unsigned int *) { Unexpected(); }
-unsigned char ItemSystem::GetItemType(entt::entity) { Unexpected(); }
-unsigned char ItemSystem::GetItemSubType(entt::entity) { Unexpected(); }
-const TItemTable* ItemSystem::GetItemProto(entt::entity) { Unexpected(); }
-int ItemSystem::GetItemValue(entt::entity,unsigned int) { Unexpected(); }
+
+
+
+
 
 int main() {
     try {

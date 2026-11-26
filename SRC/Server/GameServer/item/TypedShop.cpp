@@ -12,7 +12,7 @@
 #include "../ecs/ResourceAdmission.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../ecs/components/quest_components.hpp"
@@ -90,7 +90,7 @@ bool WithinShop(entt::entity character,const Session& session)
 bool Admitted(entt::entity e,bool transaction)
 {
     if(!g_registry.valid(e) || !ecs::PlayerRuntime::IsPC(e) || CombatSystem::IsDead(e) || ecs::PlayerRuntime::IsObserverMode(e) ||
-       !InventorySystem::CanHandleItems(e) || ecs::SocialSystem::HasExchange(e) || ecs::SessionSystem::IsSafeboxOpen(e) ||
+       !PlayerItemActions::CanHandleItems(e) || ecs::SocialSystem::HasExchange(e) || ecs::SessionSystem::IsSafeboxOpen(e) ||
        ecs::SessionSystem::IsCubeOpen(e) || ecs::SocialSystem::GetMyShop(e)!=entt::null)return false;
     const auto* s=g_registry.try_get<Session>(e);
     if(ecs::SocialSystem::GetShopOwner(e)!=entt::null && (!s || ecs::SocialSystem::GetShopOwner(e)!=s->npc))return false;

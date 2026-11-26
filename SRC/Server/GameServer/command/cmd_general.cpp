@@ -1,3 +1,4 @@
+#include "TypedShop.hpp"
 #include "../item/TypedBooks.hpp"
 #include "../item/TypedCraft.hpp"
 #include "../item/TypedCostumes.hpp"
@@ -33,7 +34,6 @@
 #include "char_interface.hpp"
 #include "char_manager.h"
 #include "../ecs/CharacterAccessors.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/InventorySortSystem.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/EntityFactory.hpp"
@@ -49,11 +49,9 @@
 #include "messenger_manager.h"
 #include "war_map.h"
 #include "questmanager.h"
-#include "item_manager.h"
 #include "mob_manager.h"
 #include "dev_log.h"
 #include <Core/Logging.hpp>
-#include "item.h"
 #include "arena.h"
 #include "buffer_manager.h"
 #include <functional>
@@ -61,7 +59,6 @@
 #include "log.h"
 #include <common/VnumHelper.h>
 #include "shop.h"
-#include "shop_manager.h"
 #include "daily_reward.h"
 #include <string_view>
 #include <charconv>
@@ -2428,11 +2425,7 @@ struct GotoInfo
 };
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-ACMD(do_attr_transfer)
-{
-    if (argument)
-        AttrTransfer_command(character, argument);
-}
+
 #endif
 
 ACMD(do_inventory)
@@ -2717,13 +2710,7 @@ ACMD(do_extend_range_npc)
 		return;
 	}
 
-	const entt::entity shop = CShopManager::instance().Get(vnum);
-
-	if(shop == entt::null)
-		return;
-
-	ecs::SocialSystem::SetShopOwner(character, character);
-	ShopSystem::AddGuest(shop, character, 0, false);
+	TryOpenTypedShop(character, ecs::PlayerRuntime::GetQuestNPC(character), vnum);
 
 }
 #endif

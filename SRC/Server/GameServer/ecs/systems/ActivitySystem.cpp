@@ -6,7 +6,6 @@
 #include "../../item/TypedGathering.hpp"
 
 #include "ActivitySystem.hpp"
-#include "ItemSystem.hpp"
 #include "../Registry.hpp"
 #include "../../core/log.h"
 
@@ -17,8 +16,6 @@
 #include "../../core/config.h"
 #include "../../network/desc.h"
 #include "../../world/fishing.h"
-#include "../../item/item.h"
-#include "../../item/item_manager.h"
 #include "../../core/locale_service.h"
 #include "../../world/mining.h"
 #include "../../core/packet.h"
@@ -81,9 +78,6 @@ void StopFishing(entt::entity fisher)
     state->fishVnum = 0;
     state->chance = 0;
 
-    const entt::entity rod = ItemSystem::GetWearItem(fisher, WEAR_WEAPON);
-    if (ItemSystem::IsValidItem(rod) && ItemSystem::GetItemType(rod) == ITEM_ROD)
-        ItemSystem::SetItemSocket(rod, 2, 0);
 
     MarkFishing(fisher, false);
 

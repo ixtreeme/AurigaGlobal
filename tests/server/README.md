@@ -1,3 +1,14 @@
+# Current item foundation
+
+The raw item, inventory, attribute, manager, switchbot, exchange, shop and safebox
+engines and their dedicated test targets have been retired. Older sections below
+record historical verification and are not current build instructions for those
+removed targets. QuickslotTests now covers PlayerItemActions (skills/commands,
+load barrier, admission, stale handles and publication reentry). Use the native
+ItemDomain suites for item/storage/commerce semantics, the updated character,
+combat, points and spatial suites for integration, and item_foundation_boundary
+for the source retirement boundary. See docs/typed_item_foundation_retirement.md.
+
 # Server ECS regression tests
 
 ## Item/combat domain foundation (2026-10-27)

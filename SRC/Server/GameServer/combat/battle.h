@@ -21,7 +21,7 @@ extern int	CalcAttBonus(entt::entity attacker, entt::entity victim, int iAtk);
 extern int	CalcBattleDamage(int iDam, int iAttackerLev, int iVictimLev);
 extern int	CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefense = false, bool bIgnoreTargetRating = false);
 extern int	CalcMagicDamage(entt::entity attacker, entt::entity victim);
-extern int	CalcArrowDamage(entt::entity attacker, entt::entity victim, entt::entity bow, entt::entity arrow, bool bIgnoreDefense = false);
+extern int	CalcArrowDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefense = false);
 extern float	CalcAttackRating(entt::entity attacker, entt::entity victim, bool bIgnoreTargetRating = false);
 
 extern bool	battle_is_attackable(entt::entity character, entt::entity victim);

@@ -2,7 +2,6 @@
 #include <Core/Logging.hpp>
 #include "input.h"
 #include "../ecs/systems/ChatSystem.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/QuestSystem.hpp"
@@ -93,7 +92,6 @@ void CInputMain::AnswerMakeGuild(entt::entity character, const char* c_pData)
 		snprintf(Log, sizeof(Log), "GUILD_NAME %s MASTER %s", cp.name, ecs::PlayerRuntime::GetName(character).data());
 		LogManager::instance().CharLog(character, 0, "MAKE_GUILD", Log);
 
-		ItemSystem::RemoveSpecifyItemEcs(character, GUILD_CREATE_ITEM_VNUM, 1);
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {

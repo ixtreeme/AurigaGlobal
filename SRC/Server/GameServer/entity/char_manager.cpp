@@ -30,7 +30,6 @@
 #include <common/CommonDefines.h>
 #include <common/service.h>
 
-#include "item_manager.h"
 
 #include <algorithm>
 #include <exception>
@@ -40,7 +39,6 @@
 #include <string_view>
 
 #include <unordered_set>
-#include "safebox.h"
 #include "../ecs/EntityFactory.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/VIDRegistry.hpp"
@@ -53,7 +51,6 @@
 #include "../ecs/components/character_runtime_components.hpp"
 #include "../ecs/EntityInvariants.hpp"
 #include "mining.h"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/components/identity_components.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
 #include <chrono>
@@ -1461,8 +1458,6 @@ void CHARACTER_MANAGER::FlushPendingDestroy()
 
 
 #ifdef ENABLE_EVENT_MANAGER
-#include "item_manager.h"
-#include "item.h"
 #include "desc_client.h"
 #include "desc_manager.h"
 #include "char.h"

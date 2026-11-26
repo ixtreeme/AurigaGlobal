@@ -4,7 +4,7 @@
 #include <common/character_creation.h>
 #include <Core/packet_string.h>
 #include <common/time_64_packets.h>
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/SkillSystem.hpp"
 #include "../ecs/components/skill_components.hpp"
 #include "../ecs/systems/PointSystem.hpp"
@@ -22,12 +22,9 @@
 #include "desc_manager.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
-#include "item.h"
-#include "item_manager.h"
 #include "packet.h"
 #include "protocol.h"
 #include "mob_manager.h"
-#include "shop_manager.h"
 #include "sectree_manager.h"
 #include "skill.h"
 #include "questmanager.h"
@@ -68,7 +65,6 @@
 #include "../ecs/Registry.hpp"
 #include "../ecs/VIDRegistry.hpp"
 #include "../ecs/AIHelpers.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/components/vital_components.hpp"
 #include "../ecs/components/inventory_components.hpp"
 #include "../item/ItemStore.hpp"
@@ -343,7 +339,7 @@ static void LoadTypedItems(entt::entity character)
             SkillSystem::InstallSkillPalette(entity, result.palette);
             if(!ApplyTypedBookLogin(entity)){if(auto* desc=ecs::PlayerRuntime::GetDesc(entity))desc->SetPhase(PHASE_CLOSE);return;}
             StartTypedAccessoryClock(entity);StartTypedRecoveryClock(entity);
-			InventorySystem::SetItemLoaded(entity);
+			PlayerItemActions::SetItemLoaded(entity);
 			SendTypedInventory(entity); // only once the client is in game
 		}
         else
@@ -474,7 +470,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 
 	quest::CQuestManager::instance().BroadcastEventFlagOnLogin(chEntity);
 
-	InventorySystem::SendQuickslots(chEntity);
+	PlayerItemActions::SendQuickslots(chEntity);
 
 	NetworkSyncSystem::PointsPacket(chEntity);
 	SkillSystem::SendSkillLevelPacket(chEntity);
@@ -560,7 +556,7 @@ void CInputDB::Boot(const char* data)
 
 	if (size)
 	{
-		ITEM_MANAGER::instance().Initialize((TItemTable *) data, size);
+
 		data += size * sizeof(TItemTable);
 	}
 
@@ -583,12 +579,6 @@ void CInputDB::Boot(const char* data)
 
 	if (size)
 	{
-		if (!CShopManager::instance().Initialize((TShopTable *) data, size))
-		{
-			LOG_ERROR("shop table Initialize error");
-			thecore_shutdown();
-			return;
-		}
 		data += size * sizeof(TShopTable);
 	}
 
@@ -1048,7 +1038,7 @@ void CInputDB::ReloadProto(const char * c_pData)
 
 	if (wSize)
 	{
-		ITEM_MANAGER::instance().Initialize((TItemTable *) c_pData, wSize);
+
 		c_pData += wSize * sizeof(TItemTable);
 	}
 
@@ -1215,7 +1205,6 @@ void LoadItemExtraProto(const char* data)
 		return;
 	}
 
-	ITEM_MANAGER::instance().InitializeExtraProto((TItemExtraProto*)(data + sizeof(TPacketDGLoadItemExtraProto)), Pack->dwCount);
 }
 #endif
 
@@ -1506,7 +1495,7 @@ int CInputDB::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		this->GuildChangeMaster((TPacketChangeGuildMaster*) c_pData);
 		break;
 	case HEADER_DG_ACK_SPARE_ITEM_ID_RANGE :
-		ITEM_MANAGER::instance().SetMaxSpareItemID(*((TItemIDRangeTable*)c_pData) );
+
 		break;
 
 	case HEADER_DG_UPDATE_HORSE_NAME :

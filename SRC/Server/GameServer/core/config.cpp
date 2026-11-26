@@ -13,7 +13,6 @@
 #include "desc.h"
 #include "desc_manager.h"
 #include "../ecs/CharacterAccessors.hpp"
-#include "item_manager.h"
 #include "p2p.h"
 #include "char_interface.hpp"
 #include "ip_ban.h"
@@ -1037,3 +1036,6 @@ void LoadMapConfig()
 }
 #endif
 
+
+// Shared warp/storage interaction cooldown (seconds).
+int g_nPortalLimitTime = 10;

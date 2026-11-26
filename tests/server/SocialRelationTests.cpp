@@ -8,18 +8,15 @@
 #include "../../SRC/Server/GameServer/world/war_map.h"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/InventorySystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/PlayerItemActions.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MountSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ViewSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ChatSystem.hpp"
-#include "../../SRC/Server/GameServer/social/exchange.h"
 #include "../../SRC/Server/GameServer/social/party.h"
 #include "../../SRC/Server/GameServer/social/shop.h"
-#include "../../SRC/Server/GameServer/social/shop_manager.h"
 #include "../../SRC/Server/GameServer/dungeon/dungeon.h"
 #include "../../SRC/Server/GameServer/social/wedding.h"
 #include "../../SRC/Server/GameServer/social/marriage.h"
@@ -120,23 +117,23 @@ int64_t ecs::PointSystem::GetGold(entt::entity) { Unexpected("GetGold"); }
 void ecs::PointSystem::Change(entt::entity, uint8_t, int64_t, bool, bool, bool) { Unexpected("PointSystem::Change"); }
 int ecs::PointSystem::GetLevel(entt::entity) { Unexpected("GetLevel"); }
 
-bool ItemSystem::IsValidItem(entt::entity) { return false; }
-bool ItemSystem::IsItemEquipped(entt::entity) { Unexpected("IsItemEquipped"); }
-bool ItemSystem::IsItemLocked(entt::entity) { Unexpected("IsItemLocked"); }
-bool ItemSystem::UnlockItem(entt::entity) { Unexpected("UnlockItem"); }
-bool ItemSystem::SetItemSocket(entt::entity, int, uint32_t, bool) { Unexpected("SetItemSocket"); }
-bool ItemSystem::RemoveSpecifyItemEcs(entt::entity, uint32_t, uint32_t, bool) { Unexpected("RemoveSpecifyItemEcs"); }
-int ItemSystem::CountItem(entt::entity, uint32_t) { Unexpected("CountItem"); }
-entt::entity ItemSystem::GetItem(entt::entity, TItemPos) { Unexpected("ItemSystem::GetItem"); }
-entt::entity ItemSystem::FindItemByID(entt::entity, uint32_t) { Unexpected("FindItemByID"); }
-const char* ItemSystem::GetItemName(entt::entity) { Unexpected("GetItemName"); }
-const TItemTable* ItemSystem::GetItemProto(entt::entity) { Unexpected("GetItemProto"); }
-uint32_t ItemSystem::GetItemID(entt::entity) { Unexpected("GetItemID"); }
-uint32_t ItemSystem::GetItemVnum(entt::entity) { Unexpected("GetItemVnum"); }
-uint32_t ItemSystem::GetItemCount(entt::entity) { Unexpected("GetItemCount"); }
 
-bool InventorySystem::CanHandleItems(entt::entity, bool, bool) { Unexpected("CanHandleItems"); }
-entt::entity InventorySystem::GetRefineNPC(entt::entity) { Unexpected("GetRefineNPC"); }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool PlayerItemActions::CanHandleItems(entt::entity, bool, bool) { Unexpected("CanHandleItems"); }
+
 
 CAffect* AffectSystem::FindAffect(entt::entity, uint32_t, uint8_t) { Unexpected("FindAffect"); }
 bool AffectSystem::RemoveAffect(entt::entity, uint32_t) { Unexpected("RemoveAffect"); }
@@ -162,7 +159,7 @@ bool PartySystem::IsValid(entt::entity) { Unexpected("PartySystem::IsValid"); }
 void PartySystem::Join(entt::entity, uint32_t) { Unexpected("PartySystem::Join"); }
 void PartySystem::Link(entt::entity, entt::entity) { Unexpected("PartySystem::Link"); }
 void PartySystem::SendPartyInfoAllToOne(entt::entity, entt::entity) { Unexpected("SendPartyInfoAllToOne"); }
-bool ShopSystem::IsValid(entt::entity) { Unexpected("ShopSystem::IsValid"); }
+
 
 void DungeonSystem::SetMemberDungeon(entt::entity, entt::entity) { Unexpected("SetMemberDungeon"); }
 entt::entity DungeonSystem::GetMemberDungeon(entt::entity) { Unexpected("GetMemberDungeon"); }
@@ -172,14 +169,14 @@ void marriage::WeddingSystem::SetMemberMap(entt::entity, entt::entity) { Unexpec
 entt::entity marriage::WeddingSystem::GetMemberMap(entt::entity) { Unexpected("GetMemberMap"); }
 entt::entity marriage::CManager::Get(uint32_t) { return entt::null; }
 
-void ExchangeSystem::Cancel(entt::entity) { Unexpected("ExchangeSystem::Cancel"); }
+
 bool CBanwordManager::CheckString(const char*, size_t) { return false; }
 void LogManager::CharLog(entt::entity, uint32_t, const char*, const char*) {}
 void DESC::Packet(const void*, int) {}
 void CLIENT_DESC::DBPacket(uint8_t, uint32_t, const void*, uint32_t) {}
 entt::entity CPartyManager::CreateParty(entt::entity) { Unexpected("CreateParty"); }
-entt::entity CShopManager::CreatePCShop(entt::entity, TShopItemTable*, uint8_t) { Unexpected("CreatePCShop"); }
-void CShopManager::DestroyPCShop(entt::entity) { Unexpected("DestroyPCShop"); }
+
+
 quest::PC* quest::CQuestManager::GetPCForce(unsigned int) { Unexpected("GetPCForce"); }
 entt::entity CHARACTER_MANAGER::FindEntityByPID(uint32_t) { Unexpected("FindEntityByPID"); }
 

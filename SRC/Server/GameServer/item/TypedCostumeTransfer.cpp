@@ -13,7 +13,7 @@
 #include "../ecs/components/status_components.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/ChatSystem.hpp"
 #include "../entity/char_manager.h"
@@ -40,7 +40,7 @@ bool Native(entt::entity e){return g_registry.valid(e) && g_registry.all_of<ecs:
 void Tell(entt::entity e,const char* text){ecs::ChatSystem::Send(e,CHAT_TYPE_INFO,"%s",text);}
 bool Near(entt::entity e,entt::entity npc){if(!g_registry.valid(npc) || P::IsPC(npc) || P::GetMapIndex(e)!=P::GetMapIndex(npc) || P::GetQuestNPC(e)!=npc)return false;const auto dx=std::abs(std::int64_t(P::GetX(e))-P::GetX(npc)),dy=std::abs(std::int64_t(P::GetY(e))-P::GetY(npc));return std::max(dx,dy)+std::min(dx,dy)/2<1000;}
 bool Admitted(entt::entity e,bool opening=false){
-    if(!Native(e) || !P::IsPC(e) || !P::GetDesc(e) || !P::GetDesc(e)->IsPhase(PHASE_GAME) || CombatSystem::IsDead(e) || P::IsWarping(e) || !InventorySystem::CanHandleItems(e) || TypedGatheringActive(e) || g_registry.all_of<ecs::TypedItemBusy>(e))return false;
+    if(!Native(e) || !P::IsPC(e) || !P::GetDesc(e) || !P::GetDesc(e)->IsPhase(PHASE_GAME) || CombatSystem::IsDead(e) || P::IsWarping(e) || !PlayerItemActions::CanHandleItems(e) || TypedGatheringActive(e) || g_registry.all_of<ecs::TypedItemBusy>(e))return false;
     const auto* flags=g_registry.try_get<ecs::StatusFlags>(e);if(flags && (flags->isObserverMode || flags->isStunned))return false;
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
     if(P::GetGMLevel(e)>GM_PLAYER && P::GetGMLevel(e)<GM_IMPLEMENTOR)return false;
@@ -87,3 +87,5 @@ bool HandleTypedCostumeTransferPacket(entt::entity e,const char* data){
     const bool queued=store::RequestCommit(state.fence.owner,state.fence.sessionGeneration,*planned,[pid,token,nonce,held](store::CommitOutcome out){const auto ch=CHARACTER_MANAGER::instance().FindEntityByPID(pid);const auto* login=g_registry.valid(ch) ? g_registry.try_get<ecs::TypedItemLogin>(ch) : nullptr;if(!login || login->token!=token)return;g_registry.remove<ecs::TypedItemBusy>(ch);if(out.state)g_registry.emplace_or_replace<ecs::TypedItems>(ch,std::move(*out.state));if(auto* current=g_registry.try_get<TypedCostumeTransferSession>(ch);current && current->nonce==nonce){current->pending=false;current->status=out.write ? Status::Applied : Status::Failed;Reply(ch,current->status);}else SendTypedInventory(ch);PumpTypedItemGrants(ch);});
     if(!queued){g_registry.remove<ecs::TypedItemBusy>(e);s=g_registry.try_get<TypedCostumeTransferSession>(e);if(s){s->pending=false;s->status=Status::Failed;}Reply(e,Status::Failed);}return true;
 }
+
+bool HasTypedCostumeTransfer(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<TypedCostumeTransferSession>(e); }

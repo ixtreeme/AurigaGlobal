@@ -1,10 +1,9 @@
+#include "TypedTrade.hpp"
 #include "stdafx.h"
 #include "desc_client.h"
 #include "desc_manager.h"
 #include "../ecs/systems/SessionSystem.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
-#include "../social/exchange.h"
-#include "../item/item_manager.h"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include <Core/player_cache_snapshot.h>
 #include "../ecs/CharacterAccessors.hpp"
 #include "../ecs/ResourceAdmission.hpp"
@@ -67,11 +66,10 @@ bool CLIENT_DESC::RequestPlayerCacheDrain(LPDESC target, auriga::player_session:
         const auto receipt = state.Result(*key, entt::to_integral(entity));
         return (request && request->challenge == challenge) || (receipt && receipt->challenge == challenge);
     }
-    if (state.Started() || !target->IsPhase(PHASE_GAME) || !InventorySystem::IsItemLoaded(entity) ||
-        !InventorySystem::CanHandleItems(entity) || ExchangeSystem::IsActive(entity) ||
+    if (state.Started() || !target->IsPhase(PHASE_GAME) || !PlayerItemActions::IsItemLoaded(entity) ||
+        !PlayerItemActions::CanHandleItems(entity) || HasTypedTrade(entity) ||
         !auriga::player_session::Nonzero(challenge) || ecs::SessionSystem::GetSkipSave(entity) ||
-        ecs::SessionSystem::GetSafebox(entity) != entt::null ||
-        ecs::SessionSystem::GetMall(entity) != entt::null || ecs::SessionSystem::IsSafeboxLoading(entity))
+        ecs::SessionSystem::IsSafeboxLoading(entity))
         return false;
     auto pause = ecs::resource_admission::Prepare(entity, *key, challenge);
     if (!pause)

@@ -1,3 +1,4 @@
+#include "TypedShop.hpp"
 #include "stdafx.h"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
@@ -18,7 +19,6 @@
 #include "party.h"
 #include "char_manager.h"
 #include "../ecs/CharacterAccessors.hpp"
-#include "shop_manager.h"
 #include "guild.h"
 #include "../ecs/quest_helpers.hpp"
 #include "../ecs/events.hpp"
@@ -40,7 +40,7 @@ namespace quest
 		}
 
 		if (CQuestManager::instance().GetCurrentNPCEntity() != entt::null)
-			CShopManager::instance().StartShopping(CQuestManager::instance().GetCurrentCharacter(),
+			TryOpenTypedShop(CQuestManager::instance().GetCurrentCharacter(),
 			CQuestManager::instance().GetCurrentNPCEntity(), iShopVnum);
 		return 0;
 	}

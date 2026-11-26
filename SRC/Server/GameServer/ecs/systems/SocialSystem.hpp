@@ -78,17 +78,11 @@ int GetSafeboxLoadTime(entt::entity e);
 void SetSafeboxLoadTime(entt::entity e);
 int GetRefineTime(entt::entity e);
 void SetRefineTime(entt::entity e);
-CGuild* GetRefineGuild(entt::entity e);
-bool IsRefineThroughGuild(entt::entity e);
 int GetLastBuyTime(entt::entity e);
 void SetLastBuyTime(entt::entity e);
 uint32_t GetLastBuySellTime(entt::entity e);
 void SetLastBuySellTime(entt::entity e, uint32_t when);
-void OpenMyShop(entt::entity e, const char* sign, TShopItemTable* table, uint8_t itemCount
-#ifdef KASMIR_PAKET_SYSTEM
-    , uint32_t kasmirNpc, uint8_t kasmirTitle
-#endif
-    );
+
 void CloseMyShop(entt::entity e);
 entt::entity GetMyShop(entt::entity e);
 bool GetNoOpenedShop(entt::entity e);

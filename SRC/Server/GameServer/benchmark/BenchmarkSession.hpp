@@ -1,8 +1,7 @@
 #pragma once
 
 // Nexoria manual PvP benchmark: live PC-versus-PC telemetry and temporary
-// level-170 equipment profiles. No damage simulation or database edits.
-// Development test characters only: do not disconnect before /benchmark stop.
+// current typed equipment. No item injection or temporary inventory snapshots.
 
 #include <entt/entt.hpp>
 #include <cstdint>

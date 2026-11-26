@@ -17,7 +17,7 @@
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../entity/char_manager.h"
@@ -65,7 +65,7 @@ bool SameAutomaticPreview(items::PersistentItem a,items::PersistentItem b)
 {if(!a.automatic || !b.automatic || a.automatic->active!=b.automatic->active)return false;a.revision=b.revision;a.automatic=b.automatic;return a==b;}
 bool Admitted(entt::entity e,bool off=false)
 {
-    if(!InGame(e) || (!off && (CombatSystem::IsDead(e) || !InventorySystem::CanHandleItems(e))) || ecs::SocialSystem::HasExchange(e) || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e) || ecs::SocialSystem::GetMyShop(e)!=entt::null || ecs::SocialSystem::GetShopOwner(e)!=entt::null)return false;
+    if(!InGame(e) || (!off && (CombatSystem::IsDead(e) || !PlayerItemActions::CanHandleItems(e))) || ecs::SocialSystem::HasExchange(e) || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e) || ecs::SocialSystem::GetMyShop(e)!=entt::null || ecs::SocialSystem::GetShopOwner(e)!=entt::null)return false;
     const auto* quest=g_registry.try_get<ecs::QuestPCState>(e);if(!quest || !quest->pc || quest->pc->IsRunning())return false;
     const auto* flags=g_registry.try_get<ecs::StatusFlags>(e);return !flags || (off || (!flags->isObserverMode && !flags->isStunned));
 }

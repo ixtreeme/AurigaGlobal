@@ -16,7 +16,6 @@
 #include "../../SRC/Server/GameServer/ecs/components/social_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ChatSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MovementSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/SocialSystem.hpp"
@@ -174,10 +173,10 @@ CAffect* AffectSystem::FindAffect(entt::entity, uint32_t, uint8_t) { return null
 // --- services only other paths use --------------------------------------------
 int64_t quest::CQuestManager::GetEventFlag(const std::string&) { Unexpected("CQuestManager::GetEventFlag"); }
 bool AffectSystem::RemoveAffect(entt::entity, uint32_t) { Unexpected("AffectSystem::RemoveAffect"); }
-entt::entity ItemSystem::FindItemByID(entt::entity, uint32_t) { Unexpected("ItemSystem::FindItemByID"); }
-bool ItemSystem::IsValidItem(entt::entity) { Unexpected("ItemSystem::IsValidItem"); }
-bool ItemSystem::UnlockItem(entt::entity) { Unexpected("ItemSystem::UnlockItem"); }
-bool ItemSystem::SetItemSocket(entt::entity, int, uint32_t, bool) { Unexpected("ItemSystem::SetItemSocket"); }
+
+
+
+
 
 namespace {
 using marriage::MarriageSystem::State;

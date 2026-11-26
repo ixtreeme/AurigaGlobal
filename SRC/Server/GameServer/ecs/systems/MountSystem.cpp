@@ -19,7 +19,6 @@
 #include "../../guild/guild.h"
 #include "../../core/vector.h"
 #include "../../quest/questmanager.h"
-#include "../../item/item.h"
 #include "../../pet/AccountCollectionSystem.hpp"
 #include "../../pet/horsename_manager.h"
 #include "../../core/locale_service.h"

@@ -6,10 +6,6 @@
 namespace ecs::SessionSystem {
 
 bool WarpToPID(entt::entity e, uint32_t dwPID);
-entt::entity GetSafebox(entt::entity e);
-entt::entity GetMall(entt::entity e);
-void CloseMall(entt::entity e);
-void CloseSafebox(entt::entity e);
 bool IsSafeboxLoading(entt::entity e);
 void SetSafeboxLoading(entt::entity e, bool loading);
 void CreatePlayerProto(entt::entity e, TPlayerTable& tab);

@@ -9,7 +9,7 @@
 #include "../ecs/ResourceAdmission.hpp"
 #include "../ecs/components/quest_components.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
@@ -35,7 +35,7 @@ void Status(entt::entity e,const char* suffix){if(g_registry.valid(e)){const aut
 bool Live(entt::entity e){auto* d=g_registry.valid(e)?P::GetDesc(e):nullptr;return d && d->IsPhase(PHASE_GAME) && P::IsPC(e) && !CombatSystem::IsDead(e) && !CombatSystem::IsStun(e) && !P::IsObserverMode(e) && !P::IsWarping(e) && g_registry.all_of<ecs::TypedItems,ecs::TypedItemLogin>(e);}
 bool Admitted(entt::entity e, lua_State* coroutine = nullptr)
 {
- if(!Live(e) || !P::CanWarp(e) || !InventorySystem::CanHandleItems(e) || ecs::SocialSystem::HasExchange(e) ||
+ if(!Live(e) || !P::CanWarp(e) || !PlayerItemActions::CanHandleItems(e) || ecs::SocialSystem::HasExchange(e) ||
     ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e))return false;
  const auto* q=g_registry.try_get<ecs::QuestPCState>(e);
  if(!q || !q->pc)return false;

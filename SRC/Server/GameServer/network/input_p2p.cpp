@@ -5,7 +5,6 @@
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/SkillSystem.hpp"
 #include "../ecs/AIHelpers.hpp"
 #include "config.h"
@@ -578,7 +577,6 @@ int CInputP2P::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 }
 
 #ifdef ENABLE_SWITCHBOT
-#include "new_switchbot.h"
 void CInputP2P::Switchbot(LPDESC d, const char* c_pData)
 {
 	const TPacketGGSwitchbot* p = reinterpret_cast<const TPacketGGSwitchbot*>(c_pData);
@@ -587,7 +585,6 @@ void CInputP2P::Switchbot(LPDESC d, const char* c_pData)
 		return;
 	}
 
-	CSwitchbotManager::Instance().P2PReceiveSwitchbot(p->table);
 }
 #endif
 

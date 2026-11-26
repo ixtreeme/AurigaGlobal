@@ -5,8 +5,7 @@
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/systems/QuestSystem.hpp"
 #include "utils.h"
@@ -216,7 +215,6 @@ ACMD(do_effect);
 //gift notify quest command
 ACMD(do_gift);
 #ifdef __ATTR_TRANSFER_SYSTEM__
-ACMD(do_attr_transfer);
 #endif
 ACMD(do_inventory);
 ACMD(do_cube);
@@ -271,16 +269,7 @@ ACMD(do_hide_costume);
 #endif
 
 #ifdef ENABLE_ATTR_COSTUMES
-ACMD(do_attrdialog_remove) {
-	if (!ecs::PlayerRuntime::IsPC(character) ||
-		ecs::PlayerRuntime::IsObserverMode(character) || CombatSystem::IsDead(character)) {
-		return;
-	}
 
-	char arg1[256];
-	one_argument(argument, arg1, sizeof(arg1));
-	ItemSystem::SelectCostumeAttributeToRemove(character, arg1);
-}
 #endif
 
 #ifdef ENABLE_RANKING
@@ -622,7 +611,6 @@ struct command_info cmd_info[] =
 
 	{ "effect",				do_effect,				0,	POS_DEAD,	GM_IMPLEMENTOR	},
 #ifdef __ATTR_TRANSFER_SYSTEM__
-	{"attrtransfer", do_attr_transfer, 0, POS_DEAD, GM_PLAYER},
 #endif
 	{ "inventory",			do_inventory,			0,	POS_DEAD,	GM_IMPLEMENTOR	},
 	{ "cube",				do_cube,				0,	POS_DEAD,	GM_PLAYER	},
@@ -681,7 +669,6 @@ struct command_info cmd_info[] =
 	{ "hide_costume", do_hide_costume, 0, POS_DEAD, GM_PLAYER },
 #endif
 #ifdef ENABLE_ATTR_COSTUMES
-	{"attrdialog_remove", do_attrdialog_remove, 0, POS_DEAD, GM_PLAYER},
 #endif
 #ifdef ENABLE_RANKING
 	{"ranking_subcategory", do_ranking_subcategory, 0, POS_DEAD, GM_PLAYER},

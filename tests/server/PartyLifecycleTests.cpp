@@ -16,7 +16,6 @@
 #include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MovementSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
 #include <Core/Logging.hpp>
 #include <functional>
 #include <iostream>
@@ -254,6 +253,8 @@ void SetDungeon(entt::entity, entt::entity) {}
 
 namespace ecs::PointSystem {
 int64_t Get(entt::entity, uint8_t) { return 0; }
+double GetPrecise(entt::entity, uint8_t) { return 0; }
+void ChangePrecise(entt::entity, uint8_t, double, bool, bool) {}
 int GetLevel(entt::entity e) { const auto* a = ActorOf(e); return a ? a->level : 0; }
 uint64_t GetMaxHP(entt::entity) { return 1000; }
 uint64_t GetMaxSP(entt::entity) { return 1000; }
@@ -291,10 +292,7 @@ bool Show(entt::entity e, int32_t, int32_t, int32_t, int32_t, bool) { shown.push
 void Stop(entt::entity e) { stopped.push_back(e); }
 }
 
-namespace ItemSystem {
-bool IsEquipUniqueItem(entt::entity, uint32_t) { return false; }
-bool IsEquipUniqueGroup(entt::entity, uint32_t) { return false; }
-}
+
 
 bool NetworkSyncSystem::BuildPartyUpdatePacket(entt::registry&, entt::entity, TPacketGCPartyUpdate& packet) {
     packet = {};

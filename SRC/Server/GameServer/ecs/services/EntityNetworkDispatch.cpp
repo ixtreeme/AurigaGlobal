@@ -17,7 +17,6 @@
 #include "../components/character_runtime_components.hpp"
 #include "../components/combat_components.hpp"
 #include "../components/identity_components.hpp"
-#include "../components/item_components.hpp"
 #include "../components/movement_components.hpp"
 #include "../components/social_components.hpp"
 #include "../components/spatial_components.hpp"
@@ -306,54 +305,11 @@ void SendCharacterRemove(entt::registry& reg, entt::entity source, entt::entity 
         ecs::PlayerRuntime::GetName(viewer).data());
 }
 
-bool EncodeItemGroundInsert(entt::registry& reg, entt::entity item, TPacketGCItemGroundAdd& packet)
-{
-    const auto* identity = reg.try_get<ecs::ItemIdentity>(item);
-    const auto* position = reg.try_get<ecs::ItemGroundPosition>(item);
-    if (!identity || !position)
-        return false;
 
-    packet = {};
-    packet.bHeader = HEADER_GC_ITEM_GROUND_ADD;
-    packet.x = position->x;
-    packet.y = position->y;
-    packet.z = position->z;
-    packet.dwVID = identity->vid;
-    packet.dwVnum = identity->vnum;
-    return true;
-}
 
-void SendItemInsert(entt::registry& reg, entt::entity item, entt::entity viewer)
-{
-    TPacketGCItemGroundAdd packet {};
-    if (!EncodeItemGroundInsert(reg, item, packet))
-        return;
 
-    ecs::NetworkService::Send(viewer, &packet, sizeof(packet));
 
-    const auto* ownership = reg.try_get<ecs::ItemOwnershipDisplay>(item);
-    const auto* identity = reg.try_get<ecs::ItemIdentity>(item);
-    if (!ownership || ownership->ownerName.empty() || !identity)
-        return;
 
-    TPacketGCItemOwnership owner {};
-    owner.bHeader = HEADER_GC_ITEM_OWNERSHIP;
-    owner.dwVID = identity->vid;
-    strlcpy(owner.szName, ownership->ownerName.c_str(), sizeof(owner.szName));
-    ecs::NetworkService::Send(viewer, &owner, sizeof(owner));
-}
-
-void SendItemRemove(entt::registry& reg, entt::entity item, entt::entity viewer)
-{
-    const auto* identity = reg.try_get<ecs::ItemIdentity>(item);
-    if (!identity)
-        return;
-
-    TPacketGCItemGroundDel packet {};
-    packet.bHeader = HEADER_GC_ITEM_GROUND_DEL;
-    packet.dwVID = identity->vid;
-    ecs::NetworkService::Send(viewer, &packet, sizeof(packet));
-}
 
 // Typed ground loot (F4 C7c): its own add packet; delete and claim label are
 // the legacy VID packets, so the client handles them like any ground item.
@@ -459,9 +415,6 @@ void SendInsert(entt::registry& reg, entt::entity source, entt::entity viewer)
         // All three are closed. The audit that watched them went with the legacy bodies it observed.
         SendCharacterInsert(reg, source, viewer);
         break;
-    case ecs::SpatialKind::Item:
-        SendItemInsert(reg, source, viewer);
-        break;
     case ecs::SpatialKind::Building:
         SendBuildingInsert(reg, source, viewer);
         break;
@@ -499,9 +452,6 @@ void SendRemove(entt::registry& reg, entt::entity source, entt::entity viewer)
         // CEntity::m_lpDesc are both bound from the same LPDESC in
         // input_db.cpp and neither is ever cleared.
         SendCharacterRemove(reg, source, viewer);
-        break;
-    case ecs::SpatialKind::Item:
-        SendItemRemove(reg, source, viewer);
         break;
     case ecs::SpatialKind::Building:
         SendBuildingRemove(reg, source, viewer);

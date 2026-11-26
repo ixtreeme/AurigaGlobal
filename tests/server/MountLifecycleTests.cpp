@@ -14,7 +14,6 @@
 #include "../../SRC/Server/GameServer/ecs/components/status_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MountSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MovementSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
@@ -266,59 +265,7 @@ void SetExp(entt::entity e, uint32_t exp) { State(e).exp = exp; }
 const TMobTable* GetMobTable(entt::entity e) { ++mobQueries; static TMobTable table{}; return State(e).hasMob ? &table : nullptr; }
 void DestroyCharacter(entt::entity e) { State(e); ++destroyed; g_registry.destroy(e); }
 }
-namespace ItemSystem {
-bool IsValidItem(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<ItemState>(e); }
-entt::entity GetItemOwner(entt::entity e) { return IsValidItem(e) ? g_registry.get<ItemState>(e).owner : entt::null; }
-uint32_t GetItemID(entt::entity e) { return IsValidItem(e) ? g_registry.get<ItemState>(e).id : 0; }
-uint32_t GetItemVID(entt::entity e) { return IsValidItem(e) ? g_registry.get<ItemState>(e).vid : 0; }
-uint32_t GetItemVnum(entt::entity e) { return IsValidItem(e) ? g_registry.get<ItemState>(e).vnum : 0; }
-const TItemTable* GetItemProto(entt::entity e) { const auto& item = g_registry.get<ItemState>(e); return item.hasProto ? &item.proto : nullptr; }
-bool IsUnlimitedTimeUnique(entt::entity e) { return g_registry.get<ItemState>(e).unlimited; }
-uint32_t GetItemSocket(entt::entity e, int i) { return static_cast<uint32_t>(g_registry.get<ItemState>(e).sockets[i]); }
-bool SetItemSocket(entt::entity e, int i, uint32_t value, bool) { g_registry.get<ItemState>(e).sockets[i] = value; return true; }
-int32_t GetItemValue(entt::entity e, uint32_t i) { return g_registry.get<ItemState>(e).proto.alValues[i]; }
-bool LockItem(entt::entity e, bool locked) { Check(IsValidItem(e), "locking stale item"); g_registry.get<ItemState>(e).locked = locked; return true; }
-bool UnlockItem(entt::entity e) { return LockItem(e, false); }
-bool IsItemLocked(entt::entity e) { Check(IsValidItem(e), "locking invalid item"); return g_registry.get<ItemState>(e).locked; }
-bool IsItemEquipped(entt::entity e) { return g_registry.get<ItemState>(e).equipped; }
-uint32_t GetItemCount(entt::entity e) { return g_registry.get<ItemState>(e).count; }
-uint8_t GetItemType(entt::entity e) { return g_registry.get<ItemState>(e).proto.bType; }
-int64_t GetItemShopBuyPrice(entt::entity e) { return g_registry.get<ItemState>(e).price; }
-bool ConsumeItemEcs(entt::entity e, uint32_t count) {
-    if (failPayment || !IsValidItem(e) || GetItemCount(e) < count) return false;
-    ++consumed;
-    if ((g_registry.get<ItemState>(e).count -= count) == 0) g_registry.destroy(e);
-    return true;
-}
-bool DestroyItemEntityEcs(entt::entity e, const char*) {
-    if (failPayment || !IsValidItem(e)) return false;
-    g_registry.destroy(e);
-    return true;
-}
-entt::entity GetInventoryItem(entt::entity owner, uint16_t cell) {
-    State(owner);
-    for (auto [e, item] : g_registry.view<ItemState>().each())
-        if (item.owner == owner && item.cell == cell) return e;
-    return entt::null;
-}
-entt::entity GetItem(entt::entity owner, TItemPos cell) { return GetInventoryItem(owner, cell.cell); }
-bool SetItemForceAttributeEcs(entt::entity e, int index, uint8_t, double value) {
-    Check(IsValidItem(e) && index >= 0 && index < ITEM_ATTRIBUTE_MAX_NUM, "invalid pet attribute write");
-    g_registry.get<ItemState>(e).attributes[index] = value;
-    return true;
-}
-void ModifyPoints(entt::entity e, bool add) {
-    Check(IsValidItem(e) && add, "pet buff used invalid item/removal path");
-    const auto& item = g_registry.get<ItemState>(e);
-    ++modifications;
-    for (const auto& apply : item.proto.aApplies)
-        if (apply.bType != APPLY_NONE) State(item.owner).petBonus += apply.lValue;
-    State(item.owner).petBonus += item.attributeBonus;
-}
-entt::entity GetWearItem(entt::entity owner, uint8_t slot) {
-    return slot == WEAR_COSTUME_MOUNT ? State(owner).wear : State(owner).skin;
-}
-}
+
 namespace MountSystem {
 bool IsHorseRiding(entt::entity e) { State(e); return false; }
 bool StopRiding(entt::entity) { throw std::runtime_error("unexpected horse riding"); }

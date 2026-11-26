@@ -1,3 +1,9 @@
+#include "TypedCostumeTransfer.hpp"
+#include "TypedShop.hpp"
+#include "TypedPrivateShops.hpp"
+#include "TypedDropRate.hpp"
+#include "TypedMoney.hpp"
+#include "TypedTrade.hpp"
 #include "../../item/TypedBooks.hpp"
 #include "../../item/TypedUniqueAccessories.hpp"
 #include "../../item/TypedCraft.hpp"
@@ -20,7 +26,7 @@
 #include "PlayerRuntimeSystem.hpp"
 #include "AffectSystem.hpp"
 #include "PointSystem.hpp"
-#include "InventorySystem.hpp"
+#include "PlayerItemActions.hpp"
 #include "SocialSystem.hpp"
 #include "QuestSystem.hpp"
 #include "NetworkSyncSystem.hpp"
@@ -59,7 +65,6 @@
 #include "../Registry.hpp"
 #include "../NetworkService.hpp"
 #include "../VIDRegistry.hpp"
-#include "ItemSystem.hpp"
 #include "../../core/utils.h"
 #include "../../core/config.h"
 #include "../../core/constants.h"
@@ -67,8 +72,6 @@
 #include "../../network/desc_manager.h"
 #include "../../entity/char.h"
 #include "../../entity/char_manager.h"
-#include "../../item/item.h"
-#include "../../item/item_manager.h"
 #include "../../item/ItemCatalogRuntime.hpp"
 #include "../../item/TypedDrops.hpp"
 #include "../../entity/mob_manager.h"
@@ -87,8 +90,6 @@
 #include "../../social/marriage.h"
 #include "../../world/arena.h"
 #include "../../world/regen.h"
-#include "../../social/exchange.h"
-#include "../../social/shop_manager.h"
 #include "../../core/dev_log.h"
 #include <Core/Logging.hpp>
 
@@ -1639,11 +1640,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 	case 20111:
 	case 20112:
 	case 20113:
-		if (ItemSystem::IsEquipUniqueItem(toEntity, 71115) || ItemSystem::IsEquipUniqueItem(toEntity, 71117) || ItemSystem::IsEquipUniqueItem(toEntity, 71119) ||
-			ItemSystem::IsEquipUniqueItem(toEntity, 71121))
-		{
-			rateFactor += 10;
-		}
+
 		break;
 
 	case 20114:
@@ -1658,8 +1655,6 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 	}
 
 	if (ecs::PlayerRuntime::GetPremiumRemainSeconds(toEntity, PREMIUM_EXP) > 0)
-		rateFactor += 50;
-	if (ItemSystem::IsEquipUniqueGroup(toEntity, UNIQUE_GROUP_RING_OF_EXP))
 		rateFactor += 50;
 	rateFactor += ecs::PointSystem::GetPrecise(toEntity, POINT_RAMADAN_CANDY_BONUS_EXP);
 	rateFactor += ecs::PointSystem::GetPrecise(toEntity, POINT_MALL_EXPBONUS);
@@ -1742,11 +1737,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 		case 20111:
 		case 20112:
 		case 20113:
-			if (ItemSystem::IsEquipUniqueItem(toEntity, 71115) || ItemSystem::IsEquipUniqueItem(toEntity, 71117) || ItemSystem::IsEquipUniqueItem(toEntity, 71119) ||
-				ItemSystem::IsEquipUniqueItem(toEntity, 71121))
-			{
-				iExp += iExp * 10 / 100;
-			}
+
 			break;
 
 		case 20114:
@@ -1767,10 +1758,7 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 			iExp += (iExp * 50 / 100);
 		}
 
-		if (ItemSystem::IsEquipUniqueGroup(toEntity, UNIQUE_GROUP_RING_OF_EXP) == true)
-		{
-			iExp += (iExp * 50 / 100);
-		}
+
 
 
 	}
@@ -2642,12 +2630,12 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 		}
 	}
 
-	ExchangeSystem::Cancel(victim);
+	CancelTypedTrade(victim);
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-	if (AttrTransfer_is_open(victim) == true)
+	if (HasTypedCostumeTransfer(victim) == true)
 	{
-		AttrTransfer_close(victim);
+		CloseTypedCostumeTransfer(victim);
 	}
 #endif
 
@@ -2657,9 +2645,9 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 
 	if (ecs::PlayerRuntime::IsPC(victim))
 	{
-		CShopManager::instance().StopShopping(victim);
+		CloseTypedShop(victim);
 		ecs::SocialSystem::CloseMyShop(victim);
-		ecs::SessionSystem::CloseSafebox(victim);
+        ecs::SessionSystem::SetSafeboxOpen(victim, false);
 	}
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
     if (castleClone && g_registry.valid(victim))
@@ -2914,7 +2902,7 @@ void DeathPenalty(entt::entity e, uint8_t bTown)
 
 	CloseTypedCraft(e);
 #ifdef __ATTR_TRANSFER_SYSTEM__
-	AttrTransfer_close(e);
+	CloseTypedCostumeTransfer(e);
 #endif
 
 	if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(e)) == true)
@@ -3298,7 +3286,7 @@ void Reward(entt::entity e, bool bItemDrop)
     // Native catalog drops are the only item reward path.
     double deltaPercent = 0;
     int randomRange = 0;
-    if (ITEM_MANAGER::instance().GetDropPct(e, attacker, deltaPercent, randomRange))
+    if (ComputeTypedDropRate(e, attacker, deltaPercent, randomRange))
         GiveTypedMobDrops(e, attacker, deltaPercent, randomRange);
     CombatSystem::ClearDamageLedger(e);
 }
@@ -3362,7 +3350,7 @@ void RewardGold(entt::entity e, entt::entity attacker)
 					gold += (gold * ecs::PointSystem::GetPrecise(attacker, POINT_MALL_GOLDBONUS) / 100);
 				}
 
-				ItemSystem::GiveGold(attacker, gold);
+				QueueTypedGold(attacker, gold);
 			}
 		}
 		else {
@@ -3374,8 +3362,7 @@ void RewardGold(entt::entity e, entt::entity attacker)
 
 			// ADD_PREMIUM
 			bool isAutoLoot =
-				(ecs::PlayerRuntime::GetPremiumRemainSeconds(attacker, PREMIUM_AUTOLOOT) > 0 ||
-					ItemSystem::IsEquipUniqueGroup(attacker, UNIQUE_GROUP_AUTOLOOT))
+				(ecs::PlayerRuntime::GetPremiumRemainSeconds(attacker, PREMIUM_AUTOLOOT) > 0)
 				? true : false; // 3
 			// END_OF_ADD_PREMIUM
 
@@ -3410,8 +3397,7 @@ void RewardGold(entt::entity e, entt::entity attacker)
 			iGoldPercent = iGoldPercent * CHARACTER_MANAGER::instance().GetMobGoldDropRate(attacker) / 100;
 
 			// ADD_PREMIUM
-			if (ecs::PlayerRuntime::GetPremiumRemainSeconds(attacker, PREMIUM_GOLD) > 0 ||
-				ItemSystem::IsEquipUniqueGroup(attacker, UNIQUE_GROUP_LUCKY_GOLD))
+			if (ecs::PlayerRuntime::GetPremiumRemainSeconds(attacker, PREMIUM_GOLD) > 0)
 				iGoldPercent += iGoldPercent;
 			// END_OF_ADD_PREMIUM
 
@@ -3489,7 +3475,7 @@ void RewardGold(entt::entity e, entt::entity attacker)
 						LOG_TRACE("Drop Money gold {} GoldMin {} GoldMax {}", iGold, (*ecs::PlayerRuntime::GetMobTable(e)).dwGoldMax, (*ecs::PlayerRuntime::GetMobTable(e)).dwGoldMax);
 					}
 
-					ItemSystem::GiveGold(attacker, iGold);
+					QueueTypedGold(attacker, iGold);
 					iTotalGold += iGold;
 				}
 			}
@@ -3508,7 +3494,7 @@ void RewardGold(entt::entity e, entt::entity attacker)
 						continue;
 					}
 
-					ItemSystem::GiveGold(attacker, iGold);
+					QueueTypedGold(attacker, iGold);
 					iTotalGold += iGold;
 
 				}
@@ -3544,11 +3530,11 @@ void RewardGold(entt::entity e, entt::entity attacker)
 						const int64_t splitGold = iGold / iSplitCount;
 						if (isAutoLoot)
 						{
-							ItemSystem::GiveGold(attacker, splitGold);
+							QueueTypedGold(attacker, splitGold);
 						}
 						else
 						{
-							ItemSystem::GiveGold(attacker, splitGold);
+							QueueTypedGold(attacker, splitGold);
 						}
 					}
 				}
@@ -3667,9 +3653,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 #ifdef DISABLE_DAMAGE_TYPE_NORMAL_RANGE_EVENT_MAP
 
 
-		const entt::entity weapon = CombatWearItem(
-			attacker, WEAR_WEAPON);
-		const TItemTable* weaponProto = ItemSystem::GetItemProto(weapon);
 		if (CombatWeaponSubtype(attacker) == WEAPON_BOW)
 		{
 
@@ -4942,69 +4925,9 @@ static int64_t CalcReferenceNormalHitDamage(entt::entity attacker, entt::entity 
 namespace CombatSystem {
 
 // The arrow and the bow a shot will spend, and the spending of them.
-int GetArrowAndBow(entt::entity e, entt::entity* ppkBow, entt::entity* ppkArrow, int iArrowCount)
+bool CanShootBow(entt::entity e)
 {
-    if (HasTypedEquipment(e))
-    {if(ppkBow)*ppkBow=entt::null;if(ppkArrow)*ppkArrow=entt::null;return CombatWeaponSubtype(e)==WEAPON_BOW && HasTypedBowAmmunition(e) ? iArrowCount : 0;}
-
-	const entt::entity bow = CombatWearItem(e, WEAR_WEAPON);
-	if (!ItemSystem::IsValidItem(bow))
-	{
-		return 0;
-	}
-
-	const TItemTable* bowProto = ItemSystem::GetItemProto(bow);
-	if (!bowProto || bowProto->bSubType != WEAPON_BOW)
-	{
-		return 0;
-	}
-
-	const entt::entity arrow = CombatWearItem(e, WEAR_ARROW);
-	if (!ItemSystem::IsValidItem(arrow) || ItemSystem::GetItemType(arrow) != ITEM_WEAPON)
-	{
-		return 0;
-	}
-
-	const TItemTable* arrowProto = ItemSystem::GetItemProto(arrow);
-	if (!arrowProto || arrowProto->bSubType != WEAPON_ARROW)
-	{
-		return 0;
-	}
-
-	iArrowCount = std::min(iArrowCount, static_cast<int>(ItemSystem::GetItemCount(arrow)));
-
-	*ppkBow = bow;
-	*ppkArrow = arrow;
-
-	return iArrowCount;
-}
-
-void UseArrow(entt::entity e, entt::entity pkArrow, uint32_t dwArrowCount)
-{
-    if (HasTypedEquipment(e)) return;
-
-	int iCount = ItemSystem::GetItemCount(pkArrow);
-	uint32_t dwVnum = ItemSystem::GetItemVnum(pkArrow);
-#if !defined(__INFINITE_ARROW__)
-	iCount = iCount - MIN(iCount, dwArrowCount);
-#endif
-	ItemSystem::SetItemCountEcs(pkArrow, iCount);
-
-	if (iCount == 0)
-	{
-		const entt::entity newArrow = ItemSystem::FindSpecifyItem(
-			e, dwVnum
-#ifdef ENABLE_EXTRA_INVENTORY
-			, false
-#endif
-		);
-
-		LOG_INFO("UseArrow : FindSpecifyItem {} entity {}", dwVnum,
-			static_cast<uint32_t>(newArrow));
-
-		if (ItemSystem::IsValidItem(newArrow))
-			ItemSystem::EquipItemEcs(e, newArrow);
-	}
+    return HasTypedEquipment(e) && CombatWeaponSubtype(e) == WEAPON_BOW && HasTypedBowAmmunition(e);
 }
 
 } // namespace CombatSystem
@@ -5051,7 +4974,6 @@ public:
 		}
 
         if(HasTypedEquipment(me) && CombatWeaponSubtype(me)==WEAPON_BOW && m_bType>1 && !SkillSystem::CheckSkillHit(me,m_bType,victim))return;
-		entt::entity pkBow = entt::null, pkArrow = entt::null;
         TypedBowProjectileScope projectile(me);
 
 		switch (m_bType)
@@ -5065,7 +4987,7 @@ public:
 				if (ecs::PlayerRuntime::GetJob(me) != JOB_ASSASSIN)
 					return;
 
-				if (0 == CombatSystem::GetArrowAndBow(me, &pkBow, &pkArrow))
+				if (0 == (CombatSystem::CanShootBow(me) ? 1 : 0))
 					return;
 
 				if (SkillSystem::GetSkillGroup(me) != 0)
@@ -5077,8 +4999,8 @@ public:
 						ecs::PointSystem::Change(me, POINT_SP, -5);
 					}
 
-				iDam = CalcArrowDamage(me, victim, pkBow, pkArrow);
-				CombatSystem::UseArrow(me, pkArrow, 1);
+				iDam = CalcArrowDamage(me, victim);
+
 
 #ifdef ENABLE_ANTICHEAT
 				if (IS_SPEED_HACK(me, victim, get_dword_time())) {
@@ -5157,7 +5079,7 @@ public:
 			int iUseArrow = 1;
 
 			{
-				if (iUseArrow == CombatSystem::GetArrowAndBow(me, &pkBow, &pkArrow, iUseArrow))
+				if (CombatSystem::CanShootBow(me))
 				{
 					ecs::MovementSystem::OnMove(me, true);
 					ecs::MovementSystem::OnMove(victim);
@@ -5166,7 +5088,7 @@ public:
 						CombatSystem::BeginFight(victim, me);
 
 					SkillSystem::ComputeSkill(m_me, m_bType, victim);
-					CombatSystem::UseArrow(me, pkArrow, iUseArrow);
+
 
 					if (CombatSystem::IsDead(victim))
 						break;
@@ -5183,7 +5105,7 @@ public:
 		{
 			int iUseArrow = 1;
 
-			if (iUseArrow == CombatSystem::GetArrowAndBow(me, &pkBow, &pkArrow, iUseArrow))
+			if (CombatSystem::CanShootBow(me))
 			{
 				ecs::MovementSystem::OnMove(me, true);
 				ecs::MovementSystem::OnMove(victim);
@@ -5193,7 +5115,7 @@ public:
 
 				LOG_INFO("{} kwankeyok {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
 				SkillSystem::ComputeSkill(m_me, m_bType, victim);
-				CombatSystem::UseArrow(me, pkArrow, iUseArrow);
+
 			}
 		}
 		break;
@@ -5201,7 +5123,7 @@ public:
 		case SKILL_GIGUNG:
 		{
 			int iUseArrow = 1;
-			if (iUseArrow == CombatSystem::GetArrowAndBow(me, &pkBow, &pkArrow, iUseArrow))
+			if (CombatSystem::CanShootBow(me))
 			{
 				ecs::MovementSystem::OnMove(me, true);
 				ecs::MovementSystem::OnMove(victim);
@@ -5211,7 +5133,7 @@ public:
 
 				LOG_INFO("{} gigung {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
 				SkillSystem::ComputeSkill(m_me, m_bType, victim);
-				CombatSystem::UseArrow(me, pkArrow, iUseArrow);
+
 			}
 		}
 
@@ -5219,7 +5141,7 @@ public:
 		case SKILL_HWAJO:
 		{
 			int iUseArrow = 1;
-			if (iUseArrow == CombatSystem::GetArrowAndBow(me, &pkBow, &pkArrow, iUseArrow))
+			if (CombatSystem::CanShootBow(me))
 			{
 				ecs::MovementSystem::OnMove(me, true);
 				ecs::MovementSystem::OnMove(victim);
@@ -5229,7 +5151,7 @@ public:
 
 				LOG_INFO("{} hwajo {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
 				SkillSystem::ComputeSkill(m_me, m_bType, victim);
-				CombatSystem::UseArrow(me, pkArrow, iUseArrow);
+
 			}
 		}
 
@@ -5238,7 +5160,7 @@ public:
 		case SKILL_HORSE_WILDATTACK_RANGE:
 		{
 			int iUseArrow = 1;
-			if (iUseArrow == CombatSystem::GetArrowAndBow(me, &pkBow, &pkArrow, iUseArrow))
+			if (CombatSystem::CanShootBow(me))
 			{
 				ecs::MovementSystem::OnMove(me, true);
 				ecs::MovementSystem::OnMove(victim);
@@ -5248,7 +5170,7 @@ public:
 
 				LOG_TRACE("{} horse_wildattack {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
 				SkillSystem::ComputeSkill(m_me, m_bType, victim);
-				CombatSystem::UseArrow(me, pkArrow, iUseArrow);
+
 			}
 		}
 
@@ -5619,10 +5541,10 @@ static int64_t CalcReferenceBowHitDamage(entt::entity attacker, entt::entity vic
 	entt::entity pkBow = entt::null;
 	entt::entity pkArrow = entt::null;
 
-	if (0 == CombatSystem::GetArrowAndBow(attacker, &pkBow, &pkArrow))
+	if (0 == (CombatSystem::CanShootBow(attacker) ? 1 : 0))
 		return 0;
 
-	int64_t dam = CalcArrowDamage(attacker, victim, pkBow, pkArrow);
+	int64_t dam = CalcArrowDamage(attacker, victim);
 	if (dam <= 0)
 		return 0;
 
@@ -5666,8 +5588,6 @@ static int64_t CalcReferenceBasicHitDamage(entt::entity attacker, entt::entity v
 
 	int64_t dam = 0;
 
-	const entt::entity weapon = CombatWearItem(
-		attacker, WEAR_WEAPON);
 	if (CombatWeaponSubtype(attacker) == WEAPON_BOW)
 		dam = CalcReferenceBowHitDamage(attacker, victim);
 	else
@@ -5692,8 +5612,6 @@ static int64_t CalcReferenceNormalHitDamage(entt::entity attacker, entt::entity 
 	if (dam <= 0)
 		return 0;
 
-	const entt::entity weapon = CombatWearItem(
-		attacker, WEAR_WEAPON);
 	if (HasCombatWeapon(attacker))
 	{
 		int32_t lValue = 0;

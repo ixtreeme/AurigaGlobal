@@ -1,127 +1,17 @@
 #pragma once
-
 #include <array>
 #include <cstdint>
-#include <entt/entity/entity.hpp>
-
 #include <common/tables.h>
 
-#include "../../core/typedef.h"
-#include "../../item/attr_transfer.h"
-#include "../../world/event.h"
-#include "item_components.hpp"
-
 namespace ecs {
-
-struct MainInventoryRuntimeComponent {
-    std::array<entt::entity, INVENTORY_AND_EQUIP_SLOT_MAX> items;
-    std::array<uint16_t, INVENTORY_AND_EQUIP_SLOT_MAX> itemGrid {};
-
-    MainInventoryRuntimeComponent() { items.fill(entt::null); }
-};
-
-// Set once the database item load for this player has been applied.
-struct ItemLoadState {
-    bool loaded { false };
-};
-
-// ENABLE_ANTICHEAT disconnects players dropping more than four items within 25 pulses.
-struct DropLimiter {
-    int32_t lastItemDropPulse { 0 };
-    int32_t itemDropCount { 0 };
-};
-
-#ifdef ENABLE_EXTRA_INVENTORY
-struct ExtraInventoryRuntimeComponent {
-    std::array<entt::entity, EXTRA_INVENTORY_MAX_NUM> items;
-    std::array<uint16_t, EXTRA_INVENTORY_MAX_NUM> itemGrid {};
-
-    ExtraInventoryRuntimeComponent() { items.fill(entt::null); }
-};
-#endif
-
-struct CubeWindowComponent {
-    std::array<entt::entity, 24> items;
-    entt::entity npc { entt::null };
-
-    CubeWindowComponent() { items.fill(entt::null); }
-};
-
-
-
-#ifdef __ATTR_TRANSFER_SYSTEM__
-struct AttrTransferWindowComponent {
-    std::array<entt::entity, MAX_ATTR_TRANSFER_SLOT> items;
-    std::array<int, MAX_ATTR_TRANSFER_SLOT> cells;
-    entt::entity npc { entt::null };
-    bool busy { false };
-
-    AttrTransferWindowComponent() { items.fill(entt::null); cells.fill(-1); }
-};
-#endif
-
-
-#ifdef ENABLE_SWITCHBOT
-struct SwitchbotRuntimeComponent {
-    std::array<entt::entity, SWITCHBOT_SLOT_COUNT> items;
-
-    SwitchbotRuntimeComponent() { items.fill(entt::null); }
-};
-
-// A player's switchbot job. It lives on its own registry-owned entity, not
-// on the character, because it outlives the character: it waits out a
-// same-core warp and moves to another core in the P2P packet.
-// CSwitchbotManager keeps the player-id index.
-struct SwitchbotState {
-    TSwitchbotTable table {};
-    LPEVENT switchEvent;
-    bool warping { false };
-};
-#endif
-
-struct GoldAmount { int64_t amount; };
-
-#ifdef ENABLE_ATTR_COSTUMES
-// Per-character dialog state. An invalid command clears the previous choice.
-struct CostumeAttributeSelection {
-    int rareSlot { 0 };
-};
-#endif
-
+struct ItemLoadState { bool loaded {false}; };
+struct GoldAmount { int64_t amount {0}; };
 struct QuickSlots {
     std::array<TQuickslot, QUICKSLOT_MAX_NUM> slots {};
-    uint64_t revision { 0 };
+    uint64_t revision {0};
 };
-
-// Authoritative state for one open safebox or mall window. The storage is a
-// registry-owned entity published by SafeboxRef on its owner. Items are
-// entities, the occupancy array replaces the legacy CGrid, and destroying is
-// the reentrancy guard for teardown. Operations revalidate the entity after
-// callbacks instead of keeping a shared_ptr alive; the operation count defers
-// owner-driven retirement until an in-flight operation has finished.
-struct SafeboxStorageComponent {
-    static constexpr int Width = 16;
-    static constexpr int MaxHeight = SAFEBOX_MAX_NUM / Width;
-
-    entt::entity owner { entt::null };
-    uint8_t windowMode { SAFEBOX };
-    int size { 0 };
-    bool destroying { false };
-    bool retirePending { false };
-    int operations { 0 };
-    std::array<entt::entity, SAFEBOX_MAX_NUM> items;
-    std::array<uint8_t, SAFEBOX_MAX_NUM> occupied {};
-
-    SafeboxStorageComponent() { items.fill(entt::null); }
-};
-
 struct SafeboxRef {
-    entt::entity safebox { entt::null };
-    entt::entity mall { entt::null };
-    int safeboxLoadTime { 0 };
-    bool isOpening { false };
-    bool closingSafebox { false };
-    bool closingMall { false };
+    int safeboxLoadTime {0};
+    bool isOpening {false};
 };
-
-} // namespace ecs
+}

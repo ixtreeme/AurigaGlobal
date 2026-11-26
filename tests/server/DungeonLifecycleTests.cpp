@@ -11,7 +11,6 @@
 #include "../../SRC/Server/GameServer/dungeon/Halloween2022Dungeon.h"
 #include "../../SRC/Server/GameServer/dungeon/VikingDungeon.h"
 #include "../../SRC/Server/GameServer/network/db.h"
-#include "../../SRC/Server/GameServer/item/item_manager.h"
 #include "../../SRC/Server/GameServer/item/ItemCatalogRuntime.hpp"
 #include "../../SRC/Server/GameServer/item/ItemStore.hpp"
 #include "../../SRC/Server/GameServer/item/TypedDungeonActions.hpp"
@@ -39,7 +38,6 @@
 #include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MovementSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ChatSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/QuestSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
@@ -360,29 +358,12 @@ DBManager testDbManager;
 void DBManager::Query(const char*, ...) {}
 void CAsyncSQL::ReturnQuery(const char*, void* data) { delete static_cast<CFuncQueryInfo*>(data); }
 MYSQL_ROW SQLResult::FetchRow() { return nullptr; }
-TItemTable* ITEM_MANAGER::GetTable(uint32_t) { return nullptr; }
-ITEM_MANAGER::ITEM_MANAGER() = default;
-ITEM_MANAGER::~ITEM_MANAGER() = default;
-ITEM_MANAGER testItemManager;
-entt::entity ITEM_MANAGER::CreateItem(uint32_t, uint32_t, uint32_t, bool, int, bool) { return entt::null; }
+
+
 int64_t quest::CQuestManager::GetEventFlag(const std::string& name) { return eventFlags[name]; }
 void quest::CQuestManager::SetEventFlag(const std::string& name, int64_t value) { eventFlags[name] = value; }
 
-namespace ItemSystem {
-int CountItem(entt::entity, uint32_t) { return 1; }
-bool RemoveSpecifyItemEcs(entt::entity, uint32_t, uint32_t, bool) { return true; }
-bool IsValidItem(entt::entity) { return false; }
-bool DestroyItemEntityEcs(entt::entity, const char*) { return true; }
-entt::entity AutoGiveItemEcs(entt::entity, uint32_t, uint32_t, int, bool, bool) {
-    if (!itemDeliverySucceeds) return entt::null;
-    ++rewardDeliveries;return g_registry.create();
-}
-uint32_t GetItemVnum(entt::entity) { return 0; }
-bool CanConsumeOwnedItem(entt::entity, entt::entity, uint32_t, ItemCostStorage) { return true; }
-bool ConsumeOwnedItemCosts(entt::entity, std::span<const ItemCost>) { return true; }
-bool PlaceItemOnGround(entt::entity, int, const PIXEL_POSITION&, int) { return true; }
-bool SetGroundOwnership(entt::entity, entt::entity, int) { return true; }
-}
+
 
 // Item-domain and SQL rules have their own tests. The controller fixture
 // publishes the same preflight plan with an immediately successful commit.

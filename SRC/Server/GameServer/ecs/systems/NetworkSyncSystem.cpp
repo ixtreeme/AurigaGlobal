@@ -16,21 +16,17 @@
 #include "../../core/buffer_manager.h"
 #include "../../network/desc.h"
 #include "../../guild/guild.h"
-#include "../../item/item.h"
 #include "../../entity/mob_manager.h"
 #include "../../core/packet.h"
 #include "../../social/party.h"
 #include "../../world/sectree.h"
 #include "../../dungeon/LostCastleDungeon.h"
 #include "../EntityFactory.hpp"
-#include "../ItemRegistry.hpp"
 #include "../NetworkService.hpp"
 #include "../Registry.hpp"
 #include "../components/appearance_components.hpp"
 #include "../components/combat_components.hpp"
 #include "../components/identity_components.hpp"
-#include "../components/item_components.hpp"
-#include "../components/item_proto_components.hpp"
 #include "../components/movement_components.hpp"
 #include "../components/pet_mount_components.hpp"
 #include "../components/session_components.hpp"
@@ -40,7 +36,6 @@
 #include "../components/status_components.hpp"
 #include "../components/transform_components.hpp"
 #include "../components/vital_components.hpp"
-#include "ItemSystem.hpp"
 #include "MountSystem.hpp"
 #include "PointSystem.hpp"
 #include "SocialSystem.hpp"
@@ -239,11 +234,9 @@ void MainCharacterPacket(entt::entity e)
     ecs::NetworkService::Send(e, &packet, sizeof(packet));
 }
 
-void SendItemBonusCatalog(entt::entity e);
 
 void PointsPacket(entt::entity e)
 {
-    SendItemBonusCatalog(e);
     TPacketGCPoints packet {};
     if (!BuildPointsPacket(g_registry, e, packet))
         return;
@@ -511,89 +504,13 @@ bool NetworkSyncSystem::BuildPointsPacket(entt::registry& reg, entt::entity sour
 }
 
 #ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
-std::string NetworkSyncSystem::GetItemOnTitlePrefix(entt::registry& reg, entt::entity source)
-{
-    if (!ecs::PlayerRuntime::IsPC(source))
-        return {};
 
-    const auto* playerID = reg.try_get<ecs::PlayerID>(source);
-    if (!playerID)
-        return {};
 
-    auto items = reg.view<ecs::ItemOwner, ecs::ItemEquipped, ecs::ItemPrototypeMeta, ecs::ItemProtoRef>();
-    for (const auto item : items) {
-        const auto& owner = items.get<ecs::ItemOwner>(item);
-        const auto& equipped = items.get<ecs::ItemEquipped>(item);
-        if (owner.ownerPID != playerID->pid || !equipped.equipped || equipped.slot != WEAR_BELT)
-            continue;
 
-        const auto& meta = items.get<ecs::ItemPrototypeMeta>(item);
-        if (meta.type != ITEM_BELT)
-            return {};
 
-        if (ItemSystem::GetItemValue(item, 5) != 1)
-            return {};
 
-        const auto& protoRef = items.get<ecs::ItemProtoRef>(item);
-        const char* protoName = protoRef.proto ? protoRef.proto->szName : nullptr;
-        if (!protoName || protoName[0] != '[')
-            return {};
 
-        const char* end = strchr(protoName, ']');
-        if (!end)
-            return {};
 
-        const int prefixLen = static_cast<int>(end - protoName) + 1;
-        if (prefixLen <= 0 || prefixLen > 24)
-            return {};
-
-        return std::string(protoName, prefixLen);
-    }
-
-    return {};
-}
-
-std::string NetworkSyncSystem::GetDisplayedNameWithItemOnTitle(entt::registry& reg, entt::entity source)
-{
-    const std::string prefix = GetItemOnTitlePrefix(reg, source);
-    const auto name = ecs::PlayerRuntime::GetName(source);
-    if (prefix.empty())
-        return std::string(name);
-
-    return prefix + std::string(name);
-}
-
-void NetworkSyncSystem::SendItemOnTitleNameToDesc(entt::registry& reg, entt::entity source, entt::entity recipient)
-{
-    TPacketGCItemOnTitleNameUpdate packet {};
-    packet.header = HEADER_GC_ITEM_ON_TITLE_NAME_UPDATE;
-    packet.dwVID = ecs::PlayerRuntime::GetPacketVID(source);
-
-    const std::string prefix = GetItemOnTitlePrefix(reg, source);
-    strlcpy(packet.name, prefix.c_str(), sizeof(packet.name));
-
-    ecs::NetworkService::Send(recipient, &packet, sizeof(packet));
-}
-
-void NetworkSyncSystem::UpdateItemOnTitleName(entt::registry& reg, entt::entity source, bool force)
-{
-    if (source == entt::null || !reg.valid(source))
-        return;
-
-    const std::string prefix = GetItemOnTitlePrefix(reg, source);
-    auto& cache = reg.get_or_emplace<ecs::ItemTitlePrefixCache>(source);
-    if (!force && cache.prefix == prefix)
-        return;
-
-    cache.prefix = prefix;
-
-    TPacketGCItemOnTitleNameUpdate packet {};
-    packet.header = HEADER_GC_ITEM_ON_TITLE_NAME_UPDATE;
-    packet.dwVID = ecs::PlayerRuntime::GetPacketVID(source);
-    strlcpy(packet.name, prefix.c_str(), sizeof(packet.name));
-
-    ecs::NetworkService::BroadcastToView(reg, source, &packet, sizeof(packet), false);
-}
 #endif
 
 entt::entity NetworkSyncSystem::FindCharacterInView(entt::registry& reg, entt::entity source, const char* name, bool findPCOnly)
@@ -737,144 +654,7 @@ void NetworkSyncSystem::SendConfirmWithMsg(entt::registry& reg, entt::entity rec
     ecs::NetworkService::Send(recipient, &packet, sizeof(packet));
 }
 
-namespace ecs::ItemNetworkSystem {
 
-entt::entity FindPlayerByPID(entt::registry& reg, uint32_t pid)
-{
-    if (pid == 0)
-        return entt::null;
-
-    auto players = reg.view<ecs::PlayerID>();
-    for (const auto player : players) {
-        const auto& playerID = players.get<ecs::PlayerID>(player);
-        if (playerID.pid == pid)
-            return player;
-    }
-
-    return entt::null;
-}
-
-bool EncodeItemGroundInsert(entt::registry& reg, entt::entity item, TPacketGCItemGroundAdd& packet)
-{
-    const auto* identity = reg.try_get<ecs::ItemIdentity>(item);
-    const auto* position = reg.try_get<ecs::ItemGroundPosition>(item);
-    if (!identity || !position)
-        return false;
-
-    packet = {};
-    packet.bHeader = HEADER_GC_ITEM_GROUND_ADD;
-    packet.x = position->x;
-    packet.y = position->y;
-    packet.z = position->z;
-    packet.dwVID = identity->vid;
-    packet.dwVnum = identity->vnum;
-    return true;
-}
-
-bool EncodeItemGroundRemove(entt::registry& reg, entt::entity item, TPacketGCItemGroundDel& packet)
-{
-    const auto* identity = reg.try_get<ecs::ItemIdentity>(item);
-    if (!identity)
-        return false;
-
-    packet = {};
-    packet.bHeader = HEADER_GC_ITEM_GROUND_DEL;
-    packet.dwVID = identity->vid;
-    return true;
-}
-
-bool EncodeItemUpdate(entt::registry& reg, entt::entity item, TPacketGCItemUpdate& packet)
-{
-    const auto* location = reg.try_get<ecs::ItemLocation>(item);
-    const auto* count = reg.try_get<ecs::ItemCount>(item);
-    const auto* sockets = reg.try_get<ecs::ItemSockets>(item);
-    const auto* attrs = reg.try_get<ecs::ItemAttributes>(item);
-    if (!location || !count || !sockets || !attrs)
-        return false;
-
-    packet = {};
-    packet.header = HEADER_GC_ITEM_UPDATE;
-    packet.Cell = TItemPos(location->window, location->cell);
-    packet.count = count->count;
-    std::copy(sockets->sockets.begin(), sockets->sockets.end(), packet.alSockets);
-    std::copy(attrs->attrs.begin(), attrs->attrs.end(), packet.aAttr);
-#ifdef ATTR_LOCK
-    const auto* locked = reg.try_get<ecs::ItemLockedAttribute>(item);
-    packet.lockedattr = locked ? locked->index : -1;
-#endif
-    return true;
-}
-
-bool EncodeItemUse(entt::registry& reg, entt::entity owner, entt::entity victim, entt::entity item, packet_item_use& packet)
-{
-    const auto* identity = reg.try_get<ecs::ItemIdentity>(item);
-    const auto* location = reg.try_get<ecs::ItemLocation>(item);
-    if (!identity || !location || identity->vnum == 0)
-        return false;
-
-    packet = {};
-    packet.header = HEADER_GC_ITEM_USE;
-    packet.ch_vid = ecs::PlayerRuntime::GetPacketVID(owner);
-    packet.victim_vid = ecs::PlayerRuntime::GetPacketVID(victim);
-    packet.Cell = TItemPos(location->window, location->cell);
-    packet.vnum = identity->vnum;
-    return true;
-}
-
-void SendItemInsert(entt::registry& reg, entt::entity item, entt::entity recipient)
-{
-    TPacketGCItemGroundAdd packet {};
-    if (!EncodeItemGroundInsert(reg, item, packet))
-        return;
-
-    ecs::NetworkService::Send(recipient, &packet, sizeof(packet));
-
-    const auto* ownership = reg.try_get<ecs::ItemOwnershipDisplay>(item);
-    const auto* identity = reg.try_get<ecs::ItemIdentity>(item);
-    if (!ownership || ownership->ownerName.empty() || !identity)
-        return;
-
-    TPacketGCItemOwnership ownershipPacket {};
-    ownershipPacket.bHeader = HEADER_GC_ITEM_OWNERSHIP;
-    ownershipPacket.dwVID = identity->vid;
-    strlcpy(ownershipPacket.szName, ownership->ownerName.c_str(), sizeof(ownershipPacket.szName));
-    ecs::NetworkService::Send(recipient, &ownershipPacket, sizeof(ownershipPacket));
-}
-
-void SendItemRemove(entt::registry& reg, entt::entity item, entt::entity recipient)
-{
-    TPacketGCItemGroundDel packet {};
-    if (!EncodeItemGroundRemove(reg, item, packet))
-        return;
-
-    ecs::NetworkService::Send(recipient, &packet, sizeof(packet));
-}
-
-void SendItemUpdate(entt::registry& reg, entt::entity item)
-{
-    const auto* owner = reg.try_get<ecs::ItemOwner>(item);
-    if (!owner)
-        return;
-
-    const auto* location = reg.try_get<ecs::ItemLocation>(item);
-    if (location && location->window == SWITCHBOT)
-        return;
-
-    const entt::entity ownerEntity = FindPlayerByPID(reg, owner->ownerPID);
-    if (ownerEntity == entt::null)
-        return;
-
-    TPacketGCItemUpdate packet {};
-    if (!EncodeItemUpdate(reg, item, packet))
-        return;
-
-    LOG_TRACE("UpdatePacket {} -> {}",
-        ItemSystem::GetItemName(item),
-        ecs::PlayerRuntime::GetName(ownerEntity).data());
-    ecs::NetworkService::Send(ownerEntity, &packet, sizeof(packet));
-}
-
-} // namespace ecs::ItemNetworkSystem
 
 
 

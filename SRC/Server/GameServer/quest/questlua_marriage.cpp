@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "../ecs/ResourceAdmission.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../item/ItemCatalogRuntime.hpp"
@@ -117,7 +117,7 @@ namespace quest
 		for (const auto actor : {initiator, partner})
 		{
 			if (actor == entt::null) continue;
-			if (!player::IsValid(actor) || !InventorySystem::CanHandleItems(actor) || g_registry.all_of<ecs::TypedItemBusy>(actor))
+			if (!player::IsValid(actor) || !PlayerItemActions::CanHandleItems(actor) || g_registry.all_of<ecs::TypedItemBusy>(actor))
 				return refuse();
 			const auto* login = g_registry.try_get<ecs::TypedItemLogin>(actor);
 			const auto* typed = g_registry.try_get<ecs::TypedItems>(actor);

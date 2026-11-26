@@ -2,6 +2,7 @@
 #include "../dungeon/DungeonUiEvents.hpp"
 #include "../dungeon/dungeon.h"
 #include "TypedItemOps.hpp"
+#include "TypedItemOperationSupport.hpp"
 #include "TypedQuestItems.hpp"
 #include "TypedMoney.hpp"
 #include "TypedPrivateShops.hpp"
@@ -24,7 +25,7 @@
 #include "../ecs/ResourceAdmission.hpp"
 #include "../ecs/services/VisibilityService.hpp"
 #include "../ecs/systems/ChatSystem.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
@@ -69,33 +70,15 @@ bool IS_SUMMONABLE_ZONE(int map_index);
 namespace
 {
 namespace items = auriga::item;
+using auriga::item::runtime::detail::ErrorText;
+using auriga::item::runtime::detail::NewOperationId;
+using auriga::item::runtime::detail::Engine;
 
-const char* ErrorText(items::ItemPersistenceError e)
-{
-	static const char* texts[] = { "érvénytelen tulajdonos", "érvénytelen tároló", "érvénytelen tárgyállapot", "nincs ilyen tárgy",
-		"ez a kategória még nem támogatott", "érvénytelen szint", "érvénytelen bónusz", "érvénytelen foglalat",
-		"nincs hely, vagy ütközik egy másik tárggyal", "érvénytelen művelet", "elavult munkamenet (lépj be újra)",
-		"érvénytelen változás", "érvénytelen pénztárca", "túl sok adat", "katalóguseltérés", "hash-hiba", "adatbázishiba",
-		"ütközés egy párhuzamos mentéssel", "a mentés eredménye ismeretlen", "nyugtaeltérés", "sérült tárolt adat", "nincs kiépítve", "a karakter nem felel meg a feltételeknek (szint, kaszt vagy nem)", "ez a tárgy nem dobható el vagy adható át" };
-	const auto code = static_cast<std::size_t>(e);
-	return code < std::size(texts) ? texts[code] : "ismeretlen hiba";
-}
 
-std::mt19937_64& Engine()
-{
-	static std::mt19937_64 engine { std::random_device {}() ^ (static_cast<std::uint64_t>(std::random_device {}()) << 32) };
-	return engine;
-}
 
-std::array<std::uint8_t, 16> NewOperationId()
-{
-	auto& engine = Engine();
-	std::array<std::uint8_t, 16> id {};
-	do
-		for (auto& byte : id) byte = static_cast<std::uint8_t>(engine());
-	while (std::ranges::all_of(id, [](auto b) { return b == 0; }));
-	return id;
-}
+
+
+
 
 void Tell(entt::entity character, const char* text)
 {
@@ -123,7 +106,7 @@ static std::expected<void, items::ItemMissionError> RequestTypedItemExchange(ent
 	const auto* quest = g_registry.try_get<ecs::QuestPCState>(character);
 	auto* desc = ecs::PlayerRuntime::GetDesc(character);
 	if (!catalog || !typed || !login || !quest || !quest->pc || inQuest!=quest->pc->IsRunning() ||
-		!desc || !desc->IsPhase(PHASE_GAME) || !InventorySystem::CanHandleItems(character))
+		!desc || !desc->IsPhase(PHASE_GAME) || !PlayerItemActions::CanHandleItems(character))
 		return std::unexpected(Error::Unavailable);
 
 	const auto fence = typed->state.fence;
@@ -555,7 +538,7 @@ void TypedQuestScript(entt::entity e,const std::string& text)
 }
 bool UtilityAdmitted(entt::entity e)
 {
-    if(CombatSystem::IsDead(e) || !InventorySystem::CanHandleItems(e) || g_registry.all_of<ecs::TypedItemBusy>(e) || ecs::SocialSystem::HasExchange(e) || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e) || ecs::SocialSystem::GetMyShop(e)!=entt::null || ecs::SocialSystem::GetShopOwner(e)!=entt::null)return false;
+    if(CombatSystem::IsDead(e) || !PlayerItemActions::CanHandleItems(e) || g_registry.all_of<ecs::TypedItemBusy>(e) || ecs::SocialSystem::HasExchange(e) || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e) || ecs::SocialSystem::GetMyShop(e)!=entt::null || ecs::SocialSystem::GetShopOwner(e)!=entt::null)return false;
     const auto* q=g_registry.try_get<ecs::QuestPCState>(e);const auto* f=g_registry.try_get<ecs::StatusFlags>(e);
     return (!q || !q->pc || !q->pc->IsRunning()) && (!f || (!f->isObserverMode && !f->isStunned));
 }
@@ -872,7 +855,7 @@ const char* RefineRefusal(entt::entity character)
 #endif
 	if (ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) ||
 		ecs::SocialSystem::GetShopOwner(character) != entt::null || ecs::SocialSystem::GetMyShop(character) != entt::null ||
-		ecs::SessionSystem::IsCubeOpen(character) || !InventorySystem::CanHandleItems(character))
+		ecs::SessionSystem::IsCubeOpen(character) || !PlayerItemActions::CanHandleItems(character))
 		return "előbb zárd be a nyitott ablakokat (csere, raktár, bolt, kocka, fejlesztés)";
 	const auto updated = quest::CQuestManager::instance().GetEventFlag("update_refine_time");
 	if (updated != 0 && get_global_time() < updated + 60 * 5)
@@ -1019,82 +1002,7 @@ bool HandleTypedItemRefinePacket(entt::entity character, const char* data)
 // new items' IDs come from the store's pool and are spent before the commit is
 // queued, so no other grant can take them meanwhile.
 
-std::expected<void, TypedGrantRefusal> RequestTypedItemGrant(entt::entity character, const items::ItemGrant& grant,
-	std::function<void(bool written)> done)
-{
-	if (!g_registry.valid(character))
-		return std::unexpected(TypedGrantRefusal::NotEnabled);
-	auto* typed = g_registry.try_get<ecs::TypedItems>(character);
-	const auto* login = g_registry.try_get<ecs::TypedItemLogin>(character);
-	const auto catalog = items::runtime::CurrentCatalog();
-	if (!typed || !login || !catalog)
-		return std::unexpected(TypedGrantRefusal::NotEnabled);
-	if (g_registry.all_of<ecs::TypedItemBusy>(character))
-		return std::unexpected(TypedGrantRefusal::Busy);
-	const auto* entry = catalog->Find(grant.key);
-	if (!entry || !grant.count)
-		return std::unexpected(TypedGrantRefusal::Invalid);
-	if(catalog->CurrencyMode(grant.key)==items::CurrencyTokenMode::GroundGold){if(grant.refinementLevel || grant.count!=1 || !grant.currencyAmount)return std::unexpected(TypedGrantRefusal::Invalid);return RequestTypedGoldCredit(character,*grant.currencyAmount,{},std::move(done));}
-	const std::uint32_t stack = entry->base.maxStack ? entry->base.maxStack : 1;
-	const std::size_t most = (std::size_t { grant.count } + stack - 1) / stack;
-	if (most > items::MaxItemCommitItems)
-		return std::unexpected(TypedGrantRefusal::Invalid);
-	const auto ids = items::runtime::PeekInstanceIds(most);
-	const auto& state = typed->state;
-	auto timedGrant=grant;if(!timedGrant.createdAtUtcMs)timedGrant.createdAtUtcMs=TypedItemEffectNow();
-	auto commit = items::MakeGrantCommit(*catalog, NewOperationId(), state.fence, state.storages, state.items, timedGrant, ids);
-	if (!commit)
-	{
-		switch (commit.error())
-		{
-		case items::ItemPersistenceError::InvalidPlacement: return std::unexpected(TypedGrantRefusal::NoRoom);
-		case items::ItemPersistenceError::LimitExceeded:
-			if (ids.size() < most) return std::unexpected(TypedGrantRefusal::NoIds);
-			return std::unexpected(TypedGrantRefusal::Invalid);
-		default: return std::unexpected(TypedGrantRefusal::Invalid);
-		}
-	}
-	items::runtime::SpendInstanceIds(static_cast<std::size_t>(std::ranges::count_if(commit->items, [](const items::ItemChange& c) { return !c.before; })));
-	const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(character);
-	const uint64_t token = login->token;
-	const auto dungeonRun=DungeonUi::Events::Context(character);
-	g_registry.emplace_or_replace<ecs::TypedItemBusy>(character);
-	const bool queued = items::runtime::RequestCommit(typed->state.fence.owner, typed->state.fence.sessionGeneration, std::move(*commit),
-		[pid, token, grant, dungeonRun, code = entry->base.contentCode, done = std::move(done)](items::runtime::CommitOutcome outcome) {
-			if(outcome.write)DungeonUi::Events::Loot(dungeonRun,pid,items::PackItemKey(grant.key),grant.refinementLevel,grant.count);
-			const entt::entity entity = CHARACTER_MANAGER::instance().FindEntityByPID(pid);
-			const auto* current = entity != entt::null && g_registry.valid(entity) ? g_registry.try_get<ecs::TypedItemLogin>(entity) : nullptr;
-			if (!current || current->token != token)
-			{
-				if (done) done(outcome.write.has_value()); // persistence outlives the login
-				return;
-			}
-			g_registry.remove<ecs::TypedItemBusy>(entity);
-			if (outcome.state)
-				g_registry.emplace_or_replace<ecs::TypedItems>(entity, std::move(*outcome.state));
-			else
-				LOG_ERROR("TypedItems: pid {} reload after a grant failed (error {})", pid, static_cast<int>(outcome.state.error()));
-			if (outcome.write)
-			{
-				LOG_INFO("TypedItems: pid {} received {} x{} (+{})", pid, code, grant.count, grant.refinementLevel);
-				ecs::ChatSystem::Send(entity, CHAT_TYPE_INFO, "Új tárgy: %s ×%u.", code.c_str(), static_cast<unsigned>(grant.count));
-			}
-			else
-			{
-				LOG_INFO("TypedItems: pid {} grant refused by the store (error {})", pid, static_cast<int>(outcome.write.error()));
-				ecs::ChatSystem::Send(entity, CHAT_TYPE_INFO, "A tárgy átadása nem sikerült: %s.", ErrorText(outcome.write.error()));
-			}
-			SendTypedInventory(entity);
-			if (done) done(outcome.write.has_value());
-			PumpTypedItemGrants(entity); // drops that waited for this answer
-		});
-	if (!queued)
-	{
-		g_registry.remove<ecs::TypedItemBusy>(character);
-		return std::unexpected(TypedGrantRefusal::NotEnabled);
-	}
-	return {};
-}
+
 
 namespace
 {

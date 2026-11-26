@@ -2,7 +2,6 @@
 #include "../pet/AccountCollectionSystem.hpp"
 #include "character_selection.h"
 #include <common/character_creation.h>
-#include "../item/item_manager.h"
 #include <Core/packet_string.h>
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
@@ -16,7 +15,6 @@
 #include "../ecs/systems/NetworkSyncSystem.hpp"
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/CharacterAccessors.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "constants.h"
 
 #include "config.h"
@@ -25,7 +23,6 @@
 #include "desc_client.h"
 #include "desc_manager.h"
 #include "char_interface.hpp"
-#include "item.h"
 #include "char_manager.h"
 #include "cmd.h"
 #include "buffer_manager.h"
@@ -51,7 +48,6 @@
 #include "MarkManager.h"
 #include <common/CommonDefines.h>
 #ifdef ENABLE_SWITCHBOT
-#include "new_switchbot.h"
 #endif
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 #endif
@@ -520,17 +516,6 @@ void CInputLogin::CharacterCreate(LPDESC d, const char* data)
 		d->Packet(&packFailure, sizeof(packFailure));
 		return;
 	}
-	if (hairAppearance != 0)
-	{
-		const auto* hair = ITEM_MANAGER::instance().GetTable(character_creation::HairItem(pinfo->job, hairAppearance));
-		const bool male = pinfo->job == 0 || pinfo->job == 2 || pinfo->job == 5 || pinfo->job == 7;
-		const uint32_t anti = (1u << (2 + pinfo->job % 4)) | (male ? ITEM_ANTIFLAG_MALE : ITEM_ANTIFLAG_FEMALE);
-		if (!hair || hair->bType != ITEM_COSTUME || hair->bSubType != COSTUME_HAIR || hair->alValues[3] != hairAppearance || (hair->dwAntiFlags & anti))
-		{
-			d->Packet(&packFailure, sizeof(packFailure));
-			return;
-		}
-	}
 	auto& initial = player_create_packet.player_table;
 	initial.skill_group = skillGroup;
 	initial.skill_point = character_creation::StartLevel;
@@ -730,7 +715,6 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	d->Packet(&p2, sizeof(p2));
 	ecs::PlayerRuntime::SendGreetMessage(ch);
 #ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
-	NetworkSyncSystem::UpdateItemOnTitleName(g_registry, ch, true);
 #endif
 #ifdef ENABLE_PVP_ADVANCED // If something is wrong and server is crashed or stopping when you was in duel.
 	int isDuel = ecs::QuestSystem::GetFlag(ch, CHECK_IS_FIGHT);
@@ -896,7 +880,6 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 
 
 #ifdef ENABLE_SWITCHBOT
-	CSwitchbotManager::Instance().EnterGame(d->GetEntity());
 #endif
 
 
@@ -912,7 +895,6 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	ecs::PlayerRuntime::GetDesc(ch)->Packet(&packet, sizeof(TPacketChangeLanguage));
 #endif
 #ifdef ENABLE_RUNE_SYSTEM
-	ecs::PlayerRuntime::SetPart(ch, PART_RUNE, ecs::PlayerRuntime::GetRuneEffect(ch));
 	NetworkSyncSystem::UpdatePacket(ch);
 	ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "rune_affect %lld", static_cast<long long>(ecs::QuestSystem::GetFlag(ch, "rune.hide_effect")));
 #endif

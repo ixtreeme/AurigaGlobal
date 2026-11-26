@@ -1,10 +1,12 @@
+#include "TypedCostumeTransfer.hpp"
+#include "TypedShop.hpp"
+#include "TypedPrivateShops.hpp"
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "input.h"
 #include "../ecs/Registry.hpp"
 #include "../ecs/systems/ChatSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/systems/MountSystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
@@ -30,7 +32,7 @@
 #include "BattleArena.h"
 #include "building.h"
 #include "../ecs/components/dirty_components.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
 #include "../ecs/systems/NetworkSyncSystem.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
@@ -48,85 +50,5 @@ void CInputMain::Warp(entt::entity character, const char * pcData)
 }
 
 #ifdef ENABLE_MAP_TELEPORTER
-void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* pPack)
-{
-// migrated from CHARACTER handler
-	if (ecs::PlayerRuntime::IsHack(character) || ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SessionSystem::IsCubeOpen(character) || ecs::SocialSystem::GetShop(character) != entt::null || ecs::SocialSystem::GetMyShop(character) != entt::null
-		)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 647, "");
-#endif
-		return;
-	}
 
-#ifdef __ATTR_TRANSFER_SYSTEM__
-	if (AttrTransfer_is_open(character))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 647, "");
-#endif
-		return;
-	}
-#endif
-
-
-	unsigned int iMapCode = pPack->iMapCode;
-	if(iMapCode <0 || iMapCode >= g_vecMapConf.size())
-		return;
-
-	TMapConfig& rConf = g_vecMapConf[iMapCode];
-
-	if(ecs::PointSystem::GetLevel(character) < rConf.iLevel)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 771, "%d", rConf.iLevel);
-#endif
-		return;
-	}
-
-	if(rConf.iLevelMax != 0 && ecs::PointSystem::GetLevel(character) > rConf.iLevelMax)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 772, "%d", rConf.iLevelMax);
-#endif
-		return;
-	}
-
-	if(ecs::PointSystem::GetGold(character) < rConf.price)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 773, "%lld", static_cast<long long>(rConf.price));
-#endif
-		return;
-	}
-
-	for (auto itemVnum : rConf.items)
-		if (ItemSystem::CountItem(character, itemVnum) == 0)
-			return;
-
-	ecs::PointSystem::Change(character, POINT_GOLD, -rConf.price);
-
-	for(auto itemVnum : rConf.items)
-		ItemSystem::RemoveSpecifyItemEcs(character, itemVnum);
-
-	// int iMapIndex = 0;
-
-	// iMapIndex = rConf.iMapIndex;
-
-	// PIXEL_POSITION pos;
-	// SECTREE_MANAGER::instance().GetRecallPositionByEmpire(iMapIndex, ecs::PlayerRuntime::GetEmpire(character), pos);
-
-	// ch->WarpSet(pos.x, pos.y);
-
-
-	int32_t coord_x = 0;
-	int32_t coord_y = 0;
-
-	coord_x = rConf.coord_x;
-	coord_y = rConf.coord_y;
-
-	ecs::MovementSystem::WarpSet(character, coord_x, coord_y);
-
-}
 #endif

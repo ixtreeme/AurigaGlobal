@@ -3,7 +3,6 @@
 
 #include "Registry.hpp"
 #include "components/identity_components.hpp"
-#include "components/item_components.hpp"
 
 #include <Core/Logging.hpp>
 
@@ -54,8 +53,6 @@ void AppendIdentity(std::string& out, entt::entity e)
         out += fmt::format(" pid={}", pid->pid);
     if (const auto* name = g_registry.try_get<ecs::PlayerName>(e); name && !name->value.empty())
         out += fmt::format(" '{}'", name->value);
-    if (const auto* item = g_registry.try_get<ecs::ItemIdentity>(e))
-        out += fmt::format(" item id={} vnum={}", item->id, item->vnum);
 
     if (g_registry.all_of<ecs::TagPC>(e))
         out += " PC";

@@ -1,9 +1,9 @@
+#include "TypedShop.hpp"
 #include "../../core/stdafx.h"
 #include "../components/skill_components.hpp"
 #include "../../item/TypedBooks.hpp"
 #include "../components/session_components.hpp"
-#include "../../social/exchange.h"
-#include "InventorySystem.hpp"
+#include "PlayerItemActions.hpp"
 #include <utility>
 #include "ViewSystem.hpp"
 #include "PointSystem.hpp"
@@ -54,7 +54,6 @@
 #include "../components/status_components.hpp"
 #include "../components/vital_components.hpp"
 #include "../../quest/questmanager.h"
-#include "../../item/safebox.h"
 #include "../../world/sectree.h"
 #include "../../world/sectree_manager.h"
 #include "../../social/shop.h"
@@ -75,7 +74,6 @@
 #include "../../dungeon/EasterDungeon.h"
 #endif
 #ifdef ENABLE_SWITCHBOT
-#include "../../social/new_switchbot.h"
 #include <Core/Logging.hpp>
 #include "CombatSystem.hpp"
 #include "MountSystem.hpp"
@@ -234,55 +232,16 @@ void SaveReal(entt::entity e)
 }
 
 // The safebox this character has open, if any.
-entt::entity GetSafebox(entt::entity e)
-{
-    return SafeboxSystem::Get(e, SAFEBOX);
-}
+
 
 // The item mall storage, which is a safebox with its own window.
-entt::entity GetMall(entt::entity e)
-{
-    return SafeboxSystem::Get(e, MALL);
-}
+
 
 // Closing the mall window.
-void CloseMall(entt::entity e)
-{
-    const auto owner = e;
-    if (SafeboxSystem::Get(owner, MALL) == entt::null) return;
-    SafeboxSystem::Close(owner, MALL);
-    if (!g_registry.valid(owner)) return;
 
-    ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "CloseMall");
-}
 
 // Closing the safebox window.
-void CloseSafebox(entt::entity e)
-{
-    const auto owner = e;
-    if (SafeboxSystem::Get(owner, SAFEBOX) == entt::null) return;
 
-    if (!ecs::PlayerRuntime::IsPC(e) || !ecs::PlayerRuntime::GetDesc(e))
-    {
-        LOG_ERROR("CloseSafebox skipped: invalid owner (name={} vid={} race={} ispc={} desc={})", ecs::PlayerRuntime::GetName(e).data(), ecs::PlayerRuntime::GetPacketVID(e), ecs::PlayerRuntime::GetRaceNum(e), ecs::PlayerRuntime::IsPC(e), static_cast<const void*>(ecs::PlayerRuntime::GetDesc(e)));
-
-        SafeboxSystem::Close(owner, SAFEBOX);
-        if (!g_registry.valid(owner)) return;
-        SetSafeboxLoading(owner, false);
-        return;
-    }
-
-    ecs::SessionSystem::SetSafeboxOpen(e, false);
-    SafeboxSystem::Close(owner, SAFEBOX);
-    if (!g_registry.valid(owner)) return;
-
-    ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "CloseSafebox");
-
-    ecs::SocialSystem::SetSafeboxLoadTime(e);
-    SetSafeboxLoading(e, false);
-
-    ecs::SessionSystem::Save(e);
-}
 
 // True between asking the database for a safebox and getting it back. This
 // was a CHARACTER flag beside SafeboxRef::isOpening, which nothing wrote.
@@ -416,7 +375,7 @@ void CreatePlayerProto(entt::entity e, TPlayerTable& tab)
     tab.sRandomSP = ecs::PointSystem::GetRandomSP(e);
 
     for (int i = 0; i < QUICKSLOT_MAX_NUM; ++i)
-        InventorySystem::GetQuickslot(e, i, tab.quickslot[i]);
+        PlayerItemActions::GetQuickslot(e, i, tab.quickslot[i]);
 
     const auto& mobile = ecs::PlayerRuntime::GetMobileAuth(e);
     if (!mobile.phone.empty() && mobile.code.empty())
@@ -465,7 +424,7 @@ void Disconnect(entt::entity e, const char* c_pszReason)
     const entt::entity currentShop = ecs::SocialSystem::GetShop(e);
     if (currentShop != entt::null)
     {
-        ShopSystem::RemoveGuest(currentShop, e);
+        CloseTypedShop(e);
         ecs::SocialSystem::SetShop(e, entt::null);
     }
 
@@ -527,8 +486,6 @@ void Disconnect(entt::entity e, const char* c_pszReason)
 
     quest::CQuestManager::instance().DisconnectPC(e);
 
-    CloseSafebox(e);
-    CloseMall(e);
 
     CPVPManager::instance().Disconnect(e);
     CTargetManager::instance().Logout(ecs::PlayerRuntime::GetPlayerID(e));
@@ -584,8 +541,7 @@ bool IsCubeOpen(entt::entity character)
     if (!g_registry.valid(character))
         return false;
     if (g_registry.all_of<ecs::TypedCraftActive>(character)) return true;
-    const auto* cube = g_registry.try_get<ecs::CubeWindowComponent>(character);
-    return cube && g_registry.valid(cube->npc);
+    return false;
 }
 
 } // namespace ecs::SessionSystem

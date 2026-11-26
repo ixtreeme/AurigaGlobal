@@ -24,7 +24,6 @@
 #include "dungeon.h"
 #include "cmd.h"
 #include "log.h"
-#include "item_manager.h" // item name from vnum
 #include "../ecs/EventDispatcher.hpp"
 #include "../ecs/events.hpp"
 #include "../ecs/CharacterAccessors.hpp"

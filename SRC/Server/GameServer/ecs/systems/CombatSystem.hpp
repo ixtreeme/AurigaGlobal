@@ -103,8 +103,6 @@ uint8_t GetMobBattleType(entt::entity e);
 // Nearest acceptable target within maxDistance, chosen from the sectree.
 entt::entity FindVictim(entt::entity self, int maxDistance);
 entt::entity GetNearestVictim(entt::entity attacker, entt::entity from);
-int GetArrowAndBow(entt::entity e, entt::entity* bow, entt::entity* arrow, int arrowCount = 1);
-void UseArrow(entt::entity e, entt::entity arrow, uint32_t count);
 bool Shoot(entt::entity e, uint8_t type);
 void FlyTarget(entt::entity e, uint32_t targetVID, int32_t x, int32_t y, uint8_t header);
 // The damage ledger, created on demand for a character being hurt.
@@ -168,3 +166,5 @@ bool IsDeathBlower(entt::entity e);
 #endif
 
 } // namespace CombatSystem
+
+namespace CombatSystem { bool CanShootBow(entt::entity); }

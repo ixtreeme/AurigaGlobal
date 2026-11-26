@@ -153,7 +153,6 @@ class CInputMain : public CInputProcessor
 
 
 #ifdef ENABLE_MAP_TELEPORTER
-		void		MapTeleporter(entt::entity character, TPacketCGMapTeleporter* pPack);
 #endif
 		void		Roulette(entt::entity character, const char* c_pData);
 #ifdef __SEND_TARGET_INFO__

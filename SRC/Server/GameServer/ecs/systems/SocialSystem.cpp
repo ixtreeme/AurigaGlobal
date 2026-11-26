@@ -1,3 +1,4 @@
+#include "TypedTrade.hpp"
 #include "../../core/stdafx.h"
 #include "PointSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
@@ -5,7 +6,7 @@
 
 #include "SocialSystem.hpp"
 #include "../../item/TypedPrivateShops.hpp"
-#include "InventorySystem.hpp"
+#include "PlayerItemActions.hpp"
 
 #include "../../combat/affect.h"
 #include "../../entity/char.h"
@@ -16,7 +17,6 @@
 #include "../../network/db.h"
 #include "../../guild/guild.h"
 #include "../../guild/guild_manager.h"
-#include "../../item/item.h"
 #include "../../core/log.h"
 #include "../../social/marriage.h"
 #include "../../social/wedding.h"
@@ -25,7 +25,6 @@
 #include "../../core/utils.h"
 #include "../../quest/questmanager.h"
 #include "../../social/banword.h"
-#include "../../social/shop_manager.h"
 #include "../../network/desc_client.h"
 #include "../../network/db.h"
 #include "../../core/log.h"
@@ -36,11 +35,10 @@
 #include "../components/character_runtime_components.hpp"
 #include "../components/social_components.hpp"
 #include "../components/status_components.hpp"
-#include "ItemSystem.hpp"
 #include "ViewSystem.hpp"
 #include "MountSystem.hpp"
 #include "AffectSystem.hpp"
-#include "InventorySystem.hpp"
+#include "PlayerItemActions.hpp"
 #include "SessionSystem.hpp"
 #include "ChatSystem.hpp"
 #include "NetworkSyncSystem.hpp"
@@ -175,15 +173,7 @@ CWarMap* GetWarMap(entt::entity e)
     return membership->warMap;
 }
 
-bool HasExchange(entt::entity e)
-{
-    if (g_registry.valid(e) && g_registry.all_of<ecs::TypedTradeActive>(e)) return true;
-    if (!g_registry.valid(e)) return false;
-    const auto* ref = g_registry.try_get<ecs::ExchangeRef>(e);
-    const auto* session = ref && g_registry.valid(ref->session)
-        ? g_registry.try_get<ecs::ExchangeSession>(ref->session) : nullptr;
-    return session && (session->offers[0].owner == e || session->offers[1].owner == e);
-}
+
 
 // When this character last opened a personal shop. The warp block reads it
 // to stop a player from shopping and then jumping away.
@@ -241,15 +231,9 @@ void SetRefineTime(entt::entity e)
 
 // The guild behind the refine NPC this character is standing at, if any. A
 // guild smith charges differently from the town one.
-CGuild* GetRefineGuild(entt::entity e)
-{
-    return GetGuild(InventorySystem::GetRefineNPC(e));
-}
 
-bool IsRefineThroughGuild(entt::entity e)
-{
-    return GetRefineGuild(e) != nullptr;
-}
+
+
 
 int GetLastBuyTime(entt::entity e)
 {
@@ -324,253 +308,9 @@ void SetKasmirPaket(entt::entity e, bool value)
 // Opening and closing a personal shop. m_pkMyShop and m_bKasmirPaketBaslik
 // were a mirror of ShopState::myShop and ::kasmirTitle, which the bodies
 // also wrote; the shop sign had the same shape and was fixed with them.
-void OpenMyShop(entt::entity e, const char* c_pszSign, TShopItemTable* pTable, uint8_t bItemCount
-#ifdef KASMIR_PAKET_SYSTEM
-    , uint32_t KasmirNpc, uint8_t KasmirBaslik
-#endif
-    )
-{
-	if (e == entt::null || !g_registry.valid(e))
-		return;
 
-	auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
-	if (e == entt::null || !g_registry.valid(e))
-		return;
-    if (!InventorySystem::CanHandleItems(e))
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 291, "");
-#endif
-        return;
-    }
 
-#ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-    if (ecs::PlayerRuntime::GetGMLevel(e) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(e) < GM_IMPLEMENTOR) {
-        return;
-    }
-#endif
 
-#ifndef ENABLE_OPEN_SHOP_WITH_ARMOR
-    if (GetPart(PART_MAIN) > 2)
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 503, "");
-#endif
-        return;
-    }
-#endif
-
-    if (shop.myShop != entt::null)
-    {
-        CloseMyShop(e);
-        return;
-    }
-
-    quest::PC* pPC = quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(e));
-    if (pPC->IsRunning())
-        return;
-
-    if (bItemCount == 0)
-        return;
-
-    int64_t nTotalMoney = 0;
-
-    for (int n = 0; n < bItemCount; ++n)
-    {
-        nTotalMoney += static_cast<int64_t>((pTable + n)->price);
-    }
-
-    nTotalMoney += static_cast<int64_t>(ecs::PointSystem::GetGold(e));
-
-    if (GOLD_MAX <= nTotalMoney)
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 226,
-            "%lld"
-
-            , static_cast<long long>(GOLD_MAX));
-#endif
-        return;
-    }
-
-    char szSign[SHOP_SIGN_MAX_LEN + 1];
-    strlcpy(szSign, c_pszSign, sizeof(szSign));
-
-    // The sign the viewers are told about lives in ShopState; nothing wrote it
-    // there, so EntityNetworkDispatch never had one to send.
-    auto& shopState = g_registry.get_or_emplace<ecs::ShopState>(e);
-    shopState.shopSign = szSign;
-
-    if (shopState.shopSign.length() == 0)
-        return;
-
-    if (CBanwordManager::instance().CheckString(shopState.shopSign.c_str(), shopState.shopSign.length()))
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 358, "");
-#endif
-        return;
-    }
-
-#ifdef KASMIR_PAKET_SYSTEM
-    shop.kasmirTitle = KasmirBaslik;
-    if (shop.kasmirTitle < 1 && shop.kasmirTitle > 6)
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 46, "");
-#endif
-        return;
-    }
-#endif
-
-    std::map<uint32_t, uint32_t> itemkind;
-
-    std::set<TItemPos> cont;
-    for (uint8_t i = 0; i < bItemCount; ++i)
-    {
-        if (cont.contains((pTable + i)->pos))
-        {
-            LOG_ERROR("MYSHOP: duplicate shop item detected! (name: {})", ecs::PlayerRuntime::GetName(e).data());
-            return;
-        }
-
-        const entt::entity item = ItemSystem::GetItem(e, (pTable + i)->pos);
-
-        if (ItemSystem::IsValidItem(item))
-        {
-            const TItemTable* item_table = ItemSystem::GetItemProto(item);
-
-            if (item_table && (IS_SET(item_table->dwAntiFlags, ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_MYSHOP)))
-            {
-#ifdef TEXTS_IMPROVEMENT
-                ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 416, "%s", ItemSystem::GetItemName(item));
-#endif
-                return;
-            }
-
-            if (ItemSystem::IsItemEquipped(item) == true)
-            {
-#ifdef TEXTS_IMPROVEMENT
-                ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 541, "");
-#endif
-                return;
-            }
-
-            if (ItemSystem::IsItemLocked(item))
-            {
-#ifdef TEXTS_IMPROVEMENT
-                ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 656, "");
-#endif
-                return;
-            }
-
-			const uint32_t itemCount = ItemSystem::GetItemCount(item);
-			if (itemCount == 0)
-			{
-				LOG_ERROR("MYSHOP: zero-count item rejected (name: {} item_id: {})",
-					ecs::PlayerRuntime::GetName(e).data(), ItemSystem::GetItemID(item));
-				return;
-			}
-			itemkind[ItemSystem::GetItemVnum(item)] = (pTable + i)->price / itemCount;
-        }
-
-        cont.insert((pTable + i)->pos);
-    }
-
-    if (ItemSystem::CountItem(e, 71049)
-#ifdef KASMIR_PAKET_SYSTEM
-        || ItemSystem::CountItem(e, 88901)
-#endif
-        ) {
-        TItemPriceListTable header;
-        memset(&header, 0, sizeof(TItemPriceListTable));
-
-        header.dwOwnerID = ecs::PlayerRuntime::GetPlayerID(e);
-        header.byCount = itemkind.size();
-
-        size_t idx = 0;
-        for (auto it = itemkind.begin(); it != itemkind.end(); ++it)
-        {
-            header.aPriceInfo[idx].dwVnum = it->first;
-            header.aPriceInfo[idx].dwPrice = it->second;
-            idx++;
-        }
-
-        db_clientdesc->DBPacket(HEADER_GD_MYSHOP_PRICELIST_UPDATE, ecs::PlayerRuntime::GetDesc(e)->GetHandle(), &header, sizeof(TItemPriceListTable));
-    }
-    else if (ItemSystem::CountItem(e, 50200))
-        ItemSystem::RemoveSpecifyItemEcs(e, 50200, 1);
-    else
-        return;
-
-    ExchangeSystem::Cancel(e);
-
-    TPacketGCShopSign p;
-
-    p.bHeader = HEADER_GC_SHOP_SIGN;
-    p.dwVID = ecs::PlayerRuntime::GetPacketVID(e);
-    strlcpy(p.szSign, c_pszSign, sizeof(p.szSign));
-#ifdef KASMIR_PAKET_SYSTEM
-    p.bShopKasmirTitle = KasmirBaslik;
-#endif
-    ViewSystem::PacketView(e, &p, sizeof(TPacketGCShopSign));
-
-    shop.myShop = CShopManager::instance().CreatePCShop(e, pTable, bItemCount);
-    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-
-    if (AffectSystem::IsPolymorphed(e) == true)
-    {
-        AffectSystem::RemoveAffect(e, AFFECT_POLYMORPH);
-    }
-
-    if (MountSystem::GetSummonedHorse(e) != entt::null)
-    {
-        MountSystem::SummonHorse(e, false, true);
-    }
-    else if (MountSystem::GetMountVnum(e))
-    {
-        AffectSystem::RemoveAffect(e, AFFECT_MOUNT);
-        AffectSystem::RemoveAffect(e, AFFECT_MOUNT_BONUS);
-    }
-
-    uint32_t dwNpcShop = 30000;
-#ifdef KASMIR_PAKET_SYSTEM
-    dwNpcShop = KasmirNpc >= 30000 && KasmirNpc <= 30007 ? KasmirNpc : 30000;
-#endif
-    AffectSystem::SetPolymorph(e, dwNpcShop, true);
-}
-
-void CloseMyShop(entt::entity e)
-{
-    if(CloseTypedPrivateShop(e))return;
-	if (e == entt::null || !g_registry.valid(e))
-		return;
-
-	auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
-    if (shop.myShop != entt::null)
-    {
-        g_registry.get_or_emplace<ecs::ShopState>(e).shopSign.clear();
-        CShopManager::instance().DestroyPCShop(e);
-        shop.myShop = entt::null;
-        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-#ifdef KASMIR_PAKET_SYSTEM
-        shop.kasmirTitle = 0;
-        ecs::SocialSystem::SetKasmirPaket(e, false);
-#endif
-
-        TPacketGCShopSign p;
-
-        p.bHeader = HEADER_GC_SHOP_SIGN;
-        p.dwVID = ecs::PlayerRuntime::GetPacketVID(e);
-#ifdef KASMIR_PAKET_SYSTEM
-        p.bShopKasmirTitle = shop.kasmirTitle;
-#endif
-        p.szSign[0] = '\0';
-
-        ViewSystem::PacketView(e, &p, sizeof(p));
-        AffectSystem::SetPolymorph(e, ecs::PlayerRuntime::GetJob(e), true);
-    }
-}
 
 entt::entity GetMyShop(entt::entity e)
 {
@@ -1404,3 +1144,9 @@ void SendGuildName(entt::entity viewer, CGuild* pGuild)
 
 } // namespace ecs::SocialSystem
 
+
+namespace ecs::SocialSystem {
+void CloseMyShop(entt::entity e) { CloseTypedPrivateShop(e); }
+}
+
+namespace ecs::SocialSystem { bool HasExchange(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<ecs::TypedTradeActive>(e); } }

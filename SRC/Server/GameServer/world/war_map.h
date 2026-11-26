@@ -66,7 +66,6 @@ class CWarMap
 		uint32_t	GetGuildOpponent(entt::entity ch);
 
 		uint32_t	GetWinnerGuild();
-		void	UsePotion(entt::entity ch, entt::entity item);
 
 		void	Draw();
 		void	Timeout();

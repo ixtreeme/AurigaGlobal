@@ -15,7 +15,7 @@
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../quest/questpc.h"
@@ -47,7 +47,7 @@ std::uint32_t Draw(std::uint32_t bound)
 bool Admitted(entt::entity e)
 {
     if(!g_registry.valid(e) || !ecs::PlayerRuntime::IsPC(e) || !g_registry.all_of<ecs::TypedItems,ecs::TypedItemLogin>(e) ||
-       CombatSystem::IsDead(e) || !InventorySystem::CanHandleItems(e) || ecs::SocialSystem::HasExchange(e) ||
+       CombatSystem::IsDead(e) || !PlayerItemActions::CanHandleItems(e) || ecs::SocialSystem::HasExchange(e) ||
        ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e) ||
        ecs::SocialSystem::GetMyShop(e)!=entt::null || ecs::SocialSystem::GetShopOwner(e)!=entt::null)return false;
     const auto* flags=g_registry.try_get<ecs::StatusFlags>(e);if(flags && (flags->isObserverMode || flags->isStunned))return false;

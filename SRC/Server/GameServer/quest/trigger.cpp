@@ -1,3 +1,6 @@
+#include "TypedCostumeTransfer.hpp"
+#include "TypedShop.hpp"
+#include "TypedPrivateShops.hpp"
 #include "stdafx.h"
 #include "../mission/TypedMissionRuntime.hpp"
 #include "../item/TypedStoneExchange.hpp"
@@ -21,13 +24,11 @@
 #include "questmanager.h"
 #include "target.h"
 #include "shop.h"
-#include "attr_transfer.h"
 #include "sectree_manager.h"
 #include "../ecs/services/SpatialService.hpp"
 #include "../ecs/AIHelpers.hpp"
 #include "battle.h"
 #include "affect.h"
-#include "shop_manager.h"
 #include "../ecs/AIHelpers.hpp"
 
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
@@ -160,7 +161,7 @@ void ecs::PlayerRuntime::OnClick(entt::entity target, entt::entity causer)
                     }
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-                    if (AttrTransfer_is_open(target))
+                    if (HasTypedCostumeTransfer(target))
                     {
 #ifdef TEXTS_IMPROVEMENT
                         ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
@@ -180,7 +181,7 @@ void ecs::PlayerRuntime::OnClick(entt::entity target, entt::entity causer)
                     }
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-                    if (AttrTransfer_is_open(causer))
+                    if (HasTypedCostumeTransfer(causer))
                     {
 #ifdef TEXTS_IMPROVEMENT
                         ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
@@ -198,7 +199,7 @@ void ecs::PlayerRuntime::OnClick(entt::entity target, entt::entity causer)
                     }
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-                    if (AttrTransfer_is_open(target))
+                    if (HasTypedCostumeTransfer(target))
                     {
 #ifdef TEXTS_IMPROVEMENT
                         ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 369, "%s", GetName(target).data());
@@ -211,7 +212,7 @@ void ecs::PlayerRuntime::OnClick(entt::entity target, entt::entity causer)
                 const entt::entity currentShop = ecs::SocialSystem::GetShop(causer);
                 if (currentShop != entt::null)
                 {
-                    ShopSystem::RemoveGuest(currentShop, causer);
+                    CloseTypedShop(causer);
                     if (!IsValid(target) || !IsPC(causer)) return;
                     ecs::SocialSystem::SetShop(causer, entt::null);
                 }
@@ -219,7 +220,7 @@ void ecs::PlayerRuntime::OnClick(entt::entity target, entt::entity causer)
                 if (!IsValid(target) || !IsPC(causer)) return;
                 const entt::entity myShop = ecs::SocialSystem::GetMyShop(target);
                 if (myShop != entt::null) {
-                    ShopSystem::AddGuest(myShop, causer, GetPacketVID(target), false);
+                    TryOpenTypedPrivateShop(causer, target);
                     if (IsValid(target) && IsPC(causer) && ecs::SocialSystem::GetShop(causer) == myShop &&
                         ecs::SocialSystem::GetMyShop(target) == myShop)
                         ecs::SocialSystem::SetShopOwner(causer, target);
@@ -261,7 +262,7 @@ void ecs::PlayerRuntime::OnClick(entt::entity target, entt::entity causer)
  */
 int OnClickShop(TRIGGERPARAM)
 {
-	CShopManager::instance().StartShopping(causer, ch);
+	TryOpenTypedShop(causer, ch);
 	return 1;
 }
 

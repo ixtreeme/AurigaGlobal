@@ -4,7 +4,6 @@
 #include "PointSystem.hpp"
 #include "CombatSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
-#include "ItemSystem.hpp"
 #include "MountSystem.hpp"
 #include "SkillSystem.hpp"
 #include "AffectSystem.hpp"
@@ -61,29 +60,7 @@ void ApplyAlignmentPoints(entt::entity e)
         if (bonuses[i][grade]) Change(e, types[i], bonuses[i][grade]);
 }
 
-void ApplyBeltPoints(entt::entity e)
-{
-    std::array<double, POINT_MAX_NUM> bonuses {};
-    std::unordered_set<entt::entity> seen;
-    for (int cell = BELT_INVENTORY_SLOT_START; cell < BELT_INVENTORY_SLOT_END; ++cell) {
-        const auto item = ItemSystem::GetInventoryItem(e, cell);
-        if (!ItemSystem::IsValidItem(item) || ItemSystem::GetItemOwner(item) != e ||
-            !seen.insert(item).second) continue;
-        const auto vnum = ItemSystem::GetItemVnum(item);
-        // Same enabled whitelist as before; the commented-out mount IDs
-        // never contributed here. Item attributes belong to mount storage.
-        if (vnum < 18000 || vnum > 18159) continue;
-        const auto* proto = ItemSystem::GetItemProto(item);
-        if (!proto) continue;
-        for (const auto apply : proto->aApplies) {
-            if (apply.bType == APPLY_NONE || apply.bType >= MAX_APPLY_NUM || !apply.lValue) continue;
-            const auto type = aApplyInfo[apply.bType].bPointType;
-            if (type != POINT_NONE && type < POINT_MAX_NUM) bonuses[type] += apply.lValue;
-        }
-    }
-    for (size_t type = 1; type < bonuses.size() && HasPointState(e); ++type)
-        if (bonuses[type]) Change(e, static_cast<uint8_t>(type), bonuses[type]);
-}
+
 } // namespace
 
 void Compute(entt::entity e)
@@ -120,7 +97,6 @@ void Compute(entt::entity e)
     std::fill(std::begin(g_registry.get<CharacterStatsComponent>(e).bonusFractionRaw),
         std::end(g_registry.get<CharacterStatsComponent>(e).bonusFractionRaw), 0);
     g_registry.get_or_emplace<SkillDamageBonus>(e).bySkill.clear();
-    ecs::PlayerRuntime::BuffOnAttr_ClearAll(e);
     if (!HasPointState(e)) return;
     ecs::PlayerRuntime::SetImmuneFlag(e, player ? 0 : mobImmune);
 
@@ -194,7 +170,6 @@ void Compute(entt::entity e)
             if (value > base) Change(e, type, value - base);
         }
     }
-    if (!HasTypedEquipment(e)) ApplyBeltPoints(e);
     if (!HasPointState(e)) return;
     ComputeBattlePoints(e);
     if (!HasPointState(e)) return;
@@ -205,19 +180,6 @@ void Compute(entt::entity e)
     ecs::PlayerRuntime::SetMaxStamina(e, EquipmentPointValue(e, POINT_MAX_STAMINA, maxStamina));
     if (!HasPointState(e)) return;
 
-    std::unordered_set<entt::entity> applied;
-    for (int slot = 0; slot < WEAR_MAX_NUM; ++slot) {
-        const auto item = CombatWearItem(e, slot);
-        if (!ItemSystem::IsValidItem(item) || ItemSystem::GetItemOwner(item) != e || !applied.insert(item).second) continue;
-#ifdef ENABLE_RUNE_SYSTEM
-        if (ItemSystem::IsRuneItem(item) && ItemSystem::GetItemSocket(item, 1) != 1) continue;
-#endif
-        const auto immune = ItemSystem::GetItemImmuneFlags(item);
-        ItemSystem::ModifyPoints(item, true);
-        if (!HasPointState(e)) return;
-        if (ItemSystem::IsValidItem(item) && ItemSystem::GetItemOwner(item) == e && ItemSystem::GetWearItem(e, slot) == item)
-            ecs::PlayerRuntime::SetImmuneFlag(e, ecs::PlayerRuntime::GetImmuneFlag(e) | immune);
-    }
 #ifdef ENABLE_EVENT_MANAGER
     CHARACTER_MANAGER::instance().CheckBonusEvent(e);
     if (!HasPointState(e)) return;

@@ -1,7 +1,6 @@
 #include "../../SRC/Server/GameServer/core/stdafx.h"
 #include "../../SRC/Server/GameServer/entity/char.h"
 #include "../../SRC/Server/GameServer/entity/char_manager.h"
-#include "../../SRC/Server/GameServer/item/item_manager.h"
 #include "../../SRC/Server/GameServer/core/config.h"
 #include "../../SRC/Server/GameServer/core/shutdown_manager.h"
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
@@ -21,7 +20,6 @@
 #include "../../SRC/Server/GameServer/ecs/systems/SessionSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/AISystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ViewSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
 #include <Core/Logging.hpp>
 #include <functional>
 #include <iostream>
@@ -269,16 +267,9 @@ entt::entity GetVictim(entt::entity e) {
     return victim;
 }
 }
-namespace ItemSystem {
-bool IsValidItem(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<ItemData>(e); }
-uint32_t GetItemVnum(entt::entity e) { return g_registry.get<ItemData>(e).vnum; }
-uint32_t GetItemCount(entt::entity e) { return g_registry.get<ItemData>(e).count; }
-}
-ITEM_MANAGER::ITEM_MANAGER() {}
-ITEM_MANAGER::~ITEM_MANAGER() {}
-entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t, bool, int, bool) {
-    ++creates; return rejectItem ? entt::null : Item(vnum, count);
-}
+
+
+
 CShutdownManager::CShutdownManager() {}
 CShutdownManager::~CShutdownManager() {}
 void CShutdownManager::Update() {}
@@ -386,10 +377,10 @@ entt::entity EntityFactory::CreateNPC(entt::registry&, const TMobTable&, int32_t
 entt::entity EntityFactory::CreateStone(entt::registry&, const TMobTable&, int32_t, int32_t, int32_t, uint32_t) { Unexpected(); }
 entt::entity ecs::SocialSystem::GetDungeon(entt::entity) { return entt::null; }
 void ecs::SocialSystem::SetDungeon(entt::entity, entt::entity) { Unexpected(); }
-void ItemSystem::AutoGiveItem(entt::entity, entt::entity, bool, bool) { Unexpected(); }
-const TItemTable* ItemSystem::GetItemProto(entt::entity) { Unexpected(); }
-bool ItemSystem::SetItemSocket(entt::entity, int, uint32_t, bool) { Unexpected(); }
-bool ItemSystem::SetItemForceAttributeEcs(entt::entity, int, uint8_t, double) { Unexpected(); }
+
+
+
+
 void CLIENT_DESC::DBPacketHeader(uint8_t, uint32_t, uint32_t) { Unexpected(); }
 void CLIENT_DESC::Packet(const void*, int) { Unexpected(); }
 
@@ -497,10 +488,14 @@ void DespawnChecks(CHARACTER_MANAGER& manager) {
 int main() {
     try {
         CHARACTER_MANAGER manager;
-        ITEM_MANAGER items;
+
         CShutdownManager shutdown;
         DespawnChecks(manager); LookupChecks(manager); DestroyChecks(manager); ShutdownChecks(manager); SaveChecks(manager); UpdateChecks(manager);
         Reset(manager);
         std::cout << "Character manager checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }
+
+// This fixture has no active soul strike or store-catalog session.
+bool DeferTypedSoulDestroy(entt::entity) { return false; }
+void SendTypedItemShopCatalog(entt::entity) {}

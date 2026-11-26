@@ -11,7 +11,7 @@
 #include "../ecs/components/status_components.hpp"
 #include "../ecs/components/quest_components.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
@@ -41,7 +41,7 @@ std::uint64_t Nonce(){std::uint64_t v=0;if(RAND_bytes(reinterpret_cast<unsigned 
 entt::entity Current(std::uint32_t pid,std::uint64_t token){const auto e=CHARACTER_MANAGER::instance().FindEntityByPID(pid);const auto* login=g_registry.valid(e)?g_registry.try_get<ecs::TypedItemLogin>(e):nullptr;return login && login->token==token?e:entt::null;}
 bool Live(entt::entity e){auto* d=g_registry.valid(e)?ecs::PlayerRuntime::GetDesc(e):nullptr;return d && d->IsPhase(PHASE_GAME) && ecs::PlayerRuntime::IsPC(e) && !CombatSystem::IsDead(e) && !ecs::PlayerRuntime::IsObserverMode(e) && g_registry.all_of<ecs::TypedItems,ecs::TypedItemLogin>(e);}
 bool Admitted(entt::entity e){
- if(!Live(e) || !InventorySystem::CanHandleItems(e) || ecs::SocialSystem::HasExchange(e) || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e))return false;
+ if(!Live(e) || !PlayerItemActions::CanHandleItems(e) || ecs::SocialSystem::HasExchange(e) || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e))return false;
  const auto* q=g_registry.try_get<ecs::QuestPCState>(e);const auto* f=g_registry.try_get<ecs::StatusFlags>(e);if(!q || !q->pc || q->pc->IsRunning() || f && f->isStunned)return false;
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
  if(ecs::PlayerRuntime::GetGMLevel(e)>GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(e)<GM_IMPLEMENTOR)return false;

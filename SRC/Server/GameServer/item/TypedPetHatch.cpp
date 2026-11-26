@@ -13,7 +13,7 @@
 #include "../ecs/components/quest_components.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
@@ -166,7 +166,7 @@ bool Admitted(entt::entity entity)
     if (gm > GM_PLAYER && gm < GM_IMPLEMENTOR) return false;
 #endif
     const auto* quest = g_registry.try_get<ecs::QuestPCState>(entity);
-    return quest && quest->pc && !quest->pc->IsRunning() && InventorySystem::CanHandleItems(entity)
+    return quest && quest->pc && !quest->pc->IsRunning() && PlayerItemActions::CanHandleItems(entity)
         && !CombatSystem::IsDead(entity) && !CombatSystem::IsStun(entity)
         && !ecs::PlayerRuntime::IsObserverMode(entity) && !AffectSystem::IsPolymorphed(entity)
         && !ecs::SocialSystem::HasExchange(entity) && !ecs::SessionSystem::IsSafeboxOpen(entity)

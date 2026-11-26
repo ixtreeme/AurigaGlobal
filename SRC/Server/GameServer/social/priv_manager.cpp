@@ -4,7 +4,6 @@
 #include <common/time_64.h>
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "../ecs/Registry.hpp"
 #include "constants.h"
 #include "priv_manager.h"
@@ -213,7 +212,7 @@ int CPrivManager::GetPriv(entt::entity character, uint8_t type)
 		return 0;
 	int val_ch = GetPrivByCharacter(ecs::PlayerRuntime::GetPlayerID(character), type);
 
-	if (val_ch < 0 && !ItemSystem::IsEquipUniqueItem(character, UNIQUE_ITEM_NO_BAD_LUCK_EFFECT))
+	if (val_ch < 0)
 		return val_ch;
 	else
 	{

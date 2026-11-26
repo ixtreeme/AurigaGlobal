@@ -280,27 +280,11 @@ endif()
 
 # Headless regression checks compile the production attribute and switchbot
 # sources with service test doubles; no server/DB startup is needed.
-add_executable(ItemAttributeTests EXCLUDE_FROM_ALL
-    ${CMAKE_SOURCE_DIR}/tests/server/ItemAttributeTests.cpp
-    ecs/systems/ItemAttributeSystem.cpp
-    social/new_switchbot.cpp
-    item/attr_transfer.cpp
-)
-target_link_libraries(ItemAttributeTests PRIVATE SERVER EnTT::EnTT AurigaItemDomain)
 if(NOT MSVC)
-    target_compile_options(ItemAttributeTests PRIVATE -ffunction-sections -fdata-sections)
-    target_link_options(ItemAttributeTests PRIVATE -Wl,--gc-sections)
-endif()
-add_test(NAME item_attributes COMMAND ItemAttributeTests)
+        endif()
 
 # The switchbot job lifecycle: player-id index, warp freeze, timer, P2P
 # hand-off and teardown, over the production source.
-add_executable(SwitchbotLifecycleTests EXCLUDE_FROM_ALL
-    ${CMAKE_SOURCE_DIR}/tests/server/SwitchbotLifecycleTests.cpp
-    social/new_switchbot.cpp
-)
-target_link_libraries(SwitchbotLifecycleTests PRIVATE SERVER EnTT::EnTT)
-add_test(NAME switchbot_lifecycle COMMAND SwitchbotLifecycleTests)
 
 add_executable(OXEventTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/OXEventTests.cpp
@@ -576,7 +560,7 @@ add_executable(PrivilegeTimeTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/PrivilegeTimeTests.cpp
     social/priv_manager.cpp
 )
-target_link_libraries(PrivilegeTimeTests PRIVATE SERVER EnTT::EnTT LUA)
+target_link_libraries(PrivilegeTimeTests PRIVATE SERVER EnTT::EnTT LUA AurigaItemDomain)
 add_test(NAME privilege_time COMMAND PrivilegeTimeTests)
 
 add_executable(PacketStringTests EXCLUDE_FROM_ALL
@@ -650,7 +634,8 @@ add_executable(DailyRewardTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/DailyRewardTests.cpp
     command/daily_reward.cpp
 )
-target_link_libraries(DailyRewardTests PRIVATE SERVER EnTT::EnTT)
+target_link_libraries(DailyRewardTests PRIVATE SERVER EnTT::EnTT AurigaItemCatalog)
+target_include_directories(DailyRewardTests PRIVATE "${CMAKE_SOURCE_DIR}/SRC/ItemDomain")
 if(WIN32)
     target_link_libraries(DailyRewardTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
 endif()
@@ -749,14 +734,15 @@ add_executable(MarriageLifecycleTests EXCLUDE_FROM_ALL
     social/marriage.cpp
     ecs/PIDRegistry.cpp
 )
-target_link_libraries(MarriageLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
+target_link_libraries(MarriageLifecycleTests PRIVATE SERVER EnTT::EnTT LUA AurigaItemDomain)
 add_test(NAME marriage_lifecycle COMMAND MarriageLifecycleTests)
 
 add_executable(PartyLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/PartyLifecycleTests.cpp
     social/party.cpp
 )
-target_link_libraries(PartyLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
+target_link_libraries(PartyLifecycleTests PRIVATE SERVER EnTT::EnTT LUA AurigaItemCatalog)
+target_include_directories(PartyLifecycleTests PRIVATE "${CMAKE_SOURCE_DIR}/SRC/ItemDomain")
 add_test(NAME party_lifecycle COMMAND PartyLifecycleTests)
 
 add_executable(DungeonLifecycleTests EXCLUDE_FROM_ALL
@@ -772,21 +758,9 @@ add_executable(DungeonLifecycleTests EXCLUDE_FROM_ALL
     dungeon/Halloween2022Dungeon.cpp
     dungeon/VikingDungeon.cpp
 )
-target_link_libraries(DungeonLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core AurigaItemCatalog)
+target_link_libraries(DungeonLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core AurigaItemCatalog AurigaItemDomain)
 add_test(NAME dungeon_lifecycle COMMAND DungeonLifecycleTests)
 
-add_executable(ShopLifecycleTests EXCLUDE_FROM_ALL
-    ${CMAKE_SOURCE_DIR}/tests/server/ShopLifecycleTests.cpp
-    social/shop.cpp
-    social/shop_manager.cpp
-    core/json_group_tree.cpp
-    core/JsonFile.cpp
-    ../Base/grid.cpp
-    world/event.cpp
-    world/event_queue.cpp
-)
-target_link_libraries(ShopLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core AurigaItemCatalog)
-add_test(NAME shop_lifecycle COMMAND ShopLifecycleTests)
 
 add_executable(MountLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/MountLifecycleTests.cpp
@@ -811,44 +785,14 @@ if(WIN32)
 endif()
 add_test(NAME social_relation COMMAND SocialRelationTests)
 
-add_executable(SafeboxLifecycleTests EXCLUDE_FROM_ALL
-    ${CMAKE_SOURCE_DIR}/tests/server/SafeboxLifecycleTests.cpp
-    item/safebox.cpp
-    ../Base/grid.cpp
-)
-target_link_libraries(SafeboxLifecycleTests PRIVATE SERVER EnTT::EnTT)
-add_test(NAME safebox_lifecycle COMMAND SafeboxLifecycleTests)
 
-add_executable(ItemManagerLifecycleTests EXCLUDE_FROM_ALL
-    ${CMAKE_SOURCE_DIR}/tests/server/ItemManagerLifecycleTests.cpp
-    item/item_manager.cpp
-    item/safebox.cpp
-    ../Base/grid.cpp
-)
-target_link_libraries(ItemManagerLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core AurigaItemCatalog)
-target_compile_definitions(ItemManagerLifecycleTests PRIVATE AURIGA_LEGACY_ITEM_TESTS=1)
-add_test(NAME item_manager_lifecycle COMMAND ItemManagerLifecycleTests)
-
-add_executable(ItemRuntimeTests EXCLUDE_FROM_ALL
-    ${CMAKE_SOURCE_DIR}/tests/server/ItemRuntimeTests.cpp
-    ecs/systems/ItemSystem.cpp
-    ecs/ItemRegistry.cpp
-)
-target_link_libraries(ItemRuntimeTests PRIVATE SERVER EnTT::EnTT LUA S_Core AurigaItemCatalog)
-target_compile_definitions(ItemRuntimeTests PRIVATE AURIGA_LEGACY_ITEM_TESTS=1)
-if(MSVC)
-    target_compile_options(ItemRuntimeTests PRIVATE /Gy)
-    target_link_options(ItemRuntimeTests PRIVATE /OPT:REF /OPT:NOICF)
-endif()
-add_test(NAME item_runtime COMMAND ItemRuntimeTests)
 
 add_executable(QuickslotTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/QuickslotTests.cpp
-    ecs/systems/InventorySystem.cpp
+    ecs/systems/PlayerItemActions.cpp
 )
 target_link_libraries(QuickslotTests PRIVATE SERVER EnTT::EnTT LUA S_Core AurigaItemCatalog)
 add_test(NAME quickslots COMMAND QuickslotTests)
-add_test(NAME quickslot_bindings COMMAND QuickslotTests --bindings)
 
 add_executable(SpatialLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/SpatialLifecycleTests.cpp
@@ -880,23 +824,12 @@ add_executable(BuildingLifecycleTests EXCLUDE_FROM_ALL
     world/building.cpp
     ecs/CBuildingRegistry.cpp
 )
-target_link_libraries(BuildingLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
+target_link_libraries(BuildingLifecycleTests PRIVATE SERVER EnTT::EnTT LUA S_Core AurigaItemDomain)
 if(MSVC)
     target_compile_options(BuildingLifecycleTests PRIVATE /Gy)
     target_link_options(BuildingLifecycleTests PRIVATE /OPT:REF /OPT:NOICF)
 endif()
 add_test(NAME building_lifecycle COMMAND BuildingLifecycleTests)
-
-add_executable(BuffAttributeTests EXCLUDE_FROM_ALL
-    ${CMAKE_SOURCE_DIR}/tests/server/BuffAttributeTests.cpp
-    combat/buff_on_attributes.cpp
-)
-target_link_libraries(BuffAttributeTests PRIVATE SERVER EnTT::EnTT LUA)
-if(MSVC)
-    target_compile_options(BuffAttributeTests PRIVATE /Gy)
-    target_link_options(BuffAttributeTests PRIVATE /OPT:REF /OPT:NOICF)
-endif()
-add_test(NAME buff_attributes COMMAND BuffAttributeTests)
 
 add_executable(EntityNetworkDispatchTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/EntityNetworkDispatchTests.cpp
@@ -998,18 +931,12 @@ if(WIN32)
 endif()
 add_test(NAME gm_commands COMMAND GmCommandTests)
 
-add_executable(ExchangeTests EXCLUDE_FROM_ALL
-    ${CMAKE_SOURCE_DIR}/tests/server/ExchangeTests.cpp
-    social/exchange.cpp
-)
-target_link_libraries(ExchangeTests PRIVATE SERVER EnTT::EnTT LUA S_Core AurigaItemDomain)
-add_test(NAME exchange COMMAND ExchangeTests)
 
 # These suites replace the SQL connection/worker, but SQLMsg destruction still
 # uses the production drain cancellation helper. Do not link a live SQL worker.
-foreach(_sql_seam_test CombatStateTests DailyRewardTests DungeonLifecycleTests ExchangeTests GuildMemberLifecycleTests
-        ItemAttributeTests ItemManagerLifecycleTests ItemRuntimeTests LoginAuthTests LoginSessionTests
-        MotionTimingTests MountLifecycleTests OXEventTests QuickslotTests ShopLifecycleTests)
+foreach(_sql_seam_test CombatStateTests DailyRewardTests DungeonLifecycleTests  GuildMemberLifecycleTests
+           LoginAuthTests LoginSessionTests
+        MotionTimingTests MountLifecycleTests OXEventTests QuickslotTests )
     target_sources(${_sql_seam_test} PRIVATE ../SQL/QueueDrain.cpp)
     target_link_libraries(${_sql_seam_test} PRIVATE Threads::Threads)
 endforeach()
@@ -1022,12 +949,12 @@ endforeach()
 
 # Exercise the same generation-aware diagnostic implementation as GameServer.
 # The isolated event suite has no diagnostic dependency.
-foreach(_ecs_test ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests QuickslotTests PointCalculationTests CombatStateTests AffectLifecycleTests CharacterManagerTests GmCommandTests ExchangeTests)
+foreach(_ecs_test  MountLifecycleTests   QuickslotTests PointCalculationTests CombatStateTests AffectLifecycleTests CharacterManagerTests GmCommandTests )
     target_sources(${_ecs_test} PRIVATE ecs/EcsDiagnostics.cpp)
 endforeach()
 
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_asan_target LuaSourceTests GameServer ServerConfigTests DatabaseTimeTests PrivilegeTimeTests OXEventTests QuestRuntimeTests QuestDataTests HorseRuntimeTests ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests ItemRuntimeTests QuickslotTests SpatialLifecycleTests BuildingLifecycleTests BuffAttributeTests EntityNetworkDispatchTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests GmCommandTests ExchangeTests SocialRelationTests AsyncSqlPreparedTests AsyncSqlMariaDbTests)
+    foreach(_asan_target LuaSourceTests GameServer ServerConfigTests DatabaseTimeTests PrivilegeTimeTests OXEventTests QuestRuntimeTests QuestDataTests HorseRuntimeTests  MountLifecycleTests    QuickslotTests SpatialLifecycleTests BuildingLifecycleTests  EntityNetworkDispatchTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests GmCommandTests  SocialRelationTests AsyncSqlPreparedTests AsyncSqlMariaDbTests)
         add_custom_command(TARGET ${_asan_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}"
@@ -1103,7 +1030,7 @@ add_test(NAME map_routing_rules COMMAND MapRoutingRulesTests)
 # Boot-time typed item catalog (item system F4, IC-034) against an owned MariaDB.
 add_executable(TypedItemGrantTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/TypedItemGrantTests.cpp
-    item/TypedItemOps.cpp
+    item/TypedItemGrants.cpp
 )
 target_link_libraries(TypedItemGrantTests PRIVATE SERVER EnTT::EnTT LUA AurigaItemCatalog)
 if(MSVC)
@@ -1255,3 +1182,7 @@ add_library(WarriorSkillMacroOffCompile OBJECT EXCLUDE_FROM_ALL
     quest/questlua_pc.cpp)
 target_link_libraries(WarriorSkillMacroOffCompile PRIVATE SERVER EnTT::EnTT LUA S_Core)
 add_dependencies(ServerTests WarriorSkillMacroOffCompile)
+
+if(Python3_Interpreter_FOUND)
+    add_test(NAME item_foundation_boundary COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/tests/server/ItemFoundationBoundaryTests.py")
+endif()

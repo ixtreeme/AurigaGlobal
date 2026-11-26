@@ -14,7 +14,7 @@
 #include "../ecs/systems/AffectSystem.hpp"
 #include "../ecs/systems/ChatSystem.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/MountSystem.hpp"
 #include "../ecs/systems/ViewSystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
@@ -188,7 +188,7 @@ std::uint32_t RidingRace(const item::ItemCatalog& catalog,const item::ItemCompan
 
 bool CanSummonFromBag(entt::entity owner)
 {
-    return InventorySystem::CanHandleItems(owner) && !CombatSystem::IsStun(owner)
+    return PlayerItemActions::CanHandleItems(owner) && !CombatSystem::IsStun(owner)
         && !ecs::SocialSystem::HasExchange(owner) && !ecs::SessionSystem::IsSafeboxOpen(owner)
         && !ecs::SessionSystem::IsCubeOpen(owner) && ecs::SocialSystem::GetShopOwner(owner) == entt::null
         && ecs::SocialSystem::GetMyShop(owner) == entt::null;

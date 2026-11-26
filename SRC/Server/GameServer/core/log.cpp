@@ -8,9 +8,7 @@
 
 #include "char_interface.hpp"
 #include "../ecs/CharacterAccessors.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "desc.h"
-#include "item.h"
 
 static char	__escape_hint[1024];
 
@@ -79,25 +77,7 @@ void LogManager::ItemLog(uint32_t dwPID, uint32_t x, uint32_t y, uint32_t dwItem
 			get_table_postfix(), dwPID, x, y, dwItemID, c_pszText, __escape_hint, c_pszIP, dwVnum);
 }
 
-void LogManager::ItemLogEntity(entt::entity character, entt::entity item,
-	const char * c_pszText, const char * c_pszHint)
-{
-	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MIN);
-	if (character == entt::null || !g_registry.valid(character) ||
-		item == entt::null || !ItemSystem::IsValidItem(item))
-	{
-		LOG_ERROR("character or item entity nil (character {} item {} text {})",
-			static_cast<uint32_t>(character), static_cast<uint32_t>(item), c_pszText);
-		return;
-	}
 
-	const LPDESC desc = ecs::PlayerRuntime::GetDesc(character);
-	ItemLog(ecs::PlayerRuntime::GetPlayerID(character),
-		ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character),
-		ItemSystem::GetItemID(item), nullptr == c_pszText ? "" : c_pszText,
-		c_pszHint, desc ? desc->GetHostName() : "",
-		ItemSystem::GetItemOriginalVnum(item));
-}
 
 void LogManager::ItemLog(entt::entity ch, int itemID, int itemVnum, const char * c_pszText, const char * c_pszHint)
 {

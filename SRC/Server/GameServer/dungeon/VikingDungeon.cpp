@@ -23,7 +23,6 @@
 #include "party.h"
 #include "sectree_manager.h"
 #include "dungeon.h"
-#include "item.h"
 #include "questmanager.h"
 #include "event.h"
 #include "../ecs/EntityFactory.hpp"

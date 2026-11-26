@@ -33,15 +33,11 @@
 #include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/InventorySystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/components/item_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/PlayerItemActions.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/identity_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/vital_components.hpp"
 #include "../../SRC/Server/GameServer/world/event_queue.h"
 #include "../../SRC/Server/GameServer/combat/affect.h"
-#include "../../SRC/Server/GameServer/item/item_manager.h"
-#include "../../SRC/Server/GameServer/ecs/ItemRegistry.hpp"
 #include "../../SRC/Server/GameServer/ecs/CBuildingRegistry.hpp"
 #include <Base/attribute.h>
 #include "../../SRC/Server/GameServer/item/TypedGathering.hpp"
@@ -57,7 +53,6 @@
 #include "../../SRC/Server/GameServer/network/desc.h"
 #include "../../SRC/Server/GameServer/core/log.h"
 #include "../../SRC/Server/GameServer/network/p2p.h"
-#include "../../SRC/Server/GameServer/social/new_switchbot.h"
 #include "../../SRC/Server/GameServer/ecs/systems/SkillSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.hpp"
 #include "../../SRC/Server/GameServer/world/building.h"
@@ -100,8 +95,6 @@ std::unordered_set<entt::entity> awake;
 struct Packet { bool add; entt::entity source, viewer; };
 std::vector<Packet> packets;
 std::function<void(Packet)> onPacket;
-std::function<void(entt::entity)> onRetire;
-int retired = 0;
 std::vector<TPacketGCMove> movementPackets;
 std::vector<std::pair<entt::entity, entt::entity>> movementRecipients;
 std::vector<packet_motion> animationPackets;
@@ -112,11 +105,9 @@ struct MotionSettings {
     uint32_t race = 0, mount = 0;
     int stamina = 100;
     int64_t movePoint = 100;
-    entt::entity weapon = entt::null;
 };
 std::unordered_map<entt::entity, MotionSettings> motionSettings;
 std::unordered_map<entt::entity, DESC*> inputDescriptors;
-std::map<entt::entity, TItemTable> weaponProtos;
 // Baked movement speeds (px/s) by (vnum, walking); a missing entry is unknown.
 std::map<std::pair<uint32_t, bool>, float> moveSpeeds;
 // Only entities a test places have a position; every other entity keeps the
@@ -145,14 +136,15 @@ struct MapFixture {
     SECTREE* At(int x = 100, int y = 100) { return SECTREE_MANAGER::instance().Get(index, x, y); }
 };
 
-entt::entity Entity(ecs::SpatialKind kind = ecs::SpatialKind::Item) {
+entt::entity Entity(ecs::SpatialKind kind = ecs::SpatialKind::TypedLoot, bool published = true) {
     const auto e = g_registry.create();
     g_registry.emplace<ecs::SpatialKindTag>(e, kind);
     g_registry.emplace<ecs::VIDComponent>(e, uint32_t(entt::to_integral(e) + 1));
-    if (kind == ecs::SpatialKind::Item) {
-        g_registry.emplace<ecs::ItemIdentity>(e);
-        g_registry.emplace<ecs::ItemLocation>(e, ecs::ItemLocation {GROUND, 0});
-    }
+    if (kind == ecs::SpatialKind::TypedLoot && published)
+        g_registry.emplace<ecs::TypedLootView>(e, uint32_t(entt::to_integral(e)+1),
+            std::vector<std::byte>{std::byte{226}}, std::string{});
+
+
     if (kind == ecs::SpatialKind::Character) {
         g_registry.emplace<ecs::CharacterType>(e, uint8_t(CHAR_TYPE_PC));
         g_registry.emplace<ecs::TagPC>(e);
@@ -172,9 +164,9 @@ void Reset() {
     clockNow = 123456;
     onRecovery = {}; recoveryChanges = recoveryNotices = 0;
     event_destroy(); recoveryHeart.pulse = 0; recoveryHeart.passes_per_sec = 25;
-    onPacket = {}; onRetire = {}; packets.clear(); awake.clear(); retired = 0;
+    onPacket = {}; packets.clear(); awake.clear();
     movementPackets.clear(); movementRecipients.clear(); animationPackets.clear(); onAnimation = {};
-    transitions.clear(); motionSettings.clear(); weaponProtos.clear();
+    transitions.clear(); motionSettings.clear();
     inputDescriptors.clear();
     moveSpeeds.clear(); placements.clear(); g_registry.clear();
 }
@@ -251,7 +243,6 @@ CHARACTER_MANAGER::CHARACTER_MANAGER() {}
 CHARACTER_MANAGER::~CHARACTER_MANAGER() {}
 // Out-of-line key functions emit RTTI required by singleton's guard on FreeBSD.
 // These service doubles are never connected to SQL or the live quest runtime.
-CSwitchbotManager::~CSwitchbotManager() = default;
 quest::CQuestManager::~CQuestManager() = default;
 quest::NPC::~NPC() = default;
 LogManager::~LogManager() = default;
@@ -316,19 +307,19 @@ char g_szPublicIP[16]="127.0.0.1";
 // Durable typed appearance/flight services are inactive in this spatial fixture.
 std::optional<bool> TypedMountFlightPermission(entt::entity){return std::nullopt;}
 void ReplayTypedCostumeAppearances(entt::entity){}
-int ItemSystem::GetItemValue(entt::entity,unsigned){Unexpected();}
+
 bool AffectSystem::IsLoaded(entt::entity){return false;}
 bool ecs::PlayerRuntime::IsObserverMode(entt::entity e){const auto* flags=g_registry.try_get<ecs::StatusFlags>(e);return flags&&flags->isObserverMode;}
 bool map_allow_find(int) { Unexpected(); }
 int number_ex(int, int, const char*, int) { Unexpected(); }
-bool InventorySystem::CanHandleItems(entt::entity, bool, bool) { Unexpected(); }
+bool PlayerItemActions::CanHandleItems(entt::entity, bool, bool) { Unexpected(); }
 bool ecs::PlayerRuntime::IsHack(entt::entity, bool, bool, int) { Unexpected(); }
 bool ecs::PlayerRuntime::IsHack(entt::entity, bool, bool) { Unexpected(); }
 bool CMapLocation::Get(int, int, int&, uint32_t&, uint16_t&) { Unexpected(); }
 SECTREE_MAP* SECTREE_MANAGER::GetMap(int) { Unexpected(); }
 int SECTREE_MANAGER::GetMapIndex(int, int) { Unexpected(); }
-void CSwitchbotManager::P2PSendSwitchbot(uint32_t, uint16_t) { Unexpected(); }
-void CSwitchbotManager::SetIsWarping(uint32_t, bool) { Unexpected(); }
+
+
 void DESC::Packet(const void*, int) { Unexpected(); }
 // Real descriptor/input objects for the packet-to-movement integration case.
 // Only their transport, dispatch and clock-sync services are replaced.
@@ -472,7 +463,7 @@ bool AffectSystem::IsAffectFlag(entt::entity e, uint32_t flag) {
     if (inputDescriptors.contains(e) && flag == AFF_STUN) return false;
     Check(flag == AFF_POISON, "recovery read unexpected affect"); return Recovery(e).poison;
 }
-bool ItemSystem::IsEquipUniqueItem(entt::entity, uint32_t) { Unexpected(); }
+
 void CombatSystem::Dead(entt::entity, entt::entity, bool) { Unexpected(); }
 int DungeonSystem::GetFlag(entt::entity dungeon, std::string key) {
     Check(key == "floor", "unexpected recovery dungeon flag");
@@ -495,13 +486,9 @@ float CMotionManager::GetMoveSpeed(uint32_t vnum, bool walking) const {
 float GetDegreeFromPositionXY(int32_t, int32_t, int32_t, int32_t) { Unexpected(); }
 void quest::CQuestManager::AttrIn(entt::entity, entt::entity, int) { Unexpected(); }
 void quest::CQuestManager::AttrOut(entt::entity, entt::entity, int) { Unexpected(); }
-entt::entity ItemSystem::GetWearItem(entt::entity e, uint8_t slot) {
-    Check(slot == WEAR_WEAPON, "motion read wrong wear slot"); return motionSettings[e].weapon;
-}
-bool ItemSystem::IsValidItem(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<ecs::ItemIdentity>(e); }
-const TItemTable* ItemSystem::GetItemProto(entt::entity e) {
-    auto it = weaponProtos.find(e); return it == weaponProtos.end() ? nullptr : &it->second;
-}
+
+
+
 uint32_t PartySystem::GetLeaderPID(entt::entity) { Unexpected(); }
 entt::entity PartySystem::GetLeader(entt::entity) { Unexpected(); }
 int64_t ecs::PointSystem::Get(entt::entity e, uint8_t point) {
@@ -525,15 +512,10 @@ uint32_t g_start_position[4][2] {};
 int passes_per_sec = 25;
 int save_event_second_cycle = 60;
 int test_server = 0;
-CItemRegistry& CItemRegistry::Instance() { Unexpected(); }
-entt::entity CItemRegistry::Find(uint32_t) const { Unexpected(); }
-entt::entity CItemRegistry::FindByVID(uint32_t) const { Unexpected(); }
-bool ItemSystem::DestroyItemEntityEcs(entt::entity e, const char*) {
-    ++retired;
-    if (onRetire) { auto callback = onRetire; callback(e); }
-    if (g_registry.valid(e)) g_registry.destroy(e);
-    return true;
-}
+
+
+
+
 namespace ecs::EntityNetworkDispatch {
 void SendInsert(entt::registry& reg, entt::entity source, entt::entity viewer) {
     Check(reg.valid(source) && reg.valid(viewer), "insert stale identity");
@@ -558,7 +540,7 @@ void MembershipAndSnapshots() {
     std::vector<entt::entity> nearby;
     auto collect = [&](entt::entity e) { nearby.push_back(e); };
     map.At()->ForEachAround(collect);
-    Check(nearby.size() == 2, "neighbor snapshot omitted entity-only item");
+    Check(nearby.size() == 2, "neighbor snapshot omitted typed ground loot");
     const auto snapshot = map.At()->SnapshotAround();
     ecs::SpatialService::RemoveEntity(g_registry, b);
     Check(Spawn(b, 10001, 6500), "private-map relocation failed");
@@ -574,7 +556,7 @@ void VisibilityRoundTrip() {
     Reset(); MapFixture map;
     const auto item = Entity(), player = Entity(ecs::SpatialKind::Character);
     Check(Spawn(item) && Spawn(player), "item-first spawn failed");
-    Check(Visible(item, player) && !Visible(player, item), "late viewer cannot see entity-only item");
+    Check(Visible(item, player) && !Visible(player, item), "late viewer cannot see typed ground loot");
     Check(packets.size() == 1 && packets[0].add && packets[0].source == item && packets[0].viewer == player,
         "incorrect directed item insertion");
     ecs::VisibilitySystem::Refresh(g_registry, player);
@@ -646,7 +628,7 @@ void LifetimeAndObservers() {
     g_registry.get<ecs::StatusFlags>(a).isObserverMode = false;
     ecs::VisibilitySystem::Refresh(g_registry, a);
     Check(Visible(a, b), "observer exit stayed hidden");
-    const auto building = Entity(ecs::SpatialKind::Building), item = Entity(ecs::SpatialKind::Item);
+    const auto building = Entity(ecs::SpatialKind::Building), item = Entity(ecs::SpatialKind::TypedLoot);
     Check(Spawn(building, 1, 12000) && Spawn(item), "non-character spawn");
     Check(Visible(building, a) && Visible(item, a), "building range exception / item hidden");
     const auto beforeRename = packets.size();
@@ -723,65 +705,7 @@ void NativeBuildingIdentityAndPlacement() {
     g_registry.destroy(sameID); g_registry.destroy(sameVID);
 }
 
-void ItemCompanionInsertion() {
-    for (int outcome = 0; outcome < 3; ++outcome) {
-        Reset(); MapFixture map;
-        const auto owner = Entity(ecs::SpatialKind::Character), item = Entity();
-        g_registry.emplace<ecs::ItemOwner>(item, ecs::ItemOwner{owner, 123, 123, 0});
-        g_registry.get<ecs::ItemLocation>(item) = {INVENTORY, 7};
-        int quantity = 10, calls = 0;
-        bool threw = false, result = false;
-        try {
-            result = ecs::SpatialService::InsertItemWithCommit(g_registry, item, 1, 100, 100, 0, [&] {
-                ++calls;
-                Check(quantity == 10 && g_registry.get<ecs::ItemOwner>(item).owner == owner &&
-                    g_registry.get<ecs::ItemLocation>(item).window == INVENTORY &&
-                    g_registry.all_of<ecs::SectorPlacement>(item) && !ecs::SectorOf(g_registry, item) &&
-                    map.At()->Contains(item) && packets.empty(), "companion ran before preparation/reservation or after publication");
-                if (outcome == 1) return false;
-                if (outcome == 2) throw std::runtime_error("companion pre-commit failure");
-                quantity -= 3;
-                g_registry.get<ecs::ItemOwner>(item) = {};
-                g_registry.get<ecs::ItemLocation>(item) = {GROUND, 0};
-                return true;
-            });
-        } catch (const std::runtime_error& error) {
-            if (std::string_view(error.what()) != "companion pre-commit failure") throw;
-            threw = true;
-        }
-        Check(calls == 1 && result == (outcome == 0) && threw == (outcome == 2) &&
-            quantity == (outcome == 0 ? 7 : 10) && packets.empty(), "companion insertion lost its commit result");
-        if (outcome == 0) {
-            Check(ecs::SectorOf(g_registry, item) == map.At() && map.At()->Contains(item) &&
-                g_registry.get<ecs::SpatialRevision>(item).value == 1, "companion failed to install native membership");
-        } else {
-            Check(!map.At()->Contains(item) && !g_registry.any_of<ecs::SectorPlacement, ecs::SpatialEntity>(item) &&
-                g_registry.get<ecs::ItemOwner>(item).owner == owner &&
-                g_registry.get<ecs::ItemLocation>(item).cell == 7, "failed companion left membership or lost stored ownership");
-            Check(ecs::SpatialService::InsertItemWithCommit(g_registry, item, 1, 100, 100, 0, [&] {
-                g_registry.get<ecs::ItemOwner>(item) = {};
-                g_registry.get<ecs::ItemLocation>(item) = {GROUND, 0}; return true;
-            }), "failed companion could not be retried");
-        }
-    }
-    for (bool retire : {false, true}) {
-        Reset(); MapFixture map;
-        const auto item = Entity(); int calls = 0;
-        Callback callback {[&](entt::registry& registry, entt::entity current) {
-            if (current != item) return;
-            if (retire) registry.destroy(item); else map.At()->Destroy();
-        }};
-        entt::scoped_connection connection = g_registry.on_construct<ecs::SectorPlacement>().connect<&Callback::Run>(callback);
-        Check(!ecs::SpatialService::InsertItemWithCommit(g_registry, item, 1, 100, 100, 0, [&] {
-            ++calls; return true;
-        }) && calls == 0 && !map.At()->Contains(item), "failed sector preparation reached resource companion");
-    }
-    Reset(); MapFixture map;
-    const auto pc = Entity(ecs::SpatialKind::Character), item = Entity(); int calls = 0;
-    Check(!ecs::SpatialService::InsertItemWithCommit(g_registry, pc, 1, 100, 100, 0, [&] { ++calls; return true; }) &&
-        !ecs::SpatialService::InsertItemWithCommit(g_registry, item, 1, 100, 100, 0, {}) && calls == 0,
-        "non-item/empty companion accepted");
-}
+
 
 void RemovalCallbacksAndTeardown() {
     Reset(); MapFixture map;
@@ -807,28 +731,24 @@ void RemovalCallbacksAndTeardown() {
     onPacket = {};
     const auto second = Entity();
     Check(Spawn(second), "teardown item spawn");
-    onRetire = [&](entt::entity e) {
-        Check(!Spawn(e), "destroying sector accepted reinsert");
+    onPacket = [&](Packet packet) {
+        if (packet.add || (packet.source != item && packet.source != second)) return;
+        Check(!Spawn(packet.source), "destroying sector accepted reinsert");
         map.At()->Destroy(); // Reentrant region teardown is idempotent.
     };
     map.At()->Destroy();
-    Check(!g_registry.valid(item) && !g_registry.valid(second) && retired == 2,
-        "sector teardown skipped/doubled item retirement");
+    map.At()->Destroy();
+    // The typed loot service owns durable escrow settlement. Sector teardown
+    // detaches visibility/membership and must leave pending entries for its tick.
+    Check(g_registry.valid(item) && g_registry.valid(second) &&
+        !ecs::SectorOf(g_registry,item) && !ecs::SectorOf(g_registry,second) &&
+        !Visible(item,player) && !Visible(second,player),
+        "sector teardown did not detach typed loot or destroyed pending escrow");
+
 }
 
 void PreparationMutationAndIteration() {
     Reset(); MapFixture map;
-    const auto item = Entity();
-    Callback callback {[&](entt::registry& reg, entt::entity e) {
-        if (e == item) reg.get<ecs::ItemLocation>(e).window = INVENTORY;
-    }};
-    entt::scoped_connection connection =
-        g_registry.on_construct<ecs::SectorPlacement>().connect<&Callback::Run>(callback);
-    Check(!Spawn(item) && !map.At()->Contains(item) &&
-        !g_registry.all_of<ecs::SectorPlacement>(item) &&
-        g_registry.get<ecs::ItemLocation>(item).window == INVENTORY,
-        "failed preparation overwrote storage or left phantom placement");
-    connection.release();
     std::vector<entt::entity> original;
     for (int i = 0; i < 8; ++i) {
         auto e = Entity(); Check(Spawn(e), "map snapshot setup"); original.push_back(e);
@@ -1376,18 +1296,18 @@ void NativeAttackMovementStop() {
 void NativeMotionSelection() {
     Reset(); MapFixture map;
     const auto e = Moving(100, 100, 101, 100);
-    const auto weapon = Entity();
-    motionSettings[e].weapon = weapon;
-    const std::pair<uint8_t, uint32_t> modes[] = {
-        {WEAPON_SWORD, MOTION_MODE_ONEHAND_SWORD}, {WEAPON_TWO_HANDED, MOTION_MODE_TWOHAND_SWORD},
-        {WEAPON_DAGGER, MOTION_MODE_DUALHAND_SWORD}, {WEAPON_BOW, MOTION_MODE_BOW},
-        {WEAPON_BELL, MOTION_MODE_BELL}, {WEAPON_FAN, MOTION_MODE_FAN}
-    };
-    for (auto [subtype, mode] : modes) {
-        weaponProtos[weapon].bSubType = subtype;
-        Check(ecs::MovementSystem::GetMotionMode(e) == mode, "weapon motion mode mismatch");
-    }
+    using W=auriga::item::WeaponSubtype;
     auto& typed=g_registry.emplace<ecs::TypedEquipmentProjection>(e);
+    typed.stats=auriga::item::EquipmentStats{};
+    const std::pair<W,uint32_t> modes[] = {
+        {W::Sword,MOTION_MODE_ONEHAND_SWORD}, {W::TwoHanded,MOTION_MODE_TWOHAND_SWORD},
+        {W::Dagger,MOTION_MODE_DUALHAND_SWORD}, {W::Bow,MOTION_MODE_BOW},
+        {W::Bell,MOTION_MODE_BELL}, {W::Fan,MOTION_MODE_FAN}
+    };
+    for (auto [subtype,mode] : modes) {
+        typed.stats->weapon=subtype;
+        Check(ecs::MovementSystem::GetMotionMode(e)==mode,"native weapon motion mode mismatch");
+    }
     typed.stats=auriga::item::EquipmentStats{};typed.stats->weapon=auriga::item::WeaponSubtype::Bow;
     Check(ecs::MovementSystem::GetMotionMode(e)==MOTION_MODE_BOW,"typed weapon motion ignored");
     typed.stats->weapon.reset();
@@ -1398,11 +1318,8 @@ void NativeMotionSelection() {
     motionSettings[e].polymorphed = true;
     Check(ecs::MovementSystem::GetMotionMode(e) == MOTION_MODE_GENERAL, "polymorph retained weapon mode");
     motionSettings[e].polymorphed = false;
-    weaponProtos.erase(weapon);
     Check(ecs::MovementSystem::GetMotionMode(e) == MOTION_MODE_GENERAL, "missing weapon proto mode");
-    g_registry.destroy(weapon);
     Check(ecs::MovementSystem::GetMotionMode(e) == MOTION_MODE_GENERAL, "stale weapon mode");
-    motionSettings[e].weapon = entt::null;
     motionSettings[e].race = 1;
     motionSettings[e].attached = true;
     // The baked speeds come by vnum and walking; the motion bake dropped the
@@ -2049,7 +1966,7 @@ void Place(entt::entity e, int x, int y) {
 }
 void ReservedTypedLootPublication() {
     Reset(); MapFixture map;
-    const auto viewer=Entity(ecs::SpatialKind::Character), loot=Entity(ecs::SpatialKind::TypedLoot);
+    const auto viewer=Entity(ecs::SpatialKind::Character), loot=Entity(ecs::SpatialKind::TypedLoot, false);
     Check(Spawn(viewer) && Spawn(loot), "reserved typed loot placement");
     packets.clear();
     ecs::VisibilitySystem::Refresh(g_registry,viewer);
@@ -2059,7 +1976,7 @@ void ReservedTypedLootPublication() {
     Check(Visible(loot,viewer) && packets.size()==1 && packets[0].add, "confirmed drop publishes to stationary viewers");
     ecs::VisibilitySystem::Refresh(g_registry,viewer);
     Check(packets.size()==1, "confirmed drop is published once");
-    const auto refused=Entity(ecs::SpatialKind::TypedLoot);
+    const auto refused=Entity(ecs::SpatialKind::TypedLoot, false);
     Check(Spawn(refused), "refused drop reservation");
     packets.clear();ecs::SpatialService::RemoveEntity(g_registry,refused);
     Check(packets.empty(), "cancelled reservation has no network side effects");
@@ -2116,7 +2033,7 @@ int main(int argc, char** argv) {
         ecs::VisibilitySystem::Init(g_registry);
         auto recoveryConnection = entt::scoped_connection(g_dispatcher.sink<ecs::EvRecovery>().connect<&Recovered>());
         AttributeSharing();
-        ItemCompanionInsertion();
+
         MembershipAndSnapshots(); VisibilityRoundTrip(); ViewCallbacks(); PreparationAndPCs();
         LifetimeAndObservers(); RemovalCallbacksAndTeardown(); PreparationMutationAndIteration();
         NativeBuildingIdentityAndPlacement();

@@ -25,7 +25,7 @@
 #include "ItemStore.hpp"
 #include "TypedInventorySync.hpp"
 #include "../ecs/ResourceAdmission.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/components/quest_components.hpp"
 #include "../quest/questpc.h"
 #include <item/OwnedGround.hpp>
@@ -142,7 +142,7 @@ void ClearClaim(Entry& entry)
 	ecs::ViewSystem::PacketView(entry.entity, &packet, sizeof(packet)); // the legacy "claim over" label
 }
 
-// The legacy pickup distance (ItemSystem::DistanceValid).
+// Keep the established pickup distance for typed loot.
 bool InReach(entt::entity loot, entt::entity character)
 {
 	const auto* where = g_registry.try_get<ecs::Position>(loot);
@@ -452,7 +452,7 @@ std::optional<items::ItemPlacement> FreeGroundPosition(const items::ItemCatalog&
 bool GroundAdmission(entt::entity character)
 {
 	if(!g_registry.valid(character) || !ecs::PlayerRuntime::IsPC(character) || CombatSystem::IsDead(character) ||
-		ecs::PlayerRuntime::IsObserverMode(character) || !InventorySystem::CanHandleItems(character))return false;
+		ecs::PlayerRuntime::IsObserverMode(character) || !PlayerItemActions::CanHandleItems(character))return false;
 	const auto* quest=g_registry.try_get<ecs::QuestPCState>(character);
 	return quest && quest->pc && !quest->pc->IsRunning();
 }

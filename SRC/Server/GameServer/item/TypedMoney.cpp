@@ -11,7 +11,7 @@
 #include "../ecs/components/status_components.hpp"
 #include "../ecs/components/quest_components.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
@@ -35,7 +35,7 @@ std::uint64_t Utc(){return std::chrono::duration_cast<std::chrono::milliseconds>
 std::array<std::uint8_t,16> Operation(){std::array<std::uint8_t,16> op{};if(RAND_bytes(op.data(),op.size())!=1)return {};return op;}
 entt::entity Current(std::uint32_t pid,std::uint64_t token){auto e=CHARACTER_MANAGER::instance().FindEntityByPID(pid);const auto* l=g_registry.valid(e)?g_registry.try_get<ecs::TypedItemLogin>(e):nullptr;return l && l->token==token?e:entt::null;}
 bool Admitted(entt::entity e){
-    if(!g_registry.valid(e) || !ecs::PlayerRuntime::IsPC(e) || CombatSystem::IsDead(e) || !InventorySystem::CanHandleItems(e) ||
+    if(!g_registry.valid(e) || !ecs::PlayerRuntime::IsPC(e) || CombatSystem::IsDead(e) || !PlayerItemActions::CanHandleItems(e) ||
        ecs::SocialSystem::HasExchange(e) || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e) ||
        ecs::SocialSystem::GetMyShop(e)!=entt::null || ecs::SocialSystem::GetShopOwner(e)!=entt::null || !g_registry.all_of<ecs::TypedItems,ecs::TypedItemLogin>(e))return false;
     const auto* flags=g_registry.try_get<ecs::StatusFlags>(e);const auto* q=g_registry.try_get<ecs::QuestPCState>(e);auto* d=ecs::PlayerRuntime::GetDesc(e);

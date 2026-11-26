@@ -1,3 +1,4 @@
+#include "TypedShop.hpp"
 #include "../mission/TypedMissionRuntime.hpp"
 #include "../item/ItemStore.hpp"
 #include "../item/TypedMoney.hpp"
@@ -33,7 +34,6 @@
 #include "char_manager.h"
 #include "../ecs/CharacterAccessors.hpp"
 #include "affect.h"
-#include "item.h"
 #include "guild_manager.h"
 #include "war_map.h"
 #include "start_position.h"
@@ -76,7 +76,6 @@
 
 #ifdef ENABLE_PC_OPENSHOP
 #include "shop.h"
-#include "shop_manager.h"
 #endif
 
 namespace quest
@@ -2657,10 +2656,9 @@ teleport_area:
 		{
 			const auto* shop = ECS_TryGet<ecs::ShopState>(e);
 			const auto* safebox = ECS_TryGet<ecs::SafeboxRef>(e);
-			const auto* cube = ECS_TryGet<ecs::CubeWindowComponent>(e);
-			if (ecs::SocialSystem::HasExchange(e) ||
+				if (ecs::SocialSystem::HasExchange(e) ||
 				(shop && (shop->currentShop != entt::null || shop->myShop != entt::null || shop->shopOwner != entt::null || shop->underRefine)) ||
-				(safebox && safebox->isOpening) || (cube && g_registry.valid(cube->npc)))
+				(safebox && safebox->isOpening) || ecs::SessionSystem::IsCubeOpen(e))
 			{
 				lua_pushboolean(L, 1);
 				return 1;
@@ -2724,10 +2722,9 @@ teleport_area:
 			return 0;
 
 		const auto* safebox = g_registry.try_get<ecs::SafeboxRef>(chEntity);
-		const auto* cube = g_registry.try_get<ecs::CubeWindowComponent>(chEntity);
 		//PREVENT_TRADE_WINDOW
 		if ((safebox && safebox->isOpening) || ecs::SocialSystem::HasExchange(chEntity) ||
-			ecs::SocialSystem::GetMyShop(chEntity) || (cube && g_registry.valid(cube->npc)))
+			ecs::SocialSystem::GetMyShop(chEntity) || ecs::SessionSystem::IsCubeOpen(chEntity))
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 294, "");
@@ -2736,12 +2733,7 @@ teleport_area:
 		}
 		//END_PREVENT_TRADE_WINDOW
 
-		const entt::entity sh = CShopManager::instance().Get(lua_tonumber(L, 1));
-		if (sh != entt::null)
-		{
-			ShopSystem::AddGuest(sh, chEntity, 0, false);
-			ecs::SocialSystem::SetShopOwner(chEntity, entt::null);
-		}
+		TryOpenTypedShop(chEntity, CQuestManager::instance().GetCurrentNPCEntity(), static_cast<uint32_t>(lua_tonumber(L, 1)));
 		return 0;
 	}
 #endif

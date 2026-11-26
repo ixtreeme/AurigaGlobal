@@ -12,7 +12,7 @@
 #include <StoragePersistenceSql.hpp>
 #include "../ecs/ResourceAdmission.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
-#include "../ecs/systems/InventorySystem.hpp"
+#include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
@@ -53,7 +53,7 @@ std::shared_ptr<Session> Get(entt::entity e){const auto* ref=g_registry.valid(e)
 bool Admitted(entt::entity e, bool fromLua = false)
 {
     if (!g_registry.valid(e) || !ecs::PlayerRuntime::IsPC(e) || CombatSystem::IsDead(e) ||
-        ecs::PlayerRuntime::IsObserverMode(e) || !InventorySystem::CanHandleItems(e) ||
+        ecs::PlayerRuntime::IsObserverMode(e) || !PlayerItemActions::CanHandleItems(e) ||
         !g_registry.all_of<ecs::TypedItems, ecs::TypedItemLogin>(e) ||
         ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e) ||
         ecs::SocialSystem::HasExchange(e) || ecs::SocialSystem::GetMyShop(e) != entt::null ||
