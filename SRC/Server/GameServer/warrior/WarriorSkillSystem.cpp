@@ -74,7 +74,8 @@ int64_t ReduceIncoming(entt::entity, entt::entity, int64_t damage, uint8_t) { re
 #include "../ecs/Registry.hpp"
 #include "../ecs/SpatialHelpers.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
+#include "../item/TypedEquipment.hpp"
+#include <item/EquipmentChecks.hpp>
 #include "../ecs/systems/MountSystem.hpp"
 #include "../ecs/systems/MovementSystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
@@ -158,23 +159,15 @@ uint32_t Pid(entt::entity e)
 {
     return ecs::PlayerRuntime::GetPlayerID(e);
 }
-uint32_t Weapon(entt::entity e)
+uint64_t Weapon(entt::entity e)
 {
-    auto item = ItemSystem::GetWearItem(e, WEAR_WEAPON);
-    return ItemSystem::IsValidItem(item) ? ItemSystem::GetItemID(item) : 0;
+    const auto weapon = auriga::item::EquippedWeapon(TypedEquipmentView(e));
+    return weapon ? weapon->instance : 0;
 }
 bool WeaponAllowed(entt::entity e)
 {
-    auto item = ItemSystem::GetWearItem(e, WEAR_WEAPON);
-    if (!ItemSystem::IsValidItem(item) || ItemSystem::GetItemType(item) != ITEM_WEAPON) return false;
-    const auto weapon = ItemSystem::GetItemSubType(item);
-    switch (ecs::PlayerRuntime::GetJob(e)) {
-        case 0: return weapon == WEAPON_SWORD || weapon == WEAPON_TWO_HANDED;
-        case 1: return weapon == WEAPON_SWORD || weapon == WEAPON_DAGGER || weapon == WEAPON_BOW;
-        case 2: return weapon == WEAPON_SWORD;
-        case 3: return weapon == WEAPON_BELL || weapon == WEAPON_FAN;
-        default: return false;
-    }
+    const auto weapon = auriga::item::EquippedWeapon(TypedEquipmentView(e));
+    return weapon && auriga::item::WeaponAllowedForJob(*weapon, ecs::PlayerRuntime::GetJob(e));
 }
 bool Alive(entt::entity e)
 {
@@ -297,7 +290,8 @@ void Bolt(entt::entity e,uint32_t id,entt::entity target,int32_t x,int32_t y,int
 EVENTINFO(CastEvent)
 {
     entt::entity caster=entt::null,target=entt::null;
-    uint32_t pid=0,skill=0,weapon=0;
+    uint32_t pid=0,skill=0;
+    uint64_t weapon=0;
     int32_t map=0,x=0,y=0,originX=0,originY=0;
     uint64_t serial=0;
     bool launched=false,started=false;

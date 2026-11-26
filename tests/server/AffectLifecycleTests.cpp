@@ -1,5 +1,6 @@
 #include "../../SRC/Server/GameServer/core/stdafx.h"
 #include "../../SRC/Server/GameServer/entity/char.h"
+#include "../../SRC/Server/GameServer/item/TypedEquipment.hpp"
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/status_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/identity_components.hpp"
@@ -72,7 +73,7 @@ std::function<void()> onSchedule;
 std::function<void(uint8_t)> onClientPacket, onDBPacket;
 std::vector<LPEVENT> scheduled;
 int schedules = 0, cancels = 0, syncs = 0, chats = 0;
-bool failSchedule = false;
+bool failSchedule = false, equipmentTick = false;
 int64_t nowSeconds = 1000;
 std::array<int, PREMIUM_MAX_NUM> premiumRemaining{};
 int hairDeadline = 0, horseDeadline = 0, hairResets = 0;
@@ -683,6 +684,29 @@ void ExpiryPublicationChecks() {
         "horse-name expiry persists empty name for the entity's player ID");
     ResetPublication(); connected = entt::null; client = nullptr; db_clientdesc = nullptr;
 }
+void EquipmentAuraChecks() {
+    ResetPublication(); equipmentTick=true;
+    namespace I=auriga::item;
+    for (auto [skill,flag] : {std::pair{SKILL_GEOMKYUNG,AFF_GEOMGYEONG},std::pair{SKILL_GWIGEOM,AFF_GWIGUM}}) {
+        auto e=Actor(); g_registry.emplace<ecs::TagCharacter>(e);
+        auto& projection=g_registry.emplace<ecs::TypedEquipmentProjection>(e);
+        auto affect=InstallTimed(e,skill,60,POINT_ATT_GRADE_BONUS,20,0,flag);
+        A::UpdateAffect(e);
+        Check(A::Resolve(e,affect),"aura removed before equipment hydration");
+        projection.stats=I::EquipmentStats{};
+        projection.stats->weapon=I::WeaponSubtype::Sword;
+        projection.stats->equipped.push_back({static_cast<uint8_t>(I::EquipmentSlot::Weapon),
+            I::ItemInstanceId::Create((1ULL<<40)+7).value(),I::ItemKey::Create(I::ItemCategory::Weapon,1).value()});
+        A::UpdateAffect(e);
+        Check(A::Resolve(e,affect)&&A::IsAffectFlag(e,flag),"typed weapon aura was stripped");
+        projection.stats->equipped.clear(); projection.stats->weapon.reset();
+        A::UpdateAffect(e);
+        Check(!A::Resolve(e,affect)&&!A::IsAffectFlag(e,flag),"unequipping typed weapon retained aura");
+        Check(ecs::PointSystem::Get(e,POINT_ATT_GRADE_BONUS)==0,"aura removal retained attack bonus");
+        g_registry.destroy(e);
+    }
+    equipmentTick=false;
+}
 void LifetimeStressChecks() {
     for (int i = 0; i < 1000; ++i) {
         const auto e = Actor();
@@ -725,7 +749,7 @@ LPDESC ecs::PlayerRuntime::GetDesc(entt::entity e) { return e == connected ? cli
 // The affect tick reads these now that UpdateAffect lives in this system.
 uint64_t ecs::PlayerRuntime::GetHP(entt::entity) { UnexpectedService(__func__); }
 int ecs::PlayerRuntime::GetMapIndex(entt::entity) { UnexpectedService(__func__); }
-int ecs::PlayerRuntime::GetStamina(entt::entity) { UnexpectedService(__func__); }
+int ecs::PlayerRuntime::GetStamina(entt::entity) { Check(equipmentTick,"unexpected stamina read"); return 0; }
 bool CombatSystem::IsDead(entt::entity) { UnexpectedService(__func__); }
 uint32_t ecs::PlayerRuntime::GetPlayerID(entt::entity) { return 1; }
 std::string_view ecs::PlayerRuntime::GetName(entt::entity) { return "affect-test"; }
@@ -785,7 +809,7 @@ int64_t ecs::PlayerRuntime::GetPremiumRemainSeconds(entt::entity, uint8_t type) 
     Check(type < PREMIUM_MAX_NUM, "premium index must be within the account array");
     return premiumRemaining[type];
 }
-int64_t ecs::PlayerRuntime::GetMaxStamina(entt::entity) { UnexpectedService(__func__); }
+int64_t ecs::PlayerRuntime::GetMaxStamina(entt::entity) { Check(equipmentTick,"unexpected max stamina read"); return 0; }
 uint64_t ecs::PlayerRuntime::GetSP(entt::entity) { return 0; }
 void NetworkSyncSystem::BroadcastSyncPacket(entt::registry&, entt::entity e) {
     ++syncs;
@@ -903,7 +927,7 @@ int main() {
         CHorseNameManager horseNames;
         StorageChecks(); FlagAndPointChecks(); RefreshChecks(); RemovalChecks();
         AddChecks(); TimerChecks(); PublicationChecks(); LifetimeStressChecks();
-        ExpiryChecks();  HairAndHorseChecks(); ExpiryPublicationChecks();
+        ExpiryChecks();  HairAndHorseChecks(); ExpiryPublicationChecks(); EquipmentAuraChecks();
         std::cout << "Affect checks passed: " << checks << '\n'; return 0;
     }
     catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

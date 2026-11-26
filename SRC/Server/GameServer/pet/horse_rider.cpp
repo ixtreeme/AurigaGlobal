@@ -16,7 +16,9 @@
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/AffectSystem.hpp"
 #include "../ecs/systems/ChatSystem.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
+#include "../item/TypedEquipment.hpp"
+#include "../item/ItemCatalogRuntime.hpp"
+#include <item/EquipmentChecks.hpp>
 #include "../ecs/systems/PointSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../ecs/systems/SkillSystem.hpp"
@@ -323,9 +325,10 @@ bool StartRiding(entt::entity rider) {
 #endif
         return false;
     }
-    const auto armor = ItemSystem::GetWearItem(rider, WEAR_BODY);
-    const auto armorVnum = ItemSystem::GetItemVnum(armor);
-    if (ItemSystem::IsValidItem(armor) && armorVnum >= 11901 && armorVnum <= 11904) {
+    const auto catalog = auriga::item::runtime::CurrentCatalog();
+    const auto* equipment = TypedEquipmentView(rider);
+    if (!catalog || !equipment) return false; // Equipment has not finished loading.
+    if (auriga::item::BlocksHorseRiding(*catalog, *equipment)) {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 410, "");
 #endif

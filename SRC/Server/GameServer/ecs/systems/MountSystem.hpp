@@ -26,7 +26,6 @@ void UpdateMountCountOverheadToViewers(entt::entity owner);
 ecs::MountState& GetMountStateRef(entt::entity rider);
 uint32_t GetLastMountTime(entt::entity rider);
 uint32_t GetMyHorseVnum(entt::entity rider);
-int GetBeltCount(entt::entity e);
 int GetMountCount(entt::entity e);
 void UpdateMountInventoryCountOverhead(entt::entity source, entt::entity viewer);
 entt::entity GetSummonedHorse(entt::entity rider);

@@ -6,7 +6,6 @@
 
 #include "MountSystem.hpp"
 #include "MountFlightSystem.hpp"
-#include "ItemSystem.hpp"
 #include "NetworkSyncSystem.hpp"
 #include "PointSystem.hpp"
 #include "SocialSystem.hpp"
@@ -357,18 +356,6 @@ uint32_t GetMyHorseVnum(entt::entity rider)
     return c_aHorseStat[GetHorseLevel(rider)].iNPCRace + delta;
 }
 
-int GetBeltCount(entt::entity e)
-{
-    int beltItemCount = 0;
-    for (int i = BELT_INVENTORY_SLOT_START; i < BELT_INVENTORY_SLOT_END; ++i)
-    {
-        if (ItemSystem::GetInventoryItem(e, i) != entt::null)
-            ++beltItemCount;
-    }
-
-    return beltItemCount;
-}
-
 int GetMountCount(entt::entity e)
 {
     return AccountCollectionSystem::MountCount(e);
@@ -391,7 +378,7 @@ void UpdateMountInventoryCountOverhead(entt::entity source, entt::entity viewerE
     p.bHeader = HEADER_GC_FAKE_SHOP_SIGN;
     p.dwVID = ecs::PlayerRuntime::GetPacketVID(source);
     p.iMountCount = GetMountCount(source);
-    p.iBeltCount = GetBeltCount(source);
+    p.iBeltCount = 0; // Reserved GC249 word; the retired belt bag has no counter.
 
     viewerDesc->Packet(&p, sizeof(p));
 }

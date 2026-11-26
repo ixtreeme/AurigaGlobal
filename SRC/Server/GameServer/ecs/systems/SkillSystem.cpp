@@ -3,6 +3,7 @@
 #include "../../item/TypedUniqueAccessories.hpp"
 #include "../../item/ItemStore.hpp"
 #include "../../core/stdafx.h"
+#include <item/EquipmentChecks.hpp>
 #include "../../dungeon/DungeonUiEvents.hpp"
 #include "../../combat/DeathRecapEvents.hpp"
 #include "../../warrior/WarriorMobility.hpp"
@@ -103,8 +104,8 @@ void MarkDirty(entt::entity e)
 #ifdef ENABLE_WARRIOR_SKILL_EXPANSION
 bool ExpansionUsesBow(entt::entity caster)
 {
-    auto weapon=ItemSystem::GetWearItem(caster,WEAR_WEAPON);
-    return ItemSystem::IsValidItem(weapon)&&ItemSystem::GetItemSubType(weapon)==WEAPON_BOW;
+    const auto weapon = auriga::item::EquippedWeapon(TypedEquipmentView(caster));
+    return weapon && weapon->subtype == auriga::item::WeaponSubtype::Bow;
 }
 double ExpansionStat(entt::entity caster)
 {

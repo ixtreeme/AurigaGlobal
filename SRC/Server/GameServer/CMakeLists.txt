@@ -385,6 +385,10 @@ add_executable(HorseRuntimeTests EXCLUDE_FROM_ALL
 target_link_libraries(HorseRuntimeTests PRIVATE SERVER EnTT::EnTT LUA AurigaItemCatalog)
 add_test(NAME horse_runtime COMMAND HorseRuntimeTests)
 
+add_executable(EquipmentChecksTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/EquipmentChecksTests.cpp)
+target_link_libraries(EquipmentChecksTests PRIVATE AurigaItemCatalog)
+add_test(NAME typed_equipment_checks COMMAND EquipmentChecksTests)
+
 add_executable(WeddingLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/WeddingLifecycleTests.cpp
     social/wedding.cpp

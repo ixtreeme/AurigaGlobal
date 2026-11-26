@@ -14,7 +14,9 @@
 #include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ChatSystem.hpp"
-#include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
+#include "../../SRC/Server/GameServer/item/TypedEquipment.hpp"
+#include "../../SRC/Server/GameServer/item/ItemCatalogRuntime.hpp"
+#include "ItemCatalogFixture.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/SocialSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/SkillSystem.hpp"
@@ -35,7 +37,9 @@ HEART horseHeart {};
 int checks = 0, packets = 0, computes = 0, skillPackets = 0, unmounts = 0, summons = 0;
 int64_t now = 1'000'000;
 bool dead = false, stunned = false, polymorphed = false, arena = false, war = false;
-uint32_t armorVnum = 0;
+namespace I = auriga::item;
+std::shared_ptr<const I::ItemCatalog> catalog;
+const auto ceremony = I::ItemKey::Create(I::ItemCategory::Armor, 700).value();
 std::function<void(entt::entity)> onPacket, onTick, onConstruct, onUnmount, onMount;
 struct Player {};
 void Check(bool value, const char* reason) { ++checks; if (!value) throw std::runtime_error(reason); }
@@ -46,13 +50,18 @@ void Reset() {
     onPacket = onTick = onConstruct = onUnmount = onMount = {};
     g_registry.clear(); event_destroy(); horseHeart.pulse=0; horseHeart.passes_per_sec=25;
     packets=computes=skillPackets=unmounts=summons=0;
-    dead=stunned=polymorphed=arena=war=false; armorVnum=0; now=1'000'000;
+    dead=stunned=polymorphed=arena=war=false; now=1'000'000;
+    auto source=item_catalog_fixture::Catalog();
+    auto armor=source.items[1]; armor.key=ceremony; armor.contentCode="armor.szmoking";
+    source.items.push_back(armor); source.armors.push_back({ceremony,I::EquipmentSlot::Body,0,0,1});
+    catalog=I::BuildItemCatalog(std::move(source)).value();
 }
 entt::entity Rider(int level=10, int hp=15, int stamina=5, bool riding=false) {
     const auto e=g_registry.create(); g_registry.emplace<Player>(e);
     THorseInfo data {}; data.bLevel=level; data.sHealth=hp; data.sStamina=stamina;
     data.bRiding=riding; data.dwHorseHealthDropTime=now+100'000;
     MountSystem::LoadHorseData(e,data);
+    g_registry.emplace<ecs::TypedEquipmentProjection>(e).stats=I::EquipmentStats{};
     return e;
 }
 int Run(int pulse) { horseHeart.pulse=pulse; return event_process(pulse); }
@@ -147,11 +156,24 @@ void ExpiryAndPolicies() {
     for (int policy=0;policy<7;++policy) {
         Reset(); e=Rider();
         if(policy==0) dead=true; if(policy==1) polymorphed=true; if(policy==2) arena=true;
-        if(policy==3) armorVnum=11901; if(policy==4) war=true;
+        if(policy==3) g_registry.get<ecs::TypedEquipmentProjection>(e).stats->equipped.push_back(
+            {static_cast<uint8_t>(I::EquipmentSlot::Body),I::ItemInstanceId::Create(1ULL<<40).value(),ceremony}); if(policy==4) war=true;
         if(policy==5) State(e).health=0; if(policy==6) State(e).stamina=0;
         Check(!MountSystem::StartRiding(e) && !State(e).consume && !MountSystem::IsHorseRiding(e),
             "mount policy was bypassed without a character shell");
     }
+}
+void TypedEquipmentPolicies() {
+    Reset(); auto e=Rider();
+    auto& projection=g_registry.get<ecs::TypedEquipmentProjection>(e);
+    projection.stats.reset();
+    Check(!MountSystem::StartRiding(e), "unloaded typed equipment bypassed horse policy");
+    projection.stats=I::EquipmentStats{};
+    projection.stats->equipped.push_back({static_cast<uint8_t>(I::EquipmentSlot::Body),
+        I::ItemInstanceId::Create(1ULL<<40).value(),ceremony});
+    Check(!MountSystem::StartRiding(e), "ceremonial native armor allowed horse riding");
+    projection.stats->equipped.clear();
+    Check(MountSystem::StartRiding(e), "removing native ceremonial armor did not permit riding");
 }
 void CallbackSafety() {
     for(int action=0;action<3;++action) {
@@ -238,10 +260,8 @@ bool RemoveAffect(entt::entity e,uint32_t) { CheckLive(e); return true; }
 }
 bool CArenaManager::IsArenaMap(uint32_t) { return arena; }
 CWarMap* ecs::SocialSystem::GetWarMap(entt::entity e) { CheckLive(e); return war ? reinterpret_cast<CWarMap*>(uintptr_t(1)) : nullptr; }
-namespace ItemSystem {
-entt::entity GetWearItem(entt::entity e,uint8_t) { CheckLive(e); return armorVnum ? e : entt::entity(entt::null); }
-uint32_t GetItemVnum(entt::entity) { return armorVnum; }
-bool IsValidItem(entt::entity e) { return g_registry.valid(e) && armorVnum; }
+namespace auriga::item::runtime {
+std::shared_ptr<const ItemCatalog> CurrentCatalog() noexcept { return catalog; }
 }
 namespace MountSystem {
 bool IsHorseRiding(entt::entity e) { const auto* s=g_registry.valid(e)?g_registry.try_get<ecs::MountState>(e):nullptr; return s&&s->horseRiding; }
@@ -272,7 +292,7 @@ int main() {
     g_registry.on_construct<ecs::HorseRuntime>().connect<&Constructed>();
     g_dispatcher.sink<ecs::EvHorseStaminaConsume>().connect<&Ticked>();
     try {
-        NativeData(); TimerLifecycle(); WideHealthDeadlines(); ExpiryAndPolicies(); CallbackSafety(); Reset();
+        NativeData(); TimerLifecycle(); WideHealthDeadlines(); ExpiryAndPolicies(); TypedEquipmentPolicies(); CallbackSafety(); Reset();
         std::cout<<"Horse runtime: "<<checks<<" checks passed\n";
     } catch(const std::exception& error) {
         std::cerr<<error.what()<<'\n'; Reset(); return 1;

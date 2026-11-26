@@ -1,4 +1,5 @@
 #include "../../core/stdafx.h"
+#include <item/EquipmentChecks.hpp>
 #include "../../combat/DeathRecapEvents.hpp"
 #include <common/retired_content.h>
 #include "PointSystem.hpp"
@@ -836,14 +837,16 @@ void CheckBiologistReward(entt::entity e) {
 	}
 }
 
-// The per-tick affect work: stamina and the auto-recall.
+// Per-tick equipment, recovery, stamina and affect expiry work.
 bool UpdateAffect(entt::entity e)
 {
 	if (!ecs::IsCharacter(e))
 		return false;
 
 #ifdef ENABLE_BUG_FIXES
-	if (!ItemSystem::IsValidItem(ItemSystem::GetWearItem(e, WEAR_WEAPON))) {
+    // A missing projection is an asynchronous load, not an unequipped weapon.
+    const auto* equipment = TypedEquipmentView(e);
+    if (equipment && !auriga::item::EquippedWeapon(equipment)) {
 		if (AffectSystem::IsAffectFlag(e, AFF_GEOMGYEONG)) {
 			AffectSystem::RemoveAffect(e, SKILL_GEOMKYUNG);
 		}
