@@ -106,17 +106,10 @@ std::vector<NativeSchema> MakeSchemas()
     // Serialization/validation exists; no gameplay effect is advertised as bound.
     for (const auto &[id, kind, name] :
          std::vector<std::tuple<uint32_t, RewardPayloadKind, std::string_view>>{
-             {0x5001, RewardPayloadKind::Item, "payload.reward_item"},
              {0x5002, RewardPayloadKind::Experience, "payload.reward_experience"},
-             {0x5003, RewardPayloadKind::Gold, "payload.reward_gold"},
-             {0x5004, RewardPayloadKind::ConsumeItem, "payload.consume_item"}})
+             {0x5003, RewardPayloadKind::Gold, "payload.reward_gold"}})
     {
-        const bool item = kind == RewardPayloadKind::Item || kind == RewardPayloadKind::ConsumeItem;
-        std::vector<NativeParameter> parameters;
-        if (item)
-            parameters.push_back({10, "vnum", PortType::ItemProtoId, true, false, 1, UINT32_MAX});
-        parameters.push_back({11, "amount", PortType::Int64, true, false, 1,
-                              item ? RewardLimits::ItemCount : int64_t(RewardLimits::Amount)});
+        std::vector<NativeParameter> parameters{{11, "amount", PortType::Int64, true, false, 1, int64_t(RewardLimits::Amount)}};
         schemas.push_back({id,
                            1,
                            NativeCategory::RewardPayload,
@@ -217,14 +210,10 @@ NativeRequirements RequiredNativeTypes(const Definition &definition)
         if (bundle.levels) required.emplace(NativeType(RewardPayloadKind::Levels),1);
         if (bundle.accountCoins) required.emplace(NativeType(RewardPayloadKind::AccountCoins),1);
         if (bundle.goldCost) required.emplace(NativeType(RewardPayloadKind::GoldCost),1);
-        if (!bundle.items.empty())
-            required.emplace(NativeType(RewardPayloadKind::Item), 1);
         if (bundle.experience)
             required.emplace(NativeType(RewardPayloadKind::Experience), 1);
         if (bundle.gold)
             required.emplace(NativeType(RewardPayloadKind::Gold), 1);
-        if (!bundle.consumeItems.empty())
-            required.emplace(NativeType(RewardPayloadKind::ConsumeItem), 1);
     }
     return required;
 }
@@ -236,7 +225,7 @@ std::string ExportNativeSchemas()
     output["arbitrary_port_edges"] = false;
     output["condition_representation"] = "embedded_typed_ast";
     output["parallel_policies"] = {{"all", 0}, {"any", 1}, {"race", 2}, {"first_terminal", 3}};
-    output["reward_payloads"] = {{"schema", 1},
+    output["reward_payloads"] = {{"schema", 3},
                                  {"typed_item_schema", 2}, {"progression_schema", 3},
                                  {"graph_schema", 2},
                                  {"atomic_bundle", true},
@@ -257,8 +246,7 @@ std::string ExportNativeSchemas()
                                                             {PortType::EventType, "EventType"},
                                                             {PortType::RewardKey, "RewardKey"},
                                                             {PortType::EventPayload, "EventPayload"},
-                                                            {PortType::BranchArm, "BranchArm"},
-                                                            {PortType::ItemProtoId, "ItemProtoId"}})
+                                                            {PortType::BranchArm, "BranchArm"}})
         output["port_types"].push_back({{"type_id", uint16_t(type)}, {"name", name}});
     output["composite_types"] = {
         {"branch_arm",

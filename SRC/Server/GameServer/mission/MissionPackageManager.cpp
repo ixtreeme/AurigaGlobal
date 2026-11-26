@@ -87,19 +87,7 @@ MissionPackageManager::Select(const std::shared_ptr<const MissionPackage> &packa
                         }
                     continue;
                 }
-                if (!rewards_.atomicBundles || bundle.experience > rewards_.maxExperience ||
-                    bundle.gold > rewards_.maxGold)
-                    return {Status::Invalid, {{"rewards/" + key, "Unverified atomic reward/amount binding"}}};
-                for (bool consume : {false, true})
-                    for (const auto &[vnum, count] : consume ? bundle.consumeItems : bundle.items)
-                    {
-                        const auto binding = rewards_.items.find(vnum);
-                        if (binding == rewards_.items.end() ||
-                            count >
-                                (consume ? binding->second.maxConsumeCount : binding->second.maxGrantCount))
-                            return {Status::Invalid,
-                                    {{"rewards/" + key, "Unknown item or unverified count binding"}}};
-                    }
+                return {Status::Invalid, {{"rewards/" + key, "Native reward schema required"}}};
             }
         }
     }

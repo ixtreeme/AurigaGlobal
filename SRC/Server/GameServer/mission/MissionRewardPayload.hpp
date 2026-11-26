@@ -15,10 +15,9 @@ struct RewardLimits
 };
 enum class RewardPayloadKind : uint8_t
 {
-    Item = 1,
+    // Payload IDs 1 and 4 are retired; never reuse.
     Experience = 2,
     Gold = 3,
-    ConsumeItem = 4,
     TypedItem = 5, TypedConsumeItem = 6, TypedRequirement = 7, GoldCost = 8, Levels = 9, AccountCoins = 10
 };
 // Unordered, all-or-nothing bundle. Costs require pre-existing resources; grants
@@ -26,10 +25,8 @@ enum class RewardPayloadKind : uint8_t
 // clamping. Decoding a payload alone never authorizes a gameplay effect.
 struct RewardBundle
 {
-    uint16_t schema = 1;
-    std::map<uint32_t, uint32_t> items;
+    uint16_t schema = 3;
     uint64_t experience = 0, gold = 0;
-    std::map<uint32_t, uint32_t> consumeItems;
     struct ItemKey
     {
         uint16_t category = 0;
@@ -48,7 +45,7 @@ inline bool ValidRewardBundle(const RewardBundle &bundle)
 {
     if (bundle.schema == 2 || bundle.schema == 3)
     {
-        if (!bundle.items.empty() || !bundle.consumeItems.empty() || (bundle.schema == 2 && (bundle.experience || bundle.levels || bundle.accountCoins)) ||
+        if ((bundle.schema == 2 && (bundle.experience || bundle.levels || bundle.accountCoins)) ||
             bundle.experience > RewardLimits::Amount || bundle.accountCoins > RewardLimits::Amount || bundle.levels > 254 ||
             bundle.gold > RewardLimits::Amount || bundle.goldCost > RewardLimits::Amount ||
             (bundle.typedItems.empty() && bundle.typedConsumeItems.empty() && bundle.gold == bundle.goldCost && !bundle.experience && !bundle.levels && !bundle.accountCoins))
@@ -65,16 +62,6 @@ inline bool ValidRewardBundle(const RewardBundle &bundle)
         }
         return true;
     }
-    if (bundle.schema != 1 || !bundle.typedItems.empty() || !bundle.typedConsumeItems.empty() ||
-        !bundle.typedRequirements.empty() || bundle.goldCost || bundle.levels || bundle.accountCoins || bundle.items.size() > RewardLimits::ItemEntries ||
-        bundle.consumeItems.size() > RewardLimits::ItemEntries - bundle.items.size() ||
-        bundle.experience > RewardLimits::Amount || bundle.gold > RewardLimits::Amount ||
-        (bundle.items.empty() && bundle.consumeItems.empty() && !bundle.experience && !bundle.gold))
-        return false;
-    for (const auto *table : {&bundle.items, &bundle.consumeItems})
-        for (const auto &[vnum, count] : *table)
-            if (!vnum || !count || count > RewardLimits::ItemCount)
-                return false;
-    return true;
+    return false;
 }
 } // namespace auriga::mission

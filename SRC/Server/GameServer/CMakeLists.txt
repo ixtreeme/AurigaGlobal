@@ -130,7 +130,6 @@ set(_mission_persistence_sources
     mission/MissionCheckpointCodec.cpp
     mission/MissionActions.cpp
     mission/MissionRewardBinding.cpp
-    mission/MissionResourcePlan.cpp
 )
 # The typed Mission coordinator and SQL integration use the same kernel/store.
 target_sources(GameServer PRIVATE mission/TypedMissionItems.cpp mission/MissionProgression.cpp mission/TypedMissionWire.cpp mission/TypedMissionRuntime.cpp mission/MissionPersistence.cpp)
@@ -178,32 +177,15 @@ add_executable(MissionPersistenceTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/MissionPersistenceTests.cpp
     ${_mission_persistence_sources}
     mission/MissionPersistence.cpp
-    mission/MissionItemAwards.cpp
-    mission/MissionResourceEffects.cpp
-    mission/MissionResourceFence.cpp
-    mission/MissionResourceDrain.cpp
-    ../Database/ItemAwardDelivery.cpp
-    ../Database/ItemAwardScan.cpp
 )
 
-add_executable(MissionResourceTests EXCLUDE_FROM_ALL
-    ${CMAKE_SOURCE_DIR}/tests/server/MissionResourceTests.cpp
-    ${_mission_persistence_sources}
-    mission/MissionResourceFence.cpp
-)
-target_include_directories(MissionResourceTests PRIVATE ${AURIGA_MISSION_JSON_INCLUDE} ${CMAKE_SOURCE_DIR}/SRC/Server)
-target_link_libraries(MissionResourceTests PRIVATE Threads::Threads OpenSSL::Crypto)
-if(TARGET auriga_sanitizers)
-    target_link_libraries(MissionResourceTests PRIVATE auriga_sanitizers)
-endif()
-add_test(NAME mission_resources COMMAND MissionResourceTests)
 target_include_directories(MissionPersistenceTests PRIVATE ${AURIGA_MISSION_JSON_INCLUDE})
 target_link_libraries(MissionPersistenceTests PRIVATE SERVER S_SQL S_Core Threads::Threads OpenSSL::Crypto)
 if(WIN32)
     target_link_libraries(MissionPersistenceTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
 endif()
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_mission_tool MissionCoreTests MissionCheck MissionCompiler MissionPackageTests MissionCheckpointTests MissionPersistenceTests MissionRewardsTests MissionResourceTests)
+    foreach(_mission_tool MissionCoreTests MissionCheck MissionCompiler MissionPackageTests MissionCheckpointTests MissionPersistenceTests MissionRewardsTests)
         add_custom_command(TARGET ${_mission_tool} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}" "$<TARGET_FILE_DIR:${_mission_tool}>"
@@ -652,24 +634,7 @@ if(WIN32)
 endif()
 add_test(NAME async_sql_prepared COMMAND AsyncSqlPreparedTests)
 
-# Canonical item_award -> item materialization, including lost COMMIT, real
 # item schema without auto-increment, full boxes and a cold process after crash.
-add_executable(ItemAwardDeliveryTests EXCLUDE_FROM_ALL
-    ${CMAKE_SOURCE_DIR}/tests/server/ItemAwardDeliveryTests.cpp
-    ../Database/ItemAwardDelivery.cpp
-    ../Database/ItemAwardScan.cpp
-)
-target_link_libraries(ItemAwardDeliveryTests PRIVATE SERVER S_SQL S_Core)
-if(WIN32)
-    target_link_libraries(ItemAwardDeliveryTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
-endif()
-if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    add_custom_command(TARGET ItemAwardDeliveryTests POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${AURIGA_ASAN_RUNTIME_DLL}" "$<TARGET_FILE_DIR:ItemAwardDeliveryTests>"
-    )
-endif()
-add_test(NAME item_award_delivery COMMAND ItemAwardDeliveryTests --unit)
 
 # Opt-in real database tests. The runner creates its own datadir and loopback
 # port; it never connects to an existing MariaDB service.
@@ -714,16 +679,7 @@ if(WIN32 AND AURIGA_TEST_MARIADB_BIN_DIR)
             --test-argument ${CMAKE_SOURCE_DIR}/db/migrations/2026-10-25_mission_engine_persistence.sql
             --test-argument ${CMAKE_SOURCE_DIR}/db/migrations/2026-10-25_mission_engine_actions.sql
             --test-argument ${CMAKE_SOURCE_DIR}/db/schema.sql
-            --drop-commit-count 7
-            --followup-argument=--cold-check
-            --crash-server-before-followup
-    )
-    add_test(NAME item_award_delivery_mariadb
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/server/AsyncSqlMariaDbTests.py
-            --server-bin-dir ${AURIGA_TEST_MARIADB_BIN_DIR}
-            --test-executable $<TARGET_FILE:ItemAwardDeliveryTests>
-            --work-dir ${CMAKE_BINARY_DIR}/item-award-delivery-isolated
-            --test-argument ${CMAKE_SOURCE_DIR}/db/schema.sql
+            --drop-commit-count 2
             --followup-argument=--cold-check
             --crash-server-before-followup
     )
@@ -1077,7 +1033,6 @@ if(TEST async_sql_mariadb_isolated)
     set_tests_properties(async_sql_mariadb_isolated PROPERTIES TIMEOUT 180 LABELS "server;integration")
     set_tests_properties(player_session_mariadb player_cache_drain_mariadb PROPERTIES TIMEOUT 180 LABELS "server;integration")
     set_tests_properties(mission_persistence_mariadb PROPERTIES TIMEOUT 180 LABELS "server;integration")
-    set_tests_properties(item_award_delivery_mariadb PROPERTIES TIMEOUT 180 LABELS "server;integration")
 endif()
 
 add_executable(ICCDeathwhisperTests EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/tests/server/ICCDeathwhisperTests.cpp)

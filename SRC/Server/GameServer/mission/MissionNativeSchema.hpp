@@ -25,7 +25,7 @@ enum class PortType : uint16_t
     PlayerRef = 7,
     NpcRef = 8,
     MobProtoId = 9,
-    ItemProtoId = 10,
+    // Port ID 10 retired (raw item prototype); never reuse.
     MissionId = 11,
     ObjectiveId = 12,
     RegionId = 13,

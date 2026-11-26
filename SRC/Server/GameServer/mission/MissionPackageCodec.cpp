@@ -369,19 +369,7 @@ void WriteReward(Writer &w, const RewardBundle &bundle)
         typed(bundle.typedItems); typed(bundle.typedConsumeItems); typed(bundle.typedRequirements); w.U64(bundle.goldCost); w.U64(bundle.gold);
         if (bundle.schema == 3) { w.U64(bundle.experience); w.U16(bundle.levels); w.U64(bundle.accountCoins); } return;
     }
-    const auto items = [&](const auto &table)
-    {
-        w.U32(uint32_t(table.size()));
-        for (const auto &[vnum, count] : table)
-        {
-            w.U32(vnum);
-            w.U32(count);
-        }
-    };
-    items(bundle.items);
-    w.U64(bundle.experience);
-    w.U64(bundle.gold);
-    items(bundle.consumeItems);
+
 }
 RewardBundle ReadReward(Reader &r)
 {
@@ -392,25 +380,7 @@ RewardBundle ReadReward(Reader &r)
         const auto typed = [&](auto &table) { const auto count = r.Count(16); RewardBundle::ItemKey previous{}; for (size_t i=0; i<count; ++i) { RewardBundle::ItemKey key{r.U16(),r.U32(),r.U16()}; Need(key > previous, "Noncanonical typed reward key"); previous=key; table.emplace(key,r.U32()); } };
         typed(bundle.typedItems); typed(bundle.typedConsumeItems); typed(bundle.typedRequirements); bundle.goldCost=r.U64(); bundle.gold=r.U64(); if(bundle.schema==3){bundle.experience=r.U64();bundle.levels=r.U16();bundle.accountCoins=r.U64();} Need(ValidRewardBundle(bundle), "Invalid typed reward payload"); return bundle;
     }
-    Need(bundle.schema == 1, "Unsupported reward payload schema");
-    const auto items = [&](auto &table)
-    {
-        const auto entries = r.Count(RewardLimits::ItemEntries);
-        uint32_t previous = 0;
-        for (size_t i = 0; i < entries; ++i)
-        {
-            const auto vnum = r.U32(), count = r.U32();
-            Need(vnum > previous, "Noncanonical/duplicate reward item prototype");
-            previous = vnum;
-            table.emplace(vnum, count);
-        }
-    };
-    items(bundle.items);
-    bundle.experience = r.U64();
-    bundle.gold = r.U64();
-    items(bundle.consumeItems);
-    Need(ValidRewardBundle(bundle), "Invalid reward payload");
-    return bundle;
+    throw std::invalid_argument("Retired reward payload schema; native keys required");
 }
 Writer WriteDefinition(const Definition &d, uint16_t graphSchema = 1)
 {
@@ -484,7 +454,7 @@ Definition ReadDefinition(Reader &r, uint16_t graphSchema, size_t &packageItems)
             Need(key > previous, "Noncanonical/duplicate reward key");
             previous = key;
             auto bundle = ReadReward(r);
-            const auto items = bundle.items.size() + bundle.consumeItems.size() + bundle.typedItems.size() + bundle.typedConsumeItems.size() + bundle.typedRequirements.size();
+            const auto items = bundle.typedItems.size() + bundle.typedConsumeItems.size() + bundle.typedRequirements.size();
             Need(items <= RewardLimits::DefinitionItems - definitionItems &&
                      items <= RewardLimits::PackageItems - packageItems,
                  "Decoded reward item memory limit");
@@ -607,7 +577,7 @@ struct PackageCodec
         {
             for (const auto &[key, bundle] : definition.rewards)
             {
-                rewardItems += bundle.items.size() + bundle.consumeItems.size() + bundle.typedItems.size() + bundle.typedConsumeItems.size() + bundle.typedRequirements.size();
+                rewardItems += bundle.typedItems.size() + bundle.typedConsumeItems.size() + bundle.typedRequirements.size();
                 Need(rewardItems <= RewardLimits::PackageItems, "Package reward item memory limit");
             }
             Need(ids.insert(definition.id).second, "Duplicate mission ID");

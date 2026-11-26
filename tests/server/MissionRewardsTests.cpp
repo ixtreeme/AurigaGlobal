@@ -91,7 +91,7 @@ void Legacy(const char *path)
     Check(found && graph->Source().rewards.empty(), "legacy rewards were fabricated");
     DefinitionRegistry live;
     RewardBindingPolicy attested;
-    attested.atomicBundles = true;
+    attested.atomicTypedItems = true;
     MissionPackageManager manager(live, MissionPackageManager::Mode::Gameplay,
                                   loaded.package->Manifest().requiresTypes, attested);
     Check(manager.Activate(loaded).status == MissionPackageManager::Status::Invalid,
@@ -123,7 +123,7 @@ void InvalidSources(const Json &source)
     for (const auto &value : std::vector<Json>{0, -1, 50001, 1.5, "2", nullptr})
     {
         changed = source;
-        changed["missions"][0]["rewards"]["demo.bundle"]["items"][0]["count"] = value;
+        changed["missions"][0]["rewards"]["demo.bundle"]["typed_items"][0]["count"] = value;
         invalid(changed);
     }
     for (const auto &value : std::vector<Json>{-1, 1.5, "100", uint64_t(INT64_MAX) + 1})
@@ -133,7 +133,7 @@ void InvalidSources(const Json &source)
         invalid(changed);
     }
     changed = source;
-    changed["missions"][0]["rewards"]["demo.bundle"]["schema"] = 2;
+    changed["missions"][0]["rewards"]["demo.bundle"]["schema"] = 1;
     invalid(changed);
     changed = source;
     changed["missions"][0]["rewards"]["demo.bundle"] = {{"schema", 1}};
@@ -142,10 +142,10 @@ void InvalidSources(const Json &source)
     changed["missions"][0]["rewards"]["demo.bundle"]["script"] = "give_item()";
     invalid(changed);
     changed = source;
-    changed["missions"][0]["rewards"]["demo.bundle"]["items"][0]["socket0"] = 1;
+    changed["missions"][0]["rewards"]["demo.bundle"]["typed_items"][0]["socket0"] = 1;
     invalid(changed);
     changed = source;
-    changed["missions"][0]["rewards"]["demo.bundle"]["items"].push_back(base["items"][0]);
+    changed["missions"][0]["rewards"]["demo.bundle"]["typed_items"].push_back(base["typed_items"][0]);
     invalid(changed);
     changed = source;
     changed["missions"][0]["rewards"]["orphan"] = base;
@@ -154,10 +154,10 @@ void InvalidSources(const Json &source)
     changed["missions"][0]["nodes"][0]["reward"] = "missing";
     invalid(changed, false);
     changed = source;
-    changed["missions"][0]["rewards"]["demo.bundle"]["items"] = Json::object();
+    changed["missions"][0]["rewards"]["demo.bundle"]["typed_items"] = Json::object();
     invalid(changed);
     changed = source;
-    changed["missions"][0]["rewards"]["demo.bundle"]["consume_items"][0]["vnum"] = 0;
+    changed["missions"][0]["rewards"]["demo.bundle"]["typed_consume_items"][0]["local"] = 0;
     invalid(changed);
     std::string duplicate = source.dump();
     const auto key = duplicate.find("\"gold\":100");
@@ -203,14 +203,14 @@ void BindingsAndPins(const PackageSource &source, const PackageLoad &loaded)
         Check(!PinReward(bad, fingerprint, *graph), "wrong action key pinned");
     }
     auto changed = source;
-    ++changed.missions[0].rewards.at(key.reward).items.begin()->second;
+    ++changed.missions[0].rewards.at(key.reward).typedItems.begin()->second;
     auto other = CompileDefinition(changed.missions[0]);
     Check(bool(other) && FingerprintDefinition(*other.definition) != fingerprint &&
               !PinReward(key, fingerprint, *other.definition),
           "payload change escaped graph identity");
     auto otherPin = PinReward(key, FingerprintDefinition(*other.definition), *other.definition);
     Check(bool(otherPin) && otherPin.reward->PayloadDigest() != pin.reward->PayloadDigest() &&
-              pin.reward->Payload().items.at(50011) == 2,
+              pin.reward->Payload().typedItems.at({6,117,0}) == 2,
           "pinned payload changed or hash omitted item count");
     for (size_t field = 0; field < 4; ++field)
     {
@@ -220,9 +220,9 @@ void BindingsAndPins(const PackageSource &source, const PackageLoad &loaded)
         if (field == 1)
             ++bundle.gold;
         if (field == 2)
-            ++bundle.consumeItems.begin()->second;
+            ++bundle.typedConsumeItems.begin()->second;
         if (field == 3)
-            bundle.items.emplace(50014, 1);
+            bundle.typedItems.emplace(RewardBundle::ItemKey{6,120,0}, 1);
         Check(FingerprintReward(bundle) != pin.reward->PayloadDigest(),
               "payload hash omitted a reward field");
     }
@@ -241,15 +241,15 @@ void BindingsAndPins(const PackageSource &source, const PackageLoad &loaded)
     changed.manifest.version = 2;
     Check(original.Activate(changed.missions).status == Publication::Status::Published &&
               runtime.Inspect(1)->definition->Source().version == 1 &&
-              pin.reward->Payload().items.at(50011) == 2,
+              pin.reward->Payload().typedItems.at({6,117,0}) == 2,
           "activation changed old reward obligation");
 
     RewardBindingPolicy policy;
-    policy.items = {
-        {50011, {RewardLimits::ItemCount, 0}}, {50012, {1, 0}}, {50013, {0, RewardLimits::ItemCount}}};
+    policy.typedItems = {
+        {{6,117,0}, {RewardLimits::ItemCount, 0}}, {{6,118,0}, {1, 0}}, {{6,119,0}, {0, RewardLimits::ItemCount}}};
     policy.maxExperience = RewardLimits::Amount;
     policy.maxGold = RewardLimits::Amount;
-    policy.atomicBundles = true;
+    policy.atomicTypedItems = true;
     using Mode = MissionPackageManager::Mode;
     using Status = MissionPackageManager::Status;
     const auto required = loaded.package->Manifest().requiresTypes;
@@ -261,13 +261,13 @@ void BindingsAndPins(const PackageSource &source, const PackageLoad &loaded)
     };
     Check(accept(required, policy) == Status::Activated, "verified payload binding contract rejected");
     auto incomplete = required;
-    incomplete.erase(NativeType(RewardPayloadKind::ConsumeItem));
+    incomplete.erase(NativeType(RewardPayloadKind::TypedConsumeItem));
     Check(accept(incomplete, policy) == Status::Invalid, "unsupported consumption capability activated");
     auto invalid = policy;
-    invalid.atomicBundles = false;
+    invalid.atomicTypedItems = false;
     Check(accept(required, invalid) == Status::Invalid, "unverified mixed-effect atomicity activated");
     invalid = policy;
-    invalid.items.erase(50013);
+    invalid.typedItems.erase({6,119,0});
     Check(accept(required, invalid) == Status::Invalid, "unknown cost item activated");
     invalid = policy;
     invalid.maxGold = 99;
@@ -276,13 +276,13 @@ void BindingsAndPins(const PackageSource &source, const PackageLoad &loaded)
     invalid.maxExperience = 999;
     Check(accept(required, invalid) == Status::Invalid, "experience binding limit ignored");
     invalid = policy;
-    invalid.items.at(50013).maxConsumeCount = 2;
+    invalid.typedItems.at({6,119,0}).maxConsumeCount = 2;
     Check(accept(required, invalid) == Status::Invalid, "cost item count binding ignored");
     invalid = policy;
-    invalid.items.at(50011).maxGrantCount = 1;
+    invalid.typedItems.at({6,117,0}).maxGrantCount = 1;
     Check(accept(required, invalid) == Status::Invalid, "per-prototype grant count binding ignored");
     invalid = policy;
-    invalid.items.at(50011) = {0, RewardLimits::ItemCount};
+    invalid.typedItems.at({6,117,0}) = {0, RewardLimits::ItemCount};
     Check(accept(required, invalid) == Status::Invalid, "consume-only prototype accepted as a grant");
 }
 void MutationChecks(const std::vector<uint8_t> &valid)
@@ -331,7 +331,7 @@ void PayloadLimits(const PackageSource &example)
             const auto key = "bundle." + std::to_string(bundle);
             RewardBundle reward;
             for (uint32_t item = 1; item <= 32; ++item)
-                reward.items.emplace(item, 1);
+                (item<=16 ? reward.typedItems : reward.typedConsumeItems).emplace(RewardBundle::ItemKey{6,item,0}, 1);
             definition.rewards.emplace(key, reward);
             Node node;
             node.id = key;
@@ -370,7 +370,7 @@ void PayloadLimits(const PackageSource &example)
               decoded.errors.front().message.find("Decoded reward item memory limit") != std::string::npos,
           "binary aggregate budget was not enforced while decoding");
     auto &definition = source.missions.front();
-    definition.rewards.begin()->second.consumeItems.emplace(99, 1);
+    definition.rewards.begin()->second.typedRequirements.emplace(RewardBundle::ItemKey{6,99,0}, 1);
     Check(!CompileDefinition(definition), "per-bundle item bound ignored");
 }
 } // namespace
@@ -392,8 +392,8 @@ int main(int argc, char **argv)
         Check(bool(loaded) && CompilePackage(SourceOf(*loaded.package)).bytes == compiled.bytes,
               "typed package roundtrip changed bytes");
         auto reversed = Json::parse(text);
-        std::reverse(reversed["missions"][0]["rewards"]["demo.bundle"]["items"].begin(),
-                     reversed["missions"][0]["rewards"]["demo.bundle"]["items"].end());
+        std::reverse(reversed["missions"][0]["rewards"]["demo.bundle"]["typed_items"].begin(),
+                     reversed["missions"][0]["rewards"]["demo.bundle"]["typed_items"].end());
         const auto reordered = ParsePackageSource(reversed.dump());
         Check(bool(reordered) && CompilePackage(reordered.source).bytes == compiled.bytes,
               "item order changed bundle identity");
@@ -401,7 +401,7 @@ int main(int argc, char **argv)
         BindingsAndPins(parsed.source, loaded);
         MutationChecks(compiled.bytes);
         PayloadLimits(parsed.source);
-        Check(NativeType(RewardPayloadKind::Item) == 0x5001 && !FindNativeSchema(0x4001),
+        Check(!FindNativeSchema(0x5001) && !FindNativeSchema(0x5004) && !FindNativeSchema(0x4001),
               "payload schema advertised a gameplay action implementation");
         const auto registry = Json::parse(ExportNativeSchemas());
         Check(!registry["reward_payloads"]["delivery_implemented"].get<bool>(),

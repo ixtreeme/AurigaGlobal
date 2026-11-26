@@ -127,27 +127,9 @@ bool Boolean(const Json &j, const std::string &path)
 }
 RewardBundle ReadRewardBundle(const Json &j, const std::string &path)
 {
-    Fields(j, path, {"schema"}, {"items", "experience", "gold", "consume_items", "typed_items", "typed_consume_items", "typed_requirements", "gold_cost", "levels", "account_coins"});
+    Fields(j, path, {"schema"}, {"experience", "gold", "typed_items", "typed_consume_items", "typed_requirements", "gold_cost", "levels", "account_coins"});
     RewardBundle bundle;
     bundle.schema = uint16_t(Number(j.at("schema"), path + "/schema", UINT16_MAX));
-    for (const auto &[field, table] :
-         std::initializer_list<std::pair<std::string_view, std::map<uint32_t, uint32_t> *>>{
-             {"items", &bundle.items}, {"consume_items", &bundle.consumeItems}})
-    {
-        if (!j.contains(field))
-            continue;
-        const auto &entries = j.at(field);
-        if (!entries.is_array() || entries.size() > RewardLimits::ItemEntries)
-            Bad(path, "reward item entry limit");
-        for (const auto &item : entries)
-        {
-            Fields(item, path, {"vnum", "count"});
-            const auto vnum = uint32_t(Number(item.at("vnum"), path + "/vnum", UINT32_MAX));
-            const auto count = uint32_t(Number(item.at("count"), path + "/count", RewardLimits::ItemCount));
-            if (!table->emplace(vnum, count).second)
-                Bad(path, "duplicate reward item prototype");
-        }
-    }
     for (const auto &[field, table] : std::initializer_list<std::pair<std::string_view, std::map<RewardBundle::ItemKey, uint32_t> *>>{
             {"typed_items", &bundle.typedItems}, {"typed_consume_items", &bundle.typedConsumeItems}, {"typed_requirements", &bundle.typedRequirements}})
     {
@@ -392,7 +374,7 @@ DefinitionParseResult ParseDefinition(std::string_view text)
                 if (!IsIdentifier(it.key()))
                     Bad("rewards", "invalid reward key");
                 auto bundle = ReadRewardBundle(it.value(), "rewards/" + it.key());
-                const auto items = bundle.items.size() + bundle.consumeItems.size();
+                const auto items = bundle.typedItems.size() + bundle.typedConsumeItems.size() + bundle.typedRequirements.size();
                 if (items > RewardLimits::DefinitionItems - rewardItems)
                     Bad("rewards", "definition reward item memory limit");
                 rewardItems += items;

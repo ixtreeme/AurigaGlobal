@@ -3,24 +3,63 @@
   "package": "demo.reward_payloads",
   "version": 1,
   "default_locale": "hu",
-  "missions": [{
-    "schema": 2,
-    "mission": "demo.reward_story",
-    "version": 1,
-    "root": "reward",
-    "nodes": [{"id": "reward", "kind": "reward", "reward": "demo.bundle"}],
-    "rewards": {
-      "demo.bundle": {
-        "schema": 1,
-        "items": [{"vnum": 50011, "count": 2}, {"vnum": 50012, "count": 1}],
-        "experience": 1000,
-        "gold": 100,
-        "consume_items": [{"vnum": 50013, "count": 3}]
+  "missions": [
+    {
+      "schema": 2,
+      "mission": "demo.reward_story",
+      "version": 1,
+      "root": "reward",
+      "nodes": [
+        {
+          "id": "reward",
+          "kind": "reward",
+          "reward": "demo.bundle"
+        }
+      ],
+      "rewards": {
+        "demo.bundle": {
+          "schema": 3,
+          "experience": 1000,
+          "gold": 100,
+          "typed_items": [
+            {
+              "category": 6,
+              "local": 117,
+              "level": 0,
+              "count": 2
+            },
+            {
+              "category": 6,
+              "local": 118,
+              "level": 0,
+              "count": 1
+            }
+          ],
+          "typed_consume_items": [
+            {
+              "category": 6,
+              "local": 119,
+              "level": 0,
+              "count": 3
+            }
+          ]
+        }
       }
     }
-  }],
+  ],
   "presentation": {
-    "locales": {"hu": {"title": "Jutalomcsomag-minta", "summary": "Szimulációs példa, játékbeli adatkapcsolat nélkül."}},
-    "missions": {"demo.reward_story": {"title": "title", "summary": "summary", "objectives": []}}
+    "locales": {
+      "hu": {
+        "title": "Jutalomcsomag-minta",
+        "summary": "Szimulációs példa, játékbeli adatkapcsolat nélkül."
+      }
+    },
+    "missions": {
+      "demo.reward_story": {
+        "title": "title",
+        "summary": "summary",
+        "objectives": []
+      }
+    }
   }
 }

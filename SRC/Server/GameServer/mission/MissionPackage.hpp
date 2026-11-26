@@ -113,9 +113,7 @@ struct RewardItemBinding
 };
 struct RewardBindingPolicy
 {
-    std::map<uint32_t, RewardItemBinding> items;
     uint64_t maxExperience = 0, maxGold = 0;
-    bool atomicBundles = false;
     std::map<RewardBundle::ItemKey, RewardItemBinding> typedItems;
     uint64_t maxGoldCost = 0, maxAccountCoins = 0;
     uint16_t maxLevels = 0;

@@ -137,7 +137,7 @@ PackageSourceResult ParsePackageSource(std::string_view text)
                                             parsed.errors.front().message);
             for (const auto &[key, bundle] : parsed.value.rewards)
             {
-                const auto items = bundle.items.size() + bundle.consumeItems.size();
+                const auto items = bundle.typedItems.size() + bundle.typedConsumeItems.size() + bundle.typedRequirements.size();
                 Need(items <= RewardLimits::PackageItems - rewardItems, "Source reward item memory limit");
                 rewardItems += items;
             }
