@@ -34,9 +34,6 @@ bool CClientManager::InitializeTables()
 		LOG_ERROR("InitializeMobTable FAILED");
 		return false;
 	}
-    // Only native item catalogs, shops, refinement and bonus tables are used.
-    // These empty ABI slots remain reserved in the shared non-item boot frame.
-    m_vec_itemTable.clear();m_map_itemTableByVnum.clear();
 #ifdef ENABLE_PROTO_FROM_DB
     extern bool g_bMirror2DB;
     if (g_bMirror2DB && !MirrorMobTableIntoDB())
@@ -507,9 +504,6 @@ bool CClientManager::ReadObjectTable(SQLMsg* message, bool publish)
 	return true;
 }
 
-#ifdef ENABLE_ITEM_EXTRA_PROTO
-
-#endif
 
 
 bool CClientManager::MirrorMobTableIntoDB()

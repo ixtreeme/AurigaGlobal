@@ -6,31 +6,9 @@
 #include "ClientManager.h"
 #include "Main.h"
 
-const char* GetItemWindowName(uint8_t window)
-{
-	// Historical SQL ENUM ordinals remain readable for archived rows. These
-	// labels do not enable the retired shop runtime or accept client requests.
-	static const char* const s_names[] = {
-		"INVENTORY", "INVENTORY", "EQUIPMENT", "SAFEBOX", "MALL",
-		"MOUNT_INVENTORY", "RETIRED_WINDOW_6", "BELT_INVENTORY",
-		"EXTRA_INVENTORY", "SWITCHBOT", "GROUND", "NEW_OFFSHOP", "SHOP_SAFEBOX"
-	};
-
-	if (window < sizeof(s_names) / sizeof(s_names[0]))
-		return s_names[window];
-
-	return "INVENTORY";
-}
-
 extern CPacketInfo g_item_info;
 extern int g_iPlayerCacheFlushSeconds;
-extern int g_iItemCacheFlushSeconds;
 extern int g_test_server;
-// MYSHOP_PRICE_LIST
-extern int g_iItemPriceListTableCacheFlushSeconds;
-// END_OF_MYSHOP_PRICE_LIST
-//
-extern int g_item_count;
 
 #ifdef __SKILL_COLOR_SYSTEM__
 extern int g_iSkillColorCacheFlushSeconds;
@@ -119,8 +97,3 @@ void CPlayerTableCache::OnFlush()
 	CreatePlayerSaveQuery(szQuery, sizeof(szQuery), &m_data);
 	CDBManager::instance().ReturnQuery(szQuery, QID_PLAYER_SAVE, 0, nullptr);
 }
-
-// MYSHOP_PRICE_LIST
-//
-// CItemPriceListTableCache class implementation
-//

@@ -142,11 +142,6 @@ void Validate(const Json& root) {
     const auto& dbServer = OptionalObject(db, "server");
     for (const char* name : {"player", "account", "common"}) Sql(db.at("sql").at(name));
     MissionSqlCheck(db, sharedSql);
-    const auto& range = db.at("item_id_range");
-    Need(range.is_array() && range.size() == 2, "database.item_id_range needs two IDs");
-    Json ids = {{"first", range[0]}, {"last", range[1]}};
-    const auto first = Integer(ids, "first", 0, 1, 0xffffffffLL);
-    Need(Integer(ids, "last", 0, 1, 0xffffffffLL) >= first, "database.item_id_range is reversed");
     Integer(dbServer, "client_heart_fps", 50, 1, 1000);
     Sql(login.at("account_sql")); Tls(login.at("tls"));
     const auto loginPort = Integer(login, "port", 0, 1, 65535); Need(loginPort != 0, "login.port is required");

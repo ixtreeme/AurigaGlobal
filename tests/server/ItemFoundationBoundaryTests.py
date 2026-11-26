@@ -24,6 +24,9 @@ class FoundationBoundary(unittest.TestCase):
             'item/item_manager.h',
             'item/item_manager_idrange.cpp',
             'item/item.h',
+            'item/refine.cpp',
+            'item/refine.h',
+            'item/LegacyItemBoundary.hpp',
             'item/ItemUse.cpp',
             'item/ItemUse.h',
             'item/over9refine.cpp',
@@ -50,7 +53,9 @@ class FoundationBoundary(unittest.TestCase):
         for name in retired:
             with self.subTest(name=name):
                 self.assertFalse((SERVER / name).exists())
-        symbols = re.compile(r"\b(?:ItemSystem|InventorySystem|ITEM_MANAGER|CItemRegistry|SafeboxSystem|CSwitchbotManager|CShopManager|ExchangeSystem)::|\becs::(?:ItemIdentity|ItemSockets|ItemOwner|MainInventoryRuntimeComponent|ExtraInventoryRuntimeComponent)\b")
+        for name in ("ItemIDRangeManager.cpp", "ItemIDRangeManager.h"):
+            self.assertFalse((ROOT / "SRC/Server/Database" / name).exists())
+        symbols = re.compile(r"\b(?:ItemIDRangeManager|CRefineManager|ItemSystem|InventorySystem|ITEM_MANAGER|CItemRegistry|SafeboxSystem|CSwitchbotManager|CShopManager|ExchangeSystem)::|\becs::(?:ItemIdentity|ItemSockets|ItemOwner|MainInventoryRuntimeComponent|ExtraInventoryRuntimeComponent)\b")
         for file in SERVER.rglob("*"):
             if file.suffix not in (".cpp", ".hpp", ".h"):
                 continue

@@ -135,7 +135,6 @@ struct BattleFixture {
     bool riding {false};
 };
 struct WeaponFixture {
-    TItemTable proto {};
     uint8_t type {ITEM_WEAPON}, subtype {WEAPON_SWORD};
     std::array<int, 6> values {0, 0, 0, 10, 10, 2};
 };

@@ -135,7 +135,9 @@ int main() {
         bad = fixture; bad["game_servers"]["ch1-core2"]["interserver_key"] = "other"; reject(bad);
         bad = fixture; bad["game_servers"]["ch1-core2"]["server"]["table_postfix"] = "_other"; reject(bad);
         bad = fixture; bad["login"]["database_link"]["port"] = 5400; reject(bad);
-        bad = fixture; bad["database"]["item_id_range"] = {9, 1}; reject(bad);
+        bad = fixture; bad["database"].erase("item_id_range");
+        Check(auriga::config::Resolve(bad, source, Role::Database, {}, section, error),
+              "native Database still requires a retired item ID range");
         bad = fixture; bad["game_servers"]["ch1-core1"]["map_allow"] = {1, 1}; reject(bad);
         bad = fixture; bad["game_defaults"]["quest"]["object_dir"] = "PASSWORD_DO_NOT_LOG"; reject(bad);
         bad = fixture; bad["common"]["tls"]["key_file"] = ""; reject(bad);

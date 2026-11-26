@@ -18,7 +18,7 @@
 #include "../mission_pass/MissionPassEvents.hpp"
 #include "../network/desc.h"
 #include "../core/packet.h"
-#include "../item/refine.h"
+#include "../item/ForgeNpcs.hpp"
 #include "../world/fishing.h"
 #include <item/ToolRuntime.hpp>
 #include <openssl/rand.h>

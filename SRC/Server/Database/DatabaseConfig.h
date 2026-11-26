@@ -18,8 +18,7 @@ namespace auriga::config { struct Section; }
 //   "sql":     { "player":  { "host": "", "port": 0, "user": "",
 //                             "password": "", "database": "" },
 //                "account": { ... }, "common": { ... } },
-//   "cache":   { "player_flush_seconds": 300, "item_flush_seconds": 300,
-//                "pricelist_flush_seconds": 540, "flush_limit_per_second": 200 },
+//   "cache":   { "player_flush_seconds": 300, "flush_limit_per_second": 200 },
 //   "proto":   { "from_db": false, "mirror2db": false },
 //   "guild":   { "poly_power": [0, 0], "poly_handicap": [0, 0] }
 // }
@@ -36,8 +35,6 @@ struct SqlConnectionConfig
 
 struct DatabaseConfig
 {
-	// [start_item_id, end_item_id]
-	uint32_t itemIdRange[2] { 0, 0 };
 
 	struct ServerConfig
 	{
@@ -70,8 +67,6 @@ struct DatabaseConfig
 	struct CacheConfig
 	{
 		int	playerFlushSeconds { 300 };
-		int	itemFlushSeconds { 300 };
-		int	pricelistFlushSeconds { 540 };
 		int	flushLimitPerSecond { 200 };
 	} cache;
 

@@ -185,9 +185,6 @@ public:
 protected:
 	std::map<uint8_t, std::vector<TEventManagerData > > m_EventManager;
 #endif
-#ifdef ENABLE_ITEM_EXTRA_PROTO
-	void		SendItemExtraProtoTable(CPeer* peer);
-#endif
 
 	bool		MirrorMobTableIntoDB();
 
@@ -412,25 +409,15 @@ private:
 	//int					m_iPlayerDeleteLevelLimitLower;
 
 	std::vector<TMobTable>			m_vec_mobTable;
-	std::vector<TItemTable>			m_vec_itemTable;
-	std::map<uint32_t, TItemTable*>		m_map_itemTableByVnum;
 
 
-	int					m_iShopTableSize;
-	TShopTable* m_pShopTable;
 
-	int					m_iRefineTableSize;
-	TRefineTable* m_pRefineTable;
+
+
 
 	std::vector<TSkillTable>		m_vec_skillTable;
 	std::vector<TBanwordTable>		m_vec_banwordTable;
-	std::vector<TItemAttrTable>		m_vec_itemAttrTable;
-	std::vector<TItemAttrTable>		m_vec_itemRareTable;
-	std::vector<TItemAttrTable>		m_vec_itemRare8Table;
 
-#ifdef ENABLE_ITEM_EXTRA_PROTO
-	std::vector<TItemExtraProto> m_vec_itemExtraProto;
-#endif
 
 	std::vector<building::TLand>		m_vec_kLandTable;
 	std::vector<building::TObjectProto>	m_vec_kObjectProto;
@@ -489,13 +476,8 @@ private:
 	int					m_iCacheFlushCountLimit;
 
 private:
-	TItemIDRangeTable m_itemRange;
 
 public:
-	bool InitializeNowItemID();
-	uint32_t GetItemID();
-	uint32_t GainItemID();
-	TItemIDRangeTable GetItemRange() { return m_itemRange; }
 
 	//BOOT_LOCALIZATION
 public:
@@ -536,7 +518,6 @@ private:
 
 	void FlushPlayerCacheSet(uint32_t pid);
 
-	void SendSpareItemIDRange(CPeer* peer);
 
 	void UpdateHorseName(TPacketUpdateHorseName* data, CPeer* peer);
 	void AckHorseName(uint32_t dwPID, CPeer* peer);
@@ -552,11 +533,6 @@ protected:
 	bool		bIsProtoReadFromDB;
 #endif
 };
-
-// Maps the in-memory EWindows value (TPlayerItem::window) to the persisted
-// `item.window` ENUM name. The DB ENUM index 1 is INVENTORY (EWindows=1), so
-// the names must be written explicitly instead of the numeric index.
-const char* GetItemWindowName(uint8_t window);
 
 template<class Func>
 Func CClientManager::for_each_peer(Func f)

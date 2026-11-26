@@ -50,7 +50,6 @@
 #include "guild_manager.h"
 #include "dungeon.h"
 #include "cmd.h"
-#include "refine.h"
 #include "banword.h"
 #include "priv_manager.h"
 #include "war_map.h"
@@ -451,7 +450,7 @@ int main(int argc, char **argv)
 	CGuildManager	guild_manager;
 	CGuildMarkManager mark_manager;
 	CDungeonManager	dungeon_manager;
-	CRefineManager	refine_manager;
+
 	CBanwordManager	banword_manager;
 	CPrivManager	priv_manager;
 	CWarMapManager	war_map_manager;

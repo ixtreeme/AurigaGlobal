@@ -101,7 +101,7 @@ enum eCommonDefines {
 #define __ENABLE_LARGE_DYNAMIC_PACKET__
 
 
-#define ENABLE_ITEM_EXTRA_PROTO
+// Item metadata is supplied by the typed catalog.
 #define ENABLE_RARITY_SYSTEM
 #define ENABLE_NEW_EXTRA_BONUS
 #define ENABLE_MEDI_PVM

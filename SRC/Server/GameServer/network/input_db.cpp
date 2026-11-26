@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "../item/TypedBooks.hpp"
-#include "../item/LegacyItemBoundary.hpp"
 #include <common/character_creation.h>
 #include <Core/packet_string.h>
 #include <common/time_64_packets.h>
@@ -33,7 +32,6 @@
 #include "guild_manager.h"
 #include "start_position.h"
 #include "party.h"
-#include "refine.h"
 #include "banword.h"
 #include "priv_manager.h"
 #include "db.h"
@@ -491,20 +489,15 @@ void CInputDB::Boot(const char* data)
 
 	LOG_INFO("BOOT: PACKET: {}", dwPacketSize);
 	LOG_INFO("BOOT: VERSION: {}", bVersion);
-	if (bVersion != 7)
+	if (bVersion != DATABASE_BOOT_VERSION)
 	{
 		LOG_ERROR("boot version error");
 		thecore_shutdown();
+        return;
 	}
 
 	LOG_INFO("sizeof(TMobTable) = {}", sizeof(TMobTable));
-	LOG_INFO("sizeof(TItemTable) = {}", sizeof(TItemTable));
-	LOG_INFO("sizeof(TShopTable) = {}", sizeof(TShopTable));
 	LOG_INFO("sizeof(TSkillTable) = {}", sizeof(TSkillTable));
-	LOG_INFO("sizeof(TRefineTable) = {}", sizeof(TRefineTable));
-	LOG_INFO("sizeof(TItemAttrTable) = {}", sizeof(TItemAttrTable));
-	LOG_INFO("sizeof(TItemRareTable) = {}", sizeof(TItemAttrTable));
-	LOG_INFO("sizeof(TItemRare8Table) = {}", sizeof(TItemAttrTable));
 	LOG_INFO("sizeof(TBanwordTable) = {}", sizeof(TBanwordTable));
 	LOG_INFO("sizeof(TLand) = {}", sizeof(building::TLand));
 	LOG_INFO("sizeof(TObjectProto) = {}", sizeof(building::TObjectProto));
@@ -538,51 +531,6 @@ void CInputDB::Boot(const char* data)
 	}
 
 	/*
-	 * ITEM
-	 */
-
-	if (decode_2bytes(data) != sizeof(TItemTable))
-	{
-		LOG_ERROR("item table size error");
-		thecore_shutdown();
-		return;
-	}
-	data += 2;
-
-	size = decode_2bytes(data);
-	data += 2;
-	LOG_INFO("BOOT: ITEM: {}", size);
-
-
-	if (size)
-	{
-
-		data += size * sizeof(TItemTable);
-	}
-
-	/*
-	 * SHOP
-	 */
-
-	if (decode_2bytes(data) != sizeof(TShopTable))
-	{
-		LOG_ERROR("shop table size error");
-		thecore_shutdown();
-		return;
-	}
-	data += 2;
-
-	size = decode_2bytes(data);
-	data += 2;
-	LOG_INFO("BOOT: SHOP: {}", size);
-
-
-	if (size)
-	{
-		data += size * sizeof(TShopTable);
-	}
-
-	/*
 	 * SKILL
 	 */
 
@@ -609,123 +557,6 @@ void CInputDB::Boot(const char* data)
 
 		data += size * sizeof(TSkillTable);
 	}
-
-
-	/*
-	 * REFINE RECIPE
-	 */
-	if (decode_2bytes(data) != sizeof(TRefineTable))
-	{
-		LOG_ERROR("refine table size error");
-		thecore_shutdown();
-		return;
-	}
-	data += 2;
-
-	size = decode_2bytes(data);
-	data += 2;
-	LOG_INFO("BOOT: REFINE: {}", size);
-
-	if (size)
-	{
-		CRefineManager::instance().Initialize((TRefineTable*) data, size);
-		data += size * sizeof(TRefineTable);
-	}
-
-	/*
-	 * ITEM ATTR
-	 */
-	if (decode_2bytes(data) != sizeof(TItemAttrTable))
-	{
-		LOG_ERROR("item attr table size error");
-		thecore_shutdown();
-		return;
-	}
-	data += 2;
-
-	size = decode_2bytes(data);
-	data += 2;
-	LOG_INFO("BOOT: ITEM_ATTR: {}", size);
-
-	if (size)
-	{
-		TItemAttrTable * p = (TItemAttrTable *) data;
-
-		for (int i = 0; i < size; ++i, ++p)
-		{
-			if (p->dwApplyIndex >= MAX_APPLY_NUM)
-				continue;
-
-			g_map_itemAttr[p->dwApplyIndex] = *p;
-			LOG_INFO("ITEM_ATTR[{}]: {} {}", p->dwApplyIndex, p->szApply, p->dwProb);
-		}
-	}
-
-	data += size * sizeof(TItemAttrTable);
-
-
-	/*
-     * ITEM RARE
-     */
-	if (decode_2bytes(data) != sizeof(TItemAttrTable))
-	{
-		LOG_ERROR("item rare table size error");
-		thecore_shutdown();
-		return;
-	}
-	data += 2;
-
-	size = decode_2bytes(data);
-	data += 2;
-	LOG_INFO("BOOT: ITEM_RARE: {}", size);
-
-	if (size)
-	{
-		TItemAttrTable * p = (TItemAttrTable *) data;
-
-		for (int i = 0; i < size; ++i, ++p)
-		{
-			if (p->dwApplyIndex >= MAX_APPLY_NUM)
-				continue;
-
-			g_map_itemRare[p->dwApplyIndex] = *p;
-			LOG_INFO("ITEM_RARE[{}]: {} {}", p->dwApplyIndex, p->szApply, p->dwProb);
-		}
-	}
-
-	data += size * sizeof(TItemAttrTable);
-
-
-	/*
-	 * ITEM RARE 8
-	 */
-	if (decode_2bytes(data) != sizeof(TItemAttrTable))
-	{
-		LOG_ERROR("item rare 8 table size error");
-		thecore_shutdown();
-		return;
-	}
-	data += 2;
-
-	size = decode_2bytes(data);
-	data += 2;
-	LOG_INFO("BOOT: ITEM_RARE8: {}", size);
-
-	if (size)
-	{
-		TItemAttrTable * p = (TItemAttrTable *) data;
-
-		for (int i = 0; i < size; ++i, ++p)
-		{
-			if (p->dwApplyIndex >= MAX_APPLY_NUM)
-				continue;
-
-			g_map_itemRare8[p->dwApplyIndex] = *p;
-			LOG_INFO("ITEM_RARE8[{}]: {} {}", p->dwApplyIndex, p->szApply, p->dwProb);
-		}
-	}
-
-	data += size * sizeof(TItemAttrTable);
 
 
 	/*
@@ -814,23 +645,6 @@ void CInputDB::Boot(const char* data)
 	std::memcpy(&serverTime, data, sizeof(serverTime));
 	set_global_time(static_cast<time_t>(serverTime));
 	data += sizeof(serverTime);
-
-	if (decode_2bytes(data) != sizeof(TItemIDRangeTable) )
-	{
-		LOG_ERROR("ITEM ID RANGE size error");
-		thecore_shutdown();
-		return;
-	}
-	data += 2;
-
-	size = decode_2bytes(data);
-	data += 2;
-
-	TItemIDRangeTable* range = (TItemIDRangeTable*) data;
-	data += size * sizeof(TItemIDRangeTable);
-
-	TItemIDRangeTable* rangespare = (TItemIDRangeTable*) data;
-	data += size * sizeof(TItemIDRangeTable);
 
 	//ADMIN_MANAGER
 	int ChunkSize = decode_2bytes(data );
@@ -1030,19 +844,6 @@ void CInputDB::ReloadProto(const char * c_pData)
 	c_pData += sizeof(TBanwordTable) * wSize;
 
 	/*
-	 * ITEM
-	 */
-	wSize = decode_2bytes(c_pData);
-	c_pData += 2;
-	LOG_INFO("RELOAD: ITEM: {}", wSize);
-
-	if (wSize)
-	{
-
-		c_pData += wSize * sizeof(TItemTable);
-	}
-
-	/*
 	 * MONSTER
 	 */
 	wSize = decode_2bytes(c_pData);
@@ -1196,17 +997,6 @@ void CInputDB::ReloadAdmin(const char * c_pData )
 //END_RELOAD_ADMIN
 
 
-#ifdef ENABLE_ITEM_EXTRA_PROTO
-void LoadItemExtraProto(const char* data)
-{
-	TPacketDGLoadItemExtraProto* Pack = (TPacketDGLoadItemExtraProto*)data;
-	if (Pack->dwTableSize != sizeof(TItemExtraProto)) {
-		LOG_ERROR("Invalid TItemExtraProto size {} (known {}) ", Pack->dwTableSize, sizeof(TItemExtraProto));
-		return;
-	}
-
-}
-#endif
 
 
 ////////////////////////////////////////////////////////////////////
@@ -1525,11 +1315,6 @@ int CInputDB::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		break;
 #endif
 
-#ifdef ENABLE_ITEM_EXTRA_PROTO
-	case HEADER_DG_ITEM_EXTRA_PROTO_LOAD:
-		LoadItemExtraProto(c_pData);
-		break;
-#endif
 
 #ifdef __SKILL_COLOR_SYSTEM__
 	case HEADER_DG_SKILL_COLOR_LOAD:
@@ -1817,5 +1602,3 @@ void CInputDB::EventManager(const char* c_pData)
 	}
 }
 #endif
-
-

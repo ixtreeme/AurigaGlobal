@@ -8,6 +8,8 @@
 
 typedef	uint32_t IDENT;
 
+inline constexpr uint8_t DATABASE_BOOT_VERSION = 8;
+
 enum
 {
 	HEADER_GD_LOGIN				= 1,
@@ -288,9 +290,6 @@ enum
 #ifdef ENABLE_CHANNEL_SWITCH_SYSTEM
 	HEADER_DG_CHANNEL_RESULT = 184,
 #endif
-#ifdef ENABLE_ITEM_EXTRA_PROTO
-	HEADER_DG_ITEM_EXTRA_PROTO_LOAD = 185,
-#endif
 
 #ifdef __SKILL_COLOR_SYSTEM__
 	HEADER_DG_SKILL_COLOR_LOAD = 186,
@@ -391,23 +390,7 @@ typedef struct TPlayerItemAttribute
 	double	sValue;
 } TPlayerItemAttribute;
 
-typedef struct SPlayerItem
-{
-	uint32_t	id;
-	uint8_t	window;
-	uint16_t	pos;
-	uint32_t	count;
 
-	uint32_t	vnum;
-	int32_t	alSockets[ITEM_SOCKET_MAX_NUM];
-
-	TPlayerItemAttribute    aAttr[ITEM_ATTRIBUTE_MAX_NUM];
-
-	uint32_t	owner;
-#ifdef ATTR_LOCK
-	short	lockedattr;
-#endif
-} TPlayerItem;
 
 typedef struct SQuickslot
 {
@@ -648,13 +631,7 @@ typedef struct SShopItemTable
 	uint8_t		display_pos;
 } TShopItemTable;
 
-typedef struct SShopTable
-{
-	uint32_t		dwVnum;
-	uint32_t		dwNPCVnum;
-	uint8_t		byItemCount;
-	TShopItemTable	items[SHOP_HOST_ITEM_MAX_NUM];
-} TShopTable;
+
 
 #define QUEST_NAME_MAX_LEN	32
 #define QUEST_STATE_MAX_LEN	64
@@ -667,11 +644,7 @@ typedef struct SQuestTable
 	int64_t		lValue;
 } TQuestTable;
 
-typedef struct SItemLimit
-{
-	uint8_t	bType;
-	int32_t	lValue;
-} TItemLimit;
+
 
 typedef struct SItemApply
 {
@@ -679,68 +652,9 @@ typedef struct SItemApply
 	double	lValue;
 } TItemApply;
 
-typedef struct SItemTable : public SEntityTable
-{
-	uint32_t		dwVnumRange;
-	char        szName[ITEM_NAME_MAX_LEN + 1];
-#ifdef ENABLE_MULTI_NAMES
-	char	szLocaleName[LANGUAGE_MAX_NUM][ITEM_NAME_MAX_LEN + 1];
-#else
-	char	szLocaleName[ITEM_NAME_MAX_LEN + 1];
-#endif
-	uint8_t	bType;
-	uint8_t	bSubType;
-
-	uint8_t        bWeight;
-	uint8_t	bSize;
-
-	uint32_t	dwAntiFlags;
-	uint32_t	dwFlags;
-	uint32_t	dwWearFlags;
-	uint32_t	dwImmuneFlag;
-
-	int64_t	dwGold;
-	int64_t	dwShopBuyPrice;
 
 
-	TItemLimit	aLimits[ITEM_LIMIT_MAX_NUM];
-	TItemApply	aApplies[ITEM_APPLY_MAX_NUM];
-	int32_t        alValues[ITEM_VALUES_MAX_NUM];
-	int32_t	alSockets[ITEM_SOCKET_MAX_NUM];
-	uint32_t	dwRefinedVnum;
-	uint16_t	wRefineSet;
-	uint8_t	bAlterToMagicItemPct;
-	uint8_t	bSpecular;
-	uint8_t	bGainSocketPct;
-
-	short int	sAddonType;
-
-	char		cLimitRealTimeFirstUseIndex;
-	char		cLimitTimerBasedOnWearIndex;
-
-} TItemTable;
-
-struct TItemAttrTable
-{
-	TItemAttrTable() :
-		dwApplyIndex(0),
-		dwProb(0)
-	{
-		szApply[0] = 0;
-		memset(&lValues, 0, sizeof(lValues));
-		memset(&bMaxLevelBySet, 0, sizeof(bMaxLevelBySet));
-	}
-
-	char	szApply[APPLY_NAME_MAX_LEN + 1];
-	uint32_t	dwApplyIndex;
-	uint32_t	dwProb;
-#ifdef ENABLE_ATTR_COSTUMES
-	double	lValues[ITEM_ATTRIBUTE_MAX_LEVEL + COSTUME_ATTRIBUTE_MAX_LEVEL];
-#else
-	double	lValues[ITEM_ATTRIBUTE_MAX_LEVEL];
-#endif
-	uint8_t	bMaxLevelBySet[ATTRIBUTE_SET_MAX_NUM];
-};
+;
 
 typedef struct SConnectTable
 {
@@ -1065,16 +979,7 @@ typedef struct SRefineMaterial
 	int count;
 } TRefineMaterial;
 
-typedef struct SRefineTable
-{
-	//uint32_t src_vnum;
-	//uint32_t result_vnum;
-	uint32_t id;
-	uint8_t material_count;
-	int64_t cost;
-	int prob;
-	TRefineMaterial materials[REFINE_MATERIAL_MAX_NUM];
-} TRefineTable;
+
 
 typedef struct SBanwordTable
 {
@@ -1431,12 +1336,7 @@ typedef struct tChangeGuildMaster
 	uint32_t idTo;
 } TPacketChangeGuildMaster;
 
-typedef struct tItemIDRange
-{
-	uint32_t dwMin;
-	uint32_t dwMax;
-	uint32_t dwUsableItemIDMin;
-} TItemIDRangeTable;
+
 
 typedef struct tUpdateHorseName
 {
@@ -1530,25 +1430,6 @@ typedef struct
 } TPacketReturnChannel;
 #endif
 
-#ifdef ENABLE_ITEM_EXTRA_PROTO
-typedef struct {
-	uint32_t dwVnum;
-
-#ifdef ENABLE_RARITY_SYSTEM
-	int iRarity;
-#endif
-#ifdef ENABLE_NEW_EXTRA_BONUS
-	TItemApply ExtraBonus[NEW_EXTRA_BONUS_COUNT];
-#endif
-} TItemExtraProto;
-
-
-typedef struct {
-	uint32_t dwCount;
-	uint32_t dwTableSize;
-} TPacketDGLoadItemExtraProto;
-
-#endif
 
 #ifdef __SKILL_COLOR_SYSTEM__
 typedef struct

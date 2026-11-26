@@ -16,7 +16,7 @@
 #include "TypedEquipment.hpp"
 #include "TypedCostumes.hpp"
 #include "TypedTools.hpp"
-#include "refine.h"
+#include "ForgeNpcs.hpp"
 #include "../command/cmd.h"
 #include "../core/packet.h"
 #include "../core/utils.h"

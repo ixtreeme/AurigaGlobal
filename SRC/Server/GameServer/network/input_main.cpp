@@ -73,7 +73,7 @@
 #endif
 
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
-	#include "refine.h"
+	#include "ForgeNpcs.hpp"
 #endif
 
 #ifdef ENABLE_WHISPER_ADMIN_SYSTEM

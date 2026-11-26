@@ -20,12 +20,10 @@
     },
     "database": {
       "type": "object",
-      "required": ["item_id_range"],
       "properties": {
         "working_directory": {"$ref": "#/$defs/path"},
         "server": {"type": "object"},
         "network": {"type": "object", "properties": {"bind_ip": {"type": "string"}, "bind_port": {"$ref": "#/$defs/port"}}},
-        "item_id_range": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "integer", "minimum": 1, "maximum": 4294967295}},
         "sql": {"$ref": "#/$defs/sqlRoles"},
         "cache": {"type": "object"},
         "proto": {"type": "object"},
@@ -73,7 +71,7 @@
         "interserver_key": {"type": "string"},
         "map_allow": {"type": "array", "uniqueItems": true, "items": {"type": "integer", "minimum": 1, "maximum": 2147483647}},
         "quest": {"type": "object", "properties": {"dir": {"type": "string"}, "object_dir": {"deprecated": true, "description": "Ignored by the direct quest source loader", "type": "array", "items": {"type": "string"}}}},
-        "items": {"type": "object", "additionalProperties": false, "description": "Typed item catalog (item system F4)", "properties": {"catalog": {"enum": ["off", "required"]}, "catalog_revision": {"type": "integer", "minimum": 1}, "catalog_sha256": {"type": "string", "pattern": "^([0-9a-f]{64})?$"}, "drops": {"enum": ["legacy", "typed"], "description": "typed: catalog drop tables instead of the legacy ones (needs catalog required)"}}}
+        "items": {"type": "object", "additionalProperties": false, "description": "Authoritative typed item catalog", "properties": {"catalog": {"enum": ["required"]}, "catalog_revision": {"type": "integer", "minimum": 1}, "catalog_sha256": {"type": "string", "pattern": "^([0-9a-f]{64})?$"}, "drops": {"enum": ["typed"], "description": "Drop tables from the required typed catalog"}}}
       }
     }
   }

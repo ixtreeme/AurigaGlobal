@@ -73,7 +73,7 @@ std::vector<TPacketGCPointChange> pointPackets;
 int pointBroadcasts = 0;
 std::function<void(entt::entity)> onItem, onAffect, onPacket, onMovement;
 struct Actor { bool player = true; uint8_t job = 0; uint32_t immune = 0; TMobTable mob {}; };
-struct Gear { int flatHP = 300, pctHP = 20; bool rune = false, active = true; uint32_t immune = IMMUNE_STUN; TItemTable proto {}; };
+struct Gear { int flatHP = 300, pctHP = 20; bool rune = false, active = true; uint32_t immune = IMMUNE_STUN; };
 std::map<std::pair<entt::entity, int>, entt::entity> equipment;
 std::map<std::pair<entt::entity, int>, entt::entity> inventory;
 void Check(bool value, const char* why) { ++checks; if (!value) throw std::runtime_error(why); }

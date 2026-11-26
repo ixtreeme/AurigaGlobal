@@ -24,7 +24,6 @@
 #include "MoneyLog.h"
 #include <bit>
 #include "Marriage.h"
-#include "ItemIDRangeManager.h"
 #include "Cache.h"
 #include <sstream>
 #include <memory>
@@ -77,7 +76,6 @@ inline const float GetRandomGaussian(float avg, float sigma)
 #endif
 
 extern int g_iPlayerCacheFlushSeconds;
-extern int g_iItemCacheFlushSeconds;
 extern int g_test_server;
 extern int g_log;
 extern std::string g_stLocale;
@@ -87,9 +85,7 @@ uint32_t g_dwUsageMax = 0;
 uint32_t g_dwUsageAvg = 0;
 
 CPacketInfo g_query_info;
-CPacketInfo g_item_info;
 
-int g_item_count = 0;
 int g_query_count[2];
 #ifdef ENABLE_PROTO_FROM_DB
 bool g_bMirror2DB = false;
@@ -100,17 +96,10 @@ CClientManager::CClientManager() : m_looping(0), m_acceptor(nullptr),
                                    m_iPlayerIDStart(0),
                                    //m_iPlayerDeleteLevelLimit(0),
                                    //m_iPlayerDeleteLevelLimitLower(0),
-                                   m_iShopTableSize(0),
-                                   m_pShopTable(nullptr),
-                                   m_iRefineTableSize(0),
-                                   m_pRefineTable(nullptr),
                                    m_bShutdowned(false), m_bLastHeader(0),
                                    m_iCacheFlushCount(0),
                                    m_iCacheFlushCountLimit(200)
 {
-	m_itemRange.dwMin = 0;
-	m_itemRange.dwMax = 0;
-	m_itemRange.dwUsableItemIDMin = 0;
 
 	memset(g_query_count, 0, sizeof(g_query_count));
 #ifdef ENABLE_PROTO_FROM_DB
@@ -301,14 +290,7 @@ bool CClientManager::Initialize()
 	}
 #endif
 	//END_BOOT_LOCALIZATION
-	//ITEM_UNIQUE_ID
 
-	if (!InitializeNowItemID())
-	{
-		LOG_ERROR(" Item range Initialize Failed. Exit DBCache Server");
-		return false;
-	}
-	//END_ITEM_UNIQUE_ID
 
 #ifdef ENABLE_PROTO_FROM_DB
 	bIsProtoReadFromDB = DbConfig().proto.fromDb;
@@ -445,7 +427,7 @@ void CClientManager::Quit()
 
 void CClientManager::QUERY_BOOT(CPeer* peer, TPacketGDBoot * p)
 {
-	const uint8_t bPacketVersion = 7;
+	const uint8_t bPacketVersion = DATABASE_BOOT_VERSION;
 
 	std::vector<tAdminInfo> vAdmin;
 	std::vector<std::string> vHost;
@@ -459,19 +441,12 @@ void CClientManager::QUERY_BOOT(CPeer* peer, TPacketGDBoot * p)
 		sizeof(uint32_t) +
 		sizeof(uint8_t) +
 		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(TMobTable) * m_vec_mobTable.size() +
-		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(TItemTable) * m_vec_itemTable.size() +
-		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(TShopTable) * m_iShopTableSize +
 		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(TSkillTable) * m_vec_skillTable.size() +
-		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(TRefineTable) * m_iRefineTableSize +
-		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(TItemAttrTable) * m_vec_itemAttrTable.size() +
-		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(TItemAttrTable) * m_vec_itemRareTable.size() +
-		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(TItemAttrTable) * m_vec_itemRare8Table.size() +
 		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(TBanwordTable) * m_vec_banwordTable.size() +
 		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(building::TLand) * m_vec_kLandTable.size() +
 		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(building::TObjectProto) * m_vec_kObjectProto.size() +
 		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(building::TObject) * m_map_pkObjectTable.size() +
 		sizeof(int64_t) +
-		sizeof(uint16_t) + sizeof(uint16_t) + sizeof(TItemIDRangeTable)*2 +
 		//ADMIN_MANAGER
 		sizeof(uint16_t) + sizeof(uint16_t) + 16 * vHost.size() +
 		sizeof(uint16_t) + sizeof(uint16_t) +  sizeof(tAdminInfo) *  vAdmin.size() +
@@ -486,13 +461,7 @@ void CClientManager::QUERY_BOOT(CPeer* peer, TPacketGDBoot * p)
 	LOG_INFO("BOOT: VERSION: {}", bPacketVersion);
 
 	LOG_INFO("sizeof(TMobTable) = {}", sizeof(TMobTable));
-	LOG_INFO("sizeof(TItemTable) = {}", sizeof(TItemTable));
-	LOG_INFO("sizeof(TShopTable) = {}", sizeof(TShopTable));
 	LOG_INFO("sizeof(TSkillTable) = {}", sizeof(TSkillTable));
-	LOG_INFO("sizeof(TRefineTable) = {}", sizeof(TRefineTable));
-	LOG_INFO("sizeof(TItemAttrTable) = {}", sizeof(TItemAttrTable));
-	LOG_INFO("sizeof(TItemRareTable) = {}", sizeof(TItemAttrTable));
-	LOG_INFO("sizeof(TItemRare8Table) = {}", sizeof(TItemAttrTable));
 	LOG_INFO("sizeof(TBanwordTable) = {}", sizeof(TBanwordTable));
 	LOG_INFO("sizeof(TLand) = {}", sizeof(building::TLand));
 	LOG_INFO("sizeof(TObjectProto) = {}", sizeof(building::TObjectProto));
@@ -502,36 +471,12 @@ void CClientManager::QUERY_BOOT(CPeer* peer, TPacketGDBoot * p)
 	//END_ADMIN_MANAGER
 
 	peer->EncodeWORD(sizeof(TMobTable));
-	peer->EncodeWORD(m_vec_mobTable.size());
-	peer->Encode(m_vec_mobTable.data(), sizeof(TMobTable) * m_vec_mobTable.size());
-
-	peer->EncodeWORD(sizeof(TItemTable));
-	peer->EncodeWORD(m_vec_itemTable.size());
-	peer->Encode(m_vec_itemTable.data(), sizeof(TItemTable) * (uint32_t)m_vec_itemTable.size());
-
-	peer->EncodeWORD(sizeof(TShopTable));
-	peer->EncodeWORD(m_iShopTableSize);
-	peer->Encode(m_pShopTable, sizeof(TShopTable) * m_iShopTableSize);
+    peer->EncodeWORD(m_vec_mobTable.size());
+    peer->Encode(m_vec_mobTable.data(), sizeof(TMobTable) * m_vec_mobTable.size());
 
 	peer->EncodeWORD(sizeof(TSkillTable));
 	peer->EncodeWORD(m_vec_skillTable.size());
-	peer->Encode(m_vec_skillTable.data(), sizeof(TSkillTable) * (uint32_t)m_vec_skillTable.size());
-
-	peer->EncodeWORD(sizeof(TRefineTable));
-	peer->EncodeWORD(m_iRefineTableSize);
-	peer->Encode(m_pRefineTable, sizeof(TRefineTable) * m_iRefineTableSize);
-
-	peer->EncodeWORD(sizeof(TItemAttrTable));
-	peer->EncodeWORD(m_vec_itemAttrTable.size());
-	peer->Encode(m_vec_itemAttrTable.data(), sizeof(TItemAttrTable) * (uint32_t)m_vec_itemAttrTable.size());
-
-	peer->EncodeWORD(sizeof(TItemAttrTable));
-	peer->EncodeWORD(m_vec_itemRareTable.size());
-	peer->Encode(m_vec_itemRareTable.data(), sizeof(TItemAttrTable) * (uint32_t)m_vec_itemRareTable.size());
-
-	peer->EncodeWORD(sizeof(TItemAttrTable));
-	peer->EncodeWORD(m_vec_itemRare8Table.size());
-	peer->Encode(m_vec_itemRare8Table.data(), sizeof(TItemAttrTable) * (uint32_t)m_vec_itemRare8Table.size());
+    peer->Encode(m_vec_skillTable.data(), sizeof(TSkillTable) * (uint32_t)m_vec_skillTable.size());
 
 	peer->EncodeWORD(sizeof(TBanwordTable));
 	peer->EncodeWORD(m_vec_banwordTable.size());
@@ -558,14 +503,6 @@ void CClientManager::QUERY_BOOT(CPeer* peer, TPacketGDBoot * p)
 	const int64_t now = static_cast<int64_t>(std::time(nullptr));
 	peer->Encode(&now, sizeof(now));
 
-	TItemIDRangeTable itemRange {};
-	TItemIDRangeTable itemRangeSpare {};
-
-	peer->EncodeWORD(sizeof(TItemIDRangeTable));
-	peer->EncodeWORD(1);
-	peer->Encode(&itemRange, sizeof(TItemIDRangeTable));
-	peer->Encode(&itemRangeSpare, sizeof(TItemIDRangeTable));
-
 
 	//ADMIN_MANAGER
 	peer->EncodeWORD(16);
@@ -591,9 +528,6 @@ void CClientManager::QUERY_BOOT(CPeer* peer, TPacketGDBoot * p)
 
 #ifdef ENABLE_EVENT_MANAGER
 	SendEventData(peer);
-#endif
-#ifdef ENABLE_ITEM_EXTRA_PROTO
-	SendItemExtraProtoTable(peer);
 #endif
 }
 
@@ -1137,7 +1071,6 @@ void CClientManager::QUERY_RELOAD_PROTO()
 		tmp->EncodeHeader(HEADER_DG_RELOAD_PROTO, 0,
 				sizeof(uint16_t) + sizeof(TSkillTable) * m_vec_skillTable.size() +
 				sizeof(uint16_t) + sizeof(TBanwordTable) * m_vec_banwordTable.size() +
-				sizeof(uint16_t) + sizeof(TItemTable) * m_vec_itemTable.size() +
 				sizeof(uint16_t) + sizeof(TMobTable) * m_vec_mobTable.size());
 
 		tmp->EncodeWORD(m_vec_skillTable.size());
@@ -1146,8 +1079,6 @@ void CClientManager::QUERY_RELOAD_PROTO()
 		tmp->EncodeWORD(m_vec_banwordTable.size());
 		tmp->Encode(m_vec_banwordTable.data(), sizeof(TBanwordTable) * m_vec_banwordTable.size());
 
-		tmp->EncodeWORD(m_vec_itemTable.size());
-		tmp->Encode(m_vec_itemTable.data(), sizeof(TItemTable) * m_vec_itemTable.size());
 
 		tmp->EncodeWORD(m_vec_mobTable.size());
 		tmp->Encode(m_vec_mobTable.data(), sizeof(TMobTable) * m_vec_mobTable.size());
@@ -1536,7 +1467,6 @@ namespace
 			{ HEADER_GD_GUILD_CHANGE_LADDER_POINT, sizeof(TPacketGuildLadderPoint) },
 			{ HEADER_GD_GUILD_USE_SKILL, sizeof(TPacketGuildUseSkill) },
 			{ HEADER_GD_FLUSH_CACHE, sizeof(uint32_t) },
-			{ HEADER_GD_ITEM_SAVE, sizeof(TPlayerItem) },
 			{ HEADER_GD_ITEM_DESTROY, sizeof(uint32_t) * 2 },
 			{ HEADER_GD_ITEM_FLUSH, sizeof(uint32_t) },
 			{ HEADER_GD_ADD_AFFECT, sizeof(TPacketGDAddAffect) },
@@ -2020,9 +1950,10 @@ void CClientManager::ProcessPackets(CPeer * peer)
 			case HEADER_GD_BREAK_MARRIAGE:
 				BreakMarriage(peer, data);
 				break;
-			case HEADER_GD_REQ_SPARE_ITEM_ID_RANGE :
-				SendSpareItemIDRange(peer);
-				break;
+			case HEADER_GD_REQ_SPARE_ITEM_ID_RANGE:
+                LOG_ERROR("Retired item ID allocator request");
+                RemovePeer(peer);
+                return;
 
 			case HEADER_GD_REQ_CHANGE_GUILD_MASTER :
 				GuildChangeMaster((TPacketChangeGuildMaster*) data);
@@ -2552,8 +2483,6 @@ int CClientManager::Process()
 			pt_log("ITEM:\n%s-------------------- MAX : %d\n", buf, count);
 			g_item_info.Reset();
 			*/
-			pt_log("ITEM:%d\n", g_item_count);
-			g_item_count = 0;
 			/////////////////////////////////////////////////////////////////
 		}
 
@@ -2668,39 +2597,11 @@ uint64_t CClientManager::GetCurrentTime()
 }
 
 // ITEM_UNIQUE_ID
-bool CClientManager::InitializeNowItemID()
-{
-	const uint32_t dwMin = DbConfig().itemIdRange[0];
-	const uint32_t dwMax = DbConfig().itemIdRange[1];
 
-	if (dwMin == 0 || dwMax == 0)
-	{
-		LOG_ERROR("server.json: database.item_id_range [start_item_id, end_item_id] is missing");
-		return false;
-	}
 
-	LOG_INFO("ItemRange From File {} ~ {} ", dwMin, dwMax);
 
-	if (CItemIDRangeManager::instance().BuildRange(dwMin, dwMax, m_itemRange) == false)
-	{
-		LOG_ERROR("Can not build ITEM_ID_RANGE");
-		return false;
-	}
 
-	LOG_INFO(" Init Success Start {} End {} Now {}\n", m_itemRange.dwMin, m_itemRange.dwMax, m_itemRange.dwUsableItemIDMin);
 
-	return true;
-}
-
-uint32_t CClientManager::GainItemID()
-{
-	return m_itemRange.dwUsableItemIDMin++;
-}
-
-uint32_t CClientManager::GetItemID()
-{
-	return m_itemRange.dwUsableItemIDMin;
-}
 // ITEM_UNIQUE_ID_END
 //BOOT_LOCALIZATION
 
@@ -2890,10 +2791,7 @@ void CClientManager::BreakMarriage(CPeer * peer, const char * data)
 
 
 
-void CClientManager::SendSpareItemIDRange(CPeer* peer)
-{
-	peer->SendSpareItemIDRange();
-}
+
 
 //
 //
@@ -3001,29 +2899,6 @@ void CClientManager::FindChannel(CPeer * requestPeer, uint32_t dwHandle, TPacket
 }
 #endif
 
-#ifdef ENABLE_ITEM_EXTRA_PROTO
-void CClientManager::SendItemExtraProtoTable(CPeer* peer) 
-{
-	uint32_t count = static_cast<uint32_t>(m_vec_itemExtraProto.size());
-	uint32_t table_size = sizeof(TItemExtraProto);
-
-	if (count == 0) {
-		LOG_ERROR("peer boot ERROR, empty item extra proto table.");
-		return;
-	}
-
-	TPacketDGLoadItemExtraProto Pack;
-	Pack.dwCount = count;
-	Pack.dwTableSize = table_size;
-
-	auto table_vector_size = count * table_size;
-	auto packet_size = sizeof(Pack) + table_vector_size;
-
-	peer->EncodeHeader(HEADER_DG_ITEM_EXTRA_PROTO_LOAD, 0, packet_size);
-	peer->Encode(&Pack, sizeof(Pack));
-	peer->Encode(m_vec_itemExtraProto.data(), table_vector_size);
-}
-#endif
 
 #if defined(BL_OFFLINE_MESSAGE)
 void CClientManager::RequestReadOfflineMessages(CPeer* pkPeer, uint32_t dwHandle, TPacketGDReadOfflineMessage* p)
@@ -3332,4 +3207,3 @@ void CClientManager::RecvItemShop(const char* data)
         ForwardPacket(HEADER_DG_ITEMSHOP, &subheader, sizeof(subheader));
 }
 #endif
-

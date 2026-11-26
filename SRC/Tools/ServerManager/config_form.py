@@ -62,8 +62,7 @@ HELP = {
     'tls': 'A titkosított klienskapcsolathoz használt tanúsítvány és kulcs elérési útja.',
     'map_allow': 'Ezeket a mapazonosítókat szolgálja ki a kiválasztott core. Vesszővel vagy soronként add meg őket.',
     'sql': 'A kiválasztott adatkör kapcsolati adatai. A jelszó rejtve marad.',
-    'items': 'off: a régi item_proto működik, az új katalógust a szerver nem olvassa. required: induláskor beolvassa és '
-             'ellenőrzi a protos katalógust, és hiba esetén nem indul el. A régi tárgyműködés egyelőre mindkét esetben változatlan.',
+    'items': 'A típusos tárgykatalógus kötelező. Induláskor a szerver ellenőrzi a katalógust; hibás vagy hiányzó adatokkal nem indul el.',
 }
 
 

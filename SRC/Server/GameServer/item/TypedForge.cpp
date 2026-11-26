@@ -18,7 +18,7 @@
 #include "../network/desc.h"
 #include "../entity/char_manager.h"
 #include "../core/utils.h"
-#include "refine.h"
+#include "ForgeNpcs.hpp"
 #include <item/ForgeRuntime.hpp>
 #include <openssl/rand.h>
 namespace {

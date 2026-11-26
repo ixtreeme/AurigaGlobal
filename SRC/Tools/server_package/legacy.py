@@ -75,7 +75,6 @@ DB_FIELDS = {
     'PROTO_FROM_DB': ('proto.from_db', lambda s: bool(int(s))),
     'MIRROR2DB': ('proto.mirror2db', lambda s: bool(int(s))),
     'BIND_PORT': ('network.bind_port', int), 'BIND_IP': ('network.bind_ip', str),
-    'ITEM_ID_RANGE': ('item_id_range', lambda s: [int(n) for n in s.split()]),
 }
 
 

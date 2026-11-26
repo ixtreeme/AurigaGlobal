@@ -72,10 +72,6 @@ class CPeer : public CPeerBase
 	void	SetMaps(int32_t* pl);
 	int32_t*	GetMaps() { return &m_alMaps[0]; }
 
-	bool	SetItemIDRange(TItemIDRangeTable itemRange);
-	bool	SetSpareItemIDRange(TItemIDRangeTable itemRange);
-	bool	CheckItemIDRangeCollision(TItemIDRangeTable itemRange);
-	void	SendSpareItemIDRange();
 
     private:
 	int	m_state;
@@ -92,8 +88,6 @@ class CPeer : public CPeerBase
 	uint16_t	m_wP2PPort;
 	int32_t	m_alMaps[MAP_ALLOW_LIMIT];
 
-	TItemIDRangeTable m_itemRange;
-	TItemIDRangeTable m_itemSpareRange;
 
 	std::string m_stPublicIP;
 };

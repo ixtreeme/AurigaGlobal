@@ -653,9 +653,6 @@ const int aiArmorSocketQty[ARMOR_NUM_TYPES] =
 	0  // ARMOR_ACCESSORY
 };
 
-TItemAttrMap g_map_itemAttr;
-TItemAttrMap g_map_itemRare;
-TItemAttrMap g_map_itemRare8;
 
 const TApplyInfo aApplyInfo[MAX_APPLY_NUM] =
 /*

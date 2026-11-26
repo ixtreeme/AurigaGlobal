@@ -485,29 +485,6 @@ enum ENewExtraBonus {
 };
 #endif
 
-#ifdef ENABLE_ITEM_EXTRA_PROTO
-enum class EItemExtraProto {
-	ITEM_VNUM,
-#ifdef ENABLE_RARITY_SYSTEM
-	ITEM_RARITY,
-#endif
-#ifdef ENABLE_NEW_EXTRA_BONUS
-	ITEM_EXTRA_BONUS_START,
-	ITEM_EXTRA_BONUS_TYPE0 = ITEM_EXTRA_BONUS_START,
-	ITEM_EXTRA_BONUS_VALUE0,
-	ITEM_EXTRA_BONUS_TYPE1,
-	ITEM_EXTRA_BONUS_VALUE1,
-	ITEM_EXTRA_BONUS_END = ITEM_EXTRA_BONUS_START + (NEW_EXTRA_BONUS_COUNT * 2) - 1,
-#endif
-	//add new values here:
-
-
-	//this is always the last
-	//value of the enum
-	ITEM_EXTRA_PROTO_FIELD_COUNT,
-};
-#endif
 
 
 #endif //__INC_METIN2_ITEM_LENGTH_H__
-

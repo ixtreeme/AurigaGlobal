@@ -68,7 +68,6 @@ struct ItemState {
     bool equipped = false;
     int64_t price = 100;
     std::array<int16_t, ITEM_ATTRIBUTE_MAX_NUM> attributes {};
-    TItemTable proto {};
     int64_t sockets[ITEM_SOCKET_MAX_NUM] {};
 };
 int checks = 0, destroyed = 0, spawned = 0, shown = 0, moves = 0, packets = 0;
@@ -483,15 +482,12 @@ void TypedFollowerStaleEntities()
 void MountFlightChecks()
 {
     auto previousTick=tick;Reset();typedFlightPermission.reset();auto owner=Character();auto item=Item(owner);State(owner).mount=32155;
-    auto& proto=g_registry.get<ItemState>(item).proto;
     Check(!ecs::MountFlightSystem::CanFly(owner),"unflagged mount can fly");
     TPacketCGMountFlight request{};request.header=HEADER_CG_MOUNT_FLIGHT;
     ecs::MountFlightSystem::Request(owner,request);
     Check(g_registry.all_of<ecs::MountFlightSystem::Supported>(owner),"flight hello was not registered");
     request.action=1;request.altitude=10000;ecs::MountFlightSystem::Request(owner,request);
     Check(!g_registry.get<ecs::MountFlightSystem::State>(owner).active,"unflagged takeoff accepted");
-    proto.alValues[5]=1;proto.alValues[1]=32155;
-    Check(!ecs::MountFlightSystem::CanFly(owner),"legacy prototype granted flight without typed admission");
     typedFlightPermission=false;
     Check(!ecs::MountFlightSystem::CanFly(owner),"another mount borrowed the worn seal's capability");
     typedFlightPermission=true;State(owner).mount=0;

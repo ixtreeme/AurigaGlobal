@@ -9,7 +9,6 @@
 #include "PrivManager.h"
 #include "MoneyLog.h"
 #include "Marriage.h"
-#include "ItemIDRangeManager.h"
 #include <signal.h>
 #include "Core/Logging.hpp"
 #include <Core/peer_auth.h>
@@ -35,7 +34,6 @@ std::string g_stPlayerDBName = "";
 BOOL g_test_server = false;
 
 int g_iPlayerCacheFlushSeconds = 60*5;
-int g_iItemCacheFlushSeconds = 60*5;
 
 
 #ifdef __SKILL_COLOR_SYSTEM__
@@ -49,7 +47,6 @@ int g_log = 1;
 
 
 // MYSHOP_PRICE_LIST
-int g_iItemPriceListTableCacheFlushSeconds = 540;
 // END_OF_MYSHOP_PRICE_LIST
 
 #if defined(__FreeBSD__) && defined(__FreeBSD_version) && __FreeBSD_version<1000000
@@ -100,7 +97,7 @@ int main(int argc, char** argv)
 	CPrivManager PrivManager;
 	CMoneyLog MoneyLog;
 	marriage::CManager MarriageManager;
-	CItemIDRangeManager ItemIDRangeManager;
+
 	if (!Start())
 		return 1;
 
@@ -174,11 +171,7 @@ int Start()
 	g_iPlayerCacheFlushSeconds = DbConfig().cache.playerFlushSeconds;
 	LOG_INFO("PLAYER_CACHE_FLUSH_SECONDS: {}", g_iPlayerCacheFlushSeconds);
 
-	g_iItemCacheFlushSeconds = DbConfig().cache.itemFlushSeconds;
-	LOG_INFO("ITEM_CACHE_FLUSH_SECONDS: {}", g_iItemCacheFlushSeconds);
 
-	g_iItemPriceListTableCacheFlushSeconds = DbConfig().cache.pricelistFlushSeconds;
-	LOG_INFO("ITEM_PRICELIST_CACHE_FLUSH_SECONDS: {}", g_iItemPriceListTableCacheFlushSeconds);
 
 	CClientManager::instance().SetCacheFlushCountLimit(DbConfig().cache.flushLimitPerSecond);
 

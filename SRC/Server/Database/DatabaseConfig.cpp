@@ -33,7 +33,6 @@ bool DatabaseConfig::Load(const auriga::config::Section& input, std::string& err
 	auto& cache = parsed.cache;
 	auto& proto = parsed.proto;
 	auto& guild = parsed.guild;
-	auto& itemIdRange = parsed.itemIdRange;
 	const auto& doc = input.values;
 	try
 	{
@@ -59,12 +58,6 @@ bool DatabaseConfig::Load(const auriga::config::Section& input, std::string& err
 			network.backupLimitSec = n.value("backup_limit_sec", 600);
 		}
 
-		if (doc.contains("item_id_range") && doc.at("item_id_range").is_array())
-		{
-			const auto& v = doc.at("item_id_range");
-			itemIdRange[0] = v.size() > 0 ? v[0].get<uint32_t>() : 0u;
-			itemIdRange[1] = v.size() > 1 ? v[1].get<uint32_t>() : 0u;
-		}
 
 		if (doc.contains("sql"))
 		{
@@ -86,8 +79,6 @@ bool DatabaseConfig::Load(const auriga::config::Section& input, std::string& err
 		{
 			const auto& c = doc.at("cache");
 			cache.playerFlushSeconds = c.value("player_flush_seconds", 300);
-			cache.itemFlushSeconds = c.value("item_flush_seconds", 300);
-			cache.pricelistFlushSeconds = c.value("pricelist_flush_seconds", 540);
 			cache.flushLimitPerSecond = c.value("flush_limit_per_second", 200);
 		}
 

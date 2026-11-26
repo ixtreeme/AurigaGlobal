@@ -200,11 +200,7 @@ struct GameConfig
 		uint32_t	skillBookNextReadMax { 43200 };
 	} gameplay;
 
-	// Typed item catalog (item system F4). "off" keeps the legacy item_proto
-	// runtime untouched; "required" loads and validates protos at boot and
-	// refuses to start without it. The revision/hash identify the release.
-	// drops: "legacy" keeps the legacy drop tables; "typed" rolls the catalog
-	// drop tables instead and needs the catalog (F4 C7b-3, IC-035).
+	// Mandatory typed catalog and drop tables. Revision/hash identify the release.
 	struct ItemsConfig
 	{
 		std::string	catalog { "required" };

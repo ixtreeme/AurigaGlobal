@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "Peer.h"
 #include "ClientManager.h"
-#include "ItemIDRangeManager.h"
 
 CPeer::CPeer()
 {
@@ -14,8 +13,6 @@ CPeer::CPeer()
 
 	memset(m_alMaps, 0, sizeof(m_alMaps));
 
-	m_itemRange.dwMin = m_itemRange.dwMax = m_itemRange.dwUsableItemIDMin = 0;
-	m_itemSpareRange.dwMin = m_itemSpareRange.dwMax = m_itemSpareRange.dwUsableItemIDMin = 0;
 }
 
 CPeer::~CPeer()
@@ -48,13 +45,8 @@ void CPeer::OnClose()
 	m_state = STATE_CLOSE;
 
 	LOG_INFO("Connection closed. (host: {})", m_host);
-	LOG_INFO("ItemIDRange: returned. {} ~ {}", m_itemRange.dwMin, m_itemRange.dwMax);
 
-	CItemIDRangeManager::instance().UpdateRange(m_itemRange.dwMin, m_itemRange.dwMax);
 
-	m_itemRange.dwMin = 0;
-	m_itemRange.dwMax = 0;
-	m_itemRange.dwUsableItemIDMin = 0;
 }
 
 uint32_t CPeer::GetHandle()
@@ -182,64 +174,3 @@ void CPeer::SetMaps(int32_t * pl)
 {
 	memcpy(m_alMaps, pl, sizeof(m_alMaps));
 }
-
-void CPeer::SendSpareItemIDRange()
-{
-	if (m_itemSpareRange.dwMin == 0 || m_itemSpareRange.dwMax == 0 || m_itemSpareRange.dwUsableItemIDMin == 0)
-	{
-		EncodeHeader(HEADER_DG_ACK_SPARE_ITEM_ID_RANGE, 0, sizeof(TItemIDRangeTable));
-		Encode(&m_itemSpareRange, sizeof(TItemIDRangeTable));
-	}
-	else
-	{
-		SetItemIDRange(m_itemSpareRange);
-
-		if (SetSpareItemIDRange(CItemIDRangeManager::instance().GetRange()) == false)
-		{
-			LOG_INFO("ItemIDRange: spare range set error");
-			m_itemSpareRange.dwMin = m_itemSpareRange.dwMax = m_itemSpareRange.dwUsableItemIDMin = 0;
-		}
-
-		EncodeHeader(HEADER_DG_ACK_SPARE_ITEM_ID_RANGE, 0, sizeof(TItemIDRangeTable));
-		Encode(&m_itemSpareRange, sizeof(TItemIDRangeTable));
-	}
-}
-
-bool CPeer::SetItemIDRange(TItemIDRangeTable itemRange)
-{
-	if (itemRange.dwMin == 0 || itemRange.dwMax == 0 || itemRange.dwUsableItemIDMin == 0) return false;
-
-	m_itemRange = itemRange;
-	LOG_INFO("ItemIDRange: SET {} {} ~ {} start: {}", GetPublicIP(), m_itemRange.dwMin, m_itemRange.dwMax, m_itemRange.dwUsableItemIDMin);
-
-	return true;
-}
-
-bool CPeer::SetSpareItemIDRange(TItemIDRangeTable itemRange)
-{
-	if (itemRange.dwMin == 0 || itemRange.dwMax == 0 || itemRange.dwUsableItemIDMin == 0) return false;
-
-	m_itemSpareRange = itemRange;
-	LOG_INFO("ItemIDRange: SPARE SET {} {} ~ {} start: {}", GetPublicIP(), m_itemSpareRange.dwMin, m_itemSpareRange.dwMax, m_itemSpareRange.dwUsableItemIDMin);
-
-	return true;
-}
-
-bool CPeer::CheckItemIDRangeCollision(TItemIDRangeTable itemRange)
-{
-	if (m_itemRange.dwMin < itemRange.dwMax && m_itemRange.dwMax > itemRange.dwMin)
-	{
-		LOG_ERROR("ItemIDRange: Collision!! this {} ~ {} check {} ~ {}", m_itemRange.dwMin, m_itemRange.dwMax, itemRange.dwMin, itemRange.dwMax);
-		return false;
-	}
-
-	if (m_itemSpareRange.dwMin < itemRange.dwMax && m_itemSpareRange.dwMax > itemRange.dwMin)
-	{
-		LOG_ERROR("ItemIDRange: Collision with spare range this {} ~ {} check {} ~ {}", m_itemSpareRange.dwMin, m_itemSpareRange.dwMax, itemRange.dwMin, itemRange.dwMax);
-		return false;
-	}
-
-	return true;
-}
-
-
