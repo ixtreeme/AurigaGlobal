@@ -11,7 +11,6 @@
 #include "../ecs/systems/MountSystem.hpp"
 #include "packet.h"
 #include "buffer_manager.h"
-#include "unique_item.h"
 #include "wedding.h"
 
 #define NEED_TARGET	(1 << 0)

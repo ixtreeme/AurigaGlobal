@@ -36,7 +36,6 @@
 #include "../../world/regen.h"
 #include "../../world/start_position.h"
 #include "../../core/config.h"
-#include "../../item/unique_item.h"
 #include "../../core/utils.h"
 #include "../../quest/questmanager.h"
 #include "../../social/party.h"

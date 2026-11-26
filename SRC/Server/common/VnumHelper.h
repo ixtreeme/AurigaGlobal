@@ -1,14 +1,5 @@
 #pragma once
 
-class CItemVnumHelper
-{
-public:
-	static	const bool	IsPhoenix(uint32_t vnum)				{ return 53001 == vnum; }
-	static	const bool	IsRamadanMoonRing(uint32_t vnum)		{ return 71135 == vnum; }
-	static	const bool	IsHalloweenCandy(uint32_t vnum)		{ return 71136 == vnum; }
-	static	const bool	IsHappinessRing(uint32_t vnum)		{ return 71143 == vnum; }
-	static	const bool	IsLovePendant(uint32_t vnum)		{ return 71145 == vnum; }
-};
 
 class CMobVnumHelper
 {

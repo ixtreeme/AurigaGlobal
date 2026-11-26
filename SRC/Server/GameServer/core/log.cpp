@@ -29,10 +29,7 @@ bool LogManager::Connect(const char * host, const int port, const char * user, c
 }
 
 #ifdef ENABLE_ACCE_SYSTEM
-void LogManager::AcceLog(uint32_t dwPID, uint32_t x, uint32_t y, uint32_t item_vnum, uint32_t item_uid, int item_count, int abs_chance, bool success)
-{
-	Query("INSERT INTO acce%s (pid, time, x, y, item_vnum, item_uid, item_count, item_abs_chance, success) VALUES(%u, NOW(), %u, %u, %u, %u, %d, %d, %d)", get_table_postfix(), dwPID, x, y, item_vnum, item_uid, item_count, abs_chance, success ? 1 : 0);
-}
+
 #endif
 
 
@@ -68,22 +65,11 @@ size_t LogManager::EscapeString(char* dst, size_t dstSize, const char *src, size
 	return m_sql.EscapeString(dst, dstSize, src, srcSize);
 }
 
-void LogManager::ItemLog(uint32_t dwPID, uint32_t x, uint32_t y, uint32_t dwItemID, const char * c_pszText, const char * c_pszHint, const char * c_pszIP, uint32_t dwVnum)
-{
-	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MIN);
-	m_sql.EscapeString(__escape_hint, sizeof(__escape_hint), c_pszHint, strlen(c_pszHint));
-
-	Query("INSERT IGNORE INTO log%s (type, time, who, x, y, what, how, hint, ip, vnum) VALUES('ITEM', NOW(), %u, %u, %u, %u, '%s', '%s', '%s', %u)",
-			get_table_postfix(), dwPID, x, y, dwItemID, c_pszText, __escape_hint, c_pszIP, dwVnum);
-}
 
 
 
-void LogManager::ItemLog(entt::entity ch, int itemID, int itemVnum, const char * c_pszText, const char * c_pszHint)
-{
-	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MIN);
-	ItemLog((ecs::PlayerRuntime::GetPlayerID(ch)), ecs::PlayerRuntime::GetX(ch), ecs::PlayerRuntime::GetY(ch), itemID, c_pszText, c_pszHint, ecs::PlayerRuntime::GetDesc(ch) ? ecs::PlayerRuntime::GetDesc(ch)->GetHostName() : "", itemVnum);
-}
+
+
 
 void LogManager::CharLog(uint32_t dwPID, uint32_t x, uint32_t y, uint32_t dwValue, const char * c_pszText, const char * c_pszHint, const char * c_pszIP)
 {
@@ -148,57 +134,9 @@ void LogManager::HackCRCLog(const char * c_pszHackName, const char * c_pszLogin,
 	Query("INSERT INTO hack_crc_log (time, login, name, ip, server, why, crc) VALUES(NOW(), '%s', '%s', '%s', '%s', '%s', %u)", c_pszLogin, c_pszName, c_pszIP, g_stHostname.c_str(), c_pszHackName, dwCRC);
 }
 
-void LogManager::GoldBarLog(uint32_t dwPID, uint32_t dwItemID, GOLDBAR_HOW eHow, const char* c_pszHint)
-{
-	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MIN);
-	char szHow[32+1];
 
-	switch (eHow)
-	{
-		case PERSONAL_SHOP_BUY:
-			snprintf(szHow, sizeof(szHow), "'BUY'");
-			break;
 
-		case PERSONAL_SHOP_SELL:
-			snprintf(szHow, sizeof(szHow), "'SELL'");
-			break;
 
-		case SHOP_BUY:
-			snprintf(szHow, sizeof(szHow), "'SHOP_BUY'");
-			break;
-
-		case SHOP_SELL:
-			snprintf(szHow, sizeof(szHow), "'SHOP_SELL'");
-			break;
-
-		case EXCHANGE_TAKE:
-			snprintf(szHow, sizeof(szHow), "'EXCHANGE_TAKE'");
-			break;
-
-		case EXCHANGE_GIVE:
-			snprintf(szHow, sizeof(szHow), "'EXCHANGE_GIVE'");
-			break;
-
-		case QUEST:
-			snprintf(szHow, sizeof(szHow), "'QUEST'");
-			break;
-
-		default:
-			snprintf(szHow, sizeof(szHow), "''");
-			break;
-	}
-
-	Query("INSERT INTO goldlog%s (date, time, pid, what, how, hint) VALUES(CURDATE(), CURTIME(), %u, %u, %s, '%s')",
-			get_table_postfix(), dwPID, dwItemID, szHow, c_pszHint);
-}
-
-void LogManager::CubeLog(uint32_t dwPID, uint32_t x, uint32_t y, uint32_t item_vnum, uint32_t item_uid, int item_count, bool success)
-{
-	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MID);
-	Query("INSERT INTO cube%s (pid, time, x, y, item_vnum, item_uid, item_count, success) "
-			"VALUES(%u, NOW(), %u, %u, %u, %u, %d, %d)",
-			get_table_postfix(), dwPID, x, y, item_vnum, item_uid, item_count, success?1:0);
-}
 
 void LogManager::SpeedHackLog(uint32_t pid, uint32_t x, uint32_t y, int hack_count)
 {
@@ -226,14 +164,7 @@ void LogManager::GMCommandLog(uint32_t dwPID, const char* szName, const char* sz
 			get_table_postfix(), dwPID, szIP, byChannel, szName, __escape_hint);
 }
 
-void LogManager::RefineLog(uint32_t pid, const char* item_name, uint32_t item_id, int item_refine_level, int is_success, const char* how)
-{
-	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MIN);
-	m_sql.EscapeString(__escape_hint, sizeof(__escape_hint), item_name, strlen(item_name));
 
-	Query("INSERT INTO refinelog%s (pid, item_name, item_id, step, time, is_success, setType) VALUES(%u, '%s', %u, %d, NOW(), %d, '%s')",
-			get_table_postfix(), pid, __escape_hint, item_id, item_refine_level, is_success, how);
-}
 
 
 void LogManager::ShoutLog(uint8_t bChannel, uint8_t bEmpire, const char * pszText)
@@ -265,19 +196,7 @@ void LogManager::BootLog(const char * c_pszHostName, uint8_t bChannel)
 			c_pszHostName, bChannel);
 }
 
-void LogManager::FishLog(uint32_t dwPID, int prob_idx, int fish_id, int fish_level, uint32_t dwMiliseconds, uint32_t dwVnum, uint32_t dwValue)
-{
-	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MAX);
-	Query("INSERT INTO fish_log%s VALUES(NOW(), %u, %d, %u, %d, %u, %u, %u)",
-			get_table_postfix(),
-			dwPID,
-			prob_idx,
-			fish_id,
-			fish_level,
-			dwMiliseconds,
-			dwVnum,
-			dwValue);
-}
+
 
 void LogManager::QuestRewardLog(const char * c_pszQuestName, uint32_t dwPID, uint32_t dwLevel, int iValue1, int iValue2)
 {
@@ -335,10 +254,7 @@ void LogManager::ChatLog(uint32_t where, uint32_t who_id, const char* who_name, 
 }
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-void LogManager::AttrTransferLog(uint32_t dwPID, uint32_t x, uint32_t y, uint32_t item_vnum)
-{
-	Query("INSERT INTO attr_transfer%s (pid, time, x, y, item_vnum) VALUES(%u, NOW(), %u, %u, %u)", get_table_postfix(), dwPID, x, y, item_vnum);
-}
+
 #endif
 
 

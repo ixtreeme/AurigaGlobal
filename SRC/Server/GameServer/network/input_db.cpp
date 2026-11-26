@@ -39,8 +39,6 @@
 
 #include "wedding.h"
 #include "login_data.h"
-#include "unique_item.h"
-
 #include "affect.h"
 #include "motion.h"
 
@@ -1299,7 +1297,7 @@ int CInputDB::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		DetailLog( (TPacketNeedLoginLogInfo*) c_pData );
 		break;
 	case HEADER_DG_ITEMAWARD_INFORMER:
-		ItemAwardInformer((TPacketItemAwardInfromer*) c_pData);
+		LOG_ERROR("Rejected retired raw item-award informer frame");
 		break;
 #if defined(BL_OFFLINE_MESSAGE)
 	case HEADER_DG_RESPOND_OFFLINE_MESSAGES:

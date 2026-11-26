@@ -51,7 +51,6 @@
 #include "../../social/party.h"
 #include "../../core/buffer_manager.h"
 #include "../../guild/guild.h"
-#include "../../item/unique_item.h"
 #include <common/CommonDefines.h>
 #ifdef LEADERBOARD_RAZOR93
 #include "../../network/db.h"

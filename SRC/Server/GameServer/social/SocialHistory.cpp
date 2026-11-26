@@ -15,7 +15,6 @@
 #include "../guild/guild.h"
 #include "../entity/char_manager.h"
 #include "../core/empire_text_convert.h"
-#include "../item/unique_item.h"
 #include "../combat/skill.h"
 #include "../command/gm.h"
 #include <Core/Logging.hpp>

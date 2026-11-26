@@ -48,7 +48,6 @@
 #include "log.h"
 #include "banword.h"
 #include "empire_text_convert.h"
-#include "unique_item.h"
 #include "building.h"
 #include "locale_service.h"
 #include "gm.h"

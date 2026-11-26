@@ -31,10 +31,6 @@ struct QuestPCState {
     std::unique_ptr<quest::PC> pc;
 };
 
-struct ItemAward {
-    uint32_t vnum { 0 };
-    std::string command;
-};
 
 struct RankPoints {
     int64_t points[RANKING_MAX_CATEGORIES] {};

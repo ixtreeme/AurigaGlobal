@@ -48,7 +48,6 @@
 #include <string_view>
 #include "BattleArena.h"
 #include "log.h"
-#include "unique_item.h"
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/Registry.hpp"
 #include "../ecs/CharacterAccessors.hpp"

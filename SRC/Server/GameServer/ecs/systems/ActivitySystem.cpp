@@ -21,7 +21,6 @@
 #include "../../core/packet.h"
 #include "../../world/sectree.h"
 #include "../../world/sectree_manager.h"
-#include "../../item/unique_item.h"
 #include "../../core/vector.h"
 #include "../CharacterAccessors.hpp"
 #include "../EntityFactory.hpp"

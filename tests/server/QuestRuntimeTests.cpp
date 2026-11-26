@@ -606,7 +606,6 @@ bool NPC::OnUnmount(PC&) {Unexpected();}
 bool NPC::OnLogin(PC&,const char*) {Unexpected();}
 bool NPC::OnButton(PC&,uint32_t) {Unexpected();}
 bool NPC::OnInfo(PC&,uint32_t) {Unexpected();}
-bool NPC::OnItemInformer(PC&,uint32_t) {Unexpected();}
 bool NPC::OnTypedItemUse(PC&, TypedItemUseSource) {Unexpected();}
 bool NPC::OnEnterState(PC&,uint32_t,int) {Unexpected();}
 bool NPC::OnLeaveState(PC&,uint32_t,int) {Unexpected();}

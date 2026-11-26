@@ -43,7 +43,6 @@
 #include "messenger_manager.h"
 #include "log.h"
 #include "utils.h"
-#include "unique_item.h"
 #include "mob_manager.h"
 #include "dungeon.h"
 #include "../ecs/quest_helpers.hpp"
@@ -2243,21 +2242,9 @@ teleport_area:
 		return 1;
 	}
 
-	ALUA(pc_get_informer_type)
-	{
-		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
-		const auto* award = ECS_TryGet<ecs::ItemAward>(character);
-		lua_pushstring(L, award ? award->command.c_str() : "");
-		return 1;
-	}
 
-	ALUA(pc_get_informer_item)
-	{
-		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
-		const auto* award = ECS_TryGet<ecs::ItemAward>(character);
-		lua_pushnumber(L, award ? award->vnum : 0);
-		return 1;
-	}
+
+
 
 #ifdef ENABLE_NEWSTUFF
 
@@ -3560,8 +3547,6 @@ teleport_area:
 
 			{ "charge_cash",		pc_charge_cash		},
 
-			{ "get_informer_type",	pc_get_informer_type	},
-			{ "get_informer_item",  pc_get_informer_item	},
 
 
 

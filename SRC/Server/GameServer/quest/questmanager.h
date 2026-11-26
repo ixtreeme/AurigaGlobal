@@ -149,7 +149,6 @@ namespace quest
 		void		Letter(uint32_t pc);
 		void		Letter(uint32_t pc, uint32_t quest_index, int state);
 
-		void		ItemInformer(unsigned int pc, unsigned int vnum);
 
 		bool		CheckQuestLoaded(PC* pc) { return pc && pc->IsLoaded(); }
 

@@ -6,7 +6,6 @@
 #include "TypedRecovery.hpp"
 #include "TypedInventorySync.hpp"
 #include "TypedLoot.hpp"
-#include "unique_item.h"
 #include "../ecs/systems/PointSystem.hpp"
 #include "../entity/char.h"
 #include "../network/desc.h"

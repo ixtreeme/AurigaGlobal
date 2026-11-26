@@ -51,11 +51,8 @@ uint32_t GetPacketVID(entt::entity e);
 uint32_t GetRaceNum(entt::entity e);
 uint8_t GetSex(entt::entity e);
 #ifdef __HIGHLIGHT_SYSTEM__
-void SetItem(entt::entity e, TItemPos Cell, entt::entity item, bool isHighLight = false);
 #else
-void SetItem(entt::entity e, TItemPos Cell, entt::entity item);
 #endif
-void SetWear(entt::entity e, uint8_t bCell, entt::entity item);
 bool IsRaceFlag(entt::entity e, uint32_t dwBit);
 uint64_t GetHP(entt::entity e);
 int GetHPPct(entt::entity e);
@@ -223,10 +220,6 @@ void RankingSubcategory(entt::entity e, int iArg);
 std::string GetLang(entt::entity e);
 #endif
 bool IsArenaObserverMode(entt::entity e);
-void SetItemAwardVnum(entt::entity e, uint32_t vnum);
-uint32_t GetItemAwardVnum(entt::entity e);
-void SetItemAwardCommand(entt::entity e, const char* command);
-const char* GetItemAwardCommand(entt::entity e);
 CArena* GetArena(entt::entity e);
 void SetArenaObserverMode(entt::entity e, bool flag);
 bool GetArenaObserverMode(entt::entity e);
@@ -262,7 +255,6 @@ bool SetVoteCoin(entt::entity e, int64_t amount);
 #endif
 
 #ifdef ENABLE_RANKING
-uint32_t GetPolymorphItemVnum(entt::entity e);
 void ResetPlayTime(entt::entity e, uint32_t remaining);
 uint32_t GetPlayStartTime(entt::entity e);
 uint32_t GetLoginPlayTime(entt::entity e);

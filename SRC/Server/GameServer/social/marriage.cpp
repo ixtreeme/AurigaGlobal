@@ -21,7 +21,6 @@
 #include "questmanager.h"
 #ifdef ENABLE_NEW_USE_POTION
 #include "../ecs/EntityFactory.hpp"
-#include "unique_item.h"
 #endif
 
 extern bool g_bShutdown;

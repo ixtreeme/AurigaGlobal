@@ -24,7 +24,6 @@
 #include "profiler.h"
 #include "guild.h"
 #include "affect.h"
-#include "unique_item.h"
 #include "lua_incl.h"
 #include "arena.h"
 #include "sectree.h"

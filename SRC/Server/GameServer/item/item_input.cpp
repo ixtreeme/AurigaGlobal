@@ -22,7 +22,6 @@
 #include "protocol.h"
 #include "utils.h"
 #include "ForgeNpcs.hpp"
-#include "unique_item.h"
 #include "../ecs/components/dirty_components.hpp"
 #include "../ecs/systems/ActivitySystem.hpp"
 #include "../ecs/systems/PlayerItemActions.hpp"

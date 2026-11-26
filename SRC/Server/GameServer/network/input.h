@@ -246,7 +246,6 @@ protected:
 	void		ChangeName(LPDESC d, const char * data);
 
 	void		AuthLogin(LPDESC d, const char * c_pData);
-	void		ItemAward(const char * c_pData);
 
 	void		ChangeEmpirePriv(const char* c_pData);
 	void		ChangeGuildPriv(const char* c_pData);
@@ -287,7 +286,6 @@ protected:
 #endif
 
 	void		DetailLog(const TPacketNeedLoginLogInfo* info);
-	void		ItemAwardInformer(TPacketItemAwardInfromer* data);
 #if defined(BL_OFFLINE_MESSAGE)
 	void		ReadOfflineMessages(LPDESC desc, const char* pcData);
 #endif

@@ -6,7 +6,6 @@
 #include "char.h"
 #include "constants.h"
 #include "utils.h"
-#include "unique_item.h"
 #include "desc_client.h"
 #include "../ecs/systems/PlayerItemActions.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
@@ -27,26 +26,4 @@
 void CInputDB::ItemLoad(LPDESC d, const char*)
 {
     if (d) d->SetPhase(PHASE_CLOSE);
-}
-
-void CInputDB::ItemAwardInformer(TPacketItemAwardInfromer *data)
-{
-	LPDESC d = DESC_MANAGER::instance().FindByLoginName(data->login);
-
-	if(d == nullptr)
-		return;
-	else
-	{
-		const entt::entity chEntity = d->GetEntity();
-		if (ecs::IsCharacter(chEntity))
-		{
-			ecs::PlayerRuntime::SetItemAwardVnum(chEntity, data->vnum);
-			ecs::PlayerRuntime::SetItemAwardCommand(chEntity, data->command);
-
-			if(d->IsPhase(PHASE_GAME))
-			{
-				quest::CQuestManager::instance().ItemInformer((ecs::PlayerRuntime::GetPlayerID(chEntity)),ecs::PlayerRuntime::GetItemAwardVnum(chEntity));
-			}
-		}
-	}
 }

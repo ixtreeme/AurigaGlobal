@@ -12,7 +12,6 @@
 #include "desc_client.h"
 #include "guild.h"
 #include "guild_manager.h"
-#include "unique_item.h"
 #include "utils.h"
 #include "log.h"
 

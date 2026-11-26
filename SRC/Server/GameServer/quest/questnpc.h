@@ -73,7 +73,6 @@ namespace quest
 			bool	OnChat(PC& pc);
 			bool	HasChat();
 
-			bool	OnItemInformer(PC& pc,unsigned int vnum);
 
 			bool	OnTarget(PC& pc, uint32_t dwQuestIndex, const char * c_pszTargetName, const char * c_pszVerb, bool & bRet);
 			bool	OnUnmount(PC& pc);

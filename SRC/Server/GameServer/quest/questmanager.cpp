@@ -130,7 +130,6 @@ namespace quest
 		m_mapEventName.insert(TEventNameMap::value_type("target", QUEST_TARGET_EVENT));
 		m_mapEventName.insert(TEventNameMap::value_type("party_kill", QUEST_PARTY_KILL_EVENT));
 		m_mapEventName.insert(TEventNameMap::value_type("unmount", QUEST_UNMOUNT_EVENT));
-		m_mapEventName.insert(TEventNameMap::value_type("item_informer", QUEST_ITEM_INFORMER_EVENT));
 #ifdef ENABLE_QUEST_DIE_EVENT
 		m_mapEventName.insert(TEventNameMap::value_type("die", QUEST_DIE_EVENT));
 #endif
@@ -871,17 +870,7 @@ namespace quest
 		else
 			LOG_ERROR("QUEST no such pc id : {}", pc);
 	}
-	void CQuestManager::ItemInformer(unsigned int pc,unsigned int vnum)
-	{
-		PC* pPC;
-		pPC = GetPC(pc);
 
-		if (!pPC) {
-			return;
-		}
-
-		GetNPC(QUEST_NO_NPC).OnItemInformer(*pPC,vnum);
-	}
 	///////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////
 

@@ -673,8 +673,6 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #endif
 
 
-	if (ecs::PlayerRuntime::GetItemAwardCommand(ch))																		// ?
-		quest::CQuestManager::instance().ItemInformer(ecs::PlayerRuntime::GetPlayerID(ch), ecs::PlayerRuntime::GetItemAwardVnum(ch));	//questmanager ?
 
 	LOG_INFO("ENTERGAME: {} {}x{}x{} {} map_index {}", ecs::PlayerRuntime::GetName(ch).data(), ecs::PlayerRuntime::GetX(ch), ecs::PlayerRuntime::GetY(ch), ecs::PlayerRuntime::GetZ(ch), d->GetHostName(), ecs::PlayerRuntime::GetMapIndex(ch));
 

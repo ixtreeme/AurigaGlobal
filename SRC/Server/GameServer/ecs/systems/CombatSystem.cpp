@@ -83,7 +83,6 @@
 #include "../../command/cmd.h"
 #include "../../dungeon/dungeon.h"
 #include "../../core/log.h"
-#include "../../item/unique_item.h"
 #include "../../social/priv_manager.h"
 #include "../../network/db.h"
 #include "../../core/vector.h"

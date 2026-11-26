@@ -55,7 +55,6 @@
 #include "arena.h"
 #include "buffer_manager.h"
 #include <functional>
-#include "unique_item.h"
 #include "log.h"
 #include <common/VnumHelper.h>
 #include "shop.h"

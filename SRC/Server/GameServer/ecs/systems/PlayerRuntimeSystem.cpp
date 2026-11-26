@@ -849,42 +849,13 @@ bool GetArenaObserverMode(entt::entity e)
 }
 
 // The quest reward waiting to be handed out, and the command that goes with
-// it. Two CHARACTER fields beside ecs::ItemAward, which the setters also wrote.
-void SetItemAwardVnum(entt::entity e, uint32_t vnum)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return;
 
-    g_registry.get_or_emplace<ecs::ItemAward>(e).vnum = vnum;
-    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-}
 
-uint32_t GetItemAwardVnum(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return 0;
 
-    const auto* award = g_registry.try_get<ecs::ItemAward>(e);
-    return award ? award->vnum : 0;
-}
 
-void SetItemAwardCommand(entt::entity e, const char* command)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return;
 
-    g_registry.get_or_emplace<ecs::ItemAward>(e).command = command ? command : "";
-    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-}
 
-const char* GetItemAwardCommand(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return "";
 
-    const auto* award = g_registry.try_get<ecs::ItemAward>(e);
-    return award ? award->command.c_str() : "";
-}
 
 CArena* GetArena(entt::entity e)
 {
@@ -1099,11 +1070,7 @@ uint8_t GetJob(entt::entity e)
 	return RaceToJob(race, &job) ? static_cast<uint8_t>(job) : JOB_WARRIOR;
 }
 
-uint32_t GetPolymorphItemVnum(entt::entity e)
-{
-	const TMobTable* table = GetMobTable(e);
-	return table ? table->dwPolymorphItemVnum : 0;
-}
+
 
 // When this character last shouted, which the fifteen second limit reads.
 // When this session's play timer started, which the played-time report reads.

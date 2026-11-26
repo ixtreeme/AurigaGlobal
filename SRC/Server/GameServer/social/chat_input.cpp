@@ -44,7 +44,6 @@
 #include "guild.h"
 #include "p2p.h"
 #include "shop.h"
-#include "unique_item.h"
 #include "gm.h"
 
 #ifdef ENABLE_ITEM_ON_TITLE_RAZOR93

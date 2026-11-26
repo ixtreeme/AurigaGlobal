@@ -19,7 +19,6 @@
 #include "p2p.h"
 #include "desc_client.h"
 #include "dungeon.h"
-#include "unique_item.h"
 #include "../ecs/CharacterAccessors.hpp"
 #include "../ecs/components/social_components.hpp"
 

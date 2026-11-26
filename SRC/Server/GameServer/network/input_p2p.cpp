@@ -23,7 +23,6 @@
 #include "party.h"
 #include "messenger_manager.h"
 #include "empire_text_convert.h"
-#include "unique_item.h"
 #include "affect.h"
 #include "dev_log.h"
 #include <Core/Logging.hpp>

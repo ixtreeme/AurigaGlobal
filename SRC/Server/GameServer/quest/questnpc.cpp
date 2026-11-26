@@ -893,10 +893,5 @@ namespace quest
 		return CQuestManager::ExecuteQuestScript(pc, dwQuestIndex, iState, itState->second.GetCode(), itState->second.GetSize());
 	}
 
-	bool NPC::OnItemInformer(PC& pc, unsigned int vnum)
-	{
-        auto& runtimeManager = CQuestManager::instance();
-        RuntimeScope runtimeScope(runtimeManager, runtimeManager.CurrentRuntime(), true);
-		return HandleEvent(pc, QUEST_ITEM_INFORMER_EVENT);
-	}
+
 }
