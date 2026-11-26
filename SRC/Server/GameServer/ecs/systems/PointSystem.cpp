@@ -89,9 +89,6 @@
 #ifdef __PET_SYSTEM__
 #include "../../pet/PetSystem.h"
 #endif
-#ifdef __NEWPET_SYSTEM__
-#include "../../pet/New_PetSystem.h"
-#endif
 #include <boost/algorithm/string/find.hpp>
 
 #include <Core/Logging.hpp>

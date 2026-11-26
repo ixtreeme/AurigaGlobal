@@ -9,7 +9,6 @@ bool DeferTypedBookMutation(entt::entity,std::function<void()>) { return false; 
 #include "../../SRC/Server/GameServer/network/desc.h"
 #include "../../SRC/Server/GameServer/network/desc_client.h"
 #include "../../SRC/Server/GameServer/core/config.h"
-#include "../../SRC/Server/GameServer/pet/New_PetSystem.h"
 #include "../../SRC/Server/GameServer/core/packet.h"
 #include "../../SRC/Server/GameServer/network/p2p.h"
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
@@ -637,9 +636,6 @@ void SyncQuickslot(entt::entity owner, uint16_t type, uint16_t oldPos, uint16_t 
     Check(ecs::PlayerRuntime::IsPC(owner) && newPos == 255, "quickslot invalid owner/destination");
     quickslots.emplace_back(type, oldPos);
 }
-}
-namespace NewPetSystem {
-size_t CountSummoned(entt::entity e) { Check(ecs::PlayerRuntime::IsPC(e), "invalid pet owner"); return activePet ? 1 : 0; }
 }
 namespace ecs {
 void ChatSystem::SendV(entt::entity e, uint8_t type, const char* format, va_list args) {

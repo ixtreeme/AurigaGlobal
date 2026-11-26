@@ -84,7 +84,6 @@
 #include "../../social/messenger_manager.h"
 #include "../../world/mining.h"
 #include "../../entity/mob_manager.h"
-#include "../../pet/New_PetSystem.h"
 #include "../components/pet_mount_components.hpp"
 #include "../../pet/PetSystem.h"
 #include "../../social/party.h"
@@ -721,14 +720,6 @@ void SetBoxUseTime(entt::entity e, uint32_t when)
 bool IsWarping(entt::entity e)
 {
     return GetCharEvent(e, CharEvent::Warp) != nullptr;
-}
-
-bool IsImmortal(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return false;
-    const auto* state = g_registry.try_get<ecs::NewPetSkillState>(e);
-    return state && state->immortalSource != entt::null && g_registry.valid(state->immortalSource);
 }
 
 uint32_t GetMonsterDrainSPPoint(entt::entity e)
@@ -2301,9 +2292,6 @@ void SetSavePointTime(entt::entity e)
 
 } // namespace ecs::PlayerRuntime
 
-#ifdef __NEWPET_SYSTEM__
-
-#endif
 
 #ifdef ENABLE_RANKING
 void ecs::PlayerRuntime::RankingSubcategory(entt::entity e, int iArg)
@@ -2581,9 +2569,6 @@ void DestroyCharacterStatePre(entt::entity character)
     PetSystem::DestroyRuntime(character);
 #endif
 
-#ifdef __NEWPET_SYSTEM__
-    NewPetSystem::DestroyRuntime(character);
-#endif
 
     MountSystem::SummonHorse(character, false);
 
@@ -2876,9 +2861,6 @@ void ecs::PlayerRuntime::SetPlayerProto(entt::entity e, const TPlayerTable* t)
     MountSystem::DestroyCostumeMountRuntime(e);
 #endif
 
-#ifdef __NEWPET_SYSTEM__
-    NewPetSystem::DestroyRuntime(e);
-#endif
 }
 
 void ecs::PlayerRuntime::SetProto(entt::entity e, const CMob* pkMob)

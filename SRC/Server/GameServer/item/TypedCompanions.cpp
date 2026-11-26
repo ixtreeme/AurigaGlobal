@@ -16,13 +16,13 @@
 #include "../ecs/systems/CombatSystem.hpp"
 #include "../ecs/systems/InventorySystem.hpp"
 #include "../ecs/systems/MountSystem.hpp"
+#include "../ecs/systems/ViewSystem.hpp"
 #include "../ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include "../entity/char_manager.h"
 #include "../entity/mob_manager.h"
 #include "../network/desc.h"
-#include "../pet/New_PetSystem.h"
 #include "../pet/PetSystem.h"
 #include "../story/CaravanQuestSystem.hpp"
 #include "../world/arena.h"
@@ -165,9 +165,6 @@ bool OtherFollower(entt::entity owner, std::uint64_t live)
     return PetSystem::CountSummoned(owner) > (live ? 1u : 0u)
         || MountSystem::IsCostumeMountSummoned(owner) || (MountSystem::IsRiding(owner) && !OwnRiding(owner))
         || MountSystem::GetSummonedHorse(owner) != entt::null
-#ifdef __NEWPET_SYSTEM__
-        || NewPetSystem::CountSummoned(owner)
-#endif
         ;
 }
 
@@ -607,7 +604,8 @@ std::uint64_t RefreshTypedCompanion(entt::entity owner)
     if (!live && canFollow && (formChanged || now - projection.checked >= 500u))
     {
         const auto name = desired->growthPet ? std::string_view(desired->growthPet->name) : std::string_view{};
-        if (PetSystem::SummonTyped(owner, race, id, row->kind == item::CompanionKind::Mount, name))
+        if (PetSystem::SummonTyped(owner, race, id, row->kind == item::CompanionKind::Mount, name,
+            desired->growthPet ? desired->growthPet->progress.level : 0))
         {
             live = id;
             projection.race = race;
@@ -616,6 +614,17 @@ std::uint64_t RefreshTypedCompanion(entt::entity owner)
     if (now - projection.checked >= 500u)
         projection.checked = now;
     projection.live = live;
+    if (live && desired && desired->growthPet)
+        if (const auto* actor = PetSystem::FindActor(owner, race); actor && g_registry.valid(actor->character))
+        {
+            auto& visible = g_registry.get_or_emplace<ecs::TypedPetLevel>(actor->character);
+            const auto level = desired->growthPet->progress.level;
+            if (visible.value != level)
+            {
+                visible.value = level;
+                ecs::ViewSystem::ViewReencode(actor->character);
+            }
+        }
     UpdateGrowthClock(owner,typed->state,live);
     UpdateTypedPetSkins(owner,typed->state,live);
     UpdateTypedFixedCompanions(owner,typed->state,live);

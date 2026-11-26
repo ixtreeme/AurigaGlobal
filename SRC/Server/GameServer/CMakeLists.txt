@@ -787,7 +787,6 @@ add_test(NAME shop_lifecycle COMMAND ShopLifecycleTests)
 add_executable(MountLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/MountLifecycleTests.cpp
     pet/PetSystem.cpp
-    pet/New_PetSystem.cpp
 )
 target_link_libraries(MountLifecycleTests PRIVATE SERVER EnTT::EnTT AurigaItemCatalog)
 add_test(NAME mount_lifecycle COMMAND MountLifecycleTests)
@@ -901,7 +900,7 @@ add_executable(EntityNetworkDispatchTests EXCLUDE_FROM_ALL
     ecs/services/EntityNetworkDispatch.cpp
     ecs/systems/NetworkSyncSystem.cpp
 )
-target_link_libraries(EntityNetworkDispatchTests PRIVATE SERVER EnTT::EnTT LUA S_Core)
+target_link_libraries(EntityNetworkDispatchTests PRIVATE SERVER EnTT::EnTT LUA S_Core AurigaItemPersistenceSql)
 if(MSVC)
     target_compile_options(EntityNetworkDispatchTests PRIVATE /Gy)
     target_link_options(EntityNetworkDispatchTests PRIVATE /OPT:REF /OPT:NOICF)

@@ -59,10 +59,6 @@
 #endif
 #include "../../combat/buff_on_attributes.h"
 #include "../../item/ItemUse.h"
-#ifdef __NEWPET_SYSTEM__
-#include "../../pet/New_PetSystem.h"
-#define __NEWPET_SYSTEM_CHECK
-#endif
 #ifdef __PET_SYSTEM__
 #include "../../pet/PetSystem.h"
 #endif

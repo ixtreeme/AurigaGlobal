@@ -87,9 +87,6 @@
 #endif
 
 
-#ifdef __NEWPET_SYSTEM__
-	#include "fstream"
-#endif
 
 
 //#define __FILEMONITOR__
@@ -517,23 +514,6 @@ int main(int argc, char **argv)
 	// VisibilitySystem PositionChangedEvent handler to the global
 	// dispatcher. Skeleton in D.3; D.4 fills in the diff handler.
 	ecs::VisibilitySystem::Init(g_registry);
-
-//		path += '/';
-//
-//	path += "exppettable.txt";
-//
-//	/*if (!exp_table_open.is_open())
-//	//int tmppet_exp = 0;
-//		exppet_table_open >> temp_exp_line;
-//		str_to_number(exppet_table_common[exppet_table_counter], temp_exp_line.c_str());
-//			0, "Livelli Pet caricati da exppettable.txt: %d !", exppet_table_common[exppet_table_counter]);
-//			exppet_table_counter++;
-//		}
-//		//else 
-//		//{
-//		//	LOG_ERROR("[main] Impossibile caricare la tabella exp valore non valido");//razor93
-//		//	break;
-//		//}
 
 	while (!auriga::config::ShutdownRequested() && idle());
 

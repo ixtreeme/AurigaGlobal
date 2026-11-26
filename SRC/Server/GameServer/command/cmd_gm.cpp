@@ -63,7 +63,6 @@
 #include "LostCastleDungeon.h"
 
 #ifdef __NEWPET_SYSTEM__
-#include "New_PetSystem.h"
 #include "../ecs/CharacterAccessors.hpp"
 #include "../ecs/systems/SessionSystem.hpp"
 #endif

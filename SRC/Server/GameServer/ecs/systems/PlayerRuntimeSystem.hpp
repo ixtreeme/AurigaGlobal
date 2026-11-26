@@ -138,7 +138,6 @@ void SetItemUseAntiFloodCount(entt::entity e, uint32_t count);
 uint32_t GetBoxUseTime(entt::entity e);
 void SetBoxUseTime(entt::entity e, uint32_t when);
 bool IsWarping(entt::entity e);
-bool IsImmortal(entt::entity e);
 uint32_t GetMonsterDrainSPPoint(entt::entity e);
 bool IsWarp(entt::entity e);
 bool IsBuilding(entt::entity e);

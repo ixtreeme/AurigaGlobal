@@ -76,9 +76,6 @@ bool ParseCommandNumber(std::string_view input, T& value)
 }
 }
 
-#ifdef __NEWPET_SYSTEM__
-#include "New_PetSystem.h"
-#endif
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 #include "../ecs/systems/GayaSystem.hpp"
 #endif
@@ -2507,32 +2504,6 @@ ACMD(do_gift)
 	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "gift");
 }
 
-#ifdef __NEWPET_SYSTEM__
-#ifndef ENABLE_NEW_PET_EDITS
-ACMD(do_PetSkill) {
-	if (!ecs::PlayerRuntime::IsPC(character))
-		return;
-	char arg1[256];
-	one_argument(argument, arg1, sizeof(arg1));
-	if (!*arg1)
-		return;
-
-	uint32_t skillslot = 0;
-	if (!ParseCommandNumber(arg1, skillslot) || skillslot > 3)
-		return;
-
-	if (NewPetSystem::IsActivePet(character)) {
-		NewPetSystem::DoPetSkill(character, skillslot);
-	}
-#ifdef TEXTS_IMPROVEMENT
-	else {
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 729, "");
-	}
-#endif
-}
-#endif
-
-#endif
 
 ACMD(do_cube)
 {

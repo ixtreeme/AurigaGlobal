@@ -473,10 +473,6 @@ void LocaleService_TransferDefaultSetting()
 	if (!exp_table)
 		exp_table = exp_table_common;
 	
-#ifdef __NEWPET_SYSTEM__
-	if (!exppet_table)
-		exppet_table = exppet_table_common;
-#endif
 
 	if (!CTableBySkill::instance().Check())
 		exit(1);

@@ -116,14 +116,6 @@ extern const uint32_t		party_exp_distribute_table[PLAYER_EXP_TABLE_MAX + 1];
 extern const uint32_t		exp_table_common[PLAYER_MAX_LEVEL_CONST + 1];
 
 extern const uint32_t*		exp_table;
-#ifdef __NEWPET_SYSTEM__
-//extern const uint32_t pets;
-extern uint32_t		exppet_table_common[121];
-extern uint32_t*		exppet_table;
-extern const uint32_t		Pet_SKill_TablePerc[4][20];
-extern const double		Pet_Skill_Table[12][23];
-extern const uint32_t		Pet_Table[11][2];
-#endif
 extern const uint32_t		guild_exp_table[GUILD_MAX_LEVEL + 1];
 extern const uint32_t		guild_exp_table2[GUILD_MAX_LEVEL + 1];
 

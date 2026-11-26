@@ -101,9 +101,6 @@
 #include "../../guild/guild_manager.h"
 #include "../../quest/questmanager.h"
 #include "../../quest/questlua.h"
-#ifdef __NEWPET_SYSTEM__
-#include "../../pet/New_PetSystem.h"
-#endif
 #ifdef ENABLE_DUNGEON_SHARED_DROP_HWID
 #include <unordered_map>
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
@@ -1680,24 +1677,6 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 	// it recalculate the given exp if the player level is greater than the exp_table size (useless)
 	iExp = AdjustExpByLevel_Combat(toEntity, iExp);
 
-#ifdef __NEWPET_SYSTEM__
-	if (NewPetSystem::IsActivePet(toEntity))
-	{
-#ifdef ENABLE_NEW_PET_EDITS
-		if (NewPetSystem::GetLevel(toEntity) < 100)
-#else
-		if (NewPetSystem::GetLevel(toEntity) < 120)
-#endif
-		{
-			if (NewPetSystem::GetLevelStep(toEntity) < 4)
-			{
-				int tmpexp = iExp * 9 / 20;
-				iExp = iExp - tmpexp;
-				NewPetSystem::SetExp(toEntity, tmpexp, 0);
-			}
-		}
-	}
-#endif
 
 	if (test_server)
 		ecs::ChatSystem::Send(toEntity, CHAT_TYPE_INFO, "exp+minGNE+adjust(%d)", iExp);
@@ -1821,19 +1800,6 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 
 	iExp = AdjustExpByLevel_Combat(toEntity, iExp);
 
-#ifdef __NEWPET_SYSTEM__
-	if (NewPetSystem::IsActivePet(toEntity)) {
-		if (NewPetSystem::GetLevel(toEntity) < 120)
-		{
-			if (NewPetSystem::GetLevelStep(toEntity) < 4)
-			{
-				int tmpexp = iExp * 9 / 20;
-				iExp = iExp - tmpexp;
-				NewPetSystem::SetExp(toEntity, tmpexp, 0);
-			}
-		}
-	}
-#endif
 
 	iExp=EquipmentLegacyInt(std::max<int64_t>(0,EquipmentScale(iExp,10000+TypedEquipmentBonus(toEntity,auriga::item::BonusId::ExperiencePercent)+TypedPetBonus(toEntity,auriga::item::PetEffect::ExperiencePercent))));
 	AwardTypedGrowthPetMobExperience(toEntity,fromEntity,iExp);
@@ -3647,10 +3613,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	if (CombatSystem::GetInvincible(victim))
 		return false;
 
-#ifdef __NEWPET_SYSTEM__
-	if (ecs::PlayerRuntime::IsImmortal(victim))
-		return false;
-#endif
 
 	if (attackerIsCharacter)
 	{

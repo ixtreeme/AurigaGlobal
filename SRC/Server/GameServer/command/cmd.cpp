@@ -34,11 +34,6 @@ ACMD(do_user_horse_feed);
 #endif
 
 
-#ifdef __NEWPET_SYSTEM__
-#ifndef ENABLE_NEW_PET_EDITS
-ACMD(do_PetSkill);
-#endif
-#endif
 // ADD_COMMAND_SLOW_STUN
 ACMD(do_slow);
 ACMD(do_stun);
@@ -660,11 +655,6 @@ struct command_info cmd_info[] =
 	{ "all_skill_master",	do_all_skill_master,	0,	POS_DEAD,	GM_HIGH_WIZARD},
 
 	{ "do_clear_affect", do_clear_affect, 	0, POS_DEAD,		GM_IMPLEMENTOR},
-#ifdef __NEWPET_SYSTEM__
-#ifndef ENABLE_NEW_PET_EDITS
-	{ "petskills", 			do_PetSkill,	0,			POS_DEAD,	GM_PLAYER },
-#endif
-#endif
 #ifdef ENABLE_NEWSTUFF
 	//item
 	//player

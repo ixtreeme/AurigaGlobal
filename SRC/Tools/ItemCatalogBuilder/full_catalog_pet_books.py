@@ -1,6 +1,6 @@
 """Audited original pet table -> native skill definitions and study supplies."""
 from pathlib import Path
-import re
+import json
 from full_catalog_behaviors import unused_values
 from legacy_item_migration import MigrationError,file_hash
 SERVER=Path(__file__).resolve().parents[2]/'Server'
@@ -9,14 +9,26 @@ SKILLS=((78,19,'warrior_resistance'),(80,20,'sura_resistance'),(79,21,'ninja_res
  (120,23,'pve_critical_chance'),(116,24,'stone_damage'),(117,25,'boss_damage'),(66,26,'experience'),
  (68,27,'gold_drop'),(64,28,'attack_bonus'),(27,29,'melee_block'),(39,30,'melee_reflection'))
 def original_table(c):
-    constants=SERVER/'GameServer/core/constants.cpp';source=SERVER/'GameServer/pet/New_PetSystem.cpp'
-    text=constants.read_text(encoding='utf-8');match=re.search(r'const uint32_t Pet_Skill_Table\[12\]\[23\]\s*=\s*\{(.*?)\};',text,re.S)
-    if not match:raise MigrationError('original_pet_skill_table_missing')
-    rows=[[int(n) for n in re.findall(r'\d+',row)] for row in re.findall(r'\{([^{}]+)\}',match[1])]
-    if len(rows)!=12 or any(len(row)!=22 or row[:2]!=[n+1,SKILLS[n][0]] for n,row in enumerate(rows)):raise MigrationError('original_pet_skill_table_changed')
-    compact=re.sub(r'\s+','',source.read_text(encoding='utf-8'))
-    if not all(token in compact for token in ('if(actor.skill[ret]>=10)','if(number(1,100)<30)','get_global_time()+(3600*3)','actor.skill[ret]+=1','if(actor.skill[iSlot]>=10)')):raise MigrationError('original_pet_study_contract_changed')
-    c.rule_inputs['native_pet_character_projection']=file_hash(SERVER/'GameServer/item/TypedEquipment.cpp');c.rule_inputs['native_pet_character_properties']=file_hash(SERVER/'common/item/PetLifecycle.hpp');c.rule_inputs['original_pet_skill_table']=file_hash(constants);c.rule_inputs['original_pet_study_runtime']=file_hash(source)
+    # Offline migration evidence survives retirement of the executable legacy motor.
+    # These are source data, never a second runtime progression or skill implementation.
+    contract=Path(__file__).with_name('original_pet_study_contract.json')
+    try:
+        data=json.loads(contract.read_text(encoding='utf-8'))
+        rows=data['rows']
+        if (data['schema']!=1 or data['max_rank']!=10 or data['known_success_bp']!=7100 or
+            data['known_cooldown_ms']!=10800000 or len(rows)!=12 or
+            any(row!=[n+1,SKILLS[n][0]]+[rank*(2 if n in (7,8) else 1) for rank in range(1,21)]
+                for n,row in enumerate(rows)) or
+            any(len(data[key])!=64 or any(ch not in '0123456789abcdef' for ch in data[key])
+                for key in ('constants_sha256','runtime_sha256'))):
+            raise ValueError('changed contract')
+    except (OSError,ValueError,KeyError,TypeError) as error:
+        raise MigrationError('original_pet_study_contract_changed') from error
+    c.rule_inputs['native_pet_character_projection']=file_hash(SERVER/'GameServer/item/TypedEquipment.cpp')
+    c.rule_inputs['native_pet_character_properties']=file_hash(SERVER/'common/item/PetLifecycle.hpp')
+    c.rule_inputs['original_pet_skill_table']=data['constants_sha256']
+    c.rule_inputs['original_pet_study_runtime']=data['runtime_sha256']
+    c.rule_inputs['original_pet_study_contract']=file_hash(contract)
     return rows
 
 def skill_ids(c):

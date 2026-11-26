@@ -32,7 +32,7 @@ ecs::PetActorState* FindActorByVID(entt::entity owner, uint32_t vid);
 bool IsPetSummoned(entt::entity owner, uint32_t vnum);
 size_t CountSummoned(entt::entity owner);
 
-bool SummonTyped(entt::entity owner, uint32_t vnum, uint64_t seal, bool mount, std::string_view name = {});
+bool SummonTyped(entt::entity owner, uint32_t vnum, uint64_t seal, bool mount, std::string_view name = {}, uint16_t level = 0);
 uint64_t LiveTypedSeal(entt::entity owner);
 void RecallTyped(entt::entity owner, uint64_t seal);
 void Unsummon(entt::entity owner, uint32_t vnum, bool deleteFromList = false);

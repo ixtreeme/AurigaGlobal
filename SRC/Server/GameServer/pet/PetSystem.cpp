@@ -214,7 +214,7 @@ size_t CountSummoned(entt::entity owner)
         [](const auto& record) { return g_registry.valid(record.character); });
 }
 
-bool SummonTyped(entt::entity owner, uint32_t vnum, uint64_t seal, bool mount, std::string_view name)
+bool SummonTyped(entt::entity owner, uint32_t vnum, uint64_t seal, bool mount, std::string_view name, uint16_t level)
 {
     if (!seal || !vnum || !ecs::PlayerRuntime::IsValid(owner) || CountSummoned(owner))
         return false;
@@ -247,6 +247,8 @@ bool SummonTyped(entt::entity owner, uint32_t vnum, uint64_t seal, bool mount, s
     flags.isMount = mount;
     if (mount)
         g_registry.emplace_or_replace<ecs::MountOwner>(follower, owner);
+    else if (level)
+        g_registry.emplace_or_replace<ecs::TypedPetLevel>(follower, level);
     if (!name.empty())
         ecs::PlayerRuntime::SetName(follower, name);
     ecs::PlayerRuntime::SetEmpire(follower, ecs::PlayerRuntime::GetEmpire(owner));

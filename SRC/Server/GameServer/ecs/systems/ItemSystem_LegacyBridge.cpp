@@ -64,12 +64,6 @@
 #include "../../combat/buff_on_attributes.h"
 #include "../../item/ItemUse.h"
 
-#ifdef __NEWPET_SYSTEM__
-#include "../../pet/New_PetSystem.h"
-#define __NEWPET_SYSTEM_CHECK
-#endif
-#ifdef __PET_SYSTEM__
-#endif
 #ifdef ENABLE_NEWSTUFF
 #include "../../combat/pvp.h"
 #endif
@@ -719,21 +713,6 @@ void AffectSystem::AutoRecallProcess(entt::entity e)
 		MountSystem::CheckMount(e);
 #endif
 
-#ifdef __NEWPET_SYSTEM__
-	{
-		const CAffect* pAffect = AffectSystem::FindAffect(e, AFFECT_RECALL2);
-		if (pAffect) {
-			const entt::entity pItem = ItemSystem::FindItemByID(e, pAffect->dwFlag);
-			if (ItemSystem::IsValidItem(pItem)) {
-				// The saved growth-pet active marker is not a live actor handle.
-				if (NewPetSystem::CountSummoned(e) == 0)
-					NewPetSystem::Summon(e, ItemSystem::GetItemValue(pItem, 0), pItem, "", false);
-			}
-			else
-				AffectSystem::RemoveAffect(e, const_cast<CAffect*>(pAffect));
-		}
-	}
-#endif
 }
 #endif
 

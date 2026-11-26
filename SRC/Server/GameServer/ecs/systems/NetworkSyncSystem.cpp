@@ -418,11 +418,9 @@ bool NetworkSyncSystem::BuildCharAdditionalInfo(entt::registry& reg, entt::entit
         const int level = ecs::PointSystem::GetLevel(source);
         packet.dwLevel = level > 0 ? static_cast<uint32_t>(level) : 0;
     }
-#ifdef __NEWPET_SYSTEM__
-    else if (const auto* pet = reg.try_get<ecs::GrowthPetComponent>(source)) {
-        packet.dwLevel = pet->level;
+    else if (const auto* pet = reg.try_get<ecs::TypedPetLevel>(source)) {
+        packet.dwLevel = pet->value;
     }
-#endif
 
 #ifdef __SKILL_COLOR_SYSTEM__
     if (const auto* skillColor = reg.try_get<ecs::SkillColor>(source))

@@ -228,6 +228,17 @@ void MountWireRoundTrip() {
         Check(bytes.dwVID == 500 && bytes.dwMountVnum == mountVnum,
             "mount/dismount update lost rider VID or mount state");
     }
+    const auto growth = Character(650, false);
+    g_registry.emplace<ecs::TypedPetLevel>(growth, uint16_t{47});
+    wire.clear();
+    ecs::EntityNetworkDispatch::SendInsert(g_registry, growth, observer);
+    const auto growthInfo = Packet<TPacketGCCharacterAdditionalInfo>(observerDesc, 1, HEADER_GC_CHAR_ADDITIONAL_INFO);
+    Check(growthInfo.dwVID == 650 && growthInfo.dwLevel == 47,
+        "typed growth follower insert lost its persistent level");
+    g_registry.get<ecs::TypedPetLevel>(growth).value = 48;
+    TPacketGCCharacterAdditionalInfo growthUpdate {};
+    Check(NetworkSyncSystem::BuildCharAdditionalInfo(g_registry, growth, growthUpdate) &&
+        growthUpdate.dwLevel == 48, "typed growth reinsert lost its persistent level");
     g_registry.clear(); wire.clear();
 }
 void ExpiredAndMissingSession() {
@@ -605,10 +616,17 @@ int64_t Get(entt::entity e, uint8_t type) {
     if (const auto* points = g_registry.try_get<PacketPoints>(e)) return points->values.at(type);
     Check(type == POINT_MOV_SPEED || type == POINT_ATT_SPEED, "unexpected packet point"); return 150;
 }
+double GetPrecise(entt::entity e, uint8_t type) { return static_cast<double>(Get(e,type)); }
+void SendPrecisionPoints(entt::entity) {} // No fractional source; production also accepts retired owners.
 int GetLevel(entt::entity e) { Live(e); return 30; }
 }
 uint32_t MountSystem::GetMountVnum(entt::entity e) { Live(e); return g_registry.get<ecs::MountState>(e).mountVnum; }
 void MountSystem::UpdateMountInventoryCountOverhead(entt::entity source, entt::entity viewer) { Live(source); Live(viewer); }
+
+// These encoding fixtures have no typed equipment or companion projection.
+void SendTypedCostumeAppearance(entt::entity, entt::entity) {}
+std::optional<bool> TypedMountFlightPermission(entt::entity) { return std::nullopt; }
+namespace NetworkSyncSystem { void SendItemBonusCatalog(entt::entity) {} }
 
 // These viewers have no gathering nodes or equipped tools. Keep the controlled
 // service boundary current with the production character packet builder.

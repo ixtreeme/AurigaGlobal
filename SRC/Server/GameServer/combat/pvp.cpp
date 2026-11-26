@@ -27,20 +27,12 @@
 #include <fmt/format.h>
 
 #ifdef ENABLE_PVP_ADVANCED
-/*
-#ifdef __NEWPET_SYSTEM__
-	#include "New_PetSystem.h" roba tua...
-#endif
-*/
 	#include "affect.h"
 	#include "party.h"
 	#include "guild.h"
 	#include "skill.h"
 #ifdef __PET_SYSTEM__
 	#include "PetSystem.h"
-#endif
-#ifdef __NEWPET_SYSTEM__
-	#include "New_PetSystem.h"
 #endif
 #endif
 
@@ -224,12 +216,6 @@ EVENTFUNC(pvp_duel_counter)
 #ifdef __PET_SYSTEM__
 				PetSystem::UnsummonAll(characterA);
 				PetSystem::UnsummonAll(characterB);
-#endif
-#ifdef __NEWPET_SYSTEM__
-				{
-					NewPetSystem::UnsummonAll(characterA);
-					NewPetSystem::UnsummonAll(characterB);
-				}
 #endif
 			}
 

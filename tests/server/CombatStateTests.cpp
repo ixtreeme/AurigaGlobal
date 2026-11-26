@@ -82,7 +82,6 @@
 #include "../../SRC/Server/GameServer/guild/guild_manager.h"
 #include "../../SRC/Server/GameServer/quest/questmanager.h"
 #include "../../SRC/Server/GameServer/quest/questlua.h"
-#include "../../SRC/Server/GameServer/pet/New_PetSystem.h"
 #include "../../SRC/Server/GameServer/dungeon/OrcsDungeon.h"
 #include "../../SRC/Server/GameServer/dungeon/TritonTempleDungeon.h"
 #include "../../SRC/Server/GameServer/dungeon/ValentineDungeon.h"
@@ -506,7 +505,6 @@ void ItemSystem::GiveGold(entt::entity, int64_t) { UnexpectedService(__func__); 
 void ecs::SocialSystem::CloseMyShop(entt::entity) { UnexpectedService(__func__); }
 entt::entity ecs::SocialSystem::GetMarryPartner(entt::entity) { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetQuestDamage(entt::entity,int,int) { UnexpectedService(__func__); }
-bool ecs::PlayerRuntime::IsImmortal(entt::entity) { return false; }
 int SkillSystem::ComputeSkill(entt::entity,uint32_t,entt::entity,uint8_t) { UnexpectedService(__func__); }
 int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetQuestFlag(entt::entity,std::string const &,int) { UnexpectedService(__func__); }
@@ -633,12 +631,6 @@ void quest::CQuestManager::Die(unsigned int,unsigned int) { UnexpectedService(__
 void quest::CQuestManager::QuestDamage(unsigned int,unsigned int) { UnexpectedService(__func__); }
 // CombatSystem asks the growth-pet runtime for its progression bonus. These
 // tests never summon one; the getters below only run behind the active check.
-namespace NewPetSystem {
-bool IsActivePet(entt::entity) { return false; }
-void SetExp(entt::entity, int, int) { UnexpectedService(__func__); }
-int GetLevel(entt::entity) { UnexpectedService(__func__); }
-int GetLevelStep(entt::entity) { UnexpectedService(__func__); }
-}
 COrcsDungeon & COrcsDungeon::instance(void) { UnexpectedService(__func__); }
 void COrcsDungeon::OnMobKilled(entt::entity,entt::entity) { UnexpectedService(__func__); }
 CTritonTempleDungeon & CTritonTempleDungeon::instance(void) { UnexpectedService(__func__); }
