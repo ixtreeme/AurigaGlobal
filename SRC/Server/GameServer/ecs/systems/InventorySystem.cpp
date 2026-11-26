@@ -1711,7 +1711,7 @@ bool DropItemImpl(entt::entity owner, TItemPos source, int requested)
 }
 
 namespace {
-void PublishEquipmentInsertion(entt::entity item, entt::entity owner, uint8_t wear, bool wearTimer);
+void PublishEquipmentInsertion(entt::entity item, entt::entity owner, uint8_t wear);
 bool TradePlayer(entt::entity owner, uint32_t pid) {
     return ecs::PlayerRuntime::IsPC(owner) && ecs::PlayerRuntime::GetPlayerID(owner) == pid;
 }
@@ -1885,7 +1885,7 @@ NpcTradeResult BuyFromNpc(entt::entity owner, const NpcPurchase& input, const st
         merges.emplace_back(candidate, pos, take); remaining -= take;
     }
     TItemPos destination = NPOS;
-    bool rune = false, wearTimer = false;
+    bool rune = false;
 #ifdef ENABLE_RUNE_SYSTEM
     rune = ItemSystem::IsRuneItem(item);
 #endif
@@ -1897,7 +1897,6 @@ NpcTradeResult BuyFromNpc(entt::entity owner, const NpcPurchase& input, const st
             if (!EnsureStorage(owner, INVENTORY)) return Result::Rejected;
             const auto* proto = ItemSystem::GetItemProto(item);
             if (!proto) return Result::Rejected;
-            wearTimer = proto->cLimitTimerBasedOnWearIndex != -1;
         } else {
             const uint8_t window =
 #ifdef ENABLE_EXTRA_INVENTORY
@@ -1961,7 +1960,7 @@ NpcTradeResult BuyFromNpc(entt::entity owner, const NpcPurchase& input, const st
         PublishTradeCosts(owner, origin.pid, costs, quickslots, "SHOP_PAYMENT");
         for (const auto& row : merges) if (Anchored(owner, row.item, row.pos)) ItemSystem::PublishItemCount(row.item);
         if (remaining && Anchored(owner, item, destination)) {
-            if (rune) PublishEquipmentInsertion(item, owner, uint8_t(destination.cell - INVENTORY_MAX_NUM), wearTimer);
+            if (rune) PublishEquipmentInsertion(item, owner, uint8_t(destination.cell - INVENTORY_MAX_NUM));
             else SendStorageSlot(owner, destination, true);
         }
         if (TradePlayer(owner, origin.pid)) ecs::SessionSystem::Save(owner);
@@ -2031,7 +2030,6 @@ bool Unequip(entt::entity itemEntity)
             ItemSystem::GetItemWindow(itemEntity) == originalWindow && ItemSystem::IsItemEquipped(itemEntity);
     };
     if (!unchanged() || !ItemSystem::GetItemProto(itemEntity)) return false;
-    const bool hasWearTimer = ItemSystem::GetItemProto(itemEntity)->cLimitTimerBasedOnWearIndex != -1;
 	if (ItemSystem::GetWearItem(
 			charEntity, static_cast<uint8_t>(ItemSystem::GetItemCell(itemEntity) - INVENTORY_MAX_NUM)) != itemEntity)
 	{
@@ -2055,16 +2053,6 @@ bool Unequip(entt::entity itemEntity)
 	}
 
 	if (!unchanged()) return false;
-	ItemSystem::StopUniqueExpireEvent(itemEntity);
-	if (!unchanged()) return false;
-
-	if (hasWearTimer)
-		ItemSystem::StopTimerBasedOnWearExpireEvent(itemEntity);
-
-	if (!unchanged()) return false;
-	ItemSystem::StopAccessorySocketExpireEvent(itemEntity);
-	if (!unchanged()) return false;
-
 	ecs::PlayerRuntime::BuffOnAttr_RemoveBuffsFromItem(charEntity, itemEntity);
 
 	if (!unchanged()) return false;
@@ -2122,7 +2110,7 @@ bool Unequip(entt::entity itemEntity)
 }
 
 namespace {
-void PublishEquipmentInsertion(entt::entity itemEntity, entt::entity charEntity, uint8_t bWearCell, bool hasWearTimer)
+void PublishEquipmentInsertion(entt::entity itemEntity, entt::entity charEntity, uint8_t bWearCell)
 {
     const auto target = TItemPos(EQUIPMENT, INVENTORY_MAX_NUM + bWearCell);
     const auto stillWorn = [&] {
@@ -2158,15 +2146,7 @@ void PublishEquipmentInsertion(entt::entity itemEntity, entt::entity charEntity,
 		ItemSystem::ModifyPoints(itemEntity, true);
 #endif
 		if (!stillWorn()) return;
-		ItemSystem::StartUniqueExpireEvent(itemEntity);
-        if (!stillWorn()) return;
-		if (hasWearTimer)
-			ItemSystem::StartTimerBasedOnWearExpireEvent(itemEntity);
 
-		// ACCESSORY_REFINE
-		if (!stillWorn()) return;
-		ItemSystem::StartAccessorySocketExpireEvent(itemEntity);
-		// END_OF_ACCESSORY_REFINE
 	}
 
 	if (!stillWorn()) return;
@@ -2552,21 +2532,6 @@ void FinishEquip(entt::entity owner, entt::entity item) {
     const auto unchanged = [&] { return WornBy(owner, item) && GetItemCell(item) == wearCell; };
     const auto* proto = GetItemProto(item);
     if (!proto) return;
-    const int firstUse = proto->cLimitRealTimeFirstUseIndex;
-    if (firstUse >= 0 && firstUse < ITEM_LIMIT_MAX_NUM) {
-        const int64_t configuredDuration = proto->aLimits[firstUse].lValue;
-        if (GetItemSocket(item, 1) == 0) {
-            int64_t duration = GetItemSocket(item, 0);
-            if (duration == 0) duration = configuredDuration;
-            if (duration <= 0) duration = 60 * 60 * 24 * 7;
-            const int64_t expires = std::clamp<int64_t>(int64_t(time(nullptr)) + duration, 0, UINT32_MAX);
-            if (!SetItemSocket(item, 0, static_cast<uint32_t>(expires)) || !unchanged()) return;
-            StartRealTimeExpireEventEcs(item);
-            if (!unchanged()) return;
-        }
-        const uint32_t used = GetItemSocket(item, 1);
-        if (!SetItemSocket(item, 1, used == UINT32_MAX ? used : used + 1) || !unchanged()) return;
-    }
     const uint32_t vnum = GetItemVnum(item);
     const auto type = GetItemType(item), subtype = GetItemSubType(item);
     int effect = -1;

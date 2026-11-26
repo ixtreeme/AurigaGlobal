@@ -1009,7 +1009,7 @@ int CombatSystem::GetArrowAndBow(entt::entity,entt::entity *,entt::entity *,int)
 int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { Unexpected(); }
 void ecs::PlayerRuntime::SetQuestFlag(entt::entity,std::string const &,int) { Unexpected(); }
 int ecs::PlayerRuntime::GetSkillPowerByLevel(entt::entity,int,bool) { Unexpected(); }
-int CombatSystem::GetSoulItemDamage(entt::entity,entt::entity,int,unsigned char) { Unexpected(); }
+
 entt::entity PartySystem::GetNextOwnership(entt::entity, entt::entity, int, int) { Unexpected(); }
 bool SECTREE_MANAGER::GetRecallPositionByEmpire(int,unsigned char,pixel_position_s &) { Unexpected(); }
 bool MountSystem::IsRiding(entt::entity) { Unexpected(); }

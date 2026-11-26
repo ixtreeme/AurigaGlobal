@@ -833,28 +833,18 @@ the public ItemSystem lookup APIs. Factory integration is compiled with the
 server, not executed by this headless target; allocator failure is not injected
 into the registry maps. Live login/duplicate-load/persistence checks remain needed.
 
-## Entity-native item load initialization
+## Typed item lifetime retirement
 
-`CheckItemUseLevel` and `OnAfterCreatedItem` now execute in ItemSystem.cpp,
-without a CItem lookup. Their CHARACTER-era item methods and bridge bodies are
-deleted. The level check preserves the first matching LIMIT_LEVEL rule and
-uses the full-width table value. Loaded first-use items resume only after use;
-partly charged souls resume charging, while fully charged souls succeed without
-a timer. Missing prototypes and stale/non-item handles are rejected.
+The old post-creation socket timer hook and the raw unique, real-time,
+wear-time, soul-charge and accessory-degradation event APIs are retired.
+CheckItemUseLevel retains its independent level-boundary coverage.
 
-Real-time and soul timer creation no longer retain an ItemEvents reference
-through allocation callbacks. A removed component or retired generation rejects
-and cancels the pending event; a nested timer start wins over an older pending
-one. Event publication may destroy the entity, so load initialization rechecks
-liveness before continuing and never reports that destroyed handle as ready.
-
-`ItemRuntimeTests` compiles the existing ItemSystem.cpp. Entity-only fixtures
-cover level boundaries above 255, missing/stale state, first-use and soul reload,
-idempotent starts, allocation failure/retry, component removal, generation reuse,
-nested creation and publication-time retirement. Scheduling, event callbacks,
-network/affect and unrelated legacy entry points are controlled doubles; this
-does not test the real event queue, DB hydration or client login. Item allocation
-and other item operations still have CItem dependencies and need further migration.
+Use the typed accessory_sockets, automatic_recovery, timed_effects,
+toggle_effects, recovery_schedule, item_effect_runtime, soul_runtime,
+soul_items, costumes and companion lifecycle suites for lifetime rules.
+AffectLifecycleTests rejects retired item-backed affects before any bonus
+or event is published and preserves ordinary character effects. See
+docs/typed_item_affect_timer_retirement.md for the runtime boundary.
 
 ## Single combat execution path
 

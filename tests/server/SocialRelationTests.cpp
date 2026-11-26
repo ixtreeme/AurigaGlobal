@@ -171,7 +171,6 @@ void DungeonSystem::ClearMemberDungeonIfOtherMap(entt::entity, int32_t) { Unexpe
 void marriage::WeddingSystem::SetMemberMap(entt::entity, entt::entity) { Unexpected("SetMemberMap"); }
 entt::entity marriage::WeddingSystem::GetMemberMap(entt::entity) { Unexpected("GetMemberMap"); }
 entt::entity marriage::CManager::Get(uint32_t) { return entt::null; }
-int marriage::MarriageSystem::GetBonus(entt::entity, uint32_t, bool, entt::entity) { Unexpected("MarriageSystem::GetBonus"); }
 
 void ExchangeSystem::Cancel(entt::entity) { Unexpected("ExchangeSystem::Cancel"); }
 bool CBanwordManager::CheckString(const char*, size_t) { return false; }
@@ -267,3 +266,6 @@ int main() {
         return 1;
     }
 }
+
+// This relationship fixture has no active typed private shop.
+bool CloseTypedPrivateShop(entt::entity) { return false; }

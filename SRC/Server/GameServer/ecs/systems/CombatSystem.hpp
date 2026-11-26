@@ -165,7 +165,6 @@ bool IsDeathBlower(entt::entity e);
 #ifdef ENABLE_SOUL_SYSTEM
 // The red or blue soul item bonus an attack earns, spending one strike of it.
 // Only a player hitting a non-player gets one.
-int GetSoulItemDamage(entt::entity attacker, entt::entity victim, int iDamage, uint8_t bSoulType);
 #endif
 
 } // namespace CombatSystem

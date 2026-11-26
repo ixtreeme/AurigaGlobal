@@ -48,7 +48,6 @@
 #endif
 #include "../../core/utils.h"
 #include "../EntityFactory.hpp"
-#include "ItemSystem.hpp"
 #include "../Registry.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
@@ -597,7 +596,7 @@ void ApplyMobAttribute(entt::entity target, const TMobTable* table)
 AffectId Attach(entt::entity e, const CAffect& value)
 {
     auto* state = AffectState(e);
-    if (!state || value.bApplyOn >= POINT_MAX_NUM || auriga::retired_content::Affect(value.dwType))
+    if (!state || value.bApplyOn >= POINT_MAX_NUM || (auriga::retired_content::Affect(value.dwType) || auriga::retired_content::ItemAffect(value.dwType)))
         return 0;
     const AffectId affect = NextAffectId();
     state->affects.push_back({affect, value});
@@ -654,7 +653,7 @@ TAffectFlag GetFlags(entt::entity e)
 
 void SetFlag(entt::entity e, uint32_t flag, bool enabled)
 {
-    // Some affect types store an item ID in dwFlag. It is not a bit index.
+    // Only valid affect-bit indices may enter the actor flag container.
     if (flag == 0 || flag >= AFF_BITS_MAX)
         return;
     if (auto* state = AffectState(e)) {
@@ -857,34 +856,6 @@ bool UpdateAffect(entt::entity e)
 	}
 #endif
 
-	if (ecs::PointSystem::GetPrecise(e, POINT_HP_RECOVERY) > 0)
-	{
-		if (ecs::PointSystem::GetMaxHP(e) <= ecs::PlayerRuntime::GetHP(e))
-		{
-			ecs::PointSystem::Change(e, POINT_HP_RECOVERY, -ecs::PointSystem::GetPrecise(e, POINT_HP_RECOVERY));
-		}
-		else
-		{
-			double iVal = std::min<int64_t>(ecs::PointSystem::GetPrecise(e, POINT_HP_RECOVERY), static_cast<int64_t>(ecs::PointSystem::GetMaxHP(e)) * 7 / 100);
-
-			ecs::PointSystem::Change(e, POINT_HP, iVal);
-			ecs::PointSystem::Change(e, POINT_HP_RECOVERY, -iVal);
-		}
-	}
-
-	if (ecs::PointSystem::GetPrecise(e, POINT_SP_RECOVERY) > 0)
-	{
-		if (ecs::PointSystem::GetMaxSP(e) <= ecs::PlayerRuntime::GetSP(e))
-			ecs::PointSystem::Change(e, POINT_SP_RECOVERY, -ecs::PointSystem::GetPrecise(e, POINT_SP_RECOVERY));
-		else
-		{
-			double iVal = std::min<int64_t>(ecs::PointSystem::GetPrecise(e, POINT_SP_RECOVERY), static_cast<int64_t>(ecs::PointSystem::GetMaxSP(e)) * 7 / 100);
-
-			ecs::PointSystem::Change(e, POINT_SP, iVal);
-			ecs::PointSystem::Change(e, POINT_SP_RECOVERY, -iVal);
-		}
-	}
-
 	if (ecs::PointSystem::GetPrecise(e, POINT_HP_RECOVER_CONTINUE) > 0)
 	{
 		ecs::PointSystem::Change(e, POINT_HP, ecs::PointSystem::GetPrecise(e, POINT_HP_RECOVER_CONTINUE));
@@ -909,9 +880,7 @@ bool UpdateAffect(entt::entity e)
     const auto entity = e;
     const bool empty = AffectSystem::ProcessAffect(entity);
     if (!AffectState(entity)) return false;
-    if (empty && ecs::PointSystem::GetPrecise(entity, POINT_HP_RECOVERY) == 0 &&
-        ecs::PointSystem::GetPrecise(entity, POINT_SP_RECOVERY) == 0 &&
-        ecs::PointSystem::Get(entity, POINT_STAMINA) == ecs::PlayerRuntime::GetMaxStamina(entity)) {
+    if (empty && ecs::PointSystem::Get(entity, POINT_STAMINA) == ecs::PlayerRuntime::GetMaxStamina(entity)) {
         AffectSystem::StopAffectEvent(entity);
         return false;
     }
@@ -941,13 +910,7 @@ void ClearAffect(entt::entity e, bool bSave)
 
 		if (bSave)
 		{
-#ifdef ENABLE_SOUL_SYSTEM
-			if ( pkAff->dwType == AFFECT_SOUL_RED || pkAff->dwType == AFFECT_SOUL_BLUE )
-			{
 
-				continue;
-			}
-#endif
 
 			if ( IS_NO_CLEAR_ON_DEATH_AFFECT(pkAff->dwType) || IS_NO_SAVE_AFFECT(pkAff->dwType) )
 			{
@@ -1072,59 +1035,9 @@ void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElemen
 	for (uint32_t i = 0; i < dwCount; ++i, ++pElements)
 	{
 		if(pElements->dwType==AFFECT_POLYMORPH && g_registry.all_of<ecs::TypedItems>(e))continue;
-		if (auriga::retired_content::Affect(pElements->dwType))
+		if ((auriga::retired_content::Affect(pElements->dwType) || auriga::retired_content::ItemAffect(pElements->dwType)))
 			continue;
         if (WarriorExpansion::IsBuffAffect(pElements->dwType) && !WarriorExpansion::AllowBuff(e,WarriorExpansion::SkillFromAffect(pElements->dwType))) continue;
-		////if (pElements->dwType == SKILL_MUYEONG)
-		////	continue;
-#ifdef ENABLE_RECALL
-        if (pElements->dwType == AFFECT_RECALL1 || pElements->dwType == AFFECT_RECALL2)
-            continue; // Recall intent is persistent typed seal state.
-#endif
-		if (AFFECT_AUTO_HP_RECOVERY == pElements->dwType || AFFECT_AUTO_SP_RECOVERY == pElements->dwType)
-		{
-			const entt::entity item = ItemSystem::FindItemByID(
-				character, pElements->dwFlag);
-			if (!ItemSystem::IsValidItem(item))
-				continue;
-
-			ItemSystem::LockItem(item);
-		}
-#ifdef ENABLE_NEW_USE_POTION
-		else if (AFFECT_AUTO_HP_RECOVERY2 == pElements->dwType || AFFECT_AUTO_SP_RECOVERY2 == pElements->dwType)
-		{
-			const entt::entity item = ItemSystem::FindItemByID(
-				character, pElements->dwFlag);
-			if (!ItemSystem::IsValidItem(item))
-				continue;
-
-			ItemSystem::LockItem(item);
-		}
-		else if ((pElements->dwType >= AFFECT_NEW_POTION1) && (pElements->dwType <= AFFECT_NEW_POTION31))
-		{
-			const entt::entity item = ItemSystem::FindItemByID(
-				character, pElements->dwFlag);
-			if (ItemSystem::IsValidItem(item))
-				ItemSystem::LockItem(item);
-			else
-				continue;
-		}
-		//			item->Lock(false);
-		//			item->SetSocket(1, 0);
-#endif
-#ifdef ENABLE_SOUL_SYSTEM
-		if(pElements->dwType == AFFECT_SOUL_RED || pElements->dwType == AFFECT_SOUL_BLUE)
-		{
-			const entt::entity item = ItemSystem::FindItemByID(
-				character, static_cast<uint32_t>(pElements->lSPCost));
-
-			if (!ItemSystem::IsValidItem(item))
-				continue;
-
-			ItemSystem::LockItem(item);
-		}
-#endif
-
 		if (pElements->bApplyOn >= POINT_MAX_NUM)
 		{
 			LOG_ERROR("invalid affect data {} ApplyOn {} ApplyValue {}", ecs::PlayerRuntime::GetName(e).data(), static_cast<int>(pElements->bApplyOn), pElements->lApplyValue);
@@ -1315,7 +1228,7 @@ bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, double applyValue
 {
     if (WarriorExpansion::IsBuffAffect(type) && !WarriorExpansion::AllowBuff(e,WarriorExpansion::SkillFromAffect(type))) return false;
     if(type==AFFECT_POLYMORPH && g_registry.all_of<ecs::TypedItems>(e))return false;
-    if (!AffectState(e) || applyOn >= POINT_MAX_NUM || auriga::retired_content::Affect(type))
+    if (!AffectState(e) || applyOn >= POINT_MAX_NUM || (auriga::retired_content::Affect(type) || auriga::retired_content::ItemAffect(type)))
         return false;
     if (duration == 0)
         duration = 1;
@@ -1591,9 +1504,6 @@ bool ProcessAffect(entt::entity e)
             if (!stillOwned(affect, value)) continue;
         }
         if (value.lSPCost > 0
-#ifdef ENABLE_SOUL_SYSTEM
-            && value.dwType != AFFECT_SOUL_RED && value.dwType != AFFECT_SOUL_BLUE
-#endif
         ) {
             if (ecs::PointSystem::Get(e, POINT_SP) < value.lSPCost)
                 expired = true;
@@ -1820,8 +1730,8 @@ EVENTFUNC(affect_event)
         AffectSystem::StopAffectEvent(entity);
         return 0;
     }
-    // The outer recovery/item/recall tick is still legacy; it delegates expiry
-    // to native ProcessAffect. Timer ownership no longer depends on CHARACTER.
+    // Character effects and stamina use this native entity-owned tick.
+    // Typed item lifetimes are persisted by their separate clock services.
     const bool repeat = AffectSystem::UpdateAffect(entity);
     if (!matches())
         return 0;

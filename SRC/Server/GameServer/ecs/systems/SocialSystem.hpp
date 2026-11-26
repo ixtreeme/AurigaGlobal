@@ -11,7 +11,6 @@ class CWarMap;
 
 namespace ecs::SocialSystem {
 
-int GetMarriageBonus(entt::entity e, uint32_t itemVnum, bool share = true);
 
 enum PartyJoinErrCode {
     PERR_NONE = 0,

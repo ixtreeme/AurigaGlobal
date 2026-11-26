@@ -2166,62 +2166,6 @@ bool InventorySystem::CanTakeInventoryItem(entt::entity e, entt::entity item, TI
     return true;
 }
 
-#ifdef ENABLE_SOUL_SYSTEM
-int CombatSystem::GetSoulItemDamage(entt::entity attacker, entt::entity victim, int iDamage, uint8_t bSoulType)
-{
-    if(HasTypedSoulChannel(attacker,bSoulType==RED_SOUL ? 1u : 2u))return 0;
-
-    if (!ecs::IsCharacter(victim))
-        return 0;
-
-    if (!ecs::PlayerRuntime::GetDesc(attacker) || AffectSystem::IsPolymorphed(attacker) || ecs::PlayerRuntime::GetDesc(victim))
-        return 0;
-
-    if (bSoulType >= SOUL_MAX_NUM)
-        return 0;
-
-    const CAffect* pAffect = AffectSystem::FindAffect(attacker, AFFECT_SOUL_RED + bSoulType);
-    int iDamageAdd = 0;
-    if (pAffect)
-    {
-        const entt::entity soulItem =
-            ItemSystem::FindItemByID(attacker, pAffect->lSPCost);
-        if (ItemSystem::IsValidItem(soulItem))
-        {
-            int iCurrentMinutes = ItemSystem::GetItemSocket(soulItem, 2) / 10000;
-            int iCurrentStrike = ItemSystem::GetItemSocket(soulItem, 2) % 10000;
-
-            int valueIndex = MINMAX(3, 2 + (iCurrentMinutes / 60), 5);
-            float fDamageIncrease = float(ItemSystem::GetItemValue(soulItem, valueIndex) / 10.0f);
-
-            iDamageAdd = (fDamageIncrease * iDamage) - iDamage;
-            int iNextStrikes = iCurrentStrike - 1;
-            if (iNextStrikes <= 0)
-            {
-                iCurrentMinutes = MINMAX(0, iCurrentMinutes - 60, 180);
-                iNextStrikes = ItemSystem::GetItemValue(soulItem, 2);
-
-                if (iCurrentMinutes < 60)
-                {
-                    ItemSystem::UnlockItem(soulItem);
-                    ItemSystem::SetItemSocket(soulItem, 1, false);
-                    AffectSystem::RemoveAffect(attacker, const_cast<CAffect*>(pAffect));
-                }
-
-                ItemSystem::SetItemSocket(soulItem, 2, 0);
-                ItemSystem::StartSoulItemEventEcs(soulItem);
-            }
-
-            ItemSystem::SetItemSocket(
-                soulItem, 2, iCurrentMinutes * 10000 + iNextStrikes);
-        }
-    }
-
-    return iDamageAdd;
-}
-#endif
-
-
 // ShopState is the only copy. ShopSystem::RemoveGuest clears it through
 // normal close path and stayed pointing at the NPC. Eleven "is this
 // player busy" guards read this getter, so one closed shop left the

@@ -7,7 +7,6 @@
 #include "../ecs/AIHelpers.hpp"
 #include "../ecs/systems/SocialSystem.hpp"
 #include "char_interface.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "char_manager.h"
 #include "../ecs/PIDRegistry.hpp"
 #include "../ecs/CharacterAccessors.hpp"
@@ -23,7 +22,6 @@
 #ifdef ENABLE_NEW_USE_POTION
 #include "item.h"
 #include "../ecs/EntityFactory.hpp"
-#include "../ecs/systems/ItemSystem.hpp"
 #include "unique_item.h"
 #endif
 
@@ -159,110 +157,7 @@ namespace marriage
 			return ecs::PlayerRuntime::GetMapIndex(state->character1) == ecs::PlayerRuntime::GetMapIndex(state->character2);
 		}
 
-		int GetBonus(entt::entity couple, uint32_t dwItemVnum, bool bShare, entt::entity me)
-		{
-			const auto* state = Couple(couple);
-			if (!state)
-				return 0;
 
-			const entt::entity ch1Entity = CPIDRegistry::Instance().Find(state->pid1);
-			const entt::entity ch2Entity = CPIDRegistry::Instance().Find(state->pid2);
-			if (!state->married)
-				return 0;
-
-
-			int iFindedBonusIndex=0;
-			{
-				for (iFindedBonusIndex = 0; iFindedBonusIndex < MAX_MARRIAGE_UNIQUE_ITEM; ++iFindedBonusIndex)
-				{
-					if (g_ItemBonus[iFindedBonusIndex].dwVnum == dwItemVnum)
-						break;
-				}
-
-				if (iFindedBonusIndex == MAX_MARRIAGE_UNIQUE_ITEM)
-					return 0;
-			}
-
-#ifdef ENABLE_NEW_USE_POTION
-			uint32_t affetIdx;
-			switch (dwItemVnum) {
-				case UNIQUE_ITEM_MARRIAGE_PENETRATE_BONUS:
-					affetIdx = AFFECT_NEW_POTION15;
-					break;
-				case UNIQUE_ITEM_MARRIAGE_EXP_BONUS:
-					affetIdx = AFFECT_NEW_POTION16;
-					break;
-				case UNIQUE_ITEM_MARRIAGE_CRITICAL_BONUS:
-					affetIdx = AFFECT_NEW_POTION17;
-					break;
-				case UNIQUE_ITEM_MARRIAGE_TRANSFER_DAMAGE:
-					affetIdx = AFFECT_NEW_POTION18;
-					break;
-				case UNIQUE_ITEM_MARRIAGE_ATTACK_BONUS:
-					affetIdx = AFFECT_NEW_POTION19;
-					break;
-				case UNIQUE_ITEM_MARRIAGE_DEFENSE_BONUS:
-					affetIdx = AFFECT_NEW_POTION20;
-					break;
-				default:
-					affetIdx = 0;
-					break;
-			}
-#endif
-
-			if (bShare)
-			{
-				int count = 0;
-				if (ecs::PlayerRuntime::IsPC(ch1Entity) &&
-#ifdef ENABLE_NEW_USE_POTION
-				affetIdx != 0 && AffectSystem::FindAffect(ch1Entity, affetIdx) != nullptr
-#else
-				ItemSystem::IsEquipUniqueItem(ch1Entity, dwItemVnum)
-#endif
-				)
-					count ++;
-				if (ecs::PlayerRuntime::IsPC(ch2Entity) &&
-#ifdef ENABLE_NEW_USE_POTION
-				affetIdx != 0 && AffectSystem::FindAffect(ch2Entity, affetIdx) != nullptr
-#else
-				ItemSystem::IsEquipUniqueItem(ch2Entity, dwItemVnum)
-#endif
-				)
-					count ++;
-
-				const TMarriageItemBonusByGrade& rkBonus = g_ItemBonus[iFindedBonusIndex];
-
-				if (count>=1)
-					return rkBonus.value[GetMarriageGrade(couple)];
-				return 0;
-			}
-			else
-			{
-				int count = 0;
-				if (me != ch1Entity && ecs::PlayerRuntime::IsPC(ch1Entity) &&
-#ifdef ENABLE_NEW_USE_POTION
-				affetIdx != 0 && AffectSystem::FindAffect(ch1Entity, affetIdx) != nullptr
-#else
-				ItemSystem::IsEquipUniqueItem(ch1Entity, dwItemVnum)
-#endif
-				)
-					count ++;
-				if (me != ch2Entity && ecs::PlayerRuntime::IsPC(ch2Entity) &&
-#ifdef ENABLE_NEW_USE_POTION
-				affetIdx != 0 && AffectSystem::FindAffect(ch2Entity, affetIdx) != nullptr
-#else
-				ItemSystem::IsEquipUniqueItem(ch2Entity, dwItemVnum)
-#endif
-				)
-					count ++;
-
-				const TMarriageItemBonusByGrade& rkBonus = g_ItemBonus[iFindedBonusIndex];
-
-				if (count>=1)
-					return rkBonus.value[GetMarriageGrade(couple)];
-				return 0;
-			}
-		}
 
 		void Save(entt::entity couple)
 		{
@@ -777,46 +672,7 @@ namespace marriage
 			return;
 		}
 
-#ifdef ENABLE_NEW_USE_POTION
-		uint32_t dwAffect = 0;
-		const entt::entity p1Entity = CHARACTER_MANAGER::instance().FindEntityByPID(dwPID1);
 
-		CAffect* pAffect = nullptr;
-		entt::entity pkItem = entt::null;
-		if (ecs::IsCharacter(p1Entity)) {
-			for (int i = 0; i < 6; i++) {
-				dwAffect = AFFECT_NEW_POTION24 + i;
-				pAffect = AffectSystem::FindAffect(p1Entity, dwAffect);
-				if (pAffect != nullptr) {
-					pkItem = ItemSystem::FindItemByID(p1Entity, pAffect->dwFlag);
-					if (ItemSystem::IsValidItem(pkItem)) {
-						ItemSystem::UnlockItem(pkItem);
-						ItemSystem::SetItemSocket(pkItem, 1, 0);
-					}
-
-					AffectSystem::RemoveAffect(p1Entity, dwAffect);
-				}
-			}
-		}
-
-		const entt::entity p2Entity = CHARACTER_MANAGER::instance().FindEntityByPID(dwPID2);
-
-		if (ecs::IsCharacter(p2Entity)) {
-			for (int i = 0; i < 6; i++) {
-				dwAffect = AFFECT_NEW_POTION24 + i;
-				pAffect = AffectSystem::FindAffect(p2Entity, dwAffect);
-				if (pAffect != nullptr) {
-					pkItem = ItemSystem::FindItemByID(p2Entity, pAffect->dwFlag);
-					if (ItemSystem::IsValidItem(pkItem)) {
-						ItemSystem::UnlockItem(pkItem);
-						ItemSystem::SetItemSocket(pkItem, 1, 0);
-					}
-
-					AffectSystem::RemoveAffect(p2Entity, dwAffect);
-				}
-			}
-		}
-#endif
 
 		m_MarriageByPID.erase(dwPID1);
 		m_MarriageByPID.erase(dwPID2);

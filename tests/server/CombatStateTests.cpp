@@ -508,7 +508,7 @@ int SkillSystem::ComputeSkill(entt::entity,uint32_t,entt::entity,uint8_t) { Unex
 int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetQuestFlag(entt::entity,std::string const &,int) { UnexpectedService(__func__); }
 int64_t ecs::PlayerRuntime::GetPremiumRemainSeconds(entt::entity, unsigned char) { UnexpectedService(__func__); }
-int CombatSystem::GetSoulItemDamage(entt::entity,entt::entity,int,unsigned char) { UnexpectedService(__func__); }
+
 unsigned int PartySystem::GetLeaderPID(entt::entity) { UnexpectedService(__func__); }
 bool PartySystem::IsPositionNearLeader(entt::entity, entt::entity) { UnexpectedService(__func__); }
 void PartySystem::SendMessage(entt::entity, entt::entity, unsigned char, unsigned int, unsigned int) { UnexpectedService(__func__); }
@@ -661,7 +661,7 @@ void AffectSystem::ApplyPoison(entt::entity e,entt::entity a) {
 }
 void AffectSystem::ApplyBleeding(entt::entity e,entt::entity a) { AssertActor(e); AssertActor(a); ++bleedingCalls; }
 bool MountSystem::IsRiding(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).riding; }
-int ecs::SocialSystem::GetMarriageBonus(entt::entity e,uint32_t,bool) { AssertActor(e); return 0; }
+
 entt::entity ecs::SocialSystem::GetMyShop(entt::entity e) { AssertActor(e); return entt::null; }
 SECTREE* ecs::PlayerRuntime::GetSectree(entt::entity e) { AssertActor(e); return nullptr; }
 void ecs::PlayerRuntime::SetMaxSP(entt::entity, uint64_t) {}

@@ -23,7 +23,6 @@ namespace marriage
 
 		int GetMarriagePoint(entt::entity couple);
 		int GetMarriageGrade(entt::entity couple);
-		int GetBonus(entt::entity couple, uint32_t dwItemVnum, bool bShare = true, entt::entity me = entt::null);
 
 		void Save(entt::entity couple);
 		void SetMarried(entt::entity couple);

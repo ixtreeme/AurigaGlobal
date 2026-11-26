@@ -16,4 +16,13 @@ constexpr bool Affect(std::uint32_t type) noexcept
 {
     return (type >= 540 && type <= 542) || (type >= 563 && type <= 566);
 }
+// Item-backed affects used 32-bit item IDs in flag/SP-cost fields. Their
+// replacement state lives in typed recovery, soul and companion persistence.
+// Keep the numeric IDs reserved so old database rows cannot reactivate them.
+constexpr bool ItemAffect(std::uint32_t type) noexcept
+{
+    return type == 304 || type == 305 || (type >= 534 && type <= 537) ||
+        type == 539 || (type >= 567 && type <= 587) || type == 589 ||
+        (type >= 590 && type <= 600);
+}
 } // namespace auriga::retired_content

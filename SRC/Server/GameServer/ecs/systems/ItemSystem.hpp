@@ -61,25 +61,9 @@ bool IsValidItem(entt::entity item);
 bool RefreshItemPrototype(entt::entity item, const TItemTable* proto);
 bool IsExtraItem(entt::entity item);
 bool CheckItemUseLevel(entt::entity item, int level);
-bool OnAfterCreatedItem(entt::entity item);
 void AttrLog(entt::entity item);
 #ifdef ENABLE_RUNE_SYSTEM
 bool IsRuneItem(entt::entity item);
-int32_t GetRuneAttributeType(entt::entity item, int index);
-double GetRuneAttributeValue(entt::entity item, int index, int32_t remainingTime);
-// Creation-only initialization: writes existing components before publication.
-bool InitializeRuneItem(entt::entity item);
-// Runtime operations require live rune components; toggles require the wear
-// anchor owned by the same entity. Reentrant operations on that owner fail.
-bool ActivateRune(entt::entity item);
-bool DeactivateRune(entt::entity item);
-bool ChangeRuneAttributes(entt::entity item, int32_t time);
-bool ActivateRuneBonus(entt::entity item);
-bool DeactivateRuneBonus(entt::entity item);
-// Returns the next wear-timer delay in seconds, or zero to stop the event.
-int UpdateRuneWearTime(entt::entity item, int32_t elapsedSeconds);
-// True means charge/cost committed, not that publication kept the entities alive.
-bool ChargeRune(entt::entity owner, entt::entity rune, entt::entity bottle);
 #endif
 uint32_t GetItemID(entt::entity item);
 uint32_t GetItemVID(entt::entity item);
@@ -168,15 +152,8 @@ void SetItemAccessorySocketGrade(entt::entity item, int iGrade
 void SetItemAccessorySocketMaxGrade(entt::entity item, int iMaxGrade);
 int GetItemAccessorySocketDownGradeTime(entt::entity item);
 void SetItemAccessorySocketDownGradeTime(entt::entity item, uint32_t time);
-void AccessorySocketDegrade(entt::entity item);
 
 void StartDestroyEvent(entt::entity item, int iSec);
-void StartUniqueExpireEvent(entt::entity item);
-void StopUniqueExpireEvent(entt::entity item);
-void StartTimerBasedOnWearExpireEvent(entt::entity item);
-void StopTimerBasedOnWearExpireEvent(entt::entity item);
-void StartAccessorySocketExpireEvent(entt::entity item);
-void StopAccessorySocketExpireEvent(entt::entity item);
 ecs::ItemEvents& GetItemEvents(entt::entity item);
 void PrepareItemDestruction(entt::entity item);
 entt::entity GetItemOwner(entt::entity item);
@@ -318,11 +295,7 @@ int GetEmptyExtraInventory(entt::entity owner, entt::entity item);
 #endif
 bool IsItemVnumStackable(uint32_t vnum);
 bool ModifyItemPointsEcs(entt::entity item, bool add);
-bool StartTimerBasedOnWearExpireEventEcs(entt::entity item);
-bool StopTimerBasedOnWearExpireEventEcs(entt::entity item);
-bool StartRealTimeExpireEventEcs(entt::entity item);
 #ifdef ENABLE_SOUL_SYSTEM
-bool StartSoulItemEventEcs(entt::entity item);
 #endif
 bool RefreshItemOwnerPID(entt::entity item);
 // Retire a stale load instance without deleting its DB row. True means this call

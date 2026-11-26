@@ -880,25 +880,7 @@ bool Apply(entt::entity character, int tier, std::string_view defenseWeapon,
                 TItemPos(INVENTORY, static_cast<uint16_t>(BELT_INVENTORY_SLOT_START + 10 * family))))
             return fail("Cannot add max belt to special inventory cell.");
     }
-#ifdef ENABLE_RUNE_SYSTEM
-    // All seven runes at full 86400-second charge, using the real activation
-    // prerequisite checks. The seventh is activated after the first six.
-    for (int i = 0; i < 7; ++i) {
-        const uint32_t runeVnum = 88970 + i;
-        if (!ITEM_MANAGER::instance().GetTable(runeVnum))
-            return fail("Missing rune VNUM " + std::to_string(runeVnum));
-        const auto rune = ITEM_MANAGER::instance().CreateItem(runeVnum, 1, 0, false, -1, true);
-        if (!ItemSystem::IsValidItem(rune))
-            return fail("Cannot create rune.");
-        saved.temporaryItems.push_back(rune);
-        ItemSystem::SetItemSocket(rune, 0, 86400, false);
-        if (!ItemSystem::InitializeRuneItem(rune) ||
-            !InventorySystem::EquipTo(rune, character, WEAR_RUNE1 + i))
-            return fail("Rune initialization/equip failed.");
-        const bool activated = i == 6 ? ItemSystem::ActivateRuneBonus(rune) : ItemSystem::ActivateRune(rune);
-        if (!activated) return fail("Rune activation rejected by real GameServer.");
-    }
-#endif
+
     ecs::PointSystem::Compute(character);
     // Apply only self-cast buffs through real skill use/affect logic; never
     // fake external buffs by writing points directly. Unavailable buffs remain
@@ -1010,7 +992,7 @@ bool Apply(entt::entity character, int tier, std::string_view defenseWeapon,
           << "Necromancer wing 85153: all six grade-four stole bonuses maximized. "
           << "Baashido pet costume 88027 equipped in pet-skin slot (base bonuses via EquipTo). "
           << "item_extra_proto applied by real equip logic. "
-          << "16 max belts, 7 runes and one PvP pet applied; self-buffs only.";
+          << "16 max belts and one PvP pet applied (legacy rune profile retired); self-buffs only.";
     message = reply.str();
     return true;
 }

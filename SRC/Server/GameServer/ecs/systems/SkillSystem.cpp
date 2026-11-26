@@ -2678,9 +2678,6 @@ struct FuncSplashDamage
 			}
 		}
 
-#ifdef ENABLE_SOUL_SYSTEM
-		iDam += CombatSystem::GetSoulItemDamage(m_character, victimEntity, iDam, BLUE_SOUL);
-#endif
 
 
 		iDam = WarriorExpansion::ScaleHit(m_character,m_pkSk->dwVnum,iDam);

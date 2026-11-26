@@ -433,11 +433,6 @@ void EntityFactory::DestroyItemEntity(entt::registry& reg, entt::entity item)
     reg.destroy(item);
 }
 
-EVENTFUNC(unique_expire_event);
-EVENTFUNC(timer_based_on_wear_expire_event);
-EVENTFUNC(real_time_expire_event);
-EVENTFUNC(accessory_socket_expire_event);
-EVENTFUNC(soul_item_event);
 
 namespace ItemSystem {
 
@@ -765,27 +760,7 @@ bool CheckItemUseLevel(entt::entity item, int level)
     return true;
 }
 
-bool OnAfterCreatedItem(entt::entity item)
-{
-    if (!IsValidItem(item) || !GetItemProto(item))
-        return false;
 
-    if (GetItemProto(item)->cLimitRealTimeFirstUseIndex != -1 && GetItemSocket(item, 1) != 0)
-        if (!StartRealTimeExpireEventEcs(item))
-            return false;
-
-    // Timer publication can retire the item or replace its prototype. Re-read
-    // the live entity before deciding whether it also needs soul charging.
-    if (!IsValidItem(item) || !GetItemProto(item))
-        return false;
-#ifdef ENABLE_SOUL_SYSTEM
-    if (GetItemType(item) == ITEM_SOUL &&
-        static_cast<int>(GetItemSocket(item, 2) / 10000) < GetItemProto(item)->aLimits[1].lValue)
-        if (!StartSoulItemEventEcs(item))
-            return false;
-#endif
-    return IsValidItem(item);
-}
 
 bool IsExtraItem(entt::entity item)
 {
@@ -1217,33 +1192,6 @@ bool IsAccessoryForSocket(entt::entity item)
         || (proto->bType == ITEM_BELT);
 }
 
-void AccessorySocketDegrade(entt::entity item)
-{
-	if (GetItemAccessorySocketGrade(item) > 0)
-	{
-		const entt::entity owner = GetItemOwner(item);
-#ifdef TEXTS_IMPROVEMENT
-		if (owner != entt::null) {
-			ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 117, "%s", GetItemName(item));
-		}
-#endif
-
-		ModifyPoints(item, false);
-		SetItemAccessorySocketGrade(item, GetItemAccessorySocketGrade(item) - 1);
-		ModifyPoints(item, true);
-
-		int iDownTime = aiAccessorySocketDegradeTime[GetItemAccessorySocketGrade(item)];
-
-		if (test_server)
-			iDownTime /= 60;
-
-		SetItemAccessorySocketDownGradeTime(item, iDownTime);
-
-		if (iDownTime)
-			StartAccessorySocketExpireEvent(item);
-	}
-}
-
 void SetItemAccessorySocketGrade(entt::entity item, int iGrade
 #ifdef ENABLE_INFINITE_RAFINES
     , bool infinite
@@ -1283,149 +1231,6 @@ void SetItemAccessorySocketDownGradeTime(entt::entity item, uint32_t time)
     SetItemSocket(item, 2, time);
 }
 
-void StartUniqueExpireEvent(entt::entity item)
-{
-	auto& events = GetItemEvents(item);
-	if (GetItemType(item) != ITEM_UNIQUE)
-		return;
-
-	if (events.uniqueExpire)
-		return;
-
-	if (IsRealTimeItem(item) || IsRealTimeFirstUseItem(item) || IsUnlimitedTimeUnique(item))
-		return;
-
-	// HARD CODING
-	/*if (GetVnum() == UNIQUE_ITEM_HIDE_ALIGNMENT_TITLE)
-		m_pOwner->ShowAlignment(false);*/
-
-	int iSec = GetItemSocket(item, ITEM_SOCKET_UNIQUE_SAVE_TIME);
-
-	if (iSec == 0)
-		iSec = 60;
-	else
-		iSec = MIN(iSec, 60);
-
-	SetItemSocket(item, ITEM_SOCKET_UNIQUE_SAVE_TIME, 0);
-
-	item_event_info* info = AllocEventInfo<item_event_info>();
-	info->item = item;
-
-	events.uniqueExpire = event_create(unique_expire_event, info, PASSES_PER_SEC(iSec));
-
-	const entt::entity e = item;
-	if (e != entt::null)
-		g_dispatcher.trigger(ecs::EvItemExpired { e, GetItemID(item) });
-}
-
-void StopUniqueExpireEvent(entt::entity item)
-{
-	auto& events = GetItemEvents(item);
-	if (!events.uniqueExpire)
-		return;
-
-	if (GetItemValue(item, 2) != 0)
-		return;
-
-	// HARD CODING
-	/*if (GetVnum() == UNIQUE_ITEM_HIDE_ALIGNMENT_TITLE)
-		m_pOwner->ShowAlignment(true);*/
-
-	SetItemSocket(item, ITEM_SOCKET_UNIQUE_SAVE_TIME, event_time(events.uniqueExpire) / passes_per_sec);
-	event_cancel(&events.uniqueExpire);
-}
-
-void StartTimerBasedOnWearExpireEvent(entt::entity item)
-{
-    StartTimerBasedOnWearExpireEventEcs(item);
-}
-
-void StopTimerBasedOnWearExpireEvent(entt::entity item)
-{
-    auto* events = IsValidItem(item) ? g_registry.try_get<ecs::ItemEvents>(item) : nullptr;
-    if (!events || !events->timerBasedOnWearExpire) return;
-    LPEVENT pending = events->timerBasedOnWearExpire;
-    const int elapsed = event_processing_time(pending) / passes_per_sec;
-    events = IsValidItem(item) ? g_registry.try_get<ecs::ItemEvents>(item) : nullptr;
-    if (!events || events->timerBasedOnWearExpire != pending) return;
-    events->timerBasedOnWearExpire = nullptr;
-    event_cancel(&pending);
-    if (!IsValidItem(item) || !g_registry.all_of<ecs::ItemSockets>(item)) return;
-    bool consumesTime = true;
-#ifdef ENABLE_RUNE_SYSTEM
-    consumesTime = !IsRuneItem(item) || (GetItemSubType(item) != RUNE_SLOT7 && GetItemSocket(item, 1) == 1);
-#endif
-    if (consumesTime) {
-        const int remaining = g_registry.get<ecs::ItemSockets>(item).sockets[0];
-        g_registry.get<ecs::ItemSockets>(item).sockets[0] = static_cast<int32_t>(
-            std::max<int64_t>(0, static_cast<int64_t>(remaining) - std::max(0, elapsed)));
-    }
-    // Publish only after detaching the timer: the update may retire the item
-    // or install another timer.
-    ecs::ItemNetworkSystem::SendItemUpdate(g_registry, item);
-}
-
-void StartAccessorySocketExpireEvent(entt::entity item)
-{
-	auto& events = GetItemEvents(item);
-	if (!IsAccessoryForSocket(item))
-		return;
-
-	if (events.accessorySocketExpire)
-		return;
-
-	if (GetItemAccessorySocketMaxGrade(item) == 0)
-		return;
-
-	if (GetItemAccessorySocketGrade(item) == 0)
-		return;
-
-	int iSec = GetItemAccessorySocketDownGradeTime(item);
-#ifdef ENABLE_INFINITE_RAFINES
-	if (iSec > 86400) {
-		return;
-	}
-#endif
-	events.accessorySocketExpire = nullptr;
-
-	if (iSec <= 1)
-		iSec = 5;
-	else
-		iSec = MIN(iSec, 60);
-
-	item_vid_event_info* info = AllocEventInfo<item_vid_event_info>();
-	info->item = item;
-
-	events.accessorySocketExpire = event_create(accessory_socket_expire_event, info, PASSES_PER_SEC(iSec));
-
-	const entt::entity e = item;
-	if (e != entt::null)
-		g_dispatcher.trigger(ecs::EvItemExpired { e, GetItemID(item) });
-}
-
-void StopAccessorySocketExpireEvent(entt::entity item)
-{
-	auto& events = GetItemEvents(item);
-	if (!events.accessorySocketExpire)
-		return;
-
-	if (!IsAccessoryForSocket(item))
-		return;
-
-	int new_time = GetItemAccessorySocketDownGradeTime(item) - (60 - event_time(events.accessorySocketExpire) / passes_per_sec);
-
-	event_cancel(&events.accessorySocketExpire);
-
-	if (new_time <= 1)
-	{
-		AccessorySocketDegrade(item);
-	}
-	else
-	{
-		SetItemAccessorySocketDownGradeTime(item, new_time);
-	}
-}
-
 ecs::ItemEvents& GetItemEvents(entt::entity item)
 {
     static ecs::ItemEvents detached;
@@ -1449,11 +1254,6 @@ void PrepareItemDestruction(entt::entity item)
     event_cancel(&timers.destroy);
     event_cancel(&timers.expire);
     event_cancel(&timers.ownership);
-    event_cancel(&timers.uniqueExpire);
-    event_cancel(&timers.soulItem);
-    event_cancel(&timers.timerBasedOnWearExpire);
-    event_cancel(&timers.realTimeExpire);
-    event_cancel(&timers.accessorySocketExpire);
     if (g_registry.valid(item)) g_dispatcher.trigger(ecs::EvItemDestroyed {item, id});
 }
 
@@ -2280,144 +2080,6 @@ bool ModifyItemPointsEcs(entt::entity item, bool add)
     ItemSystem::ModifyPoints(item, add);
     return true;
 }
-
-bool StopTimerBasedOnWearExpireEventEcs(entt::entity item)
-{
-    if (!IsValidItem(item))
-        return false;
-
-    ItemSystem::StopTimerBasedOnWearExpireEvent(item);
-    return true;
-}
-
-namespace {
-// Allocation and event publication are callback boundaries. Never keep a
-// component reference through either, or overwrite a nested timer start.
-template <typename EventInfo = item_vid_event_info>
-bool StartItemRuntimeTimer(entt::entity item, LPEVENT ecs::ItemEvents::*slot,
-    TEVENTFUNC callback, int32_t delay, bool newPotion = false)
-{
-    if (!IsValidItem(item))
-        return false;
-    if (!g_registry.all_of<ecs::ItemEvents>(item))
-        g_registry.insert<ecs::ItemEvents>(&item, &item + 1);
-    if (!IsValidItem(item) || !g_registry.all_of<ecs::ItemEvents>(item))
-        return false;
-    if (g_registry.get<ecs::ItemEvents>(item).*slot)
-        return true;
-
-    auto* info = AllocEventInfo<EventInfo>();
-    info->item = item;
-#ifdef ENABLE_NEW_USE_POTION
-    if constexpr (std::is_same_v<EventInfo, item_vid_event_info>)
-        info->newpotion = newPotion;
-#endif
-    LPEVENT pending = event_create(callback, info, delay);
-    if (!pending)
-        return false;
-    auto* state = IsValidItem(item) ? g_registry.try_get<ecs::ItemEvents>(item) : nullptr;
-    if (!state || state->*slot)
-    {
-        event_cancel(&pending);
-        const auto* current = IsValidItem(item) ? g_registry.try_get<ecs::ItemEvents>(item) : nullptr;
-        return current && bool(current->*slot);
-    }
-    state->*slot = pending;
-    g_dispatcher.trigger(ecs::EvItemExpired { item, GetItemID(item) });
-    const auto* published = IsValidItem(item) ? g_registry.try_get<ecs::ItemEvents>(item) : nullptr;
-    const bool scheduled = published && bool(published->*slot);
-    if (!scheduled || published->*slot != pending) event_cancel(&pending);
-    return scheduled;
-}
-} // namespace
-
-bool StartTimerBasedOnWearExpireEventEcs(entt::entity item)
-{
-    if (!IsValidItem(item) || !GetItemProto(item)) return false;
-    // A live item without this limit has nothing to schedule (as before).
-    if (IsRealTimeItem(item) || GetItemProto(item)->cLimitTimerBasedOnWearIndex == -1) return true;
-    const int seconds = static_cast<int32_t>(GetItemSocket(item, ITEM_SOCKET_REMAIN_SEC));
-    const int delay = seconds <= 0 ? 1 : seconds % 60 == 0 ? 60 : seconds % 60;
-    return StartItemRuntimeTimer<item_event_info>(item, &ecs::ItemEvents::timerBasedOnWearExpire,
-        timer_based_on_wear_expire_event, PASSES_PER_SEC(delay));
-}
-
-bool StartRealTimeExpireEventEcs(entt::entity item)
-{
-    if (!IsValidItem(item))
-        return false;
-
-    const auto* events = g_registry.try_get<ecs::ItemEvents>(item);
-    if (events && events->realTimeExpire)
-        return true;
-
-    const TItemTable* proto = GetItemProto(item);
-    if (!proto)
-        return false;
-
-    for (const auto& limit : proto->aLimits)
-    {
-        if (limit.bType != LIMIT_REAL_TIME && limit.bType != LIMIT_REAL_TIME_START_FIRST_USE)
-            continue;
-
-#ifdef ENABLE_NEW_USE_POTION
-        const bool isNewPotion = GetItemType(item) == ITEM_USE && GetItemSubType(item) == USE_NEW_POTIION;
-        const int32_t remainSec = isNewPotion ? static_cast<int32_t>(GetItemSocket(item, 0)) : 0;
-        if (isNewPotion && remainSec <= 0)
-        {
-            if (GetItemSocket(item, 1) == 1)
-            {
-                const entt::entity owner = GetItemOwnerEntity(item);
-                if (owner != entt::null)
-                {
-                    if (AffectSystem::FindAffect(owner, GetItemValue(item, 0)))
-                        AffectSystem::RemoveAffect(owner, GetItemValue(item, 0));
-#ifdef TEXTS_IMPROVEMENT
-                    ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 27, "%s", GetItemName(item));
-#endif
-                }
-            }
-
-            ITEM_MANAGER::instance().RemoveItem(item, "REAL_TIME_EXPIRE");
-            return true;
-        }
-#endif
-
-#ifdef ENABLE_NEW_USE_POTION
-        const int32_t delay = PASSES_PER_SEC(isNewPotion ? std::min(remainSec, 60) : 1);
-        return StartItemRuntimeTimer(item, &ecs::ItemEvents::realTimeExpire,
-            real_time_expire_event, delay, isNewPotion);
-#else
-        return StartItemRuntimeTimer(item, &ecs::ItemEvents::realTimeExpire,
-            real_time_expire_event, PASSES_PER_SEC(1));
-#endif
-    }
-
-    return false;
-}
-
-#ifdef ENABLE_SOUL_SYSTEM
-bool StartSoulItemEventEcs(entt::entity item)
-{
-    if (!IsValidItem(item) || GetItemType(item) != ITEM_SOUL)
-        return false;
-
-    const auto* events = g_registry.try_get<ecs::ItemEvents>(item);
-    if (events && events->soulItem)
-        return true;
-
-    const TItemTable* proto = GetItemProto(item);
-    if (!proto)
-        return false;
-
-    const int minutes = static_cast<int>(GetItemSocket(item, 2) / 10000);
-    if (minutes >= proto->aLimits[1].lValue)
-        return false;
-
-    return StartItemRuntimeTimer(item, &ecs::ItemEvents::soulItem,
-        soul_item_event, PASSES_PER_SEC(test_server ? 5 : 60));
-}
-#endif
 
 int FindEquipCell(entt::entity ownerEntity, entt::entity item, int iCandidateCell)
 {

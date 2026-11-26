@@ -801,7 +801,7 @@ add_executable(SocialRelationTests EXCLUDE_FROM_ALL
     world/event.cpp
     world/event_queue.cpp
 )
-target_link_libraries(SocialRelationTests PRIVATE SERVER EnTT::EnTT LUA)
+target_link_libraries(SocialRelationTests PRIVATE SERVER EnTT::EnTT LUA AurigaItemCatalog)
 if(MSVC)
     target_compile_options(SocialRelationTests PRIVATE /Gy)
     target_link_options(SocialRelationTests PRIVATE /OPT:REF /OPT:NOICF)

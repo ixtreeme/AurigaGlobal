@@ -287,8 +287,8 @@ int32_t GetItemFlags(entt::entity item) { return g_registry.get<ecs::ItemFlags>(
 bool DestroyItemEntityEcs(entt::entity item, const char* reason) {
     ITEM_MANAGER::instance().RemoveItem(item, reason); return !g_registry.valid(item);
 }
-void StartUniqueExpireEvent(entt::entity item) { CreationStage("unique", item); }
-void StartTimerBasedOnWearExpireEvent(entt::entity) { Unexpected(); }
+
+
 uint32_t GetItemSocket(entt::entity item, int index) {
     const auto* sockets = g_registry.try_get<ecs::ItemSockets>(item);
     return sockets ? sockets->sockets[index] : 0;
@@ -318,8 +318,8 @@ bool ConsumeItemEcs(entt::entity, uint32_t) { Unexpected(); }
 bool AddItemCountEcs(entt::entity, int) { Unexpected(); }
 bool AlterItemToMagicItem(entt::entity item) { CreationStage("magic", item); return true; }
 bool IsItemEquipped(entt::entity) { Unexpected(); }
-bool StartRealTimeExpireEventEcs(entt::entity item) { CreationStage("real-time", item); return !rejectTimer; }
-bool StartSoulItemEventEcs(entt::entity item) { CreationStage("soul", item); return !rejectTimer; }
+
+
 bool InitializeRuneItem(entt::entity item) { CreationStage("rune", item); return !rejectRune; }
 }
 int CHARACTER_MANAGER::GetMobItemRate(entt::entity) { Unexpected(); }

@@ -1547,8 +1547,6 @@ void Stun(entt::entity e)
 
 	LOG_INFO("{}: Stun {}", ecs::PlayerRuntime::GetName(e).data(), static_cast<uint32_t>(e));
 
-	ecs::PointSystem::Change(e, POINT_HP_RECOVERY, -ecs::PointSystem::GetPrecise(e, POINT_HP_RECOVERY));
-	ecs::PointSystem::Change(e, POINT_SP_RECOVERY, -ecs::PointSystem::GetPrecise(e, POINT_SP_RECOVERY));
 
 	ecs::SocialSystem::CloseMyShop(e);
 
@@ -1663,7 +1661,6 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 		rateFactor += 50;
 	if (ItemSystem::IsEquipUniqueGroup(toEntity, UNIQUE_GROUP_RING_OF_EXP))
 		rateFactor += 50;
-	rateFactor += ecs::SocialSystem::GetMarriageBonus(toEntity, UNIQUE_ITEM_MARRIAGE_EXP_BONUS);
 	rateFactor += ecs::PointSystem::GetPrecise(toEntity, POINT_RAMADAN_CANDY_BONUS_EXP);
 	rateFactor += ecs::PointSystem::GetPrecise(toEntity, POINT_MALL_EXPBONUS);
 	// useless (never used except for china intoxication) = always 100
@@ -1776,7 +1773,6 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 		}
 
 
-		iExp += iExp * ecs::SocialSystem::GetMarriageBonus(toEntity, UNIQUE_ITEM_MARRIAGE_EXP_BONUS) / 100;
 	}
 
 	iExp += (iExp * ecs::PointSystem::GetPrecise(toEntity, POINT_RAMADAN_CANDY_BONUS_EXP) / 100);
@@ -3747,7 +3743,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			double iCriticalPct = ecs::PointSystem::GetPrecise(attacker, POINT_CRITICAL_PCT);
 
 			if (!ecs::PlayerRuntime::IsPC(victim)) {
-				iCriticalPct += ecs::SocialSystem::GetMarriageBonus(attacker, UNIQUE_ITEM_MARRIAGE_CRITICAL_BONUS);
 				iCriticalPct += ecs::PointSystem::GetPrecise(attacker, POINT_PVM_CRITICAL_PCT);
 			}
 
@@ -3777,8 +3772,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			//
 			double iPenetratePct = ecs::PointSystem::GetPrecise(attacker, POINT_PENETRATE_PCT);
 
-			if (!ecs::PlayerRuntime::IsPC(victim))
-				iPenetratePct += ecs::SocialSystem::GetMarriageBonus(attacker, UNIQUE_ITEM_MARRIAGE_PENETRATE_BONUS);
 
 
 			if (iPenetratePct)
@@ -3910,7 +3903,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			double iCriticalPct = ecs::PointSystem::GetPrecise(attacker, POINT_CRITICAL_PCT);
 
 			if (!ecs::PlayerRuntime::IsPC(victim)) {
-				iCriticalPct += ecs::SocialSystem::GetMarriageBonus(attacker, UNIQUE_ITEM_MARRIAGE_CRITICAL_BONUS);
 				iCriticalPct += ecs::PointSystem::GetPrecise(attacker, POINT_PVM_CRITICAL_PCT);
 			}
 
@@ -3930,8 +3922,6 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			//
 			double iPenetratePct = ecs::PointSystem::GetPrecise(attacker, POINT_PENETRATE_PCT);
 
-			if (!ecs::PlayerRuntime::IsPC(victim))
-				iPenetratePct += ecs::SocialSystem::GetMarriageBonus(attacker, UNIQUE_ITEM_MARRIAGE_PENETRATE_BONUS);
 
 			{
 				CSkillProto* pkSk = CSkillManager::instance().Get(SKILL_RESIST_PENETRATE);
@@ -5117,7 +5107,6 @@ public:
 			//iDam = (int)((int64_t)iDam * (100 - lValue) * 20 / 10000);
 
 #ifdef ENABLE_SOUL_SYSTEM // Arrow ninja
-			iDam += CombatSystem::GetSoulItemDamage(m_me, victim, iDam, RED_SOUL);
 #endif
 
 			//LOG_INFO(0, "%s arrow %s dam %d", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data(), iDam);
@@ -5654,7 +5643,6 @@ static int64_t CalcReferenceBowHitDamage(entt::entity attacker, entt::entity vic
 
 #ifdef ENABLE_SOUL_SYSTEM
 	if (ecs::IsCharacter(attacker))
-		dam += CombatSystem::GetSoulItemDamage(attacker, victim, dam, RED_SOUL);
 #endif
 
 	if (ecs::PointSystem::GetPrecise(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS))
@@ -5789,7 +5777,6 @@ static int64_t CalcReferenceNormalHitDamage(entt::entity attacker, entt::entity 
 
 #ifdef ENABLE_SOUL_SYSTEM
 	if (ecs::IsCharacter(attacker))
-		dam += CombatSystem::GetSoulItemDamage(attacker, victim, dam, RED_SOUL);
 #endif
 
 	if (ecs::PointSystem::GetPrecise(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS))

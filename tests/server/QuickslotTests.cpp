@@ -722,12 +722,12 @@ bool ItemSystem::DestroyItemEntityEcs(entt::entity e, char const * reason) {
 short ItemSystem::GetItemLockedAttr(entt::entity) { Unexpected(); }
 int ItemSystem::GetItemAccessorySocketGrade(entt::entity) { Unexpected(); }
 bool ItemSystem::IsAccessoryForSocket(entt::entity e) { Meta(e); return false; }
-void ItemSystem::StartUniqueExpireEvent(entt::entity e) { Meta(e); Service("start-unique"); }
-void ItemSystem::StopUniqueExpireEvent(entt::entity e) { Meta(e); Service("stop-unique"); }
-void ItemSystem::StartTimerBasedOnWearExpireEvent(entt::entity e) { Meta(e); Service("start-wear-timer"); }
-void ItemSystem::StopTimerBasedOnWearExpireEvent(entt::entity) { Unexpected(); }
-void ItemSystem::StartAccessorySocketExpireEvent(entt::entity e) { Meta(e); Service("start-accessory"); }
-void ItemSystem::StopAccessorySocketExpireEvent(entt::entity e) { Meta(e); Service("stop-accessory"); }
+
+
+
+
+
+
 ecs::ItemEvents & ItemSystem::GetItemEvents(entt::entity) { Unexpected(); }
 uint32_t ItemSystem::GetItemSocket(entt::entity e, int i) { return g_registry.get<ecs::ItemSockets>(e).sockets[i]; }
 TPlayerItemAttribute ItemSystem::GetItemAttribute(entt::entity e, int i) { return g_registry.get<ecs::ItemAttributes>(e).attrs[i]; }
@@ -1228,7 +1228,7 @@ bool ItemSystem::IsSameSpecialGroup(entt::entity a, entt::entity b) {
 }
 bool ItemSystem::IsItemLocked(entt::entity e) { return Meta(e).locked; }
 bool ItemSystem::IsItemExchanging(entt::entity e) { return Meta(e).exchanging; }
-bool ItemSystem::StartRealTimeExpireEventEcs(entt::entity e) { Meta(e); Service("real-time"); return true; }
+
 bool AffectSystem::IsPolymorphed(entt::entity e) { return Actor(e).poly; }
 bool AffectSystem::IsAffectFlag(entt::entity e, uint32_t) { Actor(e); return false; }
 bool AffectSystem::RemoveAffect(entt::entity e, uint32_t) { Actor(e); Service("affect-remove"); return true; }

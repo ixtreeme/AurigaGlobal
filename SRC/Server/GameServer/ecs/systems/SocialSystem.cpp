@@ -754,23 +754,7 @@ void SetParty(entt::entity e, entt::entity pkParty)
         SetDungeon(e, entt::null);
 #endif
 
-#ifdef ENABLE_NEW_USE_POTION
-    if (isPC && previous != entt::null && pkParty == entt::null &&
-        PartySystem::GetLeaderPID(previous) == ecs::PlayerRuntime::GetPlayerID(e))
-    {
-        if (CAffect* pAffect = AffectSystem::FindAffect(e, AFFECT_NEW_POTION31))
-        {
-            const auto item = ItemSystem::FindItemByID(e, pAffect->dwFlag);
-            if (ItemSystem::IsValidItem(item))
-            {
-                ItemSystem::UnlockItem(item);
-                ItemSystem::SetItemSocket(item, 1, 0);
-            }
 
-            AffectSystem::RemoveAffect(e, AFFECT_NEW_POTION31);
-        }
-    }
-#endif
 
     refs.party = pkParty;
 
@@ -1348,13 +1332,7 @@ ecs::SocialSystem::PartyJoinErrCode ecs::SocialSystem::IsPartyJoinableMutableCon
     return PERR_NONE;
 }
 
-int ecs::SocialSystem::GetMarriageBonus(entt::entity e, uint32_t itemVnum, bool share)
-{
-    if (!ecs::PlayerRuntime::IsPC(e))
-        return 0;
-    const entt::entity couple = marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID(e));
-    return couple != entt::null ? marriage::MarriageSystem::GetBonus(couple, itemVnum, share, e) : 0;
-}
+
 
 // ForEachMemberPtr handed this a null pointer for every member not linked to a
 // character, and it dereferenced it; the online walk skips those members.

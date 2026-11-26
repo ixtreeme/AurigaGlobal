@@ -618,9 +618,9 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	switch (type)
 	{
 	case POINT_NONE:
-
-
-		return;
+    case POINT_HP_RECOVERY: // Retired socket/potion reserve points; numeric IDs stay reserved.
+    case POINT_SP_RECOVERY:
+        return;
 
 	case POINT_LEVEL:
 		if ((GetLevel(e) + amount) > gPlayerMaxLevel)
@@ -1058,8 +1058,6 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_MAGIC_ATT_GRADE:
 	case POINT_MAGIC_DEF_GRADE:
 	case POINT_BOW_DISTANCE:
-	case POINT_HP_RECOVERY:
-	case POINT_SP_RECOVERY:
 
 	case POINT_ATTBONUS_HUMAN:
 	case POINT_ATTBONUS_ANIMAL:

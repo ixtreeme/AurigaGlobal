@@ -301,12 +301,12 @@ void RemovalChecks() {
         onChange = {}; onCompute = {};
     }
     e = Actor(); A::Attach(e, Value(AFFECT_STUN)); A::Attach(e, Value(AFFECT_SLOW));
-    A::Attach(e, Value(AFFECT_STR)); A::Attach(e, Value(AFFECT_AUTO_HP_RECOVERY));
+    A::Attach(e, Value(AFFECT_STR)); A::Attach(e, Value(AFFECT_BLOCK_CHAT));
     A::RemoveBadAffects(e);
     Check(!A::FindAffect(e, AFFECT_STUN) && !A::FindAffect(e, AFFECT_SLOW), "bad affects removed natively");
     Check(A::FindAffect(e, AFFECT_STR) != nullptr, "good affect survives bad removal");
     A::RemoveGoodAffects(e);
-    Check(!A::FindAffect(e, AFFECT_STR) && A::FindAffect(e, AFFECT_AUTO_HP_RECOVERY), "good removal preserves unrelated types");
+    Check(!A::FindAffect(e, AFFECT_STR) && A::FindAffect(e, AFFECT_BLOCK_CHAT), "good removal preserves unrelated types");
 }
 bool Add(entt::entity e, int value = 10, uint32_t type = AFFECT_STR,
     uint8_t apply = POINT_ST, uint32_t flag = 0, bool overwrite = true, bool cube = false, int duration = 60) {
@@ -316,6 +316,18 @@ void ResetPublication() {
     clientAdds.clear(); clientRemoves.clear(); dbHeaders.clear(); storedAffects.clear();
     onClientPacket = {}; onDBPacket = {}; onUpdate = {}; onChange = {}; onCompute = {}; onSync = {}; onSchedule = {};
     onPart = {}; onQuest = {}; onHorse = {}; horseCalls.clear(); horsePackets.clear();
+}
+void RetiredItemChecks() {
+    auto e=Actor();
+    for (uint32_t type : {304u,305u,534u,535u,536u,537u,539u,567u,586u,587u,589u,590u,600u}) {
+        Check(!A::Attach(e,Value(type)) && !Add(e,10,type),"retired item affect was admitted");
+        Check(A::Snapshot(e).empty(),"retired item affect altered state");
+    }
+    for (uint32_t type : {4u,63u,500u,588u,601u}) {
+        const auto id=A::Attach(e,Value(type));
+        Check(id!=0,"ordinary or neighboring affect was retired"); A::Detach(e,id);
+    }
+    g_registry.destroy(e);
 }
 void AddChecks() {
     auto e = Actor();
@@ -527,13 +539,7 @@ void ExpiryChecks() {
     g_registry.get<TestPoints>(e).values[POINT_SP] = static_cast<int64_t>(INT32_MAX) + 3;
     Check(!A::ProcessAffect(e) && Live(e, affect).lDuration == INT32_MAX - 1 && ecs::PointSystem::Get(e, POINT_SP) == 3,
         "large duration and SP cost remain representable");
-#ifdef ENABLE_SOUL_SYSTEM
-    e = Actor();
-    InstallTimed(e, AFFECT_SOUL_RED, 2, POINT_NONE, 0, 123456);
-    InstallTimed(e, AFFECT_SOUL_BLUE, 2, POINT_NONE, 0, 234567);
-    Check(!A::ProcessAffect(e) && A::Snapshot(e).size() == 2 && ecs::PointSystem::Get(e, POINT_SP) == 0,
-        "soul seal IDs are not interpreted as SP costs");
-#endif
+
     e = Actor(); InstallTimed(e, GUILD_SKILL_START, 20);
     Check(A::ProcessAffect(e), "guild skill expires without a guild war");
     e = Actor(); affect = InstallTimed(e, AFFECT_STR, 3, POINT_NONE, 0, 2);
@@ -705,6 +711,12 @@ void EquipmentAuraChecks() {
         Check(ecs::PointSystem::Get(e,POINT_ATT_GRADE_BONUS)==0,"aura removal retained attack bonus");
         g_registry.destroy(e);
     }
+    auto e=Actor(); g_registry.emplace<ecs::TagCharacter>(e);
+    auto& points=g_registry.get<TestPoints>(e).values;
+    points[POINT_HP_RECOVERY]=1000;points[POINT_SP_RECOVERY]=1000;
+    Check(!A::UpdateAffect(e),"retired potion reserves kept the affect timer alive");
+    Check(points[POINT_HP]==0&&points[POINT_SP]==0,"retired potion reserves healed outside typed persistence");
+    g_registry.destroy(e);
     equipmentTick=false;
 }
 void LifetimeStressChecks() {
@@ -926,7 +938,7 @@ int main() {
     try {
         CHorseNameManager horseNames;
         StorageChecks(); FlagAndPointChecks(); RefreshChecks(); RemovalChecks();
-        AddChecks(); TimerChecks(); PublicationChecks(); LifetimeStressChecks();
+        RetiredItemChecks(); AddChecks(); TimerChecks(); PublicationChecks(); LifetimeStressChecks();
         ExpiryChecks();  HairAndHorseChecks(); ExpiryPublicationChecks(); EquipmentAuraChecks();
         std::cout << "Affect checks passed: " << checks << '\n'; return 0;
     }

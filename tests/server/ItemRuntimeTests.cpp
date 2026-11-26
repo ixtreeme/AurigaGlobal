@@ -466,124 +466,12 @@ void LevelChecks() {
     g_registry.emplace<ecs::ItemProtoRef>(ordinary).proto = &f.proto;
     Check(!ItemSystem::CheckItemUseLevel(ordinary, 999), "non-item prototype accepted");
     g_registry.remove<ecs::ItemProtoRef>(f.item);
-    Check(!ItemSystem::CheckItemUseLevel(f.item, 999) && !ItemSystem::OnAfterCreatedItem(f.item),
+    Check(!ItemSystem::CheckItemUseLevel(f.item, 999),
         "missing prototype accepted");
     g_registry.destroy(f.item); const auto replacement = g_registry.create();
     Check(!ItemSystem::CheckItemUseLevel(f.item, 999) && !ItemSystem::CheckItemUseLevel(entt::null, 999) &&
-        !ItemSystem::OnAfterCreatedItem(f.item) && g_registry.valid(replacement), "stale handle accepted");
+        g_registry.valid(replacement), "stale handle accepted");
 }
-void LoadedTimers() {
-    Reset(); Fixture f;
-    Check(ItemSystem::OnAfterCreatedItem(f.item) && queued.empty(), "ordinary item started a timer");
-    f.FirstUse(false);
-    Check(ItemSystem::OnAfterCreatedItem(f.item) && queued.empty(), "unused first-use item started expiring");
-    f.FirstUse(true);
-    Check(ItemSystem::OnAfterCreatedItem(f.item) && queued.size() == 1, "used item did not resume its timer");
-    Check(ItemSystem::OnAfterCreatedItem(f.item) && queued.size() == 1, "loading twice duplicated the timer");
-#ifdef ENABLE_SOUL_SYSTEM
-    Reset(); Fixture soul;
-    g_registry.get<ecs::ItemPrototypeMeta>(soul.item).type = ITEM_SOUL;
-    soul.proto.aLimits[1].lValue = 10;
-    g_registry.get<ecs::ItemSockets>(soul.item).sockets[2] = 100000;
-    Check(ItemSystem::OnAfterCreatedItem(soul.item) && queued.empty(), "fully charged soul treated as failure");
-    g_registry.get<ecs::ItemSockets>(soul.item).sockets[2] = 90000;
-    Check(ItemSystem::OnAfterCreatedItem(soul.item) && queued.size() == 1, "soul charging did not resume");
-    Check(ItemSystem::OnAfterCreatedItem(soul.item) && queued.size() == 1, "soul charging duplicated");
-#endif
-}
-void WearTimers() {
-    Reset(); Fixture f;
-    Check(ItemSystem::StartTimerBasedOnWearExpireEventEcs(f.item) && queued.empty(), "unlimited item started wear timer");
-    f.proto.cLimitTimerBasedOnWearIndex = 0;
-    g_registry.get<ecs::ItemSockets>(f.item).sockets[0] = 100;
-    Check(ItemSystem::StartTimerBasedOnWearExpireEventEcs(f.item) && queued.size() == 1 &&
-        dynamic_cast<item_event_info*>(queued.front()->info), "wear timer lost its correct native event payload");
-    Check(ItemSystem::StartTimerBasedOnWearExpireEventEcs(f.item) && queued.size() == 1, "wear timer start duplicated");
-    event_cancel(&g_registry.get<ecs::ItemEvents>(f.item).timerBasedOnWearExpire);
-    failAllocation = true;
-    Check(!ItemSystem::StartTimerBasedOnWearExpireEventEcs(f.item), "failed wear timer allocation reported success");
-    failAllocation = false;
-    Check(ItemSystem::StartTimerBasedOnWearExpireEventEcs(f.item) && queued.size() == 2, "stopped wear timer did not restart");
-
-    Reset(); Fixture retired; retired.proto.cLimitTimerBasedOnWearIndex = 0;
-    onCreate = [](entt::entity item) { g_registry.destroy(item); };
-    Check(!ItemSystem::StartTimerBasedOnWearExpireEventEcs(retired.item) && queued.front()->is_force_to_end,
-        "wear allocation callback left an orphan event");
-
-    Reset(); Fixture removed; removed.proto.cLimitTimerBasedOnWearIndex = 0;
-    onComponent = [](entt::entity item) { g_registry.remove<ecs::ItemEvents>(item); };
-    Check(!ItemSystem::StartTimerBasedOnWearExpireEventEcs(removed.item) && queued.empty(), "wear timer recreated retired components");
-
-    Reset(); Fixture unpublished; unpublished.proto.cLimitTimerBasedOnWearIndex = 0;
-    onPublish = [](entt::entity item) { g_registry.remove<ecs::ItemEvents>(item); };
-    Check(!ItemSystem::StartTimerBasedOnWearExpireEventEcs(unpublished.item) && queued.front()->is_force_to_end,
-        "publication-time component removal left an orphan wear timer");
-}
-void WearTimerStops() {
-    for (bool active : {false, true}) {
-        Reset(); Fixture f; wearStopTest = true;
-        f.proto.cLimitTimerBasedOnWearIndex = 0;
-        auto& meta = g_registry.get<ecs::ItemPrototypeMeta>(f.item);
-        meta.type = ITEM_COSTUME; meta.subType = RUNE_SLOT1;
-        g_registry.get<ecs::ItemSockets>(f.item).sockets[0] = 5;
-        g_registry.get<ecs::ItemSockets>(f.item).sockets[1] = active;
-        Check(ItemSystem::StartTimerBasedOnWearExpireEventEcs(f.item), "wear stop fixture timer failed");
-        ItemSystem::StopTimerBasedOnWearExpireEvent(f.item);
-        Check(queued.front()->is_force_to_end && !g_registry.get<ecs::ItemEvents>(f.item).timerBasedOnWearExpire &&
-            g_registry.get<ecs::ItemSockets>(f.item).sockets[0] == (active ? 0 : 5) && wearUpdates == 1,
-            "wear stop lost paused-rune semantics, nonnegative time, or cancellation");
-    }
-    {
-        Reset(); Fixture f; wearStopTest = true; f.proto.cLimitTimerBasedOnWearIndex = 0;
-        ItemSystem::StartTimerBasedOnWearExpireEventEcs(f.item);
-        onUpdate = [](entt::entity item) { g_registry.destroy(item); };
-        ItemSystem::StopTimerBasedOnWearExpireEvent(f.item);
-        Check(queued.front()->is_force_to_end && wearUpdates == 1, "wear stop reused a retired entity after publication");
-    }
-    Reset(); Fixture f; wearStopTest = true; f.proto.cLimitTimerBasedOnWearIndex = 0;
-    ItemSystem::StartTimerBasedOnWearExpireEventEcs(f.item);
-    onUpdate = [](entt::entity item) { Check(ItemSystem::StartTimerBasedOnWearExpireEventEcs(item), "nested wear restart failed"); };
-    ItemSystem::StopTimerBasedOnWearExpireEvent(f.item);
-    Check(queued.size() == 2 && queued[0]->is_force_to_end && !queued[1]->is_force_to_end &&
-        g_registry.get<ecs::ItemEvents>(f.item).timerBasedOnWearExpire == queued[1], "wear stop canceled a replacement timer");
-}
-void TimerFailuresAndCallbacks() {
-    Reset(); Fixture f; f.FirstUse(true); failAllocation = true;
-    Check(!ItemSystem::OnAfterCreatedItem(f.item), "failed timer allocation reported success");
-    failAllocation = false;
-    Check(ItemSystem::OnAfterCreatedItem(f.item), "failed allocation prevented a retry");
-
-    Reset(); Fixture destroyed; destroyed.FirstUse(true);
-    entt::entity replacement = entt::null;
-    onCreate = [&](entt::entity item) { g_registry.destroy(item); replacement = g_registry.create(); };
-    Check(!ItemSystem::OnAfterCreatedItem(destroyed.item) && queued.front()->is_force_to_end,
-        "creation-time retirement left an orphan timer");
-    Check(g_registry.valid(replacement) && !g_registry.any_of<ecs::ItemEvents>(replacement),
-        "a recycled generation inherited the timer");
-
-    Reset(); Fixture removed; removed.FirstUse(true);
-    onComponent = [](entt::entity item) { g_registry.remove<ecs::ItemEvents>(item); };
-    Check(!ItemSystem::OnAfterCreatedItem(removed.item) && queued.empty(), "removed event component was reused");
-
-    Reset(); Fixture nested; nested.FirstUse(true);
-    bool reentered = false;
-    onCreate = [&](entt::entity item) {
-        if (!reentered) { reentered = true; Check(ItemSystem::OnAfterCreatedItem(item), "nested start failed"); }
-    };
-    Check(ItemSystem::OnAfterCreatedItem(nested.item) && queued.size() == 2,
-        "nested start was not exercised");
-    Check(queued[0]->is_force_to_end && !queued[1]->is_force_to_end &&
-        g_registry.get<ecs::ItemEvents>(nested.item).realTimeExpire == queued[1],
-        "outer timer overwrote the nested timer");
-
-    Reset(); Fixture published; published.FirstUse(true);
-    onPublish = [](entt::entity item) {
-        event_cancel(&g_registry.get<ecs::ItemEvents>(item).realTimeExpire);
-        g_registry.destroy(item);
-    };
-    Check(!ItemSystem::OnAfterCreatedItem(published.item), "publication-time retirement reported a live item");
-}
-
 std::function<void(entt::registry&, entt::entity)> onFactoryIdentity;
 std::function<void(const ecs::EvItemDestroyed&)> onRetire;
 void FactoryIdentity(entt::registry& registry, entt::entity item) {
@@ -754,11 +642,9 @@ void FactoryCallbacks() {
 
     const auto timed = EntityFactory::CreateItemEntity(g_registry, &proto, 100, 805, 806);
     auto& events = g_registry.get<ecs::ItemEvents>(timed);
-    std::array<LPEVENT, 8> timers;
+    std::array<LPEVENT, 3> timers;
     for (auto& timer : timers) timer = LPEVENT(new EVENT);
     events.destroy = timers[0]; events.expire = timers[1]; events.ownership = timers[2];
-    events.uniqueExpire = timers[3]; events.soulItem = timers[4]; events.timerBasedOnWearExpire = timers[5];
-    events.realTimeExpire = timers[6]; events.accessorySocketExpire = timers[7];
     entt::entity replacement = entt::null;
     onCancel = [&] {
         onCancel = {};
@@ -861,7 +747,7 @@ int main() {
     g_registry.on_construct<ecs::ItemEvents>().connect<&Constructed>();
     g_registry.on_construct<ecs::ItemIdentity>().connect<&FactoryIdentity>();
     g_dispatcher.sink<ecs::EvItemDestroyed>().connect<&Retired>();
-    try { NativeFactory(); NativePrototypeRefresh(); FactoryCallbacks(); NativePickups(); PickupAdmission(); NativeInventory(); NativeIdentityRegistry(); LocalizedNames(); LevelChecks(); LoadedTimers(); WearTimers(); WearTimerStops(); TimerFailuresAndCallbacks(); Reset(); }
+    try { NativeFactory(); NativePrototypeRefresh(); FactoryCallbacks(); NativePickups(); PickupAdmission(); NativeInventory(); NativeIdentityRegistry(); LocalizedNames(); LevelChecks();     Reset(); }
     catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
     std::cout << "Item runtime: " << checks << " checks passed\n";
 }

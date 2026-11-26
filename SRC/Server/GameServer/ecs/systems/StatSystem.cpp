@@ -109,7 +109,7 @@ void Compute(entt::entity e)
         POINT_HORSE_SKILL, POINT_LEVEL_STEP, POINT_PARTY_ATTACKER_BONUS,
         POINT_PARTY_TANKER_BONUS, POINT_PARTY_BUFFER_BONUS,
         POINT_PARTY_SKILL_MASTER_BONUS, POINT_PARTY_HASTE_BONUS,
-        POINT_PARTY_DEFENDER_BONUS, POINT_HP_RECOVERY, POINT_SP_RECOVERY
+        POINT_PARTY_DEFENDER_BONUS
     };
     std::array<double, std::size(preservedTypes)> preserved {};
     for (size_t i = 0; i < preserved.size(); ++i) preserved[i] = GetPrecise(e, preservedTypes[i]);

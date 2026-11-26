@@ -340,17 +340,6 @@ int CalcAttBonus(entt::entity attacker, entt::entity victim, int input)
     const auto bound=[](long double value) { return static_cast<int64_t>(std::clamp<long double>(value,INT_MIN,INT_MAX)); };
     if (!IsBattlePair(attacker, victim))
         return 0;
-	// PvP???? ????????????
-	if (!ecs::PlayerRuntime::IsPC(victim))
-		iAtk = bound(static_cast<long double>(iAtk) + (ecs::SocialSystem::GetMarriageBonus(attacker, UNIQUE_ITEM_MARRIAGE_ATTACK_BONUS)));
-
-	// PvP???? ????????????
-	if (!ecs::PlayerRuntime::IsPC(attacker))
-	{
-		int iReduceDamagePct = ecs::SocialSystem::GetMarriageBonus(victim, UNIQUE_ITEM_MARRIAGE_TRANSFER_DAMAGE);
-		iAtk = bound(static_cast<long double>(iAtk) * (100 + iReduceDamagePct) / 100);
-	}
-
 	if (!ecs::PlayerRuntime::IsPC(attacker) && ecs::PlayerRuntime::IsPC(victim))
 	{
 		iAtk = bound((static_cast<long double>(iAtk) * CHARACTER_MANAGER::instance().GetMobDamageRate(attacker)) / 100);
@@ -651,8 +640,6 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 	{
 		iDef = EquipmentLegacyInt(EquipmentEffectiveDefense(attacker, ecs::PointSystem::GetPrecise(victim, POINT_DEF_GRADE) * (100 + ecs::PointSystem::GetPrecise(victim, POINT_DEF_BONUS)) / 100));
 
-		if (!ecs::PlayerRuntime::IsPC(attacker))
-			iDef += ecs::SocialSystem::GetMarriageBonus(victim, UNIQUE_ITEM_MARRIAGE_DEFENSE_BONUS);
 	}
 
 	if (!ecs::PlayerRuntime::IsPC(attacker))
@@ -955,7 +942,6 @@ int battle_hit(entt::entity attacker, entt::entity victim, int & iRetDam)
 
 #ifdef ENABLE_SOUL_SYSTEM
     if (ecs::PlayerRuntime::IsPC(attacker))
-        iDam += CombatSystem::GetSoulItemDamage(attacker, victim, iDam, RED_SOUL);
 #endif
 
 	iRetDam = iDam;
