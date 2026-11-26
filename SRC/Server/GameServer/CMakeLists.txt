@@ -1186,3 +1186,9 @@ add_dependencies(ServerTests WarriorSkillMacroOffCompile)
 if(Python3_Interpreter_FOUND)
     add_test(NAME item_foundation_boundary COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/tests/server/ItemFoundationBoundaryTests.py")
 endif()
+
+add_executable(GuildBuildingMaterialsTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/GuildBuildingMaterialsTests.cpp)
+target_link_libraries(GuildBuildingMaterialsTests PRIVATE SERVER)
+target_include_directories(GuildBuildingMaterialsTests PRIVATE ${AURIGA_MISSION_JSON_INCLUDE})
+add_test(NAME native_guild_building_materials COMMAND GuildBuildingMaterialsTests)

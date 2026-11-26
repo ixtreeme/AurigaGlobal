@@ -255,8 +255,19 @@ std::expected<SqlTransaction,E> PrepareItemWrite(const ItemCatalog& c,const Item
         }
         else
         {
-            tx.push_back({"SELECT vnum FROM player.object_proto WHERE vnum=? AND price=? LOCK IN SHARE MODE",
-                {U::UInt(build->prototype), U::UInt(build->gold)}, {}, 1});
+            std::map<ItemKey,std::uint64_t> costs;
+            for (const auto& change:r.items)
+                costs[change.before->key]+=change.before->count-change.after.count;
+            std::string recipe="[";
+            for(const auto& [key,count]:costs) {
+                if(recipe.size()>1)recipe+=",";
+                recipe+=R"({"category":)"+std::to_string(static_cast<unsigned>(key.Category()))+R"(,"local":)"+std::to_string(key.LocalId())+
+                        R"(,"count":)"+std::to_string(count)+"}";
+            }
+            recipe+="]";
+            tx.push_back({"SELECT vnum FROM player.object_proto WHERE vnum=? AND price=? "
+                "AND JSON_LENGTH(native_materials)=? AND JSON_CONTAINS(native_materials,?) LOCK IN SHARE MODE",
+                {U::UInt(build->prototype), U::UInt(build->gold),U::UInt(costs.size()),U::Text(recipe)}, {}, 1});
             tx.push_back({"INSERT INTO player.object(land_id,vnum,map_index,x,y,x_rot,y_rot,z_rot) VALUES (?,?,?,?,?,?,?,?)",
                 {U::UInt(build->land), U::UInt(build->prototype), U::Int(build->map), U::Int(build->x), U::Int(build->y),
                  U::Real(build->xRotation), U::Real(build->yRotation), U::Real(build->zRotation)}, 1, {}});

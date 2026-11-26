@@ -1,5 +1,6 @@
 #ifndef __METIN_II_COMMON_BUILDING_H__
 #define __METIN_II_COMMON_BUILDING_H__
+#include <cstdint>
 
 namespace building
 {
@@ -21,8 +22,9 @@ namespace building
 
 	typedef struct SObjectMaterial
 	{
-		uint32_t	dwItemVnum;
-		uint32_t	dwCount;
+		uint16_t	category;
+		uint32_t	local;
+		uint32_t	count;
 	} TObjectMaterial;
 
 	typedef struct SObjectProto
@@ -30,7 +32,7 @@ namespace building
 		uint32_t	dwVnum;
 		uint32_t	dwPrice;
 
-		TObjectMaterial kMaterials[OBJECT_MATERIAL_MAX_NUM];
+		TObjectMaterial materials[OBJECT_MATERIAL_MAX_NUM];
 
 		uint32_t	dwUpgradeVnum;
 		uint32_t	dwUpgradeLimitTime;

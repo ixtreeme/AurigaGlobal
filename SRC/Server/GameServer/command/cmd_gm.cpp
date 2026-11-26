@@ -2559,24 +2559,19 @@ void block_chat(entt::entity executor, std::string_view arguments)
 // BUILD_BUILDING
 static std::optional<std::array<uint32_t, 3>> TypedBuildingMaterialCounts(const building::TObjectProto& prototype)
 {
-	std::array<uint32_t, 3> counts{};
-	for (const auto& material : prototype.kMaterials)
-	{
-		if (!material.dwItemVnum && !material.dwCount)
-			continue;
-		const auto known = std::ranges::find(auriga::item::GuildConstructionMaterials,
-			material.dwItemVnum, [](const auto& value) { return value.first; });
-		if (known == auriga::item::GuildConstructionMaterials.end() || !material.dwCount)
-		{
-			LOG_ERROR("Missing typed material {} for building {}", material.dwItemVnum, prototype.dwVnum);
-			return {};
-		}
-		auto& count = counts[std::distance(auriga::item::GuildConstructionMaterials.begin(), known)];
-		if (UINT32_MAX - count < material.dwCount)
-			return {};
-		count += material.dwCount;
-	}
-	return counts;
+    std::array<uint32_t, 3> counts{};
+    for (const auto& material : prototype.materials)
+    {
+        if (!material.category && !material.local && !material.count) continue;
+        const auto key = auriga::item::ItemKey::Create(material.category, material.local);
+        if (!key || !material.count) return {};
+        const auto known = std::ranges::find(auriga::item::GuildConstructionMaterials, *key);
+        if (known == auriga::item::GuildConstructionMaterials.end()) return {};
+        auto& count = counts[std::distance(auriga::item::GuildConstructionMaterials.begin(), known)];
+        if (UINT32_MAX - count < material.count) return {};
+        count += material.count;
+    }
+    return counts;
 }
 
 ACMD(do_build)
@@ -2733,7 +2728,7 @@ ACMD(do_build)
 				std::vector<items::MissionItemAmount> costs;
 				for (std::size_t i = 0; i < counts->size(); ++i)
 					if ((*counts)[i])
-						costs.push_back({items::GuildConstructionMaterials[i].second, 0, (*counts)[i]});
+						costs.push_back({items::GuildConstructionMaterials[i], 0, (*counts)[i]});
 				const auto [objectCount, lastObject] = pkLand->ObjectRevision();
 				const items::GuildConstruction build{pkLand->GetID(), pkLand->GetOwner(), dwVnum, map,
 					placement->x, placement->y, xRot, yRot, zRot, objectCount, lastObject, t->dwPrice, GMLevel == GM_PLAYER};

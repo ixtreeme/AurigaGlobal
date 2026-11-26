@@ -8,7 +8,7 @@
 
 typedef	uint32_t IDENT;
 
-inline constexpr uint8_t DATABASE_BOOT_VERSION = 8;
+inline constexpr uint8_t DATABASE_BOOT_VERSION = 9;
 
 enum
 {

@@ -9,11 +9,9 @@ namespace auriga::item
 {
 inline constexpr std::uint16_t GuildConstructionOutcome = 0x4211;
 
-// Existing world data stores these three material references as numbers.
-// Convert at that boundary; the economy only sees catalog keys.
-inline constexpr auto GuildConstructionMaterials = std::to_array<std::pair<std::uint32_t, ItemKey>>({
-    {90010, *ItemKey::Create(6, 755)}, {90011, *ItemKey::Create(6, 756)},
-    {90012, *ItemKey::Create(6, 757)},
+// Canonical material keys used by the three construction counters.
+inline const auto GuildConstructionMaterials = std::to_array<ItemKey>({
+    *ItemKey::Create(6, 755), *ItemKey::Create(6, 756), *ItemKey::Create(6, 757),
 });
 
 struct GuildConstruction
@@ -101,7 +99,7 @@ inline std::optional<GuildConstruction> DecodeGuildConstruction(const ItemCommit
             !(PlainInventoryItem(*change.before, owner) || PlainInventoryItem(*change.before, owner, ItemStorageKind::SpecialInventory)))
             return {};
         const auto material = std::ranges::find_if(GuildConstructionMaterials, [&](const auto& entry) {
-            return entry.second == change.before->key;
+            return entry == change.before->key;
         });
         if (material == GuildConstructionMaterials.end())
             return {};

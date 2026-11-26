@@ -378,7 +378,7 @@ bool building::RequestAltarUpgrade(entt::entity character, entt::entity npc, uin
 		state->rotationX, state->rotationY, state->rotationZ, count, last, upgrade->gold, true, state->objectId, state->vnum};
 	std::vector<items::MissionItemAmount> costs;
 	for (std::size_t index = 0; index < upgrade->amounts.size(); ++index)
-		costs.push_back({items::GuildConstructionMaterials[index].second, 0, upgrade->amounts[index]});
+		costs.push_back({items::GuildConstructionMaterials[index], 0, upgrade->amounts[index]});
 	return RequestTypedGuildExchange(character, std::move(costs), upgrade->gold, items::GuildConstructionOutcome,
 		items::EncodeGuildConstruction(change), std::move(done), {}, true).has_value();
 }

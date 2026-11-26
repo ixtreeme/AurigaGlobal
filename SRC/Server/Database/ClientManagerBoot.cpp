@@ -1,3 +1,4 @@
+#include <common/item/GuildBuildingMaterials.hpp>
 #include <type_traits>
 #include <cmath>
 // vim:ts=4 sw=4
@@ -313,58 +314,7 @@ bool CClientManager::InitializeLandTable()
 	return true;
 }
 
-void parse_pair_number_string(const char* c_pszString, std::vector<std::pair<int, int> >& vec)
-{
-	// format: 10,1/20,3/300,50
-	const char* t = c_pszString;
-	const char* p = strchr(t, '/');
-	std::pair<int, int> k;
 
-	char szNum[32 + 1];
-	char* comma;
-
-	while (p)
-	{
-		if (isnhdigit(*t))
-		{
-			strlcpy(szNum, t, MIN(sizeof(szNum), (p - t) + 1));
-
-			comma = strchr(szNum, ',');
-
-			if (comma)
-			{
-				*comma = '\0';
-				str_to_number(k.second, comma + 1);
-			}
-			else
-				k.second = 0;
-
-			str_to_number(k.first, szNum);
-			vec.push_back(k);
-		}
-
-		t = p + 1;
-		p = strchr(t, '/');
-	}
-
-	if (isnhdigit(*t))
-	{
-		strlcpy(szNum, t, sizeof(szNum));
-
-		comma = strchr(const_cast<char*>(t), ',');
-
-		if (comma)
-		{
-			*comma = '\0';
-			str_to_number(k.second, comma + 1);
-		}
-		else
-			k.second = 0;
-
-		str_to_number(k.first, szNum);
-		vec.push_back(k);
-	}
-}
 
 bool CClientManager::InitializeObjectProto()
 {
@@ -372,11 +322,12 @@ bool CClientManager::InitializeObjectProto()
 
 	char query[4096];
 	snprintf(query, sizeof(query),
-		"SELECT vnum, price, materials, upgrade_vnum, upgrade_limit_time, life, reg_1, reg_2, reg_3, reg_4, npc, group_vnum, dependent_group "
+		"SELECT vnum, price, native_materials, upgrade_vnum, upgrade_limit_time, life, reg_1, reg_2, reg_3, reg_4, npc, group_vnum, dependent_group "
 		"FROM object_proto%s ORDER BY vnum",
 		GetTablePostfix());
 
 	std::unique_ptr<SQLMsg> pkMsg(CDBManager::instance().DirectQuery(query));
+	if (!pkMsg || pkMsg->uiSQLErrno || !pkMsg->Get()) return false;
 	SQLResult* pRes = pkMsg->Get();
 
 	if (!m_vec_kObjectProto.empty())
@@ -399,16 +350,13 @@ bool CClientManager::InitializeObjectProto()
 			str_to_number(t.dwVnum, data[col++]);
 			str_to_number(t.dwPrice, data[col++]);
 
-			std::vector<std::pair<int, int> > vec;
-			parse_pair_number_string(data[col++], vec);
-
-			for (unsigned int i = 0; i < OBJECT_MATERIAL_MAX_NUM && i < vec.size(); ++i)
-			{
-				std::pair<int, int>& r = vec[i];
-
-				t.kMaterials[i].dwItemVnum = r.first;
-				t.kMaterials[i].dwCount = r.second;
-			}
+			const auto materials = data[col] ? auriga::item::ReadGuildBuildingMaterials(data[col]) : std::nullopt;
+            ++col;
+            if (!materials) {
+                LOG_ERROR("Object {} has no valid native material recipe; apply the reviewed construction import", t.dwVnum);
+                return false;
+            }
+            std::ranges::copy(*materials, t.materials);
 
 			str_to_number(t.dwUpgradeVnum, data[col++]);
 			str_to_number(t.dwUpgradeLimitTime, data[col++]);
@@ -427,7 +375,7 @@ bool CClientManager::InitializeObjectProto()
 			t.lNPCY = MAX(t.lRegion[1], t.lRegion[3]) + 300;
 			// END_OF_ADD_BUILDING_NPC
 
-			LOG_INFO("OBJ_PROTO: vnum {} price {} mat {} {}", t.dwVnum, t.dwPrice, t.kMaterials[0].dwItemVnum, t.kMaterials[0].dwCount);
+			LOG_INFO("OBJ_PROTO: vnum {} price {} mat {} {}", t.dwVnum, t.dwPrice, t.materials[0].local, t.materials[0].count);
 
 			m_vec_kObjectProto.push_back(t);
 		}
