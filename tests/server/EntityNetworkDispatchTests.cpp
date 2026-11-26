@@ -489,14 +489,14 @@ void CommittedStatePublication() {
             packet.awPart[CHR_EQUIPPART_HEAD] == 0 &&
             packet.awPart[CHR_EQUIPPART_HAIR] == 100 + PART_HAIR, "retired item IDs leaked or character traits were lost on UPDATE");
 #ifdef ENABLE_RUNE_SYSTEM
-        Check(packet.awPart[CHR_EQUIPPART_RUNE] == 100 + PART_RUNE, "rune appearance lost");
+        Check(packet.awPart[CHR_EQUIPPART_RUNE] == 0, "retired rune part leaked");
 #endif
 #ifdef ENABLE_ACCE_SYSTEM
-        Check(packet.awPart[CHR_EQUIPPART_ACCE] == 100 + PART_ACCE, "accessory appearance lost");
+        Check(packet.awPart[CHR_EQUIPPART_ACCE] == 0, "retired stole part leaked");
 #endif
 #ifdef ENABLE_COSTUME_EFFECT
-        Check(packet.awPart[CHR_EQUIPPART_EFFECT_BODY] == 100 + PART_EFFECT_BODY &&
-            packet.awPart[CHR_EQUIPPART_EFFECT_WEAPON] == 100 + PART_EFFECT_WEAPON, "costume effects lost");
+        Check(packet.awPart[CHR_EQUIPPART_EFFECT_BODY] == 0 &&
+            packet.awPart[CHR_EQUIPPART_EFFECT_WEAPON] == 0, "retired effect parts leaked");
 #endif
         Check(packet.dwAffectFlag[0] == 1 && packet.dwAffectFlag[1] == 0x80000000u &&
             packet.bMovingSpeed == 150 && packet.bAttackSpeed == 150, "affect/speed UPDATE fields lost");
