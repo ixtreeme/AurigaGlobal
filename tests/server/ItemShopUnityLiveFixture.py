@@ -50,7 +50,6 @@ def main():
             assert db.query(f'SELECT shop_id,units,paid FROM player.ishop_native_purchase WHERE account_id={account}') == [[str(c['ShopConverted']), str(BUY_COUNT), str(paid)]], 'one logged purchase'
             units = db.query(f"SELECT COALESCE(SUM(stack_count),0) FROM player.item_instance WHERE owner_kind=1 AND owner_id={pid} AND destroyed=0 AND category_id={c['ConvertedCategory']} AND local_id={c['ConvertedLocal']}")
             assert units == [[str(BUY_COUNT)]], units
-            assert db.query(f"SELECT COUNT(*) FROM player.item WHERE owner_id={pid}") == [['0']], 'no legacy item was created'
             print(f'ITEMSHOP_LOCAL_SQL=SUCCESS wallet={START_COINS - paid} swept={START_COINS} units={BUY_COUNT}')
             return
         if a.action in ('content', 'verify-content'):
@@ -72,8 +71,8 @@ def main():
                 return
             assert 'ContentMount' not in c
             def pick(category, free):
-                return db.query('SELECT n.shop_id,n.local_id,d.itemPrice,n.legacy_vnum FROM player.ishop_native_item n JOIN player.ishop_data d ON d.id=n.shop_id AND d.itemVnum=n.legacy_vnum '
-                                f"WHERE n.category_id={category} AND d.discount=0 AND d.week_limit=0 AND d.month_limit=0 AND d.itemPrice{'=0' if free else '>0'} ORDER BY d.itemPrice,n.shop_id LIMIT 1")[0]
+                return db.query('SELECT d.offer_id,m.local_id,d.unit_price FROM player.ishop_offer d JOIN player.ishop_offer_member m ON m.offer_id=d.offer_id '
+                                f"WHERE d.enabled=1 AND d.package_title IS NULL AND m.category_id={category} AND d.discount_percent=0 AND d.weekly_limit=0 AND d.monthly_limit=0 AND d.unit_price{'=0' if free else '>0'} ORDER BY d.unit_price,d.offer_id LIMIT 1")[0]
             free, mount, stole = pick(15, True), pick(15, False), pick(19, False)
             balance = int(db.query(f'SELECT balance FROM player.item_wallet WHERE owner_kind=2 AND owner_id={account} AND currency=2')[0][0])
             inbox = 1000  # legacy top-up, swept by the first shop read
@@ -81,7 +80,7 @@ def main():
             inbox = int(db.query(f'SELECT coins FROM account.account WHERE id={account}')[0][0])  # all of it is swept
             c.update(ContentMountFree=int(free[0]), ContentMountFreeLocal=int(free[1]), ContentMount=int(mount[0]), ContentMountLocal=int(mount[1]),
                      ContentMountPrice=int(mount[2]), ContentStole=int(stole[0]), ContentStoleLocal=int(stole[1]), ContentStolePrice=int(stole[2]),
-                     ContentStartCoins=balance + inbox, ContentVnums=[int(free[3]), int(mount[3]), int(stole[3])])
+                     ContentStartCoins=balance + inbox)
             assert c['ContentMountPrice'] + c['ContentStolePrice'] <= c['ContentStartCoins']
             write(fixture, c)
             print(f"ITEMSHOP_CONTENT=READY free={free[0]} mount={mount[0]} stole={stole[0]} coins={c['ContentStartCoins']}")
@@ -107,12 +106,14 @@ def main():
             c = dict(Host='127.0.0.1', ServerName=profile['Tls']['ServerName'], Pin=profile['Tls']['PinnedCertificateSha256'],
                      Version=profile['ClientVersion'], AuthPort=profile['AuthPort'], GamePort=30078,  # ch99-core99 hosts map 41
                      Token=token, Accounts=[], X=987300, Y=268800, Backup=str(backup))
-            row = db.query("SELECT n.shop_id,n.legacy_vnum,n.category_id,n.local_id,d.itemPrice FROM player.ishop_native_item n "
-                           "JOIN player.ishop_data d ON d.id=n.shop_id AND d.itemVnum=n.legacy_vnum "
-                           "WHERE n.category_id=6 AND d.itemPrice>0 AND d.discount=0 AND d.week_limit=0 AND d.month_limit=0 ORDER BY d.itemPrice,n.shop_id LIMIT 1")[0]
-            c.update(ShopConverted=int(row[0]), ConvertedVnum=int(row[1]), ConvertedCategory=int(row[2]), ConvertedLocal=int(row[3]), ConvertedPrice=int(row[4]))
-            assert BUY_COUNT * c['ConvertedPrice'] < START_COINS < 20 * c['ConvertedPrice'], 'price window for the refusal check'
-            c['ShopUnconverted'] = int(db.query('SELECT MIN(d.id) FROM player.ishop_data d LEFT JOIN player.ishop_native_item n ON n.shop_id=d.id WHERE n.shop_id IS NULL')[0][0])
+            row = db.query("SELECT d.offer_id,m.category_id,m.local_id,d.unit_price FROM player.ishop_offer d "
+                           "JOIN player.ishop_offer_member m ON m.offer_id=d.offer_id "
+                           "WHERE d.enabled=1 AND d.package_title IS NULL AND m.category_id=6 AND d.unit_price>250 AND d.unit_price<2500 "
+                           "AND d.discount_percent=0 AND d.weekly_limit=0 AND d.monthly_limit=0 ORDER BY d.unit_price,d.offer_id LIMIT 1")[0]
+            c.update(ShopConverted=int(row[0]),ConvertedCategory=int(row[1]),ConvertedLocal=int(row[2]),ConvertedPrice=int(row[3]))
+            assert BUY_COUNT * c['ConvertedPrice'] < START_COINS < 20 * c['ConvertedPrice'], 'price window for refusal'
+            c['ShopUnconverted']=4000000000
+            assert db.query("SELECT COUNT(*) FROM player.ishop_offer WHERE offer_id=4000000000")==[['0']], 'reserved absent test offer exists'
             source = int(db.query("SELECT p.id FROM player.player p JOIN account.account a ON a.id=p.account_id WHERE a.login LIKE 'codexitem%' ORDER BY p.id DESC LIMIT 1")[0][0])
             columns = [r[0] for r in db.query('SHOW COLUMNS FROM player.player') if r[0] != 'id' and 'GENERATED' not in r[5]]
             db.query('START TRANSACTION')

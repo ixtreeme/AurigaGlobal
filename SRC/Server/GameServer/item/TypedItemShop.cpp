@@ -32,7 +32,7 @@ constexpr std::uint32_t HistoryPageSize = 100;
 
 struct Product
 {
-    std::uint32_t id = 0, price = 0, legacy = 0;
+    std::uint32_t id = 0, price = 0, historyScope = 0;
     std::uint64_t added = 0, offer = 0, sales = 0;
     std::uint32_t week = 0, month = 0;
     std::uint8_t category = 0, subcategory = 0, discount = 0;
@@ -135,16 +135,13 @@ std::uint64_t Quote(const Product& product)
 std::optional<std::vector<Product>> ReadProducts(CAsyncSQL& db, const item::ItemCatalog& catalog, std::uint32_t id)
 {
     std::unique_ptr<SQLMsg> message(db.DirectQueryPrepared(
-        "SELECT d.id,d.categoryType,d.categorySubType,d.itemPrice,d.discount,UNIX_TIMESTAMP(d.offerTime),"
-        "UNIX_TIMESTAMP(d.addedTime),d.sellCount+COALESCE((SELECT SUM(h.units) FROM player.ishop_native_purchase h WHERE h.shop_id=d.id),0),"
-        "d.week_limit,d.month_limit,n.legacy_vnum,p.title,m.slot,"
-        "IF(p.shop_id IS NULL,n.category_id,m.category_id),IF(p.shop_id IS NULL,n.local_id,m.local_id),"
-        "IF(p.shop_id IS NULL,n.refinement_level,m.refinement_level),IF(p.shop_id IS NULL,1,m.quantity) "
-        "FROM player.ishop_data d "
-        "LEFT JOIN player.ishop_native_item n ON n.shop_id=d.id AND n.legacy_vnum=d.itemVnum "
-        "LEFT JOIN player.ishop_native_package p ON p.shop_id=d.id "
-        "LEFT JOIN player.ishop_native_package_member m ON m.shop_id=p.shop_id "
-        "WHERE (?=0 OR d.id=?) AND (n.shop_id IS NOT NULL OR p.shop_id IS NOT NULL) ORDER BY d.id,m.slot LIMIT 12289",
+        "SELECT d.offer_id,d.display_category,d.display_subcategory,d.unit_price,d.discount_percent,UNIX_TIMESTAMP(d.offer_until),"
+        "UNIX_TIMESTAMP(d.added_at),d.baseline_sales+COALESCE((SELECT SUM(h.units) FROM player.ishop_native_purchase h WHERE h.shop_id=d.offer_id),0),"
+        "d.weekly_limit,d.monthly_limit,d.history_scope_id,d.package_title,m.slot,"
+        "m.category_id,m.local_id,m.refinement_level,m.quantity "
+        "FROM player.ishop_offer d "
+        "LEFT JOIN player.ishop_offer_member m ON m.offer_id=d.offer_id "
+        "WHERE d.enabled=1 AND (?=0 OR d.offer_id=?) ORDER BY d.offer_id,m.slot LIMIT 12289",
         {SqlParam::UInt(id), SqlParam::UInt(id)}));
     if (!message || message->uiSQLErrno || !message->Get() || message->Get()->uiNumRows > 12288) return {};
     std::vector<Product> result;
@@ -172,7 +169,7 @@ std::optional<std::vector<Product>> ReadProducts(CAsyncSQL& db, const item::Item
             current.sales = Number(row[7]);
             current.week = static_cast<std::uint32_t>(Number(row[8]));
             current.month = static_cast<std::uint32_t>(Number(row[9]));
-            current.legacy = row[11] ? 0 : static_cast<std::uint32_t>(Number(row[10]));
+            current.historyScope = static_cast<std::uint32_t>(Number(row[10]));
             current.title = row[11] ? row[11] : "";
             valid = shop && (!row[11] || (!current.title.empty() && current.title.size() <= 512));
         }
@@ -219,11 +216,11 @@ std::uint64_t Bought(CAsyncSQL& db, const Session& session, const Product& produ
     const std::string interval = month ? "MONTH" : "WEEK";
     const std::string query =
         "SELECT COALESCE((SELECT SUM(units) FROM player.ishop_native_purchase WHERE account_id=? AND shop_id=? AND bought_at>DATE_SUB(NOW(),INTERVAL 1 "
-        + interval + ")),0)+COALESCE((SELECT SUM(itemCount) FROM player.ishop_log WHERE accountID=? AND itemVnum=? AND ?>0 AND buyDate>DATE_SUB(NOW(),INTERVAL 1 "
+        + interval + ")),0)+COALESCE((SELECT SUM(units) FROM player.ishop_purchase_archive WHERE account_id=? AND history_scope_id=? AND ?>0 AND bought_at>DATE_SUB(NOW(),INTERVAL 1 "
         + interval + ")),0)";
     std::unique_ptr<SQLMsg> message(db.DirectQueryPrepared(query.c_str(),
         {SqlParam::UInt(session.account),SqlParam::UInt(product.id),SqlParam::UInt(session.account),
-            SqlParam::UInt(product.legacy),SqlParam::UInt(product.legacy)}));
+            SqlParam::UInt(product.historyScope),SqlParam::UInt(product.historyScope)}));
     if (!message || message->uiSQLErrno || !message->Get()) return UINT64_MAX;
     const auto row = message->Get()->FetchRow();
     return row ? Number(row[0]) : UINT64_MAX;
@@ -346,10 +343,8 @@ void SendTypedItemShopHistory(entt::entity character, std::uint32_t offset)
         std::unique_ptr<SQLMsg> message(db.DirectQueryPrepared(
             "SELECT bought_at,units,paid,purchase_payload,0,0,0 FROM player.ishop_native_purchase WHERE account_id=? "
             "UNION ALL "
-            "SELECT l.buyDate,l.itemCount,l.itemPrice,NULL,n.category_id,n.local_id,n.refinement_level FROM player.ishop_log l "
-            "LEFT JOIN (SELECT legacy_vnum,MIN(category_id) AS category_id,MIN(local_id) AS local_id,MIN(refinement_level) AS refinement_level "
-            "FROM player.ishop_native_item GROUP BY legacy_vnum HAVING COUNT(DISTINCT category_id,local_id,refinement_level)=1) n ON n.legacy_vnum=l.itemVnum "
-            "WHERE l.accountID=? AND l.itemCount>0 ORDER BY 1 DESC,2,3,4,5,6,7 LIMIT ? OFFSET ?",
+            "SELECT bought_at,units,paid,NULL,category_id,local_id,refinement_level FROM player.ishop_purchase_archive "
+            "WHERE account_id=? AND units>0 ORDER BY 1 DESC,2,3,4,5,6,7 LIMIT ? OFFSET ?",
             {SqlParam::UInt(s.account),SqlParam::UInt(s.account),SqlParam::UInt(HistoryPageSize+1),SqlParam::UInt(offset)}));
         if (!message || message->uiSQLErrno || !message->Get()) return [s] {
             if (const auto e=s.Current(); e!=entt::null) Tell(e,"A vásárlási napló most nem olvasható."); };

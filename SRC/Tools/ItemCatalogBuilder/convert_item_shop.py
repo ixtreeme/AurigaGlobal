@@ -1,4 +1,7 @@
-"""OFFLINE one-time conversion of the legacy item shop to native items (C45).
+"""Historical pre-cutover mapping step. Migration 056 and migrate_item_shop_storage.py
+consume this archive explicitly; live offers are edited in ishop_offer/member.
+
+OFFLINE one-time conversion of the legacy item shop to native items (C45).
 
 Each player.ishop_data row names a legacy item prototype (itemVnum). The row is
 sold to characters on the native item system only through the native item it
