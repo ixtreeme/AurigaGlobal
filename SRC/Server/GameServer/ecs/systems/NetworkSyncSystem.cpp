@@ -283,6 +283,9 @@ void CopyStringView(char* dest, std::size_t destSize, std::string_view value)
 
 uint16_t GetAppearancePart(entt::registry& reg, entt::entity e, uint8_t part)
 {
+    // Owned equipment is described exclusively by GC_TYPED_APPEARANCE asset paths.
+    // The character-parts array retains character traits (e.g. hairstyle), never item IDs.
+    if (part == PART_MAIN || part == PART_WEAPON || part == PART_HEAD) return 0;
     const auto* appearance = reg.try_get<ecs::AppearancePartsComponent>(e);
     if (!appearance || part >= PART_MAX_NUM)
         return 0;

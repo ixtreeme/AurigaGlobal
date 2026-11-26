@@ -474,15 +474,20 @@ void CommittedStatePublication() {
     g_registry.emplace<ecs::DirtyTag>(owner);
     Check(wire.empty(), "generic mutation marker emitted network packets");
 
+    TPacketGCCharacterAdditionalInfo join{};
+    Check(NetworkSyncSystem::BuildCharAdditionalInfo(g_registry, owner, join) &&
+        join.awPart[CHR_EQUIPPART_ARMOR] == 0 && join.awPart[CHR_EQUIPPART_WEAPON] == 0 &&
+        join.awPart[CHR_EQUIPPART_HEAD] == 0 && join.awPart[CHR_EQUIPPART_HAIR] == 100 + PART_HAIR,
+        "joining observers receive character traits without retired item identities");
     NetworkSyncSystem::UpdatePacket(owner);
     Check(wire.size() == 2 && !wire.count(&distantDesc), "appearance update recipients differ from visible owner/observer");
     for (const auto* desc : {&ownerDesc, &observerDesc}) {
         Check(wire.at(desc).size() == 1, "appearance change replayed MOVE, ADD or full points");
         const auto packet = Packet<TPacketGCCharacterUpdate>(*desc, 0, HEADER_GC_CHARACTER_UPDATE);
-        Check(packet.dwVID == 1000 && packet.awPart[CHR_EQUIPPART_ARMOR] == 100 + PART_MAIN &&
-            packet.awPart[CHR_EQUIPPART_WEAPON] == 100 + PART_WEAPON &&
-            packet.awPart[CHR_EQUIPPART_HEAD] == 100 + PART_HEAD &&
-            packet.awPart[CHR_EQUIPPART_HAIR] == 100 + PART_HAIR, "equipment appearance lost on UPDATE");
+        Check(packet.dwVID == 1000 && packet.awPart[CHR_EQUIPPART_ARMOR] == 0 &&
+            packet.awPart[CHR_EQUIPPART_WEAPON] == 0 &&
+            packet.awPart[CHR_EQUIPPART_HEAD] == 0 &&
+            packet.awPart[CHR_EQUIPPART_HAIR] == 100 + PART_HAIR, "retired item IDs leaked or character traits were lost on UPDATE");
 #ifdef ENABLE_RUNE_SYSTEM
         Check(packet.awPart[CHR_EQUIPPART_RUNE] == 100 + PART_RUNE, "rune appearance lost");
 #endif
