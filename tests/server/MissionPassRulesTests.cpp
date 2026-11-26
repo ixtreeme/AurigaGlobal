@@ -118,7 +118,7 @@ int main(int argc, char** argv) {
         reloaded.season++;
         CHECK(Apply(s,reloaded,e,now)==ApplyResult::WrongAccount);
 
-        s.rewards = {{1,Track::Free,90011,1},{1,Track::Premium,90011,2}};
+        s.rewards = {{1,Track::Free,6,0,756,1},{1,Track::Premium,6,0,756,2}};
         State claim; claim.account = 7; claim.season = s.id;
         CHECK(ReserveReward(s,claim,1,Track::Free,now) == ClaimResult::Locked);
         claim.xp = 1000;
@@ -142,8 +142,12 @@ int main(int argc, char** argv) {
         bad = doc; bad["ends_at_utc"] = bad["starts_at_utc"]; Rejects([&]{ReadConfig(bad);});
         bad = doc; bad["premium_purchase_enabled"] = true; Rejects([&]{ReadConfig(bad);});
         bad = doc; bad["missions"][4]["goal"] = 13; Rejects([&]{ReadConfig(bad);});
-        bad = doc; bad["rewards"] = nlohmann::json::array({{{"level",1},{"track","free"},{"item",90011},{"count",1}},
-            {{"level",1},{"track","free"},{"item",90011},{"count",1}}}); Rejects([&]{ReadConfig(bad);});
+        bad = doc; bad["rewards"] = nlohmann::json::array({{{"level",1},{"track","free"},{"category",6},{"local",756},{"refinement",0},{"count",1}},
+            {{"level",1},{"track","free"},{"category",6},{"local",756},{"refinement",0},{"count",1}}}); Rejects([&]{ReadConfig(bad);});
+        bad=doc;bad["schema_version"]=1;Rejects([&]{ReadConfig(bad);});
+        bad=doc;bad["rewards"][0]["item"]=90011;Rejects([&]{ReadConfig(bad);});
+        bad=doc;bad["rewards"][0]["local"]=0;Rejects([&]{ReadConfig(bad);});
+        bad=doc;bad["rewards"][0]["category"]=65536;Rejects([&]{ReadConfig(bad);});
         std::cout << "MISSION_PASS_RULES=PASS missions=36 utc_resets=ok dedup=ok premium_isolated=ok claims=ok config_rejection=ok\n";
         return 0;
     } catch (const std::exception& e) { std::cerr << e.what() << '\n'; return 1; }

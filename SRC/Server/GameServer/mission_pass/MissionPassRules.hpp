@@ -24,7 +24,7 @@ enum class Track { Free, Premium };
 
 struct Mission {
     uint32_t id = 0;
-    std::string nameKey, descriptionKey;
+    std::string nameKey, descriptionKey, icon;
     Cadence cadence = Cadence::Daily;
     Kind kind = Kind::MobKill;
     Counting counting = Counting::Quantity;
@@ -37,7 +37,8 @@ struct Mission {
 struct Reward {
     uint32_t level = 0;
     Track track = Track::Free;
-    uint32_t item = 0, count = 0;
+    uint16_t category = 0, refinement = 0;
+    uint32_t local = 0, count = 0;
 };
 struct Season {
     uint32_t id = 0, levels = 40, xpPerLevel = 1000;
@@ -102,7 +103,7 @@ inline void Validate(const Season& season) {
     }
     std::set<RewardKey> slots;
     for (const auto& r : season.rewards)
-        if (!r.level || r.level > season.levels || !r.item || !r.count || r.count > 200 ||
+        if (!r.level || r.level > season.levels || !r.category || !r.local || r.refinement>255 || !r.count || r.count > 200 ||
             !slots.emplace(r.level, r.track).second)
             throw std::invalid_argument("Invalid or duplicate Mission Pass reward");
 }

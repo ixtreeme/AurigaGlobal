@@ -1,5 +1,8 @@
 #include "../core/stdafx.h"
 #include "MissionPassSystem.hpp"
+#include "../item/ItemCatalogRuntime.hpp"
+#include <NativeAwardsSql.hpp>
+#include <item/TypedItemDetails.hpp>
 #include "MissionPassState.hpp"
 #include "MissionPassEvents.hpp"
 #include "../core/JsonFile.h"
@@ -20,6 +23,7 @@
 #include <unordered_map>
 #include <thread>
 #include <random>
+#include <openssl/sha.h>
 
 extern bool g_bShutdown;
 
@@ -48,6 +52,7 @@ struct Run {
 };
 std::map<int32_t,Run> runs;
 uint64_t serial=0;
+std::string contractHash;
 const std::string boot=std::to_string(std::chrono::high_resolution_clock::now().time_since_epoch().count())+"_"+std::to_string(std::random_device{}());
 int64_t Now(){return get_global_time();}
 entt::entity Player(uint32_t account) {
@@ -62,7 +67,22 @@ bool Load() {
     loaded=true;
     nlohmann::json doc;
     if(!JsonFile::Load(LocaleService_GetBasePath()+"/mission_pass.json",doc))return false;
-    try {season=ReadConfig(doc);LOG_INFO("MISSION_PASS_CONFIG season={} enabled={}",season.id,season.enabled);return true;}
+    try {
+        season=ReadConfig(doc);
+        auto pinned=doc;pinned.erase("enabled");const auto canonical=pinned.dump();unsigned char digest[SHA256_DIGEST_LENGTH];
+        if(!SHA256(reinterpret_cast<const unsigned char*>(canonical.data()),canonical.size(),digest))
+            throw std::runtime_error("Mission Pass contract hashing failed");
+        contractHash.clear();static constexpr char digits[]="0123456789abcdef";
+        for(auto byte:digest){contractHash+=digits[byte>>4];contractHash+=digits[byte&15];}
+        const auto catalog=auriga::item::runtime::CurrentCatalog();
+        if(!catalog)throw std::invalid_argument("Native item catalog unavailable");
+        for(const auto& r:season.rewards) {
+            const auto key=auriga::item::ItemKey::Create(r.category,r.local);
+            if(!key || !auriga::item::persistence::CanQueueNativeItemAward(*catalog,*key,r.refinement,r.count))
+                throw std::invalid_argument("Unsupported native Mission Pass reward");
+        }
+        LOG_INFO("MISSION_PASS_CONFIG season={} enabled={}",season.id,season.enabled);return true;
+    }
     catch(const std::exception& e){LOG_ERROR("MISSION_PASS_CONFIG {}",e.what());season.enabled=false;return false;}
 }
 void Snapshot(uint32_t account) {
@@ -75,15 +95,31 @@ void Snapshot(uint32_t account) {
         {"missions",nlohmann::json::array()},{"rewards",nlohmann::json::array()}};
     for(const auto& m:season.missions) {
         auto p=a.state.progress.find({m.id,Period(season,m.cadence,Now())});
-        doc["missions"].push_back({{"id",m.id},{"name_key",m.nameKey},{"description_key",m.descriptionKey},
+        doc["missions"].push_back({{"id",m.id},{"name_key",m.nameKey},{"description_key",m.descriptionKey},{"icon",m.icon},
             {"cadence",m.cadence==Cadence::Daily?"daily":m.cadence==Cadence::Weekly?"weekly":"season"},
             {"goal",m.goal},{"xp",m.xp},{"progress",p==a.state.progress.end()?0:p->second.value}});
     }
-    for(const auto& r:a.rewards)doc["rewards"].push_back({{"level",r.level},{"track",r.track==Track::Free?0:1},
-        {"item",r.item},{"count",r.count},{"claimed",a.state.reservedRewards.count({r.level,r.track})!=0}});
-    const auto bytes=doc.dump();if(bytes.size()>60000){LOG_ERROR("MISSION_PASS snapshot exceeds bound");return;}
+    const auto catalog=auriga::item::runtime::CurrentCatalog();
+    if(!catalog)return;
+    std::vector<auriga::item::ItemGrant> grants;
+    for(const auto& r:a.rewards) {
+        const auto key=auriga::item::ItemKey::Create(r.category,r.local);
+        if(!key || !auriga::item::persistence::CanQueueNativeItemAward(*catalog,*key,r.refinement,r.count)) {
+            Notice(account,"MP_DATABASE_ERROR");return;
+        }
+        grants.push_back({*key,r.refinement,r.count});
+        doc["rewards"].push_back({{"level",r.level},{"track",r.track==Track::Free?0:1},
+            {"category",r.category},{"local",r.local},{"refinement",r.refinement},{"count",r.count},
+            {"claimed",a.state.reservedRewards.count({r.level,r.track})!=0}});
+    }
+    const auto details=auriga::item::EncodeTypedItemDetails(*catalog,{},false,grants);
+    if(!details)return;
+    std::string metadata;static constexpr char hexDigits[]="0123456789abcdef";
+    for(auto value:*details){const auto byte=std::to_integer<unsigned>(value);metadata+=hexDigits[byte>>4];metadata+=hexDigits[byte&15];}
+    doc["item_details"]=metadata;
+    const auto bytes=doc.dump();if(bytes.size()>(1u<<20)){LOG_ERROR("MISSION_PASS snapshot exceeds bound");return;}
     const auto id=++serial;
-    ecs::ChatSystem::Send(player,CHAT_TYPE_COMMAND,"amp_begin 1 %llu %zu",static_cast<unsigned long long>(id),bytes.size());
+    ecs::ChatSystem::Send(player,CHAT_TYPE_COMMAND,"amp_begin 2 %llu %zu",static_cast<unsigned long long>(id),bytes.size());
     static constexpr char digits[]="0123456789abcdef";
     for(size_t start=0,index=0;start<bytes.size();start+=120,++index) {
         std::string hex;for(size_t i=start;i<std::min(start+120,bytes.size());++i){auto c=static_cast<unsigned char>(bytes[i]);hex+=digits[c>>4];hex+=digits[c&15];}
@@ -93,11 +129,15 @@ void Snapshot(uint32_t account) {
 }
 bool ReadResult(uint32_t account,SQLMsg* result,std::string& status) {
     if(!result || result->uiSQLErrno || !result->Get() || !result->Get()->uiNumRows ||
-        mysql_num_fields(result->Get()->pSQLResult)<7)return false;
+        mysql_num_fields(result->Get()->pSQLResult)!=12)return false;
     auto row=result->Get()->FetchRow();if(!row || !row[0])return false;
     status=row[0];
     try {
         auto& a=accounts.at(account);
+        if(!row[7] || !row[8] || !row[9] || !row[10] || !row[11] || std::string(row[11])!=contractHash ||
+            std::stoll(row[7])!=season.startsAt || std::stoll(row[8])!=season.endsAt ||
+            std::stoull(row[9])!=season.xpPerLevel || std::stoull(row[10])!=season.levels)
+            throw std::invalid_argument("Mission Pass season contract mismatch");
         a.state=LoadState(season,account,row[1]?row[1]:"");
         a.revision=std::stoull(row[2]);a.state.premiumActivatedAt=std::stoll(row[3]);
         if(a.state.xp!=std::stoull(row[4]))throw std::runtime_error("XP mismatch");
@@ -105,7 +145,13 @@ bool ReadResult(uint32_t account,SQLMsg* result,std::string& status) {
             a.state.reservedRewards.emplace(r[0].get<uint32_t>(),r[1].get<int>()==0?Track::Free:Track::Premium);
         a.rewards.clear();
         for(const auto& r:nlohmann::json::parse(row[6]?row[6]:"[]"))
-            a.rewards.push_back({r[0].get<uint32_t>(),r[1].get<int>()==0?Track::Free:Track::Premium,r[2].get<uint32_t>(),r[3].get<uint32_t>()});
+            a.rewards.push_back({r[0].get<uint32_t>(),r[1].get<int>()==0?Track::Free:Track::Premium,
+                r[2].get<uint16_t>(),r[4].get<uint16_t>(),r[3].get<uint32_t>(),r[5].get<uint32_t>()});
+        const auto contract=[](const Reward& r){return std::tuple{r.level,r.track,r.category,r.local,r.refinement,r.count};};
+        auto expected=season.rewards,actual=a.rewards;
+        std::ranges::sort(expected,{},contract);std::ranges::sort(actual,{},contract);
+        if(expected.size()!=actual.size() || !std::ranges::equal(expected,actual,{},contract,contract))
+            throw std::invalid_argument("Mission Pass reward contract mismatch");
         a.ready=true;return true;
     }catch(const std::exception& e){LOG_ERROR("MISSION_PASS_LOAD account={} {}",account,e.what());return false;}
 }
@@ -115,7 +161,7 @@ void Refresh(uint32_t account) {
         auto& current=accounts.at(account);current.busy=false;std::string status;
         if(!ReadResult(account,result,status)){current.retryAt=Now()+5;Notice(account,"MP_DATABASE_ERROR");return;}
         Snapshot(account);
-    },"CALL mission_pass_snapshot("+std::to_string(account)+","+std::to_string(season.id)+")");
+    },"CALL player.native_mission_pass_snapshot("+std::to_string(account)+","+std::to_string(season.id)+")");
 }
 void Commit(uint32_t account) {
     auto& a=accounts.at(account);
@@ -125,8 +171,8 @@ void Commit(uint32_t account) {
     for(size_t i=0;i<a.inFlight;++i){auto e=a.events[i];e.sequence=next.lastSequence+1;Apply(season,next,e,std::min(Now(),season.endsAt-1));}
     if(newBatch)a.completions=NewCompletions(a.state,next);
     a.busy=true;
-    auto query="CALL mission_pass_commit("+std::to_string(account)+","+std::to_string(season.id)+","+
-        std::to_string(a.revision)+","+SqlText(a.token)+","+SqlText(SaveState(next).dump())+")";
+    auto query="CALL player.native_mission_pass_commit("+std::to_string(account)+","+std::to_string(season.id)+","+
+        std::to_string(a.revision)+","+SqlText(a.token)+","+SqlText(SaveState(next).dump())+","+SqlText(contractHash)+")";
     DBManager::instance().FuncQueryText([account](SQLMsg* result){
         auto& current=accounts.at(account);current.busy=false;std::string status;
         if(!ReadResult(account,result,status)){current.retryAt=Now()+5;return;}
@@ -221,7 +267,20 @@ void Tick() {
         if(a.open && now-a.lastSent>=30){Refresh(id);++it;continue;}
         if(!a.claims.empty()) {
             const size_t count=a.claims.size();a.busy=true;std::string query;
-            for(const auto& claim:a.claims)query+="CALL mission_pass_claim("+std::to_string(id)+","+std::to_string(season.id)+","+std::to_string(claim.first)+","+std::to_string(claim.second)+");";
+            for(const auto& claim:a.claims) {
+                const auto reward=std::ranges::find_if(a.rewards,[&](const auto& r){return r.level==claim.first && unsigned(r.track)==claim.second;});
+                if(reward==a.rewards.end()){a.busy=false;a.claims.clear();Notice(id,"MP_DATABASE_ERROR");break;}
+                const auto catalog=auriga::item::runtime::CurrentCatalog();
+                const auto key=auriga::item::ItemKey::Create(reward->category,reward->local);
+                if(!catalog || !key || !auriga::item::persistence::CanQueueNativeItemAward(*catalog,*key,reward->refinement,reward->count)) {
+                    a.busy=false;a.claims.clear();Notice(id,"MP_DATABASE_ERROR");break;
+                }
+                query+="CALL player.native_mission_pass_claim("+std::to_string(id)+","+std::to_string(season.id)+","+
+                    std::to_string(a.pid)+","+std::to_string(claim.first)+","+std::to_string(claim.second)+","+
+                    std::to_string(reward->category)+","+std::to_string(reward->local)+","+
+                    std::to_string(reward->refinement)+","+std::to_string(reward->count)+","+SqlText(contractHash)+");";
+            }
+            if(!a.busy)continue;
             DBManager::instance().FuncQueryText([id,count](SQLMsg* result){auto& c=accounts.at(id);c.busy=false;
                 if(!result || result->uiSQLErrno){c.retryAt=Now()+5;return;}
                 bool sent=false;std::string message="MP_CLAIMED";

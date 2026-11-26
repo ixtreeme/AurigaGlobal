@@ -3,7 +3,7 @@
 #include <nlohmann/json.hpp>
 
 namespace AurigaMissionPass {
-// Strict reader shared by offline validation and the future runtime adapter.
+// Strict native contract reader shared by validation and the running service.
 // A malformed config must not partially replace the running season.
 inline Season ReadConfig(const nlohmann::json& doc) {
     const auto readUnsigned = [](const nlohmann::json& value) -> uint32_t {
@@ -18,7 +18,7 @@ inline Season ReadConfig(const nlohmann::json& doc) {
             value.get<int64_t>() < 0) throw std::invalid_argument("Invalid UTC timestamp");
         return value.get<int64_t>();
     };
-    if (doc.at("schema_version") != 1 || doc.at("premium_purchase_enabled") != false)
+    if (doc.at("schema_version") != 2 || doc.at("premium_purchase_enabled") != false)
         throw std::invalid_argument("Unsupported schema or premium purchasing enabled");
     Season s;
     s.id = readUnsigned(doc.at("season_id"));
@@ -46,6 +46,7 @@ inline Season ReadConfig(const nlohmann::json& doc) {
         m.id = readUnsigned(row.at("id"));
         m.nameKey = row.at("name_key").get<std::string>();
         m.descriptionKey = row.at("description_key").get<std::string>();
+        m.icon = row.value("icon",std::string{});
         m.cadence = cadences.at(row.at("cadence").get<std::string>());
         m.kind = kinds.at(row.at("event").get<std::string>());
         m.group = groups.at(row.at("group").get<std::string>());
@@ -62,8 +63,12 @@ inline Season ReadConfig(const nlohmann::json& doc) {
     for (const auto& row : doc.at("rewards")) {
         auto track = row.at("track").get<std::string>();
         if (track != "free" && track != "premium") throw std::invalid_argument("Unknown reward track");
+        if(row.contains("item") || row.contains("vnum") || readUnsigned(row.at("category"))>UINT16_MAX ||
+           readUnsigned(row.at("refinement"))>255)throw std::invalid_argument("Native Mission Pass item key required");
         s.rewards.push_back({readUnsigned(row.at("level")), track == "free" ? Track::Free : Track::Premium,
-            readUnsigned(row.at("item")), readUnsigned(row.at("count"))});
+            static_cast<uint16_t>(readUnsigned(row.at("category"))),
+            static_cast<uint16_t>(readUnsigned(row.at("refinement"))),
+            readUnsigned(row.at("local")), readUnsigned(row.at("count"))});
     }
     Validate(s);
     return s;
