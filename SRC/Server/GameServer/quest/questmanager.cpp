@@ -748,31 +748,7 @@ namespace quest
 				SendTypedInventory(character);
 	}
 
-	bool CQuestManager::GiveItemToPC(unsigned int pc, entt::entity pkChr)
-	{
-		if (!ecs::PlayerRuntime::IsPC(pkChr))
-			return false;
 
-		PC * pPC = GetPC(pc);
-
-		if (pPC)
-		{
-			if (!CheckQuestLoaded(pPC))
-				return false;
-
-			TargetInfo * pInfo = CTargetManager::instance().GetTargetInfo(pc, TARGET_TYPE_VID, ecs::PlayerRuntime::GetPacketVID(pkChr));
-
-			if (pInfo)
-			{
-				bool bRet;
-
-				if (GetNPC(QUEST_NO_NPC).OnTarget(*pPC, pInfo->dwQuestIndex, pInfo->szTargetName, "click", bRet))
-					return true;
-			}
-		}
-
-		return false;
-	}
 
 	bool CQuestManager::Click(entt::entity pc, entt::entity chrTarget)
 	{

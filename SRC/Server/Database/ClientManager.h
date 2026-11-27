@@ -60,40 +60,29 @@ public:
 		uint8_t	account_index;
 		std::optional<auriga::player_session::Lease> playerSession;
 		char	login[LOGIN_MAX_LEN + 1];
-		char	safebox_password[SAFEBOX_PASSWORD_MAX_LEN + 1];
 		char	ip[MAX_HOST_LENGTH + 1];
 
 		TAccountTable* pAccountTable;
-		TSafeboxTable* pSafebox;
 
 		ClientHandleInfo(uint32_t argHandle, uint32_t dwPID = 0): account_id(0), account_index(0), login{},
-		                                                    safebox_password{}, ip{}
+		                                                    ip{}
 		{
 			dwHandle = argHandle;
-			pSafebox = nullptr;
 			pAccountTable = nullptr;
 			player_id = dwPID;
 		}
 		;
-		ClientHandleInfo(uint32_t argHandle, uint32_t dwPID, uint32_t accountId): account_index(0), login{}, safebox_password{},
+		ClientHandleInfo(uint32_t argHandle, uint32_t dwPID, uint32_t accountId): account_index(0), login{},
 		                                                                 ip{}
 		{
 			dwHandle = argHandle;
-			pSafebox = nullptr;
 			pAccountTable = nullptr;
 			player_id = dwPID;
 			account_id = accountId;
 		}
 		;
 
-		~ClientHandleInfo()
-		{
-			if (pSafebox)
-			{
-				delete pSafebox;
-				pSafebox = nullptr;
-			}
-		}
+
 	};
 
 #ifdef ENABLE_ITEMSHOP

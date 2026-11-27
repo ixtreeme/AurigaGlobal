@@ -137,7 +137,6 @@ namespace quest
 		void		AttrIn(entt::entity pc, entt::entity ch, int attr);
 		void		AttrOut(entt::entity pc, entt::entity ch, int attr);
 		bool		Target(unsigned int pc, uint32_t dwQuestIndex, const char* c_pszTargetName, const char* c_pszVerb);
-		bool		GiveItemToPC(unsigned int pc, entt::entity pkChr);
 		void		Unmount(unsigned int pc);
 
 		void		QuestButton(unsigned int pc, unsigned int quest_index);
