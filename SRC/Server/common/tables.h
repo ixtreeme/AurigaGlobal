@@ -391,7 +391,6 @@ typedef struct TPlayerItemAttribute
 } TPlayerItemAttribute;
 
 
-
 typedef struct SQuickslot
 {
 	uint8_t	type;
@@ -632,7 +631,6 @@ typedef struct SShopItemTable
 } TShopItemTable;
 
 
-
 #define QUEST_NAME_MAX_LEN	32
 #define QUEST_STATE_MAX_LEN	64
 
@@ -645,13 +643,11 @@ typedef struct SQuestTable
 } TQuestTable;
 
 
-
 typedef struct SItemApply
 {
 	uint8_t	bType;
 	double	lValue;
 } TItemApply;
-
 
 
 ;
@@ -708,9 +704,6 @@ typedef struct SPlayerCountPacket
 #define SAFEBOX_PASSWORD_MAX_LEN	6
 
 
-
-
-
 typedef struct SSafeboxTable
 {
 	uint32_t	dwID;
@@ -749,27 +742,6 @@ typedef struct SEmpireSelectPacket
 	uint32_t	dwAccountID;
 	uint8_t	bEmpire;
 } TEmpireSelectPacket;
-
-
-typedef struct SMountInventoryItemTable
-{
-	uint32_t	id;
-	uint16_t	slot;
-	uint32_t	vnum;
-	uint32_t	count;
-	int32_t alSockets[ITEM_SOCKET_MAX_NUM];
-	TPlayerItemAttribute	aAttr[ITEM_ATTRIBUTE_MAX_NUM];
-} TMountInventoryItemTable;
-
-typedef struct SPetInventoryItemTable
-{
-	uint32_t	id;
-	uint16_t	slot;
-	uint32_t	vnum;
-	uint32_t	count;
-	int32_t alSockets[ITEM_SOCKET_MAX_NUM];
-	TPlayerItemAttribute	aAttr[ITEM_ATTRIBUTE_MAX_NUM];
-} TPetInventoryItemTable;
 
 
 typedef struct SPacketGDSetup
@@ -978,7 +950,6 @@ typedef struct SRefineMaterial
 	uint32_t vnum;
 	int count;
 } TRefineMaterial;
-
 
 
 typedef struct SBanwordTable
@@ -1337,7 +1308,6 @@ typedef struct tChangeGuildMaster
 } TPacketChangeGuildMaster;
 
 
-
 typedef struct tUpdateHorseName
 {
 	uint32_t dwPlayerID;
@@ -1354,12 +1324,6 @@ typedef struct tNeedLoginLogInfo
 	uint32_t dwPlayerID;
 } TPacketNeedLoginLogInfo;
 
-typedef struct tItemAwardInformer
-{
-	char	login[LOGIN_MAX_LEN + 1];
-	char	command[20];
-	uint32_t vnum;
-} TPacketItemAwardInfromer;
 
 typedef struct tDeleteAwardID
 {
@@ -1408,12 +1372,7 @@ struct TSwitchbotTable
 	}
 };
 
-struct TSwitchbottAttributeTable
-{
-	uint8_t attribute_set;
-	int apply_num;
-	double max_value;
-};
+
 #endif
 
 #ifdef ENABLE_CHANNEL_SWITCH_SYSTEM
@@ -1438,7 +1397,6 @@ typedef struct
 	uint32_t	dwSkillColor[ESkillColorLength::MAX_SKILL_COUNT + ESkillColorLength::MAX_BUFF_COUNT][ESkillColorLength::MAX_EFFECT_COUNT];
 } TSkillColor;
 #endif
-
 
 
 #if defined(BL_OFFLINE_MESSAGE)
@@ -1520,9 +1478,6 @@ enum
 	LELEKGOMB_EVENT = 28,
 
 
-
-
-
 };
 #endif
 
@@ -1538,32 +1493,8 @@ enum
 	// Game core -> DB: a purchase already paid and delivered natively; log and count it.
 	ITEMSHOP_RECORD,
 };
-typedef struct SIShopData
-{
-	uint32_t	id;
-	uint32_t	itemVnum;
-	uint32_t	itemPrice;
-	int		topSellingIndex;
-	uint8_t	discount;
-	int64_t		offerTime;
-	int64_t		addedTime;
-	uint32_t	sellCount;
-	int	week_limit;
-	int	month_limit;
-	int32_t alSocket[ITEM_SOCKET_MAX_NUM];
-	TPlayerItemAttribute aAttr[ITEM_ATTRIBUTE_MAX_NUM];
-}TIShopData;
-typedef struct SIShopLogData
-{
-	uint32_t	accountID;
-	char	playerName[CHARACTER_NAME_MAX_LEN + 1];
-	char	buyDate[21];
-	int		buyTime;
-	char	ipAdress[16];
-	uint32_t	itemVnum;
-	int		itemCount;
-	uint32_t	itemPrice;
-}TIShopLogData;
+
+
 #endif
 
 #pragma pack()

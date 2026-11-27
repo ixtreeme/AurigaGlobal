@@ -719,41 +719,6 @@ typedef struct packet_safebox_money_change
 	uint32_t	dwMoney;
 } TPacketGCSafeboxMoneyChange;
 
-typedef struct packet_mount_inventory
-{
-	uint8_t bHeader;
-	uint16_t size;
-	uint8_t bWidth;
-	uint8_t bHeight;
-	uint16_t wCount;
-} TPacketGCMountInventory;
-
-typedef struct packet_mount_inventory_item
-{
-	uint16_t wSlot;
-	uint32_t dwVnum;
-	uint32_t dwCount;
-	uint32_t alSockets[ITEM_SOCKET_MAX_NUM];
-	TPlayerItemAttribute aAttr[ITEM_ATTRIBUTE_MAX_NUM];
-} TMountInventoryItemData;
-
-typedef struct packet_pet_inventory
-{
-	uint8_t bHeader;
-	uint16_t size;
-	uint8_t bWidth;
-	uint8_t bHeight;
-	uint16_t wCount;
-} TPacketGCPetInventory;
-
-typedef struct packet_pet_inventory_item
-{
-	uint16_t wSlot;
-	uint32_t dwVnum;
-	uint32_t dwCount;
-	uint32_t alSockets[ITEM_SOCKET_MAX_NUM];
-	TPlayerItemAttribute aAttr[ITEM_ATTRIBUTE_MAX_NUM];
-} TPetInventoryItemData;
 
 typedef struct packet_guild
 {
@@ -989,7 +954,6 @@ typedef struct SPacketGCSpecificEffect
 } TPacketGCSpecificEffect;
 
 
-
 typedef struct SPacketGCStateCheck
 {
 	uint8_t header;
@@ -1120,8 +1084,6 @@ typedef struct SPacketGCItemShop
 	uint32_t	size;
 } TPacketGCItemShop;
 #endif
-
-
 
 
 typedef struct SItemBonusCatalogEntry

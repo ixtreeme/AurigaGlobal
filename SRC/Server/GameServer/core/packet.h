@@ -104,7 +104,6 @@ enum
 };
 
 
-
 struct packet_item_use
 {
 	uint8_t	header;
@@ -326,13 +325,6 @@ struct TNPCPosition
 	int32_t y;
 };
 
-typedef struct SEquipmentItemSet
-{
-	uint32_t   vnum;
-	uint8_t    count;
-	int32_t    alSockets[ITEM_SOCKET_MAX_NUM];
-	TPlayerItemAttribute aAttr[ITEM_ATTRIBUTE_MAX_NUM];
-} TEquipmentItemSet;
 
 typedef struct
 {
@@ -351,17 +343,10 @@ struct TPacketHandshakeCompleted
 };
 
 
-
-
-
-
 typedef struct SPacketGGCheckAwakeness
 {
 	uint8_t bHeader;
 } TPacketGGCheckAwakeness;
-
-
-
 
 
 #ifdef ENABLE_ACCE_SYSTEM
@@ -412,7 +397,6 @@ enum ECGSwitchbotSubheader
 };
 
 
-
 enum EGCSwitchbotSubheader
 {
 	SUBHEADER_GC_SWITCHBOT_UPDATE,
@@ -421,15 +405,6 @@ enum EGCSwitchbotSubheader
 };
 
 
-
-struct TSwitchbotUpdateItem
-{
-	uint8_t	slot;
-	uint8_t	vnum;
-	uint8_t	count;
-	int32_t	alSockets[ITEM_SOCKET_MAX_NUM];
-	TPlayerItemAttribute aAttr[ITEM_ATTRIBUTE_MAX_NUM];
-};
 #endif
 
 #ifdef ENABLE_CUBE_RENEWAL_WORLDARD
