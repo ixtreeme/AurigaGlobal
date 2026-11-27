@@ -165,7 +165,10 @@ static std::uint32_t CreateLoot(const items::ItemGrant& grant, std::int32_t mapI
 	const std::uint32_t vid = AllocateGroundVid();
 	if (!vid)
 		return 0;
-	auto insert = items::EncodeTypedGround({ vid, x, y, z, grant.key, grant.refinementLevel, grant.count, item->base.contentCode,catalog->CurrencyMode(grant.key)==items::CurrencyTokenMode::GroundGold ? grant.currencyAmount.value_or(grant.count) : 0 });
+	const auto* appearance=item->base.appearanceProfile ? catalog->FindAppearance(*item->base.appearanceProfile) : nullptr;
+    auto insert = items::EncodeTypedGround({vid,x,y,z,grant.key,grant.refinementLevel,grant.count,item->base.contentCode,
+        catalog->CurrencyMode(grant.key)==items::CurrencyTokenMode::GroundGold ? grant.currencyAmount.value_or(grant.count) : 0,
+        item->base.nameKey,appearance ? appearance->modelAsset : ""});
 	if (!insert)
 	{
 		LOG_ERROR("TypedLoot: {} cannot be shown on the ground (error {})", item->base.contentCode, static_cast<int>(insert.error()));

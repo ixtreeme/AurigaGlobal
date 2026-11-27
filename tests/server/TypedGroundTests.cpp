@@ -80,7 +80,7 @@ int main(int argc, char** argv)
 		Check(DecodeTypedGround(longer).error() == TypedGroundWireError::TrailingBytes, "trailing byte");
 		auto header = b; header[0] = std::byte { 225 };
 		Check(DecodeTypedGround(header).error() == TypedGroundWireError::BadHeader, "wrong header");
-		auto version = b; version[5] = std::byte { 3 };
+		auto version = b; version[5] = std::byte { 4 };
 		Check(DecodeTypedGround(version).error() == TypedGroundWireError::BadVersion, "unknown version");
 		auto sized = b; sized[1] = std::byte { 99 };
 		Check(DecodeTypedGround(sized).error() == TypedGroundWireError::BadSize, "size disagrees with the code length");
@@ -96,6 +96,30 @@ int main(int argc, char** argv)
 			Check(EncodeTypedGround(bad).error() == TypedGroundWireError::BadValue, "invalid view refused");
 		Check(EncodeTypedGround({ 1, 0, 0, 0, view.key, 0, 1, std::string(96, 'a') }).has_value(), "a 96-character code fits");
 
+        auto authored=view;authored.nameKey="item.custom_ground.name";authored.model="item/weapon/00010.gr2";
+        const auto v3=EncodeTypedGround(authored);
+        Check(v3&&(*v3)[5]==std::byte{3},"authored ground uses version 3");
+        const auto decodedV3=DecodeTypedGround(*v3);
+        Check(decodedV3&&decodedV3->nameKey==authored.nameKey&&decodedV3->model==authored.model&&
+            decodedV3->key==authored.key&&decodedV3->level==authored.level&&decodedV3->count==authored.count,"authoritative presentation round trip");
+        auto invalid=authored;invalid.nameKey="bad|h";
+        Check(!EncodeTypedGround(invalid),"ground localization markup refused");
+        invalid=authored;invalid.nameKey=std::string(161,'a');
+        Check(!EncodeTypedGround(invalid),"oversized ground name refused");
+        invalid=authored;invalid.model="bad\nmodel";
+        Check(!EncodeTypedGround(invalid),"ground model control character refused");
+        invalid=authored;invalid.model=std::string(513,'a');
+        Check(!EncodeTypedGround(invalid),"oversized ground model refused");
+        auto truncated=*v3;truncated.pop_back();
+        Check(!DecodeTypedGround(truncated),"truncated authored model refused");
+        if(argc==2&&std::string(argv[1])=="--write-golden")
+            std::ofstream(Golden().parent_path()/"typed_ground_v3.hex",std::ios::binary)<<Hex(*v3);
+        else {
+            std::ifstream fixture(Golden().parent_path()/"typed_ground_v3.hex",std::ios::binary);
+            std::stringstream expectedV3;expectedV3<<fixture.rdbuf();
+            auto expectedText=expectedV3.str();std::erase(expectedText,'\r');
+            Check(expectedText==Hex(*v3),"authored ground golden bytes");
+        }
         const ItemGrant receiptGrant{view.key,2,7};
         const auto receipt=TypedPickupReceipt(receiptGrant,"item.fixture.name");
         Check(receipt && *receipt=="7#|Hti:"+std::to_string(static_cast<unsigned>(view.key.Category()))+
